@@ -7,37 +7,38 @@ const singleAritmaticOperatorPriority = 9;
 const singleLogicalOperatorPriority = 9;
 const memberAccessOperatorPriority = 10;
 
-export class OperatorExpression {
+// + binary operator ~ >> << >>>
+export class ExpressionOperator {
     constructor(readonly Symbol: string, readonly Priority: number) {
     }
 }
 
-export const AllOperatorExpressions = [
-    new OperatorExpression("++", singleAritmaticOperatorPriority),
-    new OperatorExpression("--", singleAritmaticOperatorPriority),
-    new OperatorExpression("+", aritmaticSubAddOperatorPriority),
-    new OperatorExpression("-", aritmaticSubAddOperatorPriority),
-    new OperatorExpression("*", aritmaticPowOperatorPriority),
-    new OperatorExpression("/", aritmaticPowOperatorPriority),
-    new OperatorExpression("%", aritmaticPowOperatorPriority),
+export const AllExpressionOperators = [
+    new ExpressionOperator("++", singleAritmaticOperatorPriority),
+    new ExpressionOperator("--", singleAritmaticOperatorPriority),
+    new ExpressionOperator("+", aritmaticSubAddOperatorPriority),
+    new ExpressionOperator("-", aritmaticSubAddOperatorPriority),
+    new ExpressionOperator("*", aritmaticPowOperatorPriority),
+    new ExpressionOperator("/", aritmaticPowOperatorPriority),
+    new ExpressionOperator("%", aritmaticPowOperatorPriority),
     // Comparison
-    new OperatorExpression("===", comparisonOperatorPriority),
-    new OperatorExpression("!==", comparisonOperatorPriority),
-    new OperatorExpression(">==", comparisonOperatorPriority),
-    new OperatorExpression("<==", comparisonOperatorPriority),
-    new OperatorExpression("==", comparisonOperatorPriority),
-    new OperatorExpression("!=", comparisonOperatorPriority),
-    new OperatorExpression(">=", comparisonOperatorPriority),
-    new OperatorExpression("<=", comparisonOperatorPriority),
-    new OperatorExpression("<", comparisonOperatorPriority),
-    new OperatorExpression(">", comparisonOperatorPriority),
-    new OperatorExpression("?", comparisonOperatorPriority),
+    new ExpressionOperator("===", comparisonOperatorPriority),
+    new ExpressionOperator("!==", comparisonOperatorPriority),
+    new ExpressionOperator(">==", comparisonOperatorPriority),
+    new ExpressionOperator("<==", comparisonOperatorPriority),
+    new ExpressionOperator("==", comparisonOperatorPriority),
+    new ExpressionOperator("!=", comparisonOperatorPriority),
+    new ExpressionOperator(">=", comparisonOperatorPriority),
+    new ExpressionOperator("<=", comparisonOperatorPriority),
+    new ExpressionOperator("<", comparisonOperatorPriority),
+    new ExpressionOperator(">", comparisonOperatorPriority),
+    new ExpressionOperator("?", comparisonOperatorPriority),
     // Logical
-    new OperatorExpression("&&", logicalOperatorPriority),
-    new OperatorExpression("||", logicalOperatorPriority),
-    new OperatorExpression("&", logicalOperatorPriority),
-    new OperatorExpression("|", logicalOperatorPriority),
-    new OperatorExpression("!", singleLogicalOperatorPriority),
+    new ExpressionOperator("&&", logicalOperatorPriority),
+    new ExpressionOperator("||", logicalOperatorPriority),
+    new ExpressionOperator("&", logicalOperatorPriority),
+    new ExpressionOperator("|", logicalOperatorPriority),
+    new ExpressionOperator("!", singleLogicalOperatorPriority),
     // Member access
-    new OperatorExpression(".", memberAccessOperatorPriority)
+    new ExpressionOperator(".", memberAccessOperatorPriority)
 ];

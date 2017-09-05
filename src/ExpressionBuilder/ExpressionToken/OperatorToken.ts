@@ -1,5 +1,5 @@
 import { IExpressionToken } from "./IExpressionToken";
-import { OperatorExpression } from "./OperatorExpression";
+import { ExpressionOperator } from "./OperatorExpression";
 export class OperatorToken implements IExpressionToken {
     public get Value(): string | undefined {
         if (this.Operator)
@@ -12,6 +12,6 @@ export class OperatorToken implements IExpressionToken {
         return -1;
     }
 
-    constructor(readonly Remaining: string, protected Operator?: OperatorExpression) {
+    constructor(readonly Remaining: string, protected Operator?: ExpressionOperator) {
     }
 }

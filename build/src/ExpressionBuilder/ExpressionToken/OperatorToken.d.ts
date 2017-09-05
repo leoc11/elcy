@@ -1,9 +1,9 @@
 import { IExpressionToken } from "./IExpressionToken";
-import { OperatorExpression } from "./OperatorExpression";
+import { ExpressionOperator } from "./OperatorExpression";
 export declare class OperatorToken implements IExpressionToken {
     readonly Remaining: string;
-    protected Operator: OperatorExpression | undefined;
+    protected Operator: ExpressionOperator | undefined;
     readonly Value: string | undefined;
     readonly Priority: number;
-    constructor(Remaining: string, Operator?: OperatorExpression | undefined);
+    constructor(Remaining: string, Operator?: ExpressionOperator | undefined);
 }

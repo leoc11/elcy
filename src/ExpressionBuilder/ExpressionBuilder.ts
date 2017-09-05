@@ -1,11 +1,15 @@
 import {
-    AllOperatorExpressions,
+    IExpression,
+    SubtractionExpression,
+    ValueExpression
+} from "./Expression/";
+import {
+    AllExpressionOperators,
     BlockToken,
+    ExpressionOperator,
     OperandToken,
-    OperatorExpression,
     OperatorToken
 } from "./ExpressionToken/";
-
 
 export class ExpressionParser {
 
@@ -19,8 +23,22 @@ export class ExpressionFactory {
  */
 // tslint:disable-next-line:max-classes-per-file
 export class ExpressionBuilder {
-    public Parse(expression: string): string {
+    public Parse(expression: string) {
         const blockResult = this.GetBlock(expression);
+        if (!blockResult)
+            return null;
+        expression = this.RemoveComments(blockResult.Remaining);
+        if (expression)
+            throw new Error("Has not parsed string.\n\tRemaining: " + expression +
+                "\n\tResult: " + JSON.stringify(blockResult));
+
+        return blockResult.Value;
+    }
+    public Parse2(expression: string) {
+        const blockResult = this.GetBlock(expression);
+        if (!blockResult)
+            return null;
+
         expression = this.RemoveComments(blockResult.Remaining);
         if (expression)
             throw new Error("Has not parsed string.\n\tRemaining: " + expression +
@@ -29,18 +47,26 @@ export class ExpressionBuilder {
         return blockResult.Value;
     }
 
-    public ParseToExpression<T>(parser: ExpressionParser, fn: (...params: any[]) => any, params: any[]) {
-        const fnParams = this.GetFunctionBody(fn);
-        const fnBody = this.GetFunctionBody(fn);
-        const expressionBody = this.Parse(fnBody);
+    // public ParseToExpression<T>(parser: ExpressionParser, fn: (...params: any[]) => any, params: any[]) {
+    //     const fnParams = this.GetFunctionParams(fn);
+    //     const paramObject: { [key: string]: any } = {};
+    //     if (params.length > fnParams.length)
+    //         throw new Error("Paramater length mismatch");
 
-        const expressionVisitor = new Function(fnParams + ", Parser", expressionBody);
-        params.push(parser);
-        return (o: T) => {
-            params.unshift(o);
-            return expressionVisitor.apply(this, params);
-        };
-    }
+    //     for (let i = 0; i < params.length; i++) {
+    //         paramObject[fnParams[i]] = params[i];
+    //     }
+
+    //     const fnBody = this.GetFunctionBody(fn);
+    //     const expressionBody = this.Parse2(fnBody);
+
+    //     const expressionVisitor = new Function(fnParams + ", Parser", expressionBody);
+    //     params.push(parser);
+    //     return (o: T) => {
+    //         params.unshift(o);
+    //         return expressionVisitor.apply(this, params);
+    //     };
+    // }
 
     /**
      * GetFunctionParams
@@ -49,7 +75,7 @@ export class ExpressionBuilder {
         const functionStr = fn.toString();
         const paramOpenIndex = functionStr.indexOf("(");
         const paramCloseIndex = functionStr.indexOf(")");
-        return functionStr.substring(paramOpenIndex + 1, paramCloseIndex);
+        return functionStr.substring(paramOpenIndex + 1, paramCloseIndex).split(",");
     }
 
     public GetFunctionBody(fn: (...params: any[]) => any) {
@@ -64,84 +90,106 @@ export class ExpressionBuilder {
         return "return " + functionStr.substring(arrowIndex + 1).trim();
     }
 
-    protected GetBlock(expressionStr: string, expressionResult: string = "", prevOperators: OperatorToken[] = []): BlockToken {
-        let prevOperator: OperatorToken | undefined = prevOperators[0];
-        const operandToken = this.GetOperand(expressionStr, prevOperator);
-        expressionStr = this.RemoveComments(operandToken.Remaining);
-        let closeString = "";
-        const isOperandOnly = !expressionStr;
+    protected GetOperatorExpression(operator: string = "", ...params: IExpression[]) {
+        if (operator !== "")
+            return SubtractionExpression.Create(params[0], params[1]);
+        return SubtractionExpression.Create(params[1], params[0]);
+    }
 
-        if (!isOperandOnly) {
+    protected GetBlock(expressionStr: string, expressionResult?: IExpression, prevOperators: OperatorToken[] = []): BlockToken | null {
+        const prevOperator: OperatorToken | undefined = prevOperators[0];
+        const operandToken = this.GetOperand(expressionStr, prevOperator);
+
+        if (operandToken == null)
+            return null;
+
+        expressionStr = this.RemoveComments(operandToken.Remaining);
+        // let closeString = "";
+        const isOperandOnly = !expressionStr;
+        if (!expressionResult)
+            expressionResult = operandToken.Value;
+
+        if (!isOperandOnly && typeof expressionResult !== "undefined") {
             const operatorToken = this.GetOperator(operandToken.Remaining);
             if (operatorToken.Value) {
                 expressionStr = operatorToken.Remaining;
                 const isUseNextOperator = !prevOperator || operatorToken.Priority > prevOperator.Priority;
                 if (isUseNextOperator) {
-                    expressionResult += "eq(" + operandToken.Value + ", '" + operatorToken.Value + "', ";
+                    const blockResult = this.GetBlock(expressionStr, operandToken.Value, prevOperators);
+                    if (blockResult) {
+                        expressionResult = this.GetOperatorExpression("", expressionResult, blockResult.Value);
+
+                        expressionStr = this.RemoveComments(blockResult.Remaining);
+                    }
+                    // expressionResult += "eq(" + operandToken.Value + ", '" + operatorToken.Value + "', ";
                 }
                 else {
-                    let closing = "";
-                    do {
-                        prevOperator = prevOperators.shift();
-                        if (!prevOperator)
-                            break;
+                    if (operandToken.Value)
+                        expressionResult = this.GetOperatorExpression(prevOperator.Value, expressionResult, operandToken.Value);
+                    // let closing = "";
+                    // do {
+                    //     prevOperator = prevOperators.shift();
+                    //     if (!prevOperator)
+                    //         break;
 
-                        closing += ")";
-                    } while (prevOperator && operatorToken.Priority < prevOperator.Priority);
-
-                    expressionResult = "eq(" + (expressionResult + operandToken.Value + closing) +
-                        ", '" + operatorToken.Value + "', ";
+                    //     closing += ")";
+                    // } while (prevOperator && operatorToken.Priority < prevOperator.Priority);
+                    // const result = this.GetBlock(expressionStr, expressionResult, prevOperators);
+                    // expressionResult = "eq(" + (expressionResult + operandToken.Value + closing) +
+                    //    ", '" + operatorToken.Value + "', ";
                 }
 
-                prevOperators.unshift(operatorToken);
-                expressionStr = this.RemoveComments(expressionStr);
-                if (!expressionStr)
-                    throw new Error("Script not valid: missing operand\n\tResult: " + expressionResult +
-                        "\n\tRemaining: " + expressionStr);
+                // prevOperators.unshift(operatorToken);
+                // expressionStr = this.RemoveComments(expressionStr);
+                // if (!expressionStr)
+                //     throw new Error("Script not valid: missing operand\n\tResult: " + expressionResult +
+                //         "\n\tRemaining: " + expressionStr);
 
-                const blockResult = this.GetBlock(expressionStr, expressionResult, prevOperators);
-                expressionResult = blockResult.Value;
-                expressionStr = this.RemoveComments(blockResult.Remaining);
-                return new BlockToken(expressionResult, expressionStr, blockResult.CloseString);
+                // const blockResult = this.GetBlock(expressionStr, expressionResult, prevOperators);
+                // expressionResult = blockResult.Value;
+                // expressionStr = this.RemoveComments(blockResult.Remaining);
+                if (expressionResult)
+                    return new BlockToken(expressionResult, expressionStr, "");
             }
 
             expressionStr = this.RemoveComments(operatorToken.Remaining);
         }
 
-        expressionResult += operandToken.Value;
-        if (!isOperandOnly) {
-            if (expressionStr) {
-                closeString = expressionStr[0];
-                expressionStr = expressionStr.substring(1);
-            }
-        }
+        // expressionResult += operandToken.Value;
+        // if (!isOperandOnly) {
+        //     if (expressionStr) {
+        //         closeString = expressionStr[0];
+        //         expressionStr = expressionStr.substring(1);
+        //     }
+        // }
 
-        for (const { } of prevOperators) {
-            expressionResult += ")";
-        }
-
-        return new BlockToken(expressionResult, expressionStr, closeString);
+        // for (const { } of prevOperators) {
+        //     expressionResult += ")";
+        // }
+        if (expressionResult)
+            return new BlockToken(expressionResult, expressionStr, "");
+        return null;
     }
 
-    protected GetOperand(expressionStr: string, prevOperator?: OperatorToken): OperandToken {
+    protected GetOperand(expressionStr: string, prevOperator?: OperatorToken): OperandToken | null {
         expressionStr = this.RemoveComments(expressionStr);
 
-        if (!expressionStr)
-            return new OperandToken("", "");
+        if (!expressionStr && prevOperator)
+            return null;
 
-        let operand: string | undefined;
+        let operand: IExpression | undefined;
 
-        if (prevOperator && prevOperator.Value === "?") {
-            let blockResult = this.GetBlock(expressionStr);
-            if (blockResult.CloseString !== ":")
-                throw new Error("ternary true value must be closed with ':'\n\tOrigin: " + expressionStr +
-                    "\n\tBlockResult: " + JSON.stringify(blockResult));
-            const trueOperand = blockResult.Value;
-            blockResult = this.GetBlock(blockResult.Remaining);
-            const falseOperand = blockResult.Value;
-            operand = trueOperand + ", " + falseOperand;
-            return new OperandToken(operand, blockResult.CloseString + blockResult.Remaining);
-        }
+        // if (prevOperator && prevOperator.Value === "?") {
+        //     let blockResult = this.GetBlock(expressionStr);
+        //     if (blockResult.CloseString !== ":")
+        //         throw new Error("ternary true value must be closed with ':'\n\tOrigin: " + expressionStr +
+        //             "\n\tBlockResult: " + JSON.stringify(blockResult));
+        //     const trueOperand = blockResult.Value;
+        //     blockResult = this.GetBlock(blockResult.Remaining);
+        //     const falseOperand = blockResult.Value;
+        //     operand = trueOperand + ", " + falseOperand;
+        //     return new OperandToken(operand, blockResult.CloseString + blockResult.Remaining);
+        // }
 
         const firstChar = expressionStr[0];
         switch (firstChar) {
@@ -154,62 +202,68 @@ export class ExpressionBuilder {
                         break;
                     }
                 }
-                operand = expressionStr.substring(0, startIndex + 1);
+                operand = new ValueExpression(expressionStr.substring(0, startIndex + 1));
                 expressionStr = expressionStr.substring(startIndex + 1).trim();
                 break;
-            case "(":
-                const blockResult = this.GetBlock(expressionStr.substring(1), "");
-                if (blockResult.CloseString !== ")")
-                    throw Error("Block not closed correctly.\n\tInput" + expressionStr + "\n\tResult: " + JSON.stringify(blockResult));
+            // case "(":
+            //     const blockResult = this.GetBlock(expressionStr.substring(1), "");
+            //     if (blockResult.CloseString !== ")")
+            //         throw Error("Block not closed correctly.\n\tInput" + expressionStr + "\n\tResult: " + JSON.stringify(blockResult));
 
-                operand = blockResult.Value;
-                expressionStr = blockResult.Remaining;
-                break;
-            case "[":
-                expressionStr = expressionStr.substring(1);
-                operand = "([";
-                while (true) {
-                    const methodParamResult = this.GetBlock(expressionStr, "");
-                    operand += methodParamResult.Value;
-                    expressionStr = methodParamResult.Remaining;
-                    if (methodParamResult.CloseString === "]")
-                        break;
+            //     operand = blockResult.Value;
+            //     expressionStr = blockResult.Remaining;
+            //     break;
+            // case "[":
+            //     expressionStr = expressionStr.substring(1);
+            //     operand = "([";
+            //     while (true) {
+            //         const methodParamResult = this.GetBlock(expressionStr, "");
+            //         operand += methodParamResult.Value;
+            //         expressionStr = methodParamResult.Remaining;
+            //         if (methodParamResult.CloseString === "]")
+            //             break;
 
-                    operand += ", ";
-                }
-                operand += "])";
-                break;
+            //         operand += ", ";
+            //     }
+            //     operand += "])";
+            //     break;
             default:
                 const match = expressionStr.match(/^[a-z0-9]+/i);
-                if (match) {
-                    operand = match[0];
-                    expressionStr = expressionStr.substring(operand.length);
+                if (match !== null) {
+                    // to do check type.
+                    const intValue = parseFloat(match[0]);
+                    if (!isNaN(intValue))
+                        operand = new ValueExpression(intValue);
+                    else
+                        operand = new ValueExpression(match[0]);
+
+                    expressionStr = expressionStr.substring(match[0].length);
                 }
                 break;
         }
 
-        if (prevOperator && prevOperator.Value === ".")
-            operand = "'" + operand + "'";
+        // if (prevOperator && prevOperator.Value === ".")
+        //     operand = "'" + operand + "'";
 
         expressionStr = this.RemoveComments(expressionStr);
         if (expressionStr && expressionStr[0] === "(") {
             // is global function call method
-            expressionStr = expressionStr.substring(1);
-            let param = "[";
-            while (true) {
-                const methodParamResult = this.GetBlock(expressionStr, "");
-                param += methodParamResult.Value;
-                expressionStr = methodParamResult.Remaining;
-                if (methodParamResult.CloseString !== ")")
-                    param += ", ";
-                else
-                    break;
-            }
-            param += "]";
-            if (prevOperator && prevOperator.Value === ".")
-                operand += ", " + param;
-            else
-                operand = "Parser.FunctionCall('" + operand + "', " + param + ")";
+            // expressionStr = expressionStr.substring(1);
+            // let param = "[";
+            // while (true) {
+            //     const methodParamResult = this.GetBlock(expressionStr, "");
+            //     param += methodParamResult.Value;
+            //     expressionStr = methodParamResult.Remaining;
+            //     if (methodParamResult.CloseString !== ")")
+            //         param += ", ";
+            //     else
+            //         break;
+            // }
+            // param += "]";
+            // if (prevOperator && prevOperator.Value === ".")
+            //     operand += ", " + param;
+            // else
+            //     operand = "Parser.FunctionCall('" + operand + "', " + param + ")";
         }
 
         return new OperandToken(operand, expressionStr);
@@ -220,8 +274,8 @@ export class ExpressionBuilder {
         if (!expression)
             return new OperatorToken(expression);
 
-        let operator: OperatorExpression | undefined;
-        for (const operatorExp of AllOperatorExpressions) {
+        let operator: ExpressionOperator | undefined;
+        for (const operatorExp of AllExpressionOperators) {
             if (expression.indexOf(operatorExp.Symbol) === 0) {
                 operator = operatorExp;
                 break;

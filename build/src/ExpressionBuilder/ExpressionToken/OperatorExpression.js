@@ -8,41 +8,42 @@ var aritmaticPowOperatorPriority = 8;
 var singleAritmaticOperatorPriority = 9;
 var singleLogicalOperatorPriority = 9;
 var memberAccessOperatorPriority = 10;
-var OperatorExpression = /** @class */ (function () {
-    function OperatorExpression(Symbol, Priority) {
+// + binary operator ~ >> << >>>
+var ExpressionOperator = /** @class */ (function () {
+    function ExpressionOperator(Symbol, Priority) {
         this.Symbol = Symbol;
         this.Priority = Priority;
     }
-    return OperatorExpression;
+    return ExpressionOperator;
 }());
-exports.OperatorExpression = OperatorExpression;
-exports.AllOperatorExpressions = [
-    new OperatorExpression("++", singleAritmaticOperatorPriority),
-    new OperatorExpression("--", singleAritmaticOperatorPriority),
-    new OperatorExpression("+", aritmaticSubAddOperatorPriority),
-    new OperatorExpression("-", aritmaticSubAddOperatorPriority),
-    new OperatorExpression("*", aritmaticPowOperatorPriority),
-    new OperatorExpression("/", aritmaticPowOperatorPriority),
-    new OperatorExpression("%", aritmaticPowOperatorPriority),
+exports.ExpressionOperator = ExpressionOperator;
+exports.AllExpressionOperators = [
+    new ExpressionOperator("++", singleAritmaticOperatorPriority),
+    new ExpressionOperator("--", singleAritmaticOperatorPriority),
+    new ExpressionOperator("+", aritmaticSubAddOperatorPriority),
+    new ExpressionOperator("-", aritmaticSubAddOperatorPriority),
+    new ExpressionOperator("*", aritmaticPowOperatorPriority),
+    new ExpressionOperator("/", aritmaticPowOperatorPriority),
+    new ExpressionOperator("%", aritmaticPowOperatorPriority),
     // Comparison
-    new OperatorExpression("===", comparisonOperatorPriority),
-    new OperatorExpression("!==", comparisonOperatorPriority),
-    new OperatorExpression(">==", comparisonOperatorPriority),
-    new OperatorExpression("<==", comparisonOperatorPriority),
-    new OperatorExpression("==", comparisonOperatorPriority),
-    new OperatorExpression("!=", comparisonOperatorPriority),
-    new OperatorExpression(">=", comparisonOperatorPriority),
-    new OperatorExpression("<=", comparisonOperatorPriority),
-    new OperatorExpression("<", comparisonOperatorPriority),
-    new OperatorExpression(">", comparisonOperatorPriority),
-    new OperatorExpression("?", comparisonOperatorPriority),
+    new ExpressionOperator("===", comparisonOperatorPriority),
+    new ExpressionOperator("!==", comparisonOperatorPriority),
+    new ExpressionOperator(">==", comparisonOperatorPriority),
+    new ExpressionOperator("<==", comparisonOperatorPriority),
+    new ExpressionOperator("==", comparisonOperatorPriority),
+    new ExpressionOperator("!=", comparisonOperatorPriority),
+    new ExpressionOperator(">=", comparisonOperatorPriority),
+    new ExpressionOperator("<=", comparisonOperatorPriority),
+    new ExpressionOperator("<", comparisonOperatorPriority),
+    new ExpressionOperator(">", comparisonOperatorPriority),
+    new ExpressionOperator("?", comparisonOperatorPriority),
     // Logical
-    new OperatorExpression("&&", logicalOperatorPriority),
-    new OperatorExpression("||", logicalOperatorPriority),
-    new OperatorExpression("&", logicalOperatorPriority),
-    new OperatorExpression("|", logicalOperatorPriority),
-    new OperatorExpression("!", singleLogicalOperatorPriority),
+    new ExpressionOperator("&&", logicalOperatorPriority),
+    new ExpressionOperator("||", logicalOperatorPriority),
+    new ExpressionOperator("&", logicalOperatorPriority),
+    new ExpressionOperator("|", logicalOperatorPriority),
+    new ExpressionOperator("!", singleLogicalOperatorPriority),
     // Member access
-    new OperatorExpression(".", memberAccessOperatorPriority)
+    new ExpressionOperator(".", memberAccessOperatorPriority)
 ];
 //# sourceMappingURL=OperatorExpression.js.map

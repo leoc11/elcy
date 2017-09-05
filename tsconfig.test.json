@@ -1,6 +1,6 @@
 {
     "version": "2.1.1",
-    "compileOnSave": true,
+    "compileOnSave": false,
     "compilerOptions": {
         "lib": ["es5", "es6", "dom"],
         "outDir": "build",
@@ -25,7 +25,7 @@
     },
     "include": [
         "app.ts",
-        "test/*.ts",
+        //"test/*.ts",
         "src/**/*.ts"
     ],
     "exclude": [

@@ -1,4 +1,5 @@
+import { IExpression } from "../Expression/IExpression";
 export interface IExpressionToken {
-    Value: string | undefined;
+    Value: IExpression | string | undefined;
     Remaining: string;
 }

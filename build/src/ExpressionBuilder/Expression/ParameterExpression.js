@@ -1,14 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ParameterExpression = /** @class */ (function () {
-    function ParameterExpression(ParamName, ctor) {
-        this.ParamName = ParamName;
-        this.Type = ctor.name;
+    function ParameterExpression(TCtor, Name) {
+        this.Name = Name;
+        this.Type = TCtor.name;
     }
     ParameterExpression.prototype.ToString = function () {
-        if (typeof this.Type === "string")
-            return "'" + this.Type + "'";
-        return this.Type + "";
+        return this.Name;
     };
     ParameterExpression.prototype.Execute = function () {
         throw new Error("Method not implemented.");
