@@ -1,7 +1,8 @@
-import { IExpression, ValueExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
+import { ValueExpression } from "./ValueExpression";
 export class AddOperatorExpression implements IExpression {
 
-    constructor(protected LeftOperand: ValueExpression, protected RightOperand: ValueExpression) {
+    constructor(protected LeftOperand: ValueExpression<any>, protected RightOperand: ValueExpression<any>) {
     }
 
     public ToString(): string {
@@ -10,5 +11,4 @@ export class AddOperatorExpression implements IExpression {
     public Execute() {
         return this.LeftOperand.Execute() + this.RightOperand.Execute();
     }
-
 }

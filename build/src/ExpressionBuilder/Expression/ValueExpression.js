@@ -11,7 +11,7 @@ var ValueExpression = /** @class */ (function () {
         return this.Type + "";
     };
     ValueExpression.prototype.Execute = function () {
-        throw new Error("Method not implemented.");
+        return this.Value;
     };
     return ValueExpression;
 }());

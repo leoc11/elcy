@@ -13,7 +13,7 @@ export class ValueExpression<T> implements IExpression {
         return this.Type + "";
     }
     public Execute() {
-        throw new Error("Method not implemented.");
+        return this.Value;
     }
 
 }

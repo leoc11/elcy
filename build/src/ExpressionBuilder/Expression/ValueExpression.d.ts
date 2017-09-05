@@ -4,5 +4,5 @@ export declare class ValueExpression<T> implements IExpression {
     readonly Type: string;
     constructor(Value: T);
     ToString(): string;
-    Execute(): void;
+    Execute(): T;
 }
