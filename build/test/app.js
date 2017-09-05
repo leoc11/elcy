@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var chai_1 = require("chai");
-var ExpressionBuilder2_1 = require("../src/ExpressionBuilder/ExpressionBuilder2");
+var ExpressionBuilder_1 = require("../src/ExpressionBuilder/ExpressionBuilder");
 describe("Expression Builder", function () {
-    var expressionBuilder = new ExpressionBuilder2_1.ExpressionBuilder2();
+    var expressionBuilder = new ExpressionBuilder_1.ExpressionBuilder();
     it("parse simple aritmatic", function () {
         var result = expressionBuilder.Parse("1 + 1");
         chai_1.assert.equal(result, "eq(1, '+', 1)");

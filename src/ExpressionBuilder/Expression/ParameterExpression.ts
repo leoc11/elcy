@@ -1,9 +1,10 @@
 import { IExpression } from "./IExpression";
-export class ValueExpression<T> implements IExpression {
+
+export class ParameterExpression<T> implements IExpression {
     public readonly Type: string;
 
-    constructor(protected Value: T) {
-        this.Type = typeof this.Value;
+    constructor(protected ParamName: string, ctor: { new(): T }) {
+        this.Type = ctor.name;
     }
 
     public ToString(): string {
