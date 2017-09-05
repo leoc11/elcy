@@ -1,0 +1,29 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rulesDirectory": [],
+    "rules": {
+        "max-line-length": [
+            false
+        ],
+        "curly": [
+            false,
+            "ignore-same-line"
+        ],
+        "one-line": [
+            true,
+            "check-whitespace",
+            "check-open-brace"
+        ],
+        "trailing-comma": [
+            true,
+            {
+                "multiline": "never",
+                "singleline": "never"
+            }
+        ]
+    }
+}
