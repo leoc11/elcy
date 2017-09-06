@@ -1,13 +1,15 @@
 import { ExpressionBase } from "./IExpression";
 export class ValueExpression<T> extends ExpressionBase<T> {
-    // tslint:disable-next-line:ban-types
-    public readonly Type: Function | undefined | null;
+    public static Create<TType>(value: ExpressionBase<TType> | TType): ValueExpression<TType> {
+        if (value instanceof ExpressionBase)
+            return new ValueExpression<TType>(value.Execute(), value.ToString());
 
+        return new ValueExpression(value);
+    }
     constructor(protected Value: T, private ExpressionString: string = "") {
-        super(Value);
-
+        super();
         if (this.ExpressionString === "") {
-            if (typeof this.Type === "string")
+            if (typeof this.Value === "string")
                 this.ExpressionString = "'" + this.Value + "'";
 
             this.ExpressionString = this.Value + "";

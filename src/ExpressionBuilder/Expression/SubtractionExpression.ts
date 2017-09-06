@@ -1,11 +1,12 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class SubtractionExpression implements IExpression {
-    public static Create(leftOperand: IExpression, rightOperand: IExpression): ValueExpression<any> | SubtractionExpression {
+export class SubtractionExpression implements ExpressionBase<number> {
+    public static Create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
+        const result = new SubtractionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return new ValueExpression(leftOperand.Execute() - rightOperand.Execute(), "(" + leftOperand.ToString() + " - " + rightOperand.ToString() + ")");
-        else
-            return new SubtractionExpression(leftOperand, rightOperand);
+            return ValueExpression.Create(result);
+
+        return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
     }

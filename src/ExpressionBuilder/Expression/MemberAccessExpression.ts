@@ -1,19 +1,31 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class MemberAccessExpression implements IExpression {
-    public static Create(leftOperand: IExpression, rightOperand: IExpression): ValueExpression<any> | MemberAccessExpression {
-        if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return new ValueExpression(leftOperand.Execute()[rightOperand.Execute()], leftOperand.ToString() + "." + rightOperand.ToString());
-        else
-            return new MemberAccessExpression(leftOperand, rightOperand);
+export class MemberAccessExpression<TType, KProp extends keyof TType> implements ExpressionBase<TType[KProp]> {
+    public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
+        const result = new MemberAccessExpression(objectOperand, member);
+        if (objectOperand instanceof ValueExpression && (member instanceof ValueExpression || !(member instanceof ExpressionBase)))
+            return ValueExpression.Create<TType[KProp]>(result);
+
+        return result;
     }
-    constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+    constructor(protected ObjectOperand: IExpression<TType>, protected MemberName: KProp | ExpressionBase<KProp>) {
     }
 
     public ToString(): string {
-        return this.LeftOperand.ToString() + "." + this.RightOperand.ToString();
+        let result = this.ObjectOperand.ToString();
+        if (this.MemberName instanceof ExpressionBase)
+            result += "[" + this.MemberName.ToString() + "]";
+        else
+            result += "." + this.MemberName;
+        return result;
     }
     public Execute() {
-        return this.LeftOperand.Execute()[this.RightOperand.Execute()];
+        let member = "";
+        if (this.MemberName instanceof ExpressionBase)
+            member = this.MemberName.Execute();
+        else
+            member = this.MemberName;
+
+        return this.ObjectOperand.Execute()[member];
     }
 }
