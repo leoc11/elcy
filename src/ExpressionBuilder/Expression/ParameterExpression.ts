@@ -1,10 +1,7 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBase } from "./IExpression";
 
-export class ParameterExpression<T> implements IExpression {
-    public readonly Type: string;
-
-    constructor(TCtor: { new(): T }, protected Name: string) {
-        this.Type = TCtor.name;
+export class ParameterExpression<TType> implements ExpressionBase<TType> {
+    constructor(protected Name: string, protected Type: { new(): TType }) {
     }
 
     public ToString(): string {

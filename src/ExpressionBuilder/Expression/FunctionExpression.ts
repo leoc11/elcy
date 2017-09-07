@@ -1,10 +1,21 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
-export class FunctionExpression implements IExpression {
-    public readonly Type: string;
+export class FunctionExpression<TType> implements ExpressionBase<TType> {
+    public static Create<TType>(functionFn: ((...params: any[]) => TType)): FunctionExpression<TType>;
+    public static Create<TType>(body: IExpression<TType>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
+    public static Create<TType>(functionFn: IExpression<TType> | ((...params: any[]) => TType), params?: Array<ParameterExpression<TType>>) {
+        if (typeof functionFn === "function")
+            return (new ExpressionBuilder()).Parse(functionFn.toString());
 
-    constructor(public Params: Array<ParameterExpression<any>>, public Body: IExpression) {
+        if (!params) {
+            params = [];
+        }
+
+        return new FunctionExpression(functionFn, params);
+    }
+    constructor(public Body: IExpression<TType>, public Params: Array<ParameterExpression<any>>) {
     }
 
     public ToString(): string {

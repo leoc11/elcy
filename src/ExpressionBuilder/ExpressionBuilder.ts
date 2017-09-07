@@ -11,17 +11,6 @@ import {
     OperatorToken
 } from "./ExpressionToken/";
 
-export class ExpressionParser {
-
-}
-// tslint:disable-next-line:max-classes-per-file
-export class ExpressionFactory {
-
-}
-/**
- * for parsing function into expression convertable to sql query
- */
-// tslint:disable-next-line:max-classes-per-file
 export class ExpressionBuilder {
     public Parse(expression: string) {
         const blockResult = this.GetBlock(expression);
@@ -97,14 +86,14 @@ export class ExpressionBuilder {
     }
 
     protected GetBlock(expressionStr: string, expressionResult?: IExpression, prevOperators: OperatorToken[] = []): BlockToken | null {
-        const prevOperator: OperatorToken | undefined = prevOperators[0];
+        let prevOperator: OperatorToken | undefined = prevOperators[0];
         const operandToken = this.GetOperand(expressionStr, prevOperator);
 
         if (operandToken == null)
             return null;
 
         expressionStr = this.RemoveComments(operandToken.Remaining);
-        // let closeString = "";
+        let closeString = "";
         const isOperandOnly = !expressionStr;
         if (!expressionResult)
             expressionResult = operandToken.Value;
@@ -118,32 +107,31 @@ export class ExpressionBuilder {
                     const blockResult = this.GetBlock(expressionStr, operandToken.Value, prevOperators);
                     if (blockResult) {
                         expressionResult = this.GetOperatorExpression("", expressionResult, blockResult.Value);
-
-                        expressionStr = this.RemoveComments(blockResult.Remaining);
+                        expressionStr = blockResult.Remaining;
                     }
                     // expressionResult += "eq(" + operandToken.Value + ", '" + operatorToken.Value + "', ";
                 }
                 else {
-                    if (operandToken.Value)
-                        expressionResult = this.GetOperatorExpression(prevOperator.Value, expressionResult, operandToken.Value);
                     // let closing = "";
-                    // do {
-                    //     prevOperator = prevOperators.shift();
-                    //     if (!prevOperator)
-                    //         break;
+                    do {
+                        prevOperator = prevOperators.shift();
+                        if (!prevOperator)
+                            break;
 
-                    //     closing += ")";
-                    // } while (prevOperator && operatorToken.Priority < prevOperator.Priority);
+                        // closing += ")";
+                    } while (prevOperator && operatorToken.Priority < prevOperator.Priority);
                     // const result = this.GetBlock(expressionStr, expressionResult, prevOperators);
                     // expressionResult = "eq(" + (expressionResult + operandToken.Value + closing) +
                     //    ", '" + operatorToken.Value + "', ";
+                    if (operandToken.Value)
+                        expressionResult = this.GetOperatorExpression("", expressionResult, operandToken.Value);
                 }
 
-                // prevOperators.unshift(operatorToken);
-                // expressionStr = this.RemoveComments(expressionStr);
-                // if (!expressionStr)
-                //     throw new Error("Script not valid: missing operand\n\tResult: " + expressionResult +
-                //         "\n\tRemaining: " + expressionStr);
+                prevOperators.unshift(operatorToken);
+                expressionStr = this.RemoveComments(expressionStr);
+                if (!expressionStr)
+                    throw new Error("Script not valid: missing operand\n\tResult: " + expressionResult.ToString() +
+                        "\n\tRemaining: " + expressionStr);
 
                 // const blockResult = this.GetBlock(expressionStr, expressionResult, prevOperators);
                 // expressionResult = blockResult.Value;

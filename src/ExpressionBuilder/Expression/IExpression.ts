@@ -5,11 +5,7 @@ export interface IExpression<T = any> {
 
 export abstract class ExpressionBase<T> implements IExpression<T> {
     // tslint:disable-next-line:ban-types
-    public ToString(): string {
-        throw new Error("Method not implemented.");
-    }
+    public abstract ToString(): string;
     // tslint:disable-next-line:no-shadowed-variable
-    public Execute(): T | any {
-        throw new Error("Method not implemented.");
-    }
+    public abstract Execute(): T | any;
 }

@@ -1,19 +1,30 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class FunctionCallExpression implements IExpression {
-    public static Create(leftOperand: IExpression, rightOperand: IExpression): ValueExpression<any> | FunctionCallExpression {
-        if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return new ValueExpression(leftOperand.Execute() - rightOperand.Execute(), "(" + leftOperand.ToString() + " - " + rightOperand.ToString() + ")");
-        else
-            return new FunctionCallExpression(leftOperand, rightOperand);
+export class FunctionCallExpression<TType> implements ExpressionBase<TType> {
+    public static Create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
+        if (typeof functionName !== "string")
+            functionName = functionFn.name;
+
+        const result = new FunctionCallExpression<TType>(functionFn, functionName, params);
+        if (params.every((param) => param instanceof ValueExpression)) {
+            return ValueExpression.Create(result);
+        }
+
+        return result;
     }
-    constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+    constructor(protected FunctionFn: ((...params: any[]) => TType), protected FunctionName: string, protected Params: IExpression[]) {
     }
 
     public ToString(): string {
-        return "(" + this.LeftOperand.ToString + " / " + this.RightOperand.ToString() + ")";
+        const paramStr = [];
+        for (const param of this.Params)
+            paramStr.push(param.ToString());
+        return this.FunctionName + "(" + paramStr.join(",") + ")";
     }
     public Execute() {
-        return this.LeftOperand.Execute() / this.RightOperand.Execute();
+        const params = [];
+        for (const param of this.Params)
+            params.push(param.Execute());
+        return this.FunctionFn.apply(null, params);
     }
 }
