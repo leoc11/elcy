@@ -3,9 +3,13 @@ export interface IExpression<T = any> {
     Execute(): T | any;
 }
 
-export abstract class ExpressionBase<T> implements IExpression<T> {
+export class ExpressionBase<T = any> implements IExpression<T> {
     // tslint:disable-next-line:ban-types
-    public abstract ToString(): string;
+    public ToString() {
+        return "";
+    }
     // tslint:disable-next-line:no-shadowed-variable
-    public abstract Execute(): T | any;
+    public Execute(): T | any {
+        return "";
+    }
 }

@@ -19,7 +19,7 @@ export class AdditionExpression<T> implements ExpressionBase<T> {
     }
 
     public ToString(): string {
-        return "(" + this.LeftOperand.ToString + " + " + this.RightOperand.ToString() + ")";
+        return "(" + this.LeftOperand.ToString() + " + " + this.RightOperand.ToString() + ")";
     }
     public Execute() {
         return this.LeftOperand.Execute() + this.RightOperand.Execute();

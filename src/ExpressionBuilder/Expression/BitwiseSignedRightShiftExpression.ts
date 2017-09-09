@@ -1,8 +1,8 @@
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class TimesExpression implements IExpression {
+export class BitwiseSignedRightShiftExpression implements ExpressionBase<number> {
     public static Create(leftOperand: IExpression, rightOperand: IExpression) {
-        const result = new TimesExpression(leftOperand, rightOperand);
+        const result = new BitwiseSignedRightShiftExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.Create<number>(result);
 
@@ -12,9 +12,10 @@ export class TimesExpression implements IExpression {
     }
 
     public ToString(): string {
-        return "(" + this.LeftOperand.ToString() + " * " + this.RightOperand.ToString() + ")";
+        return "(" + this.LeftOperand.ToString() + " >> " + this.RightOperand.ToString() + ")";
     }
     public Execute() {
-        return this.LeftOperand.Execute() * this.RightOperand.Execute();
+        // tslint:disable-next-line:no-bitwise
+        return this.LeftOperand.Execute() >> this.RightOperand.Execute();
     }
 }

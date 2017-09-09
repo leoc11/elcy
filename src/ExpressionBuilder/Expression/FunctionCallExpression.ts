@@ -19,7 +19,7 @@ export class FunctionCallExpression<TType> implements ExpressionBase<TType> {
         const paramStr = [];
         for (const param of this.Params)
             paramStr.push(param.ToString());
-        return this.FunctionName + "(" + paramStr.join(",") + ")";
+        return this.FunctionName + "(" + paramStr.join(", ") + ")";
     }
     public Execute() {
         const params = [];

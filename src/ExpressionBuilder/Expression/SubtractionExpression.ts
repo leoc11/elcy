@@ -12,7 +12,7 @@ export class SubtractionExpression implements ExpressionBase<number> {
     }
 
     public ToString(): string {
-        return "(" + this.LeftOperand.ToString + " - " + this.RightOperand.ToString() + ")";
+        return "(" + this.LeftOperand.ToString() + " - " + this.RightOperand.ToString() + ")";
     }
     public Execute() {
         return this.LeftOperand.Execute() - this.RightOperand.Execute();
