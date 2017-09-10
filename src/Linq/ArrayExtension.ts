@@ -37,24 +37,24 @@ Array.prototype.selectMany = function <T>(this: T[], fn: (item: T) => any[]) {
     }
     return result;
 };
-Array.prototype.select = function <T>(fn: (item: T) => any) {
+Array.prototype.select = function <T>(this: T[], fn: (item: T) => any) {
     const result = [];
     for (const item of this) {
         result.push(fn(item));
     }
     return result;
 };
-Array.prototype.where = function <T>(fn: (item: T) => boolean) {
+Array.prototype.where = function <T>(this: T[], fn: (item: T) => boolean) {
     return this.filter(fn);
 };
-Array.prototype.orderBy = function <T>(fn: (item: T) => any, orderDirection: "asc" | "desc" = "asc") {
+Array.prototype.orderBy = function <T>(this: T[], fn: (item: T) => any, orderDirection: "asc" | "desc" = "asc") {
     return this.sort((a, b) => {
         const aVal = fn(a);
         const bVal = fn(b);
         return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * (orderDirection === "asc" ? 1 : -1);
     });
 };
-Array.prototype.first = function <T>(fn?: (item: T) => boolean) {
+Array.prototype.first = function <T>(this: T[], fn?: (item: T) => boolean) {
     if (!fn)
         fn = () => true;
     return this.where(fn)[0];
@@ -200,7 +200,7 @@ Array.prototype.except = (array2: any[]) => {
         return array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
     });
 };
-Array.prototype.pivot = (dimensions, metrics) => {
+Array.prototype.pivot = function <T>(this: T[], dimensions, metrics) {
     const dataResult: Array<GroupArray<any, any>> = [];
     for (const item of this) {
         const dimensionKey: { [key: string]: any } = {};
