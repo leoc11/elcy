@@ -22,7 +22,10 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
         return "[" + itemString.join(", ") + "]";
     }
     public Execute() {
-        return this.Items;
+        const arrayValues = [];
+        for (const item of this.Items)
+            arrayValues.push(item.Execute());
+        return arrayValues;
     }
 
 }

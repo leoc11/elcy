@@ -63,6 +63,16 @@ describe("Expression Builder", () => {
         // tslint:disable-next-line:max-line-length
         assert.equal(result!.ToString(), '[[0, (0 + 1)], [parseInt("123")]]');
     });
+    it("support anonymous object", () => {
+        const result = expressionBuilder.Parse('{Prop1: 123, Prop2: "345", Prop3: "1" + 2 + 3}');
+        // tslint:disable-next-line:max-line-length
+        assert.equal(result!.ToString(), '{Prop1: 123, Prop2: "345", Prop3: (("1" + 2) + 3)}');
+    });
+    it("support Typed Object", () => {
+        const result = expressionBuilder.Parse('{Prop1: 123, Prop2: "345", Prop3: "1" + 2 + 3}');
+        // tslint:disable-next-line:max-line-length
+        assert.equal(result!.ToString(), '{Prop1: 123, Prop2: "345", Prop3: (("1" + 2) + 3)}');
+    });
     // it("support access array item with index", () => {
     //     const result = expressionBuilder.Parse("Product.Images[0] == ''");
     //     // tslint:disable-next-line:max-line-length

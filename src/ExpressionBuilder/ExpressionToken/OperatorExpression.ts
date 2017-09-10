@@ -16,7 +16,8 @@ export class ExpressionOperator {
 }
 
 export const MemberOperators = [
-    new ExpressionOperator(".", memberAccessOperatorPriority)
+    new ExpressionOperator(".", memberAccessOperatorPriority),
+    new ExpressionOperator("[", memberAccessOperatorPriority)
 ];
 export const UnaryOperators = [
     new ExpressionOperator("++", singleAritmaticOperatorPriority),
@@ -30,7 +31,7 @@ export const UnaryOperators = [
 export const RightUnaryOperators = [
     new ExpressionOperator("++", singleAritmaticOperatorPriority),
     new ExpressionOperator("--", singleAritmaticOperatorPriority)
-]
+];
 
 export const TernaryOperators = [
     new ExpressionOperator("?", comparisonOperatorPriority)

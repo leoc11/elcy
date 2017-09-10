@@ -29,7 +29,9 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
         return "{" + itemString.join(", ") + "}";
     }
     public Execute() {
-        return this.Object;
+        const objectValue: { [key: string]: any } = {};
+        for (const prop in this.Object)
+            objectValue[prop] = this.Object[prop].Execute();
+        return objectValue;
     }
-
 }

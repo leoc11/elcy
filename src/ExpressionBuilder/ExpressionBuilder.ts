@@ -8,8 +8,8 @@ import {
     OperandToken,
     OperatorToken,
     RightUnaryOperators,
-    UnaryOperators,
-    TernaryOperators
+    TernaryOperators,
+    UnaryOperators
 } from "./ExpressionToken/";
 
 const GlobalObjects: { [key: string]: any } = global || window;
@@ -27,39 +27,49 @@ export class ExpressionBuilder {
         return blockResult.Value as IExpression;
     }
 
-    // public ParseToExpression<T>(parser: ExpressionParser, fn: (...params: any[]) => any, params: any[]) {
-    //     const fnParams = this.GetFunctionParams(fn);
-    //     const paramObject: { [key: string]: any } = {};
-    //     if (params.length > fnParams.length)
-    //         throw new Error("Paramater length mismatch");
+    public ParseToExpression(fn: string, cTor: Array<{ new(): any }>, params?: any[]): Expression.FunctionExpression;
+    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<{ new(): any }>, params?: any[]) {
+        if (typeof fn === "function")
+            fn = fn.toString();
 
-    //     for (let i = 0; i < params.length; i++) {
-    //         paramObject[fnParams[i]] = params[i];
-    //     }
+        const fnParams = this.GetFunctionParams(fn);
+        const paramObject: { [key: string]: any } = {};
 
-    //     const fnBody = this.GetFunctionBody(fn);
-    //     const expressionBody = this.Parse2(fnBody);
+        const fnParamExpressions: Expression.ParameterExpression[] = [];
+        for (let i = 0; i < ctors.length; i++) {
+            fnParamExpressions.push(Expression.ParameterExpression.Create(ctors[i], fnParams[i]));
+        }
 
-    //     const expressionVisitor = new Function(fnParams + ", Parser", expressionBody);
-    //     params.push(parser);
-    //     return (o: T) => {
-    //         params.unshift(o);
-    //         return expressionVisitor.apply(this, params);
-    //     };
-    // }
+        if (params) {
+            if (params.length > fnParams.length - ctors.length)
+                throw new Error("Paramater length mismatch");
+
+            for (let i = 0; i < params.length; i++) {
+                paramObject[fnParams[i]] = params[i];
+            }
+        }
+
+        const fnBody = this.GetFunctionBody(fn);
+        const expressionBody = this.Parse(fnBody, paramObject);
+        if (expressionBody == null)
+            return null;
+
+        return new Expression.FunctionExpression(expressionBody, fnParamExpressions);
+    }
 
     /**
      * GetFunctionParams
      */
-    public GetFunctionParams(fn: (...params: any[]) => any) {
-        const functionStr = fn.toString();
+    public GetFunctionParams(functionStr: string) {
         const paramOpenIndex = functionStr.indexOf("(");
-        const paramCloseIndex = functionStr.indexOf(")");
-        return functionStr.substring(paramOpenIndex + 1, paramCloseIndex).split(",");
+        if (paramOpenIndex >= 0) {
+            const paramCloseIndex = functionStr.indexOf(")");
+            functionStr = functionStr.substring(paramOpenIndex + 1, paramCloseIndex);
+        }
+        return functionStr.split(",");
     }
 
-    public GetFunctionBody(fn: (...params: any[]) => any) {
-        const functionStr = fn.toString();
+    public GetFunctionBody(functionStr: string) {
         const arrowIndex = functionStr.indexOf("=>");
         const fnOpenIndex = functionStr.indexOf("{");
         if (fnOpenIndex > arrowIndex) {
@@ -67,7 +77,7 @@ export class ExpressionBuilder {
             return functionStr.substring(fnOpenIndex, fnCloseIndex).trim();
         }
         // for arrow function (o)=> '123'
-        return "return " + functionStr.substring(arrowIndex + 1).trim();
+        return functionStr.substring(arrowIndex + 1).trim();
     }
 
     protected GetOperatorExpression(operator: string = "", ...params: Array<IExpression | undefined>): IExpression {
@@ -360,6 +370,12 @@ export class ExpressionBuilder {
                     }
                     else if (GlobalObjects.hasOwnProperty(matchedStr))
                         operand = Expression.ValueExpression.Create(GlobalObjects[matchedStr], matchedStr);
+                    else if (matchedStr === "undefined") {
+                        operand = Expression.ValueExpression.Create(undefined);
+                    }
+                    else if (matchedStr === "null") {
+                        operand = Expression.ValueExpression.Create(null);
+                    }
                     else {
                         const intValue = parseFloat(match[0]);
                         if (!isNaN(intValue))
@@ -387,18 +403,58 @@ export class ExpressionBuilder {
             if (expressionStr[0] === "(") {
                 expressionStr = this.RemoveComments(expressionStr.substr(1));
                 const fnParams = [];
+                let closeString = "";
+                const errowFunctionRegex = /^([_a-z0-9,\s]+|\([_a-z0-9,\s]+\))\s*=>/;
                 while (true) {
-                    const fnParamResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                    if (fnParamResult === null) {
-                        throw new Error("asdasda");
+                    // need check for functionExpression here.
+                    if (expressionStr.search(errowFunctionRegex) === 0) {
+                        // function param
+                        const arrowIndex = expressionStr.indexOf("=>");
+                        const fnParamStr = expressionStr.substring(0, arrowIndex);
+                        const functionBody = this.RemoveComments(expressionStr.substring(arrowIndex + 2));
+                        if (functionBody[0] === "{")
+                            throw new Error("Only simple arrow function allowed here.");
+
+                        const innerFnParams = this.GetFunctionParams(fnParamStr);
+                        const fnParamExpressions: Expression.ParameterExpression[] = [];
+                        const fnParamContext: { [key: string]: any } = {};
+                        for (const fnParam of innerFnParams) {
+                            const paramExpression = Expression.ParameterExpression.Create(fnParam);
+                            fnParamExpressions.push(paramExpression);
+                            fnParamContext[fnParam] = paramExpression;
+                        }
+                        if (paramContext) {
+                            for (const prop in paramContext) {
+                                if (!fnParamContext.hasOwnProperty(prop))
+                                    fnParamContext[prop] = paramContext[prop];
+                            }
+                        }
+
+                        const functionBodyResult = this.GetBlock(functionBody, undefined, undefined, fnParamContext);
+                        if (functionBodyResult == null)
+                            throw new Error("Function must have a body statement");
+
+                        expressionStr = functionBodyResult.Remaining;
+                        closeString = functionBodyResult.CloseString;
+                        fnParams.push(Expression.FunctionExpression.Create(functionBodyResult.Value, fnParamExpressions));
+                    }
+                    else {
+
+                        const fnParamResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
+                        if (fnParamResult === null) {
+                            throw new Error("asdasda");
+                        }
+
+                        expressionStr = fnParamResult.Remaining;
+                        if (fnParamResult.Value !== undefined || fnParamResult.CloseString !== ")")
+                            fnParams.push(fnParamResult.Value);
+                        closeString = fnParamResult.CloseString;
                     }
 
-                    expressionStr = fnParamResult.Remaining;
-                    if (fnParamResult.Value !== undefined || fnParamResult.CloseString !== ")")
-                        fnParams.push(fnParamResult.Value);
-
-                    if (fnParamResult.CloseString === ")")
+                    if (closeString === ")")
                         break;
+                    else if (closeString !== ",")
+                        throw new Error("Wrong function parameter sperator.");
                 }
                 operand = Expression.MethodCallExpression.Create(operand, nestOperand.Value.Execute(), fnParams);
             }
