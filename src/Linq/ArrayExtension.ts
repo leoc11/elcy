@@ -30,31 +30,31 @@ declare global {
     }
 }
 
-Array.prototype.selectMany = (fn: (item: any) => any[]) => {
-    let result = [];
+Array.prototype.selectMany = function <T>(this: T[], fn: (item: T) => any[]) {
+    let result: T[] = [];
     for (const item of this) {
         result = result.concat(fn(item));
     }
     return result;
 };
-Array.prototype.select = (fn: (item) => any) => {
+Array.prototype.select = function <T>(fn: (item: T) => any) {
     const result = [];
     for (const item of this) {
         result.push(fn(item));
     }
     return result;
 };
-Array.prototype.where = (fn: (item) => boolean) => {
+Array.prototype.where = function <T>(fn: (item: T) => boolean) {
     return this.filter(fn);
 };
-Array.prototype.orderBy = (fn: (item) => any, orderDirection: "asc" | "desc" = "asc") => {
+Array.prototype.orderBy = function <T>(fn: (item: T) => any, orderDirection: "asc" | "desc" = "asc") {
     return this.sort((a, b) => {
         const aVal = fn(a);
         const bVal = fn(b);
-        return (a > b ? 1 : a < b ? -1 : 0) * (orderDirection === "asc" ? 1 : -1);
+        return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * (orderDirection === "asc" ? 1 : -1);
     });
 };
-Array.prototype.first = (fn?: (item) => boolean) => {
+Array.prototype.first = function <T>(fn?: (item: T) => boolean) {
     if (!fn)
         fn = () => true;
     return this.where(fn)[0];
