@@ -59,43 +59,43 @@ Array.prototype.first = function <T>(this: T[], fn?: (item: T) => boolean) {
         fn = () => true;
     return this.where(fn)[0];
 };
-Array.prototype.last = (fn?: (item) => boolean) => {
+Array.prototype.last = function <T>(this: T[], fn?: (item: T) => boolean) {
     if (!fn)
         fn = () => true;
     const result = this.where(fn);
     return result[result.length - 1];
 };
-Array.prototype.any = (fn?: (item) => boolean) => {
+Array.prototype.any = function <T>(this: T[], fn?: (item: T) => boolean) {
     if (!fn)
         fn = () => true;
     return this.some(fn);
 };
-Array.prototype.all = (fn: (item) => boolean) => {
+Array.prototype.all = function <T>(this: T[], fn: (item: T) => boolean) {
     if (!fn)
         fn = () => true;
     return this.every(fn);
 };
-Array.prototype.skip = (n: number) => {
+Array.prototype.skip = function <T>(this: T[], n: number) {
     return this.slice(n);
 };
-Array.prototype.take = (n: number) => {
+Array.prototype.take = function <T>(this: T[], n: number) {
     return this.slice(0, n);
 };
-Array.prototype.sum = (fn?: (item) => number) => {
+Array.prototype.sum = function <T>(this: T[], fn?: (item: T) => number) {
     let arrayVal: any[] = this;
     if (fn)
         arrayVal = arrayVal.select(fn);
 
     return arrayVal.reduce((a, b) => a + b, 0);
 };
-Array.prototype.avg = (fn?: (item) => number) => {
+Array.prototype.avg = function <T>(this: T[], fn?: (item: T) => number) {
     let arrayVal: any[] = this;
     if (fn)
         arrayVal = arrayVal.select(fn);
 
     return arrayVal.sum() / arrayVal.count();
 };
-Array.prototype.max = (fn?: (item: any) => number) => {
+Array.prototype.max = function <T>(this: T[], fn?: (item: T) => number) {
     let arrayVal: any[] = this;
     if (fn)
         arrayVal = arrayVal.select(fn);
@@ -103,49 +103,49 @@ Array.prototype.max = (fn?: (item: any) => number) => {
     return Math.max.apply(Math, arrayVal);
 };
 
-Array.prototype.min = (fn?: (item: any) => number) => {
+Array.prototype.min = function <T>(this: T[], fn?: (item: T) => number) {
     let arrayVal: any[] = this;
     if (fn)
         arrayVal = arrayVal.select(fn);
 
     return Math.min.apply(Math, arrayVal);
 };
-Array.prototype.count = () => {
+Array.prototype.count = function <T>(this: T[]) {
     return this.length;
 };
-Array.prototype.groupBy = (fn: (item) => any): Array<GroupArray<any, any>> => {
-    const result: Array<GroupArray<any, any>> = [];
+Array.prototype.groupBy = function <T, TKey>(this: T[], fn: (item: T) => TKey): Array<GroupArray<TKey, T>> {
+    const result: Array<GroupArray<TKey, T>> = [];
     for (const item of this) {
         const key = fn(item);
         let group = result.first((o) => JSON.stringify(o.Key) === JSON.stringify(key));
         if (!group) {
-            group = new GroupArray();
+            group = new GroupArray(key);
             result.push(group);
         }
         group.push(item);
     }
     return result;
 };
-Array.prototype.distinct = (fn?: (item) => any) => {
+Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
     if (!fn) {
         fn = (o) => o;
     }
 
-    return this.groupBy(fn).selectMany((o) => o[0]);
+    return this.groupBy(fn).selectMany((o) => [o[0]]);
 };
-Array.prototype.innerJoin = (array2: any[], keySelector1: (item) => any, keySelector2: (item) => any, resultSelector: (item1, item2) => any) => {
+Array.prototype.innerJoin = function <T, T2, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T, item2: T2) => TResult) {
     return this.selectMany((item1) => {
         const key1 = keySelector1(item1);
-        const matched = array2.select((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
+        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
         return matched.select((item2) => {
             return resultSelector(item1, item2);
         });
     });
 };
-Array.prototype.leftJoin = (array2: any[], keySelector1: (item) => any, keySelector2: (item) => any, resultSelector: (item1, item2?) => any) => {
+Array.prototype.leftJoin = function <T, T2, TResult>(this: T[], array2: T[], keySelector1: (item: T) => any, keySelector2: (item: T) => any, resultSelector: (item1: T, item2?: T2) => TResult) {
     return this.selectMany((item1) => {
         const key1 = keySelector1(item1);
-        const matched = array2.select((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
+        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
         if (matched.length === 0)
             return [resultSelector(item1)];
         return matched.select((item2) => {
