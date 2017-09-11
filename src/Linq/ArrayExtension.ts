@@ -200,7 +200,7 @@ Array.prototype.except = function <T>(array2: T[]) {
 Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM) {
     const dataResult: Array<GroupArray<TResult, any>> = [];
     for (const item of this) {
-        const dimensionKey: any = {};
+        const dimensionKey = {} as TResult;
         // tslint:disable-next-line:forin
         for (const key in dimensions) {
             dimensionKey[key] = dimensions[key](item);
