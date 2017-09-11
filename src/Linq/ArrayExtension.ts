@@ -19,14 +19,14 @@ declare global {
         min(fn?: (item: T) => number): number;
         groupBy<KType>(fn: (item: T) => KType): Array<GroupArray<KType, T>>;
         distinct<TKey>(fn?: (item: T) => TKey): T[];
-        innerJoin<T2, TResult>(array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T, item2: T2) => TResult): TResult[];
-        leftJoin<T2, TResult>(array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T, item2?: T2) => TResult): TResult[];
-        rightJoin<T2, TResult>(array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T | undefined, item2: T2) => TResult): TResult[];
-        fullJoin<T2, TResult>(array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T | undefined, item2?: T2) => TResult): TResult[];
+        innerJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): TResult[];
+        leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2?: T2) => TResult): TResult[];
+        rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2: T2) => TResult): TResult[];
+        fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2?: T2) => TResult): TResult[];
         union(array2: T[], all: boolean): T[];
         intersect(array2: T[]): T[];
         except(array2: T[]): T[];
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T) => any }>(dimensions: TD, metric: TM): Array<TD & TM>;
+        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): TResult[];
     }
 }
 
@@ -133,7 +133,7 @@ Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
 
     return this.groupBy(fn).selectMany((o) => [o[0]]);
 };
-Array.prototype.innerJoin = function <T, T2, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => any, keySelector2: (item: T2) => any, resultSelector: (item1: T, item2: T2) => TResult) {
+Array.prototype.innerJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult) {
     return this.selectMany((item1) => {
         const key1 = keySelector1(item1);
         const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
@@ -142,7 +142,7 @@ Array.prototype.innerJoin = function <T, T2, TResult>(this: T[], array2: T2[], k
         });
     });
 };
-Array.prototype.leftJoin = function <T, T2, TResult>(this: T[], array2: T[], keySelector1: (item: T) => any, keySelector2: (item: T) => any, resultSelector: (item1: T, item2?: T2) => TResult) {
+Array.prototype.leftJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2?: T2) => TResult) {
     return this.selectMany((item1) => {
         const key1 = keySelector1(item1);
         const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
@@ -153,11 +153,10 @@ Array.prototype.leftJoin = function <T, T2, TResult>(this: T[], array2: T[], key
         });
     });
 };
-Array.prototype.rightJoin = (array2: any[], keySelector1: (item) => any, keySelector2: (item) => any, resultSelector: (item1, item2) => any) => {
-    const that = this;
+Array.prototype.rightJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2: T2) => TResult) {
     return array2.selectMany((item2) => {
         const key2 = keySelector2(item2);
-        const matched = that.select((item1) => JSON.stringify(keySelector1(item1)) === JSON.stringify(key2));
+        const matched = this.where((item1) => JSON.stringify(keySelector1(item1)) === JSON.stringify(key2));
         if (matched.length === 0)
             return [resultSelector(undefined, item2)];
         return matched.select((item1) => {
@@ -165,11 +164,10 @@ Array.prototype.rightJoin = (array2: any[], keySelector1: (item) => any, keySele
         });
     });
 };
-Array.prototype.fullJoin = (array2: any[], keySelector1: (item) => any, keySelector2: (item) => any, resultSelector: (item1, item2?) => any) => {
-    const array1 = this;
+Array.prototype.fullJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2?: T2) => TResult) {
     const result = this.selectMany((item1) => {
         const key1 = keySelector1(item1);
-        const matched = array2.select((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
+        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
         if (matched.length === 0)
             return [resultSelector(item1)];
         return matched.select((item2) => {
@@ -178,49 +176,48 @@ Array.prototype.fullJoin = (array2: any[], keySelector1: (item) => any, keySelec
     });
     const leftArray2 = array2.where((item2) => {
         const key2 = keySelector2(item2);
-        return array1.all((item1) => JSON.stringify(keySelector1(item1)) !== JSON.stringify(key2));
+        return this.all((item1) => JSON.stringify(keySelector1(item1)) !== JSON.stringify(key2));
     }).select((item2) => resultSelector(undefined, item2));
 
     return result.concat(leftArray2);
 };
-Array.prototype.union = (array2: any[], all: boolean = false) => {
-    const array1: any[] = this;
-    let result = array1.concat(array2);
+Array.prototype.union = function <T>(this: T[], array2: T[], all: boolean = false) {
+    let result = this.concat(array2);
     if (!all)
         result = result.distinct();
 
     return result;
 };
-Array.prototype.intersect = (array2: any[]) => {
-    return this.innerJoin(array2, (item1) => item1, (item2) => item2, (item1, item2) => item1)
+Array.prototype.intersect = function <T>(this: T[], array2: T[]) {
+    return this.innerJoin(array2, (item1) => item1, (item2) => item2, (item1) => item1)
         .distinct();
 };
-Array.prototype.except = (array2: any[]) => {
+Array.prototype.except = function <T>(array2: T[]) {
     return this.where((item1) => {
         return array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
     });
 };
-Array.prototype.pivot = function <T>(this: T[], dimensions, metrics) {
-    const dataResult: Array<GroupArray<any, any>> = [];
+Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM) {
+    const dataResult: Array<GroupArray<TResult, any>> = [];
     for (const item of this) {
-        const dimensionKey: { [key: string]: any } = {};
+        const dimensionKey: any = {};
         // tslint:disable-next-line:forin
         for (const key in dimensions) {
             dimensionKey[key] = dimensions[key](item);
         }
         let group = dataResult.first((o) => JSON.stringify(o.Key) === JSON.stringify(dimensionKey));
         if (!group) {
-            group = new GroupArray();
+            group = new GroupArray<TResult, any>(dimensionKey);
             dataResult.push(group);
         }
         group.push(item);
     }
 
     return dataResult.select((o) => {
-        // tslint:disable-next-line:forin
         for (const key in metrics) {
-            o.Key[key] = metrics[key](o);
+            if (o.Key)
+                o.Key[key] = metrics[key](o);
         }
-        return o.Key;
+        return o.Key as TResult;
     });
 };
