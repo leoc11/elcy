@@ -1,4 +1,5 @@
 export class EntityMetaData<T> {
+    public hasInheritance: boolean;
     public primaryKeys: string[];
     public deleteProperty: string;
     public createDateProperty: string;
