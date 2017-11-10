@@ -1,11 +1,8 @@
 import { ColumnMetaData } from "./ColumnMetaData";
-export class StringColumnMetaData extends ColumnMetaData<string> {
+// tslint:disable-next-line:ban-types
+export class StringColumnMetaData extends ColumnMetaData<String> {
     public maxLength?: number;
     public dbtype: "nvarchar" | "varchar";
-    /*
-    * UTC TimeZone offset in minute.
-    */
-    public timezoneOffset: number;
     constructor() {
         super(String);
     }

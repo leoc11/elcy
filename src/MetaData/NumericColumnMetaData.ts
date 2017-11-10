@@ -1,11 +1,9 @@
 import { ColumnMetaData } from "./ColumnMetaData";
-export class NumericColumnMetaData extends ColumnMetaData<any> {
+// tslint:disable-next-line:ban-types
+export class NumericColumnMetaData extends ColumnMetaData<Number> {
     public autoIncrement: boolean;
-    public dbtype: "decimal" | "bigint" | "int" | "tinyint" | "smallint";
-    /*
-    * UTC TimeZone offset in minute.
-    */
-    public timezoneOffset: number;
+    public dbtype: "decimal" | "bigint" | "int" | "tinyint" | "smallint" | "number" | "float" | "double";
+
     constructor() {
         super(Number);
     }

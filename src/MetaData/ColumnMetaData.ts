@@ -1,8 +1,8 @@
 
-export type dbType = "string" | "text" | "number" | "int" | "smallint" | "bigint"
-    | "float" | "double" | "decimal" | "date" | "time" | "datetime" | "boolean"
+export type dbType = "string" | "nvarchar" | "varchar" | "text"
+    | "decimal" | "bigint" | "int" | "tinyint" | "smallint" | "number" | "float" | "double"
+    | "date" | "time" | "datetime" | "boolean"
     | "json" | "jsonb" | "simple_array";
-
 export class ColumnMetaData<T> {
     public name: string;
     public indexed: boolean;
