@@ -1,29 +1,24 @@
+import "ColumnMetaKey";
 import "reflect-metadata";
+import "../../MetaData/ColumnMetaData/DateColumnMetaData";
+import { columnMetaKey } from "./ColumnMetaKey";
+import { DateColumnMetadata } from "../../MetaData/ColumnMetaData/index";
 
-const formatMetadataKey = Symbol("format");
-
-function format(formatString: string) {
-    return Reflect.metadata(formatMetadataKey, formatString);
-}
-
-function getFormat(target: any, propertyKey: string) {
-    return Reflect.met(formatMetadataKey, target, propertyKey);
-}
-
-function DateColumn(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
-    let method = descriptor.value;
-    descriptor.value = function () {
-        let requiredParameters: number[] = Reflect.getOwnMetadata(requiredMetadataKey, target, propertyName);
-        if (requiredParameters) {
-            for (let parameterIndex of requiredParameters) {
-                if (parameterIndex >= arguments.length || arguments[parameterIndex] === undefined) {
-                    throw new Error("Missing required argument.");
-                }
-            }
-        }
-
-        return method.apply(this, arguments);
-    }
+export function DateColumn(dateTimeKind: "UTC" | "Unspecified" | "custom", dbtype: "date" | "datetime", timezoneOffset = 0): {
+    // tslint:disable-next-line:ban-types
+    (target: Function): void;
+    (target: object, propertyKey: string | symbol): void;
+};
+export function DateColumn(dateTimeKind: "UTC" | "Unspecified" | "custom", dbtype: "date" | "datetime", timezoneOffset: number): {
+    // tslint:disable-next-line:ban-types
+    (target: Function): void;
+    (target: object, propertyKey: string | symbol): void;
+} {
+    const metadata = new DateColumnMetadata();
+    metadata.dateTimeKind = dateTimeKind;
+    metadata.dbtype = dbtype;
+    metadata.timezoneOffset = timezoneOffset;
+    return Reflect.metadata(columnMetaKey, metadata);
 }
 
 // specific type modifier
