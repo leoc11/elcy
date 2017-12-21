@@ -4,6 +4,7 @@ declare global {
     interface Array<T> {
         selectMany<TReturn>(fn: (item: T) => TReturn[]): TReturn[];
         select<TReturn>(fn: (item: T) => TReturn): TReturn[];
+        contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): T[];
@@ -43,6 +44,9 @@ Array.prototype.select = function <T>(this: T[], fn: (item: T) => any) {
         result.push(fn(item));
     }
     return result;
+};
+Array.prototype.contains = function <T>(this: T[], item: T) {
+    return this.indexOf(item) >= 0;
 };
 Array.prototype.where = function <T>(this: T[], fn: (item: T) => boolean) {
     return this.filter(fn);
