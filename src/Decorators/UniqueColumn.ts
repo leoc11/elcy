@@ -8,7 +8,7 @@ export function UniqueColumn(name: string): (target: object, propertyKey: string
         if (!name)
             name = "IX_UQ_" + propertyKey;
 
-        let entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
+        let entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
             entityMetaData = new EntityMetaData(() => target);
         }

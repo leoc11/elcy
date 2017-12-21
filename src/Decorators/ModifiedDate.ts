@@ -4,9 +4,9 @@ import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { dateTimeKind } from "../MetaData/Types";
 import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
 
-export function ModifiedDateColumn(timezoneOffset: number): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ModifiedDateColumn(name: string, dbtype: "date" | "datetime", dateTimeKind: dateTimeKind, timezoneOffset: number, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ModifiedDateColumn(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind: dateTimeKind = "UTC", timezoneOffset = 0, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function ModifiedDate(timezoneOffset: number): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export function ModifiedDate(name: string, dbtype: "date" | "datetime", dateTimeKind: dateTimeKind, timezoneOffset: number, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export function ModifiedDate(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind: dateTimeKind = "UTC", timezoneOffset = 0, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
     const metadata = new DateColumnMetaData();
     if (typeof (name) === "number") {
         timezoneOffset = name;
@@ -27,7 +27,7 @@ export function ModifiedDateColumn(name: string | number = "", dbtype: "date" | 
     metadata.timezoneOffset = timezoneOffset;
 
     return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
-        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
+        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData) {
             entityMetaData.modifiedProperty = propertyKey;
             if (entityMetaData.members.indexOf(propertyKey) < 0) {

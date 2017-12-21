@@ -5,3 +5,10 @@ export enum RelationType {
     OneToOne,
     OneToMany
 }
+export enum ReferenceOption {
+    RESTRICT,
+    CASCADE,
+    SETNULL,
+    NOACTION,
+    SETDEFAULT
+}

@@ -11,7 +11,7 @@ export function DeleteColumn(name?: string, defaultValue?: boolean): (target: ob
         metadata.default = defaultValue;
 
     return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
-        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
+        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData) {
             entityMetaData.deleteProperty = propertyKey;
             if (entityMetaData.members.indexOf(propertyKey) < 0) {

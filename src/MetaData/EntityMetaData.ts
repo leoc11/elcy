@@ -1,3 +1,4 @@
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { UniqueMetaData } from "./IndexMetaData";
 import { RelationMetaData } from "./RelationMetaData";
 import { genericType } from "./Types";
@@ -11,6 +12,7 @@ export class EntityMetaData<T> {
     public members: string[] = [];
     public relationShips: { [key: string]: RelationMetaData<T, any, keyof T, any> };
     public uniques: { [key: string]: UniqueMetaData };
+    public computedMembers: { [key: string]: (item: IExpression<T>) => IExpression };
     public name: string;
     public defaultOrder: (item: T) => any;
     constructor(public type: genericType<T>, name?: string, defaultOrder?: (item: T) => any, hasInheritance?: boolean) {
