@@ -1,4 +1,5 @@
 import { UniqueMetaData } from "./IndexMetaData";
+import { RelationMetaData } from "./RelationMetaData";
 import { genericType } from "./Types";
 
 export class EntityMetaData<T> {
@@ -8,7 +9,7 @@ export class EntityMetaData<T> {
     public createDateProperty: string;
     public modifiedProperty: string;
     public members: string[] = [];
-    public relationShips: string[] = [];
+    public relationShips: { [key: string]: RelationMetaData<T, any, keyof T, any> };
     public uniques: { [key: string]: UniqueMetaData };
     public name: string;
     public defaultOrder: (item: T) => any;
