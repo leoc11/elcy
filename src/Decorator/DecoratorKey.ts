@@ -1,5 +1,6 @@
 export const columnMetaKey = Symbol("column-meta");
 export const entityMetaKey = Symbol("entity-meta");
+export const relationMetaKey = Symbol("relation-meta");
 
 // specific type modifier
 // DateTime: timezone

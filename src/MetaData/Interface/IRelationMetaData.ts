@@ -1,11 +1,9 @@
-import { genericType, ReferenceOption, RelationType } from "../Types";
+import { genericType, RelationType } from "../Types";
 
-export interface IRelationMetaData<TSource, TTarget, TSourceKey extends keyof TSource, TTargetKey extends keyof TTarget> {
-    sourceType?: genericType<TSource>;
-    targetType?: genericType<TTarget>;
-    relationMaps?: Array<{ source: TSourceKey, target: TTargetKey }>;
+export interface IRelationMetaData<TSlave, TMaster> {
+    slaveType?: genericType<TSlave>;
+    masterType?: genericType<TMaster>;
     relationType?: RelationType;
     foreignKeyName?: string;
-    deleteOption: ReferenceOption;
-    updateOption: ReferenceOption;
+    relationMap?: {[key in keyof TSlave]?: keyof TMaster } | {[key in keyof TMaster]?: keyof TSlave };
 }
