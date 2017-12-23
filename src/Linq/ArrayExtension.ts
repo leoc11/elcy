@@ -25,7 +25,13 @@ declare global {
         rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2: T2) => TResult): TResult[];
         fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | undefined, item2?: T2) => TResult): TResult[];
         union(array2: T[], all: boolean): T[];
+        /**
+         * Return array of item exist in both source array and array2.
+         */
         intersect(array2: T[]): T[];
+        /**
+         * Return array of item exist in both source array and array2.
+         */
         except(array2: T[]): T[];
         pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): TResult[];
     }
@@ -193,12 +199,13 @@ Array.prototype.union = function <T>(this: T[], array2: T[], all: boolean = fals
     return result;
 };
 Array.prototype.intersect = function <T>(this: T[], array2: T[]) {
-    return this.innerJoin(array2, (item1) => item1, (item2) => item2, (item1) => item1)
-        .distinct();
-};
-Array.prototype.except = function <T>(array2: T[]) {
     return this.where((item1) => {
         return array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
+    });
+};
+Array.prototype.except = function <T>(this: T[], array2: T[]) {
+    return this.where((item1) => {
+        return !array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
     });
 };
 Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM) {

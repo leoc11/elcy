@@ -1,16 +1,15 @@
 import "reflect-metadata";
-import { ColumnMetaData, DateColumnMetaData } from "../MetaData";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
-import { dateTimeKind } from "../MetaData/Types";
-import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
+import { DateColumnMetaData } from "../MetaData";
+import { DateTimeKind } from "../MetaData/Types";
+import { Column } from "./Column";
 
 export function ModifiedDate(timezoneOffset: number): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ModifiedDate(name: string, dbtype: "date" | "datetime", dateTimeKind: dateTimeKind, timezoneOffset: number, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ModifiedDate(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind: dateTimeKind = "UTC", timezoneOffset = 0, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function ModifiedDate(name: string, dbtype: "date" | "datetime", dateTimeKind: DateTimeKind, timezoneOffset: number, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export function ModifiedDate(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind = DateTimeKind.UTC, timezoneOffset = 0, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
     const metadata = new DateColumnMetaData();
     if (typeof (name) === "number") {
         timezoneOffset = name;
-        dateTimeKind = "custom";
+        dateTimeKind = DateTimeKind.Custom;
         metadata.columnType = dbtype;
         metadata.timezoneOffset = timezoneOffset;
     }
@@ -26,24 +25,5 @@ export function ModifiedDate(name: string | number = "", dbtype: "date" | "datet
     metadata.columnType = dbtype;
     metadata.timezoneOffset = timezoneOffset;
 
-    return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
-        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
-        if (entityMetaData) {
-            entityMetaData.modifiedProperty = propertyKey;
-            if (entityMetaData.members.indexOf(propertyKey) < 0) {
-                entityMetaData.members.push(propertyKey);
-            }
-        }
-
-        if (!metadata.name) {
-            if (typeof (propertyKey) === "string")
-                metadata.name = propertyKey;
-        }
-
-        const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
-        if (columnMetaData != null) {
-            metadata.Copy(columnMetaData);
-        }
-        Reflect.defineMetadata(columnMetaKey, metadata, target, propertyKey);
-    };
+    return Column(metadata, { isModifiedDate: true });
 }

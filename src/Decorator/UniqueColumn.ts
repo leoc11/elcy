@@ -1,10 +1,9 @@
 import "reflect-metadata";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
-import { UniqueMetaData } from "../MetaData/IndexMetaData";
+import { EntityMetaData, UniqueMetaData } from "../MetaData";
 import { entityMetaKey } from "./DecoratorKey";
 
 export function UniqueColumn(name: string): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
-    return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
+    return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         if (!name)
             name = "IX_UQ_" + propertyKey;
 

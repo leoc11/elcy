@@ -1,8 +1,8 @@
-import { entityMetaKey } from "../Decorators/DecoratorKey";
-import { EntityMetaData } from "./EntityMetaData";
+import { entityMetaKey } from "../../Decorator/DecoratorKey";
+import { EntityMetaData } from "../EntityMetaData";
+import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { genericType, RelationType } from "../Types";
 import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
-import { IRelationMetaData } from "./Interface/IRelationMetaData";
-import { genericType, RelationType } from "./Types";
 
 export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaData<TSlave, TMaster> {
 
@@ -12,7 +12,11 @@ export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaDat
         if (!this._relationMaps) {
             const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.slaveType);
             const foreignKey: ForeignKeyMetaData<TSlave, TMaster> = entityMetaData.foreignKeys[this.foreignKeyName];
-            Object.keys(foreignKey.relationMaps).forEach((o: keyof TSlave) => this._relationMaps[foreignKey.relationMaps[o]] = o);
+            Object.keys(foreignKey.relationMaps).forEach((o: keyof TSlave) => {
+                const masterProp = foreignKey.relationMaps[o];
+                if (typeof masterProp !== "undefined")
+                    this._relationMaps[masterProp] = o;
+            });
         }
         return this._relationMaps;
     }

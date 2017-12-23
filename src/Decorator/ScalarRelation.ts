@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
-import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../MetaData/Relations";
+import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../MetaData/Relation";
 import { genericType, ReferenceOption, RelationType } from "../MetaData/Types";
 import { entityMetaKey, relationMetaKey } from "./DecoratorKey";
-import { IRelationOption } from "./IRelationOption";
+import { IRelationOption } from "./Option";
 
 export function ScalarRelation<S, T>(option: IRelationOption<S, T>)
     : (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
@@ -35,7 +35,7 @@ export function ScalarRelation<S, T>(masterType: genericType<T> | IRelationOptio
     if (Object.keys(relationOption.relationMap).any((o) => !targetMetaData.primaryKeys.contains(o) && (targetUniqueKeys.length < 0 || targetUniqueKeys.all((key) => !targetMetaData.uniques[key].members.contains(o)))))
         throw new Error("Target property not valid. Target property must be a unique column");
 
-    return (target: S, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
+    return (target: S, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         if (!relationOption.slaveType)
             relationOption.slaveType = target.constructor as () => S;
         if (!relationOption.name)

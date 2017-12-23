@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import { BooleanColumnMetaData, ColumnMetaData } from "../MetaData";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
+import { BooleanColumnMetaData } from "../MetaData";
 import { IBooleanColumnMetaData } from "../MetaData/Interface";
-import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
+import { Column } from "./Column";
 
 export function BooleanColumn(option: IBooleanColumnMetaData): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 // tslint:disable-next-line:ban-types
@@ -17,24 +16,5 @@ export function BooleanColumn(name?: string | IBooleanColumnMetaData, defaultVal
         if (typeof defaultValue !== "undefined")
             metadata.default = defaultValue;
     }
-
-    return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
-        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
-        if (entityMetaData) {
-            if (entityMetaData.members.indexOf(propertyKey) < 0) {
-                entityMetaData.members.push(propertyKey);
-            }
-        }
-
-        if (!metadata.name) {
-            if (typeof (propertyKey) === "string")
-                metadata.name = propertyKey;
-        }
-
-        const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
-        if (columnMetaData != null) {
-            metadata.Copy(columnMetaData);
-        }
-        Reflect.defineMetadata(columnMetaKey, metadata, target, propertyKey);
-    };
+    return Column(metadata);
 }

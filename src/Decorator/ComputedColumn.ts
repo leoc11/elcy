@@ -1,17 +1,19 @@
 import "reflect-metadata";
-import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
-import { entityMetaKey } from "./DecoratorKey";
+import { AbstractEntityMetaData, ComputedColumnMetaData } from "../MetaData";
+import { IEntityMetaData } from "../MetaData/Interface";
+import { genericType } from "../MetaData/Types";
+import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
 
-export function ComputedColumn<T>(fn: (o: T) => any): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
-    const expressionFactory = ExpressionFactory.prototype.GetExpressionFactory(fn);
-    return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
-        let entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+export function ComputedColumn<T, R>(type: genericType<R>, fn: (o: T) => R) {
+    return (target: T, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+        const computedMetaData = new ComputedColumnMetaData(type, fn, propertyKey);
+        let entityMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
-            entityMetaData = new EntityMetaData(() => target);
+            entityMetaData = new AbstractEntityMetaData(target.constructor as genericType<T>);
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target);
         }
-
-        entityMetaData.computedMembers[propertyKey] = expressionFactory;
+        if (entityMetaData.computedProperties.contains(computedMetaData.name))
+            entityMetaData.computedProperties.push(computedMetaData.name);
+        Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
     };
 }

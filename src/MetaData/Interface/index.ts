@@ -5,3 +5,4 @@ export * from "./IDecimalColumnMetaData";
 export * from "./INumericColumnMetaData";
 export * from "./IRelationMetaData";
 export * from "./IStringColumnMetaData";
+export * from "./IEntityMetaData";

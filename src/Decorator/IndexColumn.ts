@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import { ColumnMetaData } from "../MetaData/ColumnMetaData/index";
+import { ColumnMetaData } from "../MetaData/ColumnMetaData";
 import { columnMetaKey } from "./DecoratorKey";
 
 export function IndexColumn(): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
-    return (target: object, propertyKey: string /* | symbol*/, descriptor: PropertyDescriptor) => {
+    return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         let columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
         if (columnMetaData == null) {
             columnMetaData = new ColumnMetaData();

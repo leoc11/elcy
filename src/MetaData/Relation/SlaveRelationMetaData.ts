@@ -1,4 +1,4 @@
-import { entityMetaKey } from "../../Decorators/DecoratorKey";
+import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../EntityMetaData";
 import { IRelationMetaData } from "../Interface";
 import { genericType, RelationType } from "../Types";

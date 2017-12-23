@@ -1,6 +1,7 @@
 export const columnMetaKey = Symbol("column-meta");
 export const entityMetaKey = Symbol("entity-meta");
 export const relationMetaKey = Symbol("relation-meta");
+export const inheritanceMetaKey = Symbol("inheritance-meta");
 
 // specific type modifier
 // DateTime: timezone
@@ -37,4 +38,4 @@ export const relationMetaKey = Symbol("relation-meta");
 // Nullable | MaxLength | Enum
 // embedded type => split 1 table into 2/more entities
 // json type => 1 column of table will be used as an object (JSON)
-// 
+//
