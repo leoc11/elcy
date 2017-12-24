@@ -1,9 +1,9 @@
+import { genericType } from "../Common/Type";
+import { IColumnOption } from "../Decorator/Option";
 import { IExpression } from "../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
-import { IColumnMetaData } from "./Interface";
-import { genericType } from "./Types";
-// tslint:disable-next-line:max-classes-per-file
-export class ComputedColumnMetaData<T, R> implements IColumnMetaData<R> {
+
+export class ComputedColumnMetaData<T, R> implements IColumnOption<R> {
     public description: string;
     // tslint:disable-next-line:variable-name
     private _fnExpressionFactory: ((item: IExpression<T>) => IExpression<R>);
@@ -19,7 +19,7 @@ export class ComputedColumnMetaData<T, R> implements IColumnMetaData<R> {
     /**
      * Copy
      */
-    public Copy(columnMeta: IColumnMetaData<any>) {
+    public Copy(columnMeta: IColumnOption<any>) {
         if (typeof columnMeta.name !== "undefined")
             this.name = columnMeta.name;
         if (columnMeta.description)

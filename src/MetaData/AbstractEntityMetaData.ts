@@ -1,10 +1,11 @@
+import { classBase, genericType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { UniqueMetaData } from "../MetaData";
+import { IndexMetaData } from "../MetaData";
 import { InheritanceMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
 import { ForeignKeyMetaData } from "./Relation";
-import { classBase, genericType } from "./Types";
+import { ClassEventListener } from "../Common/ClassEventListener";
 
 export class AbstractEntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
     public defaultOrder?: (item: T) => any;
@@ -14,13 +15,14 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
     public modifiedDateProperty?: string;
     public properties: string[] = [];
     public foreignKeys: { [key: string]: ForeignKeyMetaData<T, any> } = {};
-    public uniques: { [key: string]: UniqueMetaData } = {};
+    public indices: { [key: string]: IndexMetaData } = {};
     public computedProperties: string[] = [];
 
     // inheritance
     public parentType?: genericType<TParent>;
     public allowInheritance = false;
     public inheritance = new InheritanceMetaData<TParent>();
+
     constructor(public type: genericType<T>, defaultOrder?: (item: T) => any) {
         if (typeof defaultOrder !== "undefined")
             this.defaultOrder = defaultOrder;

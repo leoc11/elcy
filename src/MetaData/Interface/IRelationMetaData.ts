@@ -1,4 +1,4 @@
-import { genericType, RelationType } from "../Types";
+import { genericType, RelationType } from "../../Common/Type";
 
 export interface IRelationMetaData<TSlave, TMaster> {
     slaveType?: genericType<TSlave>;

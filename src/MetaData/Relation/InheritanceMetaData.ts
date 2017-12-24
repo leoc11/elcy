@@ -1,4 +1,4 @@
-import { genericType, InheritanceType } from "../Types";
+import { genericType, InheritanceType } from "../../Common/Type";
 
 export class InheritanceMetaData<TParent> {
     /**

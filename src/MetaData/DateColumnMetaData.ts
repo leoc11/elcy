@@ -1,8 +1,8 @@
+import { DateColumnType } from "../Common/ColumnType";
+import { DateTimeKind } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { IDateColumnMetaData } from "./Interface/IDateColumnMetaData";
-import { DateTimeKind } from "./Types";
-export class DateColumnMetaData extends ColumnMetaData<Date> implements IDateColumnMetaData {
-    public columnType: "date" | "datetime";
+export class DateColumnMetaData extends ColumnMetaData<Date> {
+    public columnType: DateColumnType = "datetime";
     public precision: number;
     public dateTimeKind = DateTimeKind.UTC;
     /*

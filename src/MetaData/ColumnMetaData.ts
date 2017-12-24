@@ -1,8 +1,8 @@
-import { ColumnType } from "../Driver/Types/ColumnType";
-import { IColumnMetaData } from "./Interface";
-import { genericType } from "./Types";
-// tslint:disable-next-line:max-classes-per-file
-export class ColumnMetaData<T> implements IColumnMetaData<T> {
+import { ColumnType } from "../Common/ColumnType";
+import { genericType } from "../Common/Type";
+import { IColumnOption } from "../Decorator/Option/IColumnOption";
+
+export class ColumnMetaData<T> {
     public name: string;
     public indexed: boolean;
     public nullable: boolean;
@@ -21,13 +21,11 @@ export class ColumnMetaData<T> implements IColumnMetaData<T> {
     /**
      * Copy
      */
-    public Copy(columnMeta: IColumnMetaData<any>) {
+    public ApplyOption(columnMeta: IColumnOption<any>) {
         if (typeof columnMeta.name !== "undefined")
             this.name = columnMeta.name;
         if (columnMeta.description)
             this.description = columnMeta.description;
-        if (typeof columnMeta.indexed !== "undefined")
-            this.indexed = columnMeta.indexed;
         if (typeof columnMeta.nullable !== "undefined")
             this.nullable = columnMeta.nullable;
         if (typeof columnMeta.columnType !== "undefined")

@@ -1,10 +1,11 @@
-import { IDecimalColumnMetaData } from "./Interface/IDecimalColumnMetaData";
-import { NumericColumnMetaData } from "./NumericColumnMetaData";
-export class DecimalColumnMetaData extends NumericColumnMetaData implements IDecimalColumnMetaData {
+import { DecimalColumnType } from "../Common/ColumnType";
+import { ColumnMetaData } from "./ColumnMetaData";
+export class DecimalColumnMetaData extends ColumnMetaData<number> {
     public precision?: number;
     public scale?: number;
-    public columnType: "decimal" | "float" | "double";
+    public length?: number;
+    public columnType: DecimalColumnType = "decimal";
     constructor() {
-        super();
+        super(Number);
     }
 }

@@ -1,4 +1,4 @@
-import { genericType, ReferenceOption } from "../../MetaData/Types";
+import { genericType, ReferenceOption } from "../../Common/Type";
 
 export interface IRelationOption<TSlave, TMaster> {
     slaveType?: genericType<TSlave>;

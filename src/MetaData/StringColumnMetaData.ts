@@ -1,9 +1,9 @@
+import { StringColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { IStringColumnMetaData } from "./Interface/IStringColumnMetaData";
 // tslint:disable-next-line:ban-types
-export class StringColumnMetaData extends ColumnMetaData<string> implements IStringColumnMetaData {
+export class StringColumnMetaData extends ColumnMetaData<string> {
     public maxLength?: number;
-    public columnType: "nvarchar" | "varchar";
+    public columnType: StringColumnType = "nvarchar";
     constructor() {
         super(String);
     }

@@ -1,19 +1,16 @@
-import { ColumnType } from "../../Driver/Types/ColumnType";
+import { ColumnType } from "../../Common/ColumnType";
+import { genericType } from "../../Common/Type";
+import { IColumnOption } from "../../Decorator/Option";
 import { ColumnMetaData } from "../../MetaData";
-import { IColumnMetaData } from "../Interface";
-import { genericType } from "../Types";
 
-export class InheritedColumnMetaData<P, T> implements IColumnMetaData<T> {
+export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
     public propertyName: string;
     public parentType: genericType<P>;
     public get name(): string {
         return this.columnMetaData.name;
     }
-    public get indexed(): boolean {
-        return this.columnMetaData.indexed;
-    }
     public get nullable(): boolean {
-        return this.columnMetaData.indexed;
+        return this.columnMetaData.nullable;
     }
     public get default(): T | undefined {
         return this.columnMetaData.default;
@@ -35,7 +32,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnMetaData<T> {
     }
     private columnMetaData: ColumnMetaData<T>;
     // tslint:disable-next-line:no-shadowed-variable
-    constructor(parentMetaData: IColumnMetaData<T>, parentType?: genericType<P>, propertyName?: string) {
+    constructor(parentMetaData: ColumnMetaData<T>, parentType?: genericType<P>, propertyName?: string) {
         if (parentMetaData instanceof InheritedColumnMetaData) {
             this.columnMetaData = parentMetaData.columnMetaData;
             this.parentType = parentMetaData.parentType;
@@ -52,7 +49,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnMetaData<T> {
      * Copy
      */
     // tslint:disable-next-line:no-empty
-    public Copy(columnMeta: IColumnMetaData<any>) {
+    public Copy(columnMeta: IColumnOption<any>) {
         if (columnMeta instanceof InheritedColumnMetaData) {
             this.columnMetaData = columnMeta.columnMetaData;
             this.parentType = columnMeta.parentType;

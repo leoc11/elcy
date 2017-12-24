@@ -1,7 +1,7 @@
+import { genericType, RelationType } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../EntityMetaData";
 import { IRelationMetaData } from "../Interface";
-import { genericType, RelationType } from "../Types";
 import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
 
 export class SlaveRelationMetaData<TSlave, TMaster> implements IRelationMetaData<TSlave, TMaster> {
