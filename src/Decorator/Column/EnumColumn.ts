@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { IEnumType, IObjectType } from "../../Common/Type";
 import { EnumColumnMetaData } from "../../MetaData";
-import { Column } from "./Column";
 import { IEnumColumnOption } from "../Option/IEnumColumnOption";
+import { Column } from "./Column";
 
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<T> | T[], defaultValue?: T): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
@@ -39,5 +39,7 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
     }
 
     const metadata = new EnumColumnMetaData(option.type as IObjectType<T>, valueOptions);
+    if (defaultValue)
+        metadata.default = defaultValue;
     return Column(metadata);
 }

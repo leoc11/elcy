@@ -4,7 +4,6 @@ import { IColumnOption } from "../Decorator/Option/IColumnOption";
 
 export class ColumnMetaData<T> {
     public name: string;
-    public indexed: boolean;
     public nullable: boolean;
     public default?: T;
     public description: string;
