@@ -9,7 +9,7 @@ export class GreaterThanExpression<TType> extends ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression<TType>, protected RightOperand: IExpression<TType>) {
-        super();
+        super(Boolean);
     }
 
     public ToString(): string {

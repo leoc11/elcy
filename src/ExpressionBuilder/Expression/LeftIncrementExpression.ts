@@ -9,7 +9,7 @@ export class LeftIncrementExpression extends ExpressionBase<number> {
         return result;
     }
     constructor(protected Operand: IExpression) {
-        super();
+        super(Number);
     }
 
     public ToString(): string {

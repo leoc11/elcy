@@ -9,7 +9,7 @@ export class InstanceofExpression extends ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
-        super();
+        super(Boolean);
     }
 
     public ToString(): string {
