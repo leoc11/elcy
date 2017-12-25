@@ -1,10 +1,8 @@
 import { ExpressionBase } from "./IExpression";
-function isExpressionBase<T>(value: any): value is ExpressionBase<T> {
-    return value.Execute;
-}
+
 export class ValueExpression<T> extends ExpressionBase<T> {
     public static Create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
-        if (value instanceof ExpressionBase || isExpressionBase(value))
+        if (value instanceof ExpressionBase)
             return new ValueExpression<TType>(value.Execute(), value.ToString());
 
         return new ValueExpression(value, expressionString);

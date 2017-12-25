@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class GreaterEqualExpression<TType> implements ExpressionBase<boolean> {
+export class GreaterEqualExpression<TType> extends ExpressionBase<boolean> {
     public static Create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new GreaterEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class GreaterEqualExpression<TType> implements ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression<TType>, protected RightOperand: IExpression<TType>) {
+        super();
     }
 
     public ToString(): string {

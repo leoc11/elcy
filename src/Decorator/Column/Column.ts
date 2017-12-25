@@ -1,9 +1,9 @@
 import "reflect-metadata";
+import { AbstractEntityMetaData, BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity";
-import { AbstractEntityMetaData, BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../MetaData";
 import { IColumnOption } from "../Option";
 
 export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOption) {
@@ -20,7 +20,7 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
 
         const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
         if (columnMetaData != null) {
-            metadata.Copy(columnMetaData);
+            metadata.ApplyOption(columnMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target, propertyKey);
 

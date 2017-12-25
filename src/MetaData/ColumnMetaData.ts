@@ -3,6 +3,7 @@ import { genericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 
 export class ColumnMetaData<T> {
+    public schema: string = "dbo";
     public name: string;
     public nullable: boolean;
     public default?: T;

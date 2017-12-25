@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class StrictEqualExpression<TType> implements ExpressionBase<boolean> {
+export class StrictEqualExpression<TType> extends ExpressionBase<boolean> {
     public static Create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new StrictEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -8,7 +8,8 @@ export class StrictEqualExpression<TType> implements ExpressionBase<boolean> {
 
         return result;
     }
-    constructor(protected LeftOperand: IExpression<TType>, protected RightOperand: IExpression<TType>) {
+    constructor(public LeftOperand: IExpression<TType>, public RightOperand: IExpression<TType>) {
+        super(Boolean);
     }
 
     public ToString(): string {

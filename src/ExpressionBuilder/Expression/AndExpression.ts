@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class AndExpression implements ExpressionBase<boolean> {
+export class AndExpression extends ExpressionBase<boolean> {
     public static Create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
         const result = new AndExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class AndExpression implements ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+        super(Boolean);
     }
 
     public ToString(): string {

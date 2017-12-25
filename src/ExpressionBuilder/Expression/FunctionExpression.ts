@@ -1,12 +1,13 @@
+import { genericType } from "../../Common/Type";
 import { ExpressionBuilder } from "../ExpressionBuilder";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
-export class FunctionExpression<TType = any> implements ExpressionBase<TType> {
-    public static Create<TType>(functionFn: ExpressionBase, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
+export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
+    public static Create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
     public static Create(functionString: string, ctors: Array<{ new(): any }>, params?: any[]): FunctionExpression<any>;
-    public static Create<TType>(functionFn: ((...params: any[]) => TType), ctors: Array<{ new(): any }>, params?: any[]): FunctionExpression<TType>;
-    public static Create<TType>(functionFn: string | ExpressionBase | ((...params: any[]) => TType), ctors: Array<{ new(): any }> | Array<ParameterExpression<TType>>, params?: any[]) {
+    public static Create<TType, TResult>(functionFn: ((...params: any[]) => TResult), ctors: Array<{ new(): any }>, params?: any[]): FunctionExpression<TType>;
+    public static Create<TType, TResult>(functionFn: string | ExpressionBase<TResult> | ((...params: any[]) => TResult), ctors: Array<{ new(): any }> | Array<ParameterExpression<TType>>, params?: any[]) {
         if (typeof functionFn === "function")
             functionFn = functionFn.toString();
         if (functionFn instanceof ExpressionBase)
@@ -14,7 +15,9 @@ export class FunctionExpression<TType = any> implements ExpressionBase<TType> {
 
         return (new ExpressionBuilder()).ParseToExpression(functionFn, ctors as Array<{ new(): any }>, params);
     }
-    constructor(public Body: IExpression<TType>, public Params: Array<ParameterExpression<any>>) {
+    // TODO: type must always specified
+    constructor(public Body: IExpression<TResult>, public Params: Array<ParameterExpression<TType>>, type?: genericType<TResult>) {
+        super(type);
     }
 
     public ToString(): string {
@@ -24,7 +27,7 @@ export class FunctionExpression<TType = any> implements ExpressionBase<TType> {
 
         return "(" + params.join(", ") + ") => {" + this.Body.ToString() + "}";
     }
-    public Execute() {
+    public Execute(): TResult {
         throw new Error("Method not implemented.");
     }
 

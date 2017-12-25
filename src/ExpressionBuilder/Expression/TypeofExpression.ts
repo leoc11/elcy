@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class TypeofExpression implements ExpressionBase<string> {
+export class TypeofExpression extends ExpressionBase<string> {
     public static Create(operand: IExpression) {
         const result = new TypeofExpression(operand);
         if (operand instanceof ValueExpression)
@@ -8,7 +8,8 @@ export class TypeofExpression implements ExpressionBase<string> {
 
         return result;
     }
-    constructor(protected Operand: IExpression) {
+    constructor(public Operand: IExpression) {
+        super(String);
     }
 
     public ToString(): string {

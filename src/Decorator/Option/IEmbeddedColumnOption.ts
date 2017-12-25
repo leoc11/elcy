@@ -1,6 +1,6 @@
-import { objectType } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 
 export interface IEmbeddedColumnOption {
     prefix?: string;
-    type: objectType<any>;
+    type: IObjectType<any>;
 }

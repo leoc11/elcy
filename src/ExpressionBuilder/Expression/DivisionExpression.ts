@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class DivisionExpression implements ExpressionBase<number> {
+export class DivisionExpression extends ExpressionBase<number> {
     public static Create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new DivisionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class DivisionExpression implements ExpressionBase<number> {
         return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+        super(Number);
     }
 
     public ToString(): string {

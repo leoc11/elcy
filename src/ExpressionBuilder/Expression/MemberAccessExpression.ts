@@ -8,7 +8,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> implements
 
         return result;
     }
-    constructor(protected ObjectOperand: IExpression<TType>, protected MemberName: KProp | ExpressionBase<KProp>) {
+    constructor(public ObjectOperand: IExpression<TType>, public MemberName: KProp | ExpressionBase<KProp>) {
     }
 
     public ToString(): string {

@@ -5,7 +5,6 @@ import { InheritanceMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
 import { ForeignKeyMetaData } from "./Relation";
-import { ClassEventListener } from "../Common/ClassEventListener";
 
 export class AbstractEntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
     public defaultOrder?: (item: T) => any;

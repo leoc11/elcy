@@ -1,9 +1,10 @@
 import { genericType } from "../../Common/Type";
 import { IndexMetaData } from "../../MetaData";
 import { ForeignKeyMetaData, InheritanceMetaData } from "../Relation";
+import { IOrderCondition } from "./IOrderCondition";
 
 export interface IEntityMetaData<T extends TParent, TParent = any> {
-    defaultOrder?: (item: T) => any;
+    defaultOrder?: IOrderCondition;
     primaryKeys: string[];
     deleteProperty?: string;
     createDateProperty?: string;

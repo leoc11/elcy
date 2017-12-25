@@ -1,5 +1,5 @@
 import { EnumColumnType } from "../Common/ColumnType";
-import { genericType, IEnumType } from "../Common/Type";
+import { genericType } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
 
 // TODO: for not supported db, use Check constraint

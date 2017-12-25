@@ -11,7 +11,7 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
     }
     public Items: Array<IExpression<TType>>;
     constructor(...items: Array<IExpression<TType>>) {
-        super();
+        super(Array);
         this.Items = items;
     }
 

@@ -4,6 +4,7 @@ export interface IEnumType<T extends string | number> { [key: string]: T; }
 // tslint:disable-next-line:ban-types
 export type genericType<T> = IObjectType<T> | ((value?: any) => T);
 export const classBase = Reflect.getPrototypeOf(Function);
+export type orderDirection = "ASC" | "DESC";
 export enum DateTimeKind {
     UTC,
     Unspecified,

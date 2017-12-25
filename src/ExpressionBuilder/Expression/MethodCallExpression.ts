@@ -11,7 +11,7 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         return result;
     }
     public MethodName: string;
-    constructor(protected ObjectOperand: IExpression<TType>, method: KProp | (() => TResult), protected Params: IExpression[]) {
+    constructor(public ObjectOperand: IExpression<TType>, method: KProp | (() => TResult), public Params: IExpression[]) {
         if (typeof method === "function") {
             this.MethodName = method.name;
         }

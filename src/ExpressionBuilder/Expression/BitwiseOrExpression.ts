@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class BitwiseOrExpression implements ExpressionBase<number> {
+export class BitwiseOrExpression extends ExpressionBase<number> {
     public static Create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseOrExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class BitwiseOrExpression implements ExpressionBase<number> {
         return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+        super(Number);
     }
 
     public ToString(): string {

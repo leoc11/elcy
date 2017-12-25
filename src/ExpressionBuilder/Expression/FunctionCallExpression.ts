@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class FunctionCallExpression<TType> implements ExpressionBase<TType> {
+export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
     public static Create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
         if (typeof functionName !== "string")
             functionName = functionFn.name;
@@ -13,6 +13,7 @@ export class FunctionCallExpression<TType> implements ExpressionBase<TType> {
         return result;
     }
     constructor(protected FunctionFn: ((...params: any[]) => TType), protected FunctionName: string, protected Params: IExpression[]) {
+        super(); // TODO: must set specific type. must specify funtion => type map.
     }
 
     public ToString(): string {

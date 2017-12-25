@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class RightIncrementExpression implements ExpressionBase<number> {
+export class RightIncrementExpression extends ExpressionBase<number> {
     public static Create(operand: IExpression<number>) {
         const result = new RightIncrementExpression(operand);
         if (operand instanceof ValueExpression)
@@ -8,7 +8,8 @@ export class RightIncrementExpression implements ExpressionBase<number> {
 
         return result;
     }
-    constructor(protected Operand: IExpression) {
+    constructor(public readonly Operand: IExpression) {
+        super(Number);
     }
 
     public ToString(): string {
