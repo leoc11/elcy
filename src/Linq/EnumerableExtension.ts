@@ -40,11 +40,7 @@ declare global {
 }
 
 Array.prototype.selectMany = function <T>(this: T[], fn: (item: T) => any[]) {
-    let result: T[] = [];
-    for (const item of this) {
-        result = result.concat(fn(item));
-    }
-    return result;
+    return this.reduce((a, b) => a.concat(fn(b)), [] as T[]);
 };
 Array.prototype.select = function <T>(this: T[], fn: (item: T) => any) {
     return this.map(fn);
@@ -55,32 +51,24 @@ Array.prototype.contains = function <T>(this: T[], item: T) {
 Array.prototype.where = function <T>(this: T[], fn: (item: T) => boolean) {
     return this.filter(fn);
 };
-Array.prototype.orderBy = function <T>(this: T[], fn: (item: T) => any, orderDirection: "asc" | "desc" = "asc") {
+Array.prototype.orderBy = function <T>(this: T[], fn: (item: T) => any, direction: orderDirection = "ASC") {
     return this.sort((a, b) => {
         const aVal = fn(a);
         const bVal = fn(b);
-        return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * (orderDirection === "asc" ? 1 : -1);
+        return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * (direction === "ASC" ? 1 : -1);
     });
 };
 Array.prototype.first = function <T>(this: T[], fn?: (item: T) => boolean) {
-    if (!fn)
-        fn = () => true;
-    return this.where(fn)[0];
+    return (fn ? this.where(fn) : this)[0];
 };
 Array.prototype.last = function <T>(this: T[], fn?: (item: T) => boolean) {
-    if (!fn)
-        fn = () => true;
-    const result = this.where(fn);
+    const result = (fn ? this.where(fn) : this);
     return result[result.length - 1];
 };
 Array.prototype.any = function <T>(this: T[], fn?: (item: T) => boolean) {
-    if (!fn)
-        fn = () => true;
-    return this.some(fn);
+    return fn ? this.some(fn) : this.length > 0;
 };
 Array.prototype.all = function <T>(this: T[], fn: (item: T) => boolean) {
-    if (!fn)
-        fn = () => true;
     return this.every(fn);
 };
 Array.prototype.skip = function <T>(this: T[], n: number) {
@@ -90,33 +78,18 @@ Array.prototype.take = function <T>(this: T[], n: number) {
     return this.slice(0, n);
 };
 Array.prototype.sum = function <T>(this: T[], fn?: (item: T) => number) {
-    let arrayVal: any[] = this;
-    if (fn)
-        arrayVal = arrayVal.select(fn);
-
-    return arrayVal.reduce((a, b) => a + b, 0);
+    return ((fn ? this.select(fn) : this) as number[]).reduce((a, b) => a + b, 0);
 };
 Array.prototype.avg = function <T>(this: T[], fn?: (item: T) => number) {
-    let arrayVal: any[] = this;
-    if (fn)
-        arrayVal = arrayVal.select(fn);
-
+    const arrayVal: any[] = fn ? this.select(fn) : this;
     return arrayVal.sum() / arrayVal.count();
 };
 Array.prototype.max = function <T>(this: T[], fn?: (item: T) => number) {
-    let arrayVal: any[] = this;
-    if (fn)
-        arrayVal = arrayVal.select(fn);
-
-    return Math.max.apply(Math, arrayVal);
+    return Math.max.apply(Math, fn ? this.select(fn) : this);
 };
 
 Array.prototype.min = function <T>(this: T[], fn?: (item: T) => number) {
-    let arrayVal: any[] = this;
-    if (fn)
-        arrayVal = arrayVal.select(fn);
-
-    return Math.min.apply(Math, arrayVal);
+    return Math.min.apply(Math, fn ? this.select(fn) : this);
 };
 Array.prototype.count = function <T>(this: T[]) {
     return this.length;
@@ -139,7 +112,6 @@ Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
     if (!fn) {
         fn = (o) => o;
     }
-
     return this.groupBy(fn).first();
 };
 Array.prototype.innerJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult) {
@@ -217,7 +189,8 @@ Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => an
         }
         let group = dataResult.first((o) => JSON.stringify(o.key) === JSON.stringify(dimensionKey));
         if (!group) {
-            group = new IGroupArray<TResult, any>(dimensionKey);
+            group = [];
+            group.key = dimensionKey;
             dataResult.push(group);
         }
         group.push(item);

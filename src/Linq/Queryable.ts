@@ -7,7 +7,6 @@ import { IColumnQueryExpression } from "./Interface/IColumnQueryExpression";
 import { IEntityQueryExpression } from "./Interface/IEntityQueryExpression";
 import { SelectQueryExpression } from "./SelectQueryExpression";
 
-// tslint:disable-next-line:interface-name
 export class Queryable<T> {
     private type: IObjectType<T>;
     private selectExpression: SelectQueryExpression<T>;
@@ -52,9 +51,6 @@ export class Queryable<T> {
         }
     }
 
-    public map<U>(callbackfn: (value: T, index: number, array: T[]) => U): U[] {
-        throw new Error("not supported");
-    }
     public selectMany<TReturn>(fn: (item: T) => TReturn[], type: IObjectType<TReturn>): Queryable<TReturn> {
         const expression = ExpressionFactory.prototype.ToExpression(fn, this.type);
         let objExpression = expression.Body;

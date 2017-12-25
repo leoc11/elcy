@@ -456,10 +456,10 @@ export class ExpressionBuilder {
                     else if (closeString !== ",")
                         throw new Error("Wrong function parameter sperator.");
                 }
-                operand = Expression.MethodCallExpression.Create(operand, nestOperand.Value.Execute(), fnParams);
+                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.Execute());
             }
             else {
-                operand = Expression.MemberAccessExpression.Create(operand, nestOperand.Value.Execute());
+                operand = Expression.MemberAccessExpression.Create(operand as any, nestOperand.Value.Execute());
             }
 
             memberOperator = this.GetOperator(expressionStr, MemberOperators);
@@ -487,11 +487,11 @@ export class ExpressionBuilder {
 
         const rightUnaryOperator = this.GetOperator(expressionStr, RightUnaryOperators);
         if (rightUnaryOperator) {
-            operand = this.GetOperatorExpression(rightUnaryOperator.Value, operand);
+            operand = this.GetOperatorExpression(rightUnaryOperator.Value, operand as any);
             expressionStr = rightUnaryOperator.Remaining;
         }
 
-        return new OperandToken(operand, expressionStr);
+        return new OperandToken(operand as IExpression, expressionStr);
     }
 
     protected GetOperator(expression: string, operators = BinaryOperators) {

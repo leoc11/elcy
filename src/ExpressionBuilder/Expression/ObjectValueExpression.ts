@@ -12,7 +12,7 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
             }
         }
         if (isAllValue)
-            return ValueExpression.Create<TType>(result);
+            return ValueExpression.Create<TType>(objectValue);
 
         return result;
     }
@@ -28,10 +28,10 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
             itemString.push(item + ": " + this.Object[item].ToString());
         return "{" + itemString.join(", ") + "}";
     }
-    public Execute() {
-        const objectValue: { [key: string]: any } = {};
+    public Execute(): TType {
+        const objectValue: { [Key: string]: IExpression } = {};
         for (const prop in this.Object)
             objectValue[prop] = this.Object[prop].Execute();
-        return objectValue;
+        return objectValue as TType;
     }
 }

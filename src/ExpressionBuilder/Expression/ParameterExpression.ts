@@ -1,5 +1,5 @@
-import { ExpressionBase } from "./IExpression";
 import { genericType } from "../../Common/Type";
+import { ExpressionBase } from "./IExpression";
 
 export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
     public static Create(name: string): ParameterExpression;

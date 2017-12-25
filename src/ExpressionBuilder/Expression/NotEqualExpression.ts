@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class NotEqualExpression implements ExpressionBase<boolean> {
+export class NotEqualExpression extends ExpressionBase<boolean> {
     public static Create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new NotEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class NotEqualExpression implements ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+        super(Boolean);
     }
 
     public ToString(): string {

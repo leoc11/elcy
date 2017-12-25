@@ -1,9 +1,8 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> implements ExpressionBase<TResult> {
-    // public static Create<TType, KProp extends keyof TType, TResult>(objectOperand: IExpression<TType>, methodName: KProp, params: IExpression[], methodFn: (() => TResult)): MethodCallExpression<TType, KProp, TResult>;
-    public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, methodName: KProp, params: IExpression[]) {
-        const result = new MethodCallExpression(objectOperand, methodName, params);
+export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> {
+    public static Create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
+        const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.Create(result);
         }
@@ -12,6 +11,7 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
     }
     public MethodName: string;
     constructor(public ObjectOperand: IExpression<TType>, method: KProp | (() => TResult), public Params: IExpression[]) {
+        super(); // TODO
         if (typeof method === "function") {
             this.MethodName = method.name;
         }
