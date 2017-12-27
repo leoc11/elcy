@@ -1,12 +1,12 @@
 import { ClassEventListener } from "../Common/ClassEventListener";
 import { genericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
-import { IDeleteEventParam, IEntityMetaData, ISaveEventParam } from "./Interface";
+import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } from "./Interface";
 import { ForeignKeyMetaData, InheritanceMetaData } from "./Relation";
 
 export class EntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
     public name: string;
-    public defaultOrder?: (item: T) => any;
+    public defaultOrder?: IOrderCondition;
     public primaryKeys: string[] = [];
     public deleteProperty: string;
     public createDateProperty: string;
