@@ -1,6 +1,6 @@
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class LessThanExpression<TType> implements ExpressionBase<boolean> {
+export class LessThanExpression<TType> extends ExpressionBase<boolean> {
     public static Create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new LessThanExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,6 +9,7 @@ export class LessThanExpression<TType> implements ExpressionBase<boolean> {
         return result;
     }
     constructor(protected LeftOperand: IExpression<TType>, protected RightOperand: IExpression<TType>) {
+        super(Boolean);
     }
 
     public ToString(): string {

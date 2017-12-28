@@ -4,10 +4,11 @@ import { IndexMetaData } from "../MetaData";
 import { InheritanceMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
+import { IOrderCondition } from "./Interface/IOrderCondition";
 import { ForeignKeyMetaData } from "./Relation";
 
 export class AbstractEntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
-    public defaultOrder?: (item: T) => any;
+    public defaultOrder?: IOrderCondition;
     public primaryKeys: string[] = [];
     public deleteProperty?: string;
     public createDateProperty?: string;
@@ -22,7 +23,7 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
     public allowInheritance = false;
     public inheritance = new InheritanceMetaData<TParent>();
 
-    constructor(public type: genericType<T>, defaultOrder?: (item: T) => any) {
+    constructor(public type: genericType<T>, defaultOrder?: IOrderCondition) {
         if (typeof defaultOrder !== "undefined")
             this.defaultOrder = defaultOrder;
 

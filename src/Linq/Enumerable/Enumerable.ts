@@ -1,10 +1,10 @@
+import { orderDirection } from "../../Common/Type";
+import { DistinctEnumerable } from "./DistinctEnumerable";
+import { GroupByEnumerable } from "./GroupByEnumerable";
+import { OrderEnumerable } from "./OrderEnumerable";
 import { SelectEnumerable } from "./SelectEnumerable";
 import { SelectManyEnumerable } from "./SelectManyEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
-import { OrderEnumerable } from "./OrderEnumerable";
-import { orderDirection } from "../../Common/Type";
-import { GroupByEnumerable } from "./GroupByEnumerable";
-import { DistinctEnumerable } from "./DistinctEnumerable";
 
 export class Enumerable<T = any> implements IterableIterator<T> {
     protected pointer = 0;

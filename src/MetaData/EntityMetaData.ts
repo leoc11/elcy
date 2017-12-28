@@ -33,7 +33,7 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public afterSave = new ClassEventListener<T, ISaveEventParam, void>(false);
     public afterDelete = new ClassEventListener<T, IDeleteEventParam, void>(false);
 
-    constructor(public type: genericType<T>, name?: string, defaultOrder?: (item: T) => any) {
+    constructor(public type: genericType<T>, name?: string, defaultOrder?: IOrderCondition) {
         if (typeof name !== "undefined")
             this.name = name;
         if (typeof defaultOrder !== "undefined")
