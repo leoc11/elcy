@@ -3,14 +3,18 @@ import { SelectManyEnumerable } from "./SelectManyEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 import { OrderEnumerable } from "./OrderEnumerable";
 import { orderDirection } from "../../Common/Type";
+import { GroupByEnumerable } from "./GroupByEnumerable";
+import { DistinctEnumerable } from "./DistinctEnumerable";
 
 export class Enumerable<T = any> implements IterableIterator<T> {
     protected pointer = 0;
     protected reversepointer = 0;
+    protected isResultComplete = false;
     protected result: T[] = [];
     protected parent: Enumerable;
     constructor(result: T[] = []) {
         this.result = result;
+        this.isResultComplete = true;
     }
     public [Symbol.iterator]() {
         return this;
@@ -79,7 +83,7 @@ export class Enumerable<T = any> implements IterableIterator<T> {
         }
         return undefined;
     }
-    public last(predicate?: (item: T) => boolean) {
+    public last(predicate?: (item: T) => boolean) { // TODO
         this.resetReversePointer();
         let prev = this.prev();
         while (!prev.done && (predicate && !predicate(prev.value))) {
@@ -152,5 +156,11 @@ export class Enumerable<T = any> implements IterableIterator<T> {
     }
     public orderBy(selector: (item: T) => any, direction: orderDirection): OrderEnumerable<T> {
         return new OrderEnumerable(this, selector, direction);
+    }
+    public groupBy<K>(keySelector: (item: T) => K): GroupByEnumerable<T, K> {
+        return new GroupByEnumerable(this, keySelector);
+    }
+    public distinct(selector: (item: T) => any): DistinctEnumerable<T> {
+        return new DistinctEnumerable(this, selector);
     }
 }

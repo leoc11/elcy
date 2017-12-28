@@ -112,7 +112,7 @@ Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
     if (!fn) {
         fn = (o) => o;
     }
-    return this.groupBy(fn).first();
+    return this.groupBy(fn).select((o) => o.first());
 };
 Array.prototype.innerJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult) {
     return this.selectMany((item1) => {

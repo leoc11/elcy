@@ -18,10 +18,12 @@ export class TakeEnumerable<T = any> extends Enumerable<T> {
             done: this.result.length < this.pointer,
             value: this.result[this.pointer]
         };
-        if (result.done) {
+        if (result.done && this.isResultComplete) {
             result = this.next();
-            if (result.done)
+            if (result.done) {
+                this.isResultComplete = true;
                 return result;
+            }
             this.result[this.pointer] = result.value;
         }
         this.pointer++;

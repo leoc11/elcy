@@ -12,11 +12,14 @@ export class SelectEnumerable<T = any, K = any> extends Enumerable<K> {
             done: this.result.length < this.pointer,
             value: this.result[this.pointer]
         };
-        if (result.done) {
+        if (result.done && !this.isResultComplete) {
             const presult = this.parent.next();
-            if (presult.done)
+            if (presult.done) {
+                this.isResultComplete = true;
                 return presult as IteratorResult<any>;
+            }
             result.value = this.result[this.pointer] = this.selector(presult.value);
+            result.done = false;
         }
         this.pointer++;
         return result;

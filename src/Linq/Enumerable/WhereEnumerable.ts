@@ -12,11 +12,13 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
             done: this.result.length < this.pointer,
             value: this.result[this.pointer]
         };
-        if (result.done) {
+        if (result.done && !this.isResultComplete) {
             do {
                 result = this.parent.next();
-                if (result.done)
+                if (result.done) {
+                    this.isResultComplete = true;
                     return result;
+                }
             } while (!this.predicate(result.value));
             this.result[this.pointer] = result.value;
         }
