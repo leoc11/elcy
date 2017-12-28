@@ -25,18 +25,15 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
     }
     public prev(): IteratorResult<T> {
         let result: IteratorResult<T> = {
-            done: this.reversepointer < 0,
-            value: this.result[this.reversepointer]
+            done: true,
+            value: this.result[-1]
         };
-        if (result.done) {
-            do {
-                result = this.parent.prev();
-                if (result.done)
-                    return result;
-            } while (!this.predicate(result.value));
-            this.result[this.reversepointer] = result.value;
-        }
-        this.reversepointer--;
+        do {
+            result = this.parent.prev();
+            if (result.done)
+                return result;
+        } while (!this.predicate(result.value));
+        this.reversepointer++;
         return result;
     }
 }

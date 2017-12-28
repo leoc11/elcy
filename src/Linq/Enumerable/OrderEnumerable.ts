@@ -47,7 +47,7 @@ function* lazysort<T>(enumerable: Enumerable<T>, selector: (item: T) => any, dir
         }
     }
 }
-export class OrderedEnumerable<T = any> extends Enumerable<T> {
+export class OrderEnumerable<T = any> extends Enumerable<T> {
     private generator: IterableIterator<any>;
     private reversegenerator: IterableIterator<any>;
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => any, protected readonly direction: orderDirection) {
@@ -76,24 +76,22 @@ export class OrderedEnumerable<T = any> extends Enumerable<T> {
     }
     public prev(): IteratorResult<T> {
         if (!this.reversegenerator) {
-            this.reversegenerator = lazysort(this.parent, this.selector, this.direction);
+            this.reversegenerator = lazysort(this.parent, this.selector, this.direction === "ASC" ? "DESC" : "ASC");
         }
         let result: IteratorResult<T> = {
-            done: this.reversepointer < 0,
-            value: this.result[this.reversepointer]
+            done: true,
+            value: this.result[-1]
         };
-        if (result.done) {
-            result = this.generator.next();
-            if (result.done)
-                return result;
-            this.result[this.reversepointer] = result.value;
-        }
-        this.reversepointer--;
+        result = this.generator.next();
+        if (result.done)
+            return result;
+        this.result[this.reversepointer] = result.value;
+        this.reversepointer++;
         return result;
     }
     public setGenerator() {
         this.generator = lazysort(this.parent, this.selector, this.direction);
-        this.reversegenerator = lazysort(this.parent, this.selector, this.direction);
+        this.reversegenerator = lazysort(this.parent, this.selector, this.direction === "ASC" ? "DESC" : "ASC");
     }
     public resetPointer() {
         this.setGenerator();
