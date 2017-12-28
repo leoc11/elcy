@@ -16,7 +16,7 @@
         },
         {
             "type": "shell",
-            "taskName": "on save watcher",
+            "label": "on save watcher",
             "command": "tsc",
             "args": ["-w", "-p", "."],
             "options": {
