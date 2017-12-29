@@ -6,6 +6,7 @@ import { SelectEnumerable } from "./SelectEnumerable";
 import { SelectManyEnumerable } from "./SelectManyEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 
+export const keyComparer = <T>(a: T, b: T) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 export class Enumerable<T = any> implements IterableIterator<T> {
     protected pointer = 0;
     protected reversepointer = 0;
