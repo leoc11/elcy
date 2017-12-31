@@ -1,7 +1,7 @@
 import { Enumerable } from "./Enumerable";
 
 export class SkipEnumerable<T = any> extends Enumerable<T> {
-    constructor(protected readonly parent: Enumerable<T>, protected readonly skip: number) {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly skipCount: number) {
         super();
     }
     public [Symbol.iterator]() {
@@ -9,7 +9,7 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
     }
     public next(): IteratorResult<T> {
         if (this.pointer <= 0) {
-            for (let i = 0; i < this.skip && !(this.parent.next().done); i++);
+            for (let i = 0; i < this.skipCount && !(this.parent.next().done); i++);
         }
         let result: IteratorResult<T> = {
             done: this.result.length < this.pointer,

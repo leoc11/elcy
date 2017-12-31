@@ -1,6 +1,16 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 
-function* innerjoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumerable<T2>, keySelector1: (item: T) => K, keySelector2: (item: T2) => K, resultSelector: (item1: T, item2: T2) => R) {
+export const defaultResultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R => {
+    const result = {} as any;
+    if (item2)
+        for (const prop in item2)
+            result[prop] = item2[prop];
+    if (item1)
+        for (const prop in item1)
+            result[prop] = item1[prop];
+    return result;
+};
+export function* innerjoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumerable<T2>, keySelector1: (item: T) => K, keySelector2: (item: T2) => K, resultSelector: (item1: T, item2: T2) => R) {
     enumerable1.resetPointer();
     let result1 = enumerable1.next();
     while (!result1.done) {
@@ -15,9 +25,9 @@ function* innerjoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumer
         result1 = enumerable1.next();
     }
 }
-export class JoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enumerable<R> {
+export class InnerJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enumerable<R> {
     private generator: IterableIterator<any>;
-    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T, item2: T2) => R) {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T, item2: T2) => R = defaultResultFn) {
         super();
         this.generator = innerjoin(parent, parent2, keySelector1, keySelector2, resultSelector);
     }

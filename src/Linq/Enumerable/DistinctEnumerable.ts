@@ -1,4 +1,4 @@
-import { Enumerable } from "./Enumerable";
+import { Enumerable, keyComparer } from "./Enumerable";
 
 export class DistinctEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => any) {
@@ -16,7 +16,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
             // tslint:disable-next-line:no-conditional-assignment
             while (!(result = this.parent.next()).done) {
                 const key = this.selector(result.value);
-                if (!this.result.any((o) => this.keyComparer(key, this.selector(o))))
+                if (!this.result.any((o) => keyComparer(key, this.selector(o))))
                     break;
             }
             if (result.done) {
@@ -30,5 +30,4 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
             this.pointer++;
         return result;
     }
-    private keyComparer = (a: T, b: T) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 }

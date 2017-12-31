@@ -1,15 +1,15 @@
-import { Enumerable } from "./Enumerable";
+import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupedEnumerable } from "./GroupedEnumerable";
 
 export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>> {
-    constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K, protected readonly isJSONCompare = false) {
+    constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
         super();
     }
     public [Symbol.iterator]() {
         return this;
     }
     public addResult(key: K, value: T) {
-        let group = this.result.first((o) => key instanceof Object ? JSON.stringify(o.key) === JSON.stringify(key) : o.key === key);
+        let group = this.result.first((o) => keyComparer(o.key, key));
         if (!group)
             group = new GroupedEnumerable(this, key);
         group.addResult(value);
@@ -33,7 +33,7 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
                     return result;
                 }
                 curKey = this.keySelector(nResult.value);
-            } while (this.keyComparer(curKey, prevResult.key));
+            } while (keyComparer(curKey, prevResult.key));
             result.value = this.result[this.pointer] = new GroupedEnumerable(this, curKey);
             this.result[this.pointer].addResult(nResult.value);
             result.done = false;
@@ -41,5 +41,4 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
         this.reversepointer++;
         return result;
     }
-    private keyComparer = (a: K, b: K) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 }

@@ -1,206 +1,125 @@
 import { orderDirection } from "../Common/Type";
-import { IGroupArray } from "./Interface/IGroupArray";
+import { Enumerable } from "./Enumerable/Enumerable";
+import { GroupByEnumerable } from "./Enumerable/GroupByEnumerable";
 
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
-        selectMany<TReturn>(fn: (item: T) => TReturn[]): TReturn[];
-        select<TReturn>(fn: (item: T) => TReturn): TReturn[];
+        asEnumerable(): Enumerable<T>;
+        selectMany<TReturn>(fn: (item: T) => TReturn[]): Enumerable<TReturn>;
+        select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         last(fn?: (item: T) => boolean): T;
-        where(fn: (item: T) => boolean): T[];
-        orderBy(fn: (item: T) => any, orderDirection: orderDirection): T[];
+        where(fn: (item: T) => boolean): Enumerable<T>;
+        orderBy(fn: (item: T) => any, orderDirection: orderDirection): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn?: (item: T) => boolean): boolean;
-        skip(n: number): T[];
-        take(n: number): T[];
+        skip(n: number): Enumerable<T>;
+        take(n: number): Enumerable<T>;
         sum(fn?: (item: T) => number): number;
         count(): number;
         avg(fn?: (item: T) => number): number;
         max(fn?: (item: T) => number): number;
         min(fn?: (item: T) => number): number;
-        groupBy<KType>(fn: (item: T) => KType): Array<IGroupArray<KType, T>>;
-        distinct<TKey>(fn?: (item: T) => TKey): T[];
-        innerJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): TResult[];
-        leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): TResult[];
-        rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): TResult[];
-        fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): TResult[];
-        union(array2: T[], all: boolean): T[];
+        groupBy<K>(fn: (item: T) => K): GroupByEnumerable<T, K>;
+        distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
+        innerJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        union(array2: T[], all: boolean): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
          */
-        intersect(array2: T[]): T[];
+        intersect(array2: T[]): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
          */
-        except(array2: T[]): T[];
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): TResult[];
+        except(array2: T[]): Enumerable<T>;
+        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): Enumerable<TResult>;
     }
 }
 
-Array.prototype.selectMany = function <T>(this: T[], fn: (item: T) => any[]) {
-    return this.reduce((a, b) => a.concat(fn(b)), [] as T[]);
+Array.prototype.asEnumerable = function <T>(this: T[]) {
+    return new Enumerable(this);
 };
-Array.prototype.select = function <T>(this: T[], fn: (item: T) => any) {
-    return this.map(fn);
+Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[]) {
+    return this.asEnumerable().selectMany(selector);
+};
+Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
+    return this.asEnumerable().select(selector);
 };
 Array.prototype.contains = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;
 };
-Array.prototype.where = function <T>(this: T[], fn: (item: T) => boolean) {
-    return this.filter(fn);
+Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {
+    return this.asEnumerable().where(predicate);
 };
-Array.prototype.orderBy = function <T>(this: T[], fn: (item: T) => any, direction: orderDirection = "ASC") {
-    return this.sort((a, b) => {
-        const aVal = fn(a);
-        const bVal = fn(b);
-        return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * (direction === "ASC" ? 1 : -1);
-    });
+Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, direction: orderDirection = "ASC") {
+    return this.asEnumerable().orderBy(selector, direction);
 };
-Array.prototype.first = function <T>(this: T[], fn?: (item: T) => boolean) {
-    return (fn ? this.where(fn) : this)[0];
+Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
+    return predicate ? this.where(predicate).first() : this[0];
 };
-Array.prototype.last = function <T>(this: T[], fn?: (item: T) => boolean) {
-    const result = (fn ? this.where(fn) : this);
-    return result[result.length - 1];
+Array.prototype.last = function <T>(this: T[], predicate?: (item: T) => boolean) {
+    return predicate ? this.where(predicate).last() : this[this.length - 1];
 };
-Array.prototype.any = function <T>(this: T[], fn?: (item: T) => boolean) {
-    return fn ? this.some(fn) : this.length > 0;
+Array.prototype.any = function <T>(this: T[], predicate?: (item: T) => boolean) {
+    return predicate ? this.asEnumerable().any(predicate) : this.length > 0;
 };
-Array.prototype.all = function <T>(this: T[], fn: (item: T) => boolean) {
-    return this.every(fn);
+Array.prototype.all = function <T>(this: T[], predicate: (item: T) => boolean) {
+    return this.asEnumerable().all(predicate);
 };
-Array.prototype.skip = function <T>(this: T[], n: number) {
-    return this.slice(n);
+Array.prototype.skip = function <T>(this: T[], skip: number) {
+    return this.asEnumerable().skip(skip);
 };
-Array.prototype.take = function <T>(this: T[], n: number) {
-    return this.slice(0, n);
+Array.prototype.take = function <T>(this: T[], take: number) {
+    return this.asEnumerable().take(take);
 };
-Array.prototype.sum = function <T>(this: T[], fn?: (item: T) => number) {
-    return ((fn ? this.select(fn) : this) as number[]).reduce((a, b) => a + b, 0);
+Array.prototype.sum = function <T>(this: T[], selector?: (item: T) => number) {
+    return selector ? this.select(selector).sum() : (this as any as number[]).reduce((a, b) => a + b, 0);
 };
-Array.prototype.avg = function <T>(this: T[], fn?: (item: T) => number) {
-    const arrayVal: any[] = fn ? this.select(fn) : this;
-    return arrayVal.sum() / arrayVal.count();
+Array.prototype.avg = function <T>(this: T[], selector?: (item: T) => number) {
+    return selector ? this.select(selector).avg() : this.sum() / this.count();
 };
-Array.prototype.max = function <T>(this: T[], fn?: (item: T) => number) {
-    return Math.max.apply(Math, fn ? this.select(fn) : this);
+Array.prototype.max = function <T>(this: T[], selector?: (item: T) => number) {
+    return selector ? this.select(selector).max() : Math.max.apply(Math, this);
 };
 
-Array.prototype.min = function <T>(this: T[], fn?: (item: T) => number) {
-    return Math.min.apply(Math, fn ? this.select(fn) : this);
+Array.prototype.min = function <T>(this: T[], selector?: (item: T) => number) {
+    return selector ? this.select(selector).min() : Math.min.apply(Math, this);
 };
-Array.prototype.count = function <T>(this: T[]) {
-    return this.length;
+Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean) {
+    return predicate ? this.asEnumerable().count(predicate) : this.length;
 };
-Array.prototype.groupBy = function <T, TKey>(this: T[], fn: (item: T) => TKey): Array<IGroupArray<TKey, T>> {
-    const result: Array<IGroupArray<TKey, T>> = [];
-    for (const item of this) {
-        const key = fn(item);
-        let group = result.first((o) => JSON.stringify(o.key) === JSON.stringify(key));
-        if (!group) {
-            group = [];
-            group.key = key;
-            result.push(group);
-        }
-        group.push(item);
-    }
-    return result;
+Array.prototype.groupBy = function <T, TKey>(this: T[], keySelector: (item: T) => TKey): GroupByEnumerable<T, TKey> {
+    return this.asEnumerable().groupBy(keySelector);
 };
 Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
-    if (!fn) {
-        fn = (o) => o;
-    }
-    return this.groupBy(fn).select((o) => o.first());
+    return this.asEnumerable().distinct(fn);
 };
 Array.prototype.innerJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult) {
-    return this.selectMany((item1) => {
-        const key1 = keySelector1(item1);
-        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
-        return matched.select((item2) => {
-            return resultSelector(item1, item2);
-        });
-    });
+    return this.asEnumerable().innerJoin(array2, keySelector1, keySelector2, resultSelector);
 };
 Array.prototype.leftJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult) {
-    return this.selectMany((item1) => {
-        const key1 = keySelector1(item1);
-        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
-        if (matched.length === 0)
-            return [resultSelector(item1, null)];
-        return matched.select((item2) => {
-            return resultSelector(item1, item2);
-        });
-    });
+    return this.asEnumerable().leftJoin(array2, keySelector1, keySelector2, resultSelector);
 };
 Array.prototype.rightJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult) {
-    return array2.selectMany((item2) => {
-        const key2 = keySelector2(item2);
-        const matched = this.where((item1) => JSON.stringify(keySelector1(item1)) === JSON.stringify(key2));
-        if (matched.length === 0)
-            return [resultSelector(null, item2)];
-        return matched.select((item1) => {
-            return resultSelector(item1, item2);
-        });
-    });
+    return this.asEnumerable().rightJoin(array2, keySelector1, keySelector2, resultSelector);
 };
 Array.prototype.fullJoin = function <T, T2, TKey, TResult>(this: T[], array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult) {
-    const result = this.selectMany((item1) => {
-        const key1 = keySelector1(item1);
-        const matched = array2.where((item2) => JSON.stringify(keySelector2(item2)) === JSON.stringify(key1));
-        if (matched.length === 0)
-            return [resultSelector(item1, null)];
-        return matched.select((item2) => {
-            return resultSelector(item1, item2);
-        });
-    });
-    const leftArray2 = array2.where((item2) => {
-        const key2 = keySelector2(item2);
-        return this.all((item1) => JSON.stringify(keySelector1(item1)) !== JSON.stringify(key2));
-    }).select((item2) => resultSelector(null, item2));
-
-    return result.concat(leftArray2);
+    return this.asEnumerable().fullJoin(array2, keySelector1, keySelector2, resultSelector);
 };
-Array.prototype.union = function <T>(this: T[], array2: T[], all: boolean = false) {
-    let result = this.concat(array2);
-    if (!all)
-        result = result.distinct();
-
-    return result;
+Array.prototype.union = function <T>(this: T[], array2: T[], isUnionAll: boolean = false) {
+    return this.asEnumerable().union(array2, isUnionAll);
 };
 Array.prototype.intersect = function <T>(this: T[], array2: T[]) {
-    return this.where((item1) => {
-        return array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
-    });
+    return this.asEnumerable().intersect(array2);
 };
 Array.prototype.except = function <T>(this: T[], array2: T[]) {
-    return this.where((item1) => {
-        return !array2.any((item2) => JSON.stringify(item2) === JSON.stringify(item1));
-    });
+    return this.asEnumerable().except(array2);
 };
 Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM) {
-    const dataResult: Array<IGroupArray<TResult, any>> = [];
-    for (const item of this) {
-        const dimensionKey = {} as TResult;
-        // tslint:disable-next-line:forin
-        for (const key in dimensions) {
-            dimensionKey[key] = dimensions[key](item);
-        }
-        let group = dataResult.first((o) => JSON.stringify(o.key) === JSON.stringify(dimensionKey));
-        if (!group) {
-            group = [];
-            group.key = dimensionKey;
-            dataResult.push(group);
-        }
-        group.push(item);
-    }
-
-    return dataResult.select((o) => {
-        for (const key in metrics) {
-            if (o.key)
-                o.key[key] = metrics[key](o);
-        }
-        return o.key as TResult;
-    });
+    return this.asEnumerable().pivot(dimensions, metrics);
 };

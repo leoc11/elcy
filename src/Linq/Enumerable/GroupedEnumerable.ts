@@ -1,4 +1,4 @@
-import { Enumerable } from "./Enumerable";
+import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
 
 export class GroupedEnumerable<T, K> extends Enumerable<T> {
@@ -31,10 +31,9 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> {
                     return result;
                 }
                 curKey = this.keySelector(result.value);
-            } while (!this.keyComparer(curKey, this.key));
+            } while (!keyComparer(curKey, this.key));
             this.result[this.pointer++] = result.value;
         }
         return result;
     }
-    private keyComparer = (a: K, b: K) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 }

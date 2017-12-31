@@ -1,5 +1,5 @@
 import { Enumerable, keyComparer } from "./Enumerable";
-import { WhereEnumerable } from "./WhereEnumerable";
+import { defaultResultFn } from "./InnerJoinEnumerable";
 
 function* leftjoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumerable<T2>, keySelector1: (item: T) => K, keySelector2: (item: T2) => K, resultSelector: (item1: T, item2: T2 | null) => R) {
     enumerable1.resetPointer();
@@ -24,7 +24,7 @@ function* leftjoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumera
 }
 export class LeftJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enumerable<R> {
     private generator: IterableIterator<any>;
-    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T, item2: T2 | null) => R) {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T, item2: T2 | null) => R = defaultResultFn) {
         super();
         this.generator = leftjoin(parent, parent2, keySelector1, keySelector2, resultSelector);
     }

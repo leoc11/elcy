@@ -1,19 +1,10 @@
 import { Enumerable, keyComparer } from "./Enumerable";
-
-const defaultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R => {
-    const result = {} as any;
-    if (item2)
-        for (const prop in item2)
-            result[prop] = item2[prop];
-    if (item1)
-        for (const prop in item1)
-            result[prop] = item1[prop];
-    return result;
-};
+import { defaultResultFn } from "./InnerJoinEnumerable";
 
 function* fulljoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumerable<T2>, keySelector1: (item: T) => K, keySelector2: (item: T2) => K, resultSelector: (item1: T | null, item2: T2 | null) => R) {
     enumerable1.resetPointer();
     let result1 = enumerable1.next();
+    const enum2array = enumerable2.toArray();
     while (!result1.done) {
         const key1 = keySelector1(result1.value);
         enumerable2.resetPointer();
@@ -23,6 +14,7 @@ function* fulljoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumera
             if (keyComparer(key1, keySelector2(result2.value))) {
                 hasMatch = true;
                 yield resultSelector(result1.value, result2.value);
+                enum2array.remove(result2.value);
             }
             result2 = enumerable2.next();
         }
@@ -31,10 +23,13 @@ function* fulljoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumera
         }
         result1 = enumerable1.next();
     }
+    while (enum2array.length > 0) {
+        yield resultSelector(null, enum2array.shift() as T2);
+    }
 }
 export class FullJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enumerable<R> {
     private generator: IterableIterator<any>;
-    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T | null, item2: T2 | null) => R = defaultFn) {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T | null, item2: T2 | null) => R = defaultResultFn) {
         super();
         this.generator = fulljoin(parent, parent2, keySelector1, keySelector2, resultSelector);
     }
