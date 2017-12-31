@@ -208,7 +208,7 @@ export class Enumerable<T = any> implements IterableIterator<T> {
                     dimensionKey[key] = dimensions[key](o);
             }
             return dimensionKey;
-        }, true), (o) => {
+        }), (o) => {
             for (const key in metrics) {
                 if (o.key)
                     o.key[key] = metrics[key](o.toArray());
