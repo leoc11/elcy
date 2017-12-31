@@ -38,7 +38,7 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
             this.result[this.pointer].addResult(nResult.value);
             result.done = false;
         }
-        this.reversepointer++;
+        this.pointer++;
         return result;
     }
 }

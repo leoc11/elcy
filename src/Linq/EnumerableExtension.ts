@@ -120,6 +120,6 @@ Array.prototype.intersect = function <T>(this: T[], array2: T[]) {
 Array.prototype.except = function <T>(this: T[], array2: T[]) {
     return this.asEnumerable().except(array2);
 };
-Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM) {
+Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
     return this.asEnumerable().pivot(dimensions, metrics);
 };

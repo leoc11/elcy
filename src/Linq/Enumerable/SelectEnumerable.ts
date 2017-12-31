@@ -24,12 +24,12 @@ export class SelectEnumerable<T = any, K = any> extends Enumerable<K> {
         this.pointer++;
         return result;
     }
-    public prev(): IteratorResult<K> {
+    public resultAt(): IteratorResult<K> {
         const result: IteratorResult<K> = {
             done: true,
             value: this.result[-1]
         };
-        const presult = this.parent.prev();
+        const presult = this.parent.resultAt();
         if (presult.done)
             return presult as IteratorResult<any>;
         result.value = this.selector(presult.value);

@@ -33,26 +33,4 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
         this.pointer++;
         return result;
     }
-    public prev(): IteratorResult<K> {
-        let result: IteratorResult<K> = {
-            done: true,
-            value: this.result[-1]
-        };
-        if (this.innerResult)
-            result = this.innerResult.prev();
-
-        if (result.done) {
-            const presult = this.parent.prev();
-            if (presult.done)
-                return presult as IteratorResult<any>;
-
-            const innerArray = this.selector(presult.value);
-            this.innerResult = Array.isArray(innerArray) ? new Enumerable(innerArray) : innerArray;
-            result = this.innerResult.prev();
-            if (result.done)
-                return result;
-        }
-        this.reversepointer++;
-        return result;
-    }
 }

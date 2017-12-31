@@ -18,7 +18,6 @@ import { WhereEnumerable } from "./WhereEnumerable";
 export const keyComparer = <T>(a: T, b: T) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 export class Enumerable<T = any> implements IterableIterator<T> {
     protected pointer = 0;
-    protected reversepointer = 0;
     protected isResultComplete = false;
     protected result: T[] = [];
     protected parent: Enumerable;
@@ -35,32 +34,20 @@ export class Enumerable<T = any> implements IterableIterator<T> {
             value: this.result[this.pointer++]
         };
     }
-    public prev(): IteratorResult<T> {
-        return {
-            done: this.reversepointer < 0,
-            value: this.result[this.result.length - (this.reversepointer + 1)]
-        };
-    }
     public resetPointer(cleanReset = false) {
         this.pointer = 0;
         if (cleanReset && this.parent)
             this.parent.resetPointer(cleanReset);
     }
-    public resetReversePointer(cleanReset = false) {
-        this.reversepointer = 0;
-        if (cleanReset && this.parent)
-            this.parent.resetReversePointer(cleanReset);
-    }
     public reset(cleanReset = false) {
         this.result = [];
         this.resetPointer();
-        this.resetReversePointer();
         if (cleanReset && this.parent)
             this.parent.reset(cleanReset);
     }
-
     public toArray() {
         const arr = [];
+        this.resetPointer();
         for (const i of this) {
             arr.push(i);
         }
@@ -93,13 +80,9 @@ export class Enumerable<T = any> implements IterableIterator<T> {
         }
         return undefined;
     }
-    public last(predicate?: (item: T) => boolean) { // TODO
-        this.resetReversePointer();
-        let prev = this.prev();
-        while (!prev.done && (predicate && !predicate(prev.value))) {
-            prev = this.prev();
-        }
-        return prev.value;
+    public last(predicate?: (item: T) => boolean) {
+        const array = predicate ? this.where(predicate).toArray() : this.toArray();
+        return array[array.length - 1];
     }
     public count(predicate?: (item: T) => boolean) {
         let count = 0;
