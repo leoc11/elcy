@@ -4,7 +4,7 @@ import { ForeignKeyMetaData, InheritanceMetaData } from "../Relation";
 import { IOrderCondition } from "./IOrderCondition";
 
 export interface IEntityMetaData<T extends TParent, TParent = any> {
-    defaultOrder?: IOrderCondition;
+    defaultOrder?: IOrderCondition[];
     primaryKeys: string[];
     deleteProperty?: string;
     createDateProperty?: string;

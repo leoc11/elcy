@@ -5,8 +5,9 @@ import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } 
 import { ForeignKeyMetaData, InheritanceMetaData } from "./Relation";
 
 export class EntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
+    public schema: string = "dbo";
     public name: string;
-    public defaultOrder?: IOrderCondition;
+    public defaultOrder?: IOrderCondition[];
     public primaryKeys: string[] = [];
     public deleteProperty: string;
     public createDateProperty: string;
@@ -33,7 +34,7 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public afterSave = new ClassEventListener<T, ISaveEventParam, void>(false);
     public afterDelete = new ClassEventListener<T, IDeleteEventParam, void>(false);
 
-    constructor(public type: genericType<T>, name?: string, defaultOrder?: IOrderCondition) {
+    constructor(public type: genericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
         if (typeof name !== "undefined")
             this.name = name;
         if (typeof defaultOrder !== "undefined")

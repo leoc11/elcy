@@ -1,8 +1,8 @@
 import { IObjectType } from "../Common/Type";
 import { Connection } from "./Connection";
+import { DbSet } from "./DbSet";
 import { NamingStrategy } from "./NamingStrategy";
 import { QueryBuilder } from "./QueryBuilder";
-import { DbSet } from "./DbSet";
 
 export abstract class DbContext {
     public readonly database: string;

@@ -10,7 +10,7 @@ export class ExpressionFactory {
         return () => new ExpressionBase<K>();
     }
 
-    public ToExpression<T, K>(fn: (item?: T) => any, ctor: IObjectType<T>): FunctionExpression<T, K> {
+    public ToExpression<T, K = any, KE extends ({[key in keyof K]: any} | K) = any>(fn: (item?: T) => K, ctor: IObjectType<T>): FunctionExpression<T, KE> {
         return (new ExpressionBuilder()).ParseToExpression(fn.toString(), [ctor]);
     }
     public ToLiteralObjectExpression<T, K, KE extends {[key in keyof K]: IExpression}, KR extends { [key: string]: FunctionExpression<T, any> }>(fn: (item?: T) => K, sourceType: IObjectType<T>): KR {

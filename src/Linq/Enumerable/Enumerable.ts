@@ -138,7 +138,7 @@ export class Enumerable<T = any> implements IterableIterator<T> {
         }
         return false;
     }
-    public select<TReturn>(selector: (item: T) => TReturn): SelectEnumerable<T, TReturn> {
+    public select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn> {
         return new SelectEnumerable(this, selector);
     }
     public selectMany<TReturn>(selector: (item: T) => TReturn[]): SelectManyEnumerable<T, TReturn> {
