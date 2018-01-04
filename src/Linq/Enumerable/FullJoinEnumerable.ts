@@ -52,31 +52,4 @@ export class FullJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enu
         this.pointer++;
         return result;
     }
-    // public next(): IteratorResult<R> {
-    //     const result: IteratorResult<R> = {
-    //         done: this.result.length < this.pointer,
-    //         value: this.result[this.pointer]
-    //     };
-    //     if (result.done && !this.isResultComplete) {
-    //         let result1 = this.parent.next();
-    //         while (!result1.done) {
-    //             const key1 = this.keySelector1(result1.value);
-    //             let result2 = this.parent2.next();
-    //             while (!result2.done && !keyComparer(key1, this.keySelector2(result2.value))) {
-    //                 result2 = this.parent2.next();
-    //             }
-    //             if (result2.done) {
-    //                 result1 = this.parent.next();
-    //                 continue;
-    //             }
-    //             result.value = this.result[this.pointer] = this.resultSelector(result1.value, result2.value);
-    //             result.done = false;
-    //             break;
-    //         }
-    //         return result;
-    //     }
-
-    //     this.pointer++;
-    //     return result;
-    // }
 }

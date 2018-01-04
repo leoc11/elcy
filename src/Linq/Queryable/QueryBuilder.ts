@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../../ExpressionBuilder/ExpressionTransformer";
 import { ColumnExpression } from "./QueryExpression/ColumnExpression";
 import { GroupByExpression } from "./QueryExpression/GroupByExpression";
 import { JoinTableExpression } from "./QueryExpression/JoinTableExpression";
@@ -7,7 +8,7 @@ import { TableExpression } from "./QueryExpression/TableExpression";
 import { UnionExpression } from "./QueryExpression/UnionExpression";
 import { WhereExpression } from "./QueryExpression/WhereExpression";
 
-export abstract class QueryBuilder {
+export abstract class QueryBuilder extends ExpressionTransformer {
     public enableEscape: boolean = true;
     public parameters: { [key: string]: any } = {};
     public namingStrategy = {};

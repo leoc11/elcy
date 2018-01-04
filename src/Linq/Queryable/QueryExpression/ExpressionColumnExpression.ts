@@ -3,8 +3,9 @@ import { ExpressionBase } from "../../../ExpressionBuilder/Expression/index";
 import { ColumnMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../QueryBuilder";
 import { TableExpression } from "./TableExpression";
+import { ColumnExpression } from "./ColumnExpression";
 
-export class ColumnExpression<T = any, TE = any> {
+export class ExpressionColumnExpression<TE = any> extends ColumnExpression<any, TE> {
     // Column name on db
     public get name() {
         return this.columnMetaData.name;

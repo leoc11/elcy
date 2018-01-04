@@ -3,7 +3,8 @@ import { QueryBuilder } from "../QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
 import { GroupByExpression } from "./GroupByExpression";
 import { TableExpression } from "./TableExpression";
+import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 
-export interface ISelectExpression {
+export interface IQueryExpression<T> extends IExpression<T> {
     alias: string;
 }

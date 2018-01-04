@@ -4,8 +4,9 @@ import { EntityMetaData } from "../../../MetaData";
 import { QueryBuilder } from "../QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
 import { IOrderExpression } from "./IOrderExpression";
+import { ISelectExpression } from "./ISelectExpression";
 
-export class TableExpression<T = any> {
+export class TableExpression<T = any> implements ISelectExpression {
     public get name() {
         return this.metaData.name;
     }

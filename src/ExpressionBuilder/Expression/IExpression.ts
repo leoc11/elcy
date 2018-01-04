@@ -1,8 +1,9 @@
 import { genericType, IObjectType } from "../../Common/Type";
+import { ExpressionTransformer } from "../ExpressionTransformer";
 export interface IExpression<T = any> {
     type: genericType<T>;
-    ToString(): string;
-    Execute(): T | any;
+    ToString(transformer: ExpressionTransformer): string;
+    Execute(transformer: ExpressionTransformer): T | any;
 }
 
 export class ExpressionBase<T = any> implements IExpression<T> {
