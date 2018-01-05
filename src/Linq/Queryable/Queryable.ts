@@ -31,7 +31,7 @@ export class Queryable<T = any> extends Enumerable<T> {
         return new SelectQueryable<T, TReturn>(this, selector, type);
     }
     public selectMany<TReturn>(selector: (item: T) => TReturn[], type?: genericType<TReturn>): Queryable<TReturn> {
-        return new SelectManyQueryable<T, TReturn>(this, selector!, type);
+        return new SelectManyQueryable<T, TReturn>(this, selector, type);
     }
     public where(predicate: (item: T) => boolean): Queryable<T> {
         return new WhereQueryable(this, predicate);
