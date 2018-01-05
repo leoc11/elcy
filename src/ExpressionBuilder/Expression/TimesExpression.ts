@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class TimesExpression extends ExpressionBase<number> {
@@ -12,10 +13,10 @@ export class TimesExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public toString(): string {
-        return "(" + this.LeftOperand.toString() + " * " + this.RightOperand.toString() + ")";
+    public toString(transformer: ExpressionTransformer): string {
+        return "(" + this.LeftOperand.toString(transformer) + " * " + this.RightOperand.toString(transformer) + ")";
     }
-    public execute() {
-        return this.LeftOperand.execute() * this.RightOperand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        return this.LeftOperand.execute(transformer) * this.RightOperand.execute(transformer);
     }
 }

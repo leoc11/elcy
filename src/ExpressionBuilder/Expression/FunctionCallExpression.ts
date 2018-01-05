@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
@@ -16,16 +17,16 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
         super(); // TODO: must set specific type. must specify funtion => type map.
     }
 
-    public toString(): string {
+    public toString(transformer: ExpressionTransformer): string {
         const paramStr = [];
         for (const param of this.Params)
-            paramStr.push(param.toString());
+            paramStr.push(param.toString(transformer));
         return this.FunctionName + "(" + paramStr.join(", ") + ")";
     }
-    public execute() {
+    public execute(transformer: ExpressionTransformer) {
         const params = [];
         for (const param of this.Params)
-            params.push(param.execute());
+            params.push(param.execute(transformer));
         return this.FunctionFn.apply(null, params);
     }
 }

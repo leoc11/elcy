@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class RightDecrementExpression extends ExpressionBase<number> {
@@ -12,10 +13,10 @@ export class RightDecrementExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public toString(): string {
-        return this.Operand.toString() + "--";
+    public toString(transformer: ExpressionTransformer): string {
+        return this.Operand.toString(transformer) + "--";
     }
-    public execute() {
-        return this.Operand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        return this.Operand.execute(transformer);
     }
 }

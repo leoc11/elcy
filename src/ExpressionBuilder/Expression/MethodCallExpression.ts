@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> {
@@ -20,17 +21,17 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         }
     }
 
-    public toString(): string {
+    public toString(transformer: ExpressionTransformer): string {
         const paramStr = [];
         for (const param of this.Params)
-            paramStr.push(param.toString());
-        return this.ObjectOperand.toString() + "." + this.MethodName + "(" + paramStr.join(", ") + ")";
+            paramStr.push(param.toString(transformer));
+        return this.ObjectOperand.toString(transformer) + "." + this.MethodName + "(" + paramStr.join(", ") + ")";
     }
-    public execute() {
-        const objectValue = this.ObjectOperand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        const objectValue = this.ObjectOperand.execute(transformer);
         const params = [];
         for (const param of this.Params)
-            params.push(param.execute());
+            params.push(param.execute(transformer));
         return objectValue[this.MethodName].apply(objectValue, params);
     }
 }

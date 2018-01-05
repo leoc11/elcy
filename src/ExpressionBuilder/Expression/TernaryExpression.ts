@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class TernaryExpression<TType> extends ExpressionBase<TType> {
@@ -12,10 +13,10 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
         super(); // TODO: resolve constructor.
     }
 
-    public toString(): string {
-        return "(" + this.LogicalOperand.toString() + " ? " + this.TrueResultOperand.toString() + " : " + this.FalseResultOperand.toString() + ")";
+    public toString(transformer: ExpressionTransformer): string {
+        return "(" + this.LogicalOperand.toString(transformer) + " ? " + this.TrueResultOperand.toString(transformer) + " : " + this.FalseResultOperand.toString(transformer) + ")";
     }
-    public execute() {
-        return this.LogicalOperand.execute() ? this.TrueResultOperand.execute() : this.FalseResultOperand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        return this.LogicalOperand.execute(transformer) ? this.TrueResultOperand.execute(transformer) : this.FalseResultOperand.execute(transformer);
     }
 }

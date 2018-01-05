@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class BitwiseXorExpression extends ExpressionBase<number> {
@@ -12,11 +13,11 @@ export class BitwiseXorExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public toString(): string {
-        return "(" + this.LeftOperand.toString() + " ^ " + this.RightOperand.toString() + ")";
+    public toString(transformer: ExpressionTransformer): string {
+        return "(" + this.LeftOperand.toString(transformer) + " ^ " + this.RightOperand.toString(transformer) + ")";
     }
-    public execute() {
+    public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:no-bitwise
-        return this.LeftOperand.execute() ^ this.RightOperand.execute();
+        return this.LeftOperand.execute(transformer) ^ this.RightOperand.execute(transformer);
     }
 }

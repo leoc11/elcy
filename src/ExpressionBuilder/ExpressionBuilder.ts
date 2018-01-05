@@ -1,3 +1,4 @@
+import { genericType } from "../Common/Type";
 import * as Expression from "./Expression/";
 import { IExpression } from "./Expression/";
 import {
@@ -11,7 +12,6 @@ import {
     TernaryOperators,
     UnaryOperators
 } from "./ExpressionToken/";
-import { genericType, IObjectType } from "../Common/Type";
 
 const GlobalObjects: { [key: string]: any } = global || window;
 export class ExpressionBuilder {

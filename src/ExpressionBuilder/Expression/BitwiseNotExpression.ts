@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class BitwiseNotExpression extends ExpressionBase<number> {
@@ -12,11 +13,11 @@ export class BitwiseNotExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public toString(): string {
-        return "~" + this.Operand.toString();
+    public toString(transformer: ExpressionTransformer): string {
+        return "~" + this.Operand.toString(transformer);
     }
-    public execute() {
+    public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:no-bitwise
-        return ~this.Operand.execute();
+        return ~this.Operand.execute(transformer);
     }
 }

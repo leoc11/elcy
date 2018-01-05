@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class StrictEqualExpression<TType> extends ExpressionBase<boolean> {
@@ -12,11 +13,11 @@ export class StrictEqualExpression<TType> extends ExpressionBase<boolean> {
         super(Boolean);
     }
 
-    public toString(): string {
-        return "(" + this.LeftOperand.toString() + " === " + this.RightOperand.toString() + ")";
+    public toString(transformer: ExpressionTransformer): string {
+        return "(" + this.LeftOperand.toString(transformer) + " === " + this.RightOperand.toString(transformer) + ")";
     }
-    public execute() {
+    public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:triple-equals
-        return this.LeftOperand.execute() === this.RightOperand.execute();
+        return this.LeftOperand.execute(transformer) === this.RightOperand.execute(transformer);
     }
 }

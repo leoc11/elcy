@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class InstanceofExpression extends ExpressionBase<boolean> {
@@ -12,10 +13,10 @@ export class InstanceofExpression extends ExpressionBase<boolean> {
         super(Boolean);
     }
 
-    public toString(): string {
-        return "(" + this.LeftOperand.toString() + " instanceof " + this.RightOperand.toString() + ")";
+    public toString(transformer: ExpressionTransformer): string {
+        return "(" + this.LeftOperand.toString(transformer) + " instanceof " + this.RightOperand.toString(transformer) + ")";
     }
-    public execute() {
-        return this.LeftOperand.execute() instanceof this.RightOperand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        return this.LeftOperand.execute(transformer) instanceof this.RightOperand.execute(transformer);
     }
 }

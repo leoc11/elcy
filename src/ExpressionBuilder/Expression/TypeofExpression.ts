@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class TypeofExpression extends ExpressionBase<string> {
@@ -12,11 +13,10 @@ export class TypeofExpression extends ExpressionBase<string> {
         super(String);
     }
 
-    public toString(): string {
-        return "typeof " + this.Operand.toString();
+    public toString(transformer: ExpressionTransformer): string {
+        return "typeof " + this.Operand.toString(transformer);
     }
-    public execute() {
-        // tslint:disable-next-line:no-bitwise
-        return typeof this.Operand.execute();
+    public execute(transformer: ExpressionTransformer) {
+        return typeof this.Operand.execute(transformer);
     }
 }
