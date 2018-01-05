@@ -1,5 +1,5 @@
 import { IExpression } from "../../../ExpressionBuilder/Expression/index";
-import { QueryBuilder } from "../QueryBuilder";
+import { QueryBuilder } from "../../QueryBuilder";
 
 export interface IQueryExpression<T> extends IExpression<T> {
     toString(queryBuilder: QueryBuilder): string;

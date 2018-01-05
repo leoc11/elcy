@@ -1,7 +1,7 @@
 import { IObjectType } from "../../../Common/Type";
 import { entityMetaKey } from "../../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../../../MetaData";
-import { QueryBuilder } from "../QueryBuilder";
+import { QueryBuilder } from "../../QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";

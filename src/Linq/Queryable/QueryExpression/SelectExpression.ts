@@ -1,6 +1,6 @@
-import { IObjectType, genericType } from "../../../Common/Type";
+import { genericType } from "../../../Common/Type";
 import { IExpression } from "../../../ExpressionBuilder/Expression/index";
-import { QueryBuilder } from "../QueryBuilder";
+import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";

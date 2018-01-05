@@ -3,11 +3,11 @@ import { classBase, InheritanceType, IObjectType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option";
 import { AbstractEntityMetaData, ColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface";
+import { IEntityMetaData, IOrderCondition } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/index";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 
-export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOrder?: (item: T) => any) {
+export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOrder?: IOrderCondition[]) {
     return (type: IObjectType<T>) => {
         const entityMetadata = new AbstractEntityMetaData(type, defaultOrder);
         const parentType = Reflect.getPrototypeOf(type) as IObjectType<TParent>;
@@ -44,7 +44,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOr
                     if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                         entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 
-                    const inheritedProperties = parentMetaData.properties.except(entityMetadata.properties);
+                    const inheritedProperties = parentMetaData.properties.except(entityMetadata.properties).toArray();
                     inheritedProperties.forEach((prop) => {
                         entityMetadata.properties.push(prop);
                         const columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
@@ -52,7 +52,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOr
                         Reflect.defineMetadata(columnMetaKey, inheritColumnMeta, type, prop);
                     });
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
-                        const additionProperties = entityMetadata.properties.except(parentMetaData.properties);
+                        const additionProperties = entityMetadata.properties.except(parentMetaData.properties).toArray();
                         additionProperties.forEach((prop) => {
                             const columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, type, prop);
                             const inheritColumnMeta = new InheritedColumnMetaData(columnMeta, parentType, prop);

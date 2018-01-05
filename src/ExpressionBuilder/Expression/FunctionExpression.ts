@@ -1,5 +1,6 @@
 import { genericType } from "../../Common/Type";
 import { ExpressionBuilder } from "../ExpressionBuilder";
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
@@ -20,14 +21,14 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         super(type);
     }
 
-    public toString(): string {
+    public toString(transformer: ExpressionTransformer): string {
         const params = [];
         for (const param of this.Params)
             params.push(param.toString());
 
-        return "(" + params.join(", ") + ") => {" + this.Body.toString() + "}";
+        return "(" + params.join(", ") + ") => {" + this.Body.toString(transformer) + "}";
     }
-    public execute(): TResult {
+    public execute(transformer: ExpressionTransformer): TResult {
         throw new Error("Method not implemented.");
     }
 

@@ -16,12 +16,13 @@ import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 
 export const keyComparer = <T>(a: T, b: T) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
-export class Enumerable<T = any> implements IterableIterator<T> {
+export class Enumerable<T = any> extends Array<T> {
     protected pointer = 0;
     protected isResultComplete = false;
     protected result: T[] = [];
     protected parent: Enumerable;
     constructor(result: T[] = []) {
+        super();
         this.result = result;
         this.isResultComplete = true;
     }
@@ -71,14 +72,14 @@ export class Enumerable<T = any> implements IterableIterator<T> {
         }
         return false;
     }
-    public first(predicate?: (item: T) => boolean) {
+    public first(predicate?: (item: T) => boolean): T {
         this.resetPointer();
         for (const item of this) {
             if (!predicate || predicate(item)) {
                 return item;
             }
         }
-        return undefined;
+        return undefined as any;
     }
     public last(predicate?: (item: T) => boolean) {
         const array = predicate ? this.where(predicate).toArray() : this.toArray();
@@ -110,7 +111,7 @@ export class Enumerable<T = any> implements IterableIterator<T> {
         }
         return sum / count;
     }
-    public max(selector?: (item: T) => number) {
+    public max(selector?: (item: T) => number): number {
         this.resetPointer();
         let max: number | undefined;
         for (const item of this) {
@@ -118,9 +119,9 @@ export class Enumerable<T = any> implements IterableIterator<T> {
             if (!max || max < num)
                 max = num;
         }
-        return max;
+        return -Infinity;
     }
-    public min(selector?: (item: T) => number) {
+    public min(selector?: (item: T) => number): number {
         this.resetPointer();
         let min: number | undefined;
         for (const item of this) {
@@ -128,7 +129,7 @@ export class Enumerable<T = any> implements IterableIterator<T> {
             if (!min || min > num)
                 min = num;
         }
-        return min;
+        return Infinity;
     }
     public contains(item: T) {
         this.resetPointer();
@@ -198,5 +199,8 @@ export class Enumerable<T = any> implements IterableIterator<T> {
             }
             return o.key;
         });
+    }
+    public include(...includes: Array<(item: T) => any>): Enumerable<T> {
+        return this;
     }
 }

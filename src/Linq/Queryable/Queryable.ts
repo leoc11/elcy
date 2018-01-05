@@ -1,12 +1,11 @@
 import { genericType, orderDirection } from "../../Common/Type";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
-import { QueryBuilder } from "../../Sql/QueryBuilder";
 import { Enumerable } from "../Enumerable";
+import { QueryBuilder } from "../QueryBuilder";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
 import { FullJoinQueryable } from "./FullJoinQueryable";
 import { GroupByQueryable } from "./GroupbyQueryable";
+import { IncludeQueryable } from "./IncludeQueryable";
 import { InnerJoinQueryable } from "./InnerJoinQueryable";
 import { IntersectQueryable } from "./IntersectQueryable";
 import { LeftJoinQueryable } from "./LeftJoinQueryable";
@@ -74,5 +73,8 @@ export class Queryable<T = any> extends Enumerable<T> {
     }
     public pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Queryable<TResult> {
         return new PivotQueryable(this, dimensions, metrics);
+    }
+    public include(...includes: Array<(item: T) => any>): Queryable<T> {
+        return new IncludeQueryable(this, includes);
     }
 }

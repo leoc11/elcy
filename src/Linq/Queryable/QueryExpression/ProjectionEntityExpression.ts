@@ -1,5 +1,5 @@
 import { IObjectType } from "../../../Common/Type";
-import { QueryBuilder } from "../QueryBuilder";
+import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";

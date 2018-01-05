@@ -2,12 +2,12 @@ import "reflect-metadata";
 import { classBase, genericType, InheritanceType, IObjectType } from "../../Common/Type";
 import { AbstractEntityMetaData, ColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface";
+import { IEntityMetaData, IOrderCondition } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/index";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { IColumnOption } from "../Option";
 
-export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: (item: T) => any, allowInheritance = true) {
+export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderCondition[], allowInheritance = true) {
     return (type: IObjectType<T>) => {
         if (name)
             name = type.name;

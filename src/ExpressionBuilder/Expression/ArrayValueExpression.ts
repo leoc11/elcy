@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
@@ -15,16 +16,16 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
         this.Items = items;
     }
 
-    public toString() {
+    public toString(transformer: ExpressionTransformer) {
         const itemString = [];
         for (const item of this.Items)
-            itemString.push(item.toString());
+            itemString.push(item.toString(transformer));
         return "[" + itemString.join(", ") + "]";
     }
-    public execute() {
+    public execute(transformer: ExpressionTransformer) {
         const arrayValues = [];
         for (const item of this.Items)
-            arrayValues.push(item.execute());
+            arrayValues.push(item.execute(transformer));
         return arrayValues;
     }
 

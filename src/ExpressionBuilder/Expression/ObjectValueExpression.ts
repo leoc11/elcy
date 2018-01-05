@@ -1,3 +1,4 @@
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
@@ -22,16 +23,16 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
         this.Object = objectValue;
     }
 
-    public toString() {
+    public toString(transformer: ExpressionTransformer) {
         const itemString = [];
         for (const item in this.Object)
-            itemString.push(item + ": " + this.Object[item].toString());
+            itemString.push(item + ": " + this.Object[item].toString(transformer));
         return "{" + itemString.join(", ") + "}";
     }
-    public execute(): TType {
+    public execute(transformer: ExpressionTransformer): TType {
         const objectValue: { [Key: string]: IExpression } = {};
         for (const prop in this.Object)
-            objectValue[prop] = this.Object[prop].execute();
+            objectValue[prop] = this.Object[prop].execute(transformer);
         return objectValue as TType;
     }
 }

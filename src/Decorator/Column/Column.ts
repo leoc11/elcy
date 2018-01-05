@@ -10,7 +10,7 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
     return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
-            AbstractEntity(target.constructor as ObjectConstructor);
+            AbstractEntity()(target.constructor as ObjectConstructor);
             entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         }
         if (!metadata.name) {

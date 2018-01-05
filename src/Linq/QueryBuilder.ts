@@ -1,17 +1,16 @@
-import { ExpressionTransformer } from "../../ExpressionBuilder/ExpressionTransformer";
-import { GroupByExpression } from "./QueryExpression/GroupByExpression";
-import { IColumnExpression } from "./QueryExpression/IColumnExpression";
-import { JoinTableExpression } from "./QueryExpression/JoinTableExpression";
-import { OrderByExpression } from "./QueryExpression/OrderByExpression";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { EntityExpression } from "./QueryExpression/TableExpression";
-import { UnionExpression } from "./QueryExpression/UnionExpression";
-import { WhereExpression } from "./QueryExpression/WhereExpression";
+import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
+import { NamingStrategy } from "./NamingStrategy";
+import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
+import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
+import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
+import { JoinTableExpression } from "./Queryable/QueryExpression/JoinTableExpression";
+import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
+import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public enableEscape: boolean = true;
     public parameters: { [key: string]: any } = {};
-    public namingStrategy = {};
+    public namingStrategy: NamingStrategy = new NamingStrategy();
     private aliasCount: number = 0;
     public newAlias() {
         return "ALIAS" + this.aliasCount++;

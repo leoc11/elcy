@@ -1,7 +1,8 @@
+import { IGroupArray } from "../Interface/IGroupArray";
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
 
-export class GroupedEnumerable<T, K> extends Enumerable<T> {
+export class GroupedEnumerable<T, K> extends Enumerable<T> implements IGroupArray<T, K> {
     public get source() {
         return this.parent.parent;
     }
