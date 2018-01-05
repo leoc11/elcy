@@ -12,11 +12,11 @@ export class TypeofExpression extends ExpressionBase<string> {
         super(String);
     }
 
-    public ToString(): string {
-        return "typeof " + this.Operand.ToString();
+    public toString(): string {
+        return "typeof " + this.Operand.toString();
     }
-    public Execute() {
+    public execute() {
         // tslint:disable-next-line:no-bitwise
-        return typeof this.Operand.Execute();
+        return typeof this.Operand.execute();
     }
 }

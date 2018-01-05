@@ -12,21 +12,21 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
         super(); // TODO
     }
 
-    public ToString(): string {
-        let result = this.ObjectOperand.ToString();
+    public toString(): string {
+        let result = this.ObjectOperand.toString();
         if (this.MemberName instanceof ExpressionBase)
-            result += "[" + this.MemberName.ToString() + "]";
+            result += "[" + this.MemberName.toString() + "]";
         else
             result += "." + this.MemberName;
         return result;
     }
-    public Execute() {
+    public execute() {
         let member = "";
         if (this.MemberName instanceof ExpressionBase)
-            member = this.MemberName.Execute();
+            member = this.MemberName.execute();
         else
             member = this.MemberName;
 
-        return this.ObjectOperand.Execute()[member];
+        return this.ObjectOperand.execute()[member];
     }
 }

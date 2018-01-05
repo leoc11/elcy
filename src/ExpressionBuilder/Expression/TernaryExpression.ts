@@ -12,10 +12,10 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
         super(); // TODO: resolve constructor.
     }
 
-    public ToString(): string {
-        return "(" + this.LogicalOperand.ToString() + " ? " + this.TrueResultOperand.ToString() + " : " + this.FalseResultOperand.ToString() + ")";
+    public toString(): string {
+        return "(" + this.LogicalOperand.toString() + " ? " + this.TrueResultOperand.toString() + " : " + this.FalseResultOperand.toString() + ")";
     }
-    public Execute() {
-        return this.LogicalOperand.Execute() ? this.TrueResultOperand.Execute() : this.FalseResultOperand.Execute();
+    public execute() {
+        return this.LogicalOperand.execute() ? this.TrueResultOperand.execute() : this.FalseResultOperand.execute();
     }
 }

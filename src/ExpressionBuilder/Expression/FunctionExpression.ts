@@ -20,14 +20,14 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         super(type);
     }
 
-    public ToString(): string {
+    public toString(): string {
         const params = [];
         for (const param of this.Params)
-            params.push(param.ToString());
+            params.push(param.toString());
 
-        return "(" + params.join(", ") + ") => {" + this.Body.ToString() + "}";
+        return "(" + params.join(", ") + ") => {" + this.Body.toString() + "}";
     }
-    public Execute(): TResult {
+    public execute(): TResult {
         throw new Error("Method not implemented.");
     }
 

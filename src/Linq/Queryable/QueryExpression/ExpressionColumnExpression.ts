@@ -2,7 +2,7 @@ import { columnMetaKey } from "../../../Decorator/DecoratorKey";
 import { ExpressionBase } from "../../../ExpressionBuilder/Expression/index";
 import { ColumnMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../QueryBuilder";
-import { TableExpression } from "./TableExpression";
+import { EntityExpression } from "./TableExpression";
 import { ColumnExpression } from "./ColumnExpression";
 
 export class ExpressionColumnExpression<TE = any> extends ColumnExpression<any, TE> {
@@ -17,10 +17,10 @@ export class ExpressionColumnExpression<TE = any> extends ColumnExpression<any, 
             this._columnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
         return this._columnMetaData;
     }
-    public entity: TableExpression<TE>; // entity type/table where this column belong to.
+    public entity: EntityExpression<TE>; // entity type/table where this column belong to.
     // tslint:disable-next-line:variable-name
     private _columnMetaData: ColumnMetaData<T>;
-    constructor(entity: TableExpression<TE>, propertyName: string, alias?: string) {
+    constructor(entity: EntityExpression<TE>, propertyName: string, alias?: string) {
         this.entity = entity;
         this.propertyName = propertyName;
         this.alias = alias;

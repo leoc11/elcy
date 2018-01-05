@@ -15,16 +15,16 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
         this.Items = items;
     }
 
-    public ToString() {
+    public toString() {
         const itemString = [];
         for (const item of this.Items)
-            itemString.push(item.ToString());
+            itemString.push(item.toString());
         return "[" + itemString.join(", ") + "]";
     }
-    public Execute() {
+    public execute() {
         const arrayValues = [];
         for (const item of this.Items)
-            arrayValues.push(item.Execute());
+            arrayValues.push(item.execute());
         return arrayValues;
     }
 

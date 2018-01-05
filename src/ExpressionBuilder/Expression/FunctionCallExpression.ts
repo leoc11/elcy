@@ -16,16 +16,16 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
         super(); // TODO: must set specific type. must specify funtion => type map.
     }
 
-    public ToString(): string {
+    public toString(): string {
         const paramStr = [];
         for (const param of this.Params)
-            paramStr.push(param.ToString());
+            paramStr.push(param.toString());
         return this.FunctionName + "(" + paramStr.join(", ") + ")";
     }
-    public Execute() {
+    public execute() {
         const params = [];
         for (const param of this.Params)
-            params.push(param.Execute());
+            params.push(param.execute());
         return this.FunctionFn.apply(null, params);
     }
 }

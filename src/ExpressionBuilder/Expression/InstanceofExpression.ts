@@ -12,10 +12,10 @@ export class InstanceofExpression extends ExpressionBase<boolean> {
         super(Boolean);
     }
 
-    public ToString(): string {
-        return "(" + this.LeftOperand.ToString() + " instanceof " + this.RightOperand.ToString() + ")";
+    public toString(): string {
+        return "(" + this.LeftOperand.toString() + " instanceof " + this.RightOperand.toString() + ")";
     }
-    public Execute() {
-        return this.LeftOperand.Execute() instanceof this.RightOperand.Execute();
+    public execute() {
+        return this.LeftOperand.execute() instanceof this.RightOperand.execute();
     }
 }

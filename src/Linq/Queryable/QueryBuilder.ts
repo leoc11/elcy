@@ -4,9 +4,10 @@ import { GroupByExpression } from "./QueryExpression/GroupByExpression";
 import { JoinTableExpression } from "./QueryExpression/JoinTableExpression";
 import { OrderByExpression } from "./QueryExpression/OrderByExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { TableExpression } from "./QueryExpression/TableExpression";
+import { EntityExpression } from "./QueryExpression/TableExpression";
 import { UnionExpression } from "./QueryExpression/UnionExpression";
 import { WhereExpression } from "./QueryExpression/WhereExpression";
+import { IColumnExpression } from "./QueryExpression/IColumnExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public enableEscape: boolean = true;
@@ -22,10 +23,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else
             return identity;
     }
-    public toColumnString(column: ColumnExpression) {
+    public toColumnString(column: IColumnExpression) {
         return this.escape(column.entity.alias) + "." + this.escape(column.alias ? column.alias : column.name);
     }
-    public toEntityString(entity: TableExpression): string {
+    public toEntityString(entity: EntityExpression): string {
         if (entity instanceof SelectExpression)
             return "(" + entity.toString(this) + ") AS " + this.escape(entity.alias);
         else
@@ -53,7 +54,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public toWhereString(where: WhereExpression): string {
         return this.toSelectString(where.select) + " " +
-            (where.select instanceof GroupByExpression ? "HAVING " : "WHERE ") + where.where.ToString();
+            (where.select instanceof GroupByExpression ? "HAVING " : "WHERE ") + where.where.toString();
     }
     public toOrderString(order: OrderByExpression): string {
         return this.toSelectString(order.select) + " " +

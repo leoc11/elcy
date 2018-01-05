@@ -12,10 +12,10 @@ export class RightDecrementExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public ToString(): string {
-        return this.Operand.ToString() + "--";
+    public toString(): string {
+        return this.Operand.toString() + "--";
     }
-    public Execute() {
-        return this.Operand.Execute();
+    public execute() {
+        return this.Operand.execute();
     }
 }

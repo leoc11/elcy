@@ -12,11 +12,11 @@ export class BitwiseNotExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public ToString(): string {
-        return "~" + this.Operand.ToString();
+    public toString(): string {
+        return "~" + this.Operand.toString();
     }
-    public Execute() {
+    public execute() {
         // tslint:disable-next-line:no-bitwise
-        return ~this.Operand.Execute();
+        return ~this.Operand.execute();
     }
 }

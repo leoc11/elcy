@@ -3,7 +3,7 @@ import { ExpressionBase } from "./IExpression";
 export class ValueExpression<T> extends ExpressionBase<T> {
     public static Create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
         if (value instanceof ExpressionBase)
-            return new ValueExpression<TType>(value.Execute(), value.ToString());
+            return new ValueExpression<TType>(value.execute(), value.toString());
 
         return new ValueExpression(value, expressionString);
     }
@@ -14,10 +14,10 @@ export class ValueExpression<T> extends ExpressionBase<T> {
         }
     }
 
-    public ToString(): string {
+    public toString(): string {
         return this.ExpressionString;
     }
-    public Execute() {
+    public execute() {
         return this.Value;
     }
 

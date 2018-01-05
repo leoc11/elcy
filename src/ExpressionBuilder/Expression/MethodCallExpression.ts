@@ -20,17 +20,17 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         }
     }
 
-    public ToString(): string {
+    public toString(): string {
         const paramStr = [];
         for (const param of this.Params)
-            paramStr.push(param.ToString());
-        return this.ObjectOperand.ToString() + "." + this.MethodName + "(" + paramStr.join(", ") + ")";
+            paramStr.push(param.toString());
+        return this.ObjectOperand.toString() + "." + this.MethodName + "(" + paramStr.join(", ") + ")";
     }
-    public Execute() {
-        const objectValue = this.ObjectOperand.Execute();
+    public execute() {
+        const objectValue = this.ObjectOperand.execute();
         const params = [];
         for (const param of this.Params)
-            params.push(param.Execute());
+            params.push(param.execute());
         return objectValue[this.MethodName].apply(objectValue, params);
     }
 }

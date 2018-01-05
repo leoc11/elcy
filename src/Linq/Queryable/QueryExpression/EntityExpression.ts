@@ -3,10 +3,11 @@ import { entityMetaKey } from "../../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../../../MetaData";
 import { QueryBuilder } from "../QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
+import { IColumnExpression } from "./IColumnExpression";
+import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { ISelectExpression } from "./ISelectExpression";
 
-export class TableExpression<T = any> implements ISelectExpression {
+export class EntityExpression<T = any> implements IEntityExpression<T> {
     public get name() {
         return this.metaData.name;
     }
@@ -15,7 +16,12 @@ export class TableExpression<T = any> implements ISelectExpression {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
     }
-    public columns: ColumnExpression[] = [];
+    public get columns(): IColumnExpression[] {
+        if (!this._columns) {
+            this._columns = this.metaData.properties.select((o) => new ColumnExpression(this, o)).toArray();
+        }
+        return this._columns;
+    }
     public get defaultOrders(): IOrderExpression[] {
         if (!this._defaultOrders) {
             if (this.metaData.defaultOrder)
@@ -28,17 +34,18 @@ export class TableExpression<T = any> implements ISelectExpression {
         }
         return this._defaultOrders;
     }
-    public type: IObjectType<T>;
-    public alias: string;
     // tslint:disable-next-line:variable-name
     private _metaData: EntityMetaData<T>;
     // tslint:disable-next-line:variable-name
+    private _columns: IColumnExpression[];
+    // tslint:disable-next-line:variable-name
     private _defaultOrders: IOrderExpression[];
-    constructor(type: IObjectType<T>, alias: string) {
-        this.type = type;
-        this.alias = alias;
+    constructor(public readonly type: IObjectType<T>, public alias: string) {
     }
     public toString(queryBuilder: QueryBuilder): string {
+        return queryBuilder.toEntityString(this);
+    }
+    public execute(queryBuilder: QueryBuilder) {
         return queryBuilder.toEntityString(this);
     }
 }

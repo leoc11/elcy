@@ -15,10 +15,10 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
         super(type);
     }
 
-    public ToString(): string {
+    public toString(): string {
         return this.name;
     }
-    public Execute(): TType {
+    public execute(): TType {
         throw new Error("Method not implemented.");
     }
 

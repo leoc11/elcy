@@ -1,18 +1,41 @@
+import { IObjectType, genericType } from "../../../Common/Type";
+import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder";
-import { ColumnExpression } from "./ColumnExpression";
-import { ISelectExpression } from "./ISelectExpression";
-import { TableExpression } from "./TableExpression";
+import { IColumnExpression } from "./IColumnExpression";
+import { IEntityExpression } from "./IEntityExpression";
+import { IOrderExpression } from "./IOrderExpression";
+import { IQueryExpression } from "./IQueryExpression";
 
-export class SelectExpression<T = any>  implements ISelectExpression {
-    public columns: ColumnExpression[] = [];
-    public entity: TableExpression;
+export class SelectExpression<T = any> implements IQueryExpression<T> {
+    [prop: string]: any;
+    public columns: IColumnExpression[] = [];
+    public entity: IEntityExpression;
     public distinct: boolean = false;
-    public top?: number;
-    constructor(entity: TableExpression<T>, public alias: string) {
-        this.entity = entity;
+    public get type(): genericType<T> {
+        return this.entity.type;
     }
+    public paging: { skip?: number, take?: number } = {};
+    public where: IExpression<boolean>;
+    public orders: IOrderExpression[] = [];
+    constructor(entity: IEntityExpression<T> | SelectExpression<T>) {
+        if (entity instanceof SelectExpression)
+            this.copy(entity);
+        else
+            this.entity = entity;
 
+    }
+    public copy(source: SelectExpression<T>) {
+        if (source) {
+            // tslint:disable-next-line:forin
+            for (const prop in source) {
+                this[prop] = source[prop];
+            }
+        }
+    }
     public toString(queryBuilder: QueryBuilder): string {
+        return queryBuilder.toSelectString(this);
+    }
+    public execute(queryBuilder: QueryBuilder): string {
         return queryBuilder.toSelectString(this);
     }
 }

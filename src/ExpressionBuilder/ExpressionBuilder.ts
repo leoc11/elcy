@@ -340,7 +340,7 @@ export class ExpressionBuilder {
                         if (!(objProperty.Value instanceof Expression.ValueExpression))
                             throw new Error("object property don't support expression");
 
-                        const propertyName = objProperty.Value.Execute();
+                        const propertyName = objProperty.Value.execute();
                         if (typeof propertyName !== "string")
                             throw new Error("object only support string property name");
 
@@ -456,10 +456,10 @@ export class ExpressionBuilder {
                     else if (closeString !== ",")
                         throw new Error("Wrong function parameter sperator.");
                 }
-                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.Execute());
+                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.execute());
             }
             else {
-                operand = Expression.MemberAccessExpression.Create(operand as any, nestOperand.Value.Execute());
+                operand = Expression.MemberAccessExpression.Create(operand as any, nestOperand.Value.execute());
             }
 
             memberOperator = this.GetOperator(expressionStr, MemberOperators);
@@ -482,7 +482,7 @@ export class ExpressionBuilder {
                 if (fnParamResult.CloseString === ")")
                     break;
             }
-            operand = Expression.FunctionCallExpression.Create(operand.Execute(), fnParams);
+            operand = Expression.FunctionCallExpression.Create(operand.execute(), fnParams);
         }
 
         const rightUnaryOperator = this.GetOperator(expressionStr, RightUnaryOperators);

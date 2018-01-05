@@ -1,17 +1,16 @@
 import { QueryBuilder } from "../QueryBuilder";
-import { GroupByExpression } from "./GroupByExpression";
-import { ISelectExpression } from "./ISelectExpression";
+import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { WhereExpression } from "./WhereExpression";
 
-export class UnionExpression implements ISelectExpression {
-    public leftEntity: SelectExpression | WhereExpression | GroupByExpression;
-    public rightEntity: SelectExpression | WhereExpression | GroupByExpression;
+export class UnionExpression extends SelectExpression {
     public isUnionAll: boolean;
-    constructor(public alias: string) {
+    constructor(public readonly entity: ProjectionEntityExpression, public readonly entity2: ProjectionEntityExpression, public alias: string) {
+        super(entity);
     }
-
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.toUnionString(this);
+    }
+    public execute(queryBuilder: QueryBuilder): string {
+        throw new Error("Method not implemented.");
     }
 }

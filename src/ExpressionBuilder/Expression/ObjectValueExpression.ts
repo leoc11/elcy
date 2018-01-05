@@ -22,16 +22,16 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
         this.Object = objectValue;
     }
 
-    public ToString() {
+    public toString() {
         const itemString = [];
         for (const item in this.Object)
-            itemString.push(item + ": " + this.Object[item].ToString());
+            itemString.push(item + ": " + this.Object[item].toString());
         return "{" + itemString.join(", ") + "}";
     }
-    public Execute(): TType {
+    public execute(): TType {
         const objectValue: { [Key: string]: IExpression } = {};
         for (const prop in this.Object)
-            objectValue[prop] = this.Object[prop].Execute();
+            objectValue[prop] = this.Object[prop].execute();
         return objectValue as TType;
     }
 }

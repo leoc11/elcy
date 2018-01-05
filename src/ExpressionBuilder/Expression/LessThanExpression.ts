@@ -12,11 +12,11 @@ export class LessThanExpression<TType> extends ExpressionBase<boolean> {
         super(Boolean);
     }
 
-    public ToString(): string {
-        return "(" + this.LeftOperand.ToString() + " < " + this.RightOperand.ToString() + ")";
+    public toString(): string {
+        return "(" + this.LeftOperand.toString() + " < " + this.RightOperand.toString() + ")";
     }
-    public Execute() {
+    public execute() {
         // tslint:disable-next-line:triple-equals
-        return this.LeftOperand.Execute() < this.RightOperand.Execute();
+        return this.LeftOperand.execute() < this.RightOperand.execute();
     }
 }

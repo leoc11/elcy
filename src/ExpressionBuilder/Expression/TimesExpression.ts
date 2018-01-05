@@ -12,10 +12,10 @@ export class TimesExpression extends ExpressionBase<number> {
         super(Number);
     }
 
-    public ToString(): string {
-        return "(" + this.LeftOperand.ToString() + " * " + this.RightOperand.ToString() + ")";
+    public toString(): string {
+        return "(" + this.LeftOperand.toString() + " * " + this.RightOperand.toString() + ")";
     }
-    public Execute() {
-        return this.LeftOperand.Execute() * this.RightOperand.Execute();
+    public execute() {
+        return this.LeftOperand.execute() * this.RightOperand.execute();
     }
 }

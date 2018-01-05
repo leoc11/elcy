@@ -1,13 +1,16 @@
+import { genericType } from "../../../Common/Type";
 import { columnMetaKey } from "../../../Decorator/DecoratorKey";
-import { ExpressionBase } from "../../../ExpressionBuilder/Expression/index";
 import { ColumnMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../QueryBuilder";
-import { TableExpression } from "./TableExpression";
+import { IColumnExpression } from "./IColumnExpression";
+import { IEntityExpression } from "./IEntityExpression";
 
-export class ColumnExpression<T = any, TE = any> {
-    // Column name on db
+export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T> {
     public get name() {
         return this.columnMetaData.name;
+    }
+    public get type(): genericType<T> {
+        return this.columnMetaData.type;
     }
     public alias?: string;
     public propertyName: string;
@@ -16,15 +19,18 @@ export class ColumnExpression<T = any, TE = any> {
             this._columnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
         return this._columnMetaData;
     }
-    public entity: TableExpression<TE>; // entity type/table where this column belong to.
+    public entity: IEntityExpression<TE>;
     // tslint:disable-next-line:variable-name
     private _columnMetaData: ColumnMetaData<T>;
-    constructor(entity: TableExpression<TE>, propertyName: string, alias?: string) {
+    constructor(entity: EntityExpression<TE>, propertyName: string, alias?: string) {
         this.entity = entity;
         this.propertyName = propertyName;
         this.alias = alias;
     }
-    public toString(queryBuilder: QueryBuilder) {
+    public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.toColumnString(this);
+    }
+    public execute(queryBuilder: QueryBuilder): string {
+        return this.toString(queryBuilder);
     }
 }
