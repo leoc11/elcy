@@ -1,7 +1,7 @@
 import { Enumerable } from "./Enumerable";
 
 export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
-    public innerResult: Enumerable<K>;
+    private innerResult: Enumerable<K>;
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => K[] | Enumerable<K>) {
         super();
     }

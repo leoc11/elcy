@@ -1,4 +1,4 @@
-import { IObjectType } from "../Common/Type";
+import { genericType, IObjectType } from "../Common/Type";
 import { ExpressionBase, IExpression } from "./Expression/IExpression";
 import { FunctionExpression } from "./Expression/index";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
@@ -10,8 +10,11 @@ export class ExpressionFactory {
         return () => new ExpressionBase<K>();
     }
 
-    public ToExpression<T, K = any, KE extends ({[key in keyof K]: any} | K) = any>(fn: (item?: T) => K, ctor: IObjectType<T>): FunctionExpression<T, KE> {
+    public ToExpression<T, K = any, KE extends ({[key in keyof K]: any} | K) = any>(fn: (item?: T) => K, ctor: genericType<T>): FunctionExpression<T, KE> {
         return (new ExpressionBuilder()).ParseToExpression(fn.toString(), [ctor]);
+    }
+    public ToExpression2<T, T2, K = any, KE extends ({[key in keyof K]: any} | K) = any>(fn: (item?: T | null, item2?: T2 | null) => K, ctor: genericType<T>, ctor2: genericType<T2>): FunctionExpression<T, KE> {
+        return (new ExpressionBuilder()).ParseToExpression(fn.toString(), [ctor, ctor2]);
     }
     public ToLiteralObjectExpression<T, K, KE extends {[key in keyof K]: IExpression}, KR extends { [key: string]: FunctionExpression<T, any> }>(fn: (item?: T) => K, sourceType: IObjectType<T>): KR {
         const expression = this.ToExpression(fn, sourceType);

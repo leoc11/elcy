@@ -141,46 +141,46 @@ export class Enumerable<T = any> implements IterableIterator<T> {
     public select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn> {
         return new SelectEnumerable(this, selector);
     }
-    public selectMany<TReturn>(selector: (item: T) => TReturn[]): SelectManyEnumerable<T, TReturn> {
+    public selectMany<TReturn>(selector: (item: T) => TReturn[]): Enumerable<TReturn> {
         return new SelectManyEnumerable(this, selector);
     }
-    public where(predicate: (item: T) => boolean): WhereEnumerable<T> {
+    public where(predicate: (item: T) => boolean): Enumerable<T> {
         return new WhereEnumerable(this, predicate);
     }
-    public orderBy(selector: (item: T) => any, direction: orderDirection): OrderEnumerable<T> {
+    public orderBy(selector: (item: T) => any, direction: orderDirection): Enumerable<T> {
         return new OrderEnumerable(this, selector, direction);
     }
-    public skip(skip: number): SkipEnumerable<T> {
+    public skip(skip: number): Enumerable<T> {
         return new SkipEnumerable(this, skip);
     }
-    public take(take: number): TakeEnumerable<T> {
+    public take(take: number): Enumerable<T> {
         return new TakeEnumerable(this, take);
     }
     public groupBy<K>(keySelector: (item: T) => K): GroupByEnumerable<T, K> {
         return new GroupByEnumerable(this, keySelector);
     }
-    public distinct(selector: (item: T) => any = (o) => o): DistinctEnumerable<T> {
+    public distinct(selector: (item: T) => any = (o) => o): Enumerable<T> {
         return new DistinctEnumerable(this, selector);
     }
-    public innerJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): InnerJoinEnumerable<T, T2, TKey, TResult> {
+    public innerJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
         return new InnerJoinEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2, keySelector1, keySelector2, resultSelector);
     }
-    public leftJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): LeftJoinEnumerable<T, T2, TKey, TResult> {
+    public leftJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
         return new LeftJoinEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2, keySelector1, keySelector2, resultSelector);
     }
-    public rightJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): RightJoinEnumerable<T, T2, TKey, TResult> {
+    public rightJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
         return new RightJoinEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2, keySelector1, keySelector2, resultSelector);
     }
-    public fullJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): FullJoinEnumerable<T, T2, TKey, TResult> {
+    public fullJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
         return new FullJoinEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2, keySelector1, keySelector2, resultSelector);
     }
-    public union(array2: T[] | Enumerable<T>, isUnionAll: boolean = false): UnionEnumerable<T> {
+    public union(array2: T[] | Enumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
         return new UnionEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2, isUnionAll);
     }
-    public intersect(array2: T[] | Enumerable<T>): IntersectEnumerable<T> {
+    public intersect(array2: T[] | Enumerable<T>): Enumerable<T> {
         return new IntersectEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2);
     }
-    public except(array2: T[] | Enumerable<T>): ExceptEnumerable<T> {
+    public except(array2: T[] | Enumerable<T>): Enumerable<T> {
         return new ExceptEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2);
     }
     public pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Enumerable<TResult> {

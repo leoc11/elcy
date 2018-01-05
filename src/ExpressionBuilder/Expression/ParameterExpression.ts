@@ -3,8 +3,8 @@ import { ExpressionBase } from "./IExpression";
 
 export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
     public static Create(name: string): ParameterExpression;
-    public static Create<TType>(ctor: { new(): TType }, name: string): ParameterExpression<TType>;
-    public static Create<TType>(ctor: { new(): TType } | string, name?: string) {
+    public static Create<TType>(ctor: genericType<TType>, name: string): ParameterExpression<TType>;
+    public static Create<TType>(ctor: genericType<TType> | string, name?: string) {
         if (typeof ctor === "string")
             return new ParameterExpression(ctor);
         if (typeof name === "undefined")

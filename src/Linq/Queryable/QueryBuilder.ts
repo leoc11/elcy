@@ -1,13 +1,12 @@
 import { ExpressionTransformer } from "../../ExpressionBuilder/ExpressionTransformer";
-import { ColumnExpression } from "./QueryExpression/ColumnExpression";
 import { GroupByExpression } from "./QueryExpression/GroupByExpression";
+import { IColumnExpression } from "./QueryExpression/IColumnExpression";
 import { JoinTableExpression } from "./QueryExpression/JoinTableExpression";
 import { OrderByExpression } from "./QueryExpression/OrderByExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { EntityExpression } from "./QueryExpression/TableExpression";
 import { UnionExpression } from "./QueryExpression/UnionExpression";
 import { WhereExpression } from "./QueryExpression/WhereExpression";
-import { IColumnExpression } from "./QueryExpression/IColumnExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public enableEscape: boolean = true;
@@ -61,8 +60,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             "ORDER BY " + order.orders.select((o) => o.column.toString(this) + " " + o.direction).toArray().join(", ");
     }
     public toUnionString(union: UnionExpression) {
-        return union.leftEntity.toString(this) +
+        return union.entity.toString(this) +
             "UNION " + (union.isUnionAll ? "ALL " : "") +
-            union.rightEntity.toString(this);
+            union.entity2.toString(this);
     }
 }

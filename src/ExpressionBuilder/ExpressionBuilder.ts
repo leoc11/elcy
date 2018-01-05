@@ -11,6 +11,7 @@ import {
     TernaryOperators,
     UnaryOperators
 } from "./ExpressionToken/";
+import { genericType, IObjectType } from "../Common/Type";
 
 const GlobalObjects: { [key: string]: any } = global || window;
 export class ExpressionBuilder {
@@ -27,8 +28,8 @@ export class ExpressionBuilder {
         return blockResult.Value as IExpression;
     }
 
-    public ParseToExpression(fn: string, cTor: Array<{ new(): any }>, params?: any[]): Expression.FunctionExpression;
-    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<{ new(): any }>, params?: any[]) {
+    public ParseToExpression(fn: string, cTor: Array<genericType<any>>, params?: any[]): Expression.FunctionExpression;
+    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<genericType<any>>, params?: any[]) {
         if (typeof fn === "function")
             fn = fn.toString();
 

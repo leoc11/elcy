@@ -22,7 +22,7 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
     public entity: IEntityExpression<TE>;
     // tslint:disable-next-line:variable-name
     private _columnMetaData: ColumnMetaData<T>;
-    constructor(entity: EntityExpression<TE>, propertyName: string, alias?: string) {
+    constructor(entity: IEntityExpression<TE>, propertyName: string, alias?: string) {
         this.entity = entity;
         this.propertyName = propertyName;
         this.alias = alias;
