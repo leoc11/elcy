@@ -13,10 +13,10 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
         return this.columnMetaData.type;
     }
     public alias?: string;
-    public propertyName: string;
+    public property: string;
     public get columnMetaData() {
         if (!this._columnMetaData)
-            this._columnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
+            this._columnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.property);
         return this._columnMetaData;
     }
     public entity: IEntityExpression<TE>;
@@ -24,7 +24,7 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
     private _columnMetaData: ColumnMetaData<T>;
     constructor(entity: IEntityExpression<TE>, propertyName: string, alias?: string) {
         this.entity = entity;
-        this.propertyName = propertyName;
+        this.property = propertyName;
         this.alias = alias;
     }
     public toString(queryBuilder: QueryBuilder): string {

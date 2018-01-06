@@ -13,20 +13,20 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
 
         return result;
     }
-    constructor(protected FunctionFn: ((...params: any[]) => TType), protected FunctionName: string, protected Params: IExpression[]) {
+    constructor(public readonly functionFn: ((...params: any[]) => TType), public readonly functionName: string, public params: IExpression[]) {
         super(); // TODO: must set specific type. must specify funtion => type map.
     }
 
     public toString(transformer: ExpressionTransformer): string {
         const paramStr = [];
-        for (const param of this.Params)
+        for (const param of this.params)
             paramStr.push(param.toString(transformer));
-        return this.FunctionName + "(" + paramStr.join(", ") + ")";
+        return this.functionName + "(" + paramStr.join(", ") + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         const params = [];
-        for (const param of this.Params)
+        for (const param of this.params)
             params.push(param.execute(transformer));
-        return this.FunctionFn.apply(null, params);
+        return this.functionFn.apply(null, params);
     }
 }

@@ -12,13 +12,12 @@ export class WhereQueryable<T> extends Queryable<T> {
     public execute() {
         if (!this.expression) {
             this.expression = new SelectExpression(this.parent.execute());
-            this.queryBuilder.expressionParent = this.expression;
-            this.queryBuilder.addParam(this.predicate.Params[0].name, this.type);
-            this.expression.where.execute(this.queryBuilder);
-            this.queryBuilder.removeParam(this.predicate.Params[0].name);
-            this.expression.where = this.predicate;
-            this.expression = this.expression.execute(this.queryBuilder);
-            return this.expression;
+            this.queryBuilder.parameters.add(this.predicate.Params[0].name, this.type);
+            const param = { parent: this.expression };
+            const whereExpression = this.queryBuilder.visit(this.predicate, param);
+            this.queryBuilder.parameters.remove(this.predicate.Params[0].name);
+            this.expression = param.parent;
+            this.expression.where = whereExpression;
         }
         return this.expression;
     }

@@ -9,14 +9,14 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
 
         return result;
     }
-    constructor(public LogicalOperand: IExpression<boolean>, public TrueResultOperand: IExpression<TType>, public FalseResultOperand: IExpression<TType>) {
+    constructor(public logicalOperand: IExpression<boolean>, public trueResultOperand: IExpression<TType>, public falseResultOperand: IExpression<TType>) {
         super(); // TODO: resolve constructor.
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.LogicalOperand.toString(transformer) + " ? " + this.TrueResultOperand.toString(transformer) + " : " + this.FalseResultOperand.toString(transformer) + ")";
+        return "(" + this.logicalOperand.toString(transformer) + " ? " + this.trueResultOperand.toString(transformer) + " : " + this.falseResultOperand.toString(transformer) + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        return this.LogicalOperand.execute(transformer) ? this.TrueResultOperand.execute(transformer) : this.FalseResultOperand.execute(transformer);
+        return this.logicalOperand.execute(transformer) ? this.trueResultOperand.execute(transformer) : this.falseResultOperand.execute(transformer);
     }
 }

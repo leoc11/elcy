@@ -1,7 +1,7 @@
 import { genericType, IObjectType, RelationType } from "../Common/Type";
 import { ComputedColumn } from "../Decorator/Column/index";
 import { columnMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
-import { AdditionExpression, AndExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, DivisionExpression, EqualExpression, FunctionExpression, GreaterEqualExpression, GreaterThanExpression, IBinaryOperatorExpression, IExpression, InstanceofExpression, LessEqualExpression, LessThanExpression, MemberAccessExpression, MethodCallExpression, NotEqualExpression, OrExpression, ParameterExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TimesExpression, IUnaryOperatorExpression, BitwiseNotExpression, LeftDecrementExpression, LeftIncrementExpression, NotExpression, RightDecrementExpression, RightIncrementExpression, TypeofExpression } from "../ExpressionBuilder/Expression";
+import { AdditionExpression, AndExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, DivisionExpression, EqualExpression, FunctionExpression, GreaterEqualExpression, GreaterThanExpression, IBinaryOperatorExpression, IExpression, InstanceofExpression, LessEqualExpression, LessThanExpression, MemberAccessExpression, MethodCallExpression, NotEqualExpression, OrExpression, ParameterExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TimesExpression, IUnaryOperatorExpression, BitwiseNotExpression, LeftDecrementExpression, LeftIncrementExpression, NotExpression, RightDecrementExpression, RightIncrementExpression, TypeofExpression, ValueExpression, FunctionCallExpression, TernaryExpression, ObjectValueExpression } from "../ExpressionBuilder/Expression";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { IRelationMetaData } from "../MetaData/Interface/index";
 import { MasterRelationMetaData } from "../MetaData/Relation/index";
@@ -15,7 +15,6 @@ import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
-    public expressionParent: ICommandQueryExpression;
     public namingStrategy: NamingStrategy = new NamingStrategy();
     private aliasObj: { [key: string]: number } = {};
     public newAlias(type: "entity" | "column" = "entity") {
@@ -157,6 +156,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 return this.visitMember(expression as any, param);
             case MethodCallExpression:
                 return this.visitMethod(expression as any, param);
+            case FunctionCallExpression:
+                return this.visitFunction(expression as any, param);
             case ParameterExpression:
                 return expression;
             case BitwiseNotExpression:
@@ -189,17 +190,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case SubtractionExpression:
             case TimesExpression:
                 return this.visitBinaryOperator(expression as any as IBinaryOperatorExpression, param);
-
+            case TernaryExpression:
+                return this.visitTernaryOperator(expression as TernaryExpression<any>, param);
+            case ObjectValueExpression:
+                return this.visitObjectLiteral(expression as ObjectValueExpression<any>, param);
         }
+        return expression;
     }
-
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: { parent: ICommandQueryExpression }): IExpression {
         const res: IExpression = this.visit(expression.ObjectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property {expression.memberName} not supported in linq to sql.`);
 
         if (res.type === Array && expression.memberName === "length") {
-            // fallback to count()
+            return new MethodCallExpression(res, "count", []);
         }
         const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
         if (relationMeta) {
@@ -228,6 +232,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         expression.Params = expression.Params.select((o) => this.visit(o, param)).toArray();
         return expression;
     }
+    protected visitFunction<T>(expression: FunctionCallExpression<T>, param: { parent: ICommandQueryExpression }): IExpression {
+        expression.params = expression.params.select((o) => this.visit(o, param)).toArray();
+        return expression;
+    }
     protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: { parent: ICommandQueryExpression }) {
         expression.leftOperand = this.visit(expression.leftOperand, param);
         expression.rightOperand = this.visit(expression.rightOperand, param);
@@ -235,6 +243,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: { parent: ICommandQueryExpression }) {
         expression.operand = this.visit(expression.operand, param);
+        return expression;
+    }
+    protected visitTernaryOperator(expression: TernaryExpression<any>, param: { parent: ICommandQueryExpression }) {
+        expression.logicalOperand = this.visit(expression.logicalOperand, param);
+        expression.trueResultOperand = this.visit(expression.trueResultOperand, param);
+        expression.falseResultOperand = this.visit(expression.falseResultOperand, param);
+        return expression;
+    }
+    protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: { parent: ICommandQueryExpression }) {
+        // tslint:disable-next-line:forin
+        for (const prop in expression.Object) {
+            expression.Object[prop] = this.visit(expression.Object[prop], param);
+        }
         return expression;
     }
 }

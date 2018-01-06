@@ -21,7 +21,7 @@ import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 
-export class Queryable<T = any> extends Enumerable<T> {
+export abstract class Queryable<T = any> extends Enumerable<T> {
     public expression: SelectExpression<T>;
     public parent: Queryable;
     constructor(public type: genericType<T>, public queryBuilder: QueryBuilder) {
