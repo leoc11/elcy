@@ -86,7 +86,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             union.entity2.toString(this);
     }
 
-
     public processMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: { parent: ICommandQueryExpression }): IExpression {
         const res: IExpression = expression.ObjectOperand.execute(this);
         switch (res.type) {
@@ -123,7 +122,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "startsWith":
                         break;
                     case "substr":
-                        break;
                     case "substring":
                         break;
                     case "toLowerCase":
@@ -136,6 +134,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "valueOf":
                         break;
                     case "trim":
+                        break;
+                    case "like":
                         break;
                     case "match":
                     default:
@@ -158,6 +158,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return expression;
     }
+
     /**
      * Expression visitor
      */
