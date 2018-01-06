@@ -2,11 +2,11 @@ import { genericType } from "../../../Common/Type";
 import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
+import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQueryExpression } from "./IQueryExpression";
 
-export class SelectExpression<T = any> implements IQueryExpression<T> {
+export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
     public columns: IColumnExpression[] = [];
     public entity: IEntityExpression;
@@ -35,7 +35,8 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.toSelectString(this);
     }
-    public execute(queryBuilder: QueryBuilder): string {
-        return queryBuilder.toSelectString(this);
+    public execute(queryBuilder: QueryBuilder): SelectExpression {
+
+        return this;
     }
 }

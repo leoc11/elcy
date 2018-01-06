@@ -1,8 +1,8 @@
 // tslint:disable-next-line:interface-name
-export interface IObjectType<T> { new(value?: any): T; }
+export interface IObjectType<T = any> { new(value?: any): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 // tslint:disable-next-line:ban-types
-export type genericType<T> = IObjectType<T> | ((value?: any) => T);
+export type genericType<T = any> = IObjectType<T> | ((value?: any) => T);
 export const classBase = Reflect.getPrototypeOf(Function);
 export type orderDirection = "ASC" | "DESC";
 export enum DateTimeKind {

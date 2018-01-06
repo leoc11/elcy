@@ -200,7 +200,7 @@ export class Enumerable<T = any> extends Array<T> {
             return o.key;
         });
     }
-    public include(...includes: Array<(item: T) => any>): Enumerable<T> {
+    public include(..._includes: Array<(item: T) => any>): Enumerable<T> {
         return this;
     }
 }

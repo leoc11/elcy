@@ -2,7 +2,7 @@ import { ColumnType } from "../Common/ColumnType";
 import { genericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 
-export class ColumnMetaData<T = any> {
+export class ColumnMetaData<T = any> implements IColumnOption<T> {
     public name: string;
     public nullable: boolean;
     public default?: T;

@@ -1,7 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
+import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class EqualExpression extends ExpressionBase<boolean> {
+export class EqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static Create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new EqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,15 +10,15 @@ export class EqualExpression extends ExpressionBase<boolean> {
 
         return result;
     }
-    constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
         super(Boolean);
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.LeftOperand.toString(transformer) + " == " + this.RightOperand.toString(transformer) + ")";
+        return "(" + this.leftOperand.toString(transformer) + " == " + this.rightOperand.toString(transformer) + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:triple-equals
-        return this.LeftOperand.execute(transformer) == this.RightOperand.execute(transformer);
+        return this.leftOperand.execute(transformer) == this.rightOperand.execute(transformer);
     }
 }

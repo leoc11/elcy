@@ -1,4 +1,4 @@
-import { genericType, RelationType } from "../../Common/Type";
+import { IObjectType, RelationType } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../EntityMetaData";
 import { IRelationMetaData } from "../Interface";
@@ -6,10 +6,10 @@ import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
 
 export class SlaveRelationMetaData<TSlave, TMaster> implements IRelationMetaData<TSlave, TMaster> {
     // tslint:disable-next-line:variable-name
-    public _masterType: genericType<TMaster>;
+    public _masterType: IObjectType<TMaster>;
     // tslint:disable-next-line:variable-name
     public _relationMaps: {[key in keyof TSlave]?: keyof TMaster };
-    public get masterType(): genericType<TMaster> {
+    public get masterType(): IObjectType<TMaster> {
         if (!this._masterType) {
             const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.slaveType);
             const foreignKey: ForeignKeyMetaData<TSlave, TMaster> = entityMetaData.foreignKeys[this.foreignKeyName];
@@ -26,7 +26,7 @@ export class SlaveRelationMetaData<TSlave, TMaster> implements IRelationMetaData
         }
         return this._relationMaps;
     }
-    constructor(public slaveType: genericType<TSlave>, public foreignKeyName: string, public relationType = RelationType.OneToOne) {
+    constructor(public slaveType: IObjectType<TSlave>, public foreignKeyName: string, public relationType = RelationType.OneToOne) {
 
     }
 }

@@ -6,4 +6,5 @@ export interface IColumnExpression<T = any, TE = any> extends IQueryExpression<T
     type: genericType<T>;
     alias?: string;
     entity: IEntityExpression<TE>;
+    property: string;
 }

@@ -1,9 +1,9 @@
-import { genericType, RelationType } from "../../Common/Type";
+import { IObjectType, RelationType } from "../../Common/Type";
 
 export interface IRelationMetaData<TSlave, TMaster> {
-    slaveType?: genericType<TSlave>;
-    masterType?: genericType<TMaster>;
+    slaveType?: IObjectType<TSlave>;
+    masterType?: IObjectType<TMaster>;
     relationType?: RelationType;
     foreignKeyName?: string;
-    relationMap?: {[key in keyof TSlave]?: keyof TMaster } | {[key in keyof TMaster]?: keyof TSlave };
+    relationMaps?: {[key in keyof TSlave]?: keyof TMaster } | {[key in keyof TMaster]?: keyof TSlave };
 }

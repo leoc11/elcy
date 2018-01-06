@@ -1,7 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
+import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class TimesExpression extends ExpressionBase<number> {
+export class TimesExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static Create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
         const result = new TimesExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -9,14 +10,14 @@ export class TimesExpression extends ExpressionBase<number> {
 
         return result;
     }
-    constructor(public LeftOperand: ExpressionBase<number>, protected RightOperand: ExpressionBase<number>) {
+    constructor(public leftOperand: ExpressionBase<number>, public rightOperand: ExpressionBase<number>) {
         super(Number);
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.LeftOperand.toString(transformer) + " * " + this.RightOperand.toString(transformer) + ")";
+        return "(" + this.leftOperand.toString(transformer) + " * " + this.rightOperand.toString(transformer) + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        return this.LeftOperand.execute(transformer) * this.RightOperand.execute(transformer);
+        return this.leftOperand.execute(transformer) * this.rightOperand.execute(transformer);
     }
 }

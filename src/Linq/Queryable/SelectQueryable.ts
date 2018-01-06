@@ -9,4 +9,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         super(type, parent.queryBuilder);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression<S, T>(selector, parent.type);
     }
+    public execute() {
+        this.expression = this.parent.execute();
+    }
 }

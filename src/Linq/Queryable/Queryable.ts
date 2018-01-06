@@ -11,6 +11,7 @@ import { IntersectQueryable } from "./IntersectQueryable";
 import { LeftJoinQueryable } from "./LeftJoinQueryable";
 import { OrderQueryable } from "./OrderQueryable";
 import { PivotQueryable } from "./PivotQueryable";
+import { SelectExpression } from "./QueryExpression";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
@@ -21,10 +22,13 @@ import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 
 export class Queryable<T = any> extends Enumerable<T> {
-    public expression: IQueryExpression<T>;
+    public expression: SelectExpression<T>;
     public parent: Queryable;
     constructor(public type: genericType<T>, public queryBuilder: QueryBuilder) {
         super();
+    }
+    public execute() {
+        return this.expression;
     }
     public select<TReturn>(selector: ((item: T) => TReturn), type?: genericType<TReturn>): Queryable<TReturn> {
         return new SelectQueryable<T, TReturn>(this, selector, type);

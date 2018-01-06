@@ -11,7 +11,7 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
             throw new Error("Name must be specified");
         return new ParameterExpression(name, ctor);
     }
-    constructor(protected name: string, type?: genericType<TType>) {
+    constructor(public readonly name: string, type?: genericType<TType>) {
         super(type);
     }
 

@@ -28,8 +28,8 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
 
         return "(" + params.join(", ") + ") => {" + this.Body.toString(transformer) + "}";
     }
-    public execute(transformer: ExpressionTransformer): TResult {
-        throw new Error("Method not implemented.");
+    public execute(transformer: ExpressionTransformer): any {
+        return transformer.executeExpression(this);
     }
 
 }

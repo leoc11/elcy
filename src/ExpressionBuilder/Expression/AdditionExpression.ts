@@ -1,8 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
+import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
-export class AdditionExpression<T extends number | string> extends ExpressionBase<T> {
+export class AdditionExpression<T extends number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
     public static Create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
     public static Create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
     public static Create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;
@@ -16,18 +17,18 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
         return result;
     }
 
-    constructor(protected LeftOperand: IExpression, protected RightOperand: IExpression) {
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
         super();
-        if (this.LeftOperand.type === String || this.RightOperand.type === String)
+        if (this.leftOperand.type === String || this.rightOperand.type === String)
             this.type = String as any;
         else
             this.type = Number as any;
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.LeftOperand.toString(transformer) + " + " + this.RightOperand.toString(transformer) + ")";
+        return "(" + this.leftOperand.toString(transformer) + " + " + this.rightOperand.toString(transformer) + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        return this.LeftOperand.execute(transformer) + this.RightOperand.execute(transformer);
+        return this.leftOperand.execute(transformer) + this.rightOperand.execute(transformer);
     }
 }
