@@ -1,11 +1,8 @@
 import { genericType, IObjectType, RelationType } from "../Common/Type";
 import { ComputedColumn } from "../Decorator/Column/index";
 import { columnMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
-import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
-import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { AdditionExpression, FunctionExpression, IExpression, MemberAccessExpression, MethodCallExpression, ParameterExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, DivisionExpression, EqualExpression, GreaterEqualExpression, GreaterThanExpression, LessEqualExpression, LessThanExpression, NotEqualExpression, OrExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TimesExpression } from "../ExpressionBuilder/Expression/index";
+import { AdditionExpression, AndExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, DivisionExpression, EqualExpression, FunctionExpression, GreaterEqualExpression, GreaterThanExpression, IBinaryOperatorExpression, IExpression, InstanceofExpression, LessEqualExpression, LessThanExpression, MemberAccessExpression, MethodCallExpression, NotEqualExpression, OrExpression, ParameterExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TimesExpression, IUnaryOperatorExpression, BitwiseNotExpression, LeftDecrementExpression, LeftIncrementExpression, NotExpression, RightDecrementExpression, RightIncrementExpression, TypeofExpression } from "../ExpressionBuilder/Expression";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
-import { ColumnMetaData, ComputedColumnMetaData } from "../MetaData/index";
 import { IRelationMetaData } from "../MetaData/Interface/index";
 import { MasterRelationMetaData } from "../MetaData/Relation/index";
 import { NamingStrategy } from "./NamingStrategy";
@@ -13,7 +10,6 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
-import { IEntityExpression, IQueryExpression } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinTableExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
@@ -161,6 +157,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 return this.visitMember(expression as any, param);
             case MethodCallExpression:
                 return this.visitMethod(expression as any, param);
+            case ParameterExpression:
+                return expression;
+            case BitwiseNotExpression:
+            case LeftDecrementExpression:
+            case LeftIncrementExpression:
+            case NotExpression:
+            case RightDecrementExpression:
+            case RightIncrementExpression:
+            case TypeofExpression:
+                return this.visitUnaryOperator(expression as any as IUnaryOperatorExpression, param);
             case AdditionExpression:
             case AndExpression:
             case BitwiseAndExpression:
@@ -173,6 +179,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case EqualExpression:
             case GreaterEqualExpression:
             case GreaterThanExpression:
+            case InstanceofExpression:
             case LessEqualExpression:
             case LessThanExpression:
             case NotEqualExpression:
@@ -182,8 +189,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case SubtractionExpression:
             case TimesExpression:
                 return this.visitBinaryOperator(expression as any as IBinaryOperatorExpression, param);
-            case ParameterExpression:
-                return expression;
+
         }
     }
 
@@ -225,6 +231,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: { parent: ICommandQueryExpression }) {
         expression.leftOperand = this.visit(expression.leftOperand, param);
         expression.rightOperand = this.visit(expression.rightOperand, param);
+        return expression;
+    }
+    protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: { parent: ICommandQueryExpression }) {
+        expression.operand = this.visit(expression.operand, param);
         return expression;
     }
 }

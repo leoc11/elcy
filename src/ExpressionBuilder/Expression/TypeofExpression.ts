@@ -1,7 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
+import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-export class TypeofExpression extends ExpressionBase<string> {
+export class TypeofExpression extends ExpressionBase<string> implements IUnaryOperatorExpression {
     public static Create(operand: IExpression) {
         const result = new TypeofExpression(operand);
         if (operand instanceof ValueExpression)
@@ -9,14 +10,14 @@ export class TypeofExpression extends ExpressionBase<string> {
 
         return result;
     }
-    constructor(public Operand: IExpression) {
+    constructor(public operand: IExpression) {
         super(String);
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "typeof " + this.Operand.toString(transformer);
+        return "typeof " + this.operand.toString(transformer);
     }
     public execute(transformer: ExpressionTransformer) {
-        return typeof this.Operand.execute(transformer);
+        return typeof this.operand.execute(transformer);
     }
 }

@@ -1,7 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
+import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-export class RightDecrementExpression extends ExpressionBase<number> {
+export class RightDecrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
     public static Create(operand: IExpression<number>) {
         const result = new RightDecrementExpression(operand);
         if (operand instanceof ValueExpression)
@@ -9,14 +10,14 @@ export class RightDecrementExpression extends ExpressionBase<number> {
 
         return result;
     }
-    constructor(public readonly Operand: IExpression) {
+    constructor(public readonly operand: IExpression) {
         super(Number);
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return this.Operand.toString(transformer) + "--";
+        return this.operand.toString(transformer) + "--";
     }
     public execute(transformer: ExpressionTransformer) {
-        return this.Operand.execute(transformer);
+        return this.operand.execute(transformer);
     }
 }

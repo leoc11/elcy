@@ -1,7 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
+import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-export class NotExpression extends ExpressionBase<boolean> {
+export class NotExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
     public static Create(operand: IExpression<boolean>) {
         const result = new NotExpression(operand);
         if (operand instanceof ValueExpression)
@@ -9,14 +10,14 @@ export class NotExpression extends ExpressionBase<boolean> {
 
         return result;
     }
-    constructor(protected Operand: IExpression) {
+    constructor(public operand: IExpression) {
         super(Boolean);
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "!" + this.Operand.toString(transformer);
+        return "!" + this.operand.toString(transformer);
     }
     public execute(transformer: ExpressionTransformer) {
-        return !this.Operand.execute(transformer);
+        return !this.operand.execute(transformer);
     }
 }

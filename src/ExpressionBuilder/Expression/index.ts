@@ -36,3 +36,5 @@ export * from "./NotEqualExpression";
 export * from "./StrictNotEqualExpression";
 export * from "./ArrayValueExpression";
 export * from "./ObjectValueExpression";
+export * from "./IBinaryOperatorExpression";
+export * from "./IUnaryOperatorExpression";
