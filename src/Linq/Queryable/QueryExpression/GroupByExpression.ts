@@ -7,11 +7,8 @@ export class GroupByExpression<T, K> extends SelectExpression<K> {
     public key: K;
     // resolved from keySelector
     public groupBy: IColumnExpression[];
-    public type: genericType<K>;
-    constructor(public readonly select: SelectExpression<T>, type?: genericType<K>) {
+    constructor(public readonly select: SelectExpression<T>, public type: genericType<K> = Object) {
         super(select.entity);
         this.select = select;
-        if (type)
-            this.type = type;
     }
 }

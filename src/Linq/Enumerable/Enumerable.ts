@@ -1,4 +1,5 @@
 import { orderDirection } from "../../Common/Type";
+import { IGroupArray } from "../Interface/IGroupArray";
 import { DistinctEnumerable } from "./DistinctEnumerable";
 import { ExceptEnumerable } from "./ExceptEnumerable";
 import { FullJoinEnumerable } from "./FullJoinEnumerable";
@@ -157,7 +158,7 @@ export class Enumerable<T = any> extends Array<T> {
     public take(take: number): Enumerable<T> {
         return new TakeEnumerable(this, take);
     }
-    public groupBy<K>(keySelector: (item: T) => K): GroupByEnumerable<T, K> {
+    public groupBy<K>(keySelector: (item: T) => K): Enumerable<IGroupArray<T, K>> {
         return new GroupByEnumerable(this, keySelector);
     }
     public distinct(selector: (item: T) => any = (o) => o): Enumerable<T> {
@@ -200,7 +201,7 @@ export class Enumerable<T = any> extends Array<T> {
             return o.key;
         });
     }
-    public include(..._includes: Array<(item: T) => any>): Enumerable<T> {
+    public include(...includes: Array<(item: T) => any>): Enumerable<T> {
         return this;
     }
 }

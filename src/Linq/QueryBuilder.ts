@@ -215,7 +215,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     rightColumn: joinEntity.rightEntity.columns.first((c) => c.property === relationMeta.relationMaps![o])
                 })).toArray();
                 param.parent.entity = joinEntity;
-                return joinEntity;
+                return joinEntity.rightEntity;
             }
             return param.parent.entity.get(targetType);
         }

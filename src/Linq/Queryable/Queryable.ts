@@ -1,5 +1,6 @@
 import { genericType, orderDirection } from "../../Common/Type";
 import { Enumerable } from "../Enumerable";
+import { IGroupArray } from "../Interface/IGroupArray";
 import { QueryBuilder } from "../QueryBuilder";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
@@ -12,7 +13,6 @@ import { LeftJoinQueryable } from "./LeftJoinQueryable";
 import { OrderQueryable } from "./OrderQueryable";
 import { PivotQueryable } from "./PivotQueryable";
 import { SelectExpression } from "./QueryExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
 import { SelectQueryable } from "./SelectQueryable";
@@ -48,11 +48,13 @@ export abstract class Queryable<T = any> extends Enumerable<T> {
     public take(take: number): Queryable<T> {
         return new TakeQueryable(this, take);
     }
-    // public groupBy<K>(keySelector: (item: T) => K): GroupByQueryable<T, K> {
-    //     return new GroupByQueryable(this, keySelector);
-    // }
+    public groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>> {
+        return new GroupByQueryable(this, keySelector);
+    }
     public distinct(selector?: (item: T) => any): Queryable<T> {
-        return new DistinctQueryable(this, selector);
+        if (selector)
+            return this.groupBy(selector).select((o) => o.first());
+        return new DistinctQueryable(this);
     }
     public innerJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult> {
         return new InnerJoinQueryable(this, array2, keySelector1, keySelector2, resultSelector);

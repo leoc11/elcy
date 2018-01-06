@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { genericType, ReferenceOption, RelationType } from "../../Common/Type";
+import { genericType, IObjectType, ReferenceOption, RelationType } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../../MetaData/Relation";
 import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
@@ -7,9 +7,9 @@ import { IRelationOption } from "../Option";
 
 export function ListRelation<S, T>(option: IRelationOption<S, T>)
     : (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ListRelation<S, T>(masterType: genericType<T>, sourceKeySelectors: Array<(source: S) => any>, targetKeySelectors: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
+export function ListRelation<S, T>(masterType: IObjectType<T>, sourceKeySelectors: Array<(source: S) => any>, targetKeySelectors: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
     : (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ListRelation<S, T>(masterType: genericType<T> | IRelationOption<S, T>, sourceKeySelectors?: Array<(source: S) => any>, targetKeySelectors?: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
+export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<S, T>, sourceKeySelectors?: Array<(source: S) => any>, targetKeySelectors?: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
     : (target: S, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
     let relationOption: IRelationOption<S, T>;
     if (typeof masterType === "object") {
@@ -37,18 +37,18 @@ export function ListRelation<S, T>(masterType: genericType<T> | IRelationOption<
 
     return (target: S, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         if (!relationOption.slaveType)
-            relationOption.slaveType = target.constructor as () => S;
+            relationOption.slaveType = target.constructor as any;
         if (!relationOption.name)
-            relationOption.name = "FK_" + propertyKey + "_" + relationOption.slaveType.name + "_" + relationOption.masterType.name;
+            relationOption.name = "FK_" + propertyKey + "_" + relationOption.slaveType!.name + "_" + relationOption.masterType.name;
 
-        const slaveMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.slaveType);
+        const slaveMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.slaveType!);
         slaveMetaData.foreignKeys[relationOption.name] = new ForeignKeyMetaData(relationOption.name, relationOption.masterType, relationOption.relationMap, relationOption.updateOption, relationOption.deleteOption);
 
-        const slaveRelation = new SlaveRelationMetaData(relationOption.slaveType, relationOption.name, RelationType.OneToOne);
-        Reflect.defineMetadata(relationMetaKey, slaveRelation, relationOption.slaveType, propertyKey);
+        const slaveRelation = new SlaveRelationMetaData(relationOption.slaveType!, relationOption.name, RelationType.OneToOne);
+        Reflect.defineMetadata(relationMetaKey, slaveRelation, relationOption.slaveType!, propertyKey);
 
         if (relationOption.masterRelationProperty) {
-            const masterRelation = new MasterRelationMetaData(relationOption.slaveType, relationOption.masterType, relationOption.name, RelationType.OneToMany);
+            const masterRelation = new MasterRelationMetaData(relationOption.slaveType!, relationOption.masterType, relationOption.name, RelationType.OneToMany);
             Reflect.defineMetadata(relationMetaKey, masterRelation, relationOption.masterType, relationOption.masterRelationProperty);
         }
     };

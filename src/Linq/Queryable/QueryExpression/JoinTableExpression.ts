@@ -12,7 +12,7 @@ export class JoinEntityExpression<T, T2, TR extends {[prop in keyof (T | T2)]: a
     public rightEntity: IEntityExpression;
     public type: IObjectType<TR>;
     public relations: Array<{ leftColumn: IColumnExpression, rightColumn: IColumnExpression }> = [];
-    constructor(public readonly entity: IEntityExpression, public readonly entity2: IEntityExpression, public alias: string, public readonly joinType: "INNER" | "LEFT" | "RIGHT" | "FULL" = "LEFT", type?: IObjectType<TR>) {
+    constructor(public readonly entity: IEntityExpression, public readonly entity2: IEntityExpression, public alias: string, public joinType: "INNER" | "LEFT" | "RIGHT" | "FULL" = "LEFT", type?: IObjectType<TR>) {
         if (type)
             this.type = type;
     }
