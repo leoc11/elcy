@@ -62,7 +62,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOr
                     }
 
                     parentMetaData.computedProperties.forEach((prop) => {
-                        if (!entityMetadata.computedProperties.contains(prop)) {
+                        if (!entityMetadata.computedProperties.contain(prop)) {
                             entityMetadata.computedProperties.push(prop);
                             const columnMeta: IColumnOption<TParent> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                             Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);

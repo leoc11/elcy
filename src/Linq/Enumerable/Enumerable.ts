@@ -132,7 +132,7 @@ export class Enumerable<T = any> extends Array<T> {
         }
         return Infinity;
     }
-    public contains(item: T) {
+    public contain(item: T) {
         this.resetPointer();
         for (const it of this) {
             if (it === item)

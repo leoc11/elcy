@@ -9,7 +9,7 @@ declare global {
 
 Array.prototype.add = function <T>(this: T[], ...items: T[]) {
     for (const item of items) {
-        if (this.contains(item))
+        if (this.contain(item))
             this.push(item);
     }
 };

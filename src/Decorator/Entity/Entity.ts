@@ -50,7 +50,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
                     entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 
                 parentMetaData.properties.forEach((prop) => {
-                    if (!entityMetadata.properties.contains(prop)) {
+                    if (!entityMetadata.properties.contain(prop)) {
                         entityMetadata.properties.push(prop);
                         let columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                         if (entityMetadata.inheritance.inheritanceType !== InheritanceType.TablePerConcreteClass)
@@ -60,7 +60,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
                 });
 
                 parentMetaData.computedProperties.forEach((prop) => {
-                    if (!entityMetadata.computedProperties.contains(prop)) {
+                    if (!entityMetadata.computedProperties.contain(prop)) {
                         entityMetadata.computedProperties.push(prop);
                         const columnMeta: IColumnOption<TParent> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                         Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);

@@ -12,7 +12,7 @@ export function ComputedColumn<T, R>(type: genericType<R>, fn: (o: T) => R) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as genericType<T>);
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target);
         }
-        if (entityMetaData.computedProperties.contains(computedMetaData.name))
+        if (entityMetaData.computedProperties.contain(computedMetaData.name))
             entityMetaData.computedProperties.push(computedMetaData.name);
         Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
     };

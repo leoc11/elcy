@@ -1,5 +1,5 @@
 import { orderDirection } from "../../Common/Type";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
@@ -13,12 +13,10 @@ export class OrderQueryable<T> extends Queryable<T> {
     public execute() {
         if (!this.expression) {
             this.expression = new SelectExpression(this.parent.execute());
-            this.queryBuilder.parameters.add(this.selector.Params[0].name, this.type);
+            const methodExpression = new MethodCallExpression(this.expression.entity, "orderBy", [this.selector, new ValueExpression(this.direction)]);
             const param = { parent: this.expression };
-            const orderByExpression = this.queryBuilder.visit(this.selector, param);
-            this.queryBuilder.parameters.remove(this.selector.Params[0].name);
+            this.queryBuilder.visit(methodExpression, param);
             this.expression = param.parent;
-            this.expression.orders.add({ column: orderByExpression, direction: this.direction });
             return this.expression;
         }
         return this.expression;

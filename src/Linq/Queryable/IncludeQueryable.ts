@@ -1,5 +1,5 @@
 import { genericType } from "../../Common/Type";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { Queryable } from "./Queryable";
 import { IColumnExpression, IEntityExpression, SelectExpression } from "./QueryExpression";
@@ -12,23 +12,10 @@ export class IncludeQueryable<T> extends Queryable<T> {
     }
     public execute() {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.execute());
+            this.expression = new SelectExpression<any>(this.parent.execute());
+            const methodExpression = new MethodCallExpression(this.expression.entity, "include", this.selectors);
             const param = { parent: this.expression };
-            for (const selector of this.selectors) {
-                this.queryBuilder.parameters.add(selector.Params[0].name, this.type);
-                const selectExpression = this.queryBuilder.visit(selector, param);
-                this.queryBuilder.parameters.remove(selector.Params[0].name);
-
-                if ((selectExpression as IEntityExpression).columns) {
-                    const entityExpression = selectExpression as IEntityExpression;
-                    for (const column of entityExpression.columns)
-                        param.parent.columns.add(column);
-                }
-                else if ((selectExpression as IColumnExpression).entity) {
-                    const columnExpression = selectExpression as IColumnExpression;
-                    param.parent.columns.add(columnExpression);
-                }
-            }
+            this.queryBuilder.visit(methodExpression, param);
             this.expression = param.parent;
         }
         return this.expression;

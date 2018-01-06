@@ -24,7 +24,7 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target, propertyKey);
 
-        if (!entityMetaData.properties.contains(propertyKey))
+        if (!entityMetaData.properties.contain(propertyKey))
             entityMetaData.properties.push(propertyKey);
         if (columnOption) {
             if (metadata instanceof DateColumnMetaData) {

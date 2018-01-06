@@ -9,7 +9,7 @@ declare global {
         asEnumerable(): Enumerable<T>;
         selectMany<TReturn>(fn: (item: T) => TReturn[]): Enumerable<TReturn>;
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
-        contains(item: T): boolean;
+        contain(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
@@ -51,7 +51,7 @@ Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[
 Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
     return this.asEnumerable().select(selector);
 };
-Array.prototype.contains = function <T>(this: T[], item: T) {
+Array.prototype.contain = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;
 };
 Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {

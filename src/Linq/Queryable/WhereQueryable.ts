@@ -1,4 +1,4 @@
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
@@ -12,12 +12,10 @@ export class WhereQueryable<T> extends Queryable<T> {
     public execute() {
         if (!this.expression) {
             this.expression = new SelectExpression(this.parent.execute());
-            this.queryBuilder.parameters.add(this.predicate.Params[0].name, this.type);
+            const methodExpression = new MethodCallExpression(this.expression.entity, "where", [this.predicate]);
             const param = { parent: this.expression };
-            const whereExpression = this.queryBuilder.visit(this.predicate, param);
-            this.queryBuilder.parameters.remove(this.predicate.Params[0].name);
+            this.queryBuilder.visit(methodExpression, param);
             this.expression = param.parent;
-            this.expression.where = whereExpression;
         }
         return this.expression;
     }
