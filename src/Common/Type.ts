@@ -1,6 +1,7 @@
 // tslint:disable-next-line:interface-name
 export interface IObjectType<T = any> { new(value?: any): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
+export const NullConstructor = () => null;
 // tslint:disable-next-line:ban-types
 export type genericType<T = any> = IObjectType<T> | ((value?: any) => T);
 export const classBase = Reflect.getPrototypeOf(Function);

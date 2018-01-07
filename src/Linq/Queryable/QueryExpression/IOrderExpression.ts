@@ -3,6 +3,6 @@ import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { IColumnExpression } from "./IColumnExpression";
 
 export interface IOrderExpression {
-    column: IExpression | IColumnExpression;
+    column: IColumnExpression | IExpression;
     direction: orderDirection;
 }

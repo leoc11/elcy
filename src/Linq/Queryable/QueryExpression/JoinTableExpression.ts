@@ -1,6 +1,5 @@
 import { IObjectType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
-import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
@@ -8,11 +7,12 @@ export class JoinEntityExpression<T, T2, TR extends {[prop in keyof (T | T2)]: a
     public get columns(): IColumnExpression[] {
         return this.leftEntity.columns.concat(this.rightEntity.columns);
     }
-    public leftEntity: IEntityExpression;
-    public rightEntity: IEntityExpression;
+    public get name() {
+        return this.alias;
+    }
     public type: IObjectType<TR>;
     public relations: Array<{ leftColumn: IColumnExpression, rightColumn: IColumnExpression }> = [];
-    constructor(public readonly entity: IEntityExpression, public readonly entity2: IEntityExpression, public alias: string, public joinType: "INNER" | "LEFT" | "RIGHT" | "FULL" = "LEFT", type?: IObjectType<TR>) {
+    constructor(public readonly leftEntity: IEntityExpression, public readonly rightEntity: IEntityExpression, public alias: string, public joinType: "INNER" | "LEFT" | "RIGHT" | "FULL" = "LEFT", type?: IObjectType<TR>) {
         if (type)
             this.type = type;
     }

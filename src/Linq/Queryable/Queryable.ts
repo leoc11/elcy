@@ -12,7 +12,7 @@ import { IntersectQueryable } from "./IntersectQueryable";
 import { LeftJoinQueryable } from "./LeftJoinQueryable";
 import { OrderQueryable } from "./OrderQueryable";
 import { PivotQueryable } from "./PivotQueryable";
-import { SelectExpression } from "./QueryExpression";
+import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
 import { SelectQueryable } from "./SelectQueryable";
@@ -22,13 +22,16 @@ import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 
 export abstract class Queryable<T = any> extends Enumerable<T> {
-    public expression: SelectExpression<T>;
+    public expression: ICommandQueryExpression<T>;
     public parent: Queryable;
     constructor(public type: genericType<T>, public queryBuilder: QueryBuilder) {
         super();
     }
-    public execute() {
+    public execute(): ICommandQueryExpression<T> {
         return this.expression;
+    }
+    public toString() {
+        return this.execute().toString(this.queryBuilder);
     }
     public select<TReturn>(selector: ((item: T) => TReturn), type?: genericType<TReturn>): Queryable<TReturn> {
         return new SelectQueryable<T, TReturn>(this, selector, type);

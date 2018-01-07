@@ -1,8 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { BitwiseExpression } from "./BitwiseExpression";
+import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-export class BitwiseNotExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
+export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression {
     public static Create(operand: IExpression) {
         const result = new BitwiseNotExpression(operand);
         if (operand instanceof ValueExpression)
@@ -10,8 +11,10 @@ export class BitwiseNotExpression extends ExpressionBase<number> implements IUna
 
         return result;
     }
-    constructor(public operand: IExpression) {
-        super(Number);
+    public operand: IExpression<number>;
+    constructor(operand: IExpression) {
+        super();
+        this.operand = this.convertOperand(operand);
     }
 
     public toString(transformer: ExpressionTransformer): string {

@@ -15,6 +15,12 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
     }
     constructor(public readonly functionFn: ((...params: any[]) => TType), public readonly functionName: string, public params: IExpression[]) {
         super(); // TODO: must set specific type. must specify funtion => type map.
+        try{
+            this.type = functionFn("").constructor as any;
+        }
+        catch(e) {
+            // TODO: map here.
+        }
     }
 
     public toString(transformer: ExpressionTransformer): string {

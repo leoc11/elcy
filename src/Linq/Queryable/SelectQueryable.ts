@@ -1,8 +1,8 @@
 import { genericType } from "../../Common/Type";
-import { FunctionExpression, ObjectValueExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { Queryable } from "./Queryable";
-import { ColumnExpression, ComputedColumnExpression, IColumnExpression, IEntityExpression, SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selector: FunctionExpression<S, T>;

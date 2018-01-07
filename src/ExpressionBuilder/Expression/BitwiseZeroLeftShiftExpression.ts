@@ -1,8 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
+import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class BitwiseZeroLeftShiftExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+export class BitwiseZeroLeftShiftExpression extends BitwiseExpression implements IBinaryOperatorExpression {
     public static Create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseZeroLeftShiftExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -10,8 +11,12 @@ export class BitwiseZeroLeftShiftExpression extends ExpressionBase<number> imple
 
         return result;
     }
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
-        super(Number);
+    public leftOperand: IExpression<number>;
+    public rightOperand: IExpression<number>;
+    constructor(leftOperand: IExpression, rightOperand: IExpression) {
+        super();
+        this.leftOperand = this.convertOperand(leftOperand);
+        this.rightOperand = this.convertOperand(rightOperand);
     }
 
     public toString(transformer: ExpressionTransformer): string {

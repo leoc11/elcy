@@ -33,10 +33,13 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         }
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.toSelectString(this);
+        return queryBuilder.getSelectQueryString(this);
     }
     public execute(queryBuilder: QueryBuilder): SelectExpression {
 
         return this;
+    }
+    public replaceEntity(source: IEntityExpression<any>, target: IEntityExpression<any>): void {
+        throw new Error("Method not implemented.");
     }
 }

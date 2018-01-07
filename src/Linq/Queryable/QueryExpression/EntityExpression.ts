@@ -43,10 +43,10 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     constructor(public readonly type: IObjectType<T>, public alias: string) {
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.toEntityString(this);
+        return queryBuilder.getEntityQueryString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
-        return queryBuilder.toEntityString(this);
+        return queryBuilder.getEntityQueryString(this);
     }
     public has(type: IObjectType<any>) {
         return this.type === type;
