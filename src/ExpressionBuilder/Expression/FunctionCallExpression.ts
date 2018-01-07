@@ -14,12 +14,28 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
         return result;
     }
     constructor(public readonly functionFn: ((...params: any[]) => TType), public readonly functionName: string, public params: IExpression[]) {
-        super(); // TODO: must set specific type. must specify funtion => type map.
-        try{
-            this.type = functionFn("").constructor as any;
-        }
-        catch(e) {
-            // TODO: map here.
+        super();
+        switch (functionFn as any) {
+            case parseInt:
+            case parseFloat:
+                this.type = Number as any;
+                break;
+            case decodeURI:
+            case decodeURIComponent:
+            case encodeURI:
+            case encodeURIComponent:
+                this.type = String as any;
+                break;
+            case isNaN:
+            case isFinite:
+                this.type = Boolean as any;
+                break;
+            case eval:
+                this.type = Function as any;
+                break;
+            default:
+                // tslint:disable-next-line:no-empty
+                try { this.type = functionFn("").constructor as any; } catch (e) {}
         }
     }
 
