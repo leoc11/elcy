@@ -6,7 +6,10 @@ export abstract class ExpressionTransformer {
 
     public executeExpression(expression: IExpression): any {
         if (expression instanceof FunctionExpression) {
-            expression.Body.execute(this);
+            expression.body.execute(this);
         }
+    }
+    public toExpressionString(expression: IExpression): string {
+        return "";
     }
 }

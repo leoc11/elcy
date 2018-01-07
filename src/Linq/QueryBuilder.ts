@@ -1,5 +1,5 @@
 import { IObjectType, orderDirection, RelationType } from "../Common/Type";
-import { columnMetaKey, entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
+import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import {
     AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
     BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
@@ -23,7 +23,7 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
-import { ColumnExpression, ComputedColumnExpression, IEntityExpression, IQueryExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
+import { ColumnExpression, ComputedColumnExpression, IEntityExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinTableExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
@@ -274,17 +274,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         // TODO: ToExpression must support this parameter
         const fnExpression = ExpressionFactory.prototype.ToExpression(expression.functionFn, expression.params[0].type);
-        for (let i = 0; i < fnExpression.Params.length; i++) {
-            const param = fnExpression.Params[i];
+        for (let i = 0; i < fnExpression.params.length; i++) {
+            const param = fnExpression.params[i];
             this.parameters.add(param.name, expression.params[i]);
         }
-        const result = this.getExpressionString(fnExpression.Body);
+        const result = this.getExpressionString(fnExpression.body);
         return result;
     }
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
-        switch (expression.ObjectOperand.type as any) {
+        switch (expression.objectOperand.type as any) {
             case String:
-                switch (expression.MethodName) {
+                switch (expression.methodName) {
                     case "charAt":
                         break;
                     case "charCodeAt":
@@ -333,7 +333,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         break;
                     case "match":
                     default:
-                        throw new Error(`method "String.${expression.MethodName}" not supported in linq to sql.`);
+                        throw new Error(`method "String.${expression.methodName}" not supported in linq to sql.`);
                 }
                 break;
             case Number:
@@ -343,9 +343,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case Symbol:
                 break;
             case Object:
-                if (expression.ObjectOperand instanceof ValueExpression) {
-                    if (expression.ObjectOperand.value === Math) {
-                        switch (expression.MethodName) {
+                if (expression.objectOperand instanceof ValueExpression) {
+                    if (expression.objectOperand.value === Math) {
+                        switch (expression.methodName) {
                             case "abs":
                             case "acos":
                             case "asin":
@@ -356,23 +356,23 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             case "sqrt":
                             case "tan":
                             case "floor":
-                                return expression.MethodName.toUpperCase() + "(" + this.getExpressionString(expression.Params[0]) + ")";
+                                return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
                             case "ceil":
-                                return "CEILING(" + this.getExpressionString(expression.Params[0]) + ")";
+                                return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
                             case "atan2":
-                                return "ATN2(" + this.getExpressionString(expression.Params[0]) + "," + this.getExpressionString(expression.Params[1]) + ")";
+                                return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
                             case "log":
-                                return "LOG10(" + this.getExpressionString(expression.Params[0]) + ")";
+                                return "LOG10(" + this.getExpressionString(expression.params[0]) + ")";
                             case "pow":
-                                return "POWER(" + this.getExpressionString(expression.Params[0]) + "," + this.getExpressionString(expression.Params[1]) + ")";
+                                return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
                             case "random":
                                 return "RAND()";
                             case "round":
-                                return "ROUND(" + this.getExpressionString(expression.Params[0]) + ", 0)";
+                                return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
                             case "max":
                             case "min":
                                 // TODO: convert to .min and .max
-                                throw new Error(`method "Math.${expression.MethodName}" not supported in linq to sql.`);
+                                throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
                         }
                     }
                 }
@@ -380,19 +380,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case Function:
                 break;
         }
-        const methodFn = expression.ObjectOperand.type.prototype[expression.MethodName];
+        const methodFn = expression.objectOperand.type.prototype[expression.methodName];
         if (methodFn) {
             // TODO: ToExpression must support this parameter
-            const fnExpression = ExpressionFactory.prototype.ToExpression(methodFn, expression.ObjectOperand.type);
-            for (let i = 0; i < fnExpression.Params.length; i++) {
-                const param = fnExpression.Params[i];
-                this.parameters.add(param.name, expression.Params[i]);
+            const fnExpression = ExpressionFactory.prototype.ToExpression(methodFn, expression.objectOperand.type);
+            for (let i = 0; i < fnExpression.params.length; i++) {
+                const param = fnExpression.params[i];
+                this.parameters.add(param.name, expression.params[i]);
             }
-            this.parameters.add("this", expression.ObjectOperand);
-            const result = this.getExpressionString(fnExpression.Body);
+            this.parameters.add("this", expression.objectOperand);
+            const result = this.getExpressionString(fnExpression.body);
             return result;
         }
-        throw new Error(`type ${expression.ObjectOperand.type.name} not supported in linq to sql.`);
+        throw new Error(`type ${expression.objectOperand.type.name} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
         return this.getValueString(this.parameters.get(expression.name));
@@ -545,10 +545,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
     protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: { parent: ICommandQueryExpression }) {
-        return this.visit(expression.Body, param);
+        return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: { parent: ICommandQueryExpression }): IEntityExpression | IColumnExpression {
-        const res = expression.ObjectOperand = this.visit(expression.ObjectOperand, param);
+        const res = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
@@ -578,10 +578,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: { parent: ICommandQueryExpression }): IExpression {
-        expression.ObjectOperand = this.visit(expression.ObjectOperand, param);
-        if ((expression.ObjectOperand as IEntityExpression).columns) {
-            const parentEntity = expression.ObjectOperand as IEntityExpression;
-            switch (expression.MethodName) {
+        expression.objectOperand = this.visit(expression.objectOperand, param);
+        if ((expression.objectOperand as IEntityExpression).columns) {
+            const parentEntity = expression.objectOperand as IEntityExpression;
+            switch (expression.methodName) {
                 case "where":
                     {
                         let projectionEntity: ProjectionEntityExpression;
@@ -592,8 +592,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             param.parent.replaceEntity(parentEntity, projectionEntity);
                         }
 
-                        const fnExpression = expression.Params[0] as FunctionExpression<TType, boolean>;
-                        this.parameters.add(fnExpression.Params[0].name, parentEntity.type);
+                        const fnExpression = expression.params[0] as FunctionExpression<TType, boolean>;
+                        this.parameters.add(fnExpression.params[0].name, parentEntity.type);
                         const resExpression = this.visit(fnExpression, { parent: projectionEntity.select });
                         let whereExpression: IExpression<boolean>;
                         if (resExpression.type === Boolean) {
@@ -611,7 +611,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         else {
                             whereExpression = new NotEqualExpression(resExpression, new ValueExpression(null));
                         }
-                        this.parameters.remove(fnExpression.Params[0].name);
+                        this.parameters.remove(fnExpression.params[0].name);
                         projectionEntity.select.where = projectionEntity.select.where ? new AndExpression(projectionEntity.select.where, whereExpression!) : whereExpression!;
                         return projectionEntity;
                     }
@@ -626,10 +626,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         let selectExp = projectionEntity.select;
-                        const fnExpression = expression.Params[0] as FunctionExpression<TType, TResult>;
-                        this.parameters.add(fnExpression.Params[0].name, projectionEntity.type);
+                        const fnExpression = expression.params[0] as FunctionExpression<TType, TResult>;
+                        this.parameters.add(fnExpression.params[0].name, projectionEntity.type);
                         const selectExpression = this.visit(fnExpression, { parent: projectionEntity.select });
-                        this.parameters.remove(fnExpression.Params[0].name);
+                        this.parameters.remove(fnExpression.params[0].name);
 
                         selectExp.columns = [];
                         if ((selectExpression as IEntityExpression).columns) {
@@ -646,8 +646,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             return columnExpression.entity;
                         }
                         else if (selectExpression instanceof ObjectValueExpression) {
-                            selectExp.columns = Object.keys(selectExpression.Object).select(
-                                (o) => selectExpression.Object[o] instanceof ColumnExpression ? selectExpression.Object[o] : new ComputedColumnExpression(selectExp.entity, selectExpression.Object[o], this.newAlias("column"))
+                            selectExp.columns = Object.keys(selectExpression.object).select(
+                                (o) => selectExpression.object[o] instanceof ColumnExpression ? selectExpression.object[o] : new ComputedColumnExpression(selectExp.entity, selectExpression.object[o], this.newAlias("column"))
                             ).toArray();
                         }
                         else {
@@ -667,8 +667,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         const selectExp = projectionEntity.select;
-                        if (expression.Params.length > 0) {
-                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "groupBy", expression.Params), param) as ProjectionEntityExpression;
+                        if (expression.params.length > 0) {
+                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "groupBy", expression.params), param) as ProjectionEntityExpression;
                             const fnExpression = ExpressionFactory.prototype.ToExpression((o: TType[]) => o.first(), Array);
                             projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "select", [fnExpression]), param) as ProjectionEntityExpression;
                         }
@@ -688,11 +688,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         const selectExp = projectionEntity.select;
-                        for (const selectorfn of expression.Params) {
+                        for (const selectorfn of expression.params) {
                             const selector = selectorfn as FunctionExpression<TType, TResult>;
-                            this.parameters.add(selector.Params[0].name, expression.ObjectOperand.type);
+                            this.parameters.add(selector.params[0].name, expression.objectOperand.type);
                             const selectExpression = this.visit(selector, { parent: projectionEntity.select });
-                            this.parameters.remove(selector.Params[0].name);
+                            this.parameters.remove(selector.params[0].name);
 
                             if ((selectExpression as IEntityExpression).columns) {
                                 const entityExpression = selectExpression as IEntityExpression;
@@ -717,11 +717,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         const selectExp = projectionEntity.select;
-                        const selector = expression.Params[0] as FunctionExpression<TType, boolean>;
-                        const direction = expression.Params[1] as ValueExpression<orderDirection>;
-                        this.parameters.add(selector.Params[0].name, expression.ObjectOperand.type);
+                        const selector = expression.params[0] as FunctionExpression<TType, boolean>;
+                        const direction = expression.params[1] as ValueExpression<orderDirection>;
+                        this.parameters.add(selector.params[0].name, expression.objectOperand.type);
                         const orderByExpression = this.visit(selector, { parent: projectionEntity.select });
-                        this.parameters.remove(selector.Params[0].name);
+                        this.parameters.remove(selector.params[0].name);
                         selectExp.orders.add({ column: orderByExpression, direction: direction.execute() });
                         return projectionEntity;
                     }
@@ -736,7 +736,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         const selectExp = projectionEntity.select;
-                        const skipExp = expression.Params[0] as ValueExpression<number>;
+                        const skipExp = expression.params[0] as ValueExpression<number>;
                         selectExp.paging.skip = skipExp.execute();
                         return projectionEntity;
                     }
@@ -751,7 +751,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         const selectExp = projectionEntity.select;
-                        const takeExp = expression.Params[0] as ValueExpression<number>;
+                        const takeExp = expression.params[0] as ValueExpression<number>;
                         selectExp.paging.take = takeExp.execute();
                         return projectionEntity;
                     }
@@ -766,10 +766,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
 
                         let selectExp = projectionEntity.select;
-                        const selector = expression.Params[0] as FunctionExpression<TType, TResult[]>;
-                        this.parameters.add(selector.Params[0].name, expression.ObjectOperand.type);
+                        const selector = expression.params[0] as FunctionExpression<TType, TResult[]>;
+                        this.parameters.add(selector.params[0].name, expression.objectOperand.type);
                         const selectExpression = this.visit(selector, param);
-                        this.parameters.remove(selector.Params[0].name);
+                        this.parameters.remove(selector.params[0].name);
 
                         selectExp.columns = [];
                         if ((selectExpression as IEntityExpression).columns) {
@@ -799,10 +799,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                         const selectExp = projectionEntity.select;
                         const groupExpression = new GroupByExpression<any, any>(new SelectExpression(projectionEntity));
-                        const keySelector = expression.Params[0] as FunctionExpression<TType, TResult>;
-                        this.parameters.add(keySelector.Params[0].name, expression.ObjectOperand.type);
+                        const keySelector = expression.params[0] as FunctionExpression<TType, TResult>;
+                        this.parameters.add(keySelector.params[0].name, expression.objectOperand.type);
                         const selectExpression = this.visit(keySelector, param);
-                        this.parameters.remove(keySelector.Params[0].name);
+                        this.parameters.remove(keySelector.params[0].name);
 
                         if ((selectExpression as IEntityExpression).columns) {
                             const entityExpression = selectExpression as IEntityExpression;
@@ -814,8 +814,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
                         else if (selectExpression instanceof ObjectValueExpression) {
                             // TODO: select expression like o => {asd: o.Prop} need optimization. remove unused relation/join
-                            groupExpression.groupBy = Object.keys(selectExpression.Object).select(
-                                (o) => selectExpression.Object[o] instanceof ColumnExpression ? selectExpression.Object[o] : new ComputedColumnExpression(selectExp.entity, selectExpression.Object[o], this.newAlias("column"))
+                            groupExpression.groupBy = Object.keys(selectExpression.object).select(
+                                (o) => selectExpression.object[o] instanceof ColumnExpression ? selectExpression.object[o] : new ComputedColumnExpression(selectExp.entity, selectExpression.object[o], this.newAlias("column"))
                             ).toArray();
                         }
                         else {
@@ -841,8 +841,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             param.parent.replaceEntity(parentEntity, projectionEntity);
                         }
 
-                        if (expression.Params.length > 0) {
-                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.Params[0]]), param) as ProjectionEntityExpression;
+                        if (expression.params.length > 0) {
+                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.params[0]]), param) as ProjectionEntityExpression;
                         }
                         const selectExp = projectionEntity.select;
                         selectExp.paging.take = 1;
@@ -864,7 +864,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
                         // TODO: reverse default order.
 
-                        return this.visit(new MethodCallExpression(projectionEntity, "first", expression.Params), param);
+                        return this.visit(new MethodCallExpression(projectionEntity, "first", expression.params), param);
                     }
                 case "count":
                 case "sum":
@@ -873,10 +873,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case "min":
                     {
                         let entity = parentEntity;
-                        if (expression.Params.length > 0) {
-                            entity = this.visit(new MethodCallExpression(entity, "select", [expression.Params[0]]), param) as IEntityExpression;
+                        if (expression.params.length > 0) {
+                            entity = this.visit(new MethodCallExpression(entity, "select", [expression.params[0]]), param) as IEntityExpression;
                         }
-                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(entity, expression.MethodName, []), this.newAlias("column"));
+                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(entity, expression.methodName, []), this.newAlias("column"));
                     }
                 case "all":
                 case "any":
@@ -889,16 +889,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             param.parent.replaceEntity(parentEntity, projectionEntity);
                         }
 
-                        if (expression.Params.length > 0) {
-                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.Params[0]]), param) as ProjectionEntityExpression;
+                        if (expression.params.length > 0) {
+                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.params[0]]), param) as ProjectionEntityExpression;
                         }
-                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, expression.MethodName, []), this.newAlias("column"));
+                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, expression.methodName, []), this.newAlias("column"));
                     }
                 case "contain":
                     {
-                        const entityMeta: IEntityMetaData<TType, any> = Reflect.getOwnMetadata(entityMetaKey, expression.Params[0].type);
+                        const entityMeta: IEntityMetaData<TType, any> = Reflect.getOwnMetadata(entityMetaKey, expression.params[0].type);
                         if (!entityMeta) {
-                            throw new Error(`${expression.MethodName} only support entity`);
+                            throw new Error(`${expression.methodName} only support entity`);
                         }
                         let projectionEntity: ProjectionEntityExpression;
                         if (parentEntity instanceof ProjectionEntityExpression)
@@ -911,7 +911,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             const primaryColumn = projectionEntity.columns.first((c) => c.property === pk);
                             if (!primaryColumn)
                                 throw new Error(`primaryColumn not exist`);
-                            this.visit(new MethodCallExpression(projectionEntity, "where", [new EqualExpression(primaryColumn, new MemberAccessExpression(expression.Params[0], pk))]), { parent: projectionEntity.select });
+                            this.visit(new MethodCallExpression(projectionEntity, "where", [new EqualExpression(primaryColumn, new MemberAccessExpression(expression.params[0], pk))]), { parent: projectionEntity.select });
                         }
                         return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, "any", []), this.newAlias("column"));
                     }
@@ -924,11 +924,23 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case "rightJoin":
                 case "union":
                 default:
-                    throw new Error(`${expression.MethodName} not supported on expression`);
+                    throw new Error(`${expression.methodName} not supported on expression`);
             }
         }
         else {
-            expression.Params = expression.Params.select((o) => this.visit(o, param)).toArray();
+            if (expression.objectOperand instanceof ValueExpression) {
+                if (expression.objectOperand.value === Math) {
+                    switch (expression.methodName) {
+                        case "max":
+                        case "min":
+                            {
+                                const entity = this.visit(expression.params[0], param) as IEntityExpression;
+                                return new ComputedColumnExpression(entity, new MethodCallExpression(entity, expression.methodName, []), this.newAlias("column"));
+                            }
+                    }
+                }
+            }
+            expression.params = expression.params.select((o) => this.visit(o, param)).toArray();
         }
 
         return expression;
@@ -977,8 +989,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: { parent: ICommandQueryExpression }) {
         // tslint:disable-next-line:forin
-        for (const prop in expression.Object) {
-            expression.Object[prop] = this.visit(expression.Object[prop], param);
+        for (const prop in expression.object) {
+            expression.object[prop] = this.visit(expression.object[prop], param);
         }
         return expression;
     }

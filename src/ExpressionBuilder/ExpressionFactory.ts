@@ -18,9 +18,9 @@ export class ExpressionFactory {
     }
     public ToLiteralObjectExpression<T, K, KE extends {[key in keyof K]: IExpression}, KR extends { [key: string]: FunctionExpression<T, any> }>(fn: (item?: T) => K, sourceType: IObjectType<T>): KR {
         const expression = this.ToExpression(fn, sourceType);
-        const objExpression = expression.Body as ObjectValueExpression<KE>;
-        return Object.keys(objExpression.Object).reduce((result, cur: keyof K) => {
-            result[cur] = FunctionExpression.Create<T, any>(objExpression.Object[cur], expression.Params);
+        const objExpression = expression.body as ObjectValueExpression<KE>;
+        return Object.keys(objExpression.object).reduce((result, cur: keyof K) => {
+            result[cur] = FunctionExpression.Create<T, any>(objExpression.object[cur], expression.params);
             return result;
         }, {} as KR);
     }

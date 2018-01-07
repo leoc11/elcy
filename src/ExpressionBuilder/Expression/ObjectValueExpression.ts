@@ -17,22 +17,22 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
 
         return result;
     }
-    public Object: TType;
+    public object: TType;
     constructor(objectValue: TType) {
         super();
-        this.Object = objectValue;
+        this.object = objectValue;
     }
 
     public toString(transformer: ExpressionTransformer) {
         const itemString = [];
-        for (const item in this.Object)
-            itemString.push(item + ": " + this.Object[item].toString(transformer));
+        for (const item in this.object)
+            itemString.push(item + ": " + this.object[item].toString(transformer));
         return "{" + itemString.join(", ") + "}";
     }
     public execute(transformer: ExpressionTransformer): TType {
         const objectValue: { [Key: string]: IExpression } = {};
-        for (const prop in this.Object)
-            objectValue[prop] = this.Object[prop].execute(transformer);
+        for (const prop in this.object)
+            objectValue[prop] = this.object[prop].execute(transformer);
         return objectValue as TType;
     }
 }

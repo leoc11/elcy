@@ -10,28 +10,28 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
 
         return result;
     }
-    public MethodName: string;
-    constructor(public ObjectOperand: IExpression<TType>, method: KProp | (() => TResult), public Params: IExpression[]) {
+    public methodName: string;
+    constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[]) {
         super(); // TODO
         if (typeof method === "function") {
-            this.MethodName = method.name;
+            this.methodName = method.name;
         }
         else {
-            this.MethodName = method;
+            this.methodName = method;
         }
     }
 
     public toString(transformer: ExpressionTransformer): string {
         const paramStr = [];
-        for (const param of this.Params)
+        for (const param of this.params)
             paramStr.push(param.toString(transformer));
-        return this.ObjectOperand.toString(transformer) + "." + this.MethodName + "(" + paramStr.join(", ") + ")";
+        return this.objectOperand.toString(transformer) + "." + this.methodName + "(" + paramStr.join(", ") + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        const objectValue = this.ObjectOperand.execute(transformer);
+        const objectValue = this.objectOperand.execute(transformer);
         const params = [];
-        for (const param of this.Params)
+        for (const param of this.params)
             params.push(param.execute(transformer));
-        return objectValue[this.MethodName].apply(objectValue, params);
+        return objectValue[this.methodName].apply(objectValue, params);
     }
 }

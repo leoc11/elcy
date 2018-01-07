@@ -1,4 +1,5 @@
 import { genericType } from "../../Common/Type";
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase } from "./IExpression";
 
 export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
@@ -15,11 +16,10 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
         super(type);
     }
 
-    public toString(): string {
-        return this.name;
+    public toString(transformer: ExpressionTransformer): string {
+        return transformer.toExpressionString(this);
     }
-    public execute(): TType {
-        throw new Error("Method not implemented.");
+    public execute(transformer: ExpressionTransformer): any {
+        return transformer.parameters.get(this.name);
     }
-
 }

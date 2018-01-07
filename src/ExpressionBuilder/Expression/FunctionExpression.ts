@@ -17,16 +17,16 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         return (new ExpressionBuilder()).ParseToExpression(functionFn, ctors as Array<{ new(): any }>, params);
     }
     // TODO: type must always specified
-    constructor(public Body: IExpression<TResult>, public Params: Array<ParameterExpression<TType>>, type?: genericType<TResult>) {
+    constructor(public body: IExpression<TResult>, public params: Array<ParameterExpression<TType>>, type?: genericType<TResult>) {
         super(type);
     }
 
     public toString(transformer: ExpressionTransformer): string {
         const params = [];
-        for (const param of this.Params)
+        for (const param of this.params)
             params.push(param.toString());
 
-        return "(" + params.join(", ") + ") => {" + this.Body.toString(transformer) + "}";
+        return "(" + params.join(", ") + ") => {" + this.body.toString(transformer) + "}";
     }
     public execute(transformer: ExpressionTransformer): any {
         return transformer.executeExpression(this);

@@ -9,12 +9,12 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
 
         return result;
     }
-    constructor(public ObjectOperand: IExpression<TType>, public memberName: KProp | ExpressionBase<KProp>) {
+    constructor(public objectOperand: IExpression<TType>, public memberName: KProp | ExpressionBase<KProp>) {
         super(); // TODO
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        let result = this.ObjectOperand.toString(transformer);
+        let result = this.objectOperand.toString(transformer);
         if (this.memberName instanceof ExpressionBase)
             result += "[" + this.memberName.toString(transformer) + "]";
         else
@@ -28,6 +28,6 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
         else
             member = this.memberName;
 
-        return this.ObjectOperand.execute(transformer)[member];
+        return this.objectOperand.execute(transformer)[member];
     }
 }

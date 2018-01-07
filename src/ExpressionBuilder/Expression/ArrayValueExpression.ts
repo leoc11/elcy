@@ -10,21 +10,21 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
 
         return result;
     }
-    public Items: Array<IExpression<TType>>;
+    public items: Array<IExpression<TType>>;
     constructor(...items: Array<IExpression<TType>>) {
         super(Array);
-        this.Items = items;
+        this.items = items;
     }
 
     public toString(transformer: ExpressionTransformer) {
         const itemString = [];
-        for (const item of this.Items)
+        for (const item of this.items)
             itemString.push(item.toString(transformer));
         return "[" + itemString.join(", ") + "]";
     }
     public execute(transformer: ExpressionTransformer) {
         const arrayValues = [];
-        for (const item of this.Items)
+        for (const item of this.items)
             arrayValues.push(item.execute(transformer));
         return arrayValues;
     }
