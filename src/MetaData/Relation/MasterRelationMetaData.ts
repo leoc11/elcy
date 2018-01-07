@@ -15,7 +15,7 @@ export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaDat
             Object.keys(foreignKey.relationMaps).forEach((o: keyof TSlave) => {
                 const masterProp = foreignKey.relationMaps[o];
                 if (typeof masterProp !== "undefined")
-                    this._relationMaps[masterProp] = o;
+                    (this._relationMaps as any)[masterProp] = o;
             });
         }
         return this._relationMaps;

@@ -435,17 +435,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getNumberString(value: number) {
         return value.toString();
     }
-    protected getFunctionExpressionString<T>(expression: FunctionExpression<T>): string {
+    // tslint:disable-next-line:variable-name
+    protected getFunctionExpressionString<T>(_expression: FunctionExpression<T>): string {
         throw new Error(`Function not supported`);
     }
 
     protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
         return "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") THEN " + this.getExpressionString(expression.trueResultOperand) + " ELSE " + this.getExpressionString(expression.falseResultOperand) + " END";
     }
-    protected getObjectValueExpressionString<T extends { [Key: string]: IExpression }>(expression: ObjectValueExpression<T>): string {
+    // tslint:disable-next-line:variable-name
+    protected getObjectValueExpressionString<T extends { [Key: string]: IExpression }>(_expression: ObjectValueExpression<T>): string {
         throw new Error(`ObjectValue not supported`);
     }
-    protected getArrayValueExpressionString<T>(expression: ArrayValueExpression<T>): string {
+    // tslint:disable-next-line:variable-name
+    protected getArrayValueExpressionString<T>(_expression: ArrayValueExpression<T>): string {
         throw new Error(`ArrayValue not supported`);
     }
 
@@ -461,7 +464,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getGreaterThanExpressionString<T>(expression: GreaterThanExpression<T>): string {
         return this.getExpressionString(expression.leftOperand) + " > " + this.getExpressionString(expression.rightOperand);
     }
-    protected getInstanceofExpressionString(expression: InstanceofExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getInstanceofExpressionString(_expression: InstanceofExpression): string {
         throw new Error(`InstanceofExpression not supported`);
     }
     protected getLessEqualExpressionString<T>(expression: LessEqualExpression<T>): string {
@@ -501,23 +505,28 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getAndExpressionString(expression: AndExpression): string {
         return this.getExpressionString(expression.leftOperand) + " AND " + this.getExpressionString(expression.rightOperand);
     }
-    protected getLeftDecrementExpressionString(expression: LeftDecrementExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
         throw new Error(`LeftDecrement not supported`);
     }
-    protected getLeftIncrementExpressionString(expression: LeftIncrementExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
     protected getNotExpressionString(expression: NotExpression): string {
         const operandString = this.getExpressionString(expression.operand);
         return "NOT " + operandString;
     }
-    protected getRightDecrementExpressionString(expression: RightDecrementExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getRightDecrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightDecrement not supported`);
     }
-    protected getRightIncrementExpressionString(expression: RightIncrementExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getRightIncrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightIncrement not supported`);
     }
-    protected getTypeofExpressionString(expression: TypeofExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getTypeofExpressionString(_expression: TypeofExpression): string {
         throw new Error(`Typeof not supported`);
     }
 

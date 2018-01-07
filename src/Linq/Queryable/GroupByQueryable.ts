@@ -1,10 +1,11 @@
-import { FunctionExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { IGroupArray } from "../Interface/IGroupArray";
 import { Queryable } from "./Queryable";
-import { ColumnExpression, ComputedColumnExpression, GroupByExpression, IColumnExpression, IEntityExpression, SelectExpression } from "./QueryExpression/index";
+import { SelectExpression } from "./QueryExpression/index";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
+    public expression: SelectExpression<IGroupArray<T, K>>;
     protected readonly keySelector: FunctionExpression<T, K>;
     constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<T, K> | ((item: T) => K)) {
         super(Array, parent.queryBuilder);
@@ -12,7 +13,7 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     }
     public execute(): SelectExpression<IGroupArray<T, K>> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.execute());
+            this.expression = new SelectExpression<any>(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "groupBy", [this.keySelector]);
             const param = { parent: this.expression };
             this.queryBuilder.visit(methodExpression, param);

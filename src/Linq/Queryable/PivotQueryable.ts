@@ -23,7 +23,7 @@ export class PivotQueryable<T, TD extends { [key: string]: ((item: T) => any) | 
 
     public execute(): SelectExpression<TResult> {
         if (!this.expression) {
-            const expression = new SelectExpression<any>(this.parent.execute());
+            const expression = new SelectExpression<any>(this.parent.execute() as any);
             const groups: any[] = [];
             const columns: any[] = [];
             const param = { parent: expression };
@@ -46,6 +46,6 @@ export class PivotQueryable<T, TD extends { [key: string]: ((item: T) => any) | 
             groupByExpression.groupBy = groups;
             this.expression = groupByExpression;
         }
-        return this.expression;
+        return this.expression as any;
     }
 }

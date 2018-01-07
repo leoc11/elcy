@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { genericType, IObjectType, ReferenceOption, RelationType } from "../../Common/Type";
+import { IObjectType, ReferenceOption, RelationType } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../../MetaData/Relation";
 import { entityMetaKey, relationMetaKey } from "../DecoratorKey";

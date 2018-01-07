@@ -8,11 +8,11 @@ export class IntersectQueryable<T> extends Queryable<T> {
     public execute(): SelectExpression<T> {
         if (!this.expression) {
             const exceptEntity = new IntersectExpression(
-                new ProjectionEntityExpression(new SelectExpression(this.parent.execute()), this.queryBuilder.newAlias()),
-                new ProjectionEntityExpression(new SelectExpression(this.parent2.execute()), this.queryBuilder.newAlias()));
+                new ProjectionEntityExpression(new SelectExpression(this.parent.execute() as any), this.queryBuilder.newAlias()),
+                new ProjectionEntityExpression(new SelectExpression(this.parent2.execute() as any), this.queryBuilder.newAlias()));
 
             this.expression = exceptEntity;
         }
-        return this.expression;
+        return this.expression as any;
     }
 }

@@ -18,7 +18,7 @@ export class JoinEntityExpression<T, T2, TR extends {[prop in keyof (T | T2)]: a
     }
 
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.toJoinEntityString(this);
+        return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");

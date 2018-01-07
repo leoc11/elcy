@@ -18,8 +18,8 @@ export abstract class JoinQueryable<T = any, T2 = any, K = any, R = any> extends
     }
     public execute() {
         if (!this.expression) {
-            const parent1Expression = new SelectExpression(this.parent.execute());
-            const parent2Expression = new SelectExpression(this.parent2.execute());
+            const parent1Expression = new SelectExpression(this.parent.execute() as any);
+            const parent2Expression = new SelectExpression(this.parent2.execute() as any);
             let param: { parent: ICommandQueryExpression } = { parent: parent1Expression };
             this.queryBuilder.parameters.add(this.keySelector1.params[0].name, this.parent.type);
             const keySelector1 = this.queryBuilder.visit(this.keySelector1, param);
@@ -35,18 +35,18 @@ export abstract class JoinQueryable<T = any, T2 = any, K = any, R = any> extends
                 new ProjectionEntityExpression(parent2Expression, this.queryBuilder.newAlias()),
                 this.queryBuilder.newAlias(), this.joinType);
 
-            joinEntity.relations.add({ leftColumn: keySelector1, rightColumn: keySelector2 });
+            joinEntity.relations.add({ leftColumn: keySelector1 as any, rightColumn: keySelector2 as any });
 
             this.expression = new SelectExpression<R>(joinEntity);
 
             if (this.resultSelector) {
                 this.queryBuilder.parameters.add(this.resultSelector.params[0].name, this.parent.type);
                 this.queryBuilder.parameters.add(this.resultSelector.params[1].name, this.parent2.type);
-                const resultSelector: ObjectValueExpression<any> = this.queryBuilder.visit(this.resultSelector, param);
+                const resultSelector = this.queryBuilder.visit(this.resultSelector, param) as ObjectValueExpression<any>;
                 this.queryBuilder.parameters.remove(this.resultSelector.params[0].name);
                 this.queryBuilder.parameters.remove(this.resultSelector.params[1].name);
 
-                this.expression.columns = Object.keys(resultSelector.object).select(
+                (this.expression as SelectExpression<R>).columns = Object.keys(resultSelector.object).select(
                     (o) => resultSelector.object[o] instanceof ColumnExpression ? resultSelector.object[o] : new ComputedColumnExpression(this.expression.entity, resultSelector.object[o], this.queryBuilder.newAlias("column"))
                 ).toArray();
             }

@@ -7,7 +7,7 @@ export class IntersectExpression extends SelectExpression {
         super(entity);
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getEntityQueryString(this);
+        return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");

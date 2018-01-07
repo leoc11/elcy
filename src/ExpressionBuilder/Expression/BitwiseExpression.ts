@@ -1,4 +1,3 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { FunctionCallExpression } from "./FunctionCallExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";

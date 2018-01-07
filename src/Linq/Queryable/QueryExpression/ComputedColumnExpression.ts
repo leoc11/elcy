@@ -12,7 +12,7 @@ export class ComputedColumnExpression<T = any, TE = any> implements IColumnExpre
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public alias?: string) {
     }
     public toString(transformer: QueryBuilder): string {
-        return transformer.getColumnString(this);
+        return transformer.getExpressionString(this);
     }
     public execute(transformer: QueryBuilder) {
         return this.toString(transformer);

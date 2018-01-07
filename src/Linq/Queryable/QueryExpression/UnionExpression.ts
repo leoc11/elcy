@@ -7,7 +7,7 @@ export class UnionExpression extends SelectExpression {
         super(entity);
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.toUnionString(this);
+        return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");

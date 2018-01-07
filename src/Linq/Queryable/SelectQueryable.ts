@@ -12,12 +12,12 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     }
     public execute(): SelectExpression<T> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.execute());
+            this.expression = new SelectExpression<any>(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "select", [this.selector]);
             const param = { parent: this.expression };
             this.queryBuilder.visit(methodExpression, param);
             this.expression = param.parent;
         }
-        return this.expression;
+        return this.expression as any;
     }
 }

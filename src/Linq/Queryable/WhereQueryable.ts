@@ -9,9 +9,9 @@ export class WhereQueryable<T> extends Queryable<T> {
         super(parent.type, parent.queryBuilder);
         this.predicate = predicate instanceof FunctionExpression ? predicate : ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, parent.type);
     }
-    public execute() {
+    public execute(): any {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.execute());
+            this.expression = new SelectExpression(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "where", [this.predicate]);
             const param = { parent: this.expression };
             this.queryBuilder.visit(methodExpression, param);

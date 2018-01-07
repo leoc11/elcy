@@ -33,7 +33,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         }
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getSelectQueryString(this);
+        return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): SelectExpression {
 

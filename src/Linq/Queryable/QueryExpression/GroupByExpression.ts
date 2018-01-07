@@ -1,5 +1,4 @@
 import { genericType } from "../../../Common/Type";
-import { FunctionExpression } from "../../../ExpressionBuilder/Expression/index";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 

@@ -16,10 +16,10 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     constructor(public select: SelectExpression, public alias: string, public readonly type: IObjectType<T> = Object as any) {
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getEntityQueryString(this);
+        return queryBuilder.getExpressionString(this);
     }
-    public execute(queryBuilder: QueryBuilder) {
-        return queryBuilder.getEntityQueryString(this);
+    public execute(queryBuilder: QueryBuilder): any {
+        return queryBuilder.getExpressionString(this);
     }
 
     public has<TE>(type: IObjectType<TE>) {

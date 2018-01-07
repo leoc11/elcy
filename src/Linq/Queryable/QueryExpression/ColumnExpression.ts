@@ -28,7 +28,7 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
         this.alias = alias;
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getColumnString(this);
+        return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): string {
         return this.toString(queryBuilder);

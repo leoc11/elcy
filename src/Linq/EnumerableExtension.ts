@@ -1,6 +1,5 @@
 import { orderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable/Enumerable";
-import { GroupByEnumerable } from "./Enumerable/GroupByEnumerable";
 import { IGroupArray } from "./Interface/IGroupArray";
 
 declare global {
