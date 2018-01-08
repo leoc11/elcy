@@ -336,9 +336,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             return "(" + this.getExpressionString(expression.params[0]) + " + RIGHT(" + this.getExpressionString(expression.objectOperand) + ", (LEN(" + this.getExpressionString(expression.objectOperand) + ") - " + this.getExpressionString(expression.params[0]) + "))))";
                         return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getString("%") + ", " + this.getExpressionString(expression.params[0]) + ", " + this.getString("%") + ")";
                     case "indexOf":
-                        return "CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.objectOperand) + ")";
+                        return "(CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.objectOperand) +
+                            (expression.params.length > 1 ? ", " + this.getExpressionString(expression.params[1]) : "") +
+                            ") - 1)";
                     case "lastIndexOf":
-                        return "(LEN(" + this.getExpressionString(expression.objectOperand) + ") - CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", REVERSE(" + this.getExpressionString(expression.objectOperand) + ")))";
+                        return "(LEN(" + this.getExpressionString(expression.objectOperand) + ") - CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", REVERSE(" + this.getExpressionString(expression.objectOperand) + ")" +
+                            (expression.params.length > 1 ? ", " + this.getExpressionString(expression.params[1]) : "") + "))";
                     case "like":
                         return "(" + this.getExpressionString(expression.objectOperand) + " LIKE " + this.getExpressionString(expression.params[0]) + ")";
                     case "repeat":
@@ -358,10 +361,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         break;
                     case "toLowerCase":
                     case "toLocaleLowerCase":
-                        break;
+                        return "LOWER(" + this.getExpressionString(expression.objectOperand) + ")";
                     case "toUpperCase":
                     case "toLocaleUpperCase":
-                        break;
+                        return "UPPER(" + this.getExpressionString(expression.objectOperand) + ")";
                     case "toString":
                     case "valueOf":
                         break;
@@ -463,6 +466,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "toLocaleTimeString":
                     case "toLocaleString":
                     case "toString":
+                    case "valueOf":
                     case "toTimeString":
                     case "toUTCString":
                         throw new Error(`${expression.methodName} not supported.`);
@@ -475,8 +479,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             "RIGHT(CONCAT(" + this.getString("0") + ", RTRIM(MONTH(" + this.getExpressionString(expression.objectOperand) + "))), 2))";
                     case "toGMTString":
                         throw new Error(`${expression.methodName} deprecated.`);
-                    case "valueOf":
-                        break;
                 }
                 break;
             case Object:
