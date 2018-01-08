@@ -337,47 +337,179 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 break;
             case Number:
-                break;
-            case Boolean:
+                switch (expression.methodName) {
+                    case "isFinite":
+                    case "isInteger":
+                    case "isNaN":
+                    case "isSafeInteger":
+                    case "toExponential":
+                    case "toFixed":
+                    case "toPrecision":
+                    case "toString":
+                    case "valueOf":
+                        break;
+
+                }
                 break;
             case Symbol:
+            case Boolean:
+                switch (expression.methodName) {
+                    case "toString":
+                        break;
+                }
+                break;
+            case Date:
+                switch (expression.methodName) {
+                    case "getDate":
+                    case "getDay":
+                    case "getFullYear":
+                    case "getHours":
+                    case "getMinutes":
+                    case "getMonth":
+                    case "getSeconds":
+                    case "getTime":
+                    case "getTimezoneOffset":
+                    case "getUTCDate":
+                    case "getUTCDay":
+                    case "getUTCFullYear":
+                    case "getUTCHours":
+                    case "getUTCMilliseconds":
+                    case "getUTCMinutes":
+                    case "getUTCMonth":
+                    case "getUTCSeconds":
+                    case "getYear":
+                    case "now":
+                    case "parse":
+                    case "setDate":
+                    case "setFullYear":
+                    case "setHours":
+                    case "setMilliseconds":
+                    case "setMinutes":
+                    case "setMonth":
+                    case "setSeconds":
+                    case "setTime":
+                    case "setUTCDate":
+                    case "setUTCFullYear":
+                    case "setUTCHours":
+                    case "setUTCMilliseconds":
+                    case "setUTCMinutes":
+                    case "setUTCMonth":
+                    case "setUTCSeconds":
+                    case "setYear":
+                    case "toDateString":
+                    case "toGMTString":
+                    case "toISOString":
+                    case "toJSON":
+                    case "toLocaleDateString":
+                    case "toLocaleTimeString":
+                    case "toLocaleString":
+                    case "toString":
+                    case "toTimeString":
+                    case "toUTCString":
+                    case "UTC":
+                    case "valueOf":
+                        break;
+                }
                 break;
             case Object:
+                if ((expression.objectOperand as IEntityExpression).columns) {
+                    switch (expression.methodName) {
+                        case "concat":
+                        case "copyWithin":
+                        case "every":
+                        case "fill":
+                        case "filter":
+                        case "find":
+                        case "findIndex":
+                        case "forEach":
+                        case "indexOf":
+                        case "join":
+                        case "lastIndexOf":
+                        case "map":
+                        case "pop":
+                        case "push":
+                        case "reduce":
+                        case "reduceRight":
+                        case "reverse":
+                        case "shift":
+                        case "slice":
+                        case "some":
+                        case "sort":
+                        case "splice":
+                        case "toString":
+                        case "unshift":
+                        case "valueOf":
+                            break;
+                    }
+                }
                 if (expression.objectOperand instanceof ValueExpression) {
-                    if (expression.objectOperand.value === Math) {
-                        switch (expression.methodName) {
-                            case "abs":
-                            case "acos":
-                            case "asin":
-                            case "atan":
-                            case "cos":
-                            case "exp":
-                            case "sin":
-                            case "sqrt":
-                            case "tan":
-                            case "floor":
-                                return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
-                            case "ceil":
-                                return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
-                            case "atan2":
-                                return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                            case "log":
-                                return "LOG10(" + this.getExpressionString(expression.params[0]) + ")";
-                            case "pow":
-                                return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                            case "random":
-                                return "RAND()";
-                            case "round":
-                                return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
-                            case "max":
-                            case "min":
-                                // TODO: convert to .min and .max
-                                throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
-                        }
+                    switch (expression.objectOperand.value) {
+                        case Math:
+                            switch (expression.methodName) {
+                                case "abs":
+                                case "acos":
+                                case "asin":
+                                case "atan":
+                                case "cos":
+                                case "exp":
+                                case "sin":
+                                case "sqrt":
+                                case "tan":
+                                case "floor":
+                                    return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
+                                case "ceil":
+                                    return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
+                                case "atan2":
+                                    return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
+                                case "log":
+                                case "log10":
+                                    return "LOG10(" + this.getExpressionString(expression.params[0]) + ")";
+                                case "pow":
+                                    return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
+                                case "random":
+                                    return "RAND()";
+                                case "round":
+                                    return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
+                                case "max":
+                                case "min":
+                                case "acosh":
+                                case "asinh":
+                                case "atanh":
+                                case "cbrt":
+                                case "clz32":
+                                case "cosh":
+                                case "expm1":
+                                case "fround":
+                                case "hypot":
+                                case "imul":
+                                case "log1p":
+                                case "log2":
+                                case "sign":
+                                case "sinh":
+                                case "tanh":
+                                case "trunc":
+                                    // TODO: convert to .min and .max
+                                    throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
+                            }
+                            break;
+                        case Array:
+                            switch (expression.methodName) {
+                                case "isArray":
+                                    break;
+                            }
+                            break;
                     }
                 }
                 break;
             case Function:
+                switch (expression.methodName) {
+                    case "apply":
+                    case "bind":
+                    case "call":
+                    case "toSource":
+                    case "toString":
+                        break;
+                }
                 break;
         }
         const methodFn = expression.objectOperand.type.prototype[expression.methodName];
@@ -563,6 +695,53 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         if ((res as IEntityExpression).columns && expression.memberName === "length") {
             return new ComputedColumnExpression(res as IEntityExpression, new MethodCallExpression(res, "count", []));
+        }
+        switch (res.type) {
+            case String:
+                switch (expression.memberName) {
+                    case "length":
+                        break;
+                }
+                break;
+            case Function:
+                switch (expression.memberName) {
+                    case "arguments":
+                    case "caller":
+                    case "length":
+                    case "name":
+                    case "prototype":
+                        break;
+                }
+                break;
+        }
+        if ((res instanceof ValueExpression)) {
+            switch (res.value) {
+                case Number:
+                    switch (expression.memberName) {
+                        case "MAX_VALUE":
+                        case "MIN_VALUE":
+                        case "NEGATIVE_INFINITY":
+                        case "NaN":
+                        case "POSITIVE_INFINITY":
+                        case "constructor":
+                        case "prototype":
+                            break;
+                    }
+                    break;
+                case Math:
+                    switch (expression.memberName) {
+                        case "E":
+                        case "LN2":
+                        case "LN10":
+                        case "LOG2E":
+                        case "LOG10E":
+                        case "PI":
+                        case "SQRT1_2":
+                        case "SQRT2":
+                            break;
+                    }
+                    break;
+            }
         }
         const parentEntity = res as IEntityExpression;
         const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
