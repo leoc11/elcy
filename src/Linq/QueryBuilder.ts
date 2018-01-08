@@ -113,7 +113,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             let result = "";
             switch (expression.constructor) {
                 case MemberAccessExpression:
-                    throw new Error(`MemberAccessExpression should not longer exist`);
+                    result = this.getMemberAccessExpressionString(expression as any);
+                    break;
                 case MethodCallExpression:
                     result = this.getMethodCallExpressionString(expression as any);
                     break;
@@ -281,28 +282,65 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const result = this.getExpressionString(fnExpression.body);
         return result;
     }
+    protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
+        switch (expression.objectOperand.type) {
+            case String:
+                switch (expression.memberName) {
+                    case "length":
+                        return "LEN(" + this.getExpressionString(expression.objectOperand) + ")";
+                }
+                break;
+            case Object:
+                if (expression instanceof ValueExpression) {
+                    switch (expression.value) {
+                        case Math:
+                            switch (expression.memberName) {
+                                case "E":
+                                    return "EXP(1)";
+                                case "LN10":
+                                    return "LOG(10)";
+                                case "LN2":
+                                    return "LOG(2)";
+                                case "LOG10E":
+                                    return "LOG10(EXP(1))";
+                                case "LOG2E":
+                                    return "LOG(EXP(1), 2)";
+                                case "PI":
+                                    return "PI()";
+                                case "SQRT1_2":
+                                    return "SQRT(0.5)";
+                                case "SQRT2":
+                                    return "SQRT(2)";
+                            }
+                            break;
+                    }
+                }
+                break;
+        }
+        throw new Error(`${expression.memberName} not supported.`);
+    }
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
         switch (expression.objectOperand.type as any) {
             case String:
                 switch (expression.methodName) {
                     case "charAt":
-                        break;
+                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", 1)";
                     case "charCodeAt":
-                        break;
+                        return "UNICODE(SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", 1))";
                     case "concat":
-                        break;
-                    case "charAt":
-                        break;
+                        return "CONCAT(" + this.getExpressionString(expression.objectOperand) + ", " + expression.params.select((p) => this.getExpressionString(p)).toArray().join(", ") + ")";
                     case "endsWith":
-                        break;
+                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getString("%") + ", " + this.getExpressionString(expression.params[0]) + "))";
                     case "includes":
-                        break;
+                        if (expression.params.length > 1)
+                            return "(" + this.getExpressionString(expression.params[0]) + " + RIGHT(" + this.getExpressionString(expression.objectOperand) + ", (LEN(" + this.getExpressionString(expression.objectOperand) + ") - " + this.getExpressionString(expression.params[0]) + "))))";
+                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getString("%") + ", " + this.getExpressionString(expression.params[0]) + ", " + this.getString("%") + ")";
                     case "indexOf":
-                        break;
+                        return "CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.objectOperand) + ")";
                     case "lastIndexOf":
-                        break;
-                    case "localeCompare":
-                        break;
+                        return "(LEN(" + this.getExpressionString(expression.objectOperand) + ") - CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", REVERSE(" + this.getExpressionString(expression.objectOperand) + ")))";
+                    case "like":
+                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE " + this.getExpressionString(expression.params[0]) + ")";
                     case "repeat":
                         break;
                     case "replace":
@@ -331,8 +369,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         break;
                     case "like":
                         break;
+                    case "localeCompare":
                     case "match":
-                    default:
+                    case "normalize":
+                    case "padEnd":
+                    case "padStart":
                         throw new Error(`method "String.${expression.methodName}" not supported in linq to sql.`);
                 }
                 break;
@@ -352,21 +393,35 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 break;
             case Symbol:
-            case Boolean:
                 switch (expression.methodName) {
                     case "toString":
                         break;
                 }
                 break;
+            case Boolean:
+                switch (expression.methodName) {
+                    case "toString":
+                        return "(CASE WHEN (" + this.getExpressionString(expression.objectOperand) + ") THEN " + this.getString("true") + " ELSE " + this.getString("false") + " END)";
+                }
+                break;
             case Date:
                 switch (expression.methodName) {
                     case "getDate":
+                        return "DAY(" + this.getExpressionString(expression.objectOperand) + ")";
                     case "getDay":
+                        return "(DATEPART(weekday, " + this.getExpressionString(expression.objectOperand) + ") - 1)";
                     case "getFullYear":
+                        return "YEAR(" + this.getExpressionString(expression.objectOperand) + ")";
                     case "getHours":
+                        return "DATEPART(hour, " + this.getExpressionString(expression.objectOperand) + ")";
                     case "getMinutes":
+                        return "DATEPART(minute, " + this.getExpressionString(expression.objectOperand) + ")";
                     case "getMonth":
+                        return "(MONTH(" + this.getExpressionString(expression.objectOperand) + ") - 1)";
                     case "getSeconds":
+                        return "DATEPART(second, " + this.getExpressionString(expression.objectOperand) + ")";
+                    case "getMilliseconds":
+                        return "DATEPART(millisecond, " + this.getExpressionString(expression.objectOperand) + ")";
                     case "getTime":
                     case "getTimezoneOffset":
                     case "getUTCDate":
@@ -377,16 +432,23 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "getUTCMinutes":
                     case "getUTCMonth":
                     case "getUTCSeconds":
+                        throw new Error(`${expression.methodName} not supported.`);
                     case "getYear":
-                    case "now":
-                    case "parse":
+                        throw new Error(`${expression.methodName} deprecated.`);
                     case "setDate":
+                        return "DATEADD(DAY, (" + this.getExpressionString(expression.params[0]) + " - DAY(" + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setFullYear":
+                        return "DATEADD(YYYY, (" + this.getExpressionString(expression.params[0]) + " - YEAR(" + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setHours":
+                        return "DATEADD(HH, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(hour, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setMilliseconds":
+                        return "DATEADD(MS, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(millisecond, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setMinutes":
+                        return "DATEADD(MI, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(minute, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setMonth":
+                        return "DATEADD(MM, (" + this.getExpressionString(expression.params[0]) + " - (MONTH(" + this.getExpressionString(expression.objectOperand) + ") - 1)), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setSeconds":
+                        return "DATEADD(SS, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(second, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
                     case "setTime":
                     case "setUTCDate":
                     case "setUTCFullYear":
@@ -395,18 +457,24 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "setUTCMinutes":
                     case "setUTCMonth":
                     case "setUTCSeconds":
-                    case "setYear":
-                    case "toDateString":
-                    case "toGMTString":
-                    case "toISOString":
                     case "toJSON":
+                    case "toISOString":
                     case "toLocaleDateString":
                     case "toLocaleTimeString":
                     case "toLocaleString":
                     case "toString":
                     case "toTimeString":
                     case "toUTCString":
-                    case "UTC":
+                        throw new Error(`${expression.methodName} not supported.`);
+                    case "setYear":
+                        throw new Error(`${expression.methodName} deprecated.`);
+                    case "toDateString":
+                        return "CONCAT(LEFT(DATENAME(WEEKDAY, " + this.getExpressionString(expression.objectOperand) + "), 3), " + this.getString(" ") + ", " +
+                            "LEFT(DATENAME(MONTH, " + this.getExpressionString(expression.objectOperand) + "), 3), " + this.getString(" ") + ", " +
+                            "RIGHT(CONCAT(" + this.getString("0") + ", RTRIM(MONTH(" + this.getExpressionString(expression.objectOperand) + "))), 2)" + this.getString(" ") + ", " +
+                            "RIGHT(CONCAT(" + this.getString("0") + ", RTRIM(MONTH(" + this.getExpressionString(expression.objectOperand) + "))), 2))";
+                    case "toGMTString":
+                        throw new Error(`${expression.methodName} deprecated.`);
                     case "valueOf":
                         break;
                 }
@@ -444,6 +512,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 if (expression.objectOperand instanceof ValueExpression) {
                     switch (expression.objectOperand.value) {
+                        case Date:
+                            switch (expression.methodName) {
+                                case "UTC":
+                                case "now":
+                                case "parse":
+                                    throw new Error(`Date.${expression.methodName} not supported.`);
+                            }
+                            break;
                         case Math:
                             switch (expression.methodName) {
                                 case "abs":
@@ -456,20 +532,36 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                                 case "sqrt":
                                 case "tan":
                                 case "floor":
+                                case "log":
+                                case "log10":
+                                case "sign":
                                     return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
                                 case "ceil":
                                     return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
                                 case "atan2":
                                     return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                                case "log":
-                                case "log10":
-                                    return "LOG10(" + this.getExpressionString(expression.params[0]) + ")";
                                 case "pow":
                                     return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
                                 case "random":
                                     return "RAND()";
                                 case "round":
                                     return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
+                                case "expm1":
+                                    return "(EXP(" + this.getExpressionString(expression.params[0]) + ") - 1)";
+                                case "hypot":
+                                    return "SQRT(" + expression.params.select((p) => "POWER(" + this.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")";
+                                case "log1p":
+                                    return "LOG(1 + " + this.getExpressionString(expression.params[0]) + ")";
+                                case "log2":
+                                    return "LOG(" + this.getExpressionString(expression.params[0]) + ", 2)";
+                                case "sinh":
+                                    return "((EXP(" + this.getExpressionString(expression.params[0]) + ") - EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
+                                case "cosh":
+                                    return "((EXP(" + this.getExpressionString(expression.params[0]) + ") + EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
+                                case "tanh":
+                                    return "((EXP(2 * " + this.getExpressionString(expression.params[0]) + ") - 1) / (EXP(2 * " + this.getExpressionString(expression.params[0]) + ") + 1))";
+                                case "trunc":
+                                    return "(" + this.getExpressionString(expression.params[0]) + " | 0)";
                                 case "max":
                                 case "min":
                                 case "acosh":
@@ -477,18 +569,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                                 case "atanh":
                                 case "cbrt":
                                 case "clz32":
-                                case "cosh":
-                                case "expm1":
                                 case "fround":
-                                case "hypot":
                                 case "imul":
-                                case "log1p":
-                                case "log2":
-                                case "sign":
-                                case "sinh":
-                                case "tanh":
-                                case "trunc":
-                                    // TODO: convert to .min and .max
                                     throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
                             }
                             break;
@@ -552,14 +634,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
     }
     protected getDateTimeString(value: Date): string {
-        return value.getFullYear() + "-" + this.fillZero(value.getMonth() + 1) + "-" + this.fillZero(value.getDate()) + " " +
-            this.fillZero(value.getHours()) + ":" + this.fillZero(value.getMinutes()) + ":" + this.fillZero(value.getSeconds());
+        return this.getString(value.getFullYear() + "-" + this.fillZero(value.getMonth() + 1) + "-" + this.fillZero(value.getDate()) + " " +
+            this.fillZero(value.getHours()) + ":" + this.fillZero(value.getMinutes()) + ":" + this.fillZero(value.getSeconds()));
     }
     protected getNullString() {
         return "NULL";
     }
     protected getString(value: string) {
-        return '"' + value + '"';
+        return "'" + value + "'";
     }
     protected getBooleanString(value: boolean) {
         return value ? "1" : "0";
@@ -688,7 +770,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: { parent: ICommandQueryExpression }) {
         return this.visit(expression.body, param);
     }
-    protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: { parent: ICommandQueryExpression }): IEntityExpression | IColumnExpression {
+    protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: { parent: ICommandQueryExpression }): IExpression {
         const res = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
@@ -700,7 +782,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case String:
                 switch (expression.memberName) {
                     case "length":
-                        break;
+                        return expression;
                 }
                 break;
             case Function:
@@ -725,19 +807,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         case "POSITIVE_INFINITY":
                         case "constructor":
                         case "prototype":
-                            break;
-                    }
-                    break;
-                case Math:
-                    switch (expression.memberName) {
-                        case "E":
-                        case "LN2":
-                        case "LN10":
-                        case "LOG2E":
-                        case "LOG10E":
-                        case "PI":
-                        case "SQRT1_2":
-                        case "SQRT2":
                             break;
                     }
                     break;
