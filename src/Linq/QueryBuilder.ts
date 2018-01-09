@@ -345,20 +345,23 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "like":
                         return "(" + this.getExpressionString(expression.objectOperand) + " LIKE " + this.getExpressionString(expression.params[0]) + ")";
                     case "repeat":
-                        break;
+                        return "REPLICATE(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ")";
                     case "replace":
-                        break;
-                    case "search":
-                        break;
-                    case "slice":
-                        break;
+                        // TODO throw error on regex.
+                        return "REPLACE(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.params[1]) + ")";
                     case "split":
-                        break;
+                        // only single character split.
+                        return "STRING_SPLIT(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ")";
                     case "startsWith":
-                        break;
+                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getExpressionString(expression.params[0]) + ", " + this.getString("%") + "))";
                     case "substr":
+                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " +
+                            "(" + this.getExpressionString(expression.params[0]) + " + 1), " +
+                            (expression.params.length > 1 ? this.getExpressionString(expression.params[1]) : "8000") + ")";
                     case "substring":
-                        break;
+                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " +
+                            "(" + this.getExpressionString(expression.params[0]) + " + 1), " +
+                            (expression.params.length > 1 ? "(" + this.getExpressionString(expression.params[1]) + " - " + this.getExpressionString(expression.params[0]) + ")" : "8000") + ")";
                     case "toLowerCase":
                     case "toLocaleLowerCase":
                         return "LOWER(" + this.getExpressionString(expression.objectOperand) + ")";
@@ -367,16 +370,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         return "UPPER(" + this.getExpressionString(expression.objectOperand) + ")";
                     case "toString":
                     case "valueOf":
-                        break;
+                        return this.getExpressionString(expression.objectOperand);
                     case "trim":
-                        break;
-                    case "like":
-                        break;
+                        return "RTRIM(LTRIM(" + this.getExpressionString(expression.objectOperand) + "))";
                     case "localeCompare":
                     case "match":
                     case "normalize":
                     case "padEnd":
                     case "padStart":
+                    case "search":
+                    case "slice":
                         throw new Error(`method "String.${expression.methodName}" not supported in linq to sql.`);
                 }
                 break;
