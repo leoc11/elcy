@@ -10,7 +10,7 @@ import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOrder?: IOrderCondition[]) {
     return (type: IObjectType<T>) => {
         const entityMetadata = new AbstractEntityMetaData(type, defaultOrder);
-        const parentType = Reflect.getPrototypeOf(type) as IObjectType<TParent>;
+        const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;
         if (parentType !== classBase) {
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             if (parentMetaData) {

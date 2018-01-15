@@ -398,12 +398,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 }
                 break;
-            case Symbol:
-                switch (expression.methodName) {
-                    case "toString":
-                        break;
-                }
-                break;
+            // case Symbol:
+            //     switch (expression.methodName) {
+            //         case "toString":
+            //             break;
+            //     }
+            //     break;
             case Boolean:
                 switch (expression.methodName) {
                     case "toString":
@@ -763,13 +763,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getExpressionString(expression.leftOperand) + " ^ " + this.getExpressionString(expression.rightOperand);
     }
     // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
-    protected getBitwiseSignedRightShiftExpressionString(expression: BitwiseSignedRightShiftExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getBitwiseSignedRightShiftExpressionString(_expression: BitwiseSignedRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    protected getBitwiseZeroRightShiftExpressionString(expression: BitwiseZeroRightShiftExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getBitwiseZeroRightShiftExpressionString(_expression: BitwiseZeroRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    protected getBitwiseZeroLeftShiftExpressionString(expression: BitwiseZeroLeftShiftExpression): string {
+    // tslint:disable-next-line:variable-name
+    protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
     protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: { parent: ICommandQueryExpression }) {
@@ -898,6 +901,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             if (!selectExp.where) {
                                 const entityExpression = selectExpression as IEntityExpression;
                                 selectExp = projectionEntity.select = new SelectExpression(entityExpression);
+                            }
+                            else {
+                                // TODO
                             }
                         }
                         else if ((selectExpression as IColumnExpression).entity) {

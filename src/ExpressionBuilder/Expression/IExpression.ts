@@ -6,17 +6,19 @@ export interface IExpression<T = any> {
     execute(transformer?: ExpressionTransformer): T | any;
 }
 
-export class ExpressionBase<T = any> implements IExpression<T> {
+export abstract class ExpressionBase<T = any> implements IExpression<T> {
     public type: genericType<T>;
     constructor(type?: genericType<T>) {
         if (type)
             this.type = type;
     }
-    public toString(transformer: ExpressionTransformer): string {
-        return transformer.toExpressionString(this);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.toExpressionString(this);
+        return "";
     }
     // tslint:disable-next-line:variable-name
-    public execute(_transformer: ExpressionTransformer): T {
+    public execute(_transformer?: ExpressionTransformer): T {
         if ((this.type as IObjectType<T>).prototype)
             return new (this.type as IObjectType<T>)();
         return (this.type as () => T)();

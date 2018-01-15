@@ -3,16 +3,19 @@
     "compileOnSave": false,
     "compilerOptions": {
         "lib": [
-            "es6",
+            "es2015",
             "es5",
             "dom"
         ],
+        "types":[
+            "node"
+        ],
         "outDir": "build",
         "rootDir": "",
-        "target": "es6",
+        "target": "es2015",
         "module": "commonjs",
         "moduleResolution": "node",
-        "emitDecoratorMetadata": true,
+        "emitDecoratorMetadata": false,
         "experimentalDecorators": true,
         "sourceMap": true,
         "noImplicitAny": true,
@@ -23,9 +26,10 @@
         "pretty": true,
         "strictNullChecks": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true,
+        "noUnusedParameters": false,
         "noImplicitThis": true,
-        "watch": true
+        "watch": true,
+        "noStrictGenericChecks": true
     },
     "include": [
         "app.ts",

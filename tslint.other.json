@@ -39,7 +39,7 @@
             }
         ],
         "variable-name": [
-            true,
+            false,
             "ban-keywords"
         ],
         "whitespace": [

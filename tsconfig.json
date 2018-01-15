@@ -2,13 +2,12 @@
     "version": "2.1.1",
     "compilerOptions": {
         "lib": [
-            "es6",
             "es5",
             "dom"
         ],
         "outDir": "build",
         "rootDir": "src",
-        "target": "es6",
+        "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
         "emitDecoratorMetadata": false,
@@ -23,7 +22,8 @@
         "strictNullChecks": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "noImplicitThis": true
+        "noImplicitThis": true,
+        "noStrictGenericChecks": true
     },
     "include": [
         "src/**/*.ts"

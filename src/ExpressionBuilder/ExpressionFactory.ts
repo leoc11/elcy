@@ -1,5 +1,5 @@
 import { genericType, IObjectType } from "../Common/Type";
-import { ExpressionBase, IExpression } from "./Expression/IExpression";
+import { IExpression } from "./Expression/IExpression";
 import { FunctionExpression } from "./Expression/index";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
@@ -7,7 +7,7 @@ import { ExpressionBuilder } from "./ExpressionBuilder";
 export class ExpressionFactory {
     // tslint:disable-next-line:variable-name
     public GetExpressionFactory<T, K>(_fn: (source?: T) => K): () => IExpression<K> {
-        return () => new ExpressionBase<K>();
+        return () => new FunctionExpression<K>(null as any, []);
     }
 
     public ToExpression<T, K = any, KE extends ({[key in keyof K]: any} | K) = any>(fn: (item?: T) => K, ctor: genericType<T>): FunctionExpression<T, KE> {

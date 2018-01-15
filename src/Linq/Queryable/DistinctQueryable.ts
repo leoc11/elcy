@@ -9,8 +9,9 @@ export class DistinctQueryable<T> extends Queryable<T> {
     }
     public execute(): any {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.execute());
-            this.expression.distinct = true;
+            const selectExp = new SelectExpression(this.parent.execute() as any);
+            selectExp.distinct = true;
+            this.expression = selectExp;
         }
         return this.expression;
     }

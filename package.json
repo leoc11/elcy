@@ -1,47 +1,47 @@
 {
-    "name": "type-dborm",
-    "private": true,
-    "version": "0.1.0-alpha",
-    "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, MongoDB databases.",
-    "main": "js/index.js",
-    "typings": "js/index",
-    "scripts": {
-        "test": "node ./node_modules/mocha/bin/mocha ./build/test/*.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/basarat/ts-npm-module.git"
-    },
-    "keywords": [
-        "typescript",
-        "atom"
-    ],
-    "author": {
-        "name": "Leo Chandra",
-        "email": "leo.chandra11@gmail.com"
-    },
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/basarat/ts-npm-module/issues"
-    },
-    "homepage": "https://github.com/basarat/ts-npm-module#readme",
-    "dependencies": {
-        "reflect-metadata": "^0.1.10"
-    },
-    "devDependencies": {
-        "@types/chai": "^4.0.4",
-        "@types/chai-as-promised": "0.0.31",
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^8.0.26",
-        "@types/sinon": "^2.3.3",
-        "chai": "^4.1.2",
-        "chai-as-promised": "^7.1.1",
-        "mocha": "^3.5.0",
-        "mongodb": "^2.2.31",
-        "mysql2": "^1.4.2",
-        "pg": "^7.2.0",
-        "sinon": "^3.2.1",
-        "sinon-chai": "^2.13.0",
-        "sqlite3": "^3.1.9"
-    }
+  "name": "type-dborm",
+  "private": true,
+  "version": "0.1.0-alpha",
+  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, MongoDB databases.",
+  "main": "js/index.js",
+  "typings": "js/index",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha ./build/test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/basarat/ts-npm-module.git"
+  },
+  "keywords": [
+    "typescript",
+    "atom"
+  ],
+  "author": {
+    "name": "Leo Chandra",
+    "email": "leo.chandra11@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/basarat/ts-npm-module/issues"
+  },
+  "homepage": "https://github.com/basarat/ts-npm-module#readme",
+  "dependencies": {
+    "reflect-metadata": "^0.1.10"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.4",
+    "@types/chai-as-promised": "0.0.31",
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^8.5.8",
+    "@types/sinon": "^2.3.3",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^3.5.0",
+    "mongodb": "^2.2.31",
+    "mysql2": "^1.4.2",
+    "pg": "^7.2.0",
+    "sinon": "^3.2.1",
+    "sinon-chai": "^2.13.0",
+    "sqlite3": "^3.1.9"
+  }
 }

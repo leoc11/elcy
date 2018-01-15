@@ -9,7 +9,8 @@ export abstract class ExpressionTransformer {
             expression.body.execute(this);
         }
     }
-    public toExpressionString(expression: IExpression): string {
+    // tslint:disable-next-line:variable-name
+    public toExpressionString(_expression: IExpression): string {
         return "";
     }
 }

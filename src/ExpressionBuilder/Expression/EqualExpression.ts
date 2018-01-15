@@ -14,10 +14,10 @@ export class EqualExpression extends ExpressionBase<boolean> implements IBinaryO
         super(Boolean);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
+    public toString(transformer?: ExpressionTransformer): string {
         return "(" + this.leftOperand.toString(transformer) + " == " + this.rightOperand.toString(transformer) + ")";
     }
-    public execute(transformer: ExpressionTransformer) {
+    public execute(transformer?: ExpressionTransformer) {
         // tslint:disable-next-line:triple-equals
         return this.leftOperand.execute(transformer) == this.rightOperand.execute(transformer);
     }

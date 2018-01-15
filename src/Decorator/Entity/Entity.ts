@@ -16,7 +16,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
         if (!allowInheritance)
             entityMetadata.descriminatorMember = "";
 
-        const parentType = Reflect.getPrototypeOf(type) as genericType<TParent>;
+        const parentType = Object.getPrototypeOf(type) as genericType<TParent>;
         if (parentType !== classBase) {
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             let isInheritance = false;
