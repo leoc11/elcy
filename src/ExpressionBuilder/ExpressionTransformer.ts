@@ -10,7 +10,7 @@ export abstract class ExpressionTransformer {
         }
     }
     // tslint:disable-next-line:variable-name
-    public toExpressionString(_expression: IExpression): string {
+    public getExpressionString(_expression: IExpression): string {
         return "";
     }
 }

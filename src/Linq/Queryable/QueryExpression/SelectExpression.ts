@@ -35,7 +35,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
     }
-    public execute(queryBuilder: QueryBuilder): SelectExpression {
+    public execute(_queryBuilder: QueryBuilder): SelectExpression {
 
         return this;
     }

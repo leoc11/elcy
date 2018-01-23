@@ -4,9 +4,9 @@ import { ValueExpression } from "./ValueExpression";
 export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
     public static Create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
         if (typeof functionName !== "string")
-            functionName = functionFn.name;
+            functionName = (functionFn as any).name;
 
-        const result = new FunctionCallExpression<TType>(functionFn, functionName, params);
+        const result = new FunctionCallExpression<TType>(functionFn, functionName!, params);
         if (params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.Create(result);
         }

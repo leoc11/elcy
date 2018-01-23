@@ -18,7 +18,7 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
 
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
-            return transformer.toExpressionString(this);
+            return transformer.getExpressionString(this);
         return this.name;
     }
     public execute(transformer: ExpressionTransformer): any {

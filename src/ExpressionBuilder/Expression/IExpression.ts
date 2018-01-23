@@ -14,7 +14,7 @@ export abstract class ExpressionBase<T = any> implements IExpression<T> {
     }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
-            return transformer.toExpressionString(this);
+            return transformer.getExpressionString(this);
         return "";
     }
     // tslint:disable-next-line:variable-name

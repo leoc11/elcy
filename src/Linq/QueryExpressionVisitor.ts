@@ -25,6 +25,8 @@ import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression
 import { ColumnExpression, ComputedColumnExpression, IEntityExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
+import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
+import { SqlInExpression } from "./Queryable/QueryExpression/SqlInExpression";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
@@ -146,7 +148,7 @@ export class QueryExpressionVisitor {
                 case "where":
                 case "orderBy":
                     if (!(parentEntity instanceof JoinEntityExpression)) {
-                        const joinPEntity = new JoinEntityExpression(parentEntity, this.newAlias());
+                        const joinPEntity = new JoinEntityExpression(parentEntity);
                         if (parentEntity.parent) {
                             parentEntity.parent.changeEntity(parentEntity, joinPEntity);
                         }
@@ -162,7 +164,7 @@ export class QueryExpressionVisitor {
                         const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
                         let entity: IEntityExpression;
                         if (param.parent.where || param.parent.orders.length > 0) {
-                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()), this.newAlias());
+                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()));
                             joinEntity.addRelation(relationMeta, param.parent.entity);
                             entity = joinEntity;
                         }
@@ -185,7 +187,7 @@ export class QueryExpressionVisitor {
                         const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
                         let entity: IEntityExpression;
                         if (param.parent.where || param.parent.orders.length > 0) {
-                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()), this.newAlias());
+                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()));
                             joinEntity.addRelation(relationMeta, param.parent.entity);
                             entity = joinEntity;
                         }
@@ -204,7 +206,7 @@ export class QueryExpressionVisitor {
                         if (parentEntity instanceof JoinEntityExpression)
                             joinEntity = parentEntity;
                         else {
-                            joinEntity = new JoinEntityExpression(parentEntity, this.newAlias());
+                            joinEntity = new JoinEntityExpression(parentEntity);
                             if (parentEntity.parent) {
                                 parentEntity.parent.changeEntity(parentEntity, joinEntity);
                             }
@@ -216,6 +218,7 @@ export class QueryExpressionVisitor {
                         const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
                         const entity = new EntityExpression(targetType, this.newAlias());
                         joinEntity.addRelation(relationMeta, entity);
+                        param.parent.columns = param.parent.columns.concat(entity.columns);
                         return entity;
                     }
             }
@@ -475,38 +478,62 @@ export class QueryExpressionVisitor {
                     }
                 case "first":
                     {
-                        let projectionEntity: ProjectionEntityExpression;
-                        if (parentEntity instanceof ProjectionEntityExpression)
-                            projectionEntity = parentEntity;
-                        else {
-                            projectionEntity = new ProjectionEntityExpression(new SelectExpression(parentEntity), this.newAlias(), parentEntity.type);
-                            param.parent.replaceEntity(parentEntity, projectionEntity);
-                        }
+                        switch (param.type) {
+                            case "select":
+                            case "selectMany":
+                                {
+                                    const group = new GroupByExpression(param.parent);
+                                    if (param.parent.entity instanceof JoinEntityExpression) {
+                                        group.groupBy = param.parent.entity.relations.selectMany((o) => o.relationMaps.select((c) => c.parentColumn)).distinct().toArray();
+                                        let addExpression: IExpression | undefined;
+                                        for (const pcol of param.parent.entity.primaryColumns) {
+                                            if (addExpression) {
+                                                addExpression = new AdditionExpression(addExpression, pcol);
+                                            }
+                                            else {
+                                                addExpression = pcol;
+                                            }
+                                        }
 
-                        if (expression.params.length > 0) {
-                            projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.params[0]]), param) as ProjectionEntityExpression;
-                        }
-                        const selectExp = projectionEntity.select;
-                        selectExp.paging.take = 1;
-                        return projectionEntity;
-                    }
-                case "last":
-                    {
-                        let projectionEntity: ProjectionEntityExpression;
-                        if (parentEntity instanceof ProjectionEntityExpression)
-                            projectionEntity = parentEntity;
-                        else {
-                            projectionEntity = new ProjectionEntityExpression(new SelectExpression(parentEntity), this.newAlias(), parentEntity.type);
-                            param.parent.replaceEntity(parentEntity, projectionEntity);
-                        }
-                        if (projectionEntity.select.orders.length > 0) {
-                            for (const order of projectionEntity.select.orders) {
-                                order.direction = order.direction === "ASC" ? "DESC" : "ASC";
-                            }
-                        }
-                        // TODO: reverse default order.
+                                        group.columns.push(new ComputedColumnExpression(param.parent.entity, new SqlFunctionCallExpression(String, "MIN", [addExpression!])));
+                                        const entity = new EntityExpression(parentEntity.type, this.newAlias());
+                                        let addExpression2: IExpression | undefined;
+                                        for (const pcol of entity.primaryColumns) {
+                                            if (addExpression2) {
+                                                addExpression2 = new AdditionExpression(addExpression2, pcol);
+                                            }
+                                            else {
+                                                addExpression2 = pcol;
+                                            }
+                                        }
+                                        const selectExp = new SelectExpression(entity);
+                                        selectExp.where = new SqlInExpression(addExpression2!, group);
+                                        param.parent = selectExp;
+                                        parentEntity = entity;
+                                    }
+                                    else {
+                                        throw new Error("first in select/selectMany must used again JoinEntityExpression");
+                                    }
+                                    return parentEntity;
+                                }
+                            default:
+                                {
+                                    let projectionEntity: ProjectionEntityExpression;
+                                    if (parentEntity instanceof ProjectionEntityExpression)
+                                        projectionEntity = parentEntity;
+                                    else {
+                                        projectionEntity = new ProjectionEntityExpression(new SelectExpression(parentEntity), this.newAlias(), parentEntity.type);
+                                        param.parent.replaceEntity(parentEntity, projectionEntity);
+                                    }
 
-                        return this.visit(new MethodCallExpression(projectionEntity, "first", expression.params), param);
+                                    if (expression.params.length > 0) {
+                                        projectionEntity = this.visit(new MethodCallExpression(projectionEntity, "where", [expression.params[0]]), param) as ProjectionEntityExpression;
+                                    }
+                                    const selectExp = projectionEntity.select;
+                                    selectExp.paging.take = 1;
+                                    return projectionEntity;
+                                }
+                        }
                     }
                 case "count":
                 case "sum":
@@ -557,6 +584,24 @@ export class QueryExpressionVisitor {
                         }
                         return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, "any", []), this.newAlias("column"));
                     }
+                case "last":
+                    // {
+                    //     let projectionEntity: ProjectionEntityExpression;
+                    //     if (parentEntity instanceof ProjectionEntityExpression)
+                    //         projectionEntity = parentEntity;
+                    //     else {
+                    //         projectionEntity = new ProjectionEntityExpression(new SelectExpression(parentEntity), this.newAlias(), parentEntity.type);
+                    //         param.parent.replaceEntity(parentEntity, projectionEntity);
+                    //     }
+                    //     if (projectionEntity.select.orders.length > 0) {
+                    //         for (const order of projectionEntity.select.orders) {
+                    //             order.direction = order.direction === "ASC" ? "DESC" : "ASC";
+                    //         }
+                    //     }
+                    //     // TODO: reverse default order.
+
+                    //     return this.visit(new MethodCallExpression(projectionEntity, "first", expression.params), param);
+                    // }
                 case "except":
                 case "fullJoin":
                 case "innerJoin":
@@ -612,8 +657,5 @@ export class QueryExpressionVisitor {
             expression.object[prop] = this.visit(expression.object[prop], param);
         }
         return expression;
-    }
-    private fillZero(value: number): string {
-        return value < 10 ? ("0" + value).slice(-2) : value.toString();
     }
 }

@@ -27,8 +27,11 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
     public get type(): IObjectType<T> {
         return this.entity.type;
     }
+    public get alias(): string {
+        return this.entity.alias;
+    }
     public relations: Array<IJoinRelation<T, any>> = [];
-    constructor(public entity: IEntityExpression, public alias: string) {
+    constructor(public entity: IEntityExpression) {
         this.entity.parent = this;
     }
     public addRelation<T2>(relationMeta: IRelationMetaData<T, T2> | IRelationMetaData<T2, T>, aliasOrChild: string | IEntityExpression<T2>) {

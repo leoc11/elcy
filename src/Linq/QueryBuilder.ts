@@ -23,6 +23,8 @@ import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpr
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { QueryExpressionVisitor } from "./QueryExpressionVisitor";
+import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
+import { SqlInExpression } from "./Queryable/QueryExpression/SqlInExpression";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
@@ -55,6 +57,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else {
             let result = "";
             switch (expression.constructor) {
+                case SqlFunctionCallExpression:
+                    result = this.getSqlFunctionCallExpressionString(expression as any);
+                    break;
+                case SqlInExpression:
+                    result = this.getSqlInExpressionString(expression as any);
+                    break;
                 case MemberAccessExpression:
                     result = this.getMemberAccessExpressionString(expression as any);
                     break;
@@ -225,6 +233,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         const result = this.getExpressionString(fnExpression.body);
         return result;
+    }
+    protected getSqlInExpressionString(expression: SqlInExpression<any>): string {
+        return this.getExpressionString(expression.leftOperand) + " IN (" + this.getExpressionString(expression.rightOperand) + ")";
+    }
+    protected getSqlFunctionCallExpressionString(expression: SqlFunctionCallExpression<any>): string {
+        return expression.functionName + "(" + expression.params.select((o) => this.getExpressionString(o)).join(", ") + ")";
     }
     protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
         switch (expression.objectOperand.type) {
