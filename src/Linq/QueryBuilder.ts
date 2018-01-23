@@ -24,10 +24,15 @@ import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 import { ColumnExpression, ComputedColumnExpression, IEntityExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
-import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinTableExpression";
+import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
+import { JoinRelationExpression } from "./Queryable/QueryExpression/JoinRelationExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 
+export interface IQueryVisitParameter {
+    parent: ICommandQueryExpression;
+    type: string;
+}
 export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
     private aliasObj: { [key: string]: number } = {};
@@ -46,7 +51,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     /**
      * Expression visitor
      */
-    public visit(expression: IExpression, param: { parent: ICommandQueryExpression }): IExpression {
+    public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         switch (expression.constructor) {
             case MemberAccessExpression:
                 return this.visitMember(expression as any, param);
@@ -254,7 +259,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (entity instanceof ProjectionEntityExpression)
             return "(" + this.getSelectQueryString(entity.select) + ") AS " + this.escape(entity.alias);
         else if (entity instanceof JoinEntityExpression)
-            return "(" + this.getEntityQueryString(entity.leftEntity) + ") " + entity.joinType + " JOIN (" + this.getEntityQueryString(entity.rightEntity) + ")" +
+            return "(" + this.getEntityQueryString(entity.entity) + ") " + entity.joinType + " JOIN (" + this.getEntityQueryString(entity.rightEntity) + ")" +
                 "ON " + entity.relations.select((r) => this.getColumnString(r.leftColumn) + "=" + this.getColumnString(r.rightColumn)).join(" AND ");
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
@@ -611,7 +616,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const result = this.getExpressionString(fnExpression.body);
             return result;
         }
-        throw new Error(`type ${expression.objectOperand.type.name} not supported in linq to sql.`);
+        throw new Error(`type ${(expression.objectOperand.type as any).name} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
         return this.getValueString(this.parameters.get(expression.name));
@@ -775,10 +780,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: { parent: ICommandQueryExpression }) {
+    protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: IQueryVisitParameter) {
         return this.visit(expression.body, param);
     }
-    protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
         const res = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
@@ -820,20 +825,22 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     break;
             }
         }
-        const parentEntity = res as IEntityExpression;
+        let parentEntity = res as IEntityExpression;
         const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
         if (relationMeta) {
-            const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
-            if (!parentEntity.has(targetType as IObjectType<any>)) {
-                const joinEntity = new JoinEntityExpression(parentEntity, new EntityExpression(targetType, this.newAlias()), this.newAlias(), relationMeta.relationType === RelationType.OneToMany ? "LEFT" : "INNER");
-                joinEntity.relations = Object.keys(relationMeta.relationMaps!).select((o) => ({
-                    leftColumn: joinEntity.leftEntity.columns.first((c) => c.property === o),
-                    rightColumn: joinEntity.rightEntity.columns.first((c) => c.property === relationMeta.relationMaps![o])
-                })).toArray();
-                param.parent.replaceEntity(parentEntity, joinEntity);
-                return joinEntity.rightEntity;
+            if (!(parentEntity instanceof JoinEntityExpression)) {
+                const joinPEntity = new JoinEntityExpression(parentEntity, this.newAlias());
+                // change parent entity to joinEntityExpression
+                if (parentEntity.parent) {
+                    parentEntity.parent.changeEntity(parentEntity, joinPEntity);
+                }
+                else {
+                    param.parent.entity = joinPEntity;
+                }
+                parentEntity = joinPEntity;
             }
-            return parentEntity.get(targetType);
+
+            return (parentEntity as JoinEntityExpression<any>).addRelation(relationMeta, this);
         }
         if (parentEntity) {
             const column = parentEntity.columns.first((c) => c.property === expression.memberName);
@@ -842,7 +849,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
     }
-    protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
         expression.objectOperand = this.visit(expression.objectOperand, param);
         if ((expression.objectOperand as IEntityExpression).columns) {
             const parentEntity = expression.objectOperand as IEntityExpression;
@@ -859,7 +866,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                         const fnExpression = expression.params[0] as FunctionExpression<TType, boolean>;
                         this.parameters.add(fnExpression.params[0].name, parentEntity.type);
-                        const resExpression = this.visit(fnExpression, { parent: projectionEntity.select });
+                        const resExpression = this.visit(fnExpression, { parent: projectionEntity.select, type: expression.methodName });
                         let whereExpression: IExpression<boolean>;
                         if (resExpression.type === Boolean) {
                             whereExpression = resExpression as any;
@@ -893,7 +900,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         let selectExp = projectionEntity.select;
                         const fnExpression = expression.params[0] as FunctionExpression<TType, TResult>;
                         this.parameters.add(fnExpression.params[0].name, projectionEntity.type);
-                        const selectExpression = this.visit(fnExpression, { parent: projectionEntity.select });
+                        const selectExpression = this.visit(fnExpression, { parent: projectionEntity.select, type: expression.methodName });
                         this.parameters.remove(fnExpression.params[0].name);
 
                         selectExp.columns = [];
@@ -959,7 +966,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         for (const selectorfn of expression.params) {
                             const selector = selectorfn as FunctionExpression<TType, TResult>;
                             this.parameters.add(selector.params[0].name, expression.objectOperand.type);
-                            const selectExpression = this.visit(selector, { parent: projectionEntity.select });
+                            const selectExpression = this.visit(selector, { parent: projectionEntity.select, type: expression.methodName });
                             this.parameters.remove(selector.params[0].name);
 
                             if ((selectExpression as IEntityExpression).columns) {
@@ -988,7 +995,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         const selector = expression.params[0] as FunctionExpression<TType, boolean>;
                         const direction = expression.params[1] as ValueExpression<orderDirection>;
                         this.parameters.add(selector.params[0].name, expression.objectOperand.type);
-                        const orderByExpression = this.visit(selector, { parent: projectionEntity.select });
+                        const orderByExpression = this.visit(selector, { parent: projectionEntity.select, type: expression.methodName });
                         this.parameters.remove(selector.params[0].name);
                         selectExp.orders.add({ column: orderByExpression, direction: direction.execute() });
                         return projectionEntity;
@@ -1030,13 +1037,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             projectionEntity = parentEntity;
                         else {
                             projectionEntity = new ProjectionEntityExpression(new SelectExpression(parentEntity), this.newAlias(), parentEntity.type);
-                            param.parent.replaceEntity(parentEntity, projectionEntity);
+                            if (parentEntity.parent) {
+                                parentEntity.parent.changeEntity(parentEntity, projectionEntity);
+                            }
+                            else {
+                                param.parent.entity = projectionEntity;
+                            }
                         }
 
                         let selectExp = projectionEntity.select;
                         const selector = expression.params[0] as FunctionExpression<TType, TResult[]>;
                         this.parameters.add(selector.params[0].name, expression.objectOperand.type);
-                        const selectExpression = this.visit(selector, param);
+                        const selectExpression = this.visit(selector, { parent: param.parent, type: expression.methodName });
                         this.parameters.remove(selector.params[0].name);
 
                         selectExp.columns = [];
@@ -1046,12 +1058,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                                 selectExp = projectionEntity.select = new SelectExpression(entityExpression);
                             }
                             else {
+
                                 // TODO
                                 this.reverseJoinEntity(selectExp.entity, entityExpression);
                             }
                         }
                         else {
-                            throw Error(`Queryable<{projectionEntity.type.name}>.selectMany({selector.toString(this)}) did not return entity`);
+                            throw Error(`Queryable<${projectionEntity.type.name}>.selectMany(${selector.toString(this)}) did not return entity`);
                         }
                         return projectionEntity;
                     }
@@ -1179,7 +1192,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             const primaryColumn = projectionEntity.columns.first((c) => c.property === pk);
                             if (!primaryColumn)
                                 throw new Error(`primaryColumn not exist`);
-                            this.visit(new MethodCallExpression(projectionEntity, "where", [new EqualExpression(primaryColumn, new MemberAccessExpression(expression.params[0], pk))]), { parent: projectionEntity.select });
+                            this.visit(new MethodCallExpression(projectionEntity, "where", [new EqualExpression(primaryColumn, new MemberAccessExpression(expression.params[0], pk))]), { parent: projectionEntity.select, type: expression.methodName });
                         }
                         return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, "any", []), this.newAlias("column"));
                     }
@@ -1229,33 +1242,33 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 rootEntity.relations = rootEntity.relations.select((o) => ({ leftColumn: o.rightColumn, rightColumn: o.leftColumn })).toArray();
                 return true;
             }
-            return this.reverseJoinEntity(rootEntity.leftEntity, entity);
+            return this.reverseJoinEntity(rootEntity.entity, entity);
         }
         else if (rootEntity instanceof ProjectionEntityExpression) {
             return this.reverseJoinEntity(rootEntity.select.entity, entity);
         }
         return rootEntity === entity;
     }
-    protected visitFunctionCall<T>(expression: FunctionCallExpression<T>, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitFunctionCall<T>(expression: FunctionCallExpression<T>, param: IQueryVisitParameter): IExpression {
         expression.params = expression.params.select((o) => this.visit(o, param)).toArray();
         return expression;
     }
-    protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: IQueryVisitParameter): IExpression {
         expression.leftOperand = this.visit(expression.leftOperand, param);
         expression.rightOperand = this.visit(expression.rightOperand, param);
         return expression;
     }
-    protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: IQueryVisitParameter): IExpression {
         expression.operand = this.visit(expression.operand, param);
         return expression;
     }
-    protected visitTernaryOperator(expression: TernaryExpression<any>, param: { parent: ICommandQueryExpression }): IExpression {
+    protected visitTernaryOperator(expression: TernaryExpression<any>, param: IQueryVisitParameter): IExpression {
         expression.logicalOperand = this.visit(expression.logicalOperand, param);
         expression.trueResultOperand = this.visit(expression.trueResultOperand, param);
         expression.falseResultOperand = this.visit(expression.falseResultOperand, param);
         return expression;
     }
-    protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: { parent: ICommandQueryExpression }) {
+    protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: IQueryVisitParameter) {
         // tslint:disable-next-line:forin
         for (const prop in expression.object) {
             expression.object[prop] = this.visit(expression.object[prop], param);

@@ -48,12 +48,4 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
     }
-    public has(type: IObjectType<any>) {
-        return this.type === type;
-    }
-    public get(type: IObjectType<any>) {
-        if (this.type === type)
-            return this;
-        return undefined as any;
-    }
 }

@@ -1,5 +1,6 @@
 import { IObjectType } from "../../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
+import { JoinEntityExpression } from "./index";
 import { IQueryExpression } from "./IQueryExpression";
 
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
@@ -7,6 +8,5 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     alias: string;
     columns: IColumnExpression[];
     name: string;
-    has<TE>(type: IObjectType<TE>): boolean;
-    get<TE>(type: IObjectType<TE>): IEntityExpression<TE>;
+    parent?: JoinEntityExpression<any>;
 }

@@ -1,4 +1,4 @@
-export interface IObjectType<T = any> { new(value?: any): T; }
+export interface IObjectType<T = any> { name?: string; new(value?: any): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor = () => null;
 // tslint:disable-next-line:ban-types

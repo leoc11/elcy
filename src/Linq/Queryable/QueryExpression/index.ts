@@ -9,7 +9,7 @@ export * from "./IEntityExpression";
 export * from "./IntersectExpression";
 export * from "./IOrderExpression";
 export * from "./IQueryExpression";
-export * from "./JoinTableExpression";
+export * from "./JoinEntityExpression";
 export * from "./ProjectionEntityExpression";
 export * from "./SelectExpression";
 export * from "./UnionExpression";

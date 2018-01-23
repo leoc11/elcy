@@ -21,13 +21,4 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
     }
-
-    public has<TE>(type: IObjectType<TE>) {
-        return this.type.name === type.name || this.select.entity.has(type);
-    }
-    public get<TE>(type: IObjectType<TE>): IEntityExpression<TE> {
-        if (this.type.name === type.name)
-            return this as any;
-        return this.select.entity.get(type);
-    }
 }
