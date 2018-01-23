@@ -21,7 +21,7 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         super(type);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
+    public toString(transformer?: ExpressionTransformer): string {
         const params = [];
         for (const param of this.params)
             params.push(param.toString(transformer));

@@ -39,7 +39,4 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
 
         return this;
     }
-    public replaceEntity(source: IEntityExpression<any>, target: IEntityExpression<any>): void {
-        throw new Error("Method not implemented.");
-    }
 }

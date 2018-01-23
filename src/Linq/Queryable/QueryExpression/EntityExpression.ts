@@ -22,11 +22,17 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._columns;
     }
+    public get primaryColumns(): IColumnExpression[] {
+        if (!this._primaryColumns) {
+            this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.property === o));
+        }
+        return this._primaryColumns;
+    }
     public get defaultOrders(): IOrderExpression[] {
         if (!this._defaultOrders) {
             if (this.metaData.defaultOrder)
                 this._defaultOrders = this.metaData.defaultOrder!.select((o) => ({
-                    column: new ColumnExpression(this, o.property),
+                    column: this.columns.first((c) => c.property === o.property),
                     direction: o.direction
                 })).toArray();
             else
@@ -38,6 +44,8 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _metaData: EntityMetaData<T>;
     // tslint:disable-next-line:variable-name
     private _columns: IColumnExpression[];
+    // tslint:disable-next-line:variable-name
+    private _primaryColumns: IColumnExpression[];
     // tslint:disable-next-line:variable-name
     private _defaultOrders: IOrderExpression[];
     constructor(public readonly type: IObjectType<T>, public alias: string) {

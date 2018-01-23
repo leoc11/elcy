@@ -1,10 +1,9 @@
 import { IObjectType, RelationType } from "../../../Common/Type";
+import { IRelationMetaData } from "../../../MetaData/Interface/index";
 import { QueryBuilder } from "../../QueryBuilder";
+import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { IRelationMetaData } from "../../../MetaData/Interface/index";
-import { MasterRelationMetaData } from "../../../MetaData/Relation/index";
-import { EntityExpression } from "./EntityExpression";
 
 export interface IJoinRelationMap<TParent, TChild> {
     parentColumn: IColumnExpression<any, TParent>;
@@ -17,7 +16,10 @@ export interface IJoinRelation<TParent, TChild> {
 }
 export class JoinEntityExpression<T> implements IEntityExpression<T> {
     public get columns(): IColumnExpression[] {
-        return this.entity.columns.concat(this.relations.selectMany((o) => o.child.columns));
+        return this.entity.columns;
+    }
+    public get primaryColumns(): IColumnExpression[] {
+        return this.entity.primaryColumns;
     }
     public get name() {
         return this.alias;
@@ -29,15 +31,23 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
     constructor(public entity: IEntityExpression, public alias: string) {
         this.entity.parent = this;
     }
-    public addRelation<T2>(relationMeta: IRelationMetaData<T, T2>, queryBuilder: QueryBuilder) {
-        const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
+    public addRelation<T2>(relationMeta: IRelationMetaData<T, T2> | IRelationMetaData<T2, T>, aliasOrChild: string | IEntityExpression<T2>) {
+        const isMaster = relationMeta.masterType === this.type;
+        let targetType: IObjectType<T2>;
+        if (aliasOrChild instanceof EntityExpression) {
+            targetType = aliasOrChild.type;
+        }
+        else {
+            targetType = (isMaster ? relationMeta.slaveType! : relationMeta.masterType!) as IObjectType<T2>;
+        }
+
         let relation = this.relations.first((o) => o.child.type === targetType);
         if (relation == null) {
-            const joinEntity = new EntityExpression(targetType, queryBuilder.newAlias());
-            const jointType = relationMeta.relationType === RelationType.OneToMany ? "LEFT" : "INNER";
+            const joinEntity = aliasOrChild instanceof EntityExpression ? aliasOrChild : new EntityExpression<T2>(targetType, aliasOrChild as string);
+            const jointType = isMaster && relationMeta.relationType === RelationType.OneToMany ? "LEFT" : "INNER";
             const relationMaps = Object.keys(relationMeta.relationMaps!).select((o) => ({
-                childColumn: joinEntity.columns.first((c) => c.property === (relationMeta.relationMaps as any)[o]),
-                parentColumn: this.entity.columns.first((c) => c.property === o)
+                childColumn: joinEntity.columns.first((c) => isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o),
+                parentColumn: this.entity.columns.first((c) => !isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o)
             })).toArray();
             relation = {
                 child: joinEntity,
