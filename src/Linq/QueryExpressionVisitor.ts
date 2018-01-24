@@ -26,7 +26,6 @@ import { ColumnExpression, ComputedColumnExpression, IEntityExpression, Projecti
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
-import { SqlInExpression } from "./Queryable/QueryExpression/SqlInExpression";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
@@ -507,7 +506,7 @@ export class QueryExpressionVisitor {
                                             }
                                         }
                                         const selectExp = new SelectExpression(entity);
-                                        selectExp.where = new SqlInExpression(addExpression2!, group);
+                                        selectExp.where = MethodCallExpression.Create<any, "contains", boolean>(group, [addExpression2!], "contains");
                                         param.parent = selectExp;
                                         parentEntity = entity;
                                     }
