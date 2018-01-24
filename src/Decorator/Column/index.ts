@@ -9,4 +9,5 @@ export * from "./EmbeddedColumn";
 export * from "./EnumColumn";
 export * from "./ModifiedDate";
 export * from "./NullableColumn";
+export * from "./StringColumn";
 export * from "./PrimaryKey";
