@@ -71,7 +71,7 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
 
         return relation.child;
     }
-    public changeEntity<TC>(entity: IEntityExpression<TC>, newEntity: IEntityExpression<TC>) {
+    public changeEntity(entity: IEntityExpression, newEntity: IEntityExpression) {
         if (this.entity === entity) {
             this.entity = newEntity;
         }

@@ -10,9 +10,9 @@ export class OrderQueryable<T> extends Queryable<T> {
         super(parent.type, parent.queryBuilder);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression(selector, parent.type);
     }
-    public execute(): SelectExpression {
+    public buildQuery(): SelectExpression {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.execute() as any);
+            this.expression = new SelectExpression(this.parent.buildQuery() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "orderBy", [this.selector, new ValueExpression(this.direction)]);
             const param = { parent: this.expression, type: "orderBy" };
             this.queryBuilder.visit(methodExpression, param as any);

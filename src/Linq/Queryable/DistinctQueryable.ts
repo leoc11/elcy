@@ -7,9 +7,9 @@ export class DistinctQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>) {
         super(parent.type, parent.queryBuilder);
     }
-    public execute(): any {
+    public buildQuery(): any {
         if (!this.expression) {
-            const selectExp = new SelectExpression(this.parent.execute() as any);
+            const selectExp = new SelectExpression(this.parent.buildQuery() as any);
             selectExp.distinct = true;
             this.expression = selectExp;
         }

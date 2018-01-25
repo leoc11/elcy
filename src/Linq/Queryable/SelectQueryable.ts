@@ -10,9 +10,9 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         super(type, parent.queryBuilder);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression<S, T>(selector, parent.type);
     }
-    public execute(): SelectExpression<T> {
+    public buildQuery(): SelectExpression<T> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.execute() as any);
+            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "select", [this.selector]);
             const param = { parent: this.expression, type: "select" };
             this.queryBuilder.visit(methodExpression, param as any);

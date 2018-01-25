@@ -24,7 +24,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     }
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.property === o));
+            this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.property === o)).toArray();
         }
         return this._primaryColumns;
     }

@@ -21,9 +21,9 @@ export class PivotQueryable<T, TD extends { [key: string]: ((item: T) => any) | 
         }
     }
 
-    public execute(): SelectExpression<TResult> {
+    public buildQuery(): SelectExpression<TResult> {
         if (!this.expression) {
-            const expression = new SelectExpression<any>(this.parent.execute() as any);
+            const expression = new SelectExpression<any>(this.parent.buildQuery() as any);
             const groups: any[] = [];
             const columns: any[] = [];
             const param = { parent: expression, type: "select" };

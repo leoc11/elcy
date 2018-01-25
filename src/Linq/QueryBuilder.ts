@@ -204,7 +204,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (entity instanceof JoinEntityExpression)
             return "(" + this.getEntityQueryString(entity.entity) + ") AS " + this.escape(entity.alias) +
                 entity.relations.select((o) => o.type + " JOIN (" + this.getEntityQueryString(o.child) + ") AS " + this.escape(o.child.alias) +
-                    " ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + "=" + this.getColumnString(r.childColumn)).join(" AND ")).join(" ");
+                    " ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + "=" + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(" ");
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
@@ -232,7 +232,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     protected getSqlFunctionCallExpressionString(expression: SqlFunctionCallExpression<any>): string {
-        return expression.functionName + "(" + expression.params.select((o) => this.getExpressionString(o)).join(", ") + ")";
+        return expression.functionName + "(" + expression.params.select((o) => this.getExpressionString(o)).toArray().join(", ") + ")";
     }
     protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
         switch (expression.objectOperand.type) {

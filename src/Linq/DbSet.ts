@@ -15,14 +15,14 @@ export class DbSet<T> extends Queryable<T> {
         super(type, new context.queryBuilder());
     }
 
-    public execute(): ICommandQueryExpression<T> {
+    public buildQuery(): ICommandQueryExpression<T> {
         if (!this.expression) {
             this.expression = new SelectExpression(new EntityExpression(this.type, this.queryBuilder.newAlias()));
         }
         return this.expression;
     }
     public toString() {
-        return this.execute().toString(this.queryBuilder);
+        return this.buildQuery().toString(this.queryBuilder);
     }
 
     // public update(setter: {[key in keyof T]: T[key]}, predicate?: (item: T) => boolean): number {

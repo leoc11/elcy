@@ -9,6 +9,9 @@
             true,
             "spaces"
         ],
+        "no-console": [
+            false
+        ],
         "no-unused-variable": true,
         "no-duplicate-variable": true,
         "no-eval": true,

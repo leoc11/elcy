@@ -10,9 +10,9 @@ export class IncludeQueryable<T> extends Queryable<T> {
         super(type, parent.queryBuilder);
         this.selectors = selectors.select((o) => o instanceof FunctionExpression ? o : ExpressionFactory.prototype.ToExpression<T, any>(o, parent.type)).toArray();
     }
-    public execute(): SelectExpression<T> {
+    public buildQuery(): SelectExpression<T> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.execute() as any);
+            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "include", this.selectors);
             const param = { parent: this.expression, type: "include" };
             this.queryBuilder.visit(methodExpression, param as any);
