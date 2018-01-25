@@ -2,6 +2,7 @@ import { IObjectType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "./NamingStrategy";
 import { Queryable } from "./Queryable";
+import "./Queryable/Queryable.partial";
 import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "./Queryable/QueryExpression/index";
 

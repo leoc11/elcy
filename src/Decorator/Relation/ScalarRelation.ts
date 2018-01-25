@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { IObjectType, ReferenceOption, RelationType } from "../../Common/Type";
+import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../../MetaData/Relation";
 import { entityMetaKey, relationMetaKey } from "../DecoratorKey";

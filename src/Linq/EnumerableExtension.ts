@@ -1,12 +1,14 @@
 import { orderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable/Enumerable";
-import { IGroupArray } from "./Interface/IGroupArray";
+import "./Enumerable/Enumerable.partial";
+import { GroupedEnumerable } from "./Enumerable/GroupedEnumerable";
+// import { IGroupArray } from "./Interface/IGroupArray";
 
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
         asEnumerable(): Enumerable<T>;
-        selectMany<TReturn>(fn: (item: T) => TReturn[]): Enumerable<TReturn>;
+        selectMany<TReturn>(fn: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
         contain(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
@@ -22,7 +24,7 @@ declare global {
         avg(fn?: (item: T) => number): number;
         max(fn?: (item: T) => number): number;
         min(fn?: (item: T) => number): number;
-        groupBy<K>(fn: (item: T) => K): Enumerable<IGroupArray<T, K>>;
+        groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
         distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
         innerJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
         leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
@@ -44,7 +46,7 @@ declare global {
 Array.prototype.asEnumerable = function <T>(this: T[]) {
     return new Enumerable(this);
 };
-Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[]) {
+Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[] | Enumerable) {
     return this.asEnumerable().selectMany(selector);
 };
 Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
@@ -93,7 +95,7 @@ Array.prototype.min = function <T>(this: T[], selector?: (item: T) => number) {
 Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().count(predicate) : this.length;
 };
-Array.prototype.groupBy = function <T, TKey>(this: T[], keySelector: (item: T) => TKey): Enumerable<IGroupArray<T, TKey>> {
+Array.prototype.groupBy = function <T, TKey>(this: T[], keySelector: (item: T) => TKey): Enumerable<GroupedEnumerable<T, TKey>> {
     return this.asEnumerable().groupBy(keySelector);
 };
 Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {

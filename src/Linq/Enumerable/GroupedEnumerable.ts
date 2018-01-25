@@ -1,8 +1,8 @@
-import { IGroupArray } from "../Interface/IGroupArray";
+// import { IGroupArray } from "../Interface/IGroupArray";
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
 
-export class GroupedEnumerable<T, K> extends Enumerable<T> implements IGroupArray<T, K> {
+export class GroupedEnumerable<T, K> extends Enumerable<T> /*implements IGroupArray<T, K>*/ {
     public get source() {
         return this.parent.parent;
     }
@@ -17,7 +17,7 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> implements IGroupArra
     }
     public next() {
         let result: IteratorResult<T> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

@@ -20,8 +20,10 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     constructor(entity: IEntityExpression<T> | SelectExpression<T>) {
         if (entity instanceof SelectExpression)
             this.copy(entity);
-        else
+        else {
             this.entity = entity;
+            this.columns = entity.columns.slice();
+        }
 
     }
     public copy(source: SelectExpression<T>) {

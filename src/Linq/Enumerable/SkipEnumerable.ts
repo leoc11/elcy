@@ -12,7 +12,7 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
             for (let i = 0; i < this.skipCount && !(this.parent.next().done); i++);
         }
         let result: IteratorResult<T> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

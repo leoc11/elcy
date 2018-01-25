@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { genericType } from "../Common/Type";
+import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData, IndexMetaData } from "../MetaData";
 import { IEntityMetaData } from "../MetaData/Interface";
 import { entityMetaKey } from "./DecoratorKey";
@@ -25,7 +26,8 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
         if (!option.name)
             option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as genericType<T>).name);
 
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, propertyKey ? target.constructor : target);
+        const entConstructor = propertyKey ? target.constructor : target;
+        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(() => target);
         }
@@ -37,6 +39,6 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
         if (propertyKey)
             option.properties = [propertyKey];
         indexMetaData.Apply(option);
-        Reflect.defineMetadata(entityMetaKey, entityMetaData, target);
+        Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
     };
 }

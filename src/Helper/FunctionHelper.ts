@@ -1,6 +1,7 @@
 // tslint:disable-next-line:no-namespace
-namespace FunctionHelper {
-    export function PropertyName<T>(propertySelector: (item: T) => any): keyof T {
-        return propertySelector.toString() as keyof T;
+export const FunctionHelper = {
+    PropertyName<T>(propertySelector: (item: T) => any): keyof T {
+        const ptopstr = propertySelector.toString();
+        return ptopstr.substr(ptopstr.lastIndexOf(".") + 1) as keyof T;
     }
-}
+};

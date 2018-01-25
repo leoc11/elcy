@@ -12,4 +12,7 @@ export class Order {
     public Total: number;
 
     public OrderDetails: OrderDetail[];
+    // tslint:disable-next-line:no-empty
+    constructor() {
+    }
 }

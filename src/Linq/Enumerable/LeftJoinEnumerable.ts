@@ -33,7 +33,7 @@ export class LeftJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enu
     }
     public next() {
         let result: IteratorResult<R> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

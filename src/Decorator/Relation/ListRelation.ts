@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { IObjectType, ReferenceOption, RelationType } from "../../Common/Type";
+import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } from "../../MetaData/Relation";
 import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
@@ -29,7 +30,7 @@ export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<
     }
     const targetMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, relationOption.masterType);
     const targetUniqueKeys = Object.keys(targetMetaData.indices);
-    if (Object.keys(relationOption.relationMap).any((o) => !targetMetaData.primaryKeys.contain(o) && (targetUniqueKeys.length < 0 || targetUniqueKeys.all((key) => !targetMetaData.indices[key].properties.contain(o)))))
+    if (Object.keys(relationOption.relationMap).any((o) => !targetMetaData.primaryKeys.contain(o) && (targetUniqueKeys.length < 0 || targetUniqueKeys.all((key) => !targetMetaData.indices[key] || !targetMetaData.indices[key].properties.contain(o)))))
         throw new Error("Target property not valid. Target property must be a unique column");
 
     return (target: S, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {

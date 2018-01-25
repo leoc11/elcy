@@ -189,9 +189,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 (select.orders.length > 0 ? " ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
         }
         else {
-            result += "SELECT " + (select.distinct ? " DISTINCT" : "") + " " + (select.paging.take && select.paging.take > 0 ? "TOP " + select.paging.take : "") + " " +
-                select.columns.select((o) => o.toString(this)).toArray().join(", ") +
-                " FROM " + this.getEntityQueryString(select.entity) +
+            result += "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
+                " " + select.columns.select((o) => o.toString(this)).toArray().join(",\n\t") + "\n" +
+                "FROM " + this.getEntityQueryString(select.entity) +
                 (select.where ? " WHERE " + select.where.toString(this) : "") +
                 ((select instanceof GroupByExpression) && select.groupBy ? " GROUP BY " + select.groupBy.select((o) => o.toString(this)).toArray().join(", ") : "") +
                 (select.orders.length > 0 ? " ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");

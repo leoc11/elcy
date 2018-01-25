@@ -1,3 +1,4 @@
+"use strict";
 import { MyDb } from "./test/Common/MyDb";
 
 // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";

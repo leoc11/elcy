@@ -10,7 +10,7 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
     }
     public next(): IteratorResult<K> {
         let result: IteratorResult<K> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

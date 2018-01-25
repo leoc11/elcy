@@ -61,7 +61,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
             this.generator = lazysort(this.parent, this.selector, this.direction);
         }
         let result: IteratorResult<T> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

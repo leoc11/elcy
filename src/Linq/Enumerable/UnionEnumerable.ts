@@ -23,7 +23,7 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
     }
     public next() {
         let result: IteratorResult<T> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {

@@ -1,14 +1,17 @@
 import "reflect-metadata";
-import { EntityMetaData } from "../../MetaData/EntityMetaData";
+import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
+import { IEntityMetaData } from "../../MetaData/Interface/index";
 import { entityMetaKey } from "../DecoratorKey";
 
 export function PrimaryKey(): PropertyDecorator {
     return (target: object, propertyKey: string /* | symbol */) => {
-        const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
-        if (entityMetaData) {
-            if (entityMetaData.primaryKeys.indexOf(propertyKey) < 0)
-                entityMetaData.primaryKeys.push(propertyKey);
+        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+        if (!entityMetaData) {
+            entityMetaData = new AbstractEntityMetaData(target as any);
+            Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
-        Reflect.defineMetadata(entityMetaKey, entityMetaData, target);
+
+        if (entityMetaData.primaryKeys.indexOf(propertyKey) < 0)
+            entityMetaData.primaryKeys.push(propertyKey);
     };
 }

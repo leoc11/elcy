@@ -9,10 +9,14 @@ import { IColumnOption } from "../Option";
 
 export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderCondition[], allowInheritance = true) {
     return (type: IObjectType<T>) => {
-        if (name)
+        if (!name)
             name = type.name;
 
         const entityMetadata = new EntityMetaData(type, name, defaultOrder);
+        const entityMet: IEntityMetaData<T, any> = Reflect.getOwnMetadata(entityMetaKey, type);
+        if (entityMet)
+            entityMetadata.ApplyOption(entityMet);
+
         if (!allowInheritance)
             entityMetadata.descriminatorMember = "";
 

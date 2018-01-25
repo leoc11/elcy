@@ -16,7 +16,7 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
     }
     public next(): IteratorResult<GroupedEnumerable<T, K>> {
         const result: IteratorResult<GroupedEnumerable<T, K>> = {
-            done: this.result.length < this.pointer,
+            done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {
