@@ -31,6 +31,7 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
                 result = this.generator.next();
                 if (result.done) {
                     this.isResultComplete = true;
+                    this.resetPointer();
                     return result;
                 }
             } while (!this.isUnionAll && this.result.any((o) => keyComparer(o, result.value)));

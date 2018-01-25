@@ -17,6 +17,7 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
                 result = this.parent.next();
                 if (result.done) {
                     this.isResultComplete = true;
+                    this.resetPointer();
                     return result;
                 }
             } while (!this.predicate(result.value));

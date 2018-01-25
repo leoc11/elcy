@@ -16,6 +16,7 @@ export class SelectEnumerable<T = any, K = any> extends Enumerable<K> {
             const presult = this.parent.next();
             if (presult.done) {
                 this.isResultComplete = true;
+                this.resetPointer();
                 return presult as IteratorResult<any>;
             }
             result.value = this.result[this.pointer] = this.selector(presult.value);

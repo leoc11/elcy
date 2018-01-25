@@ -21,6 +21,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
             }
             if (result.done) {
                 this.isResultComplete = true;
+                this.resetPointer();
                 return result;
             }
             this.result[this.pointer] = result.value;

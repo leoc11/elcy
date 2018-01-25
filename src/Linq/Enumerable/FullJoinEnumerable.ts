@@ -1,3 +1,4 @@
+import "../ArrayExtension";
 import { Enumerable, keyComparer } from "./Enumerable";
 import { defaultResultFn } from "./InnerJoinEnumerable";
 
@@ -18,7 +19,7 @@ function* fulljoin<T, T2, K, R>(enumerable1: Enumerable<T>, enumerable2: Enumera
             }
             result2 = enumerable2.next();
         }
-        if (hasMatch) {
+        if (!hasMatch) {
             yield resultSelector(result1.value, null);
         }
         result1 = enumerable1.next();
@@ -45,6 +46,7 @@ export class FullJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enu
             result = this.generator.next();
             if (result.done) {
                 this.isResultComplete = true;
+                this.resetPointer();
                 return result;
             }
             this.result[this.pointer] = result.value;

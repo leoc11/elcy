@@ -15,10 +15,13 @@ export class Enumerable<T = any> {
         return this;
     }
     public next(): IteratorResult<T> {
-        return {
+        const rest = {
             done: this.result.length <= this.pointer,
             value: this.result[this.pointer++]
         };
+        if (rest.done)
+            this.resetPointer();
+        return rest;
     }
     public resetPointer(cleanReset = false) {
         this.pointer = 0;

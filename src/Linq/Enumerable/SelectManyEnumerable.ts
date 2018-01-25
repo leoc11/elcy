@@ -22,6 +22,7 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
                     const presult = this.parent.next();
                     if (presult.done) {
                         this.isResultComplete = true;
+                        this.resetPointer();
                         return presult as IteratorResult<any>;
                     }
                     const innerArray = this.selector(presult.value);

@@ -37,6 +37,7 @@ export class RightJoinEnumerable<T = any, T2 = any, K = any, R = any> extends En
             result = this.generator.next();
             if (result.done) {
                 this.isResultComplete = true;
+                this.resetPointer();
                 return result;
             }
             this.result[this.pointer] = result.value;

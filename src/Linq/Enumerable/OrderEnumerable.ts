@@ -58,7 +58,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
 
     public next(): IteratorResult<T> {
         if (!this.generator) {
-            this.generator = lazysort(this.parent, this.selector, this.direction);
+            this.setGenerator();
         }
         let result: IteratorResult<T> = {
             done: this.result.length <= this.pointer,
@@ -68,6 +68,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
             result = this.generator.next();
             if (result.done) {
                 this.isResultComplete = true;
+                this.resetPointer();
                 return result;
             }
             this.result[this.pointer] = result.value;
@@ -75,8 +76,10 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
         this.pointer++;
         return result;
     }
-    public resetPointer() {
-        this.setGenerator();
+    public resetPointer(cleanReset = false) {
+        super.resetPointer(cleanReset);
+        if (cleanReset)
+            this.setGenerator();
     }
     protected setGenerator() {
         this.generator = lazysort(this.parent, this.selector, this.direction);

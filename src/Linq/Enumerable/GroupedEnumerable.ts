@@ -13,14 +13,14 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> /*implements IGroupAr
         super();
     }
     public addResult(value: T) {
-        this.result.add(value);
+        this.result.push(value);
     }
     public next() {
         let result: IteratorResult<T> = {
             done: this.result.length <= this.pointer,
             value: this.result[this.pointer]
         };
-        if (result.done && !this.isResultComplete) {
+        if (result.done && !this.parent.isComplete) {
             let curKey: K | undefined;
             do {
                 if (curKey && result) {
@@ -28,13 +28,16 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> /*implements IGroupAr
                 }
                 result = this.source.next();
                 if (result.done) {
-                    this.isResultComplete = true;
+                    this.parent.isComplete = true;
+                    this.resetPointer();
                     return result;
                 }
                 curKey = this.keySelector(result.value);
             } while (!keyComparer(curKey, this.key));
-            this.result[this.pointer++] = result.value;
+            this.result[this.pointer] = result.value;
+            result.done = false;
         }
+        this.pointer++;
         return result;
     }
 }
