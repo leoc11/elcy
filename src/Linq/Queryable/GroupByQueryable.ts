@@ -15,8 +15,8 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         if (!this.expression) {
             this.expression = new SelectExpression<any>(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "groupBy", [this.keySelector]);
-            const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param);
+            const param = { parent: this.expression, type: "groupBy" };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression;

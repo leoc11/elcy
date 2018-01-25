@@ -2,8 +2,8 @@ import "reflect-metadata";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { entityMetaKey } from "../DecoratorKey";
 
-export function PrimaryKey(): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
-    return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+export function PrimaryKey(): PropertyDecorator {
+    return (target: object, propertyKey: string /* | symbol */) => {
         const entityMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target);
         if (entityMetaData) {
             if (entityMetaData.primaryKeys.indexOf(propertyKey) < 0)

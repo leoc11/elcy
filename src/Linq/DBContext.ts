@@ -5,7 +5,7 @@ import { QueryBuilder } from "./QueryBuilder";
 
 export abstract class DbContext {
     public readonly database: string;
-    public readonly entities: Array<IObjectType<any>> = [];
+    public abstract entities: Array<IObjectType<any>>;
     public readonly queryBuilder: IObjectType<QueryBuilder>;
     private connection: Connection;
     private dbsets: { [key: string]: DbSet<any> } = {}; // don't only used constructor name but also namespace if possible
@@ -13,8 +13,8 @@ export abstract class DbContext {
         this.connection = new Connection(connectionOption);
     }
 
-    public Set<T>(type: IObjectType<T>): DbSet<T> {
-        let dbSet = this.dbsets[type.name];
+    public set<T>(type: IObjectType<T>): DbSet<T> {
+        let dbSet = this.dbsets[type.name!];
         if (!dbSet) {
             dbSet = this.dbsets[type.name!] = new DbSet(type, this);
         }

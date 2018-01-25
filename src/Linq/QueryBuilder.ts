@@ -23,14 +23,15 @@ import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpr
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
-import { QueryExpressionVisitor } from "./QueryExpressionVisitor";
+import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 
-export interface IQueryVisitParameter {
-    parent: SelectExpression;
-    type: "select" | "selectMany" | "where" | "orderBy" | "include";
-}
 export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
+    public queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
+
+    public newAlias(type?: "entity" | "column") {
+        return this.queryVisitor.newAlias(type);
+    }
     public escape(identity: string) {
         if (this.namingStrategy.enableEscape)
             return "[" + identity + "]";
@@ -41,7 +42,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
      * Expression visitor
      */
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
-        return new QueryExpressionVisitor(this.namingStrategy).visit(expression, param);
+        return this.queryVisitor.visit(expression, param);
     }
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {

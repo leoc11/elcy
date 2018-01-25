@@ -6,7 +6,7 @@ import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity";
 import { IColumnOption } from "../Option";
 
-export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOption) {
+export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOption): PropertyDecorator {
     return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {

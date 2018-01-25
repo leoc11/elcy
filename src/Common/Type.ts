@@ -20,6 +20,12 @@ export enum RelationType {
     OneToOne,
     OneToMany
 }
+export enum JoinType {
+    INNER = "INNER",
+    FULL = "FULL",
+    RIGHT = "RIGHT",
+    LEFT = "LEFT"
+}
 export enum ReferenceOption {
     RESTRICT = "restricted",
     CASCADE = "cascade",

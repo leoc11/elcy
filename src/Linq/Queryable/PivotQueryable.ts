@@ -26,18 +26,18 @@ export class PivotQueryable<T, TD extends { [key: string]: ((item: T) => any) | 
             const expression = new SelectExpression<any>(this.parent.execute() as any);
             const groups: any[] = [];
             const columns: any[] = [];
-            const param = { parent: expression };
+            const param = { parent: expression, type: "select" };
             // tslint:disable-next-line:forin
             for (const dimensionKey in this.dimensions) {
                 this.queryBuilder.parameters.add(this.dimensions[dimensionKey].params[0].name, this.type);
-                const selectExpression = this.queryBuilder.visit(this.dimensions[dimensionKey], param);
+                const selectExpression = this.queryBuilder.visit(this.dimensions[dimensionKey], param as any);
                 this.queryBuilder.parameters.remove(this.dimensions[dimensionKey].params[0].name);
                 groups.add(new ComputedColumnExpression(param.parent.entity, selectExpression, this.queryBuilder.newAlias("column")));
             }
             // tslint:disable-next-line:forin
             for (const key in this.metrics) {
                 this.queryBuilder.parameters.add(this.metrics[key].params[0].name, this.type);
-                const selectExpression = this.queryBuilder.visit(this.metrics[key], param);
+                const selectExpression = this.queryBuilder.visit(this.metrics[key], param as any);
                 this.queryBuilder.parameters.remove(this.metrics[key].params[0].name);
                 columns.add(new ComputedColumnExpression(param.parent.entity, selectExpression, this.queryBuilder.newAlias("column")));
             }

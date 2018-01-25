@@ -29,7 +29,7 @@ import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFuncti
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
-    type?: "select" | "selectMany" | "where" | "orderBy" | "include";
+    type?: "select" | "selectMany" | "where" | "orderBy" | "include" | "groupBy";
 }
 export class QueryExpressionVisitor {
     public parameters = new TransformerParameter();

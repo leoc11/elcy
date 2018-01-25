@@ -4,8 +4,8 @@ import { EnumColumnMetaData } from "../../MetaData";
 import { IEnumColumnOption } from "../Option/IEnumColumnOption";
 import { Column } from "./Column";
 
-export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<T> | T[], defaultValue?: T): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): PropertyDecorator;
+export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<T> | T[], defaultValue?: T): PropertyDecorator {
     let option: IEnumColumnOption<T> = { type: String as any };
     if (!Array.isArray(options) && (options as IEnumColumnOption<T>).options) {
         option = options;

@@ -2,9 +2,9 @@ import { DateTimeKind } from "../../Common/Type";
 import { DateColumnMetaData } from "../../MetaData";
 import { Column } from "../Column";
 
-export function CreatedDate(timezoneOffset: number): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function CreatedDate(name: string, dbtype: "date" | "datetime", dateTimeKind: DateTimeKind, timezoneOffset: number, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function CreatedDate(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind = DateTimeKind.UTC, timezoneOffset = 0, defaultValue?: Date): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function CreatedDate(timezoneOffset: number): PropertyDecorator;
+export function CreatedDate(name: string, dbtype: "date" | "datetime", dateTimeKind: DateTimeKind, timezoneOffset: number, defaultValue?: Date): PropertyDecorator;
+export function CreatedDate(name: string | number = "", dbtype: "date" | "datetime" = "datetime", dateTimeKind = DateTimeKind.UTC, timezoneOffset = 0, defaultValue?: Date): PropertyDecorator {
     const metadata = new DateColumnMetaData();
     if (typeof (name) === "number") {
         timezoneOffset = name;

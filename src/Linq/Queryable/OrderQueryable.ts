@@ -14,8 +14,8 @@ export class OrderQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             this.expression = new SelectExpression(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "orderBy", [this.selector, new ValueExpression(this.direction)]);
-            const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param);
+            const param = { parent: this.expression, type: "orderBy" };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression as any;

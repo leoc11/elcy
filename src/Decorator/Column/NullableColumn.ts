@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { ColumnMetaData } from "../../MetaData";
 import { columnMetaKey } from "../DecoratorKey";
 
-export function NullableColumn(): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function NullableColumn(): PropertyDecorator {
     return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         let columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
         if (columnMetaData == null) {

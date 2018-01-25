@@ -5,12 +5,9 @@ import { ForeignKeyMetaData, MasterRelationMetaData, SlaveRelationMetaData } fro
 import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
 import { IRelationOption } from "../Option";
 
-export function ListRelation<S, T>(option: IRelationOption<S, T>)
-    : (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ListRelation<S, T>(masterType: IObjectType<T>, sourceKeySelectors: Array<(source: S) => any>, targetKeySelectors: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
-    : (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<S, T>, sourceKeySelectors?: Array<(source: S) => any>, targetKeySelectors?: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption)
-    : (target: S, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function ListRelation<S, T>(option: IRelationOption<S, T>): PropertyDecorator;
+export function ListRelation<S, T>(masterType: IObjectType<T>, sourceKeySelectors: Array<(source: S) => any>, targetKeySelectors: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption): PropertyDecorator;
+export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<S, T>, sourceKeySelectors?: Array<(source: S) => any>, targetKeySelectors?: Array<(source: T) => any>, masterRelationPropertySelector?: (master: T) => S[], updateOption?: ReferenceOption, deleteOption?: ReferenceOption): PropertyDecorator {
     let relationOption: IRelationOption<S, T>;
     if (typeof masterType === "object") {
         relationOption = masterType;

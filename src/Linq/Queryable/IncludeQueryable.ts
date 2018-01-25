@@ -14,8 +14,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             this.expression = new SelectExpression<any>(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "include", this.selectors);
-            const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param);
+            const param = { parent: this.expression, type: "include" };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression as any;

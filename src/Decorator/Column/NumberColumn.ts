@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import { StringColumnMetaData } from "../../MetaData";
-import { IStringColumnOption } from "../Option";
+import { NumericColumnMetaData } from "../../MetaData";
+import { INumericColumnOption } from "../Option";
 import { Column } from "./Column";
 
-export function StringColumn(option: IStringColumnOption): PropertyDecorator;
+export function NumberColumn(option: INumericColumnOption): PropertyDecorator;
 // tslint:disable-next-line:ban-types
-export function StringColumn(name?: string | IStringColumnOption, defaultValue?: string): PropertyDecorator {
-    const metadata = new StringColumnMetaData();
+export function NumberColumn(name?: string | INumericColumnOption, defaultValue?: number): PropertyDecorator {
+    const metadata = new NumericColumnMetaData();
     if (name && typeof name !== "string") {
         metadata.ApplyOption(name);
     }

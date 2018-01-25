@@ -1,4 +1,4 @@
 import { DbContext } from "../../Linq/DBContext";
 
-export class MssqlDbContext extends DbContext {
+export abstract class MssqlDbContext extends DbContext {
 }

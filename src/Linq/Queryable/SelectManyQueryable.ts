@@ -14,8 +14,8 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
         if (!this.expression) {
             this.expression = new SelectExpression<any>(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "selectMany", [this.selector]);
-            const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param);
+            const param = { parent: this.expression, type: "selectMany" };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression as any;

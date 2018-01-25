@@ -2,6 +2,7 @@ import { IObjectType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "./NamingStrategy";
 import { Queryable } from "./Queryable";
+import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "./Queryable/QueryExpression/index";
 
 export class DbSet<T> extends Queryable<T> {
@@ -12,7 +13,16 @@ export class DbSet<T> extends Queryable<T> {
 
     constructor(public readonly type: IObjectType<T>, context: DbContext) {
         super(type, new context.queryBuilder());
-        this.expression = new SelectExpression(new EntityExpression(type, this.queryBuilder.newAlias()));
+    }
+
+    public execute(): ICommandQueryExpression<T> {
+        if (!this.expression) {
+            this.expression = new SelectExpression(new EntityExpression(this.type, this.queryBuilder.newAlias()));
+        }
+        return this.expression;
+    }
+    public toString() {
+        return this.execute().toString(this.queryBuilder);
     }
 
     // public update(setter: {[key in keyof T]: T[key]}, predicate?: (item: T) => boolean): number {

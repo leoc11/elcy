@@ -3,9 +3,9 @@ import { BooleanColumnMetaData } from "../../MetaData";
 import { IBooleanColumnOption } from "../Option";
 import { Column } from "./Column";
 
-export function BooleanColumn(option: IBooleanColumnOption): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export function BooleanColumn(option: IBooleanColumnOption): PropertyDecorator;
 // tslint:disable-next-line:ban-types
-export function BooleanColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function BooleanColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
     const metadata = new BooleanColumnMetaData();
     if (name && typeof name !== "string") {
         metadata.ApplyOption(name);

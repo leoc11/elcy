@@ -13,8 +13,8 @@ export class WhereQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             this.expression = new SelectExpression(this.parent.execute() as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "where", [this.predicate]);
-            const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param);
+            const param = { parent: this.expression, type: "where" };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression;

@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { ColumnMetaData } from "../../MetaData";
 import { columnMetaKey } from "../DecoratorKey";
 
-export function ColumnDescription(description: string): (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void {
+export function ColumnDescription(description: string): PropertyDecorator {
     return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         let columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
         if (columnMetaData == null) {

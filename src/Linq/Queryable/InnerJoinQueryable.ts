@@ -1,4 +1,4 @@
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, JoinType } from "../../Common/Type";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
 import { JoinQueryable } from "./JoinQueryable";
 import { Queryable } from "./Queryable";
@@ -8,6 +8,6 @@ export class InnerJoinQueryable<T = any, T2 = any, K = any, R = any> extends Joi
     protected readonly keySelector2: FunctionExpression<T2, K>;
     protected readonly resultSelector: FunctionExpression<T | T2, R>;
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<T | T2, R> | ((item1: T, item2: T2) => R), public type: IObjectType<R> = Object as any) {
-        super("INNER", parent, parent2, keySelector1, keySelector2, resultSelector, type);
+        super(JoinType.INNER, parent, parent2, keySelector1, keySelector2, resultSelector, type);
     }
 }

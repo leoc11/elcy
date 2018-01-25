@@ -40,6 +40,6 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
         if (typeof defaultOrder !== "undefined")
             this.defaultOrder = defaultOrder;
         if (!name)
-            this.name = type.name;
+            this.name = type.name!;
     }
 }

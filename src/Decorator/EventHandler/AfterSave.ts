@@ -6,7 +6,7 @@ import { entityMetaKey } from "../DecoratorKey";
 /**
  * Register before save event. only for concrete entity
  */
-export function AfterSave<T = any>(handler?: (this: T, param: ISaveEventParam) => void) {
+export function AfterSave<T = any>(handler?: (this: T, param: ISaveEventParam) => void): MethodDecorator | ClassDecorator {
     return (target: object | IObjectType<T>, propertyKey?: string /* | symbol*/, descriptor?: PropertyDescriptor) => {
         const entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, propertyKey ? target.constructor : target);
         if (!(entityMetaData instanceof EntityMetaData))
