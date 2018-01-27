@@ -16,12 +16,13 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         super(Array as any);
         this.keySelector = keySelector instanceof FunctionExpression ? keySelector : ExpressionFactory.prototype.ToExpression(keySelector, parent.type);
     }
-    public buildQuery(): SelectExpression<GroupedEnumerable<T, K>> {
+    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "groupBy", [this.keySelector]);
             const param = { parent: this.expression, type: "groupBy" };
-            this.queryBuilder.visit(methodExpression, param as any);
+            queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression;

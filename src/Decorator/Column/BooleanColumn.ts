@@ -8,7 +8,7 @@ export function BooleanColumn(option: IBooleanColumnOption): PropertyDecorator;
 export function BooleanColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
     const metadata = new BooleanColumnMetaData();
     if (name && typeof name !== "string") {
-        metadata.ApplyOption(name);
+        metadata.applyOption(name);
     }
     else {
         if (typeof name !== "undefined")

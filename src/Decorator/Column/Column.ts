@@ -21,7 +21,7 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
 
         const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (columnMetaData != null) {
-            metadata.ApplyOption(columnMetaData);
+            metadata.applyOption(columnMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
 

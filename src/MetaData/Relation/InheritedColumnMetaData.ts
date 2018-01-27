@@ -49,7 +49,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
      * Copy
      */
     // tslint:disable-next-line:no-empty
-    public ApplyOption(columnMeta: IColumnOption<any>) {
+    public applyOption(columnMeta: IColumnOption<any>) {
         if (columnMeta instanceof InheritedColumnMetaData) {
             this.columnMetaData = columnMeta.columnMetaData;
             this.parentType = columnMeta.parentType;

@@ -20,7 +20,7 @@ export class ColumnMetaData<T = any> implements IColumnOption<T> {
     /**
      * Copy
      */
-    public ApplyOption(columnMeta: IColumnOption<any>) {
+    public applyOption(columnMeta: IColumnOption<any>) {
         if (typeof columnMeta.name !== "undefined")
             this.name = columnMeta.name;
         if (columnMeta.description)

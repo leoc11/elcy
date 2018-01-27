@@ -10,9 +10,10 @@ export class SkipQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type);
     }
-    public buildQuery(): SelectExpression<T> {
+    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.buildQuery() as any);
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            this.expression = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
             this.expression.paging.skip = this.quantity;
         }
         return this.expression;

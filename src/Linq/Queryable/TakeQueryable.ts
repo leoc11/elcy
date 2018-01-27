@@ -10,9 +10,10 @@ export class TakeQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type);
     }
-    public buildQuery() {
+    public buildQuery(queryBuilder?: QueryBuilder) {
         if (!this.expression) {
-            this.expression = new SelectExpression(this.parent.buildQuery() as any);
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            this.expression = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
             this.expression.paging.take = this.quantity;
         }
         return this.expression;

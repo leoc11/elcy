@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { MethodCallExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 import { Enumerable } from "../Enumerable";
 // import { IGroupArray } from "../Interface/IGroupArray";

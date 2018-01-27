@@ -19,7 +19,7 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
-import { ColumnExpression, ComputedColumnExpression, IEntityExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
+import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
@@ -32,6 +32,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
+    protected indent = 0;
 
     public newAlias(type?: "entity" | "column") {
         return this.queryVisitor.newAlias(type);
@@ -185,37 +186,40 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return "(" + result + ")";
         }
     }
-    protected getColumnString(column: IColumnExpression) {
+    protected getColumnString(column: IColumnExpression, emitAlias = true) {
         if (column instanceof ComputedColumnExpression) {
-            return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias);
+            return this.getExpressionString(column.expression) + (emitAlias ? " AS " + this.escape(column.alias) : "");
         }
         return this.escape(column.entity.alias) + "." + this.escape(column.alias ? column.alias : column.property);
     }
     protected getSelectQueryString(select: SelectExpression): string {
-        let result = "";
-        if (select instanceof UnionExpression) {
-            result += "(" + this.newLine(++this.indent) + this.getSelectQueryString(select.entity.select) + this.newLine(--this.indent) + ")" +
-                this.newLine() + "UNION" + (select.isUnionAll ? " ALL" : "") +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(select.entity2.select) + this.newLine(--this.indent) + ")" +
-                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
-                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
-        }
-        else {
-            result += "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-                " " + select.columns.select((o) => o.toString(this)).toArray().join("," + this.newLine(this.indent + 1)) +
-                this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
-                ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => o.toString(this)).toArray().join(", ") : "") +
-                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
-        }
-        return result;
+        return "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
+            " " + select.columns.select((o) => o.toString(this)).toArray().join("," + this.newLine(this.indent + 1)) +
+            this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
+            (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
+            ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o, false)).toArray().join(", ") : "") +
+            (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
     }
     protected newLine(indent = this.indent) {
         return "\n" + (Array(indent + 1).join("\t"))
     }
-    protected indent = 0;
     protected getEntityQueryString(entity: IEntityExpression): string {
-        if (entity instanceof ProjectionEntityExpression)
+        if (entity instanceof IntersectExpression) {
+            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+                this.newLine() + "INTERSECT" +
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
+        else if (entity instanceof UnionExpression) {
+            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+                this.newLine() + "UNION" + (entity.isUnionAll ? " ALL" : "") +
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
+        else if (entity instanceof ExceptExpression) {
+            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+                this.newLine() + "EXCEPT" +
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
+        else if (entity instanceof ProjectionEntityExpression)
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         else if (entity instanceof JoinEntityExpression)
             return this.getEntityQueryString(entity.parentEntity) +
@@ -494,8 +498,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 break;
             default:
-                if ((expression.objectOperand instanceof SelectExpression)) {
+                if (expression.objectOperand instanceof SelectExpression) {
                     switch (expression.methodName) {
+                        case "count":
+                            return "COUNT()";
+                        case "sum":
+                        case "min":
+                        case "max":
+                        case "avg":
+                            return expression.methodName.toUpperCase() + "(" + this.getColumnString(expression.params[0] as any) + ")";
                         case "contains":
                             return this.getExpressionString(expression.params[0]) + " IN (" + this.getExpressionString(expression.objectOperand) + ")";
                     }

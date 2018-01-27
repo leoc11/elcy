@@ -1,8 +1,10 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { columnMetaKey } from "../../Decorator/DecoratorKey";
+import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { ColumnMetaData } from "../../MetaData/index";
+import { IRelationMetaData } from "../../MetaData/Interface/index";
+import { MasterRelationMetaData } from "../../MetaData/Relation/index";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> {
     public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);
@@ -17,6 +19,11 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
             const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, memberName);
             if (columnMeta)
                 this.type = columnMeta.type;
+            else {
+                const relationMeta: IRelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
+                if (relationMeta)
+                    this.type = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType : relationMeta.masterType!;
+            }
         }
     }
 

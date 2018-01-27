@@ -1,12 +1,12 @@
 import { IObjectType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
+import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
+import { ComputedColumnExpression } from "./index";
 import { IOrderExpression } from "./IOrderExpression";
 import { JoinEntityExpression } from "./JoinEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { ColumnExpression } from "./ColumnExpression";
-import { ComputedColumnExpression } from "./index";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
@@ -17,7 +17,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
                 if (o instanceof ComputedColumnExpression) {
                     return new ColumnExpression(this, o.alias);
                 }
-                return new ColumnExpression(this, o.property);
+                return new ColumnExpression(this, o.alias ? o.alias : o.property, o.alias === "" ? "" : undefined);
             }).toArray();
         }
         return this._columns;

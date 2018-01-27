@@ -1,5 +1,4 @@
 export * from "./BooleanColumn";
-export * from "./Column";
 export * from "./ColumnDescription";
 export * from "./ComputedColumn";
 export * from "./CreatedDate";

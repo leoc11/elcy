@@ -14,12 +14,13 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         super(type);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression<S, T>(selector, parent.type);
     }
-    public buildQuery(): SelectExpression<T> {
+    public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, "select", [this.selector]);
             const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param as any);
+            queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression as any;

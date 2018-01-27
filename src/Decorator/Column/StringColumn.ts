@@ -8,7 +8,7 @@ export function StringColumn(option: IStringColumnOption): PropertyDecorator;
 export function StringColumn(name?: string | IStringColumnOption, defaultValue?: string): PropertyDecorator {
     const metadata = new StringColumnMetaData();
     if (name && typeof name !== "string") {
-        metadata.ApplyOption(name);
+        metadata.applyOption(name);
     }
     else {
         if (typeof name !== "undefined")

@@ -1,13 +1,17 @@
 import "reflect-metadata";
 import { BooleanColumnMetaData } from "../../MetaData";
 import { Column } from "./Column";
+import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 
-export function DeleteColumn(name?: string, defaultValue?: boolean): PropertyDecorator {
+export function DeleteColumn(option: IBooleanColumnOption): PropertyDecorator;
+export function DeleteColumn(name?: string, defaultValue?: boolean): PropertyDecorator;
+export function DeleteColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
     const metadata = new BooleanColumnMetaData();
-    if (typeof name !== "undefined")
+    if (typeof name === "string") {
         metadata.name = name;
-    if (typeof defaultValue !== "undefined")
-        metadata.default = defaultValue;
+        if (defaultValue !== undefined) metadata.default = defaultValue;
+    }
+    else if (name) metadata.applyOption(name);
 
     return Column(metadata, { isDeleteColumn: true });
 }

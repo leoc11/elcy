@@ -8,7 +8,7 @@ export function NumberColumn(option: INumericColumnOption): PropertyDecorator;
 export function NumberColumn(name?: string | INumericColumnOption, defaultValue?: number): PropertyDecorator {
     const metadata = new NumericColumnMetaData();
     if (name && typeof name !== "string") {
-        metadata.ApplyOption(name);
+        metadata.applyOption(name);
     }
     else {
         if (typeof name !== "undefined")

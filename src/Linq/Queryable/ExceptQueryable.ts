@@ -1,6 +1,7 @@
+import { MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
-import { ExceptExpression, ProjectionEntityExpression, SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression";
 
 export class ExceptQueryable<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -9,13 +10,15 @@ export class ExceptQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
         super(parent.type);
     }
-    public buildQuery(): SelectExpression<T> {
+    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            const exceptEntity = new ExceptExpression(
-                new ProjectionEntityExpression(new SelectExpression(this.parent.buildQuery() as any), this.queryBuilder.newAlias()),
-                new ProjectionEntityExpression(new SelectExpression(this.parent2.buildQuery() as any), this.queryBuilder.newAlias()));
-
-            this.expression = exceptEntity;
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            const select1 = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const select2 = new SelectExpression<any>(this.parent2.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(select1.entity, "except", [select2]);
+            const param = { parent: select1 };
+            queryBuilder.visit(methodExpression, param as any);
+            this.expression = param.parent;
         }
         return this.expression as any;
     }

@@ -1,14 +1,10 @@
 import { IObjectType, JoinType, ValueType } from "../../Common/Type";
-import { FunctionExpression, IExpression, ObjectValueExpression, AndExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
-import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { Queryable } from "./Queryable";
-import { ComputedColumnExpression, IJoinRelationMap, JoinEntityExpression, ProjectionEntityExpression, SelectExpression } from "./QueryExpression";
-import { IColumnExpression } from "./QueryExpression/IColumnExpression";
+import { SelectExpression } from "./QueryExpression";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
-import { IEntityExpression } from "./QueryExpression/IEntityExpression";
-import { EntityExpression } from "./QueryExpression/EntityExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;
@@ -25,13 +21,14 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
         if (resultSelector)
             this.resultSelector = resultSelector instanceof FunctionExpression ? resultSelector : ExpressionFactory.prototype.ToExpression2<T, T2, R>(resultSelector, parent.type, parent2.type);
     }
-    public buildQuery(): ICommandQueryExpression<R> {
+    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
         if (!this.expression) {
-            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
-            const parent2Expression = new SelectExpression(this.parent2.buildQuery(this.queryBuilder) as any);
+            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
+            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const parent2Expression = new SelectExpression(this.parent2.buildQuery(queryBuilder) as any);
             const methodExpression = new MethodCallExpression(this.expression.entity, this.joinType.toLowerCase() + "Join", [parent2Expression, this.keySelector1, this.keySelector2, this.resultSelector]);
             const param = { parent: this.expression };
-            this.queryBuilder.visit(methodExpression, param as any);
+            queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
         }
         return this.expression;

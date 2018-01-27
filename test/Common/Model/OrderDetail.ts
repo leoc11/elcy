@@ -1,4 +1,4 @@
-import { PrimaryKey, DeleteColumn, StringColumn } from "../../../src/Decorator/Column/index";
+import { PrimaryKey, DateColumn, DeleteColumn, StringColumn } from "../../../src/Decorator/Column/index";
 import { Entity } from "../../../src/Decorator/Entity/index";
 import { ListRelation } from "../../../src/Decorator/Relation/ListRelation";
 import { Order } from "./Order";
@@ -12,6 +12,9 @@ export class OrderDetail {
     public OrderId: string;
     @StringColumn({ columnType: "nvarchar" })
     public name: string;
+    @DateColumn()
+    public CreatedDate: Date;
+    
     @DeleteColumn()
     public isDeleted: boolean;
     @ListRelation<OrderDetail, Order>(Order, [(s) => s.OrderId], [(a) => a.OrderId], (o) => o.OrderDetails)

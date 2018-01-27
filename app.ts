@@ -1,10 +1,12 @@
 "use strict";
-import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression } from "./src/ExpressionBuilder/Expression/index";
-import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable } from "./src/Linq/Queryable/index";
+import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression } from "./src/ExpressionBuilder/Expression/index";
+import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable } from "./src/Linq/Queryable/index";
 import { JoinQueryable } from "./src/Linq/Queryable/JoinQueryable";
 import { SelectExpression } from "./src/Linq/Queryable/QueryExpression/index";
 import { MyDb } from "./test/Common/MyDb";
 import { Order, OrderDetail } from "./test/Common/Model/index";
+import { WhereEnumerable } from "./src/Linq/Enumerable/WhereEnumerable";
+import { Enumerable } from "./src/Linq/Enumerable/Enumerable";
 
 // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -14,17 +16,32 @@ import { Order, OrderDetail } from "./test/Common/Model/index";
 // console.log(result);
 
 const db = new MyDb({});
+
+const param = new ParameterExpression("o", db.orderDetails.type);
+const param1 = new ParameterExpression("o", Enumerable);
+// const param2 = new ParameterExpression("od", db.orderDetails.type);
+const a = new ObjectValueExpression({
+    date: new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param])
+});
+const b = new ObjectValueExpression({
+    avg: new FunctionExpression(new MethodCallExpression(param1, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]), [param1]),
+    // count: new FunctionExpression(new MethodCallExpression(param1, "count", []), [param1]),
+    max: new FunctionExpression(new MethodCallExpression(param1, "max", [new FunctionExpression(new MemberAccessExpression(param, "OrderDetailId"), [param])]), [param1]),
+    min: new FunctionExpression(new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(param, "OrderDetailId"), [param])]), [param1]),
+    // totalSum: new FunctionExpression(new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]), [param1])
+});
+const c = new PivotQueryable(db.orderDetails, a, b);
+// tslint:disable-next-line:no-console
+const date = new Date();
+console.log(c.toString());
+// tslint:disable-next-line:no-console
+console.log(((new Date()).valueOf() - date.valueOf()) / (1000));
+
 // const param = new ParameterExpression("o", db.orders.type);
 // const param2 = new ParameterExpression("od", db.orderDetails.type);
-// const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
-// const b = new InnerJoinQueryable(w, db.orderDetails, new FunctionExpression(new MemberAccessExpression(param, "OrderId"), [param]), new FunctionExpression(new MemberAccessExpression(param2, "OrderId"), [param2]),
-//     new FunctionExpression(new ObjectValueExpression({
-//         OD: new MemberAccessExpression<Order | OrderDetail, any>(param2, "name"),
-//         Order: new MemberAccessExpression(param, "Total")
-//     }), [param, param2]));
-// const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "first", []), [param]));
-const param = new ParameterExpression("o", db.orderDetails.type);
-const a = new SelectQueryable(db.orderDetails, new FunctionExpression(new MemberAccessExpression(param, "Order"), [param]));
-
-// tslint:disable-next-line:no-console
-console.log(a.toString());
+// const a = new SelectQueryable(new WhereQueryable(db.orders, new FunctionExpression(new GreaterThanExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param])), new FunctionExpression(new MemberAccessExpression(param, "OrderDate"), [param]));
+// const b = new SelectQueryable(new WhereQueryable(db.orderDetails, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param2, "CreatedDate"), new ValueExpression(new Date(2018, 0, 1))), [param2])), new FunctionExpression(new MemberAccessExpression(param2, "CreatedDate"), [param2]));
+// const c = new IntersectQueryable(a, b);
+// const param3 = new ParameterExpression("u", c.type);
+// const d = new WhereQueryable(c, new FunctionExpression(new GreaterEqualExpression(param3, new ValueExpression(new Date(2018, 0, 1))), [param3]));
+// console.log(d.toString());
