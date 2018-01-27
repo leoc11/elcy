@@ -14,8 +14,10 @@ export class ModulusExpression extends ExpressionBase<number> implements IBinary
         super(Number);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.leftOperand.toString(transformer) + " % " + this.rightOperand.toString(transformer) + ")";
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.leftOperand.toString() + " % " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) * this.rightOperand.execute(transformer);

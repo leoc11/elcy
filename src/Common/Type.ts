@@ -2,9 +2,9 @@ export interface IObjectType<T = any> { name?: string; new(value?: any): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor = () => null;
 // tslint:disable-next-line:ban-types
-export type genericType<T = any> = IObjectType<T> | ((value?: any) => T);
-export const classBase = Object.getPrototypeOf(Function);
-export type orderDirection = "ASC" | "DESC";
+export type GenericType<T = any> = IObjectType<T> | ((value?: any) => T);
+export type ValueType = number | string | Date;
+export const ClassBase = Object.getPrototypeOf(Function);
 export enum DateTimeKind {
     UTC,
     Unspecified,
@@ -19,6 +19,10 @@ export enum InheritanceType {
 export enum RelationType {
     OneToOne,
     OneToMany
+}
+export enum OrderDirection {
+    ASC = "ASC",
+    DESC = "DESC"
 }
 export enum JoinType {
     INNER = "INNER",

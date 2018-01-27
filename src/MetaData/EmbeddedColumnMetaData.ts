@@ -1,6 +1,6 @@
-import { genericType } from "../Common/Type";
+import { GenericType } from "../Common/Type";
 
 export class EmbeddedColumnMetaData<T> {
-    constructor(public type: genericType<T>, public prefix: string) {
+    constructor(public type: GenericType<T>, public prefix: string) {
     }
 }

@@ -1,19 +1,25 @@
-import { IObjectType, JoinType } from "../../Common/Type";
-import { FunctionExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression";
+import { IObjectType, JoinType, ValueType } from "../../Common/Type";
+import { FunctionExpression, IExpression, ObjectValueExpression, AndExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
+import { QueryBuilder } from "../QueryBuilder";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { Queryable } from "./Queryable";
-import { ColumnExpression, ComputedColumnExpression, IJoinRelationMap, JoinEntityExpression, ProjectionEntityExpression, SelectExpression } from "./QueryExpression";
+import { ComputedColumnExpression, IJoinRelationMap, JoinEntityExpression, ProjectionEntityExpression, SelectExpression } from "./QueryExpression";
 import { IColumnExpression } from "./QueryExpression/IColumnExpression";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IEntityExpression } from "./QueryExpression/IEntityExpression";
+import { EntityExpression } from "./QueryExpression/EntityExpression";
 
-export abstract class JoinQueryable<T = any, T2 = any, K = any, R = any> extends Queryable<R> {
+export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;
     protected readonly keySelector1: FunctionExpression<T, K>;
     protected readonly keySelector2: FunctionExpression<T2, K>;
     protected readonly resultSelector: FunctionExpression<T | T2, R>;
-    constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<T | T2, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
-        super(type, parent.queryBuilder);
+    public get queryBuilder(): QueryBuilder {
+        return this.parent.queryBuilder;
+    }
+    constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
+        super(type);
         this.keySelector1 = keySelector1 instanceof FunctionExpression ? keySelector1 : ExpressionFactory.prototype.ToExpression<T, K>(keySelector1, parent.type);
         this.keySelector2 = keySelector2 instanceof FunctionExpression ? keySelector2 : ExpressionFactory.prototype.ToExpression<T2, K>(keySelector2, parent2.type);
         if (resultSelector)
@@ -21,40 +27,12 @@ export abstract class JoinQueryable<T = any, T2 = any, K = any, R = any> extends
     }
     public buildQuery(): ICommandQueryExpression<R> {
         if (!this.expression) {
-            const parent1Expression = new SelectExpression(this.parent.buildQuery() as any);
-            const parent2Expression = new SelectExpression(this.parent2.buildQuery() as any);
-            let param: IQueryVisitParameter = { parent: parent1Expression };
-            this.queryBuilder.parameters.add(this.keySelector1.params[0].name, this.parent.type);
-            const keySelector1 = this.queryBuilder.visit(this.keySelector1, param) as IColumnExpression;
-            this.queryBuilder.parameters.remove(this.keySelector1.params[0].name);
-
-            param = { parent: parent2Expression };
-            this.queryBuilder.parameters.add(this.keySelector2.params[0].name, this.parent2.type);
-            const keySelector2 = this.queryBuilder.visit(this.keySelector2, param) as IColumnExpression;
-            this.queryBuilder.parameters.remove(this.keySelector2.params[0].name);
-
-            const joinEntity = new JoinEntityExpression(new ProjectionEntityExpression<T>(parent1Expression, this.queryBuilder.newAlias()));
-            const relationMap: Array<IJoinRelationMap<T, T2>> = [];
-            relationMap.add({
-                childColumn: keySelector1,
-                parentColumn: keySelector2
-            });
-            joinEntity.addRelation(relationMap, new ProjectionEntityExpression(parent2Expression, this.queryBuilder.newAlias()), this.joinType);
-
+            this.expression = new SelectExpression<any>(this.parent.buildQuery() as any);
+            const parent2Expression = new SelectExpression(this.parent2.buildQuery(this.queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(this.expression.entity, this.joinType.toLowerCase() + "Join", [parent2Expression, this.keySelector1, this.keySelector2, this.resultSelector]);
+            const param = { parent: this.expression };
+            this.queryBuilder.visit(methodExpression, param as any);
             this.expression = param.parent;
-
-            const selectExp = new SelectExpression(joinEntity);
-            this.queryBuilder.parameters.add(this.resultSelector.params[0].name, this.parent.type);
-            this.queryBuilder.parameters.add(this.resultSelector.params[1].name, this.parent2.type);
-            const resultSelector = this.queryBuilder.visit(this.resultSelector, param) as ObjectValueExpression<any>;
-            this.queryBuilder.parameters.remove(this.resultSelector.params[0].name);
-            this.queryBuilder.parameters.remove(this.resultSelector.params[1].name);
-
-            selectExp.columns = Object.keys(resultSelector.object).select(
-                (o) => resultSelector.object[o] instanceof ColumnExpression ? resultSelector.object[o] : new ComputedColumnExpression(this.expression.entity, resultSelector.object[o], this.queryBuilder.newAlias("column"))
-            ).toArray();
-
-            this.expression = new SelectExpression(new ProjectionEntityExpression(selectExp, this.queryBuilder.newAlias(), this.type));
         }
         return this.expression;
     }

@@ -16,10 +16,12 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
         this.items = items;
     }
 
-    public toString(transformer: ExpressionTransformer) {
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         const itemString = [];
         for (const item of this.items)
-            itemString.push(item.toString(transformer));
+            itemString.push(item.toString());
         return "[" + itemString.join(", ") + "]";
     }
     public execute(transformer: ExpressionTransformer) {

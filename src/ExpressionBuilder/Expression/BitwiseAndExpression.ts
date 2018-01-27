@@ -20,7 +20,9 @@ export class BitwiseAndExpression extends BitwiseExpression implements IBinaryOp
     }
 
     public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.leftOperand.toString(transformer) + " & " + this.rightOperand.toString(transformer) + ")";
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.leftOperand.toString() + " & " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:no-bitwise

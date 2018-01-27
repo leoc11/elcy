@@ -1,6 +1,6 @@
-import { orderDirection } from "../../Common/Type";
+import { OrderDirection } from "../../Common/Type";
 
 export interface IOrderCondition {
     property: string;
-    direction: orderDirection;
+    direction: OrderDirection;
 }

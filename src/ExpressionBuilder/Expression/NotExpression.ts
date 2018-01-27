@@ -18,19 +18,21 @@ export class NotExpression extends ExpressionBase<boolean> implements IUnaryOper
         this.operand = this.convertOperand(operand);
     }
     public convertOperand(operand: IExpression): IExpression<boolean> {
-        if (operand.type === Number) {
-            operand = new OrExpression(new NotEqualExpression(operand, new ValueExpression(0)), new NotEqualExpression(operand, new ValueExpression(null)));
+        switch (operand.type) {
+            case Number:
+                return new OrExpression(new NotEqualExpression(operand, new ValueExpression(0)), new NotEqualExpression(operand, new ValueExpression(null)));
+            case String:
+                return new OrExpression(new NotEqualExpression(operand, new ValueExpression("")), new NotEqualExpression(operand, new ValueExpression(null)));
+            case Boolean:
+                return operand;
+            default:
+                return new NotEqualExpression(operand, new ValueExpression(null));
         }
-        else if (operand.type === String) {
-            operand = new OrExpression(new NotEqualExpression(operand, new ValueExpression("")), new NotEqualExpression(operand, new ValueExpression(null)));
-        }
-        else {
-            operand = new NotEqualExpression(operand, new ValueExpression(null));
-        }
-        return operand as any;
     }
-    public toString(transformer: ExpressionTransformer): string {
-        return "!" + this.operand.toString(transformer);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "!" + this.operand.toString();
     }
     public execute(transformer: ExpressionTransformer) {
         return !this.operand.execute(transformer);

@@ -1,4 +1,4 @@
-import { classBase, genericType } from "../Common/Type";
+import { ClassBase, GenericType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IndexMetaData } from "../MetaData";
 import { InheritanceMetaData } from "../MetaData/Relation";
@@ -19,16 +19,16 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
     public computedProperties: string[] = [];
 
     // inheritance
-    public parentType?: genericType<TParent>;
+    public parentType?: GenericType<TParent>;
     public allowInheritance = false;
     public inheritance = new InheritanceMetaData<TParent>();
 
-    constructor(public type: genericType<T>, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<T>, defaultOrder?: IOrderCondition[]) {
         if (typeof defaultOrder !== "undefined")
             this.defaultOrder = defaultOrder;
 
-        const parentType = Reflect.getPrototypeOf(this.type) as genericType<TParent>;
-        if (parentType !== classBase) {
+        const parentType = Reflect.getPrototypeOf(this.type) as GenericType<TParent>;
+        if (parentType !== ClassBase) {
             const parentMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance)
                 this.parentType = parentType;

@@ -15,7 +15,9 @@ export class EqualExpression extends ExpressionBase<boolean> implements IBinaryO
     }
 
     public toString(transformer?: ExpressionTransformer): string {
-        return "(" + this.leftOperand.toString(transformer) + " == " + this.rightOperand.toString(transformer) + ")";
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.leftOperand.toString() + " == " + this.rightOperand.toString() + ")";
     }
     public execute(transformer?: ExpressionTransformer) {
         // tslint:disable-next-line:triple-equals

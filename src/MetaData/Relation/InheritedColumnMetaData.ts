@@ -1,11 +1,11 @@
 import { ColumnType } from "../../Common/ColumnType";
-import { genericType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option";
 import { ColumnMetaData } from "../../MetaData";
 
 export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
     public propertyName: string;
-    public parentType: genericType<P>;
+    public parentType: GenericType<P>;
     public get name(): string {
         return this.columnMetaData.name;
     }
@@ -21,7 +21,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
     public get columnType(): ColumnType {
         return this.columnMetaData.columnType;
     }
-    public get type(): genericType<T> {
+    public get type(): GenericType<T> {
         return this.columnMetaData.type;
     }
     public get collation(): string {
@@ -32,7 +32,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
     }
     private columnMetaData: ColumnMetaData<T>;
     // tslint:disable-next-line:no-shadowed-variable
-    constructor(parentMetaData: ColumnMetaData<T>, parentType?: genericType<P>, propertyName?: string) {
+    constructor(parentMetaData: ColumnMetaData<T>, parentType?: GenericType<P>, propertyName?: string) {
         if (parentMetaData instanceof InheritedColumnMetaData) {
             this.columnMetaData = parentMetaData.columnMetaData;
             this.parentType = parentMetaData.parentType;
@@ -40,7 +40,7 @@ export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
         }
         else if (parentMetaData instanceof ColumnMetaData) {
             this.columnMetaData = parentMetaData;
-            this.parentType = parentType as genericType<P>;
+            this.parentType = parentType as GenericType<P>;
             this.propertyName = propertyName as string;
         }
     }

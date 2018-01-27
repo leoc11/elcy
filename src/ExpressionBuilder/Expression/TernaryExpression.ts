@@ -13,8 +13,10 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
         super(); // TODO: resolve constructor.
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.logicalOperand.toString(transformer) + " ? " + this.trueResultOperand.toString(transformer) + " : " + this.falseResultOperand.toString(transformer) + ")";
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.logicalOperand.toString() + " ? " + this.trueResultOperand.toString() + " : " + this.falseResultOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         return this.logicalOperand.execute(transformer) ? this.trueResultOperand.execute(transformer) : this.falseResultOperand.execute(transformer);

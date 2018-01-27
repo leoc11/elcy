@@ -1,4 +1,4 @@
-import { genericType } from "../Common/Type";
+import { GenericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option";
 import { IExpression } from "../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -13,7 +13,7 @@ export class ComputedColumnMetaData<T, R> implements IColumnOption<R> {
         return this._fnExpressionFactory;
     }
     // tslint:disable-next-line:no-shadowed-variable
-    constructor(public type: genericType<R>, public fn: (item: T) => R, public name: string) {
+    constructor(public type: GenericType<R>, public fn: (item: T) => R, public name: string) {
     }
 
     /**

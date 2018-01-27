@@ -39,10 +39,12 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
         }
     }
 
-    public toString(transformer: ExpressionTransformer): string {
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         const paramStr = [];
         for (const param of this.params)
-            paramStr.push(param.toString(transformer));
+            paramStr.push(param.toString());
         return this.functionName + "(" + paramStr.join(", ") + ")";
     }
     public execute(transformer: ExpressionTransformer) {

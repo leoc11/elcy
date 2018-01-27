@@ -16,23 +16,23 @@ export interface IJoinRelation<TParent, TChild> {
 }
 export class JoinEntityExpression<T> implements IEntityExpression<T> {
     public get columns(): IColumnExpression[] {
-        return this.entity.columns;
+        return this.parentEntity.columns;
     }
     public get primaryColumns(): IColumnExpression[] {
-        return this.entity.primaryColumns;
+        return this.parentEntity.primaryColumns;
     }
     public get name() {
         return this.alias;
     }
     public get type(): IObjectType<T> {
-        return this.entity.type;
+        return this.parentEntity.type;
     }
     public get alias(): string {
-        return this.entity.alias;
+        return this.parentEntity.alias;
     }
     public relations: Array<IJoinRelation<T, any>> = [];
-    constructor(public entity: IEntityExpression<T>) {
-        this.entity.parent = this;
+    constructor(public parentEntity: IEntityExpression<T>) {
+        this.parentEntity.parent = this;
     }
     public addRelation<T2>(relationMetaOrMap: IRelationMetaData<T, T2> | IRelationMetaData<T2, T>, aliasOrChild: string | IEntityExpression<T2>): IEntityExpression<T2>;
     public addRelation<T2>(relationMetaOrMap: Array<IJoinRelationMap<T, T2>>, child: IEntityExpression<T2>, type: JoinType): IEntityExpression<T2>;
@@ -54,7 +54,7 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
             type = isMaster && relationMeta.relationType === RelationType.OneToMany ? JoinType.LEFT : JoinType.INNER;
             relationMaps = Object.keys(relationMeta.relationMaps!).select((o) => ({
                 childColumn: child.columns.first((c) => isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o),
-                parentColumn: this.entity.columns.first((c) => !isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o)
+                parentColumn: this.parentEntity.columns.first((c) => !isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o)
             })).toArray();
         }
         else {
@@ -72,8 +72,8 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
         return relation.child;
     }
     public changeEntity(entity: IEntityExpression, newEntity: IEntityExpression) {
-        if (this.entity === entity) {
-            this.entity = newEntity;
+        if (this.parentEntity === entity) {
+            this.parentEntity = newEntity;
         }
         else {
             for (const relation of this.relations) {

@@ -14,8 +14,10 @@ export class TypeofExpression extends ExpressionBase<string> implements IUnaryOp
         super(String);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "typeof " + this.operand.toString(transformer);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "typeof " + this.operand.toString();
     }
     public execute(transformer: ExpressionTransformer) {
         return typeof this.operand.execute(transformer);

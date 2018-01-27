@@ -7,9 +7,10 @@ import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
 export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaData<TSlave, TMaster> {
 
     // tslint:disable-next-line:variable-name
-    private _relationMaps: {[key in keyof TMaster]?: keyof TSlave; } = {};
+    private _relationMaps: {[key in keyof TMaster]?: keyof TSlave; };
     public get relationMaps(): {[key in keyof TMaster]?: keyof TSlave } {
         if (!this._relationMaps) {
+            this._relationMaps = {};
             const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.slaveType);
             const foreignKey: ForeignKeyMetaData<TSlave, TMaster> = entityMetaData.foreignKeys[this.foreignKeyName];
             Object.keys(foreignKey.relationMaps).forEach((o: keyof TSlave) => {

@@ -1,4 +1,4 @@
-import { genericType } from "../Common/Type";
+import { GenericType } from "../Common/Type";
 import * as Expression from "./Expression/";
 import { IExpression } from "./Expression/";
 import {
@@ -28,8 +28,8 @@ export class ExpressionBuilder {
         return blockResult.Value as IExpression;
     }
 
-    public ParseToExpression(fn: string, cTor: Array<genericType<any>>, params?: any[]): Expression.FunctionExpression;
-    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<genericType<any>>, params?: any[]) {
+    public ParseToExpression(fn: string, cTor: Array<GenericType<any>>, params?: any[]): Expression.FunctionExpression;
+    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<GenericType<any>>, params?: any[]) {
         if (typeof fn === "function")
             fn = fn.toString();
 

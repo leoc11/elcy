@@ -17,8 +17,10 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
         this.operand = this.convertOperand(operand);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "~" + this.operand.toString(transformer);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "~" + this.operand.toString();
     }
     public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:no-bitwise

@@ -1,11 +1,11 @@
-import { orderDirection } from "../../Common/Type";
+import { OrderDirection } from "../../Common/Type";
 import { Enumerable } from "./Enumerable";
 
 interface IRange {
     first: number;
     last: number;
 }
-function* lazysort<T>(enumerable: Enumerable<T>, selector: (item: T) => any, direction: orderDirection) {
+function* lazysort<T>(enumerable: Enumerable<T>, selector: (item: T) => any, direction: OrderDirection) {
     let index = 0;
     enumerable.resetPointer();
     const array = enumerable.toArray();
@@ -49,7 +49,7 @@ function* lazysort<T>(enumerable: Enumerable<T>, selector: (item: T) => any, dir
 }
 export class OrderEnumerable<T = any> extends Enumerable<T> {
     private generator: IterableIterator<any>;
-    constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => any, protected readonly direction: orderDirection) {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => any, protected readonly direction: OrderDirection) {
         super();
     }
     public [Symbol.iterator]() {

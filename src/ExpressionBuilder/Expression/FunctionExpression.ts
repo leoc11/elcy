@@ -1,4 +1,4 @@
-import { genericType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { ExpressionBuilder } from "../ExpressionBuilder";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
@@ -17,14 +17,16 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         return (new ExpressionBuilder()).ParseToExpression(functionFn, ctors as Array<{ new(): any }>, params);
     }
     // TODO: type must always specified
-    constructor(public body: IExpression<TResult>, public params: Array<ParameterExpression<TType>>, type?: genericType<TResult>) {
+    constructor(public body: IExpression<TResult>, public params: Array<ParameterExpression<TType>>, type?: GenericType<TResult>) {
         super(type);
     }
 
     public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         const params = [];
         for (const param of this.params)
-            params.push(param.toString(transformer));
+            params.push(param.toString());
 
         return "(" + params.join(", ") + ") => {" + this.body.toString(transformer) + "}";
     }

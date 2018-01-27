@@ -1,5 +1,6 @@
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
+import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { ComputedColumnExpression, GroupByExpression } from "./QueryExpression/index";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -7,8 +8,11 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export class PivotQueryable<T, TD extends { [key: string]: ((item: T) => any) | FunctionExpression<T, any> }, TM extends { [key: string]: ((item: T[]) => any) | FunctionExpression<T[], any> }, TResult extends {[key in (keyof TD & keyof TM)]: any }> extends Queryable<TResult> {
     public readonly dimensions: { [key: string]: FunctionExpression<T, any> } = {};
     public readonly metrics: { [key: string]: FunctionExpression<T[], any> } = {};
+    public get queryBuilder(): QueryBuilder {
+        return this.parent.queryBuilder;
+    }
     constructor(public readonly parent: Queryable<T>, dimensions: TD, metrics: TM) {
-        super(Object, parent.queryBuilder);
+        super(Object);
         // tslint:disable-next-line:forin
         for (const key in dimensions) {
             const val: ((item: T) => any) | FunctionExpression<T, any> = dimensions[key];

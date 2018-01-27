@@ -1,6 +1,8 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { columnMetaKey } from "../../Decorator/DecoratorKey";
+import { ColumnMetaData } from "../../MetaData/index";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> {
     public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);
@@ -10,13 +12,20 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
         return result;
     }
     constructor(public objectOperand: IExpression<TType>, public memberName: KProp | ExpressionBase<KProp>) {
-        super(); // TODO
+        super();
+        if (!(memberName instanceof ExpressionBase)) {
+            const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, memberName);
+            if (columnMeta)
+                this.type = columnMeta.type;
+        }
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        let result = this.objectOperand.toString(transformer);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        let result = this.objectOperand.toString();
         if (this.memberName instanceof ExpressionBase)
-            result += "[" + this.memberName.toString(transformer) + "]";
+            result += "[" + this.memberName.toString() + "]";
         else
             result += "." + this.memberName;
         return result;

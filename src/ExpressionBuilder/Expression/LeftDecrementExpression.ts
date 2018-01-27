@@ -14,8 +14,10 @@ export class LeftDecrementExpression extends ExpressionBase<number> implements I
         super(Number);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "--" + this.operand.toString(transformer);
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "--" + this.operand.toString();
     }
     public execute(transformer: ExpressionTransformer) {
         return this.operand.execute(transformer) - 1;

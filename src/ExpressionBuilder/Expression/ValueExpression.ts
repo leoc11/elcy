@@ -1,4 +1,5 @@
-import { genericType, NullConstructor } from "../../Common/Type";
+import { GenericType, NullConstructor } from "../../Common/Type";
+import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase } from "./IExpression";
 
 export class ValueExpression<T> extends ExpressionBase<T> {
@@ -8,7 +9,7 @@ export class ValueExpression<T> extends ExpressionBase<T> {
 
         return new ValueExpression(value, expressionString);
     }
-    public get type(): genericType<T> {
+    public get type(): GenericType<T> {
         if (this.value === null || this.value === undefined)
             return NullConstructor as any;
         return this.value.constructor as any;
@@ -19,7 +20,9 @@ export class ValueExpression<T> extends ExpressionBase<T> {
             this.ExpressionString = JSON.stringify(this.value);
         }
     }
-    public toString(): string {
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         return this.ExpressionString;
     }
     public execute() {

@@ -1,9 +1,9 @@
-import { IObjectType, JoinType } from "../../Common/Type";
+import { IObjectType, JoinType, ValueType } from "../../Common/Type";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression";
 import { JoinQueryable } from "./JoinQueryable";
 import { Queryable } from "./Queryable";
 
-export class FullJoinQueryable<T = any, T2 = any, K = any, R = any> extends JoinQueryable<T, T2, K, R> {
+export class FullJoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends JoinQueryable<T, T2, K, R> {
     protected readonly keySelector1: FunctionExpression<T, K>;
     protected readonly keySelector2: FunctionExpression<T2, K>;
     protected readonly resultSelector: FunctionExpression<T | T2, R>;

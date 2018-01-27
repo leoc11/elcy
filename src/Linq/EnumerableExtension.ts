@@ -1,4 +1,4 @@
-import { orderDirection } from "../Common/Type";
+import { OrderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable/Enumerable";
 import "./Enumerable/Enumerable.partial";
 import { GroupedEnumerable } from "./Enumerable/GroupedEnumerable";
@@ -10,11 +10,11 @@ declare global {
         asEnumerable(): Enumerable<T>;
         selectMany<TReturn>(fn: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
-        contain(item: T): boolean;
+        contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(fn: (item: T) => any, orderDirection: orderDirection): Enumerable<T>;
+        orderBy(fn: (item: T) => any, orderDirection: OrderDirection): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn?: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
@@ -52,13 +52,13 @@ Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[
 Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
     return this.asEnumerable().select(selector);
 };
-Array.prototype.contain = function <T>(this: T[], item: T) {
+Array.prototype.contains = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;
 };
 Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {
     return this.asEnumerable().where(predicate);
 };
-Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, direction: orderDirection = "ASC") {
+Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC) {
     return this.asEnumerable().orderBy(selector, direction);
 };
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {

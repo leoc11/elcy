@@ -14,8 +14,10 @@ export class RightIncrementExpression extends ExpressionBase<number> implements 
         super(Number);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return this.operand.toString(transformer) + "++";
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return this.operand.toString() + "++";
     }
     // TODO: return before increment;
     public execute(transformer: ExpressionTransformer) {

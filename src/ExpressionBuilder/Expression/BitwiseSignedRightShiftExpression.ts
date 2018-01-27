@@ -19,8 +19,10 @@ export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implem
         this.rightOperand = this.convertOperand(rightOperand);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.leftOperand.toString(transformer) + " >> " + this.rightOperand.toString(transformer) + ")";
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.leftOperand.toString() + " >> " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         // tslint:disable-next-line:no-bitwise

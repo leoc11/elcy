@@ -14,8 +14,10 @@ export class InstanceofExpression extends ExpressionBase<boolean> implements IBi
         super(Boolean);
     }
 
-    public toString(transformer: ExpressionTransformer): string {
-        return "(" + this.leftOperand.toString(transformer) + " instanceof " + this.rightOperand.toString(transformer) + ")";
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return "(" + this.leftOperand.toString() + " instanceof " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) instanceof this.rightOperand.execute(transformer);

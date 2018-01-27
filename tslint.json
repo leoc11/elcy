@@ -18,6 +18,10 @@
             "check-whitespace",
             "check-open-brace"
         ],
+        "variable-name": [
+            false,
+            "ban-keywords"
+        ],
         "trailing-comma": [
             true,
             {

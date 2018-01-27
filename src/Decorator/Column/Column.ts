@@ -19,13 +19,13 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
                 metadata.name = propertyKey;
         }
 
-        const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
+        const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (columnMetaData != null) {
             metadata.ApplyOption(columnMetaData);
         }
-        Reflect.defineMetadata(columnMetaKey, metadata, target, propertyKey);
+        Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
 
-        if (!entityMetaData.properties.contain(propertyKey))
+        if (!entityMetaData.properties.contains(propertyKey))
             entityMetaData.properties.push(propertyKey);
         if (columnOption) {
             if (metadata instanceof DateColumnMetaData) {

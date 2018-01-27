@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { classBase, InheritanceType, IObjectType } from "../../Common/Type";
+import { ClassBase, InheritanceType, IObjectType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option";
 import { AbstractEntityMetaData, ColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
@@ -11,7 +11,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOr
     return (type: IObjectType<T>) => {
         const entityMetadata = new AbstractEntityMetaData(type, defaultOrder);
         const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;
-        if (parentType !== classBase) {
+        if (parentType !== ClassBase) {
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             if (parentMetaData) {
                 let isInheritance = false;
@@ -62,7 +62,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOr
                     }
 
                     parentMetaData.computedProperties.forEach((prop) => {
-                        if (!entityMetadata.computedProperties.contain(prop)) {
+                        if (!entityMetadata.computedProperties.contains(prop)) {
                             entityMetadata.computedProperties.push(prop);
                             const columnMeta: IColumnOption<TParent> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                             Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);

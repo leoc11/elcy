@@ -1,4 +1,4 @@
-import { genericType } from "../../../Common/Type";
+import { GenericType } from "../../../Common/Type";
 import { columnMetaKey } from "../../../Decorator/DecoratorKey";
 import { ColumnMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../../QueryBuilder";
@@ -9,7 +9,7 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
     public get name() {
         return this.columnMetaData.name;
     }
-    public get type(): genericType<T> {
+    public get type(): GenericType<T> {
         return this.columnMetaData.type;
     }
     public alias?: string;
@@ -26,6 +26,9 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
         this.entity = entity;
         this.property = propertyName;
         this.alias = alias;
+    }
+    public clone() {
+        return new ColumnExpression(this.entity, this.property, this.alias);
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

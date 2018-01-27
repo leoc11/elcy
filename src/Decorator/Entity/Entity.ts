@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { classBase, genericType, InheritanceType, IObjectType } from "../../Common/Type";
+import { ClassBase, GenericType, InheritanceType, IObjectType } from "../../Common/Type";
 import { AbstractEntityMetaData, ColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { IEntityMetaData, IOrderCondition } from "../../MetaData/Interface";
@@ -20,8 +20,8 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
         if (!allowInheritance)
             entityMetadata.descriminatorMember = "";
 
-        const parentType = Object.getPrototypeOf(type) as genericType<TParent>;
-        if (parentType !== classBase) {
+        const parentType = Object.getPrototypeOf(type) as GenericType<TParent>;
+        if (parentType !== ClassBase) {
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             let isInheritance = false;
             if (parentMetaData instanceof AbstractEntityMetaData) {
@@ -54,7 +54,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
                     entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 
                 parentMetaData.properties.forEach((prop) => {
-                    if (!entityMetadata.properties.contain(prop)) {
+                    if (!entityMetadata.properties.contains(prop)) {
                         entityMetadata.properties.push(prop);
                         let columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                         if (entityMetadata.inheritance.inheritanceType !== InheritanceType.TablePerConcreteClass)
@@ -64,7 +64,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
                 });
 
                 parentMetaData.computedProperties.forEach((prop) => {
-                    if (!entityMetadata.computedProperties.contain(prop)) {
+                    if (!entityMetadata.computedProperties.contains(prop)) {
                         entityMetadata.computedProperties.push(prop);
                         const columnMeta: IColumnOption<TParent> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
                         Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);

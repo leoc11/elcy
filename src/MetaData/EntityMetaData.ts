@@ -1,5 +1,5 @@
 import { ClassEventListener } from "../Common/ClassEventListener";
-import { genericType } from "../Common/Type";
+import { GenericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
 import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } from "./Interface";
 import { ForeignKeyMetaData, InheritanceMetaData } from "./Relation";
@@ -18,7 +18,7 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public computedProperties: string[] = [];
 
     // inheritance
-    public parentType?: genericType<TParent>;
+    public parentType?: GenericType<TParent>;
     public descriminatorMember = "__type__";
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
@@ -34,7 +34,7 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public afterSave = new ClassEventListener<T, ISaveEventParam, void>(false);
     public afterDelete = new ClassEventListener<T, IDeleteEventParam, void>(false);
 
-    constructor(public type: genericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
         if (typeof name !== "undefined")
             this.name = name;
         if (typeof defaultOrder !== "undefined")

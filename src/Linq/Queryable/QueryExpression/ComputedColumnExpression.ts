@@ -1,4 +1,4 @@
-import { genericType } from "../../../Common/Type";
+import { GenericType } from "../../../Common/Type";
 import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
@@ -6,10 +6,13 @@ import { IEntityExpression } from "./IEntityExpression";
 
 export class ComputedColumnExpression<T = any, TE = any> implements IColumnExpression<T, TE> {
     public property: string;
-    public get type(): genericType<T>{
+    public get type(): GenericType<T>{
         return this.expression.type;
     }
-    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public alias?: string) {
+    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public alias: string) {
+    }
+    public clone() {
+        return new ComputedColumnExpression(this.entity, this.expression, this.alias);
     }
     public toString(transformer: QueryBuilder): string {
         return transformer.getExpressionString(this);

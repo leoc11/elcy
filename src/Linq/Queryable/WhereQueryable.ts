@@ -1,12 +1,16 @@
 import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
+import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 
 export class WhereQueryable<T> extends Queryable<T> {
+    public get queryBuilder(): QueryBuilder {
+        return this.parent.queryBuilder;
+    }
     protected readonly predicate: FunctionExpression<T, boolean>;
     constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<T, boolean> | ((item: T) => boolean)) {
-        super(parent.type, parent.queryBuilder);
+        super(parent.type);
         this.predicate = predicate instanceof FunctionExpression ? predicate : ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, parent.type);
     }
     public buildQuery(): any {

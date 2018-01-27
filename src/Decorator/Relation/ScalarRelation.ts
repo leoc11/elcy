@@ -30,7 +30,7 @@ export function ScalarRelation<S, T>(masterType: IObjectType<T> | IRelationOptio
     }
     const targetMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, relationOption.masterType);
     const targetUniqueKeys = Object.keys(targetMetaData.indices);
-    if (Object.keys(relationOption.relationMap).any((o) => !targetMetaData.primaryKeys.contain(o) && (targetUniqueKeys.length < 0 || targetUniqueKeys.all((key) => !targetMetaData.indices[key].properties.contain(o)))))
+    if (Object.keys(relationOption.relationMap).any((o) => !targetMetaData.primaryKeys.contains(o) && (targetUniqueKeys.length < 0 || targetUniqueKeys.all((key) => !targetMetaData.indices[key].properties.contains(o)))))
         throw new Error("Target property not valid. Target property must be a unique column");
 
     return (target: S, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {

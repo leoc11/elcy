@@ -1,14 +1,14 @@
-import { genericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 export interface IExpression<T = any> {
-    type: genericType<T>;
+    type: GenericType<T>;
     toString(transformer?: ExpressionTransformer): string;
     execute(transformer?: ExpressionTransformer): T | any;
 }
 
 export abstract class ExpressionBase<T = any> implements IExpression<T> {
-    public type: genericType<T>;
-    constructor(type?: genericType<T>) {
+    public type: GenericType<T>;
+    constructor(type?: GenericType<T>) {
         if (type)
             this.type = type;
     }

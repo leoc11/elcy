@@ -14,6 +14,7 @@ import {
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
+import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
@@ -26,8 +27,11 @@ import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
+    public get parameters(): TransformerParameter {
+        return this.queryVisitor.parameters;
+    }
     public namingStrategy: NamingStrategy = new NamingStrategy();
-    public queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
+    protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
 
     public newAlias(type?: "entity" | "column") {
         return this.queryVisitor.newAlias(type);
@@ -44,6 +48,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
     }
+
+    public getContainsString(expression: SelectExpression) {
+        return "SELECT EXISTS (" + this.getExpressionString(expression) + ")";
+    }
+
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {
             return this.getSelectQueryString(expression);
@@ -177,34 +186,41 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
     }
     protected getColumnString(column: IColumnExpression) {
+        if (column instanceof ComputedColumnExpression) {
+            return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias);
+        }
         return this.escape(column.entity.alias) + "." + this.escape(column.alias ? column.alias : column.property);
     }
     protected getSelectQueryString(select: SelectExpression): string {
         let result = "";
         if (select instanceof UnionExpression) {
-            result += this.getSelectQueryString(select.entity.select) +
-                " UNION" + (select.isUnionAll ? " ALL" : "") +
-                " " + this.getSelectQueryString(select.entity2.select) +
-                (select.where ? " WHERE " + select.where.toString(this) : "") +
-                (select.orders.length > 0 ? " ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+            result += "(" + this.newLine(++this.indent) + this.getSelectQueryString(select.entity.select) + this.newLine(--this.indent) + ")" +
+                this.newLine() + "UNION" + (select.isUnionAll ? " ALL" : "") +
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(select.entity2.select) + this.newLine(--this.indent) + ")" +
+                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
+                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
         }
         else {
             result += "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-                " " + select.columns.select((o) => o.toString(this)).toArray().join(",\n\t") + "\n" +
-                "FROM " + this.getEntityQueryString(select.entity) +
-                (select.where ? " WHERE " + select.where.toString(this) : "") +
-                ((select instanceof GroupByExpression) && select.groupBy ? " GROUP BY " + select.groupBy.select((o) => o.toString(this)).toArray().join(", ") : "") +
-                (select.orders.length > 0 ? " ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+                " " + select.columns.select((o) => o.toString(this)).toArray().join("," + this.newLine(this.indent + 1)) +
+                this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
+                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
+                ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => o.toString(this)).toArray().join(", ") : "") +
+                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
         }
         return result;
     }
+    protected newLine(indent = this.indent) {
+        return "\n" + (Array(indent + 1).join("\t"))
+    }
+    protected indent = 0;
     protected getEntityQueryString(entity: IEntityExpression): string {
         if (entity instanceof ProjectionEntityExpression)
-            return "(" + this.getSelectQueryString(entity.select) + ") AS " + this.escape(entity.alias);
+            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         else if (entity instanceof JoinEntityExpression)
-            return "(" + this.getEntityQueryString(entity.entity) + ") AS " + this.escape(entity.alias) +
-                entity.relations.select((o) => o.type + " JOIN (" + this.getEntityQueryString(o.child) + ") AS " + this.escape(o.child.alias) +
-                    " ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + "=" + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(" ");
+            return this.getEntityQueryString(entity.parentEntity) +
+                this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
+                    this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine());
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
@@ -436,35 +452,52 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         throw new Error(`${expression.methodName} deprecated.`);
                 }
                 break;
-            case Object:
-                if ((expression.objectOperand as IEntityExpression).columns) {
+            case Function:
+                switch (expression.methodName) {
+                    case "apply":
+                    case "bind":
+                    case "call":
+                    case "toSource":
+                    case "toString":
+                        break;
+                }
+                break;
+            case Array:
+                switch (expression.methodName) {
+                    case "contains":
+                    case "concat":
+                    case "copyWithin":
+                    case "every":
+                    case "fill":
+                    case "filter":
+                    case "find":
+                    case "findIndex":
+                    case "forEach":
+                    case "indexOf":
+                    case "join":
+                    case "lastIndexOf":
+                    case "map":
+                    case "pop":
+                    case "push":
+                    case "reduce":
+                    case "reduceRight":
+                    case "reverse":
+                    case "shift":
+                    case "slice":
+                    case "some":
+                    case "sort":
+                    case "splice":
+                    case "toString":
+                    case "unshift":
+                    case "valueOf":
+                        break;
+                }
+                break;
+            default:
+                if ((expression.objectOperand instanceof SelectExpression)) {
                     switch (expression.methodName) {
-                        case "concat":
-                        case "copyWithin":
-                        case "every":
-                        case "fill":
-                        case "filter":
-                        case "find":
-                        case "findIndex":
-                        case "forEach":
-                        case "indexOf":
-                        case "join":
-                        case "lastIndexOf":
-                        case "map":
-                        case "pop":
-                        case "push":
-                        case "reduce":
-                        case "reduceRight":
-                        case "reverse":
-                        case "shift":
-                        case "slice":
-                        case "some":
-                        case "sort":
-                        case "splice":
-                        case "toString":
-                        case "unshift":
-                        case "valueOf":
-                            break;
+                        case "contains":
+                            return this.getExpressionString(expression.params[0]) + " IN (" + this.getExpressionString(expression.objectOperand) + ")";
                     }
                 }
                 if (expression.objectOperand instanceof ValueExpression) {
@@ -538,16 +571,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             }
                             break;
                     }
-                }
-                break;
-            case Function:
-                switch (expression.methodName) {
-                    case "apply":
-                    case "bind":
-                    case "call":
-                    case "toSource":
-                    case "toString":
-                        break;
                 }
                 break;
         }
@@ -686,6 +709,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getNotExpressionString(expression: NotExpression): string {
         const operandString = this.getExpressionString(expression.operand);
+        if (expression.operand instanceof ColumnExpression)
+            return operandString + "<> 1";
         return "NOT " + operandString;
     }
     // tslint:disable-next-line:variable-name

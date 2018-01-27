@@ -21,11 +21,13 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         }
     }
 
-    public toString(transformer: ExpressionTransformer): string {
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         const paramStr = [];
         for (const param of this.params)
-            paramStr.push(param.toString(transformer));
-        return this.objectOperand.toString(transformer) + "." + this.methodName + "(" + paramStr.join(", ") + ")";
+            paramStr.push(param.toString());
+        return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
     }
     public execute(transformer: ExpressionTransformer) {
         const objectValue = this.objectOperand.execute(transformer);

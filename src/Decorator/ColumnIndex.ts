@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { genericType } from "../Common/Type";
+import { GenericType } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData, IndexMetaData } from "../MetaData";
 import { IEntityMetaData } from "../MetaData/Interface";
@@ -22,9 +22,9 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
         return FunctionHelper.PropertyName(item);
     });
 
-    return (target: genericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+    return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         if (!option.name)
-            option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as genericType<T>).name);
+            option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as GenericType<T>).name);
 
         const entConstructor = propertyKey ? target.constructor : target;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);

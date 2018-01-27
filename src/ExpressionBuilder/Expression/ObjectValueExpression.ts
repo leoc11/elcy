@@ -23,10 +23,12 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
         this.object = objectValue;
     }
 
-    public toString(transformer: ExpressionTransformer) {
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
         const itemString = [];
         for (const item in this.object)
-            itemString.push(item + ": " + this.object[item].toString(transformer));
+            itemString.push(item + ": " + this.object[item].toString());
         return "{" + itemString.join(", ") + "}";
     }
     public execute(transformer: ExpressionTransformer): TType {
