@@ -1,6 +1,7 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { GenericType } from "../../Common/Type";
 export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> {
     public static Create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
@@ -11,8 +12,8 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         return result;
     }
     public methodName: string;
-    constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[]) {
-        super(); // TODO
+    constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[], type?: GenericType<TResult>) {
+        super(type); // TODO
         if (typeof method === "function") {
             this.methodName = method.name;
         }

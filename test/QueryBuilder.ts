@@ -1,14 +1,14 @@
 import { assert } from "chai";
 import "mocha";
-import { FunctionExpression, GreaterEqualExpression, GreaterThanExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ObjectValueExpression, ParameterExpression, ValueExpression } from "../src/ExpressionBuilder/Expression/index";
+import { FunctionExpression, GreaterEqualExpression, GreaterThanExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ObjectValueExpression, ParameterExpression, ValueExpression, StrictNotEqualExpression, OrExpression, LessThanExpression } from "../src/ExpressionBuilder/Expression/index";
 import { Enumerable } from "../src/Linq/Enumerable/index";
 import { ExceptQueryable, InnerJoinQueryable, IntersectQueryable, PivotQueryable, SelectManyQueryable, SelectQueryable, UnionQueryable, WhereQueryable } from "../src/Linq/Queryable/index";
 import { SelectExpression } from "../src/Linq/Queryable/QueryExpression/index";
 import { Order, OrderDetail } from "./Common/Model/index";
 import { MyDb } from "./Common/MyDb";
 
+const db = new MyDb({});
 describe("Query builder", () => {
-    const db = new MyDb({});
     it("dbset.tostring()", () => {
         const result = db.orders.toString();
         assert.equal(result.replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0]");
@@ -35,12 +35,6 @@ describe("Query builder", () => {
         const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
         const a = new SelectManyQueryable(w, new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param]));
         assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [OrderDetails] AS [entity1] INNER JOIN [Orders] AS [entity0] ON [entity1].[OrderId] = [entity0].[OrderId] WHERE ([entity0].[Total] >= (10000))");
-    });
-    it("order.where(o => o.Total > 10000).select(o => o.OrderDetails.first())", () => {
-        const param = new ParameterExpression("o", db.orders.type);
-        const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
-        const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "first", []), [param]));
-        assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity2].[OrderDetailId], [entity2].[OrderId], [entity2].[name], [entity2].[CreatedDate], [entity2].[isDeleted] FROM [OrderDetails] AS [entity2] WHERE ([entity2].[OrderDetailId] IN (SELECT (MIN([entity1].[OrderDetailId])) AS [column0] FROM [OrderDetails] AS [entity1] INNER JOIN [Orders] AS [entity0] ON [entity1].[OrderId] = [entity0].[OrderId] GROUP BY [entity1].[OrderId]))");
     });
     it("orders.where(o => o.Total > 10000).innerJoin(orderDetails, o => o.OrderId, od => od.OrderId, (o, od) => ({ OD: od.name, Order: o.Total }))", () => {
         const param = new ParameterExpression("o", db.orders.type);
@@ -94,7 +88,7 @@ describe("Query builder", () => {
             totalSum: new FunctionExpression(new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]), [param1])
         });
         const c = new PivotQueryable(db.orderDetails, a, b);
-        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity1].[OrderDate] AS [date], (AVG([entity1].[Total])) AS [avg], (COUNT()) AS [count], (MAX([entity0].[OrderDetailId])) AS [max], (MIN([entity0].[OrderDetailId])) AS [min], (SUM([entity1].[Total])) AS [totalSum] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] GROUP BY [entity1].[OrderDate]");
+        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity1].[OrderDate] AS [date], (AVG([entity1].[Total])) AS [avg], (COUNT()) AS [count], (MAX([entity0].[OrderDetailId])) AS [max], (MIN([entity0].[OrderDetailId])) AS [min], (SUM([entity1].[Total])) AS [totalSum] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] GROUP BY [date]");
     });
     it("orders.select(o => o.Total).max()", () => {
         const param = new ParameterExpression("o", db.orders.type);
@@ -145,5 +139,87 @@ describe("Query builder", () => {
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
         assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
+    });
+});
+
+describe("Query builder: where", () => {
+    it("orders.where(o => o.Total > 1000 || o.OrderDate >= new Date(2018, 0, 1))", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const a = new GreaterThanExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(1000))
+        const b = new GreaterEqualExpression(new MemberAccessExpression(param, "OrderDate"), new ValueExpression(new Date(2018, 0, 1)));
+        const c = new OrExpression(a, b);
+        const d = new WhereQueryable(db.orders, new FunctionExpression(c, [param]));
+        assert.equal(d.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] WHERE (([entity0].[Total] > (1000)) OR ([entity0].[OrderDate] >= ('2018-01-01 00:00:00')))");
+    });
+    it("orderDetails.where(o => o.Order.Total > 1000).where(o => o.CreatedDate > o.Order.OrderDate)", () => {
+        const param = new ParameterExpression("od", db.orderDetails.type);
+        const a = new GreaterThanExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), new ValueExpression(1000))
+        const b = new GreaterEqualExpression(new MemberAccessExpression(param, "CreatedDate"), new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"));
+        const c = new WhereQueryable(db.orderDetails, new FunctionExpression(a, [param]));
+        const d = new WhereQueryable(c, new FunctionExpression(b, [param]));
+        assert.equal(d.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderDetailId], [entity0].[OrderId], [entity0].[name], [entity0].[CreatedDate], [entity0].[isDeleted] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE (([entity1].[Total] > (1000)) AND ([entity0].[CreatedDate] >= [entity1].[OrderDate]))");
+    });
+    it("order.where(o => o.OrderDetails.count() > 2)", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const a = new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(2));
+        const b = new WhereQueryable(db.orders, new FunctionExpression(a, [param]));
+        assert.equal(b.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] WHERE ((SELECT (COUNT()) AS [column0] FROM [OrderDetails] AS [entity1] WHERE ([entity1].[OrderId] = [entity0].[OrderId])) > (2))");
+    });
+    it("order.where(o => o.OrderDetails.count() > 2).where(o => o.OrderDetails.max(p => p.CreatedDate) < new Date(2018, 0, 1))", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const param2 = new ParameterExpression("p", OrderDetail);
+        const a = new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(2));
+        const b = new WhereQueryable(db.orders, new FunctionExpression(a, [param]));
+        const c1 = new FunctionExpression(new MemberAccessExpression(param2, "CreatedDate"), [param2]);
+        const c = new LessThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "max", [c1]), new ValueExpression(new Date(2018, 0, 1)));
+        const d = new WhereQueryable(b, new FunctionExpression(c, [param]));
+        assert.equal(d.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] WHERE ((SELECT (COUNT()) AS [column0] FROM [OrderDetails] AS [entity1] WHERE ([entity1].[OrderId] = [entity0].[OrderId])) > (2))");
+    });
+});
+
+describe("Query builder: first", () => {
+    it("orders.first()", () => {
+        const a = db.orders;
+        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const methodExpression = new MethodCallExpression(expression.entity, "first", []);
+        const param2 = { parent: expression, type: "first" };
+        a.queryBuilder.visit(methodExpression, param2);
+        expression = param2.parent;
+        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0]");
+    });
+    it("orderDetails.first(o => o.Order !== null)", () => {
+        const param = new ParameterExpression("o", db.orderDetails.type);
+        const a = db.orderDetails;
+        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const methodExpression = new MethodCallExpression(expression.entity, "first", [new FunctionExpression(new StrictNotEqualExpression(new MemberAccessExpression(param, "Order"), new ValueExpression(null)), [param])]);
+        const param2 = { parent: expression, type: "first" };
+        a.queryBuilder.visit(methodExpression, param2);
+        expression = param2.parent;
+        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderDetailId], [entity0].[OrderId], [entity0].[name], [entity0].[CreatedDate], [entity0].[isDeleted] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity1].[OrderId] <> (NULL))");
+    });
+    it("orders.first(o => o.OrderDetails.count() > 0)", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const a = db.orders;
+        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const methodExpression = new MethodCallExpression(expression.entity, "first", [new FunctionExpression(new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(0)), [param])]);
+        const param2 = { parent: expression, type: "first" };
+        a.queryBuilder.visit(methodExpression, param2);
+        expression = param2.parent;
+        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate], (COUNT()) AS [column0] FROM [Orders] AS [entity0] INNER JOIN [OrderDetails] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([column0] > (0)) GROUP BY [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate]");
+    });
+    it("orders.first(o => ({ odcount: o.OrderDetails.count()}))", () => {
+        //  assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
+    });
+    it("orders.selectMany(o => o.OrderDetails).first()", () => {
+        // assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
+    });
+    it("order.where(o => o.Total > 10000).select(o => o.OrderDetails.first())", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
+        const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "first", []), [param]));
+        assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity2].[OrderDetailId], [entity2].[OrderId], [entity2].[name], [entity2].[CreatedDate], [entity2].[isDeleted] FROM [OrderDetails] AS [entity2] WHERE ([entity2].[OrderDetailId] IN (SELECT (MIN([entity1].[OrderDetailId])) AS [column0] FROM [OrderDetails] AS [entity1] INNER JOIN [Orders] AS [entity0] ON [entity1].[OrderId] = [entity0].[OrderId] GROUP BY [entity1].[OrderId]))");
+    });
+    it("orders.select(o => {od: o.OrderDetails.first()}).first()", () => {
+        // assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
     });
 });

@@ -9,7 +9,7 @@ import {
     MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression, OrExpression,
     ParameterExpression, RightDecrementExpression, RightIncrementExpression,
     StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TernaryExpression,
-    TimesExpression, TypeofExpression, ValueExpression
+    TimesExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -186,18 +186,24 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return "(" + result + ")";
         }
     }
-    protected getColumnString(column: IColumnExpression, emitAlias = true) {
-        if (column instanceof ComputedColumnExpression) {
-            return this.getExpressionString(column.expression) + (emitAlias ? " AS " + this.escape(column.alias) : "");
+    protected getColumnString(column: IColumnExpression, isSelect = false) {
+        if (isSelect) {
+            if (column instanceof ComputedColumnExpression) {
+                return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias);
+            }
+            return this.escape(column.entity.alias) + "." + this.escape(column.property) + (column.alias ? " AS " + this.escape(column.alias) : "");
         }
-        return this.escape(column.entity.alias) + "." + this.escape(column.alias ? column.alias : column.property);
+        if ((column instanceof ComputedColumnExpression) && !column.alias) {
+            return "(" + this.getExpressionString(column.expression) + ")";
+        }
+        return column.alias ? this.escape(column.alias) : this.escape(column.entity.alias) + "." + this.escape(column.property);
     }
     protected getSelectQueryString(select: SelectExpression): string {
         return "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-            " " + select.columns.select((o) => o.toString(this)).toArray().join("," + this.newLine(this.indent + 1)) +
+            " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
             (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
-            ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o, false)).toArray().join(", ") : "") +
+            ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ") : "") +
             (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
     }
     protected newLine(indent = this.indent) {
@@ -658,35 +664,35 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
 
     protected getDivisionExpressionString(expression: DivisionExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " / " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
     protected getEqualExpressionString(expression: EqualExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " = " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " = " + this.getOperandString(expression.rightOperand);
     }
     protected getGreaterEqualExpressionString<T>(expression: GreaterEqualExpression<T>): string {
-        return this.getExpressionString(expression.leftOperand) + " >= " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " >= " + this.getOperandString(expression.rightOperand);
     }
     protected getGreaterThanExpressionString<T>(expression: GreaterThanExpression<T>): string {
-        return this.getExpressionString(expression.leftOperand) + " > " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " > " + this.getOperandString(expression.rightOperand);
     }
     // tslint:disable-next-line:variable-name
     protected getInstanceofExpressionString(_expression: InstanceofExpression): string {
         throw new Error(`InstanceofExpression not supported`);
     }
     protected getLessEqualExpressionString<T>(expression: LessEqualExpression<T>): string {
-        return this.getExpressionString(expression.leftOperand) + " <= " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " <= " + this.getOperandString(expression.rightOperand);
     }
     protected getLessThanExpressionString<T>(expression: LessThanExpression<T>): string {
-        return this.getExpressionString(expression.leftOperand) + " < " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " < " + this.getOperandString(expression.rightOperand);
     }
     protected getModulusExpressionString(expression: ModulusExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " % " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " % " + this.getOperandString(expression.rightOperand);
     }
     protected getNotEqualExpressionString(expression: NotEqualExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " <> " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " <> " + this.getOperandString(expression.rightOperand);
     }
     protected getOrExpressionString(expression: OrExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " OR " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " OR " + this.getOperandString(expression.rightOperand);
     }
     protected getStrictEqualExpressionString<T>(expression: StrictEqualExpression<T>): string {
         return this.getEqualExpressionString(expression);
@@ -695,20 +701,27 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getNotEqualExpressionString(expression);
     }
     protected getSubtractionExpressionString(expression: SubtractionExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " - " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " - " + this.getOperandString(expression.rightOperand);
     }
     protected getTimesExpressionString(expression: TimesExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " * " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " * " + this.getOperandString(expression.rightOperand);
     }
 
     protected getAdditionExpressionString<T extends string | number>(expression: AdditionExpression<T>): string {
         if (expression.type as any === String)
-            return "CONCAT(" + this.getExpressionString(expression.leftOperand) + ", " + this.getExpressionString(expression.rightOperand) + ")";
+            return "CONCAT(" + this.getOperandString(expression.leftOperand) + ", " + this.getOperandString(expression.rightOperand) + ")";
 
-        return this.getExpressionString(expression.leftOperand) + " + " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " + " + this.getOperandString(expression.rightOperand);
+    }
+    protected getOperandString(expression: IExpression): string {
+        if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
+            const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
+            return this.getColumnString(column);
+        }
+        return this.getExpressionString(expression);
     }
     protected getAndExpressionString(expression: AndExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " AND " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " AND " + this.getOperandString(expression.rightOperand);
     }
     // tslint:disable-next-line:variable-name
     protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
@@ -719,7 +732,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`LeftIncrement not supported`);
     }
     protected getNotExpressionString(expression: NotExpression): string {
-        const operandString = this.getExpressionString(expression.operand);
+        const operandString = this.getOperandString(expression.operand);
         if (expression.operand instanceof ColumnExpression)
             return operandString + "<> 1";
         return "NOT " + operandString;
@@ -738,17 +751,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
 
     protected getBitwiseNotExpressionString(expression: BitwiseNotExpression): string {
-        const operandString = this.getExpressionString(expression.operand);
+        const operandString = this.getOperandString(expression.operand);
         return "~ " + operandString;
     }
     protected getBitwiseAndExpressionString(expression: BitwiseAndExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " & " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " & " + this.getOperandString(expression.rightOperand);
     }
     protected getBitwiseOrExpressionString(expression: BitwiseOrExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " | " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " | " + this.getOperandString(expression.rightOperand);
     }
     protected getBitwiseXorExpressionString(expression: BitwiseXorExpression): string {
-        return this.getExpressionString(expression.leftOperand) + " ^ " + this.getExpressionString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand) + " ^ " + this.getOperandString(expression.rightOperand);
     }
     // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
     // tslint:disable-next-line:variable-name

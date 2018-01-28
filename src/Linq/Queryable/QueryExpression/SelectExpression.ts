@@ -1,13 +1,15 @@
 import { GenericType } from "../../../Common/Type";
-import { IExpression, AndExpression } from "../../../ExpressionBuilder/Expression/index";
+import { AndExpression, IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
+import { ProjectionEntityExpression } from "./index";
 import { IOrderExpression } from "./IOrderExpression";
 
 export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
+    public parent?: ProjectionEntityExpression<T>;
     public columns: IColumnExpression[] = [];
     public entity: IEntityExpression;
     public distinct: boolean = false;

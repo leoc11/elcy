@@ -34,6 +34,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     private _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     constructor(public select: SelectExpression, public alias: string, public readonly type: IObjectType<T> = Object as any) {
+        this.select.parent = this;
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
