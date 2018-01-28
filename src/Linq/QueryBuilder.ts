@@ -201,7 +201,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
     }
     protected newLine(indent = this.indent) {
-        return "\n" + (Array(indent + 1).join("\t"))
+        return "\n" + (Array(indent + 1).join("\t"));
     }
     protected getEntityQueryString(entity: IEntityExpression): string {
         if (entity instanceof IntersectExpression) {

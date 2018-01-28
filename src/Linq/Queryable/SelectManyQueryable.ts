@@ -14,7 +14,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
         super(type);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression<S, T[] | Queryable<T>>(selector, parent.type);
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
+    public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);

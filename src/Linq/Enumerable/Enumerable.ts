@@ -69,10 +69,10 @@ export class Enumerable<T = any> {
         }
         return undefined as any;
     }
-    public last(predicate?: (item: T) => boolean) {
-        const array = predicate ? (this as any).where(predicate).toArray() : this.toArray();
-        return array[array.length - 1];
-    }
+    // public last(predicate?: (item: T) => boolean) {
+    //     const array = predicate ? (this as any).where(predicate).toArray() : this.toArray();
+    //     return array[array.length - 1];
+    // }
     public count(predicate?: (item: T) => boolean) {
         let count = 0;
         this.resetPointer();

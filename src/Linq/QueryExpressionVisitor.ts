@@ -1,4 +1,4 @@
-import { OrderDirection, JoinType, RelationType } from "../Common/Type";
+import { JoinType, OrderDirection, RelationType } from "../Common/Type";
 import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import {
     AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
@@ -22,14 +22,14 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
-import { ColumnExpression, ComputedColumnExpression, IEntityExpression, ProjectionEntityExpression, IJoinRelationMap, UnionExpression, IntersectExpression, ExceptExpression } from "./Queryable/QueryExpression/index";
+import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IJoinRelationMap, IntersectExpression, ProjectionEntityExpression, UnionExpression } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
-    type?: "select" | "selectMany" | "where" | "orderBy" | "include" | "groupBy";
+    type?: string;
 }
 export class QueryExpressionVisitor {
     public parameters = new TransformerParameter();
@@ -142,25 +142,10 @@ export class QueryExpressionVisitor {
                     break;
             }
         }
-        let parentEntity = res as IEntityExpression;
+        const parentEntity = res as IEntityExpression;
         const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
         if (relationMeta) {
             switch (param.type) {
-                case "where":
-                case "orderBy":
-                    if (!(parentEntity instanceof JoinEntityExpression)) {
-                        const parent = parentEntity.parent;
-                        const joinPEntity = new JoinEntityExpression(parentEntity);
-                        if (parent) {
-                            parent.changeEntity(parentEntity, joinPEntity);
-                        }
-                        else {
-                            param.parent.entity = joinPEntity;
-                        }
-                        parentEntity = joinPEntity;
-                    }
-
-                    return (parentEntity as JoinEntityExpression<any>).addRelation(relationMeta, this.newAlias());
                 case "select":
                     {
                         const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
@@ -213,9 +198,10 @@ export class QueryExpressionVisitor {
                         if (parentEntity instanceof JoinEntityExpression)
                             joinEntity = parentEntity;
                         else {
+                            const parent = parentEntity.parent;
                             joinEntity = new JoinEntityExpression(parentEntity);
-                            if (parentEntity.parent) {
-                                parentEntity.parent.changeEntity(parentEntity, joinEntity);
+                            if (parent) {
+                                parent.changeEntity(parentEntity, joinEntity);
                             }
                             else {
                                 param.parent.entity = joinEntity;
@@ -228,6 +214,24 @@ export class QueryExpressionVisitor {
                         param.parent.columns = param.parent.columns.concat(entity.columns);
                         return entity;
                     }
+                default:
+                    let joinPEntity: JoinEntityExpression<any>;
+                    if (parentEntity.parent && parentEntity.parent.parentEntity === parentEntity) {
+                        joinPEntity = parentEntity.parent;
+                    }
+                    else {
+                        const parent = parentEntity.parent;
+                        joinPEntity = new JoinEntityExpression(parentEntity);
+                        if (parent) {
+                            parent.changeEntity(parentEntity, joinPEntity);
+                        }
+                        else {
+                            param.parent.entity = joinPEntity;
+                        }
+                    }
+
+                    return (joinPEntity as JoinEntityExpression<any>).addRelation(relationMeta, this.newAlias());
+
             }
         }
         if (parentEntity) {
@@ -241,7 +245,7 @@ export class QueryExpressionVisitor {
         expression.objectOperand = this.visit(expression.objectOperand, param);
         if ((expression.objectOperand as IEntityExpression).columns) {
             let parentEntity = expression.objectOperand as IEntityExpression;
-            const param1: IQueryVisitParameter = { parent: param.parent };
+            const param1: IQueryVisitParameter = { parent: param.parent, type: param.type === expression.methodName ? param.type : undefined };
             if (parentEntity.parent && parentEntity.parent.parentEntity !== parentEntity) {
                 let projectionEntity: ProjectionEntityExpression;
                 if (parentEntity.constructor === ProjectionEntityExpression)
@@ -258,7 +262,6 @@ export class QueryExpressionVisitor {
             switch (expression.methodName) {
                 case "where":
                     {
-                        param1.type = "where";
                         const fnExpression = expression.params[0] as FunctionExpression<TType, boolean>;
                         this.parameters.add(fnExpression.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
                         const resExpression = this.visit(fnExpression, param1);
@@ -284,7 +287,6 @@ export class QueryExpressionVisitor {
                     }
                 case "select":
                     {
-                        param1.type = "select";
                         const fnExpression = expression.params[0] as FunctionExpression<TType, TResult>;
                         this.parameters.add(fnExpression.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
                         const selectExpression = this.visit(fnExpression, param1);
@@ -300,30 +302,20 @@ export class QueryExpressionVisitor {
                             selectExp.columns = Object.keys(selectExpression.object).select(
                                 (o) => new ComputedColumnExpression(selectExp.entity, selectExpression.object[o], o)
                             ).toArray();
+                            parentEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
+                            selectExp = new SelectExpression(parentEntity);
                         }
-                        // else {
-                        //     const columnExpression = new ComputedColumnExpression(selectExp.entity, selectExpression, this.newAlias("column"));
-                        //     selectExp.columns.add(columnExpression);
-                        // }
-                        parentEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
-                        selectExp = new SelectExpression(parentEntity);
-                        if (parentEntity.parent) {
-                            const projectionEntity = new ProjectionEntityExpression(selectExp, this.newAlias(), parentEntity.type);
-                            parentEntity.parent.changeEntity(parentEntity, projectionEntity);
-                            parentEntity = projectionEntity;
-                        }
-                        else {
-                            param.parent = selectExp;
-                        }
+                        param.parent = selectExp;
 
                         return parentEntity;
                     }
                 case "distinct":
                     {
                         if (expression.params.length > 0) {
-                            param1.type = "groupBy";
+                            if (param1.type) param1.type = "groupBy";
                             parentEntity = this.visit(new MethodCallExpression(parentEntity, "groupBy", expression.params), param1) as ProjectionEntityExpression;
                             const fnExpression = ExpressionFactory.prototype.ToExpression((o: TType[]) => o.first(), Array);
+                            if (param1.type) param1.type = "select";
                             parentEntity = this.visit(new MethodCallExpression(parentEntity, "select", [fnExpression]), param1) as ProjectionEntityExpression;
                         }
                         else {
@@ -333,7 +325,6 @@ export class QueryExpressionVisitor {
                     }
                 case "include":
                     {
-                        param1.type = "include";
                         for (const selectorfn of expression.params) {
                             const selector = selectorfn as FunctionExpression<TType, TResult>;
                             this.parameters.add(selector.params[0].name, parentEntity);
@@ -354,7 +345,6 @@ export class QueryExpressionVisitor {
                     }
                 case "orderBy":
                     {
-                        param1.type = "orderBy";
                         const selector = expression.params[0] as FunctionExpression<TType, boolean>;
                         const direction = expression.params[1] as ValueExpression<OrderDirection>;
                         this.parameters.add(selector.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
@@ -377,7 +367,6 @@ export class QueryExpressionVisitor {
                     }
                 case "selectMany":
                     {
-                        param1.type = "selectMany";
                         const selector = expression.params[0] as FunctionExpression<TType, TResult>;
                         this.parameters.add(selector.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
                         const selectEntity = this.visit(selector, param1) as EntityExpression;
@@ -405,7 +394,6 @@ export class QueryExpressionVisitor {
                     }
                 case "groupBy":
                     {
-                        param1.type = "groupBy";
                         const selectExp = param1.parent;
                         const groupExpression = new GroupByExpression<any, any>(new SelectExpression(parentEntity));
                         const keySelector = expression.params[0] as FunctionExpression<TType, TResult>;
@@ -493,7 +481,9 @@ export class QueryExpressionVisitor {
                     }
                 case "count":
                     {
-                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(param.parent, expression.methodName, []), this.newAlias("column"));
+                        const column = new ComputedColumnExpression(parentEntity, new MethodCallExpression(param.parent, expression.methodName, []), this.newAlias("column"));
+                        param1.parent.columns = [column];
+                        return column;
                     }
                 case "sum":
                 case "avg":
@@ -502,6 +492,7 @@ export class QueryExpressionVisitor {
                     {
                         let columnExp = this.resolveThisArgument(param1.parent, parentEntity);
                         if (expression.params.length > 0) {
+                            if (param1.type) param1.type = "select";
                             this.visit(new MethodCallExpression(columnExp, "select", [expression.params[0]]), param1);
                             columnExp = this.resolveThisArgument(param1.parent, parentEntity);
                             param.parent = param1.parent;
@@ -509,7 +500,9 @@ export class QueryExpressionVisitor {
                         if (!(columnExp as IColumnExpression).entity) {
                             throw new Error(`unable find column to ${expression.methodName}`);
                         }
-                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(param.parent, expression.methodName, [columnExp]), this.newAlias("column"));
+                        const column = new ComputedColumnExpression(parentEntity, new MethodCallExpression(param.parent, expression.methodName, [columnExp]), this.newAlias("column"));
+                        param1.parent.columns = [column];
+                        return column;
                     }
                 case "all":
                 case "any":
@@ -521,7 +514,7 @@ export class QueryExpressionVisitor {
                     }
                 case "contains":
                     {
-                        if (param.type) {
+                        if (!param.type) {
                             return expression;
                         }
                         else {
@@ -550,10 +543,10 @@ export class QueryExpressionVisitor {
                 case "rightJoin":
                 case "fullJoin":
                     {
-                        param1.type = "select";
+                        if (param1.type) param1.type = "select";
                         const childSelect = this.visit(expression.params[0], param) as SelectExpression;
                         let childEntity = this.visit(childSelect.entity, param) as IEntityExpression;
-                        const param2: IQueryVisitParameter = { parent: new SelectExpression(childEntity), type: "select" };
+                        const param2: IQueryVisitParameter = { parent: new SelectExpression(childEntity), type: (param1.type) ? "select" : undefined };
                         if (childEntity.parent && childEntity.parent.parentEntity !== childEntity) {
                             let projectionEntity: ProjectionEntityExpression;
                             if (childEntity.constructor === ProjectionEntityExpression)
@@ -628,7 +621,7 @@ export class QueryExpressionVisitor {
                             selectExp.addWhere(param2.parent.where);
                         }
 
-                        const param3: IQueryVisitParameter = { parent: selectExp, type: "select" };
+                        const param3: IQueryVisitParameter = { parent: selectExp, type: (param1.type) ? "select" : undefined };
                         const resultSelector = expression.params[3] as FunctionExpression;
                         this.parameters.add(resultSelector.params[1].name, this.resolveThisArgument(param2.parent, childEntity));
                         const entityExp = this.visit(new MethodCallExpression(param3.parent.entity, "select", [resultSelector]), param3);
@@ -676,18 +669,14 @@ export class QueryExpressionVisitor {
                         // tslint:disable-next-line:forin
                         for (const dimensionKey in dimensions.object) {
                             this.parameters.add(dimensions.object[dimensionKey].params[0].name, parentEntity);
-                            const nparam: IQueryVisitParameter = { parent: new SelectExpression(param1.parent), type: "where" };
-                            const selectExpression = this.visit(dimensions.object[dimensionKey], nparam);
-                            param1.parent.entity = nparam.parent.entity;
+                            const selectExpression = this.visit(dimensions.object[dimensionKey], param1);
                             this.parameters.remove(dimensions.object[dimensionKey].params[0].name);
                             groups.add(new ComputedColumnExpression(parentEntity, selectExpression, dimensionKey, dimensionKey));
                         }
                         // tslint:disable-next-line:forin
                         for (const key in metrics.object) {
                             this.parameters.add(metrics.object[key].params[0].name, parentEntity);
-                            const nparam: IQueryVisitParameter = { parent: new SelectExpression(param1.parent), type: "where" };
-                            const selectExpression = this.visit(metrics.object[key], nparam) as ComputedColumnExpression;
-                            param1.parent.entity = nparam.parent.entity;
+                            const selectExpression = this.visit(metrics.object[key], param1) as ComputedColumnExpression;
                             this.parameters.remove(metrics.object[key].params[0].name);
                             selectExpression.alias = selectExpression.property = key;
                             columns.add(selectExpression);
@@ -739,7 +728,7 @@ export class QueryExpressionVisitor {
         return expression;
     }
     protected resolveThisArgument<TT>(select: SelectExpression<TT>, entity: IEntityExpression<TT>) {
-        return select.columns.length == 1 && select.columns[0].alias === "" ? select.columns[0] : entity;
+        return select.columns.length === 1 && select.columns[0].alias === "" ? select.columns[0] : entity;
     }
     protected visitFunctionCall<T>(expression: FunctionCallExpression<T>, param: IQueryVisitParameter): IExpression {
         expression.params = expression.params.select((o) => this.visit(o, param)).toArray();

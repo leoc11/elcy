@@ -12,7 +12,7 @@ declare global {
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
-        last(fn?: (item: T) => boolean): T;
+        // last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
         orderBy(fn: (item: T) => any, orderDirection: OrderDirection): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
@@ -64,9 +64,9 @@ Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, di
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];
 };
-Array.prototype.last = function <T>(this: T[], predicate?: (item: T) => boolean) {
-    return predicate ? this.where(predicate).last() : this[this.length - 1];
-};
+// Array.prototype.last = function <T>(this: T[], predicate?: (item: T) => boolean) {
+//     return predicate ? this.where(predicate).last() : this[this.length - 1];
+// };
 Array.prototype.any = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().any(predicate) : this.length > 0;
 };

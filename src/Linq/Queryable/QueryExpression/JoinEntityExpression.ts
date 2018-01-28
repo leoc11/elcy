@@ -62,12 +62,14 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
             relationMaps = relationMetaOrMap as Array<IJoinRelationMap<T, T2>>;
         }
         let relation = this.relations.first((o) => o.child.type === child.type);
-        relation = {
-            child,
-            relationMaps,
-            type: type!
-        };
-        this.relations.push(relation);
+        if (!relation) {
+            relation = {
+                child,
+                relationMaps,
+                type: type!
+            };
+            this.relations.push(relation);
+        }
 
         return relation.child;
     }
