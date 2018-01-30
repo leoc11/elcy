@@ -26,6 +26,13 @@ import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityEx
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
+import { Column } from "../Decorator/Column/Column";
+import { isPrimitive } from "util";
+import { isValueType } from "../Helper/Util";
+import { SingleSelectExpression } from "./Queryable/QueryExpression/SingleSelectExpression";
+import { ColumnEntityExpression } from "./Queryable/QueryExpression/ColumnEntityExpression";
+import { Queryable } from "./Queryable/index";
+import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
@@ -105,9 +112,6 @@ export class QueryExpressionVisitor {
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
-        if ((res as IEntityExpression).columns && expression.memberName === "length") {
-            return new ComputedColumnExpression(res as IEntityExpression, new MethodCallExpression(res, "count", []), this.newAlias());
-        }
         switch (res.type) {
             case String:
                 switch (expression.memberName) {
@@ -142,61 +146,51 @@ export class QueryExpressionVisitor {
                     break;
             }
         }
+        if (res instanceof SelectExpression && expression.memberName === "length") {
+            return this.visit(new MethodCallExpression(res, "count", []), param);
+        }
+
         const parentEntity = res as IEntityExpression;
         const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
         if (relationMeta) {
             switch (param.type) {
                 case "select":
-                    {
-                        const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
-                        let entity: IEntityExpression;
-                        let selectExp: SelectExpression;
-                        if (param.parent.where || param.parent.orders.length > 0 || relationMeta.relationType === RelationType.OneToMany) {
-                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()));
-                            joinEntity.addRelation(relationMeta, param.parent.entity);
-                            entity = joinEntity.parentEntity;
-                            selectExp = new SelectExpression(joinEntity);
-                            selectExp.where = param.parent.where;
-                            selectExp.orders = param.parent.orders;
-
-                            if (relationMeta.relationType === RelationType.OneToMany) {
-                                // TODO: this is a helper column so we could make [][] result
-                                for (const pcol of param.parent.entity.primaryColumns)
-                                    selectExp.columns.unshift(pcol);
-                            }
-                        }
-                        else {
-                            entity = new EntityExpression(targetType, this.newAlias());
-                            selectExp = new SelectExpression(entity);
-                        }
-                        param.parent = selectExp;
-                        return entity;
-                    }
                 case "selectMany":
                     {
                         const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
-                        let entity: IEntityExpression;
-                        let selectExp: SelectExpression;
-                        if (param.parent.where || param.parent.orders.length > 0) {
-                            const joinEntity = new JoinEntityExpression(new EntityExpression(targetType, this.newAlias()));
-                            joinEntity.addRelation(relationMeta, param.parent.entity);
-                            entity = joinEntity.parentEntity;
-                            selectExp = new SelectExpression(joinEntity);
-                            selectExp.where = param.parent.where;
-                            selectExp.orders = param.parent.orders;
+                        if (relationMeta.relationType === RelationType.OneToMany && param.type === "select") {
+                            param.parent.columns = param.parent.entity.primaryColumns.slice();
+                            let joinEntity: JoinEntityExpression<any>;
+                            if (parentEntity.parent && parentEntity.parent.masterEntity === parentEntity) {
+                                joinEntity = parentEntity.parent;
+                            }
+                            else {
+                                joinEntity = new JoinEntityExpression(parentEntity);
+                                param.parent.entity = joinEntity;
+                            }
+                            const child = joinEntity.addRelation(relationMeta, this.newAlias()) as ProjectionEntityExpression;
+                            return child.select;
                         }
                         else {
-                            entity = new EntityExpression(targetType, this.newAlias());
-                            selectExp = new SelectExpression(entity);
+                            const entity = new EntityExpression(targetType, this.newAlias());
+                            if (param.parent.where || param.parent.orders.length > 0) {
+                                const joinEntity = new JoinEntityExpression(entity);
+                                joinEntity.addRelation(relationMeta, param.parent.entity);
+                                param.parent.entity = joinEntity;
+                                param.parent.columns = joinEntity.columns.slice();
+                            }
+                            else {
+                                param.parent = new SelectExpression(entity);
+                            }
+                            return entity;
                         }
-                        param.parent = selectExp;
-                        return entity;
                     }
-                case "include":
+                default:
                     {
                         let joinEntity: JoinEntityExpression<any>;
-                        if (parentEntity instanceof JoinEntityExpression)
-                            joinEntity = parentEntity;
+                        if (parentEntity.parent && parentEntity.parent.masterEntity === parentEntity) {
+                            joinEntity = parentEntity.parent;
+                        }
                         else {
                             const parent = parentEntity.parent;
                             joinEntity = new JoinEntityExpression(parentEntity);
@@ -208,65 +202,11 @@ export class QueryExpressionVisitor {
                             }
                         }
 
-                        const targetType = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType! : relationMeta.masterType!;
-                        const entity = new EntityExpression(targetType, this.newAlias());
-                        joinEntity.addRelation(relationMeta, entity);
-                        param.parent.columns = param.parent.columns.concat(entity.columns);
-                        return entity;
+                        const child = (joinEntity as JoinEntityExpression<any>).addRelation(relationMeta, this.newAlias());
+                        if (param.type === "include")
+                            Array.prototype.push.apply(param.parent.columns, child.columns);
+                        return child instanceof ProjectionEntityExpression ? child.select : child;
                     }
-                case "where":
-                    {
-                        if (relationMeta.relationType === RelationType.OneToOne) {
-                            let joinPEntity: JoinEntityExpression<any>;
-                            if (parentEntity.parent && parentEntity.parent.parentEntity === parentEntity) {
-                                joinPEntity = parentEntity.parent;
-                            }
-                            else {
-                                const parent = parentEntity.parent;
-                                joinPEntity = new JoinEntityExpression(parentEntity);
-                                if (parent) {
-                                    parent.changeEntity(parentEntity, joinPEntity);
-                                }
-                                else {
-                                    param.parent.entity = joinPEntity;
-                                }
-                            }
-
-                            const child = (joinPEntity as JoinEntityExpression<any>).addRelation(relationMeta, this.newAlias());
-                            return child;
-                        }
-                        else {
-                            const child = new EntityExpression(relationMeta.slaveType!, this.newAlias());
-                            const select = new SelectExpression(child);
-                            const relations = Object.keys(relationMeta.relationMaps!).select((o) =>
-                                new EqualExpression(child.columns.first((c) => c.property === o), parentEntity.columns.first((c) => c.property === (relationMeta.relationMaps as any)[o]))
-                            ).toArray();
-                            for (const rel of relations) {
-                                select.addWhere(rel);
-                            }
-                            return select;
-                        }
-                    }
-                default:
-                    {
-                        let joinPEntity: JoinEntityExpression<any>;
-                        if (parentEntity.parent && parentEntity.parent.parentEntity === parentEntity) {
-                            joinPEntity = parentEntity.parent;
-                        }
-                        else {
-                            const parent = parentEntity.parent;
-                            joinPEntity = new JoinEntityExpression(parentEntity);
-                            if (parent) {
-                                parent.changeEntity(parentEntity, joinPEntity);
-                            }
-                            else {
-                                param.parent.entity = joinPEntity;
-                            }
-                        }
-
-                        return (joinPEntity as JoinEntityExpression<any>).addRelation(relationMeta, this.newAlias());
-                    }
-
             }
         }
         if (parentEntity) {
@@ -277,7 +217,225 @@ export class QueryExpressionVisitor {
         throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        if (objectOperand instanceof SelectExpression) {
+            let selectOperand = objectOperand as SelectExpression;
+            switch (expression.methodName) {
+                case "select":
+                case "selectMany":
+                    {
+                        const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                        const visitParam: IQueryVisitParameter = { parent: selectOperand, type: expression.methodName };
+                        this.parameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                        const selectExp = this.visit(selectorFn, visitParam);
+                        this.parameters.remove(selectorFn.params[0].name);
+
+                        if (expression.methodName === "select") {
+                            if (selectExp instanceof SelectExpression) {
+                                selectOperand = visitParam.parent;
+                            }
+                            else if ((selectExp as EntityExpression).primaryColumns) {
+                                selectOperand = visitParam.parent;
+                            }
+                            else if (selectExp instanceof ObjectValueExpression) {
+                                selectOperand.columns = Object.keys(selectExp.object).select(
+                                    (o) => new ComputedColumnExpression(selectOperand.entity, selectExp.object[o], o)
+                                ).toArray();
+                                const objEntity = new ProjectionEntityExpression(selectOperand, this.newAlias());
+                                selectOperand = new SelectExpression(objEntity);
+                            }
+                            else if ((selectExp as IColumnExpression).entity) {
+                                const column = selectExp as IColumnExpression;
+                                column.alias = ""; // set alias as empty string to mark that this entity next type will be this column type
+                                selectOperand = visitParam.parent;
+                                selectOperand.columns = [column];
+                                selectOperand = new SelectExpression(new ColumnEntityExpression(selectOperand, this.newAlias()));
+                            }
+                        }
+                        else {
+                            if (!(selectExp instanceof SelectExpression)) {
+                                throw new Error(`Queryable<${objectOperand.type}>.selectMany required selector with array or queryable or enumerable return value.`);
+                            }
+                            selectOperand = selectExp;
+                        }
+                        if (objectOperand.parent) {
+                            objectOperand.parent.select = selectOperand
+                        }
+                        else {
+                            param.parent = selectOperand;
+                        }
+
+                        return selectOperand;
+                    }
+                case "where":
+                    {
+                        const predicateFn = expression.params[0] as FunctionExpression<TType, boolean>;
+                        const visitParam: IQueryVisitParameter = { parent: objectOperand, type: "where" };
+                        this.parameters.add(predicateFn.params[0].name, objectOperand.getVisitParam());
+                        const whereExp = this.visit(predicateFn, visitParam) as IExpression<boolean>;
+                        this.parameters.remove(predicateFn.params[0].name);
+                        if (whereExp.type !== Boolean) {
+                            throw new Error(`Queryable<${objectOperand.type}>.where required predicate with boolean return value.`);
+                        }
+                        objectOperand.addWhere(whereExp);
+                        return objectOperand;
+                    }
+                case "orderBy":
+                    {
+                        const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
+                        const direction = expression.params[1] as ValueExpression<OrderDirection>;
+                        const visitParam: IQueryVisitParameter = { parent: objectOperand, type: expression.methodName };
+                        this.parameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                        const selectExp = this.visit(selectorFn, visitParam);
+                        this.parameters.remove(selectorFn.params[0].name);
+
+                        if (!isValueType(selectExp.type)) {
+                            throw new Error(`Queryable<${objectOperand.type}>.orderBy required select with basic type return value.`);
+                        }
+
+                        objectOperand.addOrder(selectExp, direction.execute());
+                        return objectOperand;
+                    }
+                case "groupBy":
+                    {
+                        // TODO: queryable end with group by.
+                        const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
+                        const visitParam: IQueryVisitParameter = { parent: selectOperand, type: expression.methodName };
+                        this.parameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                        const selectExp = this.visit(selectorFn, visitParam);
+                        this.parameters.remove(selectorFn.params[0].name);
+
+                        if (selectExp instanceof SelectExpression) {
+                            throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
+                        }
+
+                        let entityExp = selectExp as IEntityExpression;
+                        if (selectExp instanceof ObjectValueExpression) {
+                            selectOperand.columns = Object.keys(selectExp.object).select(
+                                (o) => new ComputedColumnExpression(selectOperand.entity, selectExp.object[o], o)
+                            ).toArray();
+                            entityExp = new ProjectionEntityExpression(selectOperand, this.newAlias());
+                        }
+                        else if ((selectExp as IColumnExpression).entity) {
+                            const column = selectExp as IColumnExpression;
+                            column.alias = ""; // set alias as empty string to mark that this entity next type will be this column type
+                            selectOperand = visitParam.parent;
+                            selectOperand.columns = [column];
+                            entityExp = new ColumnEntityExpression(param.parent, this.newAlias());
+                            // TODO
+                        }
+                        selectOperand = new GroupByExpression(param.parent, entityExp);
+                        if (objectOperand.parent) {
+                            objectOperand.parent.select = selectOperand;
+                        }
+                        else {
+                            param.parent = selectOperand;
+                        }
+                        return selectOperand;
+                    }
+                case "skip":
+                case "take":
+                    {
+                        const takeExp = expression.params[0] as ValueExpression<number>;
+                        objectOperand.paging[expression.methodName] = takeExp.execute();
+                        return objectOperand;
+                    }
+                case "distinct":
+                    {
+                        if (expression.params.length > 0) {
+                            // groupBy select first
+                            const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
+                            let visitParam: IQueryVisitParameter = { parent: objectOperand, type: expression.methodName };
+                            const groupExp = this.visit(new MethodCallExpression(objectOperand, "groupBy", [selectorFn]), visitParam) as GroupByExpression;
+
+                            const paramExp = new ParameterExpression("og", groupExp.getVisitParam().type);
+                            const selectFirstFn = new FunctionExpression(new MethodCallExpression(paramExp, "first", []), [paramExp]);
+                            visitParam = { parent: groupExp, type: expression.methodName };
+                            const groupFirstExp = this.visit(new MethodCallExpression(objectOperand, "select", [selectFirstFn]), visitParam) as SelectExpression;
+                            if (objectOperand.parent) {
+                                objectOperand.parent.select = groupFirstExp;
+                            }
+                            else {
+                                param.parent = groupFirstExp;
+                            }
+                            return groupFirstExp;
+                        }
+                        else {
+                            objectOperand.distinct = true;
+                            return objectOperand;
+                        }
+                    }
+                case "include":
+                    {
+                        for (const paramFn of expression.params) {
+                            const selectorFn = paramFn as FunctionExpression<TType, TResult>;
+                            this.parameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                            let visitParam: IQueryVisitParameter = { parent: objectOperand, type: expression.methodName };
+                            const selectExpression = this.visit(selectorFn, visitParam);
+                            this.parameters.remove(selectorFn.params[0].name);
+
+                            // TODO: place this on member access instead
+                            if (selectExpression instanceof ComputedColumnExpression) {
+                                objectOperand.columns.add(selectExpression);
+                            }
+                        }
+                        return objectOperand;
+                    }
+                case "toArray":
+                    {
+                        return objectOperand;
+                    }
+                case "count":
+                    {
+                        if (param.parent === selectOperand) {
+                            // must be call from Queryable.count()
+                            const column = new ComputedColumnExpression(objectOperand.entity, new MethodCallExpression(objectOperand, expression.methodName, [new ValueExpression("*")], Number), this.newAlias("column"));
+                            selectOperand.columns = [column];
+                            return column;
+                        }
+                        else {
+                            // within function expression
+                            const groupExp = projectionEntity.select as GroupByExpression<any, any>;
+                            // soure: expression
+                            const relation = selectOperand.parent!.getChildRelation(projectionEntity);
+                            groupExp.groupBy = relation.relationMaps.select((o) => o.childColumn).toArray();
+                            groupExp.columns = groupExp.groupBy.slice();
+                            groupExp.columns.add(column);
+                            selectOperand = new GroupedExpression(selectOperand);
+                        }
+                        // if current parentEntity did not have parent, then it must be call from queryable
+                        if (parentEntity.parent) {
+                            let projectionEntity: ProjectionEntityExpression;
+                            if (!(parentEntity instanceof ProjectionEntityExpression)) {
+                                const selectExp = new GroupByExpression(new SelectExpression(parentEntity));
+                                projectionEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
+
+                                parentEntity.parent!.changeEntity(parentEntity, projectionEntity);
+
+                                parentEntity = projectionEntity;
+                            }
+                            else {
+                                projectionEntity = parentEntity;
+                                if (!(projectionEntity.select instanceof GroupByExpression)) {
+                                    projectionEntity.select = new GroupByExpression(projectionEntity.select);
+                                }
+                            }
+
+                            column.entity = projectionEntity;
+                            const groupExp = projectionEntity.select as GroupByExpression<any, any>;
+                            // soure: expression
+                            const relation = projectionEntity.parent!.getChildRelation(projectionEntity);
+                            groupExp.groupBy = relation.relationMaps.select((o) => o.childColumn).toArray();
+                            groupExp.columns = groupExp.groupBy.slice();
+                            groupExp.columns.add(column);
+                        }
+                        else {
+                            param.parent.columns = [column];
+                        }
+                        return column;
+                    }
+            }
+        }
         if ((expression.objectOperand as IEntityExpression).columns) {
             let parentEntity = expression.objectOperand as IEntityExpression;
             const param1: IQueryVisitParameter = { parent: param.parent, type: param.type === expression.methodName ? param.type : undefined };
@@ -285,7 +443,7 @@ export class QueryExpressionVisitor {
                 param1.parent = parentEntity;
                 parentEntity = parentEntity.entity;
             }
-            else if (parentEntity.parent && parentEntity.parent.parentEntity !== parentEntity) {
+            else if (parentEntity.parent && parentEntity.parent.masterEntity !== parentEntity) {
                 let projectionEntity: ProjectionEntityExpression;
                 if (parentEntity.constructor === ProjectionEntityExpression)
                     projectionEntity = parentEntity as ProjectionEntityExpression;
@@ -299,177 +457,6 @@ export class QueryExpressionVisitor {
                 parentEntity = projectionEntity;
             }
             switch (expression.methodName) {
-                case "where":
-                    {
-                        const fnExpression = expression.params[0] as FunctionExpression<TType, boolean>;
-                        this.parameters.add(fnExpression.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
-                        const resExpression = this.visit(fnExpression, param1);
-                        let whereExpression: IExpression<boolean>;
-                        if (resExpression.type === Boolean) {
-                            whereExpression = resExpression as any;
-                        }
-                        else if ((resExpression as IEntityExpression).columns) {
-                            whereExpression = new ValueExpression(true);
-                        }
-                        else if (resExpression.type === Number) {
-                            whereExpression = new OrExpression(new NotEqualExpression(resExpression, new ValueExpression(0)), new NotEqualExpression(resExpression, new ValueExpression(null)));
-                        }
-                        else if (resExpression.type === String) {
-                            whereExpression = new OrExpression(new NotEqualExpression(resExpression, new ValueExpression("")), new NotEqualExpression(resExpression, new ValueExpression(null)));
-                        }
-                        else {
-                            whereExpression = new NotEqualExpression(resExpression, new ValueExpression(null));
-                        }
-                        this.parameters.remove(fnExpression.params[0].name);
-                        param1.parent.where = param1.parent.where ? new AndExpression(param1.parent.where, whereExpression!) : whereExpression!;
-                        param.parent = param1.parent;
-                        return parentEntity;
-                    }
-                case "select":
-                    {
-                        const fnExpression = expression.params[0] as FunctionExpression<TType, TResult>;
-                        this.parameters.add(fnExpression.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
-                        const selectExpression = this.visit(fnExpression, param1);
-                        this.parameters.remove(fnExpression.params[0].name);
-
-                        let selectExp = param1.parent;
-                        if ((selectExpression as IColumnExpression).entity) {
-                            const colExp = selectExpression as IColumnExpression;
-                            colExp.alias = "";
-                            selectExp.columns = [colExp];
-                        }
-                        else if (selectExpression instanceof ObjectValueExpression) {
-                            selectExp.columns = Object.keys(selectExpression.object).select(
-                                (o) => new ComputedColumnExpression(selectExp.entity, selectExpression.object[o], o)
-                            ).toArray();
-                            parentEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
-                            selectExp = new SelectExpression(parentEntity);
-                        }
-                        else if ((selectExpression as IEntityExpression).columns) {
-                            parentEntity = selectExpression as IEntityExpression;
-                        }
-                        param.parent = selectExp;
-
-                        return parentEntity;
-                    }
-                case "distinct":
-                    {
-                        if (expression.params.length > 0) {
-                            if (param1.type) param1.type = "groupBy";
-                            parentEntity = this.visit(new MethodCallExpression(parentEntity, "groupBy", expression.params), param1) as ProjectionEntityExpression;
-                            const fnExpression = ExpressionFactory.prototype.ToExpression((o: TType[]) => o.first(), Array);
-                            if (param1.type) param1.type = "select";
-                            parentEntity = this.visit(new MethodCallExpression(parentEntity, "select", [fnExpression]), param1) as ProjectionEntityExpression;
-                        }
-                        else {
-                            param1.parent.distinct = true;
-                        }
-                        return parentEntity;
-                    }
-                case "include":
-                    {
-                        for (const selectorfn of expression.params) {
-                            const selector = selectorfn as FunctionExpression<TType, TResult>;
-                            this.parameters.add(selector.params[0].name, parentEntity);
-                            const selectExpression = this.visit(selector, param1);
-                            this.parameters.remove(selector.params[0].name);
-
-                            if ((selectExpression as IEntityExpression).columns) {
-                                const entityExpression = selectExpression as IEntityExpression;
-                                for (const column of entityExpression.columns)
-                                    param1.parent.columns.add(column);
-                            }
-                            else if ((selectExpression as IColumnExpression).entity) {
-                                const columnExpression = selectExpression as IColumnExpression;
-                                param1.parent.columns.add(columnExpression);
-                            }
-                        }
-                        return parentEntity;
-                    }
-                case "orderBy":
-                    {
-                        const selector = expression.params[0] as FunctionExpression<TType, boolean>;
-                        const direction = expression.params[1] as ValueExpression<OrderDirection>;
-                        this.parameters.add(selector.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
-                        const orderByExpression = this.visit(selector, param1);
-                        this.parameters.remove(selector.params[0].name);
-                        param1.parent.orders.add({ column: orderByExpression, direction: direction.execute() });
-                        return parentEntity;
-                    }
-                case "skip":
-                    {
-                        const skipExp = expression.params[0] as ValueExpression<number>;
-                        param1.parent.paging.skip = skipExp.execute();
-                        return parentEntity;
-                    }
-                case "take":
-                    {
-                        const takeExp = expression.params[0] as ValueExpression<number>;
-                        param1.parent.paging.take = takeExp.execute();
-                        return parentEntity;
-                    }
-                case "selectMany":
-                    {
-                        const selector = expression.params[0] as FunctionExpression<TType, TResult>;
-                        this.parameters.add(selector.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
-                        const selectEntity = this.visit(selector, param1) as EntityExpression;
-                        this.parameters.remove(selector.params[0].name);
-
-                        if (!(selectEntity as IEntityExpression).columns) {
-                            throw Error(`Queryable<${parentEntity.type.name}>.selectMany(${selector.toString()}) did not return entity`);
-                        }
-
-                        if (parentEntity.parent) {
-                            let projectionEntity: ProjectionEntityExpression;
-                            if (parentEntity.constructor === ProjectionEntityExpression)
-                                projectionEntity = parentEntity as ProjectionEntityExpression;
-                            else {
-                                projectionEntity = new ProjectionEntityExpression(param1.parent, this.newAlias(), parentEntity.type);
-                                parentEntity.parent.changeEntity(parentEntity, projectionEntity);
-                            }
-                            parentEntity = projectionEntity;
-                        }
-                        else if (!parentEntity.parent) {
-                            param.parent = param1.parent;
-                        }
-
-                        return selectEntity;
-                    }
-                case "groupBy":
-                    {
-                        const selectExp = param1.parent;
-                        const groupExpression = new GroupByExpression<any, any>(new SelectExpression(parentEntity));
-                        const keySelector = expression.params[0] as FunctionExpression<TType, TResult>;
-                        this.parameters.add(keySelector.params[0].name, this.resolveThisArgument(param1.parent, parentEntity));
-                        const selectExpression = this.visit(keySelector, param1);
-                        this.parameters.remove(keySelector.params[0].name);
-
-                        if ((selectExpression as IEntityExpression).columns) {
-                            const entityExpression = selectExpression as IEntityExpression;
-                            groupExpression.groupBy = entityExpression.columns;
-                        }
-                        else if ((selectExpression as IColumnExpression).entity) {
-                            const columnExpression = selectExpression as IColumnExpression;
-                            groupExpression.groupBy.add(columnExpression);
-                        }
-                        else if (selectExpression instanceof ObjectValueExpression) {
-                            // TODO: select expression like o => {asd: o.Prop} need optimization. remove unused relation/join
-                            groupExpression.groupBy = Object.keys(selectExpression.object).select(
-                                (o) => selectExpression.object[o] instanceof ColumnExpression ? selectExpression.object[o] : new ComputedColumnExpression(selectExp.entity, selectExpression.object[o], this.newAlias("column"))
-                            ).toArray();
-                        }
-                        else {
-                            const columnExpression = new ComputedColumnExpression(parentEntity, selectExpression, this.newAlias("column"));
-                            groupExpression.groupBy.add(columnExpression);
-                        }
-
-                        param.parent = groupExpression;
-                        return parentEntity;
-                    }
-                case "toArray":
-                    {
-                        return parentEntity;
-                    }
                 case "first":
                     {
                         switch (param.type) {
@@ -522,65 +509,100 @@ export class QueryExpressionVisitor {
                                 }
                         }
                     }
-                case "count":
-                    {
-                        const selectExp = new SelectExpression(parentEntity);
-                        let column = new ComputedColumnExpression(parentEntity, new MethodCallExpression(selectExp, expression.methodName, [], Number), this.newAlias("column"));
-                        if (param1.type) {
-                            param1.parent.columns = [column];
-                        }
-                        else {
-                            const selectExp = new SelectExpression(parentEntity);
-                            selectExp.columns = [column];
-                            column = new ComputedColumnExpression(parentEntity, selectExp, "");
-                        }
-                        return column;
-                    }
                 case "sum":
                 case "avg":
                 case "max":
                 case "min":
                     {
-                        let column1: IColumnExpression | undefined;
-                        if (expression.params.length > 0) {
-                            if (param1.type) param1.type = "select";
-                            const selRes = this.visit(new MethodCallExpression(parentEntity, "select", [expression.params[0]]), param1) as SelectExpression;
-                            parentEntity = selRes.entity;
-                            column1 = param1.parent.columns[0];
-                        }
-                        const selectExp = new SelectExpression(parentEntity);
-                        let column = new ComputedColumnExpression(parentEntity, new MethodCallExpression(selectExp, expression.methodName, [], Number), this.newAlias("column"));
-                        if (param1.type) {
-                            param1.parent.columns = [column];
+                        const methodExp = new MethodCallExpression(parentEntity, expression.methodName, [], Number);
+                        const column = new ComputedColumnExpression(parentEntity, methodExp, this.newAlias("column"));
+
+                        // if current parentEntity did not have parent, then it must be call from queryable
+                        if (parentEntity.parent) {
+                            let projectionEntity: ProjectionEntityExpression;
+                            if (!(parentEntity instanceof ProjectionEntityExpression)) {
+                                const selectExp = new SelectExpression(parentEntity);
+                                projectionEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
+
+                                parentEntity.parent!.changeEntity(parentEntity, projectionEntity);
+                                parentEntity = projectionEntity;
+                            }
+                            else {
+                                projectionEntity = parentEntity;
+                            }
+
+                            if (expression.params.length > 0) {
+                                const columnExp = this.visit(new MethodCallExpression(projectionEntity.select.entity, "select", [expression.params[0]]), { parent: projectionEntity.select, type: "where" }) as ColumnExpression;
+                                methodExp.params = [columnExp];
+                            }
+                            else {
+                                if (projectionEntity.select.columns.length !== 1) {
+                                    throw new Error(`only one column should exist for ${expression.methodName} without parameter`);
+                                }
+                                methodExp.params = [projectionEntity.select.columns[0]];
+                            }
+
+                            if (!(projectionEntity.select instanceof GroupByExpression)) {
+                                projectionEntity.select = new GroupByExpression(projectionEntity.select);
+                            }
+
+                            column.entity = projectionEntity;
+                            const groupExp = projectionEntity.select as GroupByExpression<any, any>;
+                            // soure: expression
+                            const relation = projectionEntity.parent!.getChildRelation(projectionEntity);
+                            groupExp.groupBy = relation.relationMaps.select((o) => o.childColumn).toArray();
+                            groupExp.columns = groupExp.groupBy.slice();
+                            groupExp.columns.add(column);
                         }
                         else {
-                            const selectExp = new SelectExpression(parentEntity);
-                            selectExp.columns = [column];
-                            column = new ComputedColumnExpression(parentEntity, selectExp, "");
+                            if (expression.params.length > 0) {
+                                const columnExp = this.visit(new MethodCallExpression(parentEntity, "select", [expression.params[0]]), { parent: param.parent, type: "where" }) as ColumnExpression;
+                                methodExp.params = [columnExp];
+                            }
+                            else {
+                                if (param.parent.columns.length !== 1) {
+                                    throw new Error(`only one column should exist for ${expression.methodName} without parameter`);
+                                }
+                                methodExp.params = [param.parent.columns[0]];
+                            }
+
+                            param.parent.columns = [column];
                         }
                         return column;
-
-                        // let columnExp = this.resolveThisArgument(param1.parent, parentEntity);
-                        // if (expression.params.length > 0) {
-                        //     if (param1.type) param1.type = "select";
-                        //     this.visit(new MethodCallExpression(columnExp, "select", [expression.params[0]]), param1);
-                        //     columnExp = this.resolveThisArgument(param1.parent, parentEntity);
-                        //     param.parent = param1.parent;
-                        // }
-                        // if (!(columnExp as IColumnExpression).entity) {
-                        //     throw new Error(`unable find column to ${expression.methodName}`);
-                        // }
-                        // const column = new ComputedColumnExpression(parentEntity, new MethodCallExpression(param.parent, expression.methodName, [columnExp]), this.newAlias("column"));
-                        // param1.parent.columns = [column];
-                        // return column;
                     }
                 case "all":
                 case "any":
                     {
-                        if (expression.params.length > 0) {
-                            parentEntity = this.visit(new MethodCallExpression(parentEntity, "where", [expression.params[0]]), param1) as ProjectionEntityExpression;
+                        const isAny = expression.methodName === "any";
+                        // if current parentEntity did not have parent, then it must be call from queryable
+                        if (parentEntity.parent) {
+                            let projectionEntity: ProjectionEntityExpression;
+                            if (!(parentEntity instanceof ProjectionEntityExpression)) {
+                                const selectExp = new SelectExpression(parentEntity);
+                                projectionEntity = new ProjectionEntityExpression(selectExp, this.newAlias());
+
+                                parentEntity.parent!.changeEntity(parentEntity, projectionEntity);
+                                parentEntity = projectionEntity;
+                            }
+                            else {
+                                projectionEntity = parentEntity;
+                            }
+
+                            if (expression.params.length > 0) {
+                                this.visit(new MethodCallExpression(projectionEntity.select.entity, "where", [expression.params[0]]), { parent: projectionEntity.select, type: "where" });
+                            }
+
+                            const relation = projectionEntity.parent!.getChildRelation(projectionEntity);
+                            projectionEntity.select.columns = relation.relationMaps.select((o) => o.childColumn).toArray();
+                            const column = new ComputedColumnExpression(projectionEntity.select.entity, new ValueExpression(isAny), this.newAlias("column"));
+                            projectionEntity.select.add(column);
+                            projectionEntity.select.distinct = true;
+                            if (!isAny) {
+                                projectionEntity.select.where = new NotExpression(projectionEntity.select.where);
+                            }
+
+                            return new ComputedColumnExpression(projectionEntity, new (isAny ? EqualExpression : NotEqualExpression)(projectionEntity.columns.first((o) => o.property === column.alias), new ValueExpression(isAny)));
                         }
-                        return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, expression.methodName, []), this.newAlias("column"));
                     }
                 case "contains":
                     {
@@ -617,7 +639,7 @@ export class QueryExpressionVisitor {
                         const childSelect = this.visit(expression.params[0], param) as SelectExpression;
                         let childEntity = this.visit(childSelect.entity, param) as IEntityExpression;
                         const param2: IQueryVisitParameter = { parent: new SelectExpression(childEntity), type: (param1.type) ? "select" : undefined };
-                        if (childEntity.parent && childEntity.parent.parentEntity !== childEntity) {
+                        if (childEntity.parent && childEntity.parent.masterEntity !== childEntity) {
                             let projectionEntity: ProjectionEntityExpression;
                             if (childEntity.constructor === ProjectionEntityExpression)
                                 projectionEntity = childEntity as ProjectionEntityExpression;

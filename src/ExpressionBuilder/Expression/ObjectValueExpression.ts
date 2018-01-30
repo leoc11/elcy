@@ -1,8 +1,9 @@
+import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
-export class ObjectValueExpression<TType extends { [Key: string]: IExpression }> extends ExpressionBase<TType> {
+export class ObjectValueExpression<T extends { [Key: string]: IExpression }> extends ExpressionBase<T> {
     public static Create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
         let isAllValue = true;
@@ -17,10 +18,12 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
 
         return result;
     }
-    public object: TType;
-    constructor(objectValue: TType) {
+    public object: T;
+    public type: IObjectType<T>;
+    constructor(objectValue: T, type?: IObjectType<T>) {
         super();
         this.object = objectValue;
+        this.type = type ? type : objectValue.constructor as IObjectType<T>;
     }
 
     public toString(transformer?: ExpressionTransformer): string {
@@ -31,10 +34,10 @@ export class ObjectValueExpression<TType extends { [Key: string]: IExpression }>
             itemString.push(item + ": " + this.object[item].toString());
         return "{" + itemString.join(", ") + "}";
     }
-    public execute(transformer: ExpressionTransformer): TType {
+    public execute(transformer: ExpressionTransformer): T {
         const objectValue: { [Key: string]: IExpression } = {};
         for (const prop in this.object)
             objectValue[prop] = this.object[prop].execute(transformer);
-        return objectValue as TType;
+        return objectValue as T;
     }
 }

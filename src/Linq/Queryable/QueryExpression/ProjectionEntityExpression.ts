@@ -15,7 +15,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         if (!this._columns) {
             this._columns = this.select.columns.select((o) => {
                 if (o instanceof ComputedColumnExpression) {
-                    return new ColumnExpression(this, o.alias);
+                    return new ColumnExpression(this, o.alias!);
                 }
                 return new ColumnExpression(this, o.alias ? o.alias : o.property, o.alias === "" ? "" : undefined);
             }).toArray();

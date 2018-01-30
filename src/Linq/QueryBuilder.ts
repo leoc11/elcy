@@ -228,7 +228,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (entity instanceof ProjectionEntityExpression)
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         else if (entity instanceof JoinEntityExpression)
-            return this.getEntityQueryString(entity.parentEntity) +
+            return this.getEntityQueryString(entity.masterEntity) +
                 this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
                     this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine());
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
