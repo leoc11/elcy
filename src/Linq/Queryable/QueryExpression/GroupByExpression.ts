@@ -1,19 +1,14 @@
-import { SelectExpression } from "./SelectExpression";
-import { IExpression } from "../../../ExpressionBuilder/Expression/index";
-import { IEntityExpression } from "./IEntityExpression";
-import { IColumnExpression } from "./IColumnExpression";
 import { GroupedExpression } from "./GroupedExpression";
+import { IColumnExpression } from "./IColumnExpression";
+import { ProjectionEntityExpression } from "./index";
+import { SelectExpression } from "./SelectExpression";
 
-export class GroupByExpression<T = any, TKey extends { [Key: string]: IExpression } = any> extends SelectExpression<T> {
-    public get groupBy(): IColumnExpression[] {
-        if (!this._groupBy)
-            this._groupBy = this.key.columns.slice();
-        return this._groupBy;
-    }
-    private _groupBy: IColumnExpression[];
-    constructor(public readonly select: SelectExpression<T>, public readonly key: IEntityExpression<TKey>) {
+export class GroupByExpression<T = any> extends SelectExpression<T> {
+    constructor(public readonly select: SelectExpression<T>, public readonly groupBy: IColumnExpression[]) {
         super(select.entity);
-        this.select = new GroupedExpression(select, key);
+        const selectExp = new SelectExpression(this.select.entity);
+        selectExp.columns = this.groupBy;
+        this.select = new GroupedExpression(select, new ProjectionEntityExpression(selectExp, this.entity.alias));
     }
     public getVisitParam() {
         return this.select;
