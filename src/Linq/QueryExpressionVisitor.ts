@@ -542,6 +542,8 @@ export class QueryExpressionVisitor {
                             const groupExp = new GroupByExpression(new SelectExpression(new EntityExpression(selectOperand.entity.type, this.newAlias())), groups);
 
                             const addExp = selectOperand.entity.primaryColumns.reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev, undefined);
+                            groupExp.columns = [new ComputedColumnExpression(groupExp.entity, addExp!, this.newAlias())];
+                            
 
                             if (param1.parent.entity instanceof JoinEntityExpression) {
                                 group.groupBy = param1.parent.entity.relations.selectMany((o) => o.relationMaps.select((c) => c.parentColumn)).distinct().toArray();
