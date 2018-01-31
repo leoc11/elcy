@@ -17,11 +17,10 @@ export class OrderQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(this.expression.entity, "orderBy", [this.selector, new ValueExpression(this.direction)]);
-            const param = { parent: this.expression, type: "orderBy" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "orderBy", [this.selector]);
+            const visitParam = { parent: objectOperand, type: "orderBy" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
     }

@@ -17,35 +17,11 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(this.expression.entity, "selectMany", [this.selector]);
-            const param = { parent: this.expression, type: "selectMany" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector]);
+            const visitParam = { parent: objectOperand, type: "selectMany" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
     }
-    /**
-     * reverse join entity for selectmany. ex:
-     * ori: order => orderDetails = left join
-     * target: orderDetail => order = inner join
-     */
-    // protected reverseJoinEntity(rootEntity: IEntityExpression, entity: IEntityExpression): boolean {
-    //     if (rootEntity instanceof JoinEntityExpression) {
-    //         const isRight = this.reverseJoinEntity(rootEntity.rightEntity, entity);
-    //         if (isRight) {
-    //             rootEntity.joinType = "INNER";
-    //             const rightEntity = rootEntity.rightEntity;
-    //             rootEntity.rightEntity = rootEntity.leftEntity;
-    //             rootEntity.leftEntity = rightEntity;
-    //             rootEntity.relations = rootEntity.relations.select((o) => ({ leftColumn: o.rightColumn, rightColumn: o.leftColumn })).toArray();
-    //             return true;
-    //         }
-    //         return this.reverseJoinEntity(rootEntity.leftEntity, entity);
-    //     }
-    //     else if (rootEntity instanceof ProjectionEntityExpression) {
-    //         return this.reverseJoinEntity(rootEntity.select.entity, entity);
-    //     }
-    //     return rootEntity === entity;
-    // }
 }

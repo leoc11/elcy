@@ -37,11 +37,10 @@ export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T,
                 this.metrics = new ObjectValueExpression(metric);
             }
 
-            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(this.expression.entity, "pivot", [this.dimensions, this.metrics]);
-            const param = { parent: this.expression, type: "pivot" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
+            const visitParam = { parent: objectOperand, type: "pivot" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
     }

@@ -41,6 +41,7 @@
                 "variable-declaration": "nospace"
             }
         ],
+        "object-literal-shorthand": false,
         "variable-name": [
             false,
             "ban-keywords"

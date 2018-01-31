@@ -14,12 +14,11 @@ export class IntersectQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             if (!this.expression) {
                 queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-                const select1 = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-                const select2 = new SelectExpression<any>(this.parent2.buildQuery(queryBuilder) as any);
-                const methodExpression = new MethodCallExpression(select1.entity, "intersect", [select2]);
-                const param = { parent: select1, type: methodExpression.methodName };
-                queryBuilder.visit(methodExpression, param as any);
-                this.expression = param.parent;
+                const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+                const childOperand = new SelectExpression<any>(this.parent2.buildQuery(queryBuilder) as any);
+                const methodExpression = new MethodCallExpression(objectOperand, "intersect", [childOperand]);
+                const visitParam = { parent: objectOperand, type: "intersect" };
+                this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
             }
         }
         return this.expression as any;

@@ -19,11 +19,10 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(this.expression.entity, "groupBy", [this.keySelector]);
-            const param = { parent: this.expression, type: "groupBy" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
+            const visitParam = { parent: objectOperand, type: "groupBy" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
     }

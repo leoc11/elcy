@@ -2,7 +2,7 @@ import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilde
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression, JoinEntityExpression } from "./QueryExpression/index";
+import { SelectExpression } from "./QueryExpression/index";
 
 export class WhereQueryable<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -16,12 +16,10 @@ export class WhereQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): any {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
-            const entity = this.expression.entity instanceof JoinEntityExpression ? this.expression.entity.masterEntity : this.expression.entity;
-            const methodExpression = new MethodCallExpression(entity, "where", [this.predicate]);
-            const param = { parent: this.expression, type: "where" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
+            const visitParam = { parent: objectOperand, type: "where" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
     }

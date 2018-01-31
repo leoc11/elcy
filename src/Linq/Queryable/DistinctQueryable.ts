@@ -1,4 +1,4 @@
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
@@ -14,9 +14,14 @@ export class DistinctQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder: QueryBuilder): any {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const selectExp = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
-            selectExp.distinct = true;
-            this.expression = selectExp;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodParams = [];
+            if (this.selector)
+                methodParams.push(this.selector);
+
+            const methodExpression = new MethodCallExpression(objectOperand, "distinct", methodParams);
+            const visitParam = { parent: objectOperand, type: "distinct" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
     }

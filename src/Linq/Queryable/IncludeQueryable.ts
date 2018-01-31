@@ -17,11 +17,10 @@ export class IncludeQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(this.expression.entity, "include", this.selectors);
-            const param = { parent: this.expression, type: "include" };
-            queryBuilder.visit(methodExpression, param as any);
-            this.expression = param.parent;
+            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
+            const visitParam = { parent: objectOperand, type: "include" };
+            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
     }
