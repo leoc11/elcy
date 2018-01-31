@@ -1,4 +1,5 @@
 import { IObjectType, JoinType, RelationType } from "../../../Common/Type";
+import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { IRelationMetaData } from "../../../MetaData/Interface/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { EntityExpression } from "./EntityExpression";
@@ -6,9 +7,9 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ProjectionEntityExpression, SelectExpression } from "./index";
 
-export interface IJoinRelationMap<TParent, TChild> {
-    parentColumn: IColumnExpression<any, TParent>;
-    childColumn: IColumnExpression<any, TChild>;
+export interface IJoinRelationMap<TParent, TChild, TType> {
+    parentColumn: IColumnExpression<TType, TParent> | IExpression<TType>;
+    childColumn: IColumnExpression<TType, TChild> | IExpression<TType>;
 }
 export interface IJoinRelation<TParent, TChild> {
     child: IEntityExpression<TChild>;
