@@ -641,7 +641,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return "'" + value + "'";
     }
     protected getBooleanString(value: boolean) {
-        return value ? "1" : "0";
+        return "(CAST " + (value ? "1" : "0") + " AS BIT)";
     }
     protected getNumberString(value: number) {
         return value.toString();
