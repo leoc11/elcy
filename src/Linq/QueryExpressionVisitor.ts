@@ -11,7 +11,7 @@ import {
     MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression, OrExpression,
     ParameterExpression, RightDecrementExpression, RightIncrementExpression,
     StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TernaryExpression,
-    TimesExpression, TypeofExpression, ValueExpression
+    TimesExpression, TypeofExpression, ValueExpression, ExpressionBase
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -487,36 +487,97 @@ export class QueryExpressionVisitor {
                 case "contains":
                     {
                         const itemExp = expression.params[0];
-                        if ((itemExp as IExpression).type) {
-
-                        }
-                        else {
-
-                        }
-                        if (!param.type) {
-                            return expression;
-                        }
-                        else {
-                            const entityMeta: IEntityMetaData<TType, any> = Reflect.getOwnMetadata(entityMetaKey, expression.params[0].type);
-                            if (entityMeta) {
-                                param1.type = "where";
-                                for (const pk of entityMeta.primaryKeys) {
-                                    const primaryColumn = parentEntity.columns.first((c) => c.property === pk);
-                                    if (!primaryColumn)
-                                        throw new Error(`primaryColumn not exist`);
-                                    this.visit(new MethodCallExpression(parentEntity, "where", [new EqualExpression(primaryColumn, new MemberAccessExpression(expression.params[0], pk))]), param1);
+                        if ((itemExp as IExpression).type && !(itemExp instanceof ValueExpression)) {
+                            if ((itemExp as IEntityExpression).primaryColumns && (itemExp as IEntityExpression).primaryColumns.length > 0) {
+                                const primaryKeys = (itemExp as IEntityExpression).primaryColumns;
+                                const whereExp = primaryKeys.select((o) => {
+                                    const parentColumn = selectOperand.entity.columns.first((p) => p.property === o.property);
+                                    return new EqualExpression(parentColumn, o);
+                                }).reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
+                                selectOperand.addWhere(whereExp);
+                            }
+                            else {
+                                if (!(selectOperand.entity instanceof ColumnEntityExpression)) {
+                                    throw new Error(`Expression not supported. the supplied item type not match`);
                                 }
-                                return new ComputedColumnExpression(parentEntity, new MethodCallExpression(parentEntity, "any", []), this.newAlias("column"));
+                                selectOperand.addWhere(new EqualExpression(selectOperand.entity.column, itemExp));
                             }
-                            else if (param1.parent.columns.length === 1) {
-                                const wexp = new EqualExpression(param.parent.columns[0], expression.params[0]);
-                                param1.parent.where = param1.parent.where ? new AndExpression(param1.parent.where, wexp) : wexp;
-                                return parentEntity;
+                        }
+                        else {
+                            const item = itemExp instanceof ValueExpression ? itemExp.execute() : itemExp;
+                            const entityMeta: IEntityMetaData<TType, any> = Reflect.getOwnMetadata(entityMetaKey, item.constructor);
+                            if (entityMeta) {
+                                const primaryKeys = entityMeta.primaryKeys;
+                                const whereExp = primaryKeys.select((o) => {
+                                    const parentColumn = selectOperand.entity.columns.first((p) => p.property === o);
+                                    return new EqualExpression(parentColumn, new ValueExpression(item[o]));
+                                }).reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
+                                selectOperand.addWhere(whereExp);
                             }
+                            else {
+                                if (!(selectOperand.entity instanceof ColumnEntityExpression)) {
+                                    throw new Error(`Expression not supported. the supplied item type not match`);
+                                }
+                                selectOperand.addWhere(new EqualExpression(selectOperand.entity.column, new ValueExpression(item)));
+                            }
+                        }
 
-                            throw new Error(`${expression.methodName} only support entity`);
+                        // throw to any.
+                        return this.visit(new MethodCallExpression(selectOperand, "any" as any, []), param);
+                    }
+                case "first":
+                    {
+                        if (expression.params.length > 0) {
+                            const predicateFn = expression.params[0] as FunctionExpression;
+                            const visitParam: IQueryVisitParameter = { parent: selectOperand, type: expression.methodName };
+                            this.visit(new MethodCallExpression(selectOperand, "where" as any, [predicateFn]), visitParam);
+                        }
+                        if (param.parent === objectOperand) {
+                            selectOperand.paging.take = 1;
+                            return selectOperand.entity;
+                        }
+                        else {
+                            const relation = selectOperand.parent!.parent!.getChildRelation(selectOperand.parent!);
+                            const groups = relation.relationMaps.select((o) => o.parentColumn).distinct().toArray();
+                            const groupExp = new GroupByExpression(new SelectExpression(new EntityExpression(selectOperand.entity.type, this.newAlias())), groups);
+
+                            const addExp = selectOperand.entity.primaryColumns.reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev, undefined);
+
+                            if (param1.parent.entity instanceof JoinEntityExpression) {
+                                group.groupBy = param1.parent.entity.relations.selectMany((o) => o.relationMaps.select((c) => c.parentColumn)).distinct().toArray();
+                                let addExpression: IExpression | undefined;
+                                for (const pcol of param1.parent.entity.primaryColumns) {
+                                    if (addExpression) {
+                                        addExpression = new AdditionExpression(addExpression, pcol);
+                                    }
+                                    else {
+                                        addExpression = pcol;
+                                    }
+                                }
+
+                                group.columns.push(new ComputedColumnExpression(param1.parent.entity, new SqlFunctionCallExpression(String, "MIN", [addExpression!]), this.newAlias("column")));
+                                const entity = new EntityExpression(parentEntity.type, this.newAlias());
+                                let addExpression2: IExpression | undefined;
+                                for (const pcol of entity.primaryColumns) {
+                                    if (addExpression2) {
+                                        addExpression2 = new AdditionExpression(addExpression2, pcol);
+                                    }
+                                    else {
+                                        addExpression2 = pcol;
+                                    }
+                                }
+                                const selectExp = new SelectExpression(entity);
+                                selectExp.where = MethodCallExpression.Create<any, "contains", boolean>(group, [addExpression2!], "contains");
+                                param.parent = selectExp;
+                                parentEntity = entity;
+                            }
+                            else {
+                                throw new Error("first in select/selectMany must used again JoinEntityExpression");
+                            }
+                            return parentEntity;
                         }
                     }
+                    break;
             }
         }
         if ((expression.objectOperand as IEntityExpression).columns) {
