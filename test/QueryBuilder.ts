@@ -94,7 +94,7 @@ describe("Query builder", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new SelectQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "Total"), [param]));
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "max", []);
+        const methodExpression = new MethodCallExpression(expression, "max", []);
         const param2 = { parent: expression, type: "max" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -104,7 +104,7 @@ describe("Query builder", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "min", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
+        const methodExpression = new MethodCallExpression(expression, "min", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
         const param2 = { parent: expression, type: "min" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -114,7 +114,7 @@ describe("Query builder", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
         const a = db.orderDetails;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]);
+        const methodExpression = new MethodCallExpression(expression, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]);
         const param2 = { parent: expression, type: "avg" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -124,7 +124,7 @@ describe("Query builder", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new SelectManyQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param]));
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "count", []);
+        const methodExpression = new MethodCallExpression(expression, "count", []);
         const param2 = { parent: expression, type: "count" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -134,7 +134,7 @@ describe("Query builder", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "sum", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
+        const methodExpression = new MethodCallExpression(expression, "sum", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
         const param2 = { parent: expression, type: "sum" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -181,7 +181,7 @@ describe("Query builder: first", () => {
     it("orders.first()", () => {
         const a = db.orders;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "first", []);
+        const methodExpression = new MethodCallExpression(expression, "first", []);
         const param2 = { parent: expression, type: "first" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -191,7 +191,7 @@ describe("Query builder: first", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
         const a = db.orderDetails;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "first", [new FunctionExpression(new StrictNotEqualExpression(new MemberAccessExpression(param, "Order"), new ValueExpression(null)), [param])]);
+        const methodExpression = new MethodCallExpression(expression, "first", [new FunctionExpression(new StrictNotEqualExpression(new MemberAccessExpression(param, "Order"), new ValueExpression(null)), [param])]);
         const param2 = { parent: expression, type: "first" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
@@ -201,7 +201,7 @@ describe("Query builder: first", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
         let expression = new SelectExpression<any>(a.buildQuery() as any);
-        const methodExpression = new MethodCallExpression(expression.entity, "first", [new FunctionExpression(new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(0)), [param])]);
+        const methodExpression = new MethodCallExpression(expression, "first", [new FunctionExpression(new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(0)), [param])]);
         const param2 = { parent: expression, type: "first" };
         a.queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;

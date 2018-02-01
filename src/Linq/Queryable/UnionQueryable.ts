@@ -1,7 +1,7 @@
+import { MethodCallExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
-import { MethodCallExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 
 export class UnionQueryable<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {

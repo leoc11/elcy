@@ -1,12 +1,13 @@
 import { GenericType, OrderDirection } from "../../../Common/Type";
 import { AndExpression, IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder";
+import { ColumnEntityExpression } from "./ColumnEntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ProjectionEntityExpression } from "./index";
 import { IOrderExpression } from "./IOrderExpression";
-import { ColumnEntityExpression } from "./ColumnEntityExpression";
+import { JoinEntityExpression } from "./JoinEntityExpression";
 
 export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
@@ -55,6 +56,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public getVisitParam(): IExpression {
         if (this.entity instanceof ColumnEntityExpression)
             return this.entity.column;
+        else if (this.entity instanceof JoinEntityExpression) {
+            return this.entity.masterEntity;
+        }
         return this.entity;
     }
 }

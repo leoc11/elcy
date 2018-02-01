@@ -1,5 +1,5 @@
 import { OrderDirection, ValueType } from "../../Common/Type";
-import { FunctionExpression, MethodCallExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";

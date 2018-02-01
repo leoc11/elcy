@@ -3,19 +3,20 @@ import {
     BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
     BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression,
     DivisionExpression, EqualExpression, FunctionCallExpression, FunctionExpression,
-    GreaterEqualExpression, GreaterThanExpression, IExpression,
-    InstanceofExpression, LeftDecrementExpression,
-    LeftIncrementExpression, LessEqualExpression, LessThanExpression, MemberAccessExpression,
-    MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression, OrExpression,
-    ParameterExpression, RightDecrementExpression, RightIncrementExpression,
-    StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression, TernaryExpression,
-    TimesExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression
+    GreaterEqualExpression, GreaterThanExpression,
+    IExpression, InstanceofExpression,
+    LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
+    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
+    OrExpression, ParameterExpression, RightDecrementExpression,
+    RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
+    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
+import { ColumnEntityExpression } from "./Queryable/QueryExpression/ColumnEntityExpression";
 import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
@@ -189,7 +190,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnString(column: IColumnExpression, isSelect = false) {
         if (isSelect) {
             if (column instanceof ComputedColumnExpression) {
-                return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias);
+                return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias!);
             }
             return this.escape(column.entity.alias) + "." + this.escape(column.property) + (column.alias ? " AS " + this.escape(column.alias) : "");
         }
@@ -224,6 +225,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
                 this.newLine() + "EXCEPT" +
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
+        else if (entity instanceof ColumnEntityExpression) {
+            return this.getEntityQueryString(entity.select.entity);
         }
         else if (entity instanceof ProjectionEntityExpression)
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);

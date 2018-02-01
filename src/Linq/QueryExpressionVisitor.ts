@@ -29,6 +29,7 @@ import {
     IJoinRelationMap, IntersectExpression, ProjectionEntityExpression, UnionExpression
 } from "./Queryable/QueryExpression/index";
 import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
+import "./Queryable/QueryExpression/JoinEntityExpression.partial";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 
 export interface IQueryVisitParameter {
@@ -166,6 +167,7 @@ export class QueryExpressionVisitor {
                                 param.parent.entity = joinEntity;
                             }
                             const child = joinEntity.addRelation(relationMeta, this.newAlias()) as ProjectionEntityExpression;
+                            param.parent.columns = param.parent.columns.concat(child.columns);
                             return child.select;
                         }
                         else {
@@ -418,22 +420,17 @@ export class QueryExpressionVisitor {
                 case "max":
                 case "min":
                     {
-                        let colEntityExp: ColumnEntityExpression;
                         if (expression.params.length > 0) {
                             const selectorFn = expression.params[0] as FunctionExpression;
                             this.parameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                             const visitParam: IQueryVisitParameter = { parent: selectOperand, type: expression.methodName };
-                            const selectExpression = this.visit(new MethodCallExpression(objectOperand, "select", [selectorFn]), visitParam);
+                            const selectExpression = this.visit(new MethodCallExpression(objectOperand, "select", [selectorFn]), visitParam) as SelectExpression;
                             this.parameters.remove(selectorFn.params[0].name);
-                            if (!(selectExpression instanceof ColumnEntityExpression))
+                            if (!(selectExpression.entity instanceof ColumnEntityExpression))
                                 throw new Error(`Queryable<${selectOperand.type.name}> required select with basic type return value.`);
                             selectOperand = visitParam.parent;
-                            colEntityExp = selectExpression as ColumnEntityExpression;
                         }
-                        else {
-                            colEntityExp = selectOperand.entity as ColumnEntityExpression;
-                        }
-
+                        const colEntityExp = selectOperand.entity as ColumnEntityExpression;
                         selectOperand = colEntityExp.select;
                         const column = new ComputedColumnExpression(selectOperand.entity, new MethodCallExpression(selectOperand, expression.methodName, [colEntityExp.column], Number), this.newAlias("column"));
                         if (param.parent === objectOperand || param.type === "select" || param.type === "selectMany") {
@@ -556,12 +553,12 @@ export class QueryExpressionVisitor {
 
                         const parentKeySelector = expression.params[1] as FunctionExpression;
                         this.parameters.add(parentKeySelector.params[0].name, selectOperand.getVisitParam());
-                        const parentKey = this.visit(parentKeySelector, visitParam);
+                        let parentKey = this.visit(parentKeySelector, visitParam);
                         this.parameters.remove(parentKeySelector.params[0].name);
 
                         const childKeySelector = expression.params[2] as FunctionExpression;
                         this.parameters.add(childKeySelector.params[0].name, childSelect.getVisitParam());
-                        const childKey = this.visit(childKeySelector, childVisitParam);
+                        let childKey = this.visit(childKeySelector, childVisitParam);
                         this.parameters.remove(childKeySelector.params[0].name);
 
                         const joinEntity = new JoinEntityExpression(selectOperand.entity);
@@ -579,9 +576,13 @@ export class QueryExpressionVisitor {
                             })).toArray();
                         }
                         else {
+                            if (!(childKey as IColumnExpression).entity)
+                                childKey = new ComputedColumnExpression(childSelect.entity, childKey, this.newAlias());
+                            if (!(parentKey as IColumnExpression).entity)
+                                parentKey = new ComputedColumnExpression(selectOperand.entity, parentKey, this.newAlias());
                             relationMap = [{
-                                childColumn: childKey,
-                                parentColumn: parentKey
+                                childColumn: childKey as IColumnExpression,
+                                parentColumn: parentKey as IColumnExpression
                             }];
                         }
                         let jointType: JoinType;

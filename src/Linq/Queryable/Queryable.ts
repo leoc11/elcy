@@ -48,7 +48,7 @@ export abstract class Queryable<T = any> extends Enumerable<T> {
         if (selector) {
             metParams.push(ExpressionFactory.prototype.ToExpression<T, number>(selector, this.type));
         }
-        const methodExpression = new MethodCallExpression(expression.entity, "sum", metParams);
+        const methodExpression = new MethodCallExpression(expression, "sum", metParams);
         const param = { parent: expression, type: methodExpression.methodName };
         this.queryBuilder.visit(methodExpression, param);
         expression = param.parent;

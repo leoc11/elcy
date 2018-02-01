@@ -1,7 +1,8 @@
 import { GenericType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { ProjectionEntityExpression, SelectExpression } from "./index";
+import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
+import { SelectExpression } from "./SelectExpression";
 export class ColumnEntityExpression<T = any, K = any> extends ProjectionEntityExpression<T> {
     public columnType: GenericType<K>;
     public get column(): IColumnExpression<K, T> {

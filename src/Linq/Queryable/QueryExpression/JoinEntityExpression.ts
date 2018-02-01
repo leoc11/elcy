@@ -1,19 +1,15 @@
-import { IObjectType, JoinType, RelationType } from "../../../Common/Type";
-import { IExpression } from "../../../ExpressionBuilder/Expression/index";
-import { IRelationMetaData } from "../../../MetaData/Interface/index";
+import { IObjectType, JoinType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
-import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { ProjectionEntityExpression, SelectExpression } from "./index";
 
-export interface IJoinRelationMap<TParent, TChild, TType> {
-    parentColumn: IColumnExpression<TType, TParent> | IExpression<TType>;
-    childColumn: IColumnExpression<TType, TChild> | IExpression<TType>;
+export interface IJoinRelationMap<TParent, TChild, TType = any> {
+    parentColumn: IColumnExpression<TType, TParent>;
+    childColumn: IColumnExpression<TType, TChild>;
 }
 export interface IJoinRelation<TParent, TChild> {
     child: IEntityExpression<TChild>;
-    relationMaps: Array<IJoinRelationMap<TParent, TChild>>;
+    relationMaps: Array<IJoinRelationMap<TParent, TChild, any>>;
     type: JoinType;
 }
 export class JoinEntityExpression<T> implements IEntityExpression<T> {
@@ -35,53 +31,6 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
     public relations: Array<IJoinRelation<T, any>> = [];
     constructor(public masterEntity: IEntityExpression<T>) {
         this.masterEntity.parent = this;
-    }
-    public addRelation<T2>(relationMetaOrMap: IRelationMetaData<T, T2> | IRelationMetaData<T2, T>, aliasOrChild: string | IEntityExpression<T2>): IEntityExpression<T2>;
-    public addRelation<T2>(relationMetaOrMap: Array<IJoinRelationMap<T, T2>>, child: IEntityExpression<T2>, type: JoinType): IEntityExpression<T2>;
-    public addRelation<T2>(relationMetaOrMap: IRelationMetaData<T, T2> | IRelationMetaData<T2, T> | Array<IJoinRelationMap<T, T2>>, aliasOrChild: string | IEntityExpression<T2>, type?: JoinType) {
-        let relationMaps: Array<IJoinRelationMap<T, T2>> = [];
-        let child: IEntityExpression<T2>;
-
-        if (!Array.isArray(relationMetaOrMap)) {
-            const relationMeta = relationMetaOrMap as IRelationMetaData<T, T2> | IRelationMetaData<T2, T>;
-            const isMaster = relationMeta.masterType === this.type;
-            let targetType: IObjectType<T2>;
-            if (aliasOrChild instanceof EntityExpression) {
-                targetType = aliasOrChild.type;
-            }
-            else {
-                targetType = (isMaster ? relationMeta.slaveType! : relationMeta.masterType!) as IObjectType<T2>;
-            }
-
-            child = aliasOrChild instanceof EntityExpression ? aliasOrChild : new EntityExpression<T2>(targetType, aliasOrChild as string);
-            const isToMany = isMaster && relationMeta.relationType === RelationType.OneToMany;
-            type = isMaster && relationMeta.relationType === RelationType.OneToMany ? JoinType.LEFT : JoinType.INNER;
-            if (isToMany) {
-                if (!(child instanceof ProjectionEntityExpression)) {
-                    child = new ProjectionEntityExpression(new SelectExpression(child), child.alias);
-                }
-            }
-
-            relationMaps = Object.keys(relationMeta.relationMaps!).select((o) => ({
-                childColumn: child.columns.first((c) => isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o),
-                parentColumn: this.masterEntity.columns.first((c) => !isMaster ? c.property === (relationMeta.relationMaps as any)[o] : c.property === o)
-            })).toArray();
-        }
-        else {
-            child = aliasOrChild as IEntityExpression<T2>;
-            relationMaps = relationMetaOrMap as Array<IJoinRelationMap<T, T2>>;
-        }
-        let relation = this.relations.first((o) => o.child.type === child.type);
-        if (!relation) {
-            relation = {
-                child,
-                relationMaps,
-                type: type!
-            };
-            this.relations.push(relation);
-        }
-
-        return relation.child;
     }
 
     public getChildRelation<T2>(child: IEntityExpression<T2>) {
