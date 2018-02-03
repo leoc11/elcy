@@ -16,7 +16,6 @@ import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
-import { ColumnEntityExpression } from "./Queryable/QueryExpression/ColumnEntityExpression";
 import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
@@ -106,8 +105,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     result = this.getFunctionExpressionString(expression as any);
                     break;
             }
-            if ((expression as IBinaryOperatorExpression).rightOperand)
-                return "(" + result + ")";
             return result;
         }
     }
@@ -245,9 +242,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
                 this.newLine() + "EXCEPT" +
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
-        }
-        else if (entity instanceof ColumnEntityExpression) {
-            return this.getExpressionString(entity.select);
         }
         else if (entity instanceof ProjectionEntityExpression)
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
