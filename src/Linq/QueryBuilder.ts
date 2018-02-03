@@ -9,7 +9,7 @@ import {
     MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression
+    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -65,6 +65,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
             return this.getEntityQueryString(expression);
         }
+        else if ((expression as IBinaryOperatorExpression).rightOperand) {
+            return this.getBinaryOperatorString(expression as any);
+        }
+        else if ((expression as IUnaryOperatorExpression).operand) {
+            return this.getUnaryOperatorString(expression as any);
+        }
         else {
             let result = "";
             switch (expression.constructor) {
@@ -79,90 +85,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     break;
                 case FunctionCallExpression:
                     result = this.getFunctionCallExpressionString(expression as any);
-                    break;
-                case BitwiseNotExpression:
-                    result = this.getBitwiseNotExpressionString(expression as any);
-                    break;
-                case LeftDecrementExpression:
-                    result = this.getLeftDecrementExpressionString(expression as any);
-                    break;
-                case LeftIncrementExpression:
-                    result = this.getLeftIncrementExpressionString(expression as any);
-                    break;
-                case NotExpression:
-                    result = this.getNotExpressionString(expression as any);
-                    break;
-                case RightDecrementExpression:
-                    result = this.getRightDecrementExpressionString(expression as any);
-                    break;
-                case RightIncrementExpression:
-                    result = this.getRightIncrementExpressionString(expression as any);
-                    break;
-                case TypeofExpression:
-                    result = this.getTypeofExpressionString(expression as any);
-                    break;
-                case AdditionExpression:
-                    result = this.getAdditionExpressionString(expression as any);
-                    break;
-                case AndExpression:
-                    result = this.getAndExpressionString(expression as any);
-                    break;
-                case BitwiseAndExpression:
-                    result = this.getBitwiseAndExpressionString(expression as any);
-                    break;
-                case BitwiseOrExpression:
-                    result = this.getBitwiseOrExpressionString(expression as any);
-                    break;
-                case BitwiseSignedRightShiftExpression:
-                    result = this.getBitwiseSignedRightShiftExpressionString(expression as any);
-                    break;
-                case BitwiseXorExpression:
-                    result = this.getBitwiseXorExpressionString(expression as any);
-                    break;
-                case BitwiseZeroLeftShiftExpression:
-                    result = this.getBitwiseZeroLeftShiftExpressionString(expression as any);
-                    break;
-                case BitwiseZeroRightShiftExpression:
-                    result = this.getBitwiseZeroRightShiftExpressionString(expression as any);
-                    break;
-                case DivisionExpression:
-                    result = this.getDivisionExpressionString(expression as any);
-                    break;
-                case EqualExpression:
-                    result = this.getEqualExpressionString(expression as any);
-                    break;
-                case GreaterEqualExpression:
-                    result = this.getGreaterEqualExpressionString(expression as any);
-                    break;
-                case GreaterThanExpression:
-                    result = this.getGreaterThanExpressionString(expression as any);
-                    break;
-                case InstanceofExpression:
-                    result = this.getInstanceofExpressionString(expression as any);
-                    break;
-                case LessEqualExpression:
-                    result = this.getLessEqualExpressionString(expression as any);
-                    break;
-                case LessThanExpression:
-                    result = this.getLessThanExpressionString(expression as any);
-                    break;
-                case NotEqualExpression:
-                    result = this.getNotEqualExpressionString(expression as any);
-                    break;
-                case OrExpression:
-                    result = this.getOrExpressionString(expression as any);
-                    break;
-                case StrictEqualExpression:
-                    result = this.getStrictEqualExpressionString(expression as any);
-                    break;
-                case StrictNotEqualExpression:
-                    result = this.getStrictNotEqualExpressionString(expression as any);
-                    break;
-                case SubtractionExpression:
-                    result = this.getSubtractionExpressionString(expression as any);
-                    break;
-                case TimesExpression:
-                    result = this.getTimesExpressionString(expression as any);
                     break;
                 case TernaryExpression:
                     result = this.getTernaryExpressionString(expression as any);
@@ -184,8 +106,109 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     result = this.getFunctionExpressionString(expression as any);
                     break;
             }
-            return "(" + result + ")";
+            if ((expression as IBinaryOperatorExpression).rightOperand)
+                return "(" + result + ")";
+            return result;
         }
+    }
+    protected getBinaryOperatorString(expression: IBinaryOperatorExpression) {
+        let result = "";
+        switch (expression.constructor) {
+            case AdditionExpression:
+                result = this.getAdditionExpressionString(expression as any);
+                break;
+            case AndExpression:
+                result = this.getAndExpressionString(expression as any);
+                break;
+            case BitwiseAndExpression:
+                result = this.getBitwiseAndExpressionString(expression as any);
+                break;
+            case BitwiseOrExpression:
+                result = this.getBitwiseOrExpressionString(expression as any);
+                break;
+            case BitwiseSignedRightShiftExpression:
+                result = this.getBitwiseSignedRightShiftExpressionString(expression as any);
+                break;
+            case BitwiseXorExpression:
+                result = this.getBitwiseXorExpressionString(expression as any);
+                break;
+            case BitwiseZeroLeftShiftExpression:
+                result = this.getBitwiseZeroLeftShiftExpressionString(expression as any);
+                break;
+            case BitwiseZeroRightShiftExpression:
+                result = this.getBitwiseZeroRightShiftExpressionString(expression as any);
+                break;
+            case DivisionExpression:
+                result = this.getDivisionExpressionString(expression as any);
+                break;
+            case EqualExpression:
+                result = this.getEqualExpressionString(expression as any);
+                break;
+            case GreaterEqualExpression:
+                result = this.getGreaterEqualExpressionString(expression as any);
+                break;
+            case GreaterThanExpression:
+                result = this.getGreaterThanExpressionString(expression as any);
+                break;
+            case InstanceofExpression:
+                result = this.getInstanceofExpressionString(expression as any);
+                break;
+            case LessEqualExpression:
+                result = this.getLessEqualExpressionString(expression as any);
+                break;
+            case LessThanExpression:
+                result = this.getLessThanExpressionString(expression as any);
+                break;
+            case NotEqualExpression:
+                result = this.getNotEqualExpressionString(expression as any);
+                break;
+            case OrExpression:
+                result = this.getOrExpressionString(expression as any);
+                break;
+            case StrictEqualExpression:
+                result = this.getStrictEqualExpressionString(expression as any);
+                break;
+            case StrictNotEqualExpression:
+                result = this.getStrictNotEqualExpressionString(expression as any);
+                break;
+            case SubtractionExpression:
+                result = this.getSubtractionExpressionString(expression as any);
+                break;
+            case TimesExpression:
+                result = this.getTimesExpressionString(expression as any);
+                break;
+            case TernaryExpression:
+                result = this.getTernaryExpressionString(expression as any);
+                break;
+        }
+        return "(" + result + ")";
+    }
+    protected getUnaryOperatorString(expression: IUnaryOperatorExpression) {
+        let result = "";
+        switch (expression.constructor) {
+            case BitwiseNotExpression:
+                result = this.getBitwiseNotExpressionString(expression as any);
+                break;
+            case LeftDecrementExpression:
+                result = this.getLeftDecrementExpressionString(expression as any);
+                break;
+            case LeftIncrementExpression:
+                result = this.getLeftIncrementExpressionString(expression as any);
+                break;
+            case NotExpression:
+                result = this.getNotExpressionString(expression as any);
+                break;
+            case RightDecrementExpression:
+                result = this.getRightDecrementExpressionString(expression as any);
+                break;
+            case RightIncrementExpression:
+                result = this.getRightIncrementExpressionString(expression as any);
+                break;
+            case TypeofExpression:
+                result = this.getTypeofExpressionString(expression as any);
+                break;
+        }
+        return result;
     }
     protected getColumnString(column: IColumnExpression, isSelect = false) {
         if (isSelect) {
@@ -194,12 +217,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
             return this.escape(column.entity.alias) + "." + this.escape(column.property) + (column.alias ? " AS " + this.escape(column.alias) : "");
         }
-        if ((column instanceof ComputedColumnExpression) && !column.alias) {
-            return "(" + this.getExpressionString(column.expression) + ")";
-        }
-        return column.alias ? this.escape(column.alias) : this.escape(column.entity.alias) + "." + this.escape(column.property);
+        return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
     }
     protected getSelectQueryString(select: SelectExpression): string {
+        if (!(select instanceof GroupByExpression) && select.entity instanceof ProjectionEntityExpression && !select.where && select.orders.length <= 0) {
+            return "SELECT" + (select.distinct || select.entity.select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
+                " " + select.entity.select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
+                this.newLine() + "FROM " + this.getEntityQueryString(select.entity.select.entity) +
+                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
+                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+        }
         return "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
             " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
@@ -227,7 +254,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
         else if (entity instanceof ColumnEntityExpression) {
-            return this.getEntityQueryString(entity.select.entity);
+            return this.getExpressionString(entity.select);
         }
         else if (entity instanceof ProjectionEntityExpression)
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
@@ -738,7 +765,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getNotExpressionString(expression: NotExpression): string {
         const operandString = this.getOperandString(expression.operand);
         if (expression.operand instanceof ColumnExpression)
-            return operandString + "<> 1";
+            return operandString + " <> 1";
         return "NOT " + operandString;
     }
     // tslint:disable-next-line:variable-name

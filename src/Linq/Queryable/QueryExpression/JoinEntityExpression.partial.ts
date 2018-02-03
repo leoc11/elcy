@@ -46,7 +46,7 @@ JoinEntityExpression.prototype.addRelation = function <T, T2>(this: JoinEntityEx
         child = aliasOrChild as IEntityExpression<T2>;
         relationMaps = relationMetaOrMap as Array<IJoinRelationMap<T, T2>>;
     }
-    let relation = this.relations.first((o) => o.child.type === child.type);
+    let relation = type === JoinType.LEFT ? undefined : this.relations.first((o) => o.child.type === child.type);
     if (!relation) {
         relation = {
             child,

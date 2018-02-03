@@ -12,6 +12,6 @@ export class TransformerParameter {
     }
     public remove(key: string) {
         const vales = this.parameters[key] || [];
-        return vales.pop();
+        return vales.shift();
     }
 }
