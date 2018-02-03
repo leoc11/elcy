@@ -1,12 +1,12 @@
 import { assert } from "chai";
 import "mocha";
-import { FunctionExpression, GreaterEqualExpression, GreaterThanExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ObjectValueExpression, ParameterExpression, ValueExpression, StrictNotEqualExpression, OrExpression, LessThanExpression } from "../src/ExpressionBuilder/Expression/index";
+import { FunctionExpression, GreaterEqualExpression, GreaterThanExpression, LessThanExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ObjectValueExpression, OrExpression, ParameterExpression, StrictNotEqualExpression, ValueExpression } from "../src/ExpressionBuilder/Expression/index";
 import { Enumerable } from "../src/Linq/Enumerable/index";
-import { ExceptQueryable, InnerJoinQueryable, IntersectQueryable, PivotQueryable, SelectManyQueryable, SelectQueryable, UnionQueryable, WhereQueryable, GroupByQueryable } from "../src/Linq/Queryable/index";
+import { ExceptQueryable, GroupByQueryable, InnerJoinQueryable, IntersectQueryable, PivotQueryable, SelectManyQueryable, SelectQueryable, UnionQueryable, WhereQueryable } from "../src/Linq/Queryable/index";
+import { GroupedExpression } from "../src/Linq/Queryable/QueryExpression/GroupedExpression";
 import { SelectExpression } from "../src/Linq/Queryable/QueryExpression/index";
 import { Order, OrderDetail } from "./Common/Model/index";
 import { MyDb } from "./Common/MyDb";
-import { GroupedExpression } from "../src/Linq/Queryable/QueryExpression/GroupedExpression";
 
 const db = new MyDb({});
 describe("Query builder", () => {
@@ -89,7 +89,7 @@ describe("Query builder", () => {
             totalSum: new FunctionExpression(new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]), [param1])
         });
         const c = new PivotQueryable(db.orderDetails, a, b);
-        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity1].[OrderDate] AS [date], (AVG([entity1].[Total])) AS [avg], (COUNT()) AS [count], (MAX([entity0].[OrderDetailId])) AS [max], (MIN([entity0].[OrderDetailId])) AS [min], (SUM([entity1].[Total])) AS [totalSum] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] GROUP BY [date]");
+        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity4].[date], [entity4].[avg], [entity4].[count], [entity4].[max], [entity4].[min], [entity4].[totalSum] FROM ( SELECT [entity1].[OrderDate] AS [date], AVG([entity1].[Total]) AS [avg], COUNT() AS [count], MAX([entity0].[OrderDetailId]) AS [max], MIN([entity0].[OrderDetailId]) AS [min], SUM([entity1].[Total]) AS [totalSum] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] GROUP BY [entity1].[date] ) AS [entity4]");
     });
     it("orders.select(o => o.Total).max()", () => {
         const param = new ParameterExpression("o", db.orders.type);
@@ -191,7 +191,7 @@ describe("Query builder: group", () => {
             min: new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
             sum: new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])])
         }), [param1]));
-        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderId], COUNT() AS [column0] FROM [OrderDetails] AS [entity1] GROUP BY [entity1].[OrderId] ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] LEFT JOIN ( SELECT MAX([entity2].[CreatedDate]) AS [column1] FROM [OrderDetails] AS [entity2] ) AS [entity2] ON [entity0].[OrderId] = [entity2].[OrderId] WHERE (([entity1].[column0] > 2) AND ([entity2].[column1] < '2018-01-01 00:00:00'))");
+        assert.equal(c.toString().replace(/[\n\t]+/g, " "), "SELECT [entity6].[date], [entity6].[count], [entity6].[avg], [entity6].[max], [entity6].[min], [entity6].[sum] FROM ( SELECT [entity1].[OrderDate] AS [date], COUNT() AS [count], AVG([entity1].[Total]) AS [avg], MAX([entity1].[Total]) AS [max], MIN([entity1].[Total]) AS [min], SUM([entity1].[Total]) AS [sum] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] GROUP BY [entity1].[OrderDate] ) AS [entity6]");
     });
 });
 describe("Query builder: first", () => {

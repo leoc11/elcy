@@ -1,9 +1,11 @@
+import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression, ProjectionEntityExpression } from "./index";
 import { SelectExpression } from "./SelectExpression";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
+    public having: IExpression<boolean>;
     constructor(public readonly select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key?: IEntityExpression | IColumnExpression) {
         super(select.entity);
         let groupExp: GroupedExpression;

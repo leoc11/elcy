@@ -220,13 +220,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
     }
     protected getSelectQueryString(select: SelectExpression): string {
-        if (!(select instanceof GroupByExpression) && select.entity instanceof ProjectionEntityExpression && !select.where && select.orders.length <= 0) {
-            return "SELECT" + (select.distinct || select.entity.select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-                " " + select.entity.select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
-                this.newLine() + "FROM " + this.getEntityQueryString(select.entity.select.entity) +
-                (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
-                (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
-        }
         return "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
             " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +

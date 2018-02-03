@@ -17,16 +17,12 @@ import { GroupedExpression } from "./src/Linq/Queryable/QueryExpression/GroupedE
 // // console.log(result);
 
 const db = new MyDb({});
-const a = db.orderDetails;
-const param = new ParameterExpression("o", db.orderDetails.type);
-const b = new GroupByQueryable(a, new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param]));
-const param1 = new ParameterExpression("o", GroupedExpression as any);
-const c = new SelectQueryable(b, new FunctionExpression(new ObjectValueExpression({
-    date: new MemberAccessExpression(param1, "key"),
-    count: new MethodCallExpression(param1, "count", []),
-    avg: new MethodCallExpression(param1, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-    max: new MethodCallExpression(param1, "max", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-    min: new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-    sum: new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])])
-}), [param1]));
-console.log(c.toString());
+const param = new ParameterExpression("o", db.orders.type);
+const param2 = new ParameterExpression("od", db.orderDetails.type);
+const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
+const a = new InnerJoinQueryable(w, db.orderDetails, new FunctionExpression(new MemberAccessExpression(param, "OrderId"), [param]), new FunctionExpression(new MemberAccessExpression(param2, "OrderId"), [param2]),
+    new FunctionExpression<Order | OrderDetail, any>(new ObjectValueExpression({
+        OD: new MemberAccessExpression(param2, "name"),
+        Order: new MemberAccessExpression(param, "Total")
+    }), [param, param2]));
+console.log(a.toString());

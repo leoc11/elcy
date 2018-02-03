@@ -1,4 +1,3 @@
-import { GenericType } from "../../../Common/Type";
 import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
