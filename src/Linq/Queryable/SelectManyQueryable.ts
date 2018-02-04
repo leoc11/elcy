@@ -17,7 +17,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector]);
             const visitParam = { parent: objectOperand, type: "selectMany" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;

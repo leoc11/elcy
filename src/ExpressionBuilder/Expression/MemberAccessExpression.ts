@@ -5,6 +5,8 @@ import { MasterRelationMetaData } from "../../MetaData/Relation/index";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { RelationType } from "../../Common/Type";
+import { Enumerable } from "../../Linq/Enumerable/Enumerable";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> {
     public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);
@@ -22,7 +24,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
             else {
                 const relationMeta: IRelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
                 if (relationMeta)
-                    this.type = relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType : relationMeta.masterType!;
+                    this.type = relationMeta.relationType === RelationType.OneToOne ? relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType : relationMeta.masterType! : Enumerable;
             }
         }
     }

@@ -94,12 +94,9 @@ export abstract class Queryable<T = any> extends Enumerable<T> {
         const query = expression.toString(this.queryBuilder);
         return query as any;
     }
-    public all(predicate?: (item: T) => boolean) {
+    public all(predicate: (item: T) => boolean) {
         let expression = new SelectExpression<any>(this.buildQuery() as any);
-        const metParams = [];
-        if (predicate) {
-            metParams.push(ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, this.type));
-        }
+        const metParams = [ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, this.type)];
         const methodExpression = new MethodCallExpression(expression.entity, "all", metParams);
         const param = { parent: expression, type: methodExpression.methodName };
         this.queryBuilder.visit(methodExpression, param);

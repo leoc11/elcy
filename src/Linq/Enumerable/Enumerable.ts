@@ -15,9 +15,9 @@ export class Enumerable<T = any> {
         return this;
     }
     public next(): IteratorResult<T> {
-        const rest = {
-            done: this.result.length <= this.pointer,
-            value: this.result[this.pointer++]
+        const rest: IteratorResult<T> = {
+            done: !this.result || this.result.length <= this.pointer,
+            value: this.result ? this.result[this.pointer++] : undefined as any
         };
         if (rest.done)
             this.resetPointer();

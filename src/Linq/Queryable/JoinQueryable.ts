@@ -24,8 +24,8 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const childOperand = new SelectExpression<any>(this.parent2.buildQuery(queryBuilder) as any);
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
+            const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
             const type = this.joinType.toLowerCase() + "Join";
             const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
             const visitParam = { parent: objectOperand, type: type };

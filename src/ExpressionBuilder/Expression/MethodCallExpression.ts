@@ -13,12 +13,21 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
     }
     public methodName: string;
     constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[], type?: GenericType<TResult>) {
-        super(type); // TODO
+        super(type);
         if (typeof method === "function") {
             this.methodName = method.name;
         }
         else {
             this.methodName = method;
+        }
+        // if type not defined, check type in runtime.
+        if (!type && objectOperand.type) {
+            try {
+                this.type = objectOperand.type.prototype[this.methodName]().constructor;
+            }
+            catch (e) {
+                this.type = Object;
+            }
         }
     }
 

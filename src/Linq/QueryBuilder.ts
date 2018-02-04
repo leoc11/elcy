@@ -43,9 +43,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else
             return identity;
     }
-    /**
-     * Expression visitor
-     */
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
     }
@@ -217,12 +214,21 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
     }
     protected getSelectQueryString(select: SelectExpression): string {
-        return "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
+        let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
             " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "") +
-            ((select instanceof GroupByExpression) && select.groupBy ? this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ") : "") +
-            (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+            (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "");
+
+        if (select instanceof GroupByExpression) {
+            if (select.groupBy.length > 0) {
+                result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
+            }
+            if (select.having) {
+                result += this.newLine() + "HAVING " + this.getExpressionString(select.having);
+            }
+        }
+
+        return result + (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
     }
     protected newLine(indent = this.indent) {
         return "\n" + (Array(indent + 1).join("\t"));
@@ -524,8 +530,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             default:
                 if (expression.objectOperand instanceof SelectExpression) {
                     switch (expression.methodName) {
+                        case "all":
+                            return "NOT EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
+                        case "any":
+                            return "EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
                         case "count":
-                            return "COUNT()";
+                            return "COUNT(*)";
                         case "sum":
                         case "min":
                         case "max":
@@ -624,7 +634,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`type ${(expression.objectOperand.type as any).name} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
-        return this.getValueString(this.parameters.get(expression.name));
+        return "@" + expression.name;
     }
     protected getValueExpressionString(expression: ValueExpression<any>): string {
         return this.getValueString(expression.value);
@@ -659,7 +669,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return "'" + value + "'";
     }
     protected getBooleanString(value: boolean) {
-        return "(CAST " + (value ? "1" : "0") + " AS BIT)";
+        return "CAST (" + (value ? "1" : "0") + " AS BIT)";
     }
     protected getNumberString(value: number) {
         return value.toString();
@@ -670,7 +680,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
 
     protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
-        return "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") THEN " + this.getExpressionString(expression.trueResultOperand) + " ELSE " + this.getExpressionString(expression.falseResultOperand) + " END";
+        return "(" + this.newLine(++this.indent) + "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") " + this.newLine() + "THEN " + this.getExpressionString(expression.trueResultOperand) + this.newLine() + "ELSE " + this.getExpressionString(expression.falseResultOperand) + this.newLine() + "END" + this.newLine(--this.indent) + ")";
     }
     // tslint:disable-next-line:variable-name
     protected getObjectValueExpressionString<T extends { [Key: string]: IExpression }>(_expression: ObjectValueExpression<T>): string {
@@ -685,7 +695,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
     protected getEqualExpressionString(expression: EqualExpression): string {
-        return this.getOperandString(expression.leftOperand) + " = " + this.getOperandString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand, true) + " = " + this.getOperandString(expression.rightOperand, true);
     }
     protected getGreaterEqualExpressionString<T>(expression: GreaterEqualExpression<T>): string {
         return this.getOperandString(expression.leftOperand) + " >= " + this.getOperandString(expression.rightOperand);
@@ -707,7 +717,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " % " + this.getOperandString(expression.rightOperand);
     }
     protected getNotEqualExpressionString(expression: NotEqualExpression): string {
-        return this.getOperandString(expression.leftOperand) + " <> " + this.getOperandString(expression.rightOperand);
+        return this.getOperandString(expression.leftOperand, true) + " <> " + this.getOperandString(expression.rightOperand, true);
     }
     protected getOrExpressionString(expression: OrExpression): string {
         return this.getOperandString(expression.leftOperand) + " OR " + this.getOperandString(expression.rightOperand);
@@ -731,11 +741,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return this.getOperandString(expression.leftOperand) + " + " + this.getOperandString(expression.rightOperand);
     }
-    protected getOperandString(expression: IExpression): string {
+    protected getOperandString(expression: IExpression, convertBoolean = false): string {
         if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnString(column);
         }
+        else if (convertBoolean && expression.type === Boolean && !(expression instanceof ValueExpression) && !(expression as IColumnExpression).entity) {
+            expression = new TernaryExpression(expression, new ValueExpression(1), new ValueExpression(0));
+        }
+
         return this.getExpressionString(expression);
     }
     protected getAndExpressionString(expression: AndExpression): string {

@@ -3,7 +3,7 @@ import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilde
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression, GroupByExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selector: FunctionExpression<S, T>;
@@ -17,8 +17,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const res = this.parent.buildQuery(queryBuilder) as any;
-            const objectOperand = res instanceof GroupByExpression ? new GroupByExpression(res.select, res.groupBy) : new SelectExpression<any>(res);
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
             const visitParam = { parent: objectOperand, type: "select" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;

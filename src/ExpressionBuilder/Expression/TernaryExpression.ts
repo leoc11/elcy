@@ -10,7 +10,7 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
         return result;
     }
     constructor(public logicalOperand: IExpression<boolean>, public trueResultOperand: IExpression<TType>, public falseResultOperand: IExpression<TType>) {
-        super(); // TODO: resolve constructor.
+        super(trueResultOperand.type);
     }
 
     public toString(transformer?: ExpressionTransformer): string {

@@ -29,6 +29,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         }
 
     }
+    public clone(): SelectExpression<T> {
+        return new SelectExpression(this);
+    }
     public copy(source: SelectExpression<T>) {
         if (source) {
             // tslint:disable-next-line:forin

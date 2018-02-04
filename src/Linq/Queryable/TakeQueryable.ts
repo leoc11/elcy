@@ -13,7 +13,7 @@ export class TakeQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder) {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            this.expression = new SelectExpression(this.parent.buildQuery(queryBuilder) as any);
+            this.expression = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             this.expression.paging.take = this.quantity;
         }
         return this.expression;

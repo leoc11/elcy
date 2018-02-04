@@ -14,8 +14,8 @@ export class UnionQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
-            const childOperand = new SelectExpression<any>(this.parent2.buildQuery(queryBuilder) as any);
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
+            const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ValueExpression(this.isUnionAll)]);
             const visitParam = { parent: objectOperand, type: "union" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;

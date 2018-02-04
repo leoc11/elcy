@@ -16,7 +16,7 @@ export class WhereQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder?: QueryBuilder): any {
         if (!this.expression) {
             queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-            const objectOperand = new SelectExpression<any>(this.parent.buildQuery(queryBuilder) as any);
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
             const visitParam = { parent: objectOperand, type: "where" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
