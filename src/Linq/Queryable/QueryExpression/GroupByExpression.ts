@@ -7,7 +7,8 @@ import { SelectExpression } from "./SelectExpression";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
-    constructor(public readonly select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key?: IEntityExpression | IColumnExpression) {
+    public select: GroupedExpression<T, any>;
+    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key?: IEntityExpression | IColumnExpression) {
         super(select);
         let groupExp: GroupedExpression;
         if (select instanceof GroupedExpression) {
@@ -17,7 +18,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             const selectExp = new SelectExpression(select);
             selectExp.columns = this.groupBy.slice();
             if (!key)
-                key = new ProjectionEntityExpression(selectExp, this.select.entity.alias);
+                key = new ProjectionEntityExpression(selectExp, select.entity.alias);
             groupExp = new GroupedExpression(select, key);
         }
         this.select = groupExp;

@@ -6,9 +6,6 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     protected readonly selectors: Array<FunctionExpression<T, any>>;
     constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any) | FunctionExpression<T, any>>, public type: GenericType<T> = Object) {
         super(type);
@@ -16,7 +13,6 @@ export class IncludeQueryable<T> extends Queryable<T> {
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
             const visitParam = { parent: objectOperand, type: "include" };

@@ -7,17 +7,12 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T, any> }, TM extends { [key: string]: FunctionExpression<T[] | Enumerable<T>, any> }, TResult extends {[key in (keyof TD & keyof TM)]: any }
     , TD1 extends { [key: string]: (o: T) => any } = any, TM1 extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> extends Queryable<TResult> {
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     constructor(public readonly parent: Queryable<T>, public dimensions: TD1 | ObjectValueExpression<TD>, public metrics: TM1 | ObjectValueExpression<TM>) {
         super(Object);
     }
 
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
-
             if (!(this.dimensions instanceof ObjectValueExpression)) {
                 const dimension: TD = {} as any;
                 // tslint:disable-next-line:forin

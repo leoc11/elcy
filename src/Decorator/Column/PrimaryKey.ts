@@ -12,6 +12,6 @@ export function PrimaryKey(): PropertyDecorator {
         }
 
         if (entityMetaData.primaryKeys.indexOf(propertyKey) < 0)
-            entityMetaData.primaryKeys.push(propertyKey);
+            entityMetaData.primaryKeys.unshift(propertyKey);
     };
 }

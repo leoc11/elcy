@@ -10,4 +10,5 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     name: string;
     parent?: JoinEntityExpression<any>;
     primaryColumns: IColumnExpression[];
+    path?: string;
 }

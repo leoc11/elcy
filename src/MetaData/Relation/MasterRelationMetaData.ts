@@ -5,8 +5,6 @@ import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
 
 export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaData<TSlave, TMaster> {
-
-    // tslint:disable-next-line:variable-name
     private _relationMaps: {[key in keyof TMaster]?: keyof TSlave; };
     public get relationMaps(): {[key in keyof TMaster]?: keyof TSlave } {
         if (!this._relationMaps) {
@@ -21,7 +19,7 @@ export class MasterRelationMetaData<TMaster, TSlave> implements IRelationMetaDat
         }
         return this._relationMaps;
     }
-    constructor(public slaveType: IObjectType<TSlave>, public masterType: IObjectType<TMaster>, public foreignKeyName: string, public relationType = RelationType.OneToMany) {
-
+    constructor(public slaveType: IObjectType<TSlave>, public masterType: IObjectType<TMaster>, public foreignKeyName: string, public relationType = RelationType.OneToMany, public reverseProperty?: string) {
+    
     }
 }

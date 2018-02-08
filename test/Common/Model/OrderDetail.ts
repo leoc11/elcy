@@ -2,9 +2,10 @@ import { PrimaryKey, DateColumn, DeleteColumn, StringColumn } from "../../../src
 import { Entity } from "../../../src/Decorator/Entity/index";
 import { ListRelation } from "../../../src/Decorator/Relation/ListRelation";
 import { Order } from "./Order";
+import { EntityBase } from "../../../src/Data/EntityBase";
 
 @Entity("OrderDetails")
-export class OrderDetail {
+export class OrderDetail extends EntityBase {
     @PrimaryKey()
     @StringColumn({ columnType: "nvarchar" })
     public OrderDetailId: string;

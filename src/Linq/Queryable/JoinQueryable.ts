@@ -11,9 +11,6 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     protected readonly keySelector1: FunctionExpression<T, K>;
     protected readonly keySelector2: FunctionExpression<T2, K>;
     protected readonly resultSelector: FunctionExpression<T | T2, R>;
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
         super(type);
         this.keySelector1 = keySelector1 instanceof FunctionExpression ? keySelector1 : ExpressionFactory.prototype.ToExpression<T, K>(keySelector1, parent.type);
@@ -23,7 +20,6 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
             const type = this.joinType.toLowerCase() + "Join";

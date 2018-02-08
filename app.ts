@@ -9,6 +9,8 @@ import { WhereEnumerable } from "./src/Linq/Enumerable/WhereEnumerable";
 import { Enumerable } from "./src/Linq/Enumerable/Enumerable";
 import { GroupedExpression } from "./src/Linq/Queryable/QueryExpression/GroupedExpression";
 import { Queryable } from "./src/Linq/Queryable/Queryable";
+import { IncludeQueryable } from "./src/Linq/Queryable/IncludeQueryable";
+import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQueryResultParser";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -18,9 +20,49 @@ import { Queryable } from "./src/Linq/Queryable/Queryable";
 // // console.log(result);
 
 const db = new MyDb({});
-const param = new ParameterExpression("o", db.orders.type);
-const param2 = new ParameterExpression("od", db.orderDetails.type);
-const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
-const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "where", [new FunctionExpression(new NotEqualExpression(new MemberAccessExpression(param2, "OrderId"), new ValueExpression(null)), [param2])]), "all", [new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param2, "name"), "like", [new ValueExpression("%a%")]), [param2])]), [param]));
+const a = db.orderDetails;
+const param = new ParameterExpression("o", db.orderDetails.type);
+const b = new GroupByQueryable(a, new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param]));
+const param1 = new ParameterExpression("o", GroupedExpression as any);
+const c = new SelectQueryable(b, new FunctionExpression(new ObjectValueExpression({
+    date: new MemberAccessExpression(param1, "key"),
+    count: new MethodCallExpression(param1, "count", []),
+    avg: new MethodCallExpression(param1, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+    max: new MethodCallExpression(param1, "max", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+    min: new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+    sum: new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])])
+}), [param1]));
 
-console.log(a.toString());
+console.log(c.toString());
+debugger;
+// const a = db.orderDetails;
+// const param = new ParameterExpression("o", db.orderDetails.type);
+// const b = new GroupByQueryable(a, new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param]));
+// const param1 = new ParameterExpression("o", GroupedExpression as any);
+// const c1 = new SelectQueryable(b, new FunctionExpression(new ObjectValueExpression({
+//     date: new MemberAccessExpression(param1, "key"),
+//     count: new MethodCallExpression(param1, "count", []),
+//     avg: new MethodCallExpression(param1, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+//     max: new MethodCallExpression(param1, "max", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+//     min: new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
+//     sum: new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])])
+// }), [param1]));
+// const dummyDatas = [
+//     ["2018-01-01", "1", "1", "1", "1", "1"],
+//     ["2018-01-01", "1", "1", "1", "1", "1"],
+//     ["2018-01-01", "2", "6", "10", "2", "12"],
+//     ["2018-01-01", "2", "6", "10", "2", "12"]
+// ];
+// const c = c1.buildQuery(c1.queryBuilder);
+// const parser = new ArrayQueryResultParser(c.columns, db);
+// const res = parser.parse(dummyDatas);
+// console.log(JSON.stringify(res));
+
+
+// const param = new ParameterExpression("o", db.orderDetails.type);
+// let a = new SelectQueryable(db.orderDetails, new FunctionExpression(new MemberAccessExpression(param, "Order"), [param]));
+// a.toString();
+// const w = new WhereQueryable(db.orderDetails, new FunctionExpression(new NotExpression(new MemberAccessExpression(param, "isDeleted")), [param]));
+// a = new SelectQueryable(w, new FunctionExpression(new MemberAccessExpression(param, "Order"), [param]));
+// console.log(a.toString());
+// debugger;

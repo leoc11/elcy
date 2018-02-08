@@ -10,31 +10,42 @@ import { SelectExpression } from "./SelectExpression";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
+    public path?: string;
     public parent?: JoinEntityExpression<any>;
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
             this._columns = this.select.columns.select((o) => {
                 if (o instanceof ComputedColumnExpression) {
-                    return new ColumnExpression(this, o.alias!);
+                    return new ColumnExpression(o.entity.path ? o.entity : this, o.alias!, o.type, o.isPrimary);
                 }
-                return new ColumnExpression(this, o.alias ? o.alias : o.property, o.alias === "" ? "" : undefined);
+                return new ColumnExpression(o.entity.path ? o.entity : this, o.alias ? o.alias : o.property, o.type, o.isPrimary, o.alias === "" ? "" : undefined);
             }).toArray();
         }
         return this._columns;
     }
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.columns.where((o) => this.select.entity.primaryColumns.any((c) => c.property === o.property)).toArray();
+            this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
         }
         return this._primaryColumns;
     }
     public get defaultOrders(): IOrderExpression[] {
         return this.select.orders;
     }
-    private _columns: IColumnExpression[];
+    protected _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
-    constructor(public select: SelectExpression, public alias: string, public readonly type: IObjectType<T> = Object as any) {
+    public readonly type: IObjectType<T>;
+    constructor(public select: SelectExpression, public alias: string, type?: IObjectType<T>) {
         this.select.parent = this;
+        if (type) this.type = type;
+        else {
+            if (this.select.columns.all((o) => !o.alias)) {
+                this.type = this.select.entity.type;
+            }
+            else {
+                this.type = Object as any;
+            }
+        }
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

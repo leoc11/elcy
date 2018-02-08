@@ -7,5 +7,7 @@ export interface IColumnExpression<T = any, TE = any> extends IQueryExpression<T
     alias?: string;
     entity: IEntityExpression<TE>;
     property: string;
+    isPrimary: boolean;
+    isShadow?: boolean;
     clone(): IColumnExpression<T, TE>;
 }

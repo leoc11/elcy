@@ -9,6 +9,7 @@ export class ComputedColumnExpression<T = any, TE = any> implements IColumnExpre
         return this.expression.type;
     }
     public property: string;
+    public isPrimary = false;
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public alias?: string) {
     }
     public clone() {

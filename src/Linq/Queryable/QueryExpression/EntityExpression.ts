@@ -18,7 +18,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
-            this._columns = this.metaData.properties.select((o) => new ColumnExpression(this, o)).toArray();
+            this._columns = this.metaData.properties.select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
         }
         return this._columns;
     }

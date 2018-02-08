@@ -7,16 +7,12 @@ import { SelectExpression } from "./QueryExpression";
 
 export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected readonly selector: FunctionExpression<S, T[] | Queryable<T>>;
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     constructor(public readonly parent: Queryable<S>, selector: FunctionExpression<S, T[] | Queryable<T>> | ((item: S) => T[] | Queryable<T>), public type: GenericType<T> = Object) {
         super(type);
         this.selector = selector instanceof FunctionExpression ? selector : ExpressionFactory.prototype.ToExpression<S, T[] | Queryable<T>>(selector, parent.type);
     }
-    public buildQuery(queryBuilder?: QueryBuilder): SelectExpression<T> {
+    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector]);
             const visitParam = { parent: objectOperand, type: "selectMany" };

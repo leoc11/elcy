@@ -3,16 +3,12 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 
 export class SkipQueryable<T> extends Queryable<T> {
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     public expression: SelectExpression<T>;
     constructor(public readonly parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type);
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             this.expression = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             this.expression.paging.skip = this.quantity;
         }

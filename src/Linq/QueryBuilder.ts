@@ -322,6 +322,95 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`${expression.memberName} not supported.`);
     }
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
+        if (expression.objectOperand instanceof SelectExpression) {
+            switch (expression.methodName) {
+                case "all":
+                    return "NOT EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
+                case "any":
+                    return "EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
+                case "count":
+                    return "COUNT(*)";
+                case "sum":
+                case "min":
+                case "max":
+                case "avg":
+                    return expression.methodName.toUpperCase() + "(" + this.getColumnString(expression.params[0] as any) + ")";
+                case "contains":
+                    return this.getExpressionString(expression.params[0]) + " IN (" + this.getExpressionString(expression.objectOperand) + ")";
+            }
+        }
+        else if (expression.objectOperand instanceof ValueExpression) {
+            switch (expression.objectOperand.value) {
+                case Date:
+                    switch (expression.methodName) {
+                        case "UTC":
+                        case "now":
+                        case "parse":
+                            throw new Error(`Date.${expression.methodName} not supported.`);
+                    }
+                    break;
+                case Math:
+                    switch (expression.methodName) {
+                        case "abs":
+                        case "acos":
+                        case "asin":
+                        case "atan":
+                        case "cos":
+                        case "exp":
+                        case "sin":
+                        case "sqrt":
+                        case "tan":
+                        case "floor":
+                        case "log":
+                        case "log10":
+                        case "sign":
+                            return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
+                        case "ceil":
+                            return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
+                        case "atan2":
+                            return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
+                        case "pow":
+                            return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
+                        case "random":
+                            return "RAND()";
+                        case "round":
+                            return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
+                        case "expm1":
+                            return "(EXP(" + this.getExpressionString(expression.params[0]) + ") - 1)";
+                        case "hypot":
+                            return "SQRT(" + expression.params.select((p) => "POWER(" + this.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")";
+                        case "log1p":
+                            return "LOG(1 + " + this.getExpressionString(expression.params[0]) + ")";
+                        case "log2":
+                            return "LOG(" + this.getExpressionString(expression.params[0]) + ", 2)";
+                        case "sinh":
+                            return "((EXP(" + this.getExpressionString(expression.params[0]) + ") - EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
+                        case "cosh":
+                            return "((EXP(" + this.getExpressionString(expression.params[0]) + ") + EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
+                        case "tanh":
+                            return "((EXP(2 * " + this.getExpressionString(expression.params[0]) + ") - 1) / (EXP(2 * " + this.getExpressionString(expression.params[0]) + ") + 1))";
+                        case "trunc":
+                            return "(" + this.getExpressionString(expression.params[0]) + " | 0)";
+                        case "max":
+                        case "min":
+                        case "acosh":
+                        case "asinh":
+                        case "atanh":
+                        case "cbrt":
+                        case "clz32":
+                        case "fround":
+                        case "imul":
+                            throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
+                    }
+                    break;
+                case Array:
+                    switch (expression.methodName) {
+                        case "isArray":
+                            break;
+                    }
+                    break;
+            }
+        }
         switch (expression.objectOperand.type as any) {
             case String:
                 switch (expression.methodName) {
@@ -525,97 +614,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "unshift":
                     case "valueOf":
                         break;
-                }
-                break;
-            default:
-                if (expression.objectOperand instanceof SelectExpression) {
-                    switch (expression.methodName) {
-                        case "all":
-                            return "NOT EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
-                        case "any":
-                            return "EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
-                        case "count":
-                            return "COUNT(*)";
-                        case "sum":
-                        case "min":
-                        case "max":
-                        case "avg":
-                            return expression.methodName.toUpperCase() + "(" + this.getColumnString(expression.params[0] as any) + ")";
-                        case "contains":
-                            return this.getExpressionString(expression.params[0]) + " IN (" + this.getExpressionString(expression.objectOperand) + ")";
-                    }
-                }
-                if (expression.objectOperand instanceof ValueExpression) {
-                    switch (expression.objectOperand.value) {
-                        case Date:
-                            switch (expression.methodName) {
-                                case "UTC":
-                                case "now":
-                                case "parse":
-                                    throw new Error(`Date.${expression.methodName} not supported.`);
-                            }
-                            break;
-                        case Math:
-                            switch (expression.methodName) {
-                                case "abs":
-                                case "acos":
-                                case "asin":
-                                case "atan":
-                                case "cos":
-                                case "exp":
-                                case "sin":
-                                case "sqrt":
-                                case "tan":
-                                case "floor":
-                                case "log":
-                                case "log10":
-                                case "sign":
-                                    return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
-                                case "ceil":
-                                    return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
-                                case "atan2":
-                                    return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                                case "pow":
-                                    return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                                case "random":
-                                    return "RAND()";
-                                case "round":
-                                    return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
-                                case "expm1":
-                                    return "(EXP(" + this.getExpressionString(expression.params[0]) + ") - 1)";
-                                case "hypot":
-                                    return "SQRT(" + expression.params.select((p) => "POWER(" + this.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")";
-                                case "log1p":
-                                    return "LOG(1 + " + this.getExpressionString(expression.params[0]) + ")";
-                                case "log2":
-                                    return "LOG(" + this.getExpressionString(expression.params[0]) + ", 2)";
-                                case "sinh":
-                                    return "((EXP(" + this.getExpressionString(expression.params[0]) + ") - EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
-                                case "cosh":
-                                    return "((EXP(" + this.getExpressionString(expression.params[0]) + ") + EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
-                                case "tanh":
-                                    return "((EXP(2 * " + this.getExpressionString(expression.params[0]) + ") - 1) / (EXP(2 * " + this.getExpressionString(expression.params[0]) + ") + 1))";
-                                case "trunc":
-                                    return "(" + this.getExpressionString(expression.params[0]) + " | 0)";
-                                case "max":
-                                case "min":
-                                case "acosh":
-                                case "asinh":
-                                case "atanh":
-                                case "cbrt":
-                                case "clz32":
-                                case "fround":
-                                case "imul":
-                                    throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
-                            }
-                            break;
-                        case Array:
-                            switch (expression.methodName) {
-                                case "isArray":
-                                    break;
-                            }
-                            break;
-                    }
                 }
                 break;
         }

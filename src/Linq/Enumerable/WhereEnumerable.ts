@@ -22,8 +22,9 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
                 }
             } while (!this.predicate(result.value));
             this.result[this.pointer] = result.value;
+
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

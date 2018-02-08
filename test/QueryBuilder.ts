@@ -7,6 +7,7 @@ import { GroupedExpression } from "../src/Linq/Queryable/QueryExpression/Grouped
 import { SelectExpression } from "../src/Linq/Queryable/QueryExpression/index";
 import { Order, OrderDetail } from "./Common/Model/index";
 import { MyDb } from "./Common/MyDb";
+import { IncludeQueryable } from "../src/Linq/Queryable/IncludeQueryable";
 
 const db = new MyDb({});
 describe("Query builder", () => {
@@ -94,52 +95,57 @@ describe("Query builder", () => {
     it("orders.select(o => o.Total).max()", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new SelectQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "Total"), [param]));
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "max", []);
         const param2 = { parent: expression, type: "max" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT MAX([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT MAX([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
     });
     it("orders.min(o => o.Total)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "min", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
         const param2 = { parent: expression, type: "min" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT MIN([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT MIN([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
     });
     it("orderDetails.avg(o => o.Order.Total)", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
         const a = db.orderDetails;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]);
         const param2 = { parent: expression, type: "avg" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT AVG([entity1].[Total]) AS [column0] FROM [Orders] AS [entity1]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT AVG([entity1].[Total]) AS [column0] FROM [Orders] AS [entity1]");
     });
     it("orders.selectMany(o => o.OrderDetails).count()", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new SelectManyQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param]));
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "count", []);
         const param2 = { parent: expression, type: "count" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT COUNT(*) AS [column0] FROM [OrderDetails] AS [entity1]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT COUNT(*) AS [column0] FROM [OrderDetails] AS [entity1]");
     });
     it("orders.sum(o => o.Total)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "sum", [new FunctionExpression(new MemberAccessExpression(param, "Total"), [param])]);
         const param2 = { parent: expression, type: "sum" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT SUM([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT SUM([entity0].[Total]) AS [column0] FROM [Orders] AS [entity0]");
     });
 });
 
@@ -227,29 +233,32 @@ describe("Query builder: group", () => {
 describe("Query builder: any", () => {
     it("orders.any()", () => {
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "any", []);
         const param2 = { parent: expression, type: "any" };
-        expression = a.queryBuilder.visit(methodExpression, param2) as any;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column0] FROM [Orders] AS [entity1] )");
+        expression = queryBuilder.visit(methodExpression, param2) as any;
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column0] FROM [Orders] AS [entity1] )");
     });
     it("orderDetails.any(o => o.Order !== null)", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
         const a = db.orderDetails;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "any", [new FunctionExpression(new StrictNotEqualExpression(new MemberAccessExpression(param, "Order"), new ValueExpression(null)), [param])]);
         const param2 = { parent: expression, type: "any" };
-        expression = a.queryBuilder.visit(methodExpression, param2) as any;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column0] FROM [OrderDetails] AS [entity1] INNER JOIN [Orders] AS [entity2] ON [entity1].[OrderId] = [entity2].[OrderId] WHERE ([entity2].[OrderId] <> NULL) )");
+        expression = queryBuilder.visit(methodExpression, param2) as any;
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column0] FROM [OrderDetails] AS [entity1] INNER JOIN [Orders] AS [entity2] ON [entity1].[OrderId] = [entity2].[OrderId] WHERE ([entity2].[OrderId] <> NULL) )");
     });
     it("orders.any(o => o.OrderDetails.count() > 0)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "any", [new FunctionExpression(new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(0)), [param])]);
         const param2 = { parent: expression, type: "any" };
-        expression = a.queryBuilder.visit(methodExpression, param2) as any;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column1] FROM [Orders] AS [entity1] LEFT JOIN ( SELECT [entity2].[OrderId], COUNT(*) AS [column0] FROM [OrderDetails] AS [entity2] GROUP BY [entity2].[OrderId] ) AS [entity2] ON [entity1].[OrderId] = [entity2].[OrderId] WHERE ([entity2].[column0] > 0) )");
+        expression = queryBuilder.visit(methodExpression, param2) as any;
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "EXIST( SELECT CAST (1 AS BIT) AS [column1] FROM [Orders] AS [entity1] LEFT JOIN ( SELECT [entity2].[OrderId], COUNT(*) AS [column0] FROM [OrderDetails] AS [entity2] GROUP BY [entity2].[OrderId] ) AS [entity2] ON [entity1].[OrderId] = [entity2].[OrderId] WHERE ([entity2].[column0] > 0) )");
     });
     it("orders.any(o => ({ odcount: o.OrderDetails.count()}))", () => {
         //  assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
@@ -277,35 +286,51 @@ describe("Query builder: all", () => {
         assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [OrderDetails] AS [entity1] WHERE [entity1].[OrderDetailId] IN (SELECT [entity2].[OrderDetailId] AS [column0] FROM [OrderDetails] AS [entity2] GROUP BY [entity0].[OrderId]) ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity0].[Total] >= 10000)");
     });
 });
+describe("Query builder: include", () => {
+    it("order.include(o => o.OrderDetails)", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const a = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
+        assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate], [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [OrderDetails] AS [entity1] ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId]");
+    });
+    it("orders.include(o => o.Total)", () => {
+        // assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
+    });
+    it("orders.include(o => o.OrderDetails.include(od => od.name))", () => {
+        // assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
+    });
+});
 describe("Query builder: first", () => {
     it("orders.first()", () => {
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "first", []);
         const param2 = { parent: expression, type: "first" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0]");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0]");
     });
     it("orderDetails.first(o => o.Order !== null)", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
         const a = db.orderDetails;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "first", [new FunctionExpression(new StrictNotEqualExpression(new MemberAccessExpression(param, "Order"), new ValueExpression(null)), [param])]);
         const param2 = { parent: expression, type: "first" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderDetailId], [entity0].[OrderId], [entity0].[name], [entity0].[CreatedDate], [entity0].[isDeleted] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity1].[OrderId] <> NULL)");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderDetailId], [entity0].[OrderId], [entity0].[name], [entity0].[CreatedDate], [entity0].[isDeleted] FROM [OrderDetails] AS [entity0] INNER JOIN [Orders] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity1].[OrderId] <> NULL)");
     });
     it("orders.first(o => o.OrderDetails.count() > 0)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = db.orders;
-        let expression = new SelectExpression<any>(a.buildQuery() as any);
+        const queryBuilder = a.queryBuilder;
+        let expression = a.buildQuery(queryBuilder) as SelectExpression;
         const methodExpression = new MethodCallExpression(expression, "first", [new FunctionExpression(new GreaterThanExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "count", []), new ValueExpression(0)), [param])]);
         const param2 = { parent: expression, type: "first" };
-        a.queryBuilder.visit(methodExpression, param2);
+        queryBuilder.visit(methodExpression, param2);
         expression = param2.parent;
-        assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderId], COUNT(*) AS [column0] FROM [OrderDetails] AS [entity1] GROUP BY [entity1].[OrderId] ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity1].[column0] > 0)");
+        assert.equal(expression.toString(queryBuilder).replace(/[\n\t]+/g, " "), "SELECT TOP 1 [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderId], COUNT(*) AS [column0] FROM [OrderDetails] AS [entity1] GROUP BY [entity1].[OrderId] ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity1].[column0] > 0)");
     });
     it("orders.first(o => ({ odcount: o.OrderDetails.count()}))", () => {
         //  assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");

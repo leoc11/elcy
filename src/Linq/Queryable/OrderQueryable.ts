@@ -6,9 +6,6 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
-    public get queryBuilder(): QueryBuilder {
-        return this.parent.queryBuilder;
-    }
     protected readonly selector: FunctionExpression<T, ValueType>;
     constructor(public readonly parent: Queryable<T>, selector: FunctionExpression<T, ValueType> | ((item: T) => ValueType), protected readonly direction: OrderDirection) {
         super(parent.type);
@@ -16,7 +13,6 @@ export class OrderQueryable<T> extends Queryable<T> {
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression {
         if (!this.expression) {
-            queryBuilder = queryBuilder ? queryBuilder : this.queryBuilder;
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "orderBy", [this.selector]);
             const visitParam = { parent: objectOperand, type: "orderBy" };
