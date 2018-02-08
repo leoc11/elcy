@@ -28,22 +28,25 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
             value: this.result[this.pointer]
         };
         if (result.done && !this.isResultComplete) {
-            let curKey: K | undefined;
-            let nResult: IteratorResult<T> | undefined;
+            let isFounded = false;
             do {
-                nResult = this.parent.next();
+                const nResult = this.parent.next();
                 if (nResult.done) {
                     this.isResultComplete = true;
                     this.resetPointer();
                     return result;
                 }
-                curKey = this.keySelector(nResult.value);
-            } while (this.result.any((o) => keyComparer(curKey, o.key)));
-            result.value = this.result[this.pointer] = new GroupedEnumerable(this, curKey);
-            this.result[this.pointer].addResult(nResult.value);
+                const curKey = this.keySelector(nResult.value);
+                let prev = this.result.first((o) => keyComparer(curKey, o.key));
+                if (!prev) {
+                    prev = result.value = this.result[this.pointer] = new GroupedEnumerable(this, curKey);
+                    isFounded = true;
+                }
+                prev.addResult(nResult.value);
+            } while (!isFounded);
             result.done = false;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

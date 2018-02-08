@@ -27,8 +27,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
             this.result[this.pointer] = result.value;
             result.done = false;
         }
-        if (!result.done)
-            this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

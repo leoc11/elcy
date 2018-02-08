@@ -37,7 +37,7 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> /*implements IGroupAr
             this.result[this.pointer] = result.value;
             result.done = false;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

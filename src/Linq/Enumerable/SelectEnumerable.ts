@@ -22,7 +22,7 @@ export class SelectEnumerable<T = any, K = any> extends Enumerable<K> {
             result.value = this.result[this.pointer] = this.selector(presult.value);
             result.done = false;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

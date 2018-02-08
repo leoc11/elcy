@@ -37,7 +37,7 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
             } while (!this.isUnionAll && this.result.any((o) => keyComparer(o, result.value)));
             this.result[this.pointer] = result.value;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

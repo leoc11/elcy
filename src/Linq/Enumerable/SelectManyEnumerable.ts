@@ -31,7 +31,7 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
             } while (result.done);
             this.result[this.pointer] = result.value;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

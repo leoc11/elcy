@@ -14,7 +14,7 @@ declare global {
         first(fn?: (item: T) => boolean): T;
         // last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(fn: (item: T) => any, orderDirection: OrderDirection): Enumerable<T>;
+        orderBy(fn: (item: T) => any, orderDirection?: OrderDirection): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn?: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;

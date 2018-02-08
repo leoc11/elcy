@@ -51,7 +51,7 @@ export class FullJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enu
             }
             this.result[this.pointer] = result.value;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
 }

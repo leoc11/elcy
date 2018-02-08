@@ -73,7 +73,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
             }
             this.result[this.pointer] = result.value;
         }
-        this.pointer++;
+        result.done ? this.resetPointer() : this.pointer++;
         return result;
     }
     public resetPointer(cleanReset = false) {

@@ -1,4 +1,15 @@
-export const keyComparer = <T>(a: T, b: T) => a instanceof Object ? JSON.stringify(a) === JSON.stringify(b) : a === b;
+export const keyComparer = <T>(a: T, b: T) => {
+    let result = a === b;
+    if (!result && a instanceof Object) {
+        try {
+            result = JSON.stringify(a) === JSON.stringify(b);
+        }
+        catch (e) {
+
+        }
+    }
+    return result;
+};
 export class Enumerable<T = any> {
     protected pointer = 0;
     protected isResultComplete = false;

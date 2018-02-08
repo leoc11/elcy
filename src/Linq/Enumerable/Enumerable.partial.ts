@@ -21,7 +21,7 @@ declare module "./Enumerable" {
         select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
-        orderBy(selector: (item: T) => any, direction: OrderDirection): Enumerable<T>;
+        orderBy(selector: (item: T) => any, direction?: OrderDirection): Enumerable<T>;
         skip(skip: number): Enumerable<T>;
         take(take: number): Enumerable<T>;
         groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
@@ -45,7 +45,7 @@ Enumerable.prototype.selectMany = function <T, TReturn>(this: Enumerable<T>, sel
 Enumerable.prototype.where = function <T>(this: Enumerable<T>, predicate: (item: T) => boolean): Enumerable<T> {
     return new WhereEnumerable(this, predicate);
 };
-Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, selector: (item: T) => any, direction: OrderDirection): Enumerable<T> {
+Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC): Enumerable<T> {
     return new OrderEnumerable(this, selector, direction);
 };
 Enumerable.prototype.skip = function <T>(this: Enumerable<T>, skip: number): Enumerable<T> {
