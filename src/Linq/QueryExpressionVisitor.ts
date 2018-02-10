@@ -33,6 +33,7 @@ import "./Queryable/QueryExpression/JoinEntityExpression.partial";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SingleSelectExpression } from "./Queryable/QueryExpression/SingleSelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
+import { Enumerable } from "./Enumerable/Enumerable";
 
 export interface IQueryVisitParameter {
     parent: SelectExpression;
@@ -176,8 +177,15 @@ export class QueryExpressionVisitor {
                                     param.parent.entity = joinEntity;
                                 }
                                 const child = joinEntity.addRelation(relationMeta, this.newAlias()) as ProjectionEntityExpression;
-                                param.parent.columns = param.parent.entity.primaryColumns.slice();
+                                param.parent.columns = param.parent.entity.primaryColumns.select((c) => {
+                                    const cc = c.clone();
+                                    cc.entity = new ProjectionEntityExpression(param.parent, param.parent.entity.alias, Array);
+                                    cc.isShadow = true;
+                                    return cc;
+                                })
+                                .toArray();
                                 param.parent.columns = param.parent.columns.concat(child.columns);
+                                child.path = "[]";
                                 return child.select;
                             }
                             else {

@@ -15,17 +15,32 @@ describe("Transformer", () => {
     it("order.Include(o => o.OrderDetails)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
-
-        const col = a.buildQuery(a.queryBuilder);
-        const parser = new ArrayQueryResultParser(col.columns, db);
         const dummyDatas = [
             ["orderid1", "10000", "2018-01-01 00:00:00", "orderdetailid1", "orderid1", "product1", "2018-01-01 00:00:00", "0"],
             ["orderid1", "10000", "2018-01-01 00:00:00", "orderdetailid2", "orderid1", "product1", "2018-01-01 00:00:00", "0"],
             ["orderid2", "10000", "2018-01-01 00:00:00", "orderdetailid3", "orderid2", "product1", "2018-01-01 00:00:00", "0"]
         ];
+        const c = a.buildQuery(a.queryBuilder);
+        const parser = new ArrayQueryResultParser(c.columns, db);
         const res = parser.parse(dummyDatas);
-        const result = JSON.stringify(res);
-        assert.equal(result, `["2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z"]`);
+        const util = require("util");
+        const result = util.inspect(res, false, null).replace(/\s+/g, " ");
+        assert.equal(result, `[ Order { OrderId: 'orderid1', Total: 10000, OrderDate: 2017-12-31T17:00:00.000Z, OrderDetails: [ OrderDetail { OrderDetailId: 'orderdetailid1', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: [ [Circular] ] }, OrderDetail { OrderDetailId: 'orderdetailid2', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: [ [Circular] ] } ] }, Order { OrderId: 'orderid2', Total: 10000, OrderDate: 2017-12-31T17:00:00.000Z, OrderDetails: [ OrderDetail { OrderDetailId: 'orderdetailid3', OrderId: 'orderid2', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: [ [Circular] ] } ] } ]`);
+    });
+    it("order.Select(o => o.OrderDetails)", () => {
+        const param = new ParameterExpression("o", db.orders.type);
+        const a = new SelectQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param]));
+        const dummyDatas = [
+            ["orderid1", "orderdetailid1", "orderid1", "product1", "2018-01-01 00:00:00", "0"],
+            ["orderid1", "orderdetailid2", "orderid1", "product1", "2018-01-01 00:00:00", "0"],
+            ["orderid2", "orderdetailid3", "orderid2", "product1", "2018-01-01 00:00:00", "0"]
+        ];
+        const c = a.buildQuery(a.queryBuilder);
+        const parser = new ArrayQueryResultParser(c.columns, db);
+        const res = parser.parse(dummyDatas);
+        const util = require("util");
+        const result = util.inspect(res, false, null).replace(/\s+/g, " ");
+        assert.equal(result, `[ [ OrderDetail { OrderDetailId: 'orderdetailid1', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false }, OrderDetail { OrderDetailId: 'orderdetailid2', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false } ], [ OrderDetail { OrderDetailId: 'orderdetailid3', OrderId: 'orderid2', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false } ] ]`);
     });
     it("orderDetails.Include(o => o.Order)", () => {
         const odparam = new ParameterExpression("o", db.orderDetails.type);
@@ -35,14 +50,13 @@ describe("Transformer", () => {
             ["orderdetailid2", "orderid1", "product1", "2018-01-01 00:00:00", "0", "orderid1", "10000", "2018-01-01 00:00:00"],
             ["orderdetailid3", "orderid2", "product1", "2018-01-01 00:00:00", "0", "orderid2", "10000", "2018-01-01 00:00:00"]
         ];
-        console.log(a.toString());
         const c = a.buildQuery(a.queryBuilder);
         const parser = new ArrayQueryResultParser(c.columns, db);
         const res = parser.parse(dummyDatas);
         const result = JSON.stringify(res);
-        assert.equal(result, `["2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z"]`);
+        assert.equal(result, `[ OrderDetail { OrderDetailId: 'orderdetailid1', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: Order { OrderId: 'orderid1', Total: 10000, OrderDate: 2017-12-31T17:00:00.000Z, OrderDetails: [ [Circular], OrderDetail { OrderDetailId: 'orderdetailid2', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: [Circular] } ] } }, OrderDetail { OrderDetailId: 'orderdetailid2', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: Order { OrderId: 'orderid1', Total: 10000, OrderDate: 2017-12-31T17:00:00.000Z, OrderDetails: [ OrderDetail { OrderDetailId: 'orderdetailid1', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: [Circular] }, [Circular] ] } }, OrderDetail { OrderDetailId: 'orderdetailid3', OrderId: 'orderid2', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false, Order: Order { OrderId: 'orderid2', Total: 10000, OrderDate: 2017-12-31T17:00:00.000Z, OrderDetails: [ [Circular] ] } } ]`);
     });
-    it("except", () => {
+    it("orders.select(o => o.OrderDate).Except(orderDetails.select(o => o.CreatedDate))", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const param2 = new ParameterExpression("od", db.orderDetails.type);
         const a = new SelectQueryable(db.orders, new FunctionExpression(new MemberAccessExpression(param, "OrderDate"), [param]));
@@ -52,13 +66,16 @@ describe("Transformer", () => {
         const parser = new ArrayQueryResultParser(col.columns, db);
         const dummyDatas = [
             ["2018-01-01 00:00:00"],
+            ["2018-01-01 00:00:00"],
             ["2018-01-02 00:00:00"],
             ["2018-01-03 00:00:00"],
             ["2018-01-04 00:00:00"],
         ];
         const res = parser.parse(dummyDatas);
-        const result = JSON.stringify(res);
-        assert.equal(result, `["2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z","2018-02-08T15:12:43.989Z"]`);
+        const util = require("util");
+        let result = util.inspect(res, false, null);
+        result = result.replace(/\s+/g, " ");
+        assert.equal(result, `[ 2017-12-31T17:00:00.000Z, 2017-12-31T17:00:00.000Z, 2018-01-01T17:00:00.000Z, 2018-01-02T17:00:00.000Z, 2018-01-03T17:00:00.000Z ]`);
     });
     it("orders.select(o => ({oDate: o.OrderDate, t: o.OrderDetails}))", () => {
         const param = new ParameterExpression("o", db.orders.type);
@@ -71,7 +88,9 @@ describe("Transformer", () => {
         const c = a.buildQuery(a.queryBuilder);
         const parser = new ArrayQueryResultParser(c.columns, db);
         const res = parser.parse(dummyDatas);
-        const result = JSON.stringify(res);
-        assert.equal(result, `[{"oDate":"2018-01-01T00:00:00.000Z","t":[{"OrderDetailId":"orderdetailid1","OrderId":"orderid1","name":"product1","CreatedDate":"2018-01-01T00:00:00.000Z","isDeleted":false},{"OrderDetailId":"orderdetailid2","OrderId":"orderid1","name":"product1","CreatedDate":"2018-01-01T00:00:00.000Z","isDeleted":false}]},{"oDate":"2018-01-01T00:00:00.000Z","t":[{"OrderDetailId":"orderdetailid3","OrderId":"orderid2","name":"product1","CreatedDate":"2018-01-01T00:00:00.000Z","isDeleted":false}]}]`);
+        const util = require("util");
+        let result = util.inspect(res, false, null);
+        result = result.replace(/\s+/g, " ");
+        assert.equal(result, `[ { oDate: 2017-12-31T17:00:00.000Z, t: [ OrderDetail { OrderDetailId: 'orderdetailid1', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false }, OrderDetail { OrderDetailId: 'orderdetailid2', OrderId: 'orderid1', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false } ] }, { oDate: 2017-12-31T17:00:00.000Z, t: [ OrderDetail { OrderDetailId: 'orderdetailid3', OrderId: 'orderid2', name: 'product1', CreatedDate: 2017-12-31T17:00:00.000Z, isDeleted: false } ] } ]`);
     });
 });

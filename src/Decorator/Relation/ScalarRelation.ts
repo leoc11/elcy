@@ -42,11 +42,11 @@ export function ScalarRelation<S, T>(masterType: IObjectType<T> | IRelationOptio
         const slaveMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.slaveType!);
         slaveMetaData.foreignKeys[relationOption.name] = new ForeignKeyMetaData(relationOption.name, relationOption.masterType, relationOption.relationMap, relationOption.updateOption, relationOption.deleteOption);
 
-        const slaveRelation = new SlaveRelationMetaData(relationOption.slaveType!, relationOption.name, RelationType.OneToOne);
+        const slaveRelation = new SlaveRelationMetaData(relationOption.slaveType!, relationOption.name, RelationType.OneToOne, relationOption.masterRelationProperty);
         Reflect.defineMetadata(relationMetaKey, slaveRelation, relationOption.slaveType!, propertyKey);
 
         if (relationOption.masterRelationProperty) {
-            const masterRelation = new MasterRelationMetaData(relationOption.slaveType!, relationOption.masterType, relationOption.name, RelationType.OneToOne);
+            const masterRelation = new MasterRelationMetaData(relationOption.slaveType!, relationOption.masterType, relationOption.name, RelationType.OneToOne, propertyKey);
             Reflect.defineMetadata(relationMetaKey, masterRelation, relationOption.masterType, relationOption.masterRelationProperty);
         }
     };

@@ -25,6 +25,7 @@ import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
+import { fillZero } from "../Helper/Util";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -657,8 +658,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
     }
     protected getDateTimeString(value: Date): string {
-        return this.getString(value.getFullYear() + "-" + this.fillZero(value.getMonth() + 1) + "-" + this.fillZero(value.getDate()) + " " +
-            this.fillZero(value.getHours()) + ":" + this.fillZero(value.getMinutes()) + ":" + this.fillZero(value.getSeconds()));
+        return this.getString(value.getFullYear() + "-" + fillZero(value.getMonth() + 1) + "-" + fillZero(value.getDate()) + " " +
+            fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()));
     }
     protected getNullString() {
         return "NULL";
@@ -672,20 +673,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getNumberString(value: number) {
         return value.toString();
     }
-    // tslint:disable-next-line:variable-name
-    protected getFunctionExpressionString<T>(_expression: FunctionExpression<T>): string {
+    protected getFunctionExpressionString<T>(expression: FunctionExpression<T>): string {
         throw new Error(`Function not supported`);
     }
 
     protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
         return "(" + this.newLine(++this.indent) + "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") " + this.newLine() + "THEN " + this.getExpressionString(expression.trueResultOperand) + this.newLine() + "ELSE " + this.getExpressionString(expression.falseResultOperand) + this.newLine() + "END" + this.newLine(--this.indent) + ")";
     }
-    // tslint:disable-next-line:variable-name
     protected getObjectValueExpressionString<T extends { [Key: string]: IExpression }>(_expression: ObjectValueExpression<T>): string {
         throw new Error(`ObjectValue not supported`);
     }
-    // tslint:disable-next-line:variable-name
-    protected getArrayValueExpressionString<T>(_expression: ArrayValueExpression<T>): string {
+    protected getArrayValueExpressionString<T>(expression: ArrayValueExpression<T>): string {
         throw new Error(`ArrayValue not supported`);
     }
 
@@ -701,8 +699,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getGreaterThanExpressionString<T>(expression: GreaterThanExpression<T>): string {
         return this.getOperandString(expression.leftOperand) + " > " + this.getOperandString(expression.rightOperand);
     }
-    // tslint:disable-next-line:variable-name
-    protected getInstanceofExpressionString(_expression: InstanceofExpression): string {
+    protected getInstanceofExpressionString(expression: InstanceofExpression): string {
         throw new Error(`InstanceofExpression not supported`);
     }
     protected getLessEqualExpressionString<T>(expression: LessEqualExpression<T>): string {
@@ -805,8 +802,5 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     // tslint:disable-next-line:variable-name
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
-    }
-    private fillZero(value: number): string {
-        return value < 10 ? ("0" + value).slice(-2) : value.toString();
     }
 }

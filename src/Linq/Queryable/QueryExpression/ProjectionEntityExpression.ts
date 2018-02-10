@@ -16,9 +16,9 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         if (!this._columns) {
             this._columns = this.select.columns.select((o) => {
                 if (o instanceof ComputedColumnExpression) {
-                    return new ColumnExpression(o.entity.path ? o.entity : this, o.alias!, o.type, o.isPrimary);
+                    return new ColumnExpression(this, o.alias!, o.type, o.isPrimary);
                 }
-                return new ColumnExpression(o.entity.path ? o.entity : this, o.alias ? o.alias : o.property, o.type, o.isPrimary, o.alias === "" ? "" : undefined);
+                return new ColumnExpression(this, o.alias ? o.alias : o.property, o.type, o.isPrimary, o.isShadow);
             }).toArray();
         }
         return this._columns;
@@ -40,12 +40,13 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         if (type) this.type = type;
         else {
             if (this.select.columns.all((o) => !o.alias)) {
-                this.type = this.select.entity.type;
+                this.type = this.select.type as any;
             }
             else {
                 this.type = Object as any;
             }
         }
+        this.path = select.entity.path;
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

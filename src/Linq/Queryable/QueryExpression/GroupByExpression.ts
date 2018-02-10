@@ -4,6 +4,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
+import { ColumnExpression } from "./ColumnExpression";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -19,8 +20,13 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             selectExp.columns = this.groupBy.slice();
             if (!key)
                 key = new ProjectionEntityExpression(selectExp, select.entity.alias);
+            else if (key instanceof ColumnExpression) {
+                key.entity = new ProjectionEntityExpression(new (require("./SingleSelectExpression").SingleSelectExpression)(key.entity, key), key.entity.alias);
+                key.entity.path = "key";
+            }
             groupExp = new GroupedExpression(select, key);
         }
+        groupExp.entity.path = "[]";
         this.select = groupExp;
     }
     public getVisitParam() {
