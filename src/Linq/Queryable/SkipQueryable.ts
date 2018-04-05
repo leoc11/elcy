@@ -14,4 +14,7 @@ export class SkipQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
+    public getHashCode() {
+        return this.parent.getHashCode() + "-SK" + this.quantity;
+    }
 }

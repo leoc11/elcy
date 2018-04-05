@@ -14,4 +14,7 @@ export class TakeQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
+    public getHashCode() {
+        return this.parent.getHashCode() + "-TK" + this.quantity;
+    }
 }

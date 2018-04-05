@@ -7,10 +7,37 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T, any> }, TM extends { [key: string]: FunctionExpression<T[] | Enumerable<T>, any> }, TResult extends {[key in (keyof TD & keyof TM)]: any }
     , TD1 extends { [key: string]: (o: T) => any } = any, TM1 extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> extends Queryable<TResult> {
-    constructor(public readonly parent: Queryable<T>, public dimensions: TD1 | ObjectValueExpression<TD>, public metrics: TM1 | ObjectValueExpression<TM>) {
-        super(Object);
+    protected readonly dimensionFn: TD1;
+    protected readonly metricFn: TM1;
+    private _dimensions: ObjectValueExpression<TD>;
+    protected get dimensions() {
+        if (!this._dimensions && this.dimensionFn)
+            this._dimensions = ExpressionFactory.prototype.ToObjectValueExpression(this.dimensionFn, Object);
+        return this._dimensions;
     }
-
+    protected set dimensions(value) {
+        this._dimensions = value;
+    }
+    private _metrics: ObjectValueExpression<TM>;
+    protected get metrics() {
+        if (!this._metrics && this.metricFn)
+            this._metrics = ExpressionFactory.prototype.ToObjectValueExpression(this.metricFn, Object);
+        return this._metrics;
+    }
+    protected set metrics(value) {
+        this._metrics = value;
+    }
+    constructor(public readonly parent: Queryable<T>, dimensions: TD1 | ObjectValueExpression<TD>, metrics: TM1 | ObjectValueExpression<TM>) {
+        super(Object);
+        if (dimensions instanceof ObjectValueExpression)
+            this.dimensions = dimensions;
+        else
+            this.dimensionFn = dimensions;
+        if (metrics instanceof ObjectValueExpression)
+            this.metrics = metrics;
+        else
+            this.metricFn = metrics;
+    }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
         if (!this.expression) {
             if (!(this.dimensions instanceof ObjectValueExpression)) {
@@ -38,5 +65,12 @@ export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T,
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
+    }
+    public getHashCode() {
+        const dimen = this.dimensionFn || this.dimensions.object;
+        let code = Object.keys(dimen).sum((o: any) => Array.from(o + dimen[o].toString()).sum((p) => p.charCodeAt(0)));
+        const metric = this.metricFn || this.metrics.object;
+        code += Object.keys(metric).sum((o: any) => Array.from(o + metric[o].toString()).sum((p) => p.charCodeAt(0)));
+        return this.parent.getHashCode() + "-PV" + code;
     }
 }

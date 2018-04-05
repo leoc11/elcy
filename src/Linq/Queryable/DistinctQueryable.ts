@@ -2,9 +2,19 @@ import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilde
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 
 export class DistinctQueryable<T> extends Queryable<T> {
-    protected readonly selector?: FunctionExpression<T, any>;
+    protected readonly selectorFn?: (item: T) => any;
+    private _selector?: FunctionExpression<T, any>;
+    protected get selector() {
+        if (!this._selector && this.selectorFn)
+            this._selector = ExpressionFactory.prototype.ToExpression<T, any>(this.selectorFn, this.parent.type);
+        return this._selector;
+    }
+    protected set selector(value) {
+        this._selector = value;
+    }
     constructor(public readonly parent: Queryable<T>) {
         super(parent.type);
     }
@@ -20,5 +30,8 @@ export class DistinctQueryable<T> extends Queryable<T> {
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
+    }
+    public getHashCode(): string {
+        return this.parent.getHashCode() + "-DI" + Array.from((this.selectorFn || this.selector || "").toString()).sum((c) => c.charCodeAt(0));;
     }
 }

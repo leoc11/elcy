@@ -1,8 +1,9 @@
 import { GenericType, IObjectType } from "../Common/Type";
 import { IExpression } from "./Expression/IExpression";
-import { FunctionExpression } from "./Expression/index";
+import { FunctionExpression, ParameterExpression } from "./Expression/index";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
+import { type } from "os";
 
 export class ExpressionFactory {
     // tslint:disable-next-line:variable-name
@@ -23,5 +24,13 @@ export class ExpressionFactory {
             result[cur] = FunctionExpression.Create<T, any>(objExpression.object[cur], expression.params);
             return result;
         }, {} as KR);
+    }
+    public ToObjectValueExpression<T, K, KE extends {[key in keyof K]: IExpression}, KR extends { [key: string]: FunctionExpression<T, any> }>(objectFn: KE, sourceType: IObjectType<T>): ObjectValueExpression<KR> {
+        const params = [new ParameterExpression("o", sourceType)];
+        const obj = Object.keys(objectFn).reduce((result, cur: keyof K) => {
+            result[cur] = FunctionExpression.Create<T, any>(objectFn[cur], params);
+            return result;
+        }, {} as KR);
+        return new ObjectValueExpression(obj);
     }
 }

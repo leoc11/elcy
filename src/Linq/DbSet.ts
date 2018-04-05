@@ -44,6 +44,9 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
         const q = this.queryBuilder;
         return this.buildQuery(q).toString(q);
     }
+    public getHashCode() {
+        return this.type.name;
+    }
     public get local(): Enumerable<T> {
         return new Enumerable(this.localCache);
     }

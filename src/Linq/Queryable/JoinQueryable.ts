@@ -8,15 +8,54 @@ import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpressi
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;
-    protected readonly keySelector1: FunctionExpression<T, K>;
-    protected readonly keySelector2: FunctionExpression<T2, K>;
-    protected readonly resultSelector: FunctionExpression<T | T2, R>;
+    protected readonly keySelector1Fn: (intem: T) => K;
+    protected readonly keySelector2Fn: (item: T2) => K;
+    protected readonly resultSelectorFn: (item1: T | null, item2: T2 | null) => R;
+    private _keySelector1: FunctionExpression<T, K>;
+    protected get keySelector1() {
+        if (!this._keySelector1 && this.keySelector1Fn)
+            this._keySelector1 = ExpressionFactory.prototype.ToExpression<T, K>(this.keySelector1Fn, this.parent.type);
+        return this._keySelector1;
+    }
+    protected set keySelector1(value) {
+        this._keySelector1 = value;
+    }
+    private _keySelector2: FunctionExpression<T2, K>;
+    protected get keySelector2() {
+        if (!this._keySelector2 && this.keySelector1Fn)
+            this._keySelector2 = ExpressionFactory.prototype.ToExpression<T2, K>(this.keySelector2Fn, this.parent2.type);
+        return this._keySelector2;
+    }
+    protected set keySelector2(value) {
+        this._keySelector2 = value;
+    }
+    private _resultSelector: FunctionExpression<T | T2, R>;
+    protected get resultSelector() {
+        if (!this._resultSelector && this.resultSelectorFn)
+            this._resultSelector = ExpressionFactory.prototype.ToExpression2<T, T2, R>(this.resultSelectorFn, this.parent.type, this.parent2.type);
+        return this._resultSelector;
+    }
+    protected set resultSelector(value) {
+        this._resultSelector = value;
+    }
     constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
         super(type);
-        this.keySelector1 = keySelector1 instanceof FunctionExpression ? keySelector1 : ExpressionFactory.prototype.ToExpression<T, K>(keySelector1, parent.type);
-        this.keySelector2 = keySelector2 instanceof FunctionExpression ? keySelector2 : ExpressionFactory.prototype.ToExpression<T2, K>(keySelector2, parent2.type);
-        if (resultSelector)
-            this.resultSelector = resultSelector instanceof FunctionExpression ? resultSelector : ExpressionFactory.prototype.ToExpression2<T, T2, R>(resultSelector, parent.type, parent2.type);
+        if (keySelector1 instanceof FunctionExpression)
+            this.keySelector1 = keySelector1;
+        else
+            this.keySelector1Fn = keySelector1;
+
+        if (keySelector2 instanceof FunctionExpression)
+            this.keySelector2 = keySelector2;
+        else
+            this.keySelector2Fn = keySelector2;
+
+        if (resultSelector) {
+            if (resultSelector instanceof FunctionExpression)
+                this.resultSelector = resultSelector;
+            else
+                this.resultSelectorFn = resultSelector;
+        }
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
         if (!this.expression) {
