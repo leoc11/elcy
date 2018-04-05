@@ -4,29 +4,32 @@ import { IEntityExpression } from "../../Linq/Queryable/QueryExpression/IEntityE
 import { DbContext } from "../../Linq/DBContext";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationMetaData } from "../../MetaData/Interface/index";
-import { GenericType, RelationType } from "../../Common/Type";
+import { GenericType, RelationType, JoinType } from "../../Common/Type";
 import { isValue } from "../../Helper/Util";
+import { EntityBase } from "../../Data/EntityBase";
 
+export interface IColumnParserData<T = any> {
+    column: IColumnExpression<T>;
+    index: number;
+}
 export interface IGroupedColumnParser {
     entity: IEntityExpression;
-    primaryColumns: IColumnExpression[];
-    columns: IColumnExpression[];
-    isCustomObject: boolean;
+    primaryColumns: IColumnParserData[];
+    columns: IColumnParserData[];
 }
-export class ArrayQueryResultParser<T> implements IQueryResultParser<T> {
+export class ArrayQueryResultParser<T extends EntityBase> implements IQueryResultParser<T> {
     protected get groupedColumns(): IGroupedColumnParser[] {
         if (!this._groupedColumns) {
             this._groupedColumns = this.columns.groupBy((o) => o.entity).select((o) => ({
                 entity: o.key,
-                primaryColumns: o.where((c) => c.isPrimary).toArray(),
-                columns: o.where((c) => !c.isPrimary && !c.isShadow).toArray(),
-                isCustomObject: o.any((c) => !!c.alias)
+                primaryColumns: o.where((c) => c.isPrimary).select((c) => ({ column: c, index: this.columns.indexOf(c) })).toArray(),
+                columns: o.where((c) => !c.isPrimary && !c.isShadow).select((c) => ({ column: c, index: this.columns.indexOf(c) })).toArray()
             })).toArray();
         }
         return this._groupedColumns;
     }
     private _groupedColumns: IGroupedColumnParser[];
-    constructor(protected readonly columns: IColumnExpression[], protected readonly dbContext: DbContext) {
+    constructor(protected readonly columns: IColumnExpression[], protected readonly dbContext: DbContext, protected readonly entity: IEntityExpression<T>) {
     }
     private convertTo<T>(input: string, type: GenericType<T>, timezoneOffset?: number): T {
         switch (type as any) {
@@ -43,132 +46,101 @@ export class ArrayQueryResultParser<T> implements IQueryResultParser<T> {
         }
     }
     public parse(rawResult: string[][]): T[] {
-        const groupedColumns = this.groupedColumns;
-        let entityPathes: any[];
         let result: T[] = [];
         const loadTime = new Date();
-        const customTypeMap = new Map<GenericType, Map<string, any>>();
+        const customTypeMap = new Map<IEntityExpression, Map<string, any>>();
         for (const data of rawResult) {
-            let index = 0;
-            entityPathes = [];
-            for (let i = 0; i < groupedColumns.length; i++) {
-                const colGroup = groupedColumns[i];
-                let entity = new colGroup.entity.type();
-                const entityKey: { [key: string]: any } = {};
-                for (const primaryCol of colGroup.primaryColumns) {
-                    const prop = primaryCol.alias ? primaryCol.alias : primaryCol.property;
-                    entityKey[prop] = this.convertTo(data[index++], primaryCol.type);
-                    if (!primaryCol.isShadow)
-                        entity[prop] = entityKey[prop];
-                }
-                let isSkipPopulateEntityData = false;
-                const dbSet = this.dbContext.set(colGroup.entity.type);
-                if (dbSet) {
-                    const existing = dbSet.entry(entity);
-                    if (existing) {
-                        entity = existing.entity;
-                        isSkipPopulateEntityData = existing.loadTime >= loadTime;
-                    }
-                    else {
-                        dbSet.attach(entity, { loadTime: loadTime });
-                    }
-                }
-                else if (Object.keys(entityKey).length > 0) {
-                    let existings = customTypeMap.get(colGroup.entity.type);
-                    if (!existings) {
-                        existings = new Map<any, any>();
-                        customTypeMap.set(colGroup.entity.type, existings);
-                    }
-
-                    if (Object.keys(entityKey).length > 0) {
-                        const entityKeyString = JSON.stringify(entityKey);
-                        const existing = existings ? existings.get(entityKeyString) : undefined;
-                        if (existing) {
-                            entity = existing;
-                            isSkipPopulateEntityData = true;
-                        }
-                        else {
-                            existings.set(entityKeyString, entity);
-                        }
-                    }
-                }
-
-                let prevEntity = entityPathes[entityPathes.length - 1];
-                if (isSkipPopulateEntityData) {
-                    entityPathes.push(entity);
-                    index += colGroup.columns.length;
-                }
-                else if (isValue(entity)) {
-                    if (colGroup.columns.length > 0)
-                        entity = this.convertTo(data[index++], colGroup.columns[0].type);
-                }
-                else {
-                    entityPathes.push(entity);
-                    for (const col of colGroup.columns) {
-                        entity[col.alias ? col.alias : col.property] = this.convertTo(data[index++], col.type);
-                    }
-                }
-
-                if (colGroup.entity.path) {
-                    if (entityPathes.length <= 0) {
-                        let existings = customTypeMap.get(colGroup.entity.type.name + "[]" as any);
-                        if (!existings) {
-                            existings = new Map<any, any>();
-                            customTypeMap.set(colGroup.entity.type.name + "[]" as any, existings);
-                        }
-
-                        const entityKeyString = JSON.stringify(entity);
-                        const existing = existings ? existings.get(entityKeyString) : undefined;
-                        if (existing) {
-                            prevEntity = existing;
-                            isSkipPopulateEntityData = true;
-                        }
-                        else {
-                            prevEntity = [];
-                            existings.set(entityKeyString, prevEntity);
-                        }
-                        entityPathes.push(prevEntity);
-                        result.add(prevEntity);
-                    }
-
-                    const path = colGroup.entity.path;
-                    let property = path.replace(/\[\]$/, "");
-                    if (path !== property) {
-                        if (property === "") {
-                            prevEntity.add(entity);
-                        }
-                        else {
-                            if (!prevEntity[property]) {
-                                prevEntity[property] = [];
-                            }
-                            (prevEntity[property] as any[]).add(entity);
-                        }
-                    }
-                    else {
-                        prevEntity[property] = entity;
-                    }
-                    if (!colGroup.isCustomObject) {
-                        let relationMeta: IRelationMetaData<any, any> = colGroup.entity.type !== Object ? Reflect.getOwnMetadata(relationMetaKey, prevEntity.constructor, property) : undefined;
-                        if (relationMeta && relationMeta.reverseProperty) {
-                            const reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, entity.constructor, relationMeta.reverseProperty);
-                            if (reverseRelationMeta.relationType === RelationType.OneToOne)
-                                entity[relationMeta.reverseProperty] = prevEntity;
-                            else {
-                                if (!entity[relationMeta.reverseProperty]) {
-                                    entity[relationMeta.reverseProperty] = [];
-                                }
-                                entity[relationMeta.reverseProperty].add(prevEntity);
-                            }
-                        }
-                    }
-                }
-                else {
-                    result.add(entity);
-                }
-
-                // entityPathes.add(entity);
-            }
+            const entity = this.parseEntity(this.entity, data, loadTime, customTypeMap);
+            result.add(entity);
         }
         return result;
+    }
+
+    public parseEntity<TE extends EntityBase>(entityExp: IEntityExpression<TE>, rawResult: string[], loadTime: Date, customTypeMap: Map<IEntityExpression, Map<string, any>>) {
+        const colGroup = this.groupedColumns.first((o) => o.entity === entityExp);
+        let entity: TE = new entityExp.type();
+        const entityKey: { [key: string]: any } = {};
+        for (const primaryCol of colGroup.primaryColumns) {
+            const prop = primaryCol.column.alias ? primaryCol.column.alias : primaryCol.column.property;
+            entityKey[prop] = this.convertTo(rawResult[primaryCol.index], primaryCol.column.type);
+            if (!primaryCol.column.isShadow)
+                (entity as any)[prop] = entityKey[prop];
+        }
+
+        let isSkipPopulateEntityData = false;
+        const dbSet = this.dbContext.set(entityExp.type);
+        if (dbSet) {
+            const existing = dbSet.entry(entity as TE);
+            if (existing) {
+                entity = existing.entity;
+                isSkipPopulateEntityData = existing.loadTime >= loadTime;
+            }
+            else {
+                dbSet.attach(entity as any, { loadTime: loadTime });
+            }
+        }
+        else if (Object.keys(entityKey).length > 0) {
+            let existings = customTypeMap.get(entityExp);
+            if (!existings) {
+                existings = new Map<any, any>();
+                customTypeMap.set(entityExp, existings);
+            }
+
+            if (Object.keys(entityKey).length > 0) {
+                const entityKeyString = JSON.stringify(entityKey);
+                const existing = existings ? existings.get(entityKeyString) : undefined;
+                if (existing) {
+                    entity = existing;
+                    isSkipPopulateEntityData = true;
+                }
+                else {
+                    existings.set(entityKeyString, entity);
+                }
+            }
+        }
+
+        if (!isSkipPopulateEntityData) {
+            if (isValue(entity)) {
+                if (colGroup.columns.length > 0)
+                    entity = this.convertTo(rawResult[colGroup.columns[0].index], colGroup.columns[0].column.type);
+            }
+            else {
+                for (const col of colGroup.columns) {
+                    (entity as any)[col.column.alias ? col.column.alias : col.column.property] = this.convertTo(rawResult[col.index], col.column.type);
+                }
+            }
+        }
+
+        for (const rel of entityExp.relations) {
+            const childEntity = this.parseEntity(rel.child, rawResult, loadTime, customTypeMap);
+            if (rel.type === JoinType.LEFT) {
+                if (rel.name === "[]" && Array.isArray(entity))
+                    entity.push(childEntity);
+                else {
+                    if (!(entity as any)[rel.name])
+                        (entity as any)[rel.name] = [];
+                    (entity as any)[rel.name].add(childEntity);
+                }
+            }
+            else {
+                (entity as any)[rel.name] = childEntity;
+            }
+
+            if (entityExp.type as any !== Object) {
+                let relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, entityExp.type, rel.name);
+                if (relationMeta && relationMeta.reverseProperty) {
+                    const reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, childEntity.constructor, relationMeta.reverseProperty);
+                    if (reverseRelationMeta.relationType === RelationType.OneToOne)
+                        childEntity[relationMeta.reverseProperty] = entity;
+                    else {
+                        if (!childEntity[relationMeta.reverseProperty]) {
+                            childEntity[relationMeta.reverseProperty] = [];
+                        }
+                        childEntity[relationMeta.reverseProperty].add(entity);
+                    }
+                }
+            }
+        }
+        return entity;
     }
 }

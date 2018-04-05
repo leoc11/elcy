@@ -59,7 +59,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
             return this.getColumnString(expression);
         }
-        else if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
+        else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             return this.getEntityQueryString(expression);
         }
         else if ((expression as IBinaryOperatorExpression).rightOperand) {
@@ -250,13 +250,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine() + "EXCEPT" +
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
-        else if (entity instanceof ProjectionEntityExpression)
-            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
-        else if (entity instanceof JoinEntityExpression)
-            return this.getEntityQueryString(entity.masterEntity) +
-                this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
-                    this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine());
-        return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
+        else if (entity instanceof ProjectionEntityExpression) {
+            if (!entity.select.where && (entity.select.paging.skip || 0) <= 0 && (entity.select.paging.take || 0) <= 0 && entity.select.columns.length === entity.select.entity.columns.length && entity.select.columns.all((c) => entity.select.entity.columns.contains(c)))
+                return this.getEntityQueryString(entity.select.entity);
+            else
+                return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
+        return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "") +
+            (entity.relations.length > 0 ? this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
+                this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine()) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
         switch (expression.functionFn) {

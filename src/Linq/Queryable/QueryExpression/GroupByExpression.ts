@@ -22,11 +22,10 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                 key = new ProjectionEntityExpression(selectExp, select.entity.alias);
             else if (key instanceof ColumnExpression) {
                 key.entity = new ProjectionEntityExpression(new (require("./SingleSelectExpression").SingleSelectExpression)(key.entity, key), key.entity.alias);
-                key.entity.path = "key";
+                // key.entity.alias = "key";
             }
             groupExp = new GroupedExpression(select, key);
         }
-        groupExp.entity.path = "[]";
         this.select = groupExp;
     }
     public getVisitParam() {

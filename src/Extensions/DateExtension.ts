@@ -8,7 +8,7 @@ declare global {
         addMinutes(days: number): Date;
         addSeconds(days: number): Date;
         addMilliSeconds(days: number): Date;
-        toDate(days: number): Date;
+        toDate(): Date;
         toTime(): TimeSpan;
     }
 }

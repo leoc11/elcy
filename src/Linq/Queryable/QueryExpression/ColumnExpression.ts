@@ -1,6 +1,6 @@
 import { GenericType } from "../../../Common/Type";
 import { columnMetaKey } from "../../../Decorator/DecoratorKey";
-import { ColumnMetaData, EntityMetaData } from "../../../MetaData/index";
+import { EntityMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";

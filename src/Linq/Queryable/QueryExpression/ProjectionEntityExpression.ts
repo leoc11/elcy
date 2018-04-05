@@ -1,27 +1,30 @@
-import { IObjectType } from "../../../Common/Type";
+import { IObjectType, JoinType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
-import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IEntityExpression } from "./IEntityExpression";
-import { ComputedColumnExpression } from "./index";
+import { IEntityExpression, IJoinRelation, IJoinRelationMap } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { JoinEntityExpression } from "./JoinEntityExpression";
 import { SelectExpression } from "./SelectExpression";
+import { ProjectionColumnExpression } from "./ProjectionColumnExpression";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
-    public path?: string;
-    public parent?: JoinEntityExpression<any>;
+    public relations: Array<IJoinRelation<T, any>> = [];
+    public get parent(): IEntityExpression | undefined {
+        return this.select.entity.parent;
+    }
+    public set parent(value) {
+        this.select.entity.parent = value;
+    }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
-            this._columns = this.select.columns.select((o) => {
-                if (o instanceof ComputedColumnExpression) {
-                    return new ColumnExpression(this, o.alias!, o.type, o.isPrimary);
-                }
-                return new ColumnExpression(this, o.alias ? o.alias : o.property, o.type, o.isPrimary, o.isShadow);
+            this._columns = this.select.columns.groupBy((o) => o.entity).selectMany((o) => {
+                return o.select((c) => new ProjectionColumnExpression(c, this));
             }).toArray();
         }
         return this._columns;
+    }
+    public set columns(value) {
+        this._columns = value;
     }
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
@@ -34,24 +37,46 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     }
     protected _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
-    public readonly type: IObjectType<T>;
-    constructor(public select: SelectExpression, public alias: string, type?: IObjectType<T>) {
+    constructor(public select: SelectExpression, public alias: string, public readonly type: IObjectType<T> = Object as any) {
         this.select.parent = this;
-        if (type) this.type = type;
-        else {
-            if (this.select.columns.all((o) => !o.alias)) {
-                this.type = this.select.type as any;
-            }
-            else {
-                this.type = Object as any;
-            }
-        }
-        this.path = select.entity.path;
+        this.relations = this.select.entity.relations.slice();
+
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
+    }
+    public clone() {
+        const clone = new ProjectionEntityExpression(this.select, this.alias, this.type);
+        return clone;
+    }
+    public addRelation<T2>(child: IEntityExpression<T2>, relationMaps: Array<IJoinRelationMap<T, T2>>, name: string, type?: JoinType): IEntityExpression<T2> {
+        let relation = type === JoinType.LEFT ? undefined : this.relations.first((o) => o.name === name);
+        if (!relation) {
+            relation = {
+                child,
+                name,
+                relationMaps,
+                type: type!
+            };
+            this.relations.push(relation);
+        }
+        relation.child.parent = this;
+
+        return relation.child;
+    }
+
+    public getChildRelation<T2>(child: IEntityExpression<T2>) {
+        return this.relations.first((o) => o.child === child);
+    }
+    public changeEntity(entity: IEntityExpression, newEntity: IEntityExpression) {
+        for (const relation of this.relations) {
+            if (relation.child === entity) {
+                relation.child = newEntity;
+                newEntity.parent = this;
+            }
+        }
     }
 }

@@ -15,7 +15,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public entity: IEntityExpression;
     public distinct: boolean = false;
     public get type(): GenericType<T> {
-        return this.entity.type;
+        return Array as any;
     }
     public paging: { skip?: number, take?: number } = {};
     public where: IExpression<boolean>;
@@ -28,6 +28,12 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             this.columns = entity.columns.slice();
         }
 
+    }
+    public toEntity() {
+        if (!this.where && (this.paging.skip || 0) <= 0 && (this.paging.take || 0) <= 0 && this.columns.length === this.entity.columns.length && this.columns.all((c) => this.entity.columns.contains(c)))
+            return this.entity;
+        else
+            return new ProjectionEntityExpression(this, this.entity.alias, this.entity.type);
     }
     public clone(): SelectExpression<T> {
         return new SelectExpression(this);

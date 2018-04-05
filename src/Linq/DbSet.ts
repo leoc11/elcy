@@ -1,4 +1,4 @@
-import { IObjectType, ValueType, NullConstructor, RelationType } from "../Common/Type";
+import { IObjectType, ValueType, RelationType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "./NamingStrategy";
 import { Queryable } from "./Queryable";

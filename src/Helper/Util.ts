@@ -14,10 +14,7 @@ export const isNativeFunction = (fn: Function) => {
 //     date = date.
 // }
 export const fillZero = (value: number, factor = 2): string => {
-    let leading = "";
-    let i = factor;
     const isNegative = value < 0;
     if (isNegative) value = Math.abs(value);
-    while (value < Math.pow(10, --i)) leading += "0";
-    return (isNegative ? "-" : "") + (leading + value).slice(-factor);
+    return (isNegative ? "-" : "") + (("0").repeat(factor - 1) + value).slice(-factor);
 };

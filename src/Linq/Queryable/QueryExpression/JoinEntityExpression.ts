@@ -1,7 +1,7 @@
 import { IObjectType, JoinType } from "../../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { IEntityExpression } from "./IEntityExpression";
+import { IEntityExpression, IEntityPath } from "./IEntityExpression";
 
 export interface IJoinRelationMap<TParent, TChild, TType = any> {
     parentColumn: IColumnExpression<TType, TParent>;
@@ -13,6 +13,7 @@ export interface IJoinRelation<TParent, TChild> {
     type: JoinType;
 }
 export class JoinEntityExpression<T> implements IEntityExpression<T> {
+    public parent?: JoinEntityExpression<any>;
     public get columns(): IColumnExpression[] {
         return this.masterEntity.columns;
     }
@@ -25,12 +26,12 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
     public get type(): IObjectType<T> {
         return this.masterEntity.type;
     }
-    public get alias(): string {
-        return this.masterEntity.alias;
-    }
+    public alias: string;
+    public path?: IEntityPath;
     public relations: Array<IJoinRelation<T, any>> = [];
     constructor(public masterEntity: IEntityExpression<T>) {
         this.masterEntity.parent = this;
+        this.alias = masterEntity.alias;
     }
 
     public getChildRelation<T2>(child: IEntityExpression<T2>) {
@@ -55,5 +56,12 @@ export class JoinEntityExpression<T> implements IEntityExpression<T> {
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");
+    }
+    public clone() {
+        const clone = new JoinEntityExpression(this.masterEntity);
+        clone.alias = this.alias;
+        clone.path = this.path;
+        clone.parent = this.parent;
+        return clone;
     }
 }

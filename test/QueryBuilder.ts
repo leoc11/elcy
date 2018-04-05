@@ -269,7 +269,7 @@ describe("Query builder: any", () => {
     it("order.where(o => o.Total > 10000).select(o => o.OrderDetails.any())", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const w = new WhereQueryable(db.orders, new FunctionExpression(new GreaterEqualExpression(new MemberAccessExpression(param, "Total"), new ValueExpression(10000)), [param]));
-        const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "all", []), [param]));
+        const a = new SelectQueryable(w, new FunctionExpression(new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "any", []), [param]));
         assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [OrderDetails] AS [entity1] WHERE [entity1].[OrderDetailId] IN (SELECT [entity2].[OrderDetailId] AS [column0] FROM [OrderDetails] AS [entity2] GROUP BY [entity0].[OrderId]) ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId] WHERE ([entity0].[Total] >= 10000)");
     });
     it("orders.select(o => {od: o.OrderDetails.first()}).any()", () => {
@@ -290,7 +290,7 @@ describe("Query builder: include", () => {
     it("order.include(o => o.OrderDetails)", () => {
         const param = new ParameterExpression("o", db.orders.type);
         const a = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
-        assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate], [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [Orders] AS [entity0] LEFT JOIN ( SELECT [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [OrderDetails] AS [entity1] ) AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId]");
+        assert.equal(a.toString().replace(/[\n\t]+/g, " "), "SELECT [entity0].[OrderId], [entity0].[Total], [entity0].[OrderDate], [entity1].[OrderDetailId], [entity1].[OrderId], [entity1].[name], [entity1].[CreatedDate], [entity1].[isDeleted] FROM [Orders] AS [entity0] LEFT JOIN [OrderDetails] AS [entity1] ON [entity0].[OrderId] = [entity1].[OrderId]");
     });
     it("orders.include(o => o.Total)", () => {
         // assert.equal(expression.toString(a.queryBuilder).replace(/[\n\t]+/g, " "), "SELECT (SUM([entity0].[Total])) AS [column0] FROM [Orders] AS [entity0]");
