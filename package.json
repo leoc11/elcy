@@ -26,13 +26,16 @@
   },
   "homepage": "https://github.com/basarat/ts-npm-module#readme",
   "dependencies": {
+    "mssql": "^4.1.0",
     "reflect-metadata": "^0.1.10"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "0.0.31",
     "@types/mocha": "^2.2.42",
-    "@types/node": "^8.5.8",
+    "@types/mssql": "^4.0.7",
+    "@types/mysql2": "github:types/mysql2",
+    "@types/node": "^8.10.3",
     "@types/sinon": "^2.3.3",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",

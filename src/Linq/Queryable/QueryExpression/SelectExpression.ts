@@ -6,7 +6,6 @@ import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ProjectionEntityExpression } from "./index";
 import { IOrderExpression } from "./IOrderExpression";
-import { JoinEntityExpression } from "./JoinEntityExpression";
 
 export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
@@ -20,6 +19,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public paging: { skip?: number, take?: number } = {};
     public where: IExpression<boolean>;
     public orders: IOrderExpression[] = [];
+    constructor(entity: SelectExpression<T>);
+    constructor(entity: IEntityExpression<T>);
     constructor(entity: IEntityExpression<T> | SelectExpression<T>) {
         if (entity instanceof SelectExpression)
             this.copy(entity);
@@ -62,9 +63,6 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         });
     }
     public getVisitParam(): IExpression {
-        if (this.entity instanceof JoinEntityExpression) {
-            return this.entity.masterEntity;
-        }
         return this.entity;
     }
 }

@@ -25,6 +25,7 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     name: string;
     parent?: IEntityExpression;
     primaryColumns: IColumnExpression[];
+    joins: Array<IJoinRelation<T, any>>;
     relations: Array<IJoinRelation<T, any>>;
     clone(): IEntityExpression<T>;
     addRelation<T2>(child: IEntityExpression<T2>, relationMetaOrMap: Array<IJoinRelationMap<T, T2>> | IRelationMetaData<T, T2> | IRelationMetaData<T2, T>, name: string, type?: JoinType): IEntityExpression<T2>;

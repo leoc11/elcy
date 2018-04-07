@@ -8,10 +8,10 @@ import { SelectExpression } from "./QueryExpression/index";
 export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     public expression: SelectExpression<GroupedEnumerable<T, K>>;
     protected readonly keySelectorFn: (item: T) => K;
-    private _keySelector?: FunctionExpression<T, any>;
+    private _keySelector: FunctionExpression<T, any>;
     protected get keySelector() {
-        if (!this._keySelector && this.selectorFn)
-            this._keySelector = ExpressionFactory.prototype.ToExpression(this.selectorFn, this.parent.type);
+        if (!this._keySelector && this.keySelectorFn)
+            this._keySelector = ExpressionFactory.prototype.ToExpression(this.keySelectorFn, this.parent.type);
         return this._keySelector;
     }
     protected set keySelector(value) {
@@ -22,7 +22,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         if (keySelector instanceof FunctionExpression)
             this.keySelector = keySelector;
         else
-            this.keySelectorFn = key;
+            this.keySelectorFn = keySelector;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
         if (!this.expression) {

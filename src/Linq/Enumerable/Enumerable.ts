@@ -16,7 +16,6 @@ export class Enumerable<T = any> {
     protected result: T[] = [];
     protected parent: Enumerable;
     constructor(result?: T[]) {
-        // super();
         if (result) {
             this.result = result;
             this.isResultComplete = true;
@@ -45,7 +44,7 @@ export class Enumerable<T = any> {
         if (cleanReset && this.parent)
             this.parent.reset(cleanReset);
     }
-    public toArray() {
+    public toArray(): T[] {
         const arr = [];
         this.resetPointer();
         for (const i of this) {
@@ -53,7 +52,7 @@ export class Enumerable<T = any> {
         }
         return arr;
     }
-    public all(predicate?: (item: T) => boolean) {
+    public all(predicate?: (item: T) => boolean): boolean {
         this.resetPointer();
         for (const item of this) {
             if (predicate && !predicate(item)) {
@@ -62,7 +61,7 @@ export class Enumerable<T = any> {
         }
         return true;
     }
-    public any(predicate?: (item: T) => boolean) {
+    public any(predicate?: (item: T) => boolean): boolean {
         this.resetPointer();
         for (const item of this) {
             if (!predicate || predicate(item)) {
@@ -71,20 +70,16 @@ export class Enumerable<T = any> {
         }
         return false;
     }
-    public first(predicate?: (item: T) => boolean): T {
+    public first(predicate?: (item: T) => boolean): T | null {
         this.resetPointer();
         for (const item of this) {
             if (!predicate || predicate(item)) {
                 return item;
             }
         }
-        return undefined as any;
+        return null;
     }
-    // public last(predicate?: (item: T) => boolean) {
-    //     const array = predicate ? (this as any).where(predicate).toArray() : this.toArray();
-    //     return array[array.length - 1];
-    // }
-    public count(predicate?: (item: T) => boolean) {
+    public count(predicate?: (item: T) => boolean): number {
         let count = 0;
         this.resetPointer();
         for (const item of this) {
@@ -93,14 +88,14 @@ export class Enumerable<T = any> {
         }
         return count;
     }
-    public sum(selector?: (item: T) => number) {
+    public sum(selector?: (item: T) => number): number {
         let sum = 0;
         this.resetPointer();
         for (const item of this)
             sum += selector ? selector(item) : item as any;
         return sum;
     }
-    public avg(selector?: (item: T) => number) {
+    public avg(selector?: (item: T) => number): number {
         let sum = 0;
         let count = 0;
         this.resetPointer();
@@ -112,25 +107,25 @@ export class Enumerable<T = any> {
     }
     public max(selector?: (item: T) => number): number {
         this.resetPointer();
-        let max: number | undefined;
+        let max = -Infinity;
         for (const item of this) {
             const num = selector ? selector(item) : item as any;
-            if (!max || max < num)
+            if (max < num)
                 max = num;
         }
-        return -Infinity;
+        return max;
     }
     public min(selector?: (item: T) => number): number {
         this.resetPointer();
-        let min: number | undefined;
+        let min = Infinity;
         for (const item of this) {
             const num = selector ? selector(item) : item as any;
             if (!min || min > num)
                 min = num;
         }
-        return Infinity;
+        return min;
     }
-    public contains(item: T) {
+    public contains(item: T): boolean {
         this.resetPointer();
         for (const it of this) {
             if (it === item)

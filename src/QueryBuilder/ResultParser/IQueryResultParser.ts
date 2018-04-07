@@ -1,5 +1,6 @@
 import { DbContext } from "../../Linq/DBContext";
+import { IQueryResult } from "../QueryResult";
 
-export interface IQueryResultParser<T> {
-    parse(rawResult: any[], dbContext: DbContext): T[];
+export interface IQueryResultParser<T = any> {
+    parse(queryResults: IQueryResult[], dbContext: DbContext): T[];
 }

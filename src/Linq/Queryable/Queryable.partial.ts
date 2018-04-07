@@ -65,7 +65,7 @@ Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>, selector?: (item: T) => any): Queryable<T> {
     if (selector)
-        return this.groupBy(selector).select((o) => o.first());
+        return this.groupBy(selector).select((o) => o.first()!);
     return new DistinctQueryable(this);
 };
 Queryable.prototype.innerJoin = function <T, T2, TKey extends ValueType, TResult>(this: Queryable<T>, array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult> {

@@ -10,7 +10,7 @@ export class Order extends EntityBase {
     public OrderId: string;
 
     @NumberColumn({ columnType: "bigint" })
-    public Total: number;
+    public TotalAmount: number;
     
     @DateColumn()
     public OrderDate: Date;

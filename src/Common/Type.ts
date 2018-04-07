@@ -1,8 +1,8 @@
-export interface IObjectType<T = any> { name?: string; new(value?: any): T; }
+export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
-export const NullConstructor = () => null;
+export const NullConstructor: () => null = () => null;
 // tslint:disable-next-line:ban-types
-export type GenericType<T = any> = IObjectType<T> | ((value?: any) => T);
+export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type ValueType = number | string | Date;
 export const ClassBase = Object.getPrototypeOf(Function);
 export enum DateTimeKind {

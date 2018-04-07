@@ -42,9 +42,8 @@ export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T,
         if (!this.expression) {
             if (!(this.dimensions instanceof ObjectValueExpression)) {
                 const dimension: TD = {} as any;
-                // tslint:disable-next-line:forin
                 for (const key in this.dimensions) {
-                    const val: ((item: T) => any) = this.dimensions[key];
+                    const val: ((item: T) => any) = (this.dimensions as any)[key];
                     dimension[key] = val instanceof FunctionExpression ? val : ExpressionFactory.prototype.ToExpression(val, this.parent.type);
                 }
                 this.dimensions = new ObjectValueExpression(dimension);
@@ -53,7 +52,7 @@ export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T,
                 const metric: TM = {} as any;
                 // tslint:disable-next-line:forin
                 for (const key in this.metrics) {
-                    const val: ((o: T[] | Enumerable<T>) => any) = this.metrics[key];
+                    const val: ((o: T[] | Enumerable<T>) => any) = (this.metrics as any)[key];
                     metric[key] = val instanceof FunctionExpression ? val : ExpressionFactory.prototype.ToExpression<T[] | Enumerable<T>, any, any>(val, Array);
                 }
                 this.metrics = new ObjectValueExpression(metric);

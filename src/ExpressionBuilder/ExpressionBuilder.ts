@@ -329,7 +329,7 @@ export class ExpressionBuilder {
                     const objectValue: { [key: string]: Expression.IExpression } = {};
                     while (true) {
                         const operators: OperatorToken[] = [];
-                        if (!(expressionStr[0] === '"' || expressionStr[0] === "'"))
+                        if (!(expressionStr[0] === "\"" || expressionStr[0] === "'"))
                             operators.push(new OperatorToken("", new ExpressionOperator(".", 10)));
 
                         const objProperty = this.GetOperand(expressionStr, operators[0], paramContext);
@@ -457,7 +457,7 @@ export class ExpressionBuilder {
                     else if (closeString !== ",")
                         throw new Error("Wrong function parameter sperator.");
                 }
-                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.execute());
+                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.execute() as never);
             }
             else {
                 operand = Expression.MemberAccessExpression.Create(operand as any, nestOperand.Value.execute());

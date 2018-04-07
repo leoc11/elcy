@@ -37,8 +37,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
         return this.expression as any;
     }
     public getHashCode(): string {
-        return this.parent.getHashCode() + "-IC" + (this.selectorsFn || this.selectors)
-            .select((o) => Array.from(o.toString()).sum((c) => c.charCodeAt(0)))
+        return this.parent.getHashCode() + "-IC" + ((this.selectorsFn || this.selectors) as any[])
+            .select((o) => Array.from(o.toString()).sum((c: string) => c.charCodeAt(0)))
             .sum();
     }
 }

@@ -3,7 +3,6 @@ import { IExpression } from "./Expression/IExpression";
 import { FunctionExpression, ParameterExpression } from "./Expression/index";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
-import { type } from "os";
 
 export class ExpressionFactory {
     // tslint:disable-next-line:variable-name

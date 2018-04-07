@@ -9,7 +9,7 @@ import { Order, OrderDetail } from "./Common/Model/index";
 import { MyDb } from "./Common/MyDb";
 import { IncludeQueryable } from "../src/Linq/Queryable/IncludeQueryable";
 
-const db = new MyDb({});
+const db = new MyDb();
 describe("Query builder", () => {
     it("dbset.tostring()", () => {
         const result = db.orders.toString();
@@ -77,7 +77,7 @@ describe("Query builder", () => {
     });
     it("orderDetails.pivot({date: o => o.Order.OrderDate}, {count: o => o.count(), avg: o => o.avg(p => p.Order.Total), max: o => o.max(p => p.Order.Total), min: o => o.min(p => p.Order.Total), sum: o => o.sum(p => p.Order.Total)})", () => {
         const param = new ParameterExpression("o", db.orderDetails.type);
-        const param1 = new ParameterExpression("o", Enumerable);
+        const param1 = new ParameterExpression<OrderDetail[]>("o", Enumerable as any);
         // const param2 = new ParameterExpression("od", db.orderDetails.type);
         const a = new ObjectValueExpression({
             date: new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param])

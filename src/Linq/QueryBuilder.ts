@@ -20,7 +20,6 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
-import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
@@ -739,7 +738,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " + " + this.getOperandString(expression.rightOperand);
     }
     protected getOperandString(expression: IExpression, convertBoolean = false): string {
-        if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
+        if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnString(column);
         }

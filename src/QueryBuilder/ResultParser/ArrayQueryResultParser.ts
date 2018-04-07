@@ -1,4 +1,3 @@
-import { IQueryResultParser } from "./IQueryResultParser";
 import { IColumnExpression } from "../../Linq/Queryable/QueryExpression/IColumnExpression";
 import { IEntityExpression } from "../../Linq/Queryable/QueryExpression/IEntityExpression";
 import { DbContext } from "../../Linq/DBContext";
@@ -7,6 +6,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/index";
 import { GenericType, RelationType, JoinType } from "../../Common/Type";
 import { isValue } from "../../Helper/Util";
 import { EntityBase } from "../../Data/EntityBase";
+import { IQueryResultParser } from "./IQueryResultParser";
 
 export interface IColumnParserData<T = any> {
     column: IColumnExpression<T>;
@@ -45,7 +45,7 @@ export class ArrayQueryResultParser<T extends EntityBase> implements IQueryResul
                 throw new Error(`${type.name} not supported`);
         }
     }
-    public parse(rawResult: string[][]): T[] {
+    public parse(rawResult: any[], dbContext: DbContext): T[] {
         let result: T[] = [];
         const loadTime = new Date();
         const customTypeMap = new Map<IEntityExpression, Map<string, any>>();

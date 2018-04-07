@@ -38,14 +38,14 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
         this._dbContext = dbContext;
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        return new SelectExpression(new EntityExpression(this.type, queryBuilder.newAlias()));
+        return new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias()));
     }
     public toString() {
         const q = this.queryBuilder;
         return this.buildQuery(q).toString(q);
     }
-    public getHashCode() {
-        return this.type.name;
+    public getHashCode(): string {
+        return this.type.name!;
     }
     public get local(): Enumerable<T> {
         return new Enumerable(this.localCache);
@@ -80,7 +80,7 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
                         entity[prop] = value = childEntry.entity;
                     }
                     else if (Array.isArray(value)) {
-                        entity[prop] = value = value.select((val) => {
+                        entity[prop] = value = value.select((val: any) => {
                             const childEntry = childSet.attach(val, option);
                             return childEntry.entity;
                         }).toArray();
