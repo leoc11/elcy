@@ -20,11 +20,13 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
-import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
+import { SelectExpression, IJoinRelation, IIncludeRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
+import { RelationType, JoinType } from "../Common/Type";
+import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -33,7 +35,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
     protected indent = 0;
-
+    public optimizeQueryExpression(commandQuery: ICommandQueryExpression) {
+        if (commandQuery instanceof SelectExpression) {
+            const select = commandQuery as SelectExpression;
+            select.includes = this.optimizeInclude(select);
+            for (const include of select.includes) {
+                this.optimizeQueryExpression(include.child);
+            }
+        }
+    }
+    private optimizeInclude(select: SelectExpression) {
+        let toManyIncludes: IIncludeRelation<any, any>[] = [];
+        for (const include of select.includes) {
+            if (include.type === RelationType.OneToMany) {
+                toManyIncludes.push(include);
+            }
+            else {
+                let columns = include.child.selects.splice(0);
+                select.selects = select.selects.concat(columns);
+                if (!select.joins.any(o => o.child.objectType === include.child.objectType)) {
+                    select.joins.add({
+                        child: include.child,
+                        parent: include.parent,
+                        relations: include.relations,
+                        type: JoinType.LEFT
+                    });
+                }
+                toManyIncludes = toManyIncludes.concat(this.optimizeInclude(include.child));
+            }
+        }
+        return toManyIncludes;
+    }
     public newAlias(type?: "entity" | "column") {
         return this.queryVisitor.newAlias(type);
     }
@@ -46,7 +78,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
     }
-
     public getContainsString(expression: SelectExpression) {
         return "SELECT EXISTS (" + this.getExpressionString(expression) + ")";
     }
@@ -213,12 +244,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
     }
-    protected getSelectQueryString(select: SelectExpression): string {
+    protected getSelectQueryString(select: SelectExpression, isJoin = false): string {
+        if (isJoin && select.isSimple()) {
+            return this.getEntityQueryString(select.entity);
+        }
         let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-            " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
+            " " + select.selects.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "");
-
+            this.getEntityJoinString(select.entity, select.joins);
+        if (select.where)
+            result += this.newLine() + "WHERE " + this.getExpressionString(select.where);
         if (select instanceof GroupByExpression) {
             if (select.groupBy.length > 0) {
                 result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
@@ -227,8 +262,69 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result += this.newLine() + "HAVING " + this.getExpressionString(select.having);
             }
         }
+        if (select.orders.length > 0)
+            result += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
-        return result + (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+        // if has other includes, then convert to temp table
+        if (select.includes.length > 0) {
+            const tempTableName = "temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
+            const tableStr = this.getCreateTempTableString(tempTableName, select.selects);
+            result = tableStr + ";" + this.newLine(0) + "INSERT INTO #" + tempTableName +
+                this.newLine(0) + result + ";";
+            result += this.newLine(0) + "SELECT * FROM #" + tempTableName + ";";
+
+            const tempSelect = select.clone();
+            tempSelect.entity.name = "#" + tempTableName;
+            // render each include here
+            for (const include of select.includes) {
+                // add join to temp table
+                const reverseRelation = new Map();
+                for (const [key, value] of include.relations) {
+                    reverseRelation.set(value, key);
+                }
+                const tempJoin = {
+                    type: JoinType.INNER,
+                    child: tempSelect,
+                    parent: include.child,
+                    relations: reverseRelation
+                };
+                include.child.joins.add(tempJoin);
+
+                result += this.newLine(0) + this.getSelectQueryString(include.child);
+                include.child.joins.remove(tempJoin);
+            }
+
+            result += "Drop Table #" + tempTableName + ";";
+        }
+        return result;
+    }
+    protected getCreateTempTableString(name: string, columns: IColumnExpression[]) {
+        let result = "CREATE TABLE #" + name;
+        result += this.newLine() + "{";
+        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join(this.newLine(this.indent + 1));
+        result += this.newLine() + "}";
+        return result;
+    }
+    protected getColumnDeclarationString(column: IColumnExpression) {
+        const name = column.alias ? column.alias : column.property;
+        return name + " " + column.dbType;
+    }
+    protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
+        let result = "";
+        if (joins.length > 0) {
+            result += this.newLine();
+            result += joins.select(o => {
+                let join = o.type + " JOIN (" + this.getSelectQueryString(o.child, true) + ")" +
+                    this.newLine(this.indent + 1) + "ON ";
+
+                const jstr: string[] = [];
+                for (const [key, val] of o.relations) {
+                    jstr.push(this.getColumnString(key) + " = " + this.getColumnString(val));
+                }
+                return join + jstr.join(" AND ");
+            }).toArray().join(this.newLine());
+        }
+        return result;
     }
     protected newLine(indent = this.indent) {
         return "\n" + (Array(indent + 1).join("\t"));
@@ -250,14 +346,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            if (!entity.select.where && (entity.select.paging.skip || 0) <= 0 && (entity.select.paging.take || 0) <= 0 && entity.select.columns.length === entity.select.entity.columns.length && entity.select.columns.all((c) => entity.select.entity.columns.contains(c)))
-                return this.getEntityQueryString(entity.select.entity);
-            else
+            if (!entity.select.isSimple())
                 return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
-        return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "") +
-            (entity.relations.length > 0 ? this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
-                this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine()) : "");
+        return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
         switch (expression.functionFn) {

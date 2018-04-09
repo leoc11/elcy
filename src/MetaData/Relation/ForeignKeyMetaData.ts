@@ -3,7 +3,7 @@ import { IObjectType, ReferenceOption } from "../../Common/Type";
 export class ForeignKeyMetaData<S, T> {
     public updateOption = ReferenceOption.NO_ACTION;
     public deleteOption = ReferenceOption.NO_ACTION;
-    constructor(public name: string, public masterType: IObjectType<T>, public relationMaps: {[key in keyof S]?: keyof T }, updateOption?: ReferenceOption, deleteOption?: ReferenceOption) {
+    constructor(public name: string, public masterType: IObjectType<T>, public relationMaps: Map<keyof S, keyof T>, updateOption?: ReferenceOption, deleteOption?: ReferenceOption) {
         if (typeof updateOption !== "undefined")
             this.updateOption = updateOption;
         if (typeof deleteOption !== "undefined")

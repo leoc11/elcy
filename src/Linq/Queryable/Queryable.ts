@@ -7,6 +7,7 @@ import { SelectExpression } from "./QueryExpression/index";
 import { DbContext } from "../DBContext";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IQueryResultParser } from "../../QueryBuilder/ResultParser/IQueryResultParser";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {
@@ -36,6 +37,7 @@ export abstract class Queryable<T = any> {
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             const commandQuery = this.buildQuery(queryBuilder);
+            queryBuilder.optimizeQueryExpression(commandQuery);
             queryStr = commandQuery.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(commandQuery);
             this.dbContext.setQueryChache(this.getHashCode(), queryStr, queryParser);
@@ -56,9 +58,9 @@ export abstract class Queryable<T = any> {
             const queryBuilder = this.queryBuilder;
             let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
             const methodExpression = new MethodCallExpression(expression.entity, "count", []);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -79,9 +81,9 @@ export abstract class Queryable<T = any> {
             const queryBuilder = this.queryBuilder;
             let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
             const methodExpression = new MethodCallExpression(expression.entity, "contains", [new ValueExpression(item)]);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = queryBuilder.getContainsString(expression);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -109,9 +111,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, number>(selector, this.type));
             }
             const methodExpression = new MethodCallExpression(expression, "sum", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -139,9 +141,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, number>(selector, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "max", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);

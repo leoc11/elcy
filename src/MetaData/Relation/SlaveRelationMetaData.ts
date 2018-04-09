@@ -5,26 +5,26 @@ import { IRelationMetaData } from "../Interface";
 import { ForeignKeyMetaData } from "./ForeignKeyMetaData";
 
 export class SlaveRelationMetaData<TSlave, TMaster> implements IRelationMetaData<TSlave, TMaster> {
-    public _masterType: IObjectType<TMaster>;
-    public _relationMaps: {[key in keyof TSlave]?: keyof TMaster };
-    public get masterType(): IObjectType<TMaster> {
-        if (!this._masterType) {
-            const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.slaveType);
+    public _targetType: IObjectType<TMaster>;
+    public _relationMaps: Map<keyof TSlave, keyof TMaster>;
+    public get targetType(): IObjectType<TMaster> {
+        if (!this._targetType) {
+            const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.sourceType);
             const foreignKey: ForeignKeyMetaData<TSlave, TMaster> = entityMetaData.foreignKeys[this.foreignKeyName];
-            this._masterType = foreignKey.masterType;
+            this._targetType = foreignKey.masterType;
         }
 
-        return this._masterType;
+        return this._targetType;
     }
-    public get relationMaps(): {[key in keyof TSlave]?: keyof TMaster } {
+    public get relationMaps() {
         if (!this._relationMaps) {
-            const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.slaveType);
+            const entityMetaData: EntityMetaData<TSlave> = Reflect.getOwnMetadata(entityMetaKey, this.sourceType);
             const foreignKey: ForeignKeyMetaData<TSlave, TMaster> = entityMetaData.foreignKeys[this.foreignKeyName];
             this._relationMaps = foreignKey.relationMaps;
         }
         return this._relationMaps;
     }
-    constructor(public slaveType: IObjectType<TSlave>, public foreignKeyName: string, public relationType = RelationType.OneToOne, public reverseProperty?: string) {
+    constructor(public sourceType: IObjectType<TSlave>, public foreignKeyName: string, public relationType = RelationType.OneToOne, public reverseProperty?: string) {
 
     }
 }

@@ -16,7 +16,7 @@ export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<
     else {
         if (!sourceKeySelectors) throw new Error("sourceKeySelectors not defined");
         if (!targetKeySelectors) throw new Error("targetKeySelectors not defined");
-        const relationMap: {[key in keyof S]?: keyof T } = {};
+        const relationMap: { [key in keyof S]?: keyof T } = {};
 
         sourceKeySelectors.forEach((o, i) => relationMap[FunctionHelper.PropertyName(o)] = FunctionHelper.PropertyName(targetKeySelectors[i]));
         relationOption = {
@@ -40,13 +40,18 @@ export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<
             relationOption.name = "FK_" + relationOption.slaveType!.name + "_" + relationOption.masterType.name;
 
         const slaveMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.slaveType!);
-        slaveMetaData.foreignKeys[relationOption.name] = new ForeignKeyMetaData(relationOption.name, relationOption.masterType, relationOption.relationMap, relationOption.updateOption, relationOption.deleteOption);
+        const relations = new Map<keyof S, keyof T>();
+        for (const prop in relationOption.relationMap) {
+            const value = relationOption.relationMap[prop];
+            relations.set(prop, value);
+        }
+        slaveMetaData.foreignKeys[relationOption.name] = new ForeignKeyMetaData(relationOption.name, relationOption.masterType, relations, relationOption.updateOption, relationOption.deleteOption);
 
         const slaveRelation = new SlaveRelationMetaData(relationOption.slaveType!, relationOption.name, RelationType.OneToOne, relationOption.masterRelationProperty);
         Reflect.defineMetadata(relationMetaKey, slaveRelation, relationOption.slaveType!, propertyKey);
 
         if (relationOption.masterRelationProperty) {
-            const masterRelation = new MasterRelationMetaData(relationOption.slaveType!, relationOption.masterType, relationOption.name, RelationType.OneToMany, propertyKey);
+            const masterRelation = new MasterRelationMetaData(relationOption.masterType, relationOption.slaveType!, relationOption.name, RelationType.OneToMany, propertyKey);
             Reflect.defineMetadata(relationMetaKey, masterRelation, relationOption.masterType, relationOption.masterRelationProperty);
         }
     };

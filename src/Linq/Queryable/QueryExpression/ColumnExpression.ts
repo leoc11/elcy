@@ -5,9 +5,10 @@ import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
-export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T> {
+export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public name: string;
     public type: GenericType<T>;
+    public dbType: string;
     public alias?: string;
     public property: string;
     public entity: IEntityExpression<TE>;
@@ -45,13 +46,15 @@ export class ColumnExpression<T = any, TE = any> implements IColumnExpression<T>
         this.isShadow = isShadow;
         this.alias = alias;
     }
-    public clone() {
-        return new ColumnExpression(this.entity, this.property, this.isPrimary, this.alias);
-    }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
     }
-    public execute(queryBuilder: QueryBuilder): string {
-        return this.toString(queryBuilder);
+    public execute(queryBuilder: QueryBuilder) {
+        return this.toString(queryBuilder) as any;
+    }
+    public clone() {
+        const clone = new ColumnExpression(this.entity, this.property, this.type, this.isPrimary, this.isShadow, this.alias, this.name);
+        clone.dbType = clone.dbType;
+        return clone;
     }
 }

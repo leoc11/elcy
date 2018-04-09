@@ -8,6 +8,7 @@ import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManag
 import { IConnectionOption } from "./Interface/IConnectionOption";
 import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
+import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 
 export abstract class DbContext {
     public abstract readonly entityTypes: Array<IObjectType<any>>;

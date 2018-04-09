@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 export interface IExpression<T = any> {
     type: GenericType<T>;
     toString(transformer?: ExpressionTransformer): string;
-    execute(transformer?: ExpressionTransformer): T | any;
+    execute(transformer?: ExpressionTransformer): T;
 }
 
 export abstract class ExpressionBase<T = any> implements IExpression<T> {

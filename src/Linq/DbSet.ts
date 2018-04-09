@@ -73,7 +73,7 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
                 if (value === undefined)
                     return;
                 const relationMeta: IRelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.type, prop);
-                const childSet = relationMeta ? this.dbContext.set(relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType : relationMeta.masterType!) : undefined;
+                const childSet = relationMeta ? this.dbContext.set(relationMeta instanceof MasterRelationMetaData ? relationMeta.sourceType : relationMeta.targetType!) : undefined;
                 if (childSet) {
                     if (relationMeta.relationType === RelationType.OneToOne) {
                         const childEntry = childSet.attach(value, option);
