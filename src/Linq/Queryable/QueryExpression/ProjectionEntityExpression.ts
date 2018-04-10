@@ -27,7 +27,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
             col.entity = this;
             return col;
         }).toArray();
-        this.defaultOrders = select.orders.splice(0);
+        this.defaultOrders = select.orders.slice(0);
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
@@ -38,9 +38,9 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     public clone() {
         const clone = new ProjectionEntityExpression(this.select, this.type);
         clone.alias = this.alias;
-        clone.defaultOrders = this.defaultOrders.splice(0);
+        clone.defaultOrders = this.defaultOrders.slice(0);
         clone.name = this.name;
-        clone.columns = this.columns.splice(0);
+        clone.columns = this.columns.slice(0);
         return clone;
     }
 }

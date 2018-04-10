@@ -4,6 +4,7 @@ import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     public expression: SelectExpression<GroupedEnumerable<T, K>>;
@@ -28,7 +29,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-            const visitParam = { parent: objectOperand, type: "groupBy" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "groupBy" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

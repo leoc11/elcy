@@ -4,6 +4,7 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
@@ -31,7 +32,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
-            const visitParam = { parent: objectOperand, type: "include" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "include" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;

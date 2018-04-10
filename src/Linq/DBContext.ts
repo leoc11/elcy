@@ -8,7 +8,6 @@ import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManag
 import { IConnectionOption } from "./Interface/IConnectionOption";
 import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
-import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 
 export abstract class DbContext {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -31,7 +30,7 @@ export abstract class DbContext {
     public setQueryChache<T>(key: string, query: string, queryParser: IQueryResultParser<T>): Promise<void> {
         return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser);
     }
-    public abstract async executeRawQuery(query: string): Promise<IQueryResult[]>;
+    public abstract async executeQuery(query: string): Promise<IQueryResult[]>;
     protected readonly connectionOptions: IConnectionOption;
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(connectionOption: IConnectionOption) {

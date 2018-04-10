@@ -23,7 +23,7 @@ export abstract class MysqlDbContext extends DbContext {
             this._connection = await this.connectionPool.getConnection();
         return this._connection;
     }
-    public async executeRawQuery(query: string): Promise<any> {
+    public async executeQuery(query: string): Promise<any> {
         const connection = await this.getConnection();
         const [rows] = await connection.execute(query);
         return rows;

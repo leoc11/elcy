@@ -10,4 +10,5 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     name: string;
     select?: SelectExpression<T>;
     primaryColumns: IColumnExpression[];
+    clone(): IEntityExpression<T>;
 }

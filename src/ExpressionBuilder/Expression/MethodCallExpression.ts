@@ -44,6 +44,6 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         const params = [];
         for (const param of this.params)
             params.push(param.execute(transformer));
-        return objectValue[this.methodName].apply(objectValue, params);
+        return (objectValue as any)[this.methodName].apply(objectValue, params);
     }
 }

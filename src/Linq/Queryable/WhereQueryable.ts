@@ -3,6 +3,7 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
@@ -26,7 +27,7 @@ export class WhereQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
-            const visitParam = { parent: objectOperand, type: "where" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "where" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

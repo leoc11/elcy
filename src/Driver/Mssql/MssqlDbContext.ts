@@ -1,15 +1,14 @@
 import { DbContext } from "../../Linq/DBContext";
 import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
-import { ConnectionPool, config } from "mssql";
+import { ConnectionPool, config, Request } from "mssql";
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";
-import { ArrayQueryResultParser } from "../../QueryBuilder/ResultParser/ArrayQueryResultParser";
 import { IQueryResult } from "../../QueryBuilder/QueryResult";
+import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
 
 export abstract class MssqlDbContext extends DbContext {
-    public queryParser = ArrayQueryResultParser;
+    public queryParser = PlainObjectQueryResultParser;
     public queryBuilder = MssqlQueryBuilder;
     private connectionPool: ConnectionPool;
-    private _connection: ConnectionPool;
     protected connectionOptions: IMssqlConnectionOption;
     constructor(connectionOption: IMssqlConnectionOption) {
         super(connectionOption);
@@ -24,16 +23,14 @@ export abstract class MssqlDbContext extends DbContext {
         }
         return config;
     }
-    protected async getConnection() {
+    protected async getConnection(): Promise<Request> {
         if (!this.connectionPool)
-            this.connectionPool = new ConnectionPool(this.getConnectionOptions());
-        if (!this._connection)
-            this._connection = await this.connectionPool.connect();
-        return this._connection;
+            this.connectionPool = await (new ConnectionPool(this.getConnectionOptions())).connect();
+        return this.connectionPool.request();
     }
-    public async executeRawQuery(query: string) {
+    public async executeQuery(query: string, parameters?: any[]) {
         const connection = await this.getConnection();
-        const rows = await connection.request().query(query);
+        const rows = await connection.query(query);
         const results: IQueryResult[] = [];
         for (let i = 0; i < rows.recordsets.length; i++) {
             results.push({

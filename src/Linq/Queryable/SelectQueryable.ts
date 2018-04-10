@@ -4,6 +4,7 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
@@ -27,7 +28,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
-            const visitParam = { parent: objectOperand, type: "select" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "select" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;

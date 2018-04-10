@@ -29,7 +29,6 @@ import {
 } from "./Queryable/QueryExpression/index";
 import "./Queryable/QueryExpression/JoinEntityExpression.partial";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
-import { SingleSelectExpression } from "./Queryable/QueryExpression/SingleSelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
 
 export interface IQueryVisitParameter {
@@ -106,11 +105,11 @@ export class QueryExpressionVisitor {
         return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
-        const res = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
-        switch (res.type) {
+        switch (objectOperand.type) {
             case String:
                 switch (expression.memberName) {
                     case "length":
@@ -128,8 +127,8 @@ export class QueryExpressionVisitor {
                 }
                 break;
         }
-        if ((res instanceof ValueExpression)) {
-            switch (res.value) {
+        if ((objectOperand instanceof ValueExpression)) {
+            switch (objectOperand.value) {
                 case Number:
                     switch (expression.memberName) {
                         case "MAX_VALUE":
@@ -144,17 +143,17 @@ export class QueryExpressionVisitor {
                     break;
             }
         }
-        if (res instanceof SelectExpression && expression.memberName === "length") {
-            return this.visit(new MethodCallExpression(res, "count", []), param);
+        if (objectOperand instanceof SelectExpression && expression.memberName === "length") {
+            return this.visit(new MethodCallExpression(objectOperand, "count", []), param);
         }
-        if (res instanceof GroupedExpression) {
+        if (objectOperand instanceof GroupedExpression) {
             if (expression.memberName === "key") {
-                return res.key;
+                return objectOperand.key;
             }
         }
-        else if (res instanceof EntityExpression || res instanceof ProjectionEntityExpression) {
-            const parentEntity = res as IEntityExpression;
-            const column = parentEntity.columns.first((c) => c.property === expression.memberName);
+        else if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression) {
+            const parentEntity = objectOperand as IEntityExpression;
+            const column = parentEntity.columns.first((c) => c.propertyName === expression.memberName);
             if (column) {
                 switch (param.scope) {
                     case "include":
@@ -170,7 +169,7 @@ export class QueryExpressionVisitor {
                 }
                 return column;
             }
-            const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, res.type, expression.memberName as string);
+            const relationMeta: IRelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
             if (relationMeta) {
                 const targetType = relationMeta.targetType;
                 switch (param.scope) {
@@ -214,7 +213,7 @@ export class QueryExpressionVisitor {
             }
         }
         else {
-            const resValue = res instanceof ValueExpression ? res.execute() : res;
+            const resValue = objectOperand instanceof ValueExpression ? objectOperand.execute() : objectOperand;
             if (resValue[expression.memberName])
                 return resValue[expression.memberName];
         }
@@ -222,7 +221,7 @@ export class QueryExpressionVisitor {
         throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = this.visit(expression.objectOperand, param);
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
@@ -253,7 +252,7 @@ export class QueryExpressionVisitor {
                                 for (const prop in selectExp.object) {
                                     const valueExp = selectExp.object[prop];
                                     if (valueExp instanceof ColumnExpression) {
-                                        objectSelectOperand.selects.push(new ColumnExpression(valueExp.entity, valueExp.property, valueExp.isPrimary, prop));
+                                        objectSelectOperand.selects.push(new ColumnExpression(valueExp.entity, valueExp.propertyName, valueExp.isPrimary, prop));
                                     }
                                     else if (valueExp instanceof ComputedColumnExpression) {
                                         objectSelectOperand.selects.push(new ComputedColumnExpression(valueExp.entity, valueExp.expression, prop));
@@ -382,7 +381,7 @@ export class QueryExpressionVisitor {
                             for (const prop in selectExp.object) {
                                 const valueExp = selectExp.object[prop];
                                 if (valueExp instanceof ColumnExpression) {
-                                    groupColumns.push(new ColumnExpression(valueExp.entity, valueExp.property, valueExp.isPrimary, prop));
+                                    groupColumns.push(new ColumnExpression(valueExp.entity, valueExp.propertyName, valueExp.isPrimary, prop));
                                 }
                                 else if (valueExp instanceof ComputedColumnExpression) {
                                     groupColumns.push(new ComputedColumnExpression(valueExp.entity, valueExp.expression, prop));
@@ -489,7 +488,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.property;
+                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
                                 keyObject[prop] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
@@ -523,7 +522,7 @@ export class QueryExpressionVisitor {
                             this.parameters.remove(selectorFn.params[0].name);
                             param.commandExpression = visitParam.commandExpression;
 
-                            if (!(selectExpression instanceof SingleSelectExpression))
+                            if (!isValueType(selectExpression.entity.type))
                                 throw new Error(`Queryable<${selectOperand.type.name}> required select with basic type return value.`);
 
                             selectOperand = selectExpression;
@@ -549,7 +548,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.property;
+                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
                                 keyObject[prop] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
@@ -615,13 +614,13 @@ export class QueryExpressionVisitor {
                             if ((itemExp as IEntityExpression).primaryColumns && (itemExp as IEntityExpression).primaryColumns.length > 0) {
                                 const primaryKeys = (itemExp as IEntityExpression).primaryColumns;
                                 const whereExp = primaryKeys.select((o) => {
-                                    const parentColumn = selectOperand.entity.columns.first((p) => p.property === o.property);
+                                    const parentColumn = selectOperand.entity.columns.first((p) => p.propertyName === o.propertyName);
                                     return new EqualExpression(parentColumn, o);
                                 }).toArray().reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
                                 selectOperand.addWhere(whereExp);
                             }
                             else {
-                                if (!(selectOperand instanceof SingleSelectExpression))
+                                if (!isValueType(selectOperand.entity.type))
                                     throw new Error(`Expression not supported. the supplied item type not match`);
 
                                 selectOperand.addWhere(new EqualExpression(selectOperand.column, itemExp));
@@ -633,13 +632,13 @@ export class QueryExpressionVisitor {
                             if (entityMeta) {
                                 const primaryKeys = entityMeta.primaryKeys;
                                 const whereExp = primaryKeys.select((o) => {
-                                    const parentColumn = selectOperand.entity.columns.first((p) => p.property === o);
+                                    const parentColumn = selectOperand.entity.columns.first((p) => p.propertyName === o);
                                     return new EqualExpression(parentColumn, new ValueExpression(item[o]));
                                 }).toArray().reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
                                 selectOperand.addWhere(whereExp);
                             }
                             else {
-                                if (!(selectOperand instanceof SingleSelectExpression))
+                                if (!isValueType(selectOperand.entity.type))
                                     throw new Error(`Expression not supported. the supplied item type not match`);
 
                                 selectOperand.addWhere(new EqualExpression(selectOperand.column, new ValueExpression(item)));
@@ -668,7 +667,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.property;
+                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
                                 keyObject[prop] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
@@ -713,7 +712,7 @@ export class QueryExpressionVisitor {
                             const parentEntity = parentKey as IEntityExpression;
                             const childEntity = childKey as IEntityExpression;
                             for (const parentCol of parentEntity.primaryColumns) {
-                                const childCol = childEntity.primaryColumns.first((c) => c.property === parentCol.property);
+                                const childCol = childEntity.primaryColumns.first((c) => c.propertyName === parentCol.propertyName);
                                 joinRelationMap.set(parentCol, childCol);
                             }
                         }

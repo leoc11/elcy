@@ -14,9 +14,9 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
             AbstractEntity()(target.constructor as ObjectConstructor);
             entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         }
-        if (!metadata.name) {
+        if (!metadata.columnName) {
             if (typeof (propertyKey) === "string")
-                metadata.name = propertyKey;
+                metadata.columnName = propertyKey;
         }
 
         const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);

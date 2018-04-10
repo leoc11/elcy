@@ -12,7 +12,7 @@ export function BooleanColumn(name?: string | IBooleanColumnOption, defaultValue
     }
     else {
         if (typeof name !== "undefined")
-            metadata.name = name as string;
+            metadata.columnName = name as string;
         if (typeof defaultValue !== "undefined")
             metadata.default = defaultValue;
     }

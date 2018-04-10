@@ -4,6 +4,7 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorFn: (item: T) => ValueType;
@@ -27,7 +28,7 @@ export class OrderQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "orderBy", [this.selector]);
-            const visitParam = { parent: objectOperand, type: "orderBy" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "orderBy" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;

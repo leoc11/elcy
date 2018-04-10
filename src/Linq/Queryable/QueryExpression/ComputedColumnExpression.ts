@@ -3,21 +3,24 @@ import { IExpression } from "../../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
+import { ColumnType } from "../../../Common/ColumnType";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
         return this.expression.type;
     }
-    public dbType: string;
-    public property: string;
+    public columnType: ColumnType;
+    public propertyName: string;
+    public columnName: string;
     public isPrimary = false;
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public alias?: string) {
     }
     public clone() {
         const clone = new ComputedColumnExpression(this.entity, this.expression, this.alias);
         clone.isPrimary = this.isPrimary;
-        clone.property = this.property;
-        clone.dbType = this.dbType;
+        clone.propertyName = this.propertyName;
+        clone.columnType = this.columnType;
+        clone.columnName = this.columnName;
         return clone;
     }
     public toString(transformer: QueryBuilder): string {

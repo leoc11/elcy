@@ -12,7 +12,7 @@ export function StringColumn(name?: string | IStringColumnOption, defaultValue?:
     }
     else {
         if (typeof name !== "undefined")
-            metadata.name = name as string;
+            metadata.columnName = name as string;
         if (typeof defaultValue !== "undefined")
             metadata.default = defaultValue;
     }

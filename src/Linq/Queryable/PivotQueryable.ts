@@ -10,7 +10,7 @@ import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 export class PivotQueryable<T,
     TD extends FunctionExpression<T, any>,
     TM extends FunctionExpression<T[] | Enumerable<T>, any>,
-    TResult extends { [key in (keyof TD & keyof TM)]: any },
+    TResult extends { [key in (keyof TD1 & keyof TM1)]: any },
     TD1 extends { [key: string]: (o: T) => any } = any,
     TM1 extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> extends Queryable<TResult> {
     protected readonly dimensionFn: TD1;

@@ -12,8 +12,8 @@ export function ComputedColumn<T, R>(type: GenericType<R>, fn: (o: T) => R): Pro
             entityMetaData = new AbstractEntityMetaData(target.constructor as GenericType<T>);
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
-        if (entityMetaData.computedProperties.contains(computedMetaData.name))
-            entityMetaData.computedProperties.push(computedMetaData.name);
+        if (entityMetaData.computedProperties.contains(computedMetaData.columnName))
+            entityMetaData.computedProperties.push(computedMetaData.columnName);
         Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
 
         const descriptor = Object.getOwnPropertyDescriptor(target, propertyKey);

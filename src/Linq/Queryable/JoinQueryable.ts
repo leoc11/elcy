@@ -5,6 +5,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;
@@ -63,7 +64,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
             const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
             const type = this.joinType.toLowerCase() + "Join";
             const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
-            const visitParam = { parent: objectOperand, type: type };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: type };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

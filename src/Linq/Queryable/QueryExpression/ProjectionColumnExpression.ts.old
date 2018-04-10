@@ -3,7 +3,7 @@ import { GenericType } from "../../../Common/Type";
 import { IEntityExpression } from "./IEntityExpression";
 import { QueryBuilder } from "../../QueryBuilder";
 
-export class ProjectionColumnExpression<TE, T> implements IColumnExpression<T, TE> {
+export class ProjectionColumnExpression<TE, T> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
         return this.projectedColumn.type;
     }

@@ -31,25 +31,18 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public where: IExpression<boolean>;
     public orders: IOrderExpression[] = [];
     public objectType: GenericType<any>;
-    public includes: IIncludeRelation<T, any>[];
-    public joins: IJoinRelation<T, any>[];
+    public includes: IIncludeRelation<T, any>[] = [];
+    public joins: IJoinRelation<T, any>[] = [];
     public parentRelation: IJoinRelation<any, T> | IIncludeRelation<any, T>;
     public getVisitParam(): IExpression {
         return this.entity;
     }
-    constructor(entity: IEntityExpression<T> | SelectExpression<T>) {
-        if (entity instanceof SelectExpression) {
-            this.entity = entity.entity;
-            this.objectType = entity.objectType;
-            this.selects = entity.selects.slice(0);
-            this.isSelectAll = entity.isSelectAll;
-        }
-        else {
-            this.entity = entity;
-            this.objectType = entity.type;
-            this.selects = entity.columns.slice(0);
-            this.isSelectAll = true;
-        }
+    constructor(entity: IEntityExpression<T>) {
+        this.entity = entity;
+        this.objectType = entity.type;
+        this.selects = entity.columns.slice(0);
+        this.isSelectAll = true;
+        entity.select = this;
     }
     public addWhere(expression: IExpression<boolean>) {
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
@@ -75,8 +68,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             const relationMeta = relationMetaOrRelations as IRelationMetaData<T, TChild>;
             relationMap = new Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>();
             for (const [parentProperty, childProperty] of relationMeta.relationMaps!) {
-                const parentCol = this.entity.columns.first((o) => o.property === parentProperty);
-                const childCol = this.entity.columns.first((o) => o.property === childProperty);
+                const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
+                const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
                 relationMap.set(parentCol, childCol);
             }
             type = relationMeta.relationType;
@@ -108,8 +101,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
 
             const isReverse = relationMeta.sourceType !== this.entity.type;
             for (const [sourceProp, targetProp] of relationMeta.relationMaps) {
-                const sourceCol = this.entity.columns.first((o) => o.property === (isReverse ? targetProp : sourceProp));
-                const targetCol = child.entity.columns.first((o) => o.property === (isReverse ? sourceProp : targetProp));
+                const sourceCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? targetProp : sourceProp));
+                const targetCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? sourceProp : targetProp));
                 relationMap.set(sourceCol, targetCol);
             }
         }
@@ -126,7 +119,11 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.joins.push(child.parentRelation);
     }
     public clone(): SelectExpression<T> {
-        return new SelectExpression(this);
+        const clone = new SelectExpression(this.entity.clone());
+        clone.objectType = this.objectType;
+        clone.selects = this.selects.slice(0);
+        clone.isSelectAll = this.isSelectAll;
+        return clone;
     }
     public execute(queryBuilder: QueryBuilder) {
         return this as any;
@@ -142,9 +139,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         }
     }
     public isSimple() {
-        return !this.where && 
-            (this.paging.skip || 0) <= 0 && (this.paging.take || 0) <= 0 && 
-            this.selects.length === this.entity.columns.length && 
+        return !this.where &&
+            (this.paging.skip || 0) <= 0 && (this.paging.take || 0) <= 0 &&
+            this.selects.length === this.entity.columns.length &&
             this.selects.all((c) => this.entity.columns.contains(c));
     }
 }

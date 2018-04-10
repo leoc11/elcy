@@ -6,7 +6,7 @@ import { EntityBase } from "../../../src/Data/EntityBase";
 @Entity("Orders")
 export class Order extends EntityBase {
     @PrimaryKey()
-    @StringColumn({ columnType: "nvarchar" })
+    @StringColumn({ columnType: "nvarchar", maxLength: 100 })
     public OrderId: string;
 
     @NumberColumn({ columnType: "bigint" })

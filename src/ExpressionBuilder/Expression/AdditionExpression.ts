@@ -42,6 +42,6 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
         return "(" + this.leftOperand.toString() + " + " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        return this.leftOperand.execute(transformer) + this.rightOperand.execute(transformer);
+        return (this.leftOperand.execute(transformer) as any) + (this.rightOperand.execute(transformer) as any);
     }
 }

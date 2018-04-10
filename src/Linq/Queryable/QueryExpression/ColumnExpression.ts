@@ -1,16 +1,19 @@
 import { GenericType } from "../../../Common/Type";
 import { columnMetaKey } from "../../../Decorator/DecoratorKey";
-import { EntityMetaData } from "../../../MetaData/index";
+import { ColumnMetaData } from "../../../MetaData/index";
 import { QueryBuilder } from "../../QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
+import { ColumnType } from "../../../Common/ColumnType";
+import { IColumnOption } from "../../../Decorator/Option";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
-    public name: string;
     public type: GenericType<T>;
-    public dbType: string;
+    public propertyName: string;
+    public columnType: ColumnType;
+    public columnName: string;
+    public columnMetaData: IColumnOption<T>;
     public alias?: string;
-    public property: string;
     public entity: IEntityExpression<TE>;
     public isPrimary: boolean;
     public isShadow?: boolean;
@@ -18,7 +21,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     constructor(entity: IEntityExpression<TE>, propertyName: string, type: GenericType<T>, isPrimary?: boolean, isShadow?: boolean, alias?: string, name?: string);
     constructor(entity: IEntityExpression<TE>, propertyName: string, typeOrIsPrimary?: GenericType<T> | boolean, aliasOrIsPrimary?: string | boolean, isShadow?: boolean, alias?: string, name?: string) {
         this.entity = entity;
-        this.property = propertyName;
+        this.propertyName = propertyName;
         let isPrimary: boolean | undefined, type: GenericType | undefined;
         if (typeOrIsPrimary) {
             if (typeof typeOrIsPrimary === "boolean")
@@ -33,14 +36,16 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
                 isPrimary = aliasOrIsPrimary;
         }
         if (!type || !name) {
-            const metaData: EntityMetaData<T, any> = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.property);
+            const metaData: ColumnMetaData<T> = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
             if (metaData) {
                 type = metaData.type;
-                if (name === undefined) name = metaData.name;
+                this.columnMetaData = metaData;
+                this.columnType = metaData.columnType;
+                if (name === undefined) name = metaData.columnName;
             }
         }
 
-        this.name = name!;
+        this.columnName = name!;
         this.type = type!;
         this.isPrimary = isPrimary!;
         this.isShadow = isShadow;
@@ -53,8 +58,9 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         return this.toString(queryBuilder) as any;
     }
     public clone() {
-        const clone = new ColumnExpression(this.entity, this.property, this.type, this.isPrimary, this.isShadow, this.alias, this.name);
-        clone.dbType = clone.dbType;
+        const clone = new ColumnExpression(this.entity, this.propertyName, this.type, this.isPrimary, this.isShadow, this.alias, this.columnName);
+        clone.columnType = clone.columnType;
+        clone.columnName = clone.columnName;
         return clone;
     }
 }

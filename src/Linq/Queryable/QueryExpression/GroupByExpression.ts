@@ -7,14 +7,14 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
     public select: GroupedExpression<T, any>;
     constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], public readonly key: IExpression) {
-        super(select);
+        super(select.entity);
         let groupExp: GroupedExpression;
         if (select instanceof GroupedExpression) {
             groupExp = new GroupedExpression(select.select, select.key);
         }
         else {
-            const selectExp = new SelectExpression(select);
-            selectExp.columns = this.groupBy.slice();
+            const selectExp = new SelectExpression(select.entity);
+            selectExp.columns = this.groupBy.slice(0);
             groupExp = new GroupedExpression(select, key);
         }
         this.select = groupExp;

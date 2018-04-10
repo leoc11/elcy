@@ -8,7 +8,7 @@ export function DeleteColumn(name?: string, defaultValue?: boolean): PropertyDec
 export function DeleteColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
     const metadata = new BooleanColumnMetaData();
     if (typeof name === "string") {
-        metadata.name = name;
+        metadata.columnName = name;
         if (defaultValue !== undefined) metadata.default = defaultValue;
     }
     else if (name) metadata.applyOption(name);

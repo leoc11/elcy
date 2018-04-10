@@ -37,7 +37,6 @@ export abstract class Queryable<T = any> {
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             const commandQuery = this.buildQuery(queryBuilder);
-            queryBuilder.optimizeQueryExpression(commandQuery);
             queryStr = commandQuery.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(commandQuery);
             this.dbContext.setQueryChache(this.getHashCode(), queryStr, queryParser);
@@ -46,7 +45,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const queryResult = await this.dbContext.executeRawQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext);
     }
     public async count() {
@@ -69,7 +68,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async contains(item: T) {
@@ -92,7 +91,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async sum(selector?: (item: T) => number) {
@@ -122,7 +121,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async max(selector?: (item: T) => number) {
@@ -152,7 +151,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async min(selector?: (item: T) => number) {
@@ -171,9 +170,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, number>(selector, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "min", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -182,7 +181,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async avg(selector?: (item: T) => number): Promise<number> {
@@ -201,9 +200,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, number>(selector, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "avg", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -212,7 +211,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async all(predicate: (item: T) => boolean) {
@@ -228,9 +227,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "all", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -239,7 +238,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async any(predicate?: (item: T) => boolean) {
@@ -258,9 +257,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "any", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -269,7 +268,7 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
     public async first(predicate?: (item: T) => boolean): Promise<T> {
@@ -288,9 +287,9 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, this.type));
             }
             const methodExpression = new MethodCallExpression(expression.entity, "first", metParams);
-            const param = { parent: expression, type: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
-            expression = param.parent;
+            expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             this.dbContext.setQueryChache(key, queryStr, queryParser);
@@ -299,10 +298,10 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeRawQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr);
         return result.first().rows.first();
     }
-    public update(setter: {[key in keyof T]: T[key]}) {
+    public update(setter: { [key in keyof T]: T[key] }) {
         const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
         if (!entityMeta) {
             throw new Error(`Only entity typed supported`);

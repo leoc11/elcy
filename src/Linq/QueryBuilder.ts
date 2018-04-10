@@ -20,13 +20,13 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
-import { SelectExpression, IJoinRelation, IIncludeRelation } from "./Queryable/QueryExpression/SelectExpression";
+import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
-import { RelationType, JoinType } from "../Common/Type";
-import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
+import { JoinType } from "../Common/Type";
+import { StringColumnMetaData } from "../MetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -35,42 +35,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
     protected indent = 0;
-    public optimizeQueryExpression(commandQuery: ICommandQueryExpression) {
-        if (commandQuery instanceof SelectExpression) {
-            const select = commandQuery as SelectExpression;
-            select.includes = this.optimizeInclude(select);
-            for (const include of select.includes) {
-                this.optimizeQueryExpression(include.child);
-            }
-        }
-    }
-    private optimizeInclude(select: SelectExpression) {
-        let toManyIncludes: IIncludeRelation<any, any>[] = [];
-        for (const include of select.includes) {
-            if (include.type === RelationType.OneToMany) {
-                toManyIncludes.push(include);
-            }
-            else {
-                let columns = include.child.selects.splice(0);
-                select.selects = select.selects.concat(columns);
-                if (!select.joins.any(o => o.child.objectType === include.child.objectType)) {
-                    select.joins.add({
-                        child: include.child,
-                        parent: include.parent,
-                        relations: include.relations,
-                        type: JoinType.LEFT
-                    });
-                }
-                toManyIncludes = toManyIncludes.concat(this.optimizeInclude(include.child));
-            }
-        }
-        return toManyIncludes;
-    }
     public newAlias(type?: "entity" | "column") {
         return this.queryVisitor.newAlias(type);
     }
     public escape(identity: string) {
-        if (this.namingStrategy.enableEscape)
+        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
             return "[" + identity + "]";
         else
             return identity;
@@ -81,7 +50,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public getContainsString(expression: SelectExpression) {
         return "SELECT EXISTS (" + this.getExpressionString(expression) + ")";
     }
-
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {
             return this.getSelectQueryString(expression);
@@ -240,14 +208,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             if (column instanceof ComputedColumnExpression) {
                 return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias!);
             }
-            return this.escape(column.entity.alias) + "." + this.escape(column.property) + (column.alias ? " AS " + this.escape(column.alias) : "");
+            return this.escape(column.entity.alias) + "." + this.escape(column.columnName) + (column.alias ? " AS " + this.escape(column.alias) : "");
         }
-        return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
+        return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.columnName));
     }
-    protected getSelectQueryString(select: SelectExpression, isJoin = false): string {
-        if (isJoin && select.isSimple()) {
-            return this.getEntityQueryString(select.entity);
-        }
+    protected getSelectQueryString(select: SelectExpression): string {
         let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
             " " + select.selects.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
@@ -267,14 +232,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         // if has other includes, then convert to temp table
         if (select.includes.length > 0) {
-            const tempTableName = "temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
-            const tableStr = this.getCreateTempTableString(tempTableName, select.selects);
-            result = tableStr + ";" + this.newLine(0) + "INSERT INTO #" + tempTableName +
+            const tempTableName = "@temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
+            const tableStr = this.getDeclareTableVariableString(tempTableName, select.selects);
+            result = tableStr + ";" + this.newLine(0) + "INSERT INTO " + tempTableName +
                 this.newLine(0) + result + ";";
-            result += this.newLine(0) + "SELECT * FROM #" + tempTableName + ";";
+            result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
 
             const tempSelect = select.clone();
-            tempSelect.entity.name = "#" + tempTableName;
+            tempSelect.entity.name = tempTableName;
+            tempSelect.selects = tempSelect.entity.columns.slice(0);
             // render each include here
             for (const include of select.includes) {
                 // add join to temp table
@@ -293,28 +259,50 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result += this.newLine(0) + this.getSelectQueryString(include.child);
                 include.child.joins.remove(tempJoin);
             }
-
-            result += "Drop Table #" + tempTableName + ";";
         }
         return result;
     }
     protected getCreateTempTableString(name: string, columns: IColumnExpression[]) {
-        let result = "CREATE TABLE #" + name;
+        let result = "CREATE TABLE " + name;
         result += this.newLine() + "{";
         result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join(this.newLine(this.indent + 1));
         result += this.newLine() + "}";
         return result;
     }
+    protected getDeclareTableVariableString(name: string, columns: IColumnExpression[]) {
+        let result = "DECLARE " + name + "  TABLE";
+        result += this.newLine() + "(";
+        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join("," + this.newLine(this.indent + 1));
+        result += this.newLine() + ")";
+        return result;
+    }
     protected getColumnDeclarationString(column: IColumnExpression) {
-        const name = column.alias ? column.alias : column.property;
-        return name + " " + column.dbType;
+        let result = column.alias ? column.alias : column.columnName;
+        result += " " + column.columnType;
+        if (column instanceof ColumnExpression) {
+            if (column.columnType === column.columnMetaData.columnType) {
+                if (column.columnMetaData instanceof StringColumnMetaData) {
+                    if (column.columnMetaData.maxLength)
+                        result += "(" + column.columnMetaData.maxLength + ")";
+                }
+                if (typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
+                    result += " not null";
+                }
+            }
+        }
+        return result;
     }
     protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
         let result = "";
         if (joins.length > 0) {
             result += this.newLine();
             result += joins.select(o => {
-                let join = o.type + " JOIN (" + this.getSelectQueryString(o.child, true) + ")" +
+                let childEntString = "";
+                if (o.child.isSimple())
+                    childEntString = this.getEntityQueryString(o.child.entity);
+                else
+                    childEntString = "(" + this.getSelectQueryString(o.child) + ") AS " + o.child.entity.alias;
+                let join = o.type + " JOIN " + childEntString +
                     this.newLine(this.indent + 1) + "ON ";
 
                 const jstr: string[] = [];
