@@ -4,6 +4,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
@@ -33,6 +34,6 @@ export class WhereQueryable<T> extends Queryable<T> {
         return this.expression;
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-WH" + Array.from((this.predicateFn || this.predicate).toString()).sum((o) => o.charCodeAt(0));
+        return this.parent.getHashCode() + "WH(" + hashCode((this.predicateFn || this.predicate).toString()) + ")";
     }
 }

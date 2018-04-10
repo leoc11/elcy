@@ -19,6 +19,6 @@ export class ExceptQueryable<T> extends Queryable<T> {
         return this.expression as any;
     }
     public getHashCode(): string {
-        return this.parent.getHashCode() + "-EX-" + this.parent2.getHashCode();
+        return this.parent.getHashCode() + "EX(" + this.parent2.getHashCode() + ")";
     }
 }

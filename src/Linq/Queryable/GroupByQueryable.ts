@@ -5,6 +5,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     public expression: SelectExpression<GroupedEnumerable<T, K>>;
@@ -35,6 +36,6 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         return this.expression;
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-GB" + Array.from((this.keySelectorFn || this.keySelector).toString()).sum((o) => o.charCodeAt(0));
+        return this.parent.getHashCode() + "GB(" + hashCode((this.keySelectorFn || this.keySelector || "").toString()) + ")";
     }
 }

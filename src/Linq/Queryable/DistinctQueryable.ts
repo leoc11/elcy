@@ -4,6 +4,7 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class DistinctQueryable<T> extends Queryable<T> {
     protected readonly selectorFn?: (item: T) => any;
@@ -33,6 +34,6 @@ export class DistinctQueryable<T> extends Queryable<T> {
         return this.expression;
     }
     public getHashCode(): string {
-        return this.parent.getHashCode() + "-DI" + Array.from((this.selectorFn || this.selector || "").toString()).sum((c) => c.charCodeAt(0));
+        return this.parent.getHashCode() + "DI(" + hashCode((this.selectorFn || this.selector || "").toString()) + ")";
     }
 }

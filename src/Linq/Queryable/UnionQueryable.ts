@@ -20,6 +20,6 @@ export class UnionQueryable<T> extends Queryable<T> {
         return this.expression;
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-UN-" + this.parent2.getHashCode();
+        return this.parent.getHashCode() + "UN(" + this.parent2.getHashCode() + ")";
     }
 }

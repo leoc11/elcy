@@ -5,6 +5,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorFn: (item: T) => ValueType;
@@ -34,6 +35,6 @@ export class OrderQueryable<T> extends Queryable<T> {
         return this.expression as any;
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-OB" + Array.from((this.selectorFn || this.selector).toString()).sum((o) => o.charCodeAt(0));
+        return this.parent.getHashCode() + "OB(" + hashCode((this.selectorFn || this.selector).toString()) + ")";
     }
 }

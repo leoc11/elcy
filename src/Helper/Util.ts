@@ -18,3 +18,18 @@ export const fillZero = (value: number, factor = 2): string => {
     if (isNegative) value = Math.abs(value);
     return (isNegative ? "-" : "") + (("0").repeat(factor - 1) + value).slice(-factor);
 };
+/**
+ * 
+ * @param str source: http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+ */
+export const hashCode = (str: string) => {
+    let hash = 0;
+    if (str.length === 0)
+        return hash;
+    for (let i = 0; i < str.length; i++) {
+        const charCode = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + charCode;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};

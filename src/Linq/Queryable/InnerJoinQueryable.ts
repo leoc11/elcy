@@ -8,6 +8,6 @@ export class InnerJoinQueryable<T = any, T2 = any, K extends ValueType = any, R 
         super(JoinType.INNER, parent, parent2, keySelector1, keySelector2, resultSelector, type);
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-IJ-" + this.parent2.getHashCode();
+        return this.parent.getHashCode() + "IJ(" + this.parent2.getHashCode() + ")";
     }
 }

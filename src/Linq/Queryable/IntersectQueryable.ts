@@ -21,6 +21,6 @@ export class IntersectQueryable<T> extends Queryable<T> {
         return this.expression as any;
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-IN-" + this.parent2.getHashCode();
+        return this.parent.getHashCode() + "IN(" + this.parent2.getHashCode() + ")";
     }
 }

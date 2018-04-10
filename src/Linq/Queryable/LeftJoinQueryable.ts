@@ -8,6 +8,6 @@ export class LeftJoinQueryable<T = any, T2 = any, K extends ValueType = any, R =
         super(JoinType.LEFT, parent, parent2, keySelector1, keySelector2, resultSelector, type);
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-LJ-" + this.parent2.getHashCode();
+        return this.parent.getHashCode() + "LJ(" + this.parent2.getHashCode() + ")";
     }
 }

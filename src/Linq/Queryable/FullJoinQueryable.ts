@@ -8,6 +8,6 @@ export class FullJoinQueryable<T = any, T2 = any, K extends ValueType = any, R =
         super(JoinType.FULL, parent, parent2, keySelector1, keySelector2, resultSelector, type);
     }
     public getHashCode() {
-        return this.parent.getHashCode() + "-FJ-" + this.parent2.getHashCode();
+        return "FJ(" + this.parent.getHashCode() + "," + this.parent2.getHashCode() + ")";
     }
 }

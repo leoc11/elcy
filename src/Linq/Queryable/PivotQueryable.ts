@@ -6,6 +6,7 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IObjectType } from "../../Common/Type";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class PivotQueryable<T,
     TD extends FunctionExpression<T, any>,
@@ -54,8 +55,8 @@ export class PivotQueryable<T,
         return this.expression as any;
     }
     public getHashCode() {
-        let code = Array.from(JSON.stringify(this.dimensionFn) || this.dimensions.toString()).sum((p) => p.charCodeAt(0));
-        code += Array.from(JSON.stringify(this.metricFn) || this.metrics.toString()).sum((p) => p.charCodeAt(0));
-        return this.parent.getHashCode() + "-PV" + code;
+        const dcode = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());
+        const mcode = "," + hashCode(this.metricFn ? JSON.stringify(this.metricFn) : this.metrics.toString());
+        return this.parent.getHashCode() + "PV(" + dcode + "," + mcode + ")";
     }
 }

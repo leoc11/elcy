@@ -26,7 +26,9 @@ import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
 import { JoinType } from "../Common/Type";
-import { StringColumnMetaData } from "../MetaData";
+import { StringColumnMetaData, BooleanColumnMetaData } from "../MetaData";
+import { IColumnOption } from "../Decorator/Option";
+import { NumberColumn } from "../Decorator/Column";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -291,6 +293,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
         }
         return result;
+    }
+
+    protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T>) {
+        if (column instanceof StringColumnMetaData) {
+
+        }
     }
     protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
         let result = "";

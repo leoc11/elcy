@@ -5,6 +5,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
@@ -38,8 +39,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
         return this.expression as any;
     }
     public getHashCode(): string {
-        return this.parent.getHashCode() + "-IC" + ((this.selectorsFn || this.selectors) as any[])
-            .select((o) => Array.from(o.toString()).sum((c: string) => c.charCodeAt(0)))
-            .sum();
+        return this.parent.getHashCode() + "IC(" + ((this.selectorsFn || this.selectors) as any[])
+            .select((o) => hashCode(o.toString()))
+            .toArray().join(",") + ")";
     }
 }
