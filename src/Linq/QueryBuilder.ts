@@ -25,10 +25,16 @@ import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFuncti
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
-import { JoinType } from "../Common/Type";
-import { StringColumnMetaData, BooleanColumnMetaData } from "../MetaData";
+import { JoinType, ValueType, GenericType } from "../Common/Type";
+import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData } from "../MetaData";
 import { IColumnOption } from "../Decorator/Option";
-import { NumberColumn } from "../Decorator/Column";
+import { BinaryColumnMetaData } from "../MetaData/BinaryColumnMetaData";
+import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
+import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
+import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
+import { ColumnType, ColumnTypeMapKey } from "../Common/ColumnType";
+import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
+import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -280,25 +286,91 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getColumnDeclarationString(column: IColumnExpression) {
         let result = column.alias ? column.alias : column.columnName;
-        result += " " + column.columnType;
+        result += " " + this.getColumnType(column);
         if (column instanceof ColumnExpression) {
-            if (column.columnType === column.columnMetaData.columnType) {
-                if (column.columnMetaData instanceof StringColumnMetaData) {
-                    if (column.columnMetaData.maxLength)
-                        result += "(" + column.columnMetaData.maxLength + ")";
-                }
-                if (typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
-                    result += " not null";
-                }
+            if (typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
+                result += " not null";
             }
         }
         return result;
     }
-
-    protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T>) {
-        if (column instanceof StringColumnMetaData) {
-
+    protected abstract supportedColumnTypes: ColumnType[];
+    protected columnTypesWithOption: ColumnType[] = [];
+    protected columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>();
+    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>();
+    protected valueTypeMap = new Map<GenericType, ColumnType>();
+    protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T> | ValueType): string {
+        if ((column as IColumnExpression<T>).entity) {
+            const columnExp = column as ColumnExpression;
+            if (columnExp instanceof ColumnExpression && columnExp.columnType === columnExp.columnMetaData.columnType) {
+                return this.getColumnType(column);
+            }
+            return columnExp.columnType;
         }
+
+        let columnOption = column as IColumnOption<T>;
+        let type: ColumnType;
+        if (!(column as IColumnOption).type) {
+            type = this.valueTypeMap.get(column as any);
+        }
+        else {
+            columnOption = column as IColumnOption<T>;
+            if (!columnOption.columnType) {
+                return this.getColumnType(columnOption.type as any);
+            }
+            type = columnOption.columnType;
+            if (!this.supportedColumnTypes.contains(type)) {
+                if (this.columnTypeMap) {
+                    if (this.columnTypeMap.has(type))
+                        type = this.columnTypeMap.get(type);
+                    else if (this.columnTypeMap.has("defaultBinary") && columnOption instanceof StringColumnMetaData)
+                        type = this.columnTypeMap.get("defaultBinary");
+                    else if (this.columnTypeMap.has("defaultBoolean") && columnOption instanceof BooleanColumnMetaData)
+                        type = this.columnTypeMap.get("defaultBoolean");
+                    else if (this.columnTypeMap.has("defaultDataString") && columnOption instanceof StringDataColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDataString");
+                    else if (this.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDate");
+                    else if (this.columnTypeMap.has("defaultDecimal") && columnOption instanceof DecimalColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDecimal");
+                    else if (this.columnTypeMap.has("defaultEnum") && columnOption instanceof EnumColumnMetaData)
+                        type = this.columnTypeMap.get("defaultEnum");
+                    else if (this.columnTypeMap.has("defaultIdentifier") && columnOption instanceof IdentifierColumnMetaData)
+                        type = this.columnTypeMap.get("defaultIdentifier");
+                    else if (this.columnTypeMap.has("defaultNumberic") && columnOption instanceof NumericColumnMetaData)
+                        type = this.columnTypeMap.get("defaultNumberic");
+                    else if (this.columnTypeMap.has("defaultString") && columnOption instanceof StringColumnMetaData)
+                        type = this.columnTypeMap.get("defaultString");
+                    else if (this.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
+                        type = this.columnTypeMap.get("defaultTime");
+                    else if (this.columnTypeMap.has("defaultTimestamp") && columnOption instanceof TimestampColumnMetaData)
+                        type = this.columnTypeMap.get("defaultTimestamp");
+                    else
+                        throw new Error(`${type} is not supported`);
+                }
+            }
+        }
+        const typeDefault = this.columnTypeDefaults.get(columnOption.columnType);
+        const option = columnOption as any;
+        const size: number = typeof option.size === "undefined" ? option.size : typeDefault.size;
+        const scale: number = typeof option.size === "undefined" ? option.scale : typeDefault.scale;
+        const precision: number = typeof option.size === "undefined" ? option.precision : typeDefault.precision;
+        if (this.columnTypesWithOption.contains(type)) {
+            if (typeof size !== "undefined") {
+                if (columnOption instanceof StringColumnMetaData || columnOption instanceof NumericColumnMetaData
+                    || columnOption instanceof BinaryColumnMetaData)
+                    type += `(${size})`;
+            }
+            else if (typeof scale !== "undefined" && typeof precision !== "undefined") {
+                if (columnOption instanceof DecimalColumnMetaData)
+                    type += `(${columnOption.precision}, ${columnOption.scale})`;
+            }
+            else if (typeof precision !== "undefined") {
+                if (columnOption instanceof TimeColumnMetaData || columnOption instanceof DateColumnMetaData)
+                    type += `(${precision})`;
+            }
+        }
+        return type;
     }
     protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
         let result = "";
@@ -579,12 +651,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 }
                 break;
-            // case Symbol:
-            //     switch (expression.methodName) {
-            //         case "toString":
-            //             break;
-            //     }
-            //     break;
+            case Symbol:
+                switch (expression.methodName) {
+                    case "toString":
+                        break;
+                }
+                break;
             case Boolean:
                 switch (expression.methodName) {
                     case "toString":
@@ -765,7 +837,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getFunctionExpressionString<T>(expression: FunctionExpression<T>): string {
         throw new Error(`Function not supported`);
     }
-
     protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
         return "(" + this.newLine(++this.indent) + "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") " + this.newLine() + "THEN " + this.getExpressionString(expression.trueResultOperand) + this.newLine() + "ELSE " + this.getExpressionString(expression.falseResultOperand) + this.newLine() + "END" + this.newLine(--this.indent) + ")";
     }
@@ -775,7 +846,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getArrayValueExpressionString<T>(expression: ArrayValueExpression<T>): string {
         throw new Error(`ArrayValue not supported`);
     }
-
     protected getDivisionExpressionString(expression: DivisionExpression): string {
         return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
@@ -818,7 +888,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getTimesExpressionString(expression: TimesExpression): string {
         return this.getOperandString(expression.leftOperand) + " * " + this.getOperandString(expression.rightOperand);
     }
-
     protected getAdditionExpressionString<T extends string | number>(expression: AdditionExpression<T>): string {
         if (expression.type as any === String)
             return "CONCAT(" + this.getOperandString(expression.leftOperand) + ", " + this.getOperandString(expression.rightOperand) + ")";
@@ -839,11 +908,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getAndExpressionString(expression: AndExpression): string {
         return this.getOperandString(expression.leftOperand) + " AND " + this.getOperandString(expression.rightOperand);
     }
-    // tslint:disable-next-line:variable-name
     protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
         throw new Error(`LeftDecrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
@@ -853,15 +920,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return operandString + " <> 1";
         return "NOT " + operandString;
     }
-    // tslint:disable-next-line:variable-name
     protected getRightDecrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightDecrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getRightIncrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightIncrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getTypeofExpressionString(_expression: TypeofExpression): string {
         throw new Error(`Typeof not supported`);
     }
@@ -880,15 +944,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " ^ " + this.getOperandString(expression.rightOperand);
     }
     // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
-    // tslint:disable-next-line:variable-name
     protected getBitwiseSignedRightShiftExpressionString(_expression: BitwiseSignedRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getBitwiseZeroRightShiftExpressionString(_expression: BitwiseZeroRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }

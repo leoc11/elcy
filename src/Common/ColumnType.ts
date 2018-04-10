@@ -1,3 +1,5 @@
+import { ValueType } from "./Type";
+
 /**
  * int Column types with length
  */
@@ -34,13 +36,24 @@ export type DecimalColumnType = "float" // mysql, mssql, oracle, sqlite
     | "smallmoney" // mssql
     | "money"; // postgres, mssql
 
+/**
+ * Time column types
+ */
+export type TimeColumnType = "time" // mysql, postgres, mssql
+    | "time with time zone" // postgres
+    | "time without time zone" // postgres
+    | "datetimeoffset" // mssql
+    | "interval year" // oracle
+    | "interval day" // oracle
+    | "interval"; // postgres
+
+/**
+ * Date column types
+ */
 export type DateColumnType = "datetime" // mssql, mysql, sqlite
     | "datetime2" // mssql
     | "smalldatetime" // mssql
     | "date" // mysql, postgres, mssql, oracle, sqlite
-    | "time" // mysql, postgres, mssql
-    | "time with time zone" // postgres
-    | "time without time zone" // postgres
     | "datetimeoffset" // mssql
     | "interval year" // oracle
     | "interval day" // oracle
@@ -87,11 +100,7 @@ export type TextColumnType = "tinytext" // mysql
     | "text" // mysql, postgres, mssql, sqlite
     | "ntext" // mssql
     | "longtext" // mysql
-    | "citext" // postgres
-    | "nvarchar" // mssql
-    | "varchar" // mysql, postgres, mssql, sqlite
-    | "varchar2" // oracle
-    | "nvarchar2"; // oracle, sqlite
+    | "citext"; // postgres
 
 /**
  * Boolean column types
@@ -100,6 +109,9 @@ export type BooleanColumnType = "bit" // mssql
     | "boolean" // postgres, sqlite
     | "bool"; // postgres
 
+/**
+ * Geometric column types
+ */
 export type GeometricColumnType = "point" // postgres
     | "line" // postgres
     | "lseg" // postgres
@@ -146,6 +158,7 @@ export type OtherColumnType = "rowid" // oracle
 export type ColumnType = IntColumnType
     | DecimalColumnType
     | DateColumnType
+    | TimeColumnType
     | TimestampColumnType
     | BinaryColumnType
     | StringColumnType
@@ -156,3 +169,7 @@ export type ColumnType = IntColumnType
     | DataStringColumnType
     | EnumColumnType
     | OtherColumnType;
+
+export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
+    | "defaultDecimal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
+    | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultTimestamp";

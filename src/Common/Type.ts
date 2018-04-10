@@ -1,9 +1,10 @@
+import { TimeSpan } from "./TimeSpan";
+
 export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
-// tslint:disable-next-line:ban-types
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
-export type ValueType = number | string | Date;
+export type ValueType = number | string | Date | TimeSpan;
 export const ClassBase = Object.getPrototypeOf(Function);
 export enum DateTimeKind {
     UTC,

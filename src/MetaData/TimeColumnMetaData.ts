@@ -1,8 +1,9 @@
-import { DateColumnType } from "../Common/ColumnType";
+import { TimeColumnType } from "../Common/ColumnType";
 import { DateTimeKind } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
-export class DateColumnMetaData extends ColumnMetaData<Date> {
-    public columnType: DateColumnType = "datetime";
+import { TimeSpan } from "../Common/TimeSpan";
+export class TimeColumnMetaData extends ColumnMetaData<TimeSpan> {
+    public columnType: TimeColumnType = "time";
     public precision?: number;
     public dateTimeKind = DateTimeKind.UTC;
     /*
@@ -10,6 +11,6 @@ export class DateColumnMetaData extends ColumnMetaData<Date> {
     */
     public timezoneOffset: number;
     constructor() {
-        super(Date);
+        super(TimeSpan);
     }
 }
