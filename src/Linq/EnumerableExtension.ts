@@ -29,7 +29,7 @@ declare global {
         leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        union(array2: T[], all: boolean): Enumerable<T>;
+        union(array2: T[], all?: boolean): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
          */

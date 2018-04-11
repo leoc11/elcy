@@ -10,17 +10,8 @@ import { GenericType, RelationType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
-import { MasterRelationMetaData } from "../../MetaData/Relation";
+import { DbSet } from "../../Linq/DbSet";
 
-export interface IColumnParserData<T = any> {
-    column: IColumnExpression<T>;
-    index: number;
-}
-export interface IGroupedColumnParser {
-    entity: IEntityExpression;
-    primaryColumns: IColumnParserData[];
-    columns: IColumnParserData[];
-}
 export class PlainObjectQueryResultParser<T extends EntityBase> implements IQueryResultParser<T> {
     constructor(protected readonly queryExpression: SelectExpression<T>) {
 
@@ -32,16 +23,31 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         const results: T[] = [];
         const queryResult = queryResults.shift();
         const dbSet = dbContext.set(select.objectType as any);
-        const primaryColumns = select.selects.where(o => o.isPrimary);
+        const primaryColumns = select.projectedColumns.where(o => o.isPrimary);
         const columns = select.selects.where(o => !o.isPrimary);
+
+        const relation = select.parentRelation as IIncludeRelation<any, T>;
+        let parentSet: DbSet<any>;
+        let relationMeta: IRelationMetaData<any, any>;
+        let reverseRelationMeta: IRelationMetaData<any, any>;
+
+        if (relation && (relation as IIncludeRelation<any, T>).name) {
+            relationMeta = Reflect.getOwnMetadata(relationMetaKey, relation.parent.objectType, relation.name);
+            if (relationMeta) {
+                parentSet = dbContext.set(relation.parent.objectType as any);
+                if (relationMeta.reverseProperty)
+                    reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, select.objectType, relationMeta.reverseProperty);
+            }
+        }
+
         for (const row of queryResult.rows) {
             let entity = new (select.objectType as any)();
             const entityKey: { [key: string]: any } = {};
             for (const primaryCol of primaryColumns) {
-                const columnName = primaryCol.alias ? primaryCol.alias : primaryCol.columnName;
-                const prop = primaryCol.alias ? primaryCol.alias : primaryCol.propertyName;
+                const columnName = primaryCol.columnName;
+                const prop = primaryCol.propertyName;
                 entityKey[prop] = this.convertTo(row[columnName], primaryCol);
-                if (!primaryCol.isShadow)
+                if (select.selects.contains(primaryCol))
                     entity[prop] = entityKey[prop];
             }
             let isSkipPopulateEntityData = false;
@@ -49,14 +55,13 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 const existing = dbSet.entry(row);
                 if (existing) {
                     entity = existing.entity;
-                    if (existing.loadTime < loadTime) {
+                    if (existing.loadTime < loadTime)
                         existing.loadTime = loadTime;
-                    }
                     else
                         isSkipPopulateEntityData = existing.isCompletelyLoaded;
                 }
                 else {
-                    dbSet.attach(entity, { loadTime: loadTime, isCompletelyLoaded: select.selects.length >= select.entity.columns.length });
+                    dbSet.attach(entity, { loadTime: loadTime });
                 }
             }
             else if (Object.keys(entityKey).length > 0) {
@@ -68,7 +73,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
 
                 if (Object.keys(entityKey).length > 0) {
                     const objHash = hashCode(JSON.stringify(entityKey));
-                    const existing = existings ? existings.get(objHash) : undefined;
+                    const existing = existings.get(objHash);
                     if (existing) {
                         entity = existing;
                     }
@@ -80,52 +85,46 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
 
             if (!isSkipPopulateEntityData) {
                 if (isValue(entity)) {
-                    const column = select.selects.first(o => !o.isShadow);
-                    const columnName = column.alias ? column.alias : column.columnName;
-                    entity = this.convertTo(row[columnName], column);
+                    const column = select.selects.first();
+                    entity = this.convertTo(row[column.columnName], column);
                 }
                 else {
                     for (const column of columns) {
-                        const columnName = column.alias ? column.alias : column.columnName;
-                        const prop = column.alias ? column.alias : column.propertyName;
-                        entity[prop] = this.convertTo(row[columnName], column);
+                        entity[column.propertyName] = this.convertTo(row[column.columnName], column);
                     }
                 }
-                if (select.parentRelation && (select.parentRelation as IIncludeRelation<any, T>).name) {
-                    const relation = select.parentRelation as IIncludeRelation<any, T>;
-                    let relationMeta: IRelationMetaData<any, any> = select.entity.type !== Object ? Reflect.getOwnMetadata(relationMetaKey, relation.parent.objectType, relation.name) : undefined;
-                    if (relationMeta && relationMeta.reverseProperty) {
-                        const parentSet = dbContext.set(relation.parent.objectType as any);
-                        let parentEntity: any = null;
-                        if (parentSet) {
-                            const a: any = {};
-                            for (const [parentCol, childCol] of relation.relations) {
-                                a[parentCol.propertyName] = entity[childCol.propertyName];
-                            }
-                            parentEntity = parentSet.findLocal(a);
+
+                // set navigation property
+                if (relationMeta) {
+                    let parentEntity: any = null;
+                    if (parentSet) {
+                        const a: any = {};
+                        for (const [parentCol, childCol] of relation.relations) {
+                            a[parentCol.propertyName] = entity[childCol.propertyName];
                         }
-                        if (parentEntity != null) {
-                            if (relationMeta.relationType === RelationType.OneToOne) {
-                                (parentEntity as any)[relation.name as any] = entity;
+                        parentEntity = parentSet.findLocal(a);
+                    }
+                    if (parentEntity) {
+                        if (relationMeta.relationType === RelationType.OneToOne) {
+                            parentEntity[relation.name as any] = entity;
+                        }
+                        else {
+                            if (!parentEntity[relation.name]) {
+                                parentEntity[relation.name] = [];
                             }
-                            else {
-                                if (!parentEntity[relation.name]) {
-                                    parentEntity[relation.name] = [];
-                                }
-                                parentEntity[relation.name].add(entity);
+                            parentEntity[relation.name].add(entity);
+                        }
+                    }
+                    if (reverseRelationMeta) {
+                        if (reverseRelationMeta.relationType === RelationType.OneToOne) {
+                            entity[relationMeta.reverseProperty] = parentEntity;
+                        }
+                        else {
+                            if (!entity[relationMeta.reverseProperty]) {
+                                entity[relationMeta.reverseProperty] = [];
                             }
-                            const reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, entity.constructor, relationMeta.reverseProperty);
-                            if (reverseRelationMeta) {
-                                if (reverseRelationMeta.relationType === RelationType.OneToOne) {
-                                    entity[relationMeta.reverseProperty] = parentEntity;
-                                }
-                                else {
-                                    if (!entity[relationMeta.reverseProperty]) {
-                                        entity[relationMeta.reverseProperty] = [];
-                                    }
-                                    entity[relationMeta.reverseProperty].add(parentEntity);
-                                }
-                            }
+                            if (parentEntity)
+                                entity[relationMeta.reverseProperty].add(parentEntity);
                         }
                     }
                 }
@@ -137,16 +136,23 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         }
         return results;
     }
-    private convertTo<T>(input: string, column: IColumnExpression<T>): T {
+    private convertTo<T>(input: any, column: IColumnExpression<T>): any {
         switch (column.type) {
             case Boolean:
-                return (input === "1") as any;
+                return input;
             case Number:
-                return Number.parseFloat(input) as any;
+                let result = Number.parseFloat(input);
+                if (isFinite(result))
+                    return result;
+                else {
+                    if (column.columnMetaData && column.columnMetaData.nullable)
+                        return null;
+                    return 0;
+                }
             case String:
-                return input as any;
+                return input;
             case Date:
-                return new Date(input) as any;
+                return new Date(input);
             case TimeSpan:
                 return new TimeSpan(Number.parseFloat(input)) as any;
             default:

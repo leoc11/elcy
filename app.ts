@@ -22,9 +22,10 @@ import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQue
 const db = new MyDb();
 (async () => {
     const param = new ParameterExpression("o", Order);
+
+    const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
+    const a = await projection.toArray();
+
     const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
     const c = await include.toArray();
-    console.log(db.orders.local.count());
-    const d = await include.toArray();
-    console.log(db.orders.local.count());
 })();

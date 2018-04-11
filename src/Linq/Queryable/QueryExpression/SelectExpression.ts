@@ -6,6 +6,7 @@ import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../../MetaData/Interface/IRelationMetaData";
+import { Enumerable } from "../../Enumerable/Enumerable";
 export interface IIncludeRelation<T, TChild> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -43,6 +44,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.selects = entity.columns.slice(0);
         this.isSelectAll = true;
         entity.select = this;
+    }
+    public get projectedColumns(): Enumerable<IColumnExpression<T>> {
+        return this.entity.primaryColumns.union(this.selects);
     }
     public addWhere(expression: IExpression<boolean>) {
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
@@ -121,7 +125,14 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public clone(): SelectExpression<T> {
         const clone = new SelectExpression(this.entity.clone());
         clone.objectType = this.objectType;
-        clone.selects = this.selects.slice(0);
+        clone.selects = this.selects.select(o => {
+            let col = clone.entity.columns.first(c => c.columnName === o.columnName);
+            if (!col) {
+                col = o.clone();
+                col.entity = clone.entity;
+            }
+            return col;
+        }).toArray();
         clone.isSelectAll = this.isSelectAll;
         return clone;
     }
@@ -131,11 +142,12 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
     }
-    public removeDefaultColumns() {
+    public clearDefaultColumns() {
         if (this.isSelectAll) {
             this.isSelectAll = false;
             for (const column of this.entity.columns)
-                this.selects.remove(column);
+                if (!column.isPrimary)
+                    this.selects.remove(column);
         }
     }
     public isSimple() {

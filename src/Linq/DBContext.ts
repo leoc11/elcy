@@ -24,10 +24,10 @@ export abstract class DbContext {
 
         return this._queryCacheManager;
     }
-    public getQueryChache<T>(key: string): Promise<QueryCache<T> | undefined> {
+    public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
         return this.queryCacheManager.get<T>(this.constructor as any, key);
     }
-    public setQueryChache<T>(key: string, query: string, queryParser: IQueryResultParser<T>): Promise<void> {
+    public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>): Promise<void> {
         return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser);
     }
     public abstract async executeQuery(query: string): Promise<IQueryResult[]>;

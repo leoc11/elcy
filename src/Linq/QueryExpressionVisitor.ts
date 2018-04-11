@@ -158,7 +158,7 @@ export class QueryExpressionVisitor {
                     case "include":
                         if (parentEntity.select) {
                             if (!(column instanceof ComputedColumnExpression)) {
-                                parentEntity.select.removeDefaultColumns();
+                                parentEntity.select.clearDefaultColumns();
                             }
                         }
                         break;
@@ -178,10 +178,7 @@ export class QueryExpressionVisitor {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
                             if (relationMeta.relationType === RelationType.OneToMany && param.scope === "select") {
                                 param.commandExpression.objectType = Array;
-                                param.commandExpression.selects = param.commandExpression.entity.primaryColumns.select((o) => {
-                                    o.isShadow = true;
-                                    return o;
-                                }).toArray();
+                                param.commandExpression.selects = [];
 
                                 param.commandExpression.addInclude(relationMeta.foreignKeyName, child, relationMeta);
                                 return child;
@@ -487,8 +484,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
-                                keyObject[prop] = childCol;
+                                keyObject[childCol.propertyName] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
                             const groupExp = new GroupByExpression(selectOperand, colGroups, key);
@@ -547,8 +543,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
-                                keyObject[prop] = childCol;
+                                keyObject[childCol.propertyName] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
                             const groupExp = new GroupByExpression(selectOperand, colGroups, key);
@@ -666,8 +661,7 @@ export class QueryExpressionVisitor {
                             const keyObject: { [key: string]: IExpression } = {};
                             for (const [, childCol] of parentRelation.relations) {
                                 colGroups.add(childCol);
-                                const prop = childCol.alias ? childCol.alias : childCol.propertyName;
-                                keyObject[prop] = childCol;
+                                keyObject[childCol.propertyName] = childCol;
                             }
                             const key = new ObjectValueExpression(keyObject);
                             const groupExp = new GroupByExpression(selectOperand, colGroups, key);

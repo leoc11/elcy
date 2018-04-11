@@ -4,6 +4,6 @@ import { IObjectType } from "../Common/Type";
 import { DbContext } from "../Linq/DBContext";
 
 export interface IQueryCacheManager {
-    get<T>(type: IObjectType<DbContext>, key: string): Promise<QueryCache<T> | undefined>;
-    set<T>(type: IObjectType<DbContext>, key: string, query: string, queryas: IQueryResultParser<T>): Promise<void>;
+    get<T>(type: IObjectType<DbContext>, key: number): Promise<QueryCache<T> | undefined>;
+    set<T>(type: IObjectType<DbContext>, key: number, query: string, queryas: IQueryResultParser<T>): Promise<void>;
 }

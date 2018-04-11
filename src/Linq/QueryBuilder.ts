@@ -35,6 +35,7 @@ import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
 import { ColumnType, ColumnTypeMapKey } from "../Common/ColumnType";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
+import { Enumerable } from "./Enumerable/Enumerable";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -214,15 +215,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnString(column: IColumnExpression, isSelect = false) {
         if (isSelect) {
             if (column instanceof ComputedColumnExpression) {
-                return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias!);
+                return this.getExpressionString(column.expression) + " AS " + this.escape(column.columnName);
             }
-            return this.escape(column.entity.alias) + "." + this.escape(column.columnName) + (column.alias ? " AS " + this.escape(column.alias) : "");
+            return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
         }
-        return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.columnName));
+        return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
     }
     protected getSelectQueryString(select: SelectExpression): string {
         let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-            " " + select.selects.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
+            " " + select.projectedColumns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
             this.getEntityJoinString(select.entity, select.joins);
         if (select.where)
@@ -241,12 +242,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         // if has other includes, then convert to temp table
         if (select.includes.length > 0) {
             const tempTableName = "@temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
-            const tableStr = this.getDeclareTableVariableString(tempTableName, select.selects);
+            const tableStr = this.getDeclareTableVariableString(tempTableName, select.projectedColumns);
             result = tableStr + ";" + this.newLine(0) + "INSERT INTO " + tempTableName +
                 this.newLine(0) + result + ";";
             result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
 
-            const tempSelect = select.clone();
+            const tempSelect = select.clone(true);
             tempSelect.entity.name = tempTableName;
             tempSelect.selects = tempSelect.entity.columns.slice(0);
             // render each include here
@@ -270,14 +271,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    protected getCreateTempTableString(name: string, columns: IColumnExpression[]) {
+    protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "CREATE TABLE " + name;
         result += this.newLine() + "{";
         result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join(this.newLine(this.indent + 1));
         result += this.newLine() + "}";
         return result;
     }
-    protected getDeclareTableVariableString(name: string, columns: IColumnExpression[]) {
+    protected getDeclareTableVariableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "DECLARE " + name + "  TABLE";
         result += this.newLine() + "(";
         result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join("," + this.newLine(this.indent + 1));
@@ -285,7 +286,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     protected getColumnDeclarationString(column: IColumnExpression) {
-        let result = column.alias ? column.alias : column.columnName;
+        let result = column.columnName;
         result += " " + this.getColumnType(column);
         if (column instanceof ColumnExpression) {
             if (typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
