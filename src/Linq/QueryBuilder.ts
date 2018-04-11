@@ -303,7 +303,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if ((column as IColumnExpression<T>).entity) {
             const columnExp = column as ColumnExpression;
             if (columnExp instanceof ColumnExpression && columnExp.columnType === columnExp.columnMetaData.columnType) {
-                return this.getColumnType(column);
+                return this.getColumnType(columnExp.columnMetaData);
             }
             return columnExp.columnType;
         }

@@ -4,4 +4,5 @@ export interface IEntityEntry<T> extends IEntityEntryOption {
 
 export interface IEntityEntryOption {
     loadTime: Date;
+    isCompletelyLoaded: boolean;
 }

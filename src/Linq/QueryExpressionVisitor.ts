@@ -27,7 +27,6 @@ import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
     IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IIncludeRelation
 } from "./Queryable/QueryExpression/index";
-import "./Queryable/QueryExpression/JoinEntityExpression.partial";
 import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
 
@@ -200,7 +199,7 @@ export class QueryExpressionVisitor {
                     case "include":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
-                            parentEntity.select!.addInclude(relationMeta.foreignKeyName, child, relationMeta);
+                            parentEntity.select!.addInclude(expression.memberName as any, child, relationMeta);
                             return relationMeta.relationType === RelationType.OneToMany ? child : child.entity;
                         }
                     default:

@@ -65,7 +65,7 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
     }
     public attach(entity: T, option?: IEntityEntryOption): T {
         const key = this.getMapKey(entity as any);
-        if (!option) option = { loadTime: new Date() };
+        if (!option) option = { loadTime: new Date(), isCompletelyLoaded: false };
         let entry = this.entry(key) as IEntityEntry<T>;
         if (entry) {
             Object.keys(entity).map((prop: keyof T) => {

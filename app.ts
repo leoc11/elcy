@@ -19,53 +19,12 @@ import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQue
 // // // tslint:disable-next-line:no-console
 // // console.log(result);
 
-const db = new MyDb({});
-const param = new ParameterExpression("o", db.orderDetails.type);
-const a = new SelectQueryable(db.orderDetails, new FunctionExpression(new ObjectValueExpression({
-    O: new MemberAccessExpression(param, "Order"),
-    O1: new MemberAccessExpression(param, "Order")
-}), [param]));
-const dummyDatas = [
-    ["orderid1", "10000", "2018-01-01 00:00:00", "orderid1", "10000", "2018-01-01 00:00:00"],
-    ["orderid1", "10000", "2018-01-01 00:00:00", "orderid1", "10000", "2018-01-01 00:00:00"],
-    ["orderid2", "10000", "2018-01-01 00:00:00", "orderid2", "10000", "2018-01-01 00:00:00"],
-    ["orderid1", "10000", "2018-01-01 00:00:00", "orderid1", "10000", "2018-01-01 00:00:00"],
-];
-const c = a.buildQuery(a.queryBuilder);
-const parser = new ArrayQueryResultParser((c instanceof GroupByExpression ? c.groupBy : []).concat(c.columns), db);
-const res = parser.parse(dummyDatas);
-const util = require("util");
-let result = util.inspect(res, false, null);
-// result = result.replace(/\s+/g, " ");
-console.log(result);
-// const a = db.orderDetails;
-// const param = new ParameterExpression("o", db.orderDetails.type);
-// const b = new GroupByQueryable(a, new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "OrderDate"), [param]));
-// const param1 = new ParameterExpression("o", GroupedExpression as any);
-// const c1 = new SelectQueryable(b, new FunctionExpression(new ObjectValueExpression({
-//     date: new MemberAccessExpression(param1, "key"),
-//     count: new MethodCallExpression(param1, "count", []),
-//     avg: new MethodCallExpression(param1, "avg", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-//     max: new MethodCallExpression(param1, "max", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-//     min: new MethodCallExpression(param1, "min", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])]),
-//     sum: new MethodCallExpression(param1, "sum", [new FunctionExpression(new MemberAccessExpression(new MemberAccessExpression(param, "Order"), "Total"), [param])])
-// }), [param1]));
-// const dummyDatas = [
-//     ["2018-01-01", "1", "1", "1", "1", "1"],
-//     ["2018-01-01", "1", "1", "1", "1", "1"],
-//     ["2018-01-01", "2", "6", "10", "2", "12"],
-//     ["2018-01-01", "2", "6", "10", "2", "12"]
-// ];
-// const c = c1.buildQuery(c1.queryBuilder);
-// const parser = new ArrayQueryResultParser(c.columns, db);
-// const res = parser.parse(dummyDatas);
-// console.log(JSON.stringify(res));
-
-
-// const param = new ParameterExpression("o", db.orderDetails.type);
-// let a = new SelectQueryable(db.orderDetails, new FunctionExpression(new MemberAccessExpression(param, "Order"), [param]));
-// a.toString();
-// const w = new WhereQueryable(db.orderDetails, new FunctionExpression(new NotExpression(new MemberAccessExpression(param, "isDeleted")), [param]));
-// a = new SelectQueryable(w, new FunctionExpression(new MemberAccessExpression(param, "Order"), [param]));
-// console.log(a.toString());
-// debugger;
+const db = new MyDb();
+(async () => {
+    const param = new ParameterExpression("o", Order);
+    const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
+    const c = await include.toArray();
+    console.log(db.orders.local.count());
+    const d = await include.toArray();
+    console.log(db.orders.local.count());
+})();
