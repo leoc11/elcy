@@ -34,7 +34,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
         }
         return this.expression as any;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "SM(" + hashCode((this.selectorFn || this.selector).toString()) + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("SELECTMANY") + hashCode((this.selectorFn || this.selector).toString());
     }
 }

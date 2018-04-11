@@ -33,7 +33,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         const queryResult = queryResults.shift();
         const dbSet = dbContext.set(select.objectType as any);
         const primaryColumns = select.selects.where(o => o.isPrimary);
-        const columns = select.selects.where(o => !o.isPrimary && !o.isShadow);
+        const columns = select.selects.where(o => !o.isPrimary);
         for (const row of queryResult.rows) {
             let entity = new (select.objectType as any)();
             const entityKey: { [key: string]: any } = {};

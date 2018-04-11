@@ -54,9 +54,9 @@ export class PivotQueryable<T,
         }
         return this.expression as any;
     }
-    public getHashCode() {
-        const dcode = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());
-        const mcode = "," + hashCode(this.metricFn ? JSON.stringify(this.metricFn) : this.metrics.toString());
-        return this.parent.getHashCode() + "PV(" + dcode + "," + mcode + ")";
+    public hashCode() {
+        let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());
+        code += hashCode(this.metricFn ? JSON.stringify(this.metricFn) : this.metrics.toString());
+        return this.parent.hashCode() + hashCode("PIVOT") + code;
     }
 }

@@ -3,6 +3,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class ExceptQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
@@ -18,7 +19,7 @@ export class ExceptQueryable<T> extends Queryable<T> {
         }
         return this.expression as any;
     }
-    public getHashCode(): string {
-        return this.parent.getHashCode() + "EX(" + this.parent2.getHashCode() + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("EXCLUDE") + this.parent2.hashCode();
     }
 }

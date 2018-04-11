@@ -33,7 +33,7 @@ export class DistinctQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
-    public getHashCode(): string {
-        return this.parent.getHashCode() + "DI(" + hashCode((this.selectorFn || this.selector || "").toString()) + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("DISTINCT") + hashCode((this.selectorFn || this.selector || "").toString());
     }
 }

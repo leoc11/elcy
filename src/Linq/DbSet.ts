@@ -6,7 +6,7 @@ import "./Queryable/Queryable.partial";
 import { ICommandQueryExpression } from "./Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "./Queryable/QueryExpression/index";
 import { QueryBuilder } from "./QueryBuilder";
-import { isValueType } from "../Helper/Util";
+import { isValueType, hashCode } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "./Enumerable/Enumerable";
@@ -44,8 +44,8 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
         const q = this.queryBuilder;
         return this.buildQuery(q).toString(q);
     }
-    public getHashCode(): string {
-        return this.type.name!;
+    public hashCode() {
+        return hashCode(this.type.name!);
     }
     public get local(): Enumerable<T> {
         return new Enumerable(this.localCache);

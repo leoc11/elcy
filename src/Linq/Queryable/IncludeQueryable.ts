@@ -38,9 +38,9 @@ export class IncludeQueryable<T> extends Queryable<T> {
         }
         return this.expression as any;
     }
-    public getHashCode(): string {
-        return this.parent.getHashCode() + "IC(" + ((this.selectorsFn || this.selectors) as any[])
+    public hashCode(): number {
+        return this.parent.hashCode() + hashCode("INCLUDE") + ((this.selectorsFn || this.selectors) as any[])
             .select((o) => hashCode(o.toString()))
-            .toArray().join(",") + ")";
+            .sum();
     }
 }

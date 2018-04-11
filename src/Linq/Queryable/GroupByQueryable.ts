@@ -35,7 +35,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         }
         return this.expression;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "GB(" + hashCode((this.keySelectorFn || this.keySelector || "").toString()) + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("GROUPBY") + hashCode((this.keySelectorFn || this.keySelector || "").toString()));
     }
 }

@@ -33,7 +33,7 @@ export class WhereQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "WH(" + hashCode((this.predicateFn || this.predicate).toString()) + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("WHERE") + hashCode((this.predicateFn || this.predicate).toString());
     }
 }

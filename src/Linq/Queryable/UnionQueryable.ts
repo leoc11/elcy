@@ -3,6 +3,7 @@ import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class UnionQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
@@ -19,7 +20,7 @@ export class UnionQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "UN(" + this.parent2.getHashCode() + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("UNION") + this.parent2.hashCode();
     }
 }

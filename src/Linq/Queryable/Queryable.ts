@@ -26,12 +26,12 @@ export abstract class Queryable<T = any> {
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
         return this.expression;
     }
-    public abstract getHashCode(): string;
+    public abstract hashCode(): number;
     public toString() {
         return this.buildQuery(this.queryBuilder).toString(this.queryBuilder);
     }
     public async toArray(): Promise<T[]> {
-        const queryCache = await this.dbContext.getQueryChache<T>(this.getHashCode());
+        const queryCache = await this.dbContext.getQueryChache<T>(this.hashCode());
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
         if (!queryCache) {
@@ -39,7 +39,7 @@ export abstract class Queryable<T = any> {
             const commandQuery = this.buildQuery(queryBuilder);
             queryStr = commandQuery.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(commandQuery);
-            this.dbContext.setQueryChache(this.getHashCode(), queryStr, queryParser);
+            this.dbContext.setQueryChache(this.hashCode(), queryStr, queryParser);
         }
         else {
             queryParser = queryCache.queryParser;
@@ -49,7 +49,7 @@ export abstract class Queryable<T = any> {
         return queryParser.parse(queryResult, this.dbContext);
     }
     public async count() {
-        let key = this.getHashCode() + "-CN";
+        let key = this.hashCode() + "-CN";
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
@@ -72,7 +72,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async contains(item: T) {
-        let key = this.getHashCode() + "-CT" + Array.from(JSON.stringify(item)).sum((o) => o.charCodeAt(0));
+        let key = this.hashCode() + "-CT" + Array.from(JSON.stringify(item)).sum((o) => o.charCodeAt(0));
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
@@ -95,7 +95,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async sum(selector?: (item: T) => number) {
-        let key = this.getHashCode() + "-SUM";
+        let key = this.hashCode() + "-SUM";
         if (selector)
             key += Array.from(selector.toString()).sum((o) => o.charCodeAt(0));
 
@@ -125,7 +125,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async max(selector?: (item: T) => number) {
-        let key = this.getHashCode() + "-MX";
+        let key = this.hashCode() + "-MX";
         if (selector)
             key += Array.from(selector.toString()).sum((o) => o.charCodeAt(0));
 
@@ -155,7 +155,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async min(selector?: (item: T) => number) {
-        let key = this.getHashCode() + "-MN";
+        let key = this.hashCode() + "-MN";
         if (selector)
             key += Array.from(selector.toString()).sum((o) => o.charCodeAt(0));
 
@@ -185,7 +185,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async avg(selector?: (item: T) => number): Promise<number> {
-        let key = this.getHashCode() + "-AV";
+        let key = this.hashCode() + "-AV";
         if (selector)
             key += Array.from(selector.toString()).sum((o) => o.charCodeAt(0));
 
@@ -215,7 +215,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async all(predicate: (item: T) => boolean) {
-        let key = this.getHashCode() + "-AL" + Array.from(predicate.toString()).sum((o) => o.charCodeAt(0));
+        let key = this.hashCode() + "-AL" + Array.from(predicate.toString()).sum((o) => o.charCodeAt(0));
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
@@ -242,7 +242,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async any(predicate?: (item: T) => boolean) {
-        let key = this.getHashCode() + "-AN";
+        let key = this.hashCode() + "-AN";
         if (predicate)
             key += Array.from(predicate.toString()).sum((o) => o.charCodeAt(0));
 
@@ -272,7 +272,7 @@ export abstract class Queryable<T = any> {
         return result.first().rows.first();
     }
     public async first(predicate?: (item: T) => boolean): Promise<T> {
-        let key = this.getHashCode() + "-F";
+        let key = this.hashCode() + "-F";
         if (predicate)
             key += Array.from(predicate.toString()).sum((o) => o.charCodeAt(0));
 

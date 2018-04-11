@@ -34,7 +34,7 @@ export class OrderQueryable<T> extends Queryable<T> {
         }
         return this.expression as any;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "OB(" + hashCode((this.selectorFn || this.selector).toString()) + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("ORDERBY") + hashCode((this.selectorFn || this.selector).toString());
     }
 }

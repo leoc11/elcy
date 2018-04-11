@@ -1,6 +1,7 @@
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { hashCode } from "../../Helper/Util";
 
 export class SkipQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
@@ -14,7 +15,7 @@ export class SkipQueryable<T> extends Queryable<T> {
         }
         return this.expression;
     }
-    public getHashCode() {
-        return this.parent.getHashCode() + "SK(" + this.quantity + ")";
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("SKIP") + this.quantity;
     }
 }
