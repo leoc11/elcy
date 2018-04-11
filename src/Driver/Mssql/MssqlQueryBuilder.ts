@@ -66,7 +66,19 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["varbinary", { size: 50 }],
         ["varchar", { size: 50 }]
     ]);
-    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([]);
+    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
+        ["defaultBoolean", "boolean"],
+        ["defaultBinary", "binary"],
+        ["defaultDataString", "xml"],
+        ["defaultDate", "datetime"],
+        ["defaultDecimal", "decimal"],
+        ["defaultEnum", "nvarchar"],
+        ["defaultIdentifier", "uniqueidentifier"],
+        ["defaultNumberic", "int"],
+        ["defaultString", "nvarchar"],
+        ["defaultTime", "time"],
+        ["defaultTimestamp", "timestamp"]
+    ]);
     protected valueTypeMap = new Map<GenericType, ColumnType>([
         [TimeSpan, "time"],
         [Date, "datetime"],

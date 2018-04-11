@@ -1,5 +1,3 @@
-import { ValueType } from "./Type";
-
 /**
  * int Column types with length
  */
