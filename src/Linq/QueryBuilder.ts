@@ -247,7 +247,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine(0) + result + ";";
             result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
 
-            const tempSelect = select.clone(true);
+            const tempSelect = select.clone();
             tempSelect.entity.name = tempTableName;
             tempSelect.selects = tempSelect.entity.columns.slice(0);
             // render each include here
@@ -353,9 +353,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         const typeDefault = this.columnTypeDefaults.get(columnOption.columnType);
         const option = columnOption as any;
-        const size: number = typeof option.size === "undefined" ? option.size : typeDefault.size;
-        const scale: number = typeof option.size === "undefined" ? option.scale : typeDefault.scale;
-        const precision: number = typeof option.size === "undefined" ? option.precision : typeDefault.precision;
+        const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
+        const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
+        const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
         if (this.columnTypesWithOption.contains(type)) {
             if (typeof size !== "undefined") {
                 if (columnOption instanceof StringColumnMetaData || columnOption instanceof NumericColumnMetaData

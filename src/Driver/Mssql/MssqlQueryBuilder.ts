@@ -67,7 +67,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["varchar", { size: 50 }]
     ]);
     protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
-        ["defaultBoolean", "boolean"],
+        ["defaultBoolean", "bit"],
         ["defaultBinary", "binary"],
         ["defaultDataString", "xml"],
         ["defaultDate", "datetime"],

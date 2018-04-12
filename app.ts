@@ -22,10 +22,25 @@ import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQue
 const db = new MyDb();
 (async () => {
     const param = new ParameterExpression("o", Order);
+    const odParam = new ParameterExpression("od", OrderDetail);
 
-    const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
-    const a = await projection.toArray();
+    // const er = await db.orders.toArray();
+    // const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
+    // const a = await projection.toArray();
 
-    const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
+    // const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
+    // const c = await include.toArray();
+
+    const pa = new MemberAccessExpression(param, "OrderDetails");
+    const pb = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
+    const pa1 = new FunctionExpression(new MethodCallExpression(pa, "include", [pb]), [param]);
+    const include = new IncludeQueryable(db.orders, [pa1]);
     const c = await include.toArray();
+
+    const d = 1;
+    // const odInclude = new IncludeQueryable(db.orderDetails, [new FunctionExpression(new MemberAccessExpression(param, "Order"), [odParam])]);
+    // const d = await include.toArray();
+
+    // next: include.include, include(a, b)
+    // select
 })();

@@ -1,5 +1,4 @@
 import { IColumnExpression } from "../../Linq/Queryable/QueryExpression/IColumnExpression";
-import { IEntityExpression } from "../../Linq/Queryable/QueryExpression/IEntityExpression";
 import { DbContext } from "../../Linq/DBContext";
 import { EntityBase } from "../../Data/EntityBase";
 import { IQueryResultParser } from "./IQueryResultParser";
@@ -61,7 +60,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                         isSkipPopulateEntityData = existing.isCompletelyLoaded;
                 }
                 else {
-                    dbSet.attach(entity, { loadTime: loadTime });
+                    dbSet.attach(entity, loadTime);
                 }
             }
             else if (Object.keys(entityKey).length > 0) {
@@ -150,7 +149,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     return 0;
                 }
             case String:
-                return input;
+                return input ? input : input.toString();
             case Date:
                 return new Date(input);
             case TimeSpan:
