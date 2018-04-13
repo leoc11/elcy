@@ -9,7 +9,7 @@ import {
     MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
+    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -36,6 +36,7 @@ import { ColumnType, ColumnTypeMapKey } from "../Common/ColumnType";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "./Enumerable/Enumerable";
+import { CustomEntityExpression } from "./Queryable/QueryExpression/CustomEntityExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -176,7 +177,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case SubtractionExpression:
                 result = this.getSubtractionExpressionString(expression as any);
                 break;
-            case TimesExpression:
+            case MultiplicationExpression:
                 result = this.getTimesExpressionString(expression as any);
                 break;
             case TernaryExpression:
@@ -246,25 +247,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result = tableStr + ";" + this.newLine(0) + "INSERT INTO " + tempTableName +
                 this.newLine(0) + result + ";";
             result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
+            
+            const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.toArray(), select.objectType, this.newAlias()));
+            // tempSelect.entity.name = tempTableName;
 
-            const tempSelect = select.clone();
-            tempSelect.entity.name = tempTableName;
-            tempSelect.selects = tempSelect.entity.columns.slice(0);
             // render each include here
             for (const include of select.includes) {
                 // add join to temp table
                 const reverseRelation = new Map();
                 for (const [key, value] of include.relations) {
-                    reverseRelation.set(value, key);
+                    const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
+                    reverseRelation.set(value, tempKey);
                 }
-                const tempJoin = {
-                    type: JoinType.INNER,
-                    child: tempSelect,
-                    parent: include.child,
-                    relations: reverseRelation
-                };
-                include.child.joins.add(tempJoin);
-
+                const tempJoin = include.child.addJoinRelation(tempSelect, reverseRelation, JoinType.INNER);
                 result += this.newLine(0) + this.getSelectQueryString(include.child);
                 include.child.joins.remove(tempJoin);
             }
@@ -303,7 +298,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T> | ValueType): string {
         if ((column as IColumnExpression<T>).entity) {
             const columnExp = column as ColumnExpression;
-            if (columnExp instanceof ColumnExpression && columnExp.columnType === columnExp.columnMetaData.columnType) {
+            if (columnExp instanceof ColumnExpression && columnExp.columnMetaData && columnExp.columnType === columnExp.columnMetaData.columnType) {
                 return this.getColumnType(columnExp.columnMetaData);
             }
             return columnExp.columnType;
@@ -415,8 +410,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            if (!entity.select.isSimple())
-                return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
@@ -886,7 +880,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getSubtractionExpressionString(expression: SubtractionExpression): string {
         return this.getOperandString(expression.leftOperand) + " - " + this.getOperandString(expression.rightOperand);
     }
-    protected getTimesExpressionString(expression: TimesExpression): string {
+    protected getTimesExpressionString(expression: MultiplicationExpression): string {
         return this.getOperandString(expression.leftOperand) + " * " + this.getOperandString(expression.rightOperand);
     }
     protected getAdditionExpressionString<T extends string | number>(expression: AdditionExpression<T>): string {

@@ -1,5 +1,5 @@
 "use strict";
-import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression } from "./src/ExpressionBuilder/Expression/index";
+import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression } from "./src/ExpressionBuilder/Expression/index";
 import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable } from "./src/Linq/Queryable/index";
 import { JoinQueryable } from "./src/Linq/Queryable/JoinQueryable";
 import { SelectExpression, GroupByExpression } from "./src/Linq/Queryable/QueryExpression/index";
@@ -42,9 +42,9 @@ const db = new MyDb();
     // const include = new IncludeQueryable(db.orders, [pa1]);
     // const c = await include.toArray();
 
-    // include to single
-    // const odInclude = new IncludeQueryable(db.orderDetails, [new FunctionExpression(new MemberAccessExpression(param, "Order"), [odParam])]);
-    // const d = await include.toArray();
+    // // include to single
+    // const odInclude = new IncludeQueryable(db.orderDetails, [new FunctionExpression(new MemberAccessExpression(odParam, "Order"), [odParam])]);
+    // const s = await odInclude.toArray();
 
     // include 2
     // const a = new FunctionExpression(new MemberAccessExpression(odParam, "Order"), [odParam]);
@@ -58,12 +58,33 @@ const db = new MyDb();
     // const s = await select.toArray();
 
     // select object
-    const selectFn = new FunctionExpression(new ObjectValueExpression({
-        date: new MemberAccessExpression(param, "OrderDate"),
-        amount: new MemberAccessExpression(param, "TotalAmount")
-    }) , [param]);
-    const select = new SelectQueryable(db.orders, selectFn);
-    const s = await select.toArray();
+    // const selectFn = new FunctionExpression(new ObjectValueExpression({
+    //     date: new MemberAccessExpression(param, "OrderDate"),
+    //     amount: new AdditionExpression(new MemberAccessExpression(param, "TotalAmount"), new ValueExpression(1.2))
+    // }) , [param]);
+    // const select = new SelectQueryable(db.orders, selectFn);
+    // const s = await select.toArray();
+
+    // select object navigation
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     date: new MemberAccessExpression(new MemberAccessExpression(odParam, "Order"), "OrderDate"),
+    // }), [odParam]);
+    // const select1 = new SelectQueryable(db.orderDetails, selectFn1);
+    // const s1 = await select1.toArray();
+
+    // select object to many navigation
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     ods: new MemberAccessExpression(param, "OrderDetails"),
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
+
+    // select object to many navigation
+    const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+        prod: new MemberAccessExpression(odParam, "Product"),
+    }), [odParam]);
+    const select1 = new SelectQueryable(db.orderDetails, selectFn1);
+    const s1 = await select1.toArray();
 
     const d = 1;
 })();

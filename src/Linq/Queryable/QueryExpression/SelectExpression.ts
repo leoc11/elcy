@@ -7,6 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { ProjectionEntityExpression } from ".";
 export interface IIncludeRelation<T, TChild> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -14,7 +15,7 @@ export interface IIncludeRelation<T, TChild> {
     type: RelationType;
     name: string;
 }
-export interface IJoinRelation<T, TChild> {
+export interface IJoinRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
     relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
@@ -41,13 +42,19 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
         this.objectType = entity.type;
-        this.selects = entity.columns.slice(0);
+        if (entity instanceof ProjectionEntityExpression) {
+            this.selects = entity.selectedColums.slice(0);
+            this.relationColumns = entity.subSelect.relationColumns.slice(0);
+        }
+        else
+            this.selects = entity.columns.slice(0);
         this.isSelectAll = true;
         entity.select = this;
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
-        return this.entity.primaryColumns.union(this.selects);
+        return this.entity.primaryColumns.union(this.selects).union(this.relationColumns);
     }
+    public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
     }
@@ -90,19 +97,19 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         };
         this.includes.push(child.parentRelation);
     }
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T>): void;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): void;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T>): IJoinRelation<T, any>;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
-        const isRelationExist = this.joins.any((o) => o.child.type === child.type);
-        if (isRelationExist)
-            return;
+        const existingRelation = this.joins.first((o) => o.child.type === child.type);
+        if (existingRelation)
+            return existingRelation;
 
         if ((relationMetaOrRelations as IRelationMetaData<any, any>).relationMaps) {
             const relationMeta = relationMetaOrRelations as IRelationMetaData<any, any>;
             const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : RelationType.OneToOne;
             type = relType === RelationType.OneToOne ? JoinType.INNER : JoinType.LEFT;
-
+            relationMap = new Map();
             const isReverse = relationMeta.sourceType !== this.entity.type;
             for (const [sourceProp, targetProp] of relationMeta.relationMaps) {
                 const sourceCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? targetProp : sourceProp));
@@ -121,9 +128,10 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             type: type
         };
         this.joins.push(child.parentRelation);
+        return child.parentRelation;
     }
-    public clone(): SelectExpression<T> {
-        const clone = new SelectExpression(this.entity.clone());
+    public clone(entity?: IEntityExpression): SelectExpression<T> {
+        const clone = new SelectExpression(entity ? entity : this.entity.clone());
         clone.objectType = this.objectType;
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);

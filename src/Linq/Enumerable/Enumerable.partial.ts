@@ -30,10 +30,10 @@ declare module "./Enumerable" {
         leftJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: T2[] | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        union(array2: T[] | Enumerable<T>, isUnionAll: boolean): Enumerable<T>;
+        union(array2: T[] | Enumerable<T>, isUnionAll?: boolean): Enumerable<T>;
         intersect(array2: T[] | Enumerable<T>): Enumerable<T>;
         except(array2: T[] | Enumerable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
     }
 }
 Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, selector: (item: T) => TReturn): Enumerable<TReturn> {
@@ -81,7 +81,7 @@ Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: T[] |
 Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: T[] | Enumerable<T>): Enumerable<T> {
     return new ExceptEnumerable(this, Array.isArray(array2) ? new Enumerable(array2) : array2);
 };
-Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
+Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
     return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
         const dimensionKey: TResult = {} as any;
         for (const key in dimensions) {

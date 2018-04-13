@@ -12,7 +12,7 @@ import {
     MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression
+    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -27,9 +27,15 @@ import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
     IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IIncludeRelation
 } from "./Queryable/QueryExpression/index";
-import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
+import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
 
+interface IPRelation {
+    name: string;
+    relationMaps: Map<any, any>;
+    child: SelectExpression<any>;
+    type: RelationType;
+}
 export interface IQueryVisitParameter {
     commandExpression: SelectExpression;
     scope?: string;
@@ -45,6 +51,7 @@ export class QueryExpressionVisitor {
         return this.namingStrategy.getAlias(type) + this.aliasObj[type]++;
     }
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
+        expression = expression.clone();
         switch (expression.constructor) {
             case MemberAccessExpression:
                 return this.visitMember(expression as any, param);
@@ -81,7 +88,7 @@ export class QueryExpressionVisitor {
             case StrictEqualExpression:
             case StrictNotEqualExpression:
             case SubtractionExpression:
-            case TimesExpression:
+            case MultiplicationExpression:
                 return this.visitBinaryOperator(expression as any as IBinaryOperatorExpression, param);
             case TernaryExpression:
                 return this.visitTernaryOperator(expression as TernaryExpression<any>, param);
@@ -104,7 +111,7 @@ export class QueryExpressionVisitor {
         return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
@@ -164,7 +171,7 @@ export class QueryExpressionVisitor {
                         break;
                 }
                 if (parentEntity.select) {
-                    parentEntity.select.selects.push(column);
+                    parentEntity.select.selects.add(column);
                 }
                 return column;
             }
@@ -202,7 +209,7 @@ export class QueryExpressionVisitor {
                     default:
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
-                            parentEntity.select!.addJoin(child, relationMeta);
+                            parentEntity.select!.addJoinRelation(child, relationMeta);
                             return relationMeta.relationType === RelationType.OneToMany ? child : child.entity;
                         }
                 }
@@ -217,7 +224,7 @@ export class QueryExpressionVisitor {
         throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
@@ -243,15 +250,12 @@ export class QueryExpressionVisitor {
                                 selectOperand = visitParam.commandExpression;
                             }
                             else if (selectExp instanceof ObjectValueExpression) {
-                                const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, Object));
-                                objectSelectOperand.selects = [];
+                                selectOperand.selects = [];
+                                const joinRelations: Array<IPRelation> = [];
                                 for (const prop in selectExp.object) {
                                     const valueExp = selectExp.object[prop];
                                     if (valueExp instanceof ColumnExpression) {
-                                        objectSelectOperand.selects.push(new ColumnExpression(valueExp.entity, valueExp.propertyName, valueExp.isPrimary, prop));
-                                    }
-                                    else if (valueExp instanceof ComputedColumnExpression) {
-                                        objectSelectOperand.selects.push(new ComputedColumnExpression(valueExp.entity, valueExp.expression, prop));
+                                        selectOperand.selects.add(new ColumnExpression(valueExp.entity, prop, valueExp.type, valueExp.isPrimary, valueExp.propertyName));
                                     }
                                     else if ((valueExp as IEntityExpression).primaryColumns) {
                                         // o.Order.Outlet.Store
@@ -270,29 +274,48 @@ export class QueryExpressionVisitor {
                                             });
                                         }
                                         const joinRelation = selectOperand.joins.first(o => o.child === currentPath);
-                                        objectSelectOperand.addInclude(prop, valueExp, joinRelation.relations, RelationType.OneToOne);
+                                        const pr: IPRelation = {
+                                            name: prop,
+                                            child: valueExp.select,
+                                            relationMaps: joinRelation.relations,
+                                            type: RelationType.OneToOne
+                                        };
+                                        joinRelations.push(pr);
+                                        Array.prototype.add.apply(selectOperand.relationColumns, Array.from(joinRelation.relations.keys()));
                                     }
                                     else if (valueExp instanceof SelectExpression) {
                                         // o.Order.Outlet.Registers => Register.Outlet.Order
-                                        let currentPath = valueExp;
-                                        while ((currentPath.parentRelation as IIncludeRelation<any, any>).name === undefined && currentPath.parentRelation.parent !== selectOperand) {
+                                        let parentRel = valueExp.parentRelation as IJoinRelation<any, any>;
+                                        while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
                                             const relationMap = new Map<any, any>();
-                                            for (const [sourceCol, targetCol] of currentPath.parentRelation.relations) {
+                                            for (const [sourceCol, targetCol] of parentRel.relations) {
                                                 relationMap.set(targetCol, sourceCol);
                                             }
-                                            currentPath.joins.push({
-                                                parent: currentPath,
-                                                child: currentPath.parentRelation.parent,
-                                                type: JoinType.INNER,
-                                                relations: relationMap
-                                            });
+                                            const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
+                                            parentRel.parent.joins.remove(parentRel);
+                                            parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
+                                            if (!parentRel) break;
+                                            parentRel = nextRel;
                                         }
-                                        const joinRelation = selectOperand.joins.first(o => o.child === currentPath);
-                                        objectSelectOperand.addInclude(prop, valueExp, joinRelation.relations, RelationType.OneToMany);
+
+                                        selectOperand.joins.remove(parentRel);
+                                        const pr: IPRelation = {
+                                            name: prop,
+                                            child: valueExp,
+                                            relationMaps: parentRel.relations,
+                                            type: RelationType.OneToMany
+                                        };
+                                        joinRelations.push(pr);
+                                        Array.prototype.add.apply(selectOperand.relationColumns, Array.from(parentRel.relations.keys()));
+                                    }
+                                    else {
+                                        selectOperand.selects.add(new ComputedColumnExpression(valueExp.entity, valueExp, prop));
                                     }
                                 }
 
-                                selectOperand = objectSelectOperand;
+                                selectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, Object));
+                                for (const rel of joinRelations)
+                                    selectOperand.addInclude(rel.name, rel.child, rel.relationMaps, rel.type);
                             }
                             else if ((selectExp as IColumnExpression).entity) {
                                 const column = selectExp as IColumnExpression;
@@ -377,7 +400,7 @@ export class QueryExpressionVisitor {
                             for (const prop in selectExp.object) {
                                 const valueExp = selectExp.object[prop];
                                 if (valueExp instanceof ColumnExpression) {
-                                    groupColumns.push(new ColumnExpression(valueExp.entity, valueExp.propertyName, valueExp.isPrimary, prop));
+                                    groupColumns.push(new ColumnExpression(valueExp.entity, prop, valueExp.type, valueExp.isPrimary, valueExp.columnName));
                                 }
                                 else if (valueExp instanceof ComputedColumnExpression) {
                                     groupColumns.push(new ComputedColumnExpression(valueExp.entity, valueExp.expression, prop));
@@ -881,9 +904,11 @@ export class QueryExpressionVisitor {
         return expression;
     }
     protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: IQueryVisitParameter) {
+        const objectValue: any = {};
         for (const prop in expression.object) {
-            expression.object[prop] = this.visit(expression.object[prop], { commandExpression: param.commandExpression });
+            objectValue[prop] = this.visit(expression.object[prop], { commandExpression: param.commandExpression });
         }
+        expression.object = objectValue;
         return expression;
     }
 }
