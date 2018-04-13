@@ -24,23 +24,46 @@ const db = new MyDb();
     const param = new ParameterExpression("o", Order);
     const odParam = new ParameterExpression("od", OrderDetail);
 
+    // toArray
     // const er = await db.orders.toArray();
+
+    // include projection
     // const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
     // const a = await projection.toArray();
 
+    // include to many
     // const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
     // const c = await include.toArray();
 
-    const pa = new MemberAccessExpression(param, "OrderDetails");
-    const pb = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
-    const pa1 = new FunctionExpression(new MethodCallExpression(pa, "include", [pb]), [param]);
-    const include = new IncludeQueryable(db.orders, [pa1]);
-    const c = await include.toArray();
+    // include.include
+    // const pa = new MemberAccessExpression(param, "OrderDetails");
+    // const pb = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
+    // const pa1 = new FunctionExpression(new MethodCallExpression(pa, "include", [pb]), [param]);
+    // const include = new IncludeQueryable(db.orders, [pa1]);
+    // const c = await include.toArray();
 
-    const d = 1;
+    // include to single
     // const odInclude = new IncludeQueryable(db.orderDetails, [new FunctionExpression(new MemberAccessExpression(param, "Order"), [odParam])]);
     // const d = await include.toArray();
 
-    // next: include.include, include(a, b)
-    // select
+    // include 2
+    // const a = new FunctionExpression(new MemberAccessExpression(odParam, "Order"), [odParam]);
+    // const b = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
+    // const odInclude = new IncludeQueryable(db.orderDetails, [a, b]);
+    // const c = await odInclude.toArray();
+
+    // select column
+    // const selectFn = new FunctionExpression(new MemberAccessExpression(param, "OrderDate") , [param]);
+    // const select = new SelectQueryable(db.orders, selectFn);
+    // const s = await select.toArray();
+
+    // select object
+    const selectFn = new FunctionExpression(new ObjectValueExpression({
+        date: new MemberAccessExpression(param, "OrderDate"),
+        amount: new MemberAccessExpression(param, "TotalAmount")
+    }) , [param]);
+    const select = new SelectQueryable(db.orders, selectFn);
+    const s = await select.toArray();
+
+    const d = 1;
 })();

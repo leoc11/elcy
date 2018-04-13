@@ -5,12 +5,17 @@ import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../QueryResult";
 import { SelectExpression, IIncludeRelation } from "../../Linq/Queryable/QueryExpression";
 import { TimeSpan } from "../../Common/TimeSpan";
-import { GenericType, RelationType } from "../../Common/Type";
+import { GenericType, RelationType, IObjectType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { DbSet } from "../../Linq/DbSet";
 
+interface IRelationResolveData<T extends EntityBase = any, TE extends EntityBase = any> {
+    resultMap: Map<number, TE>;
+    relationMeta: IRelationMetaData<T, TE>;
+    reverseRelationMeta?: IRelationMetaData<TE, T>;
+}
 export class PlainObjectQueryResultParser<T extends EntityBase> implements IQueryResultParser<T> {
     constructor(protected readonly queryExpression: SelectExpression<T>) {
 
@@ -25,20 +30,41 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         const primaryColumns = select.projectedColumns.where(o => o.isPrimary);
         const columns = select.selects.where(o => !o.isPrimary);
 
-        const relation = select.parentRelation as IIncludeRelation<any, T>;
-        let parentSet: DbSet<any>;
-        let relationMeta: IRelationMetaData<any, any>;
-        let reverseRelationMeta: IRelationMetaData<any, any>;
-
-        if (relation && (relation as IIncludeRelation<any, T>).name) {
-            relationMeta = Reflect.getOwnMetadata(relationMetaKey, relation.parent.objectType, relation.name);
-            if (relationMeta) {
-                parentSet = dbContext.set(relation.parent.objectType as any);
-                if (relationMeta.reverseProperty)
-                    reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, select.objectType, relationMeta.reverseProperty);
+        // parent relation
+        let parentRelation: IRelationResolveData<any, any>;
+        if (select.parentRelation) {
+            const relation = select.parentRelation as IIncludeRelation<any, T>;
+            if (relation.type === RelationType.OneToMany) {
+                parentRelation = {
+                    resultMap: customTypeMap.get(relation.parent.objectType),
+                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, relation.parent.objectType, relation.name)
+                };
+                if (parentRelation.relationMeta && parentRelation.relationMeta.reverseProperty) {
+                    parentRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, select.objectType, parentRelation.relationMeta.reverseProperty);
+                }
             }
         }
 
+        // child relation
+        const childRelations = new Map<IIncludeRelation<T, any>, IRelationResolveData>();
+        for (const include of select.includes) {
+            if (include.type === RelationType.OneToOne) {
+                this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
+                const childRelation: IRelationResolveData = {
+                    resultMap: customTypeMap.get(include.child.objectType),
+                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, select.objectType, include.name)
+                };
+                if (childRelation.relationMeta && childRelation.relationMeta.reverseProperty)
+                    childRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, include.child.objectType, childRelation.relationMeta.reverseProperty);
+                childRelations.set(include, childRelation);
+            }
+        }
+
+        let resultMap = customTypeMap.get(select.objectType);
+        if (!resultMap) {
+            resultMap = new Map<any, any>();
+            customTypeMap.set(select.objectType, resultMap);
+        }
         for (const row of queryResult.rows) {
             let entity = new (select.objectType as any)();
             const entityKey: { [key: string]: any } = {};
@@ -50,6 +76,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     entity[prop] = entityKey[prop];
             }
             let isSkipPopulateEntityData = false;
+            const key = hashCode(JSON.stringify(entityKey));
             if (dbSet) {
                 const existing = dbSet.entry(row);
                 if (existing) {
@@ -63,24 +90,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     dbSet.attach(entity, loadTime);
                 }
             }
-            else if (Object.keys(entityKey).length > 0) {
-                let existings = customTypeMap.get(select.objectType);
-                if (!existings) {
-                    existings = new Map<any, any>();
-                    customTypeMap.set(select.objectType, existings);
-                }
-
-                if (Object.keys(entityKey).length > 0) {
-                    const objHash = hashCode(JSON.stringify(entityKey));
-                    const existing = existings.get(objHash);
-                    if (existing) {
-                        entity = existing;
-                    }
-                    else {
-                        existings.set(objHash, entity);
-                    }
-                }
-            }
+            resultMap.set(key, entity);
 
             if (!isSkipPopulateEntityData) {
                 if (isValue(entity)) {
@@ -93,45 +103,59 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     }
                 }
 
-                // set navigation property
-                if (relationMeta) {
-                    let parentEntity: any = null;
-                    if (parentSet) {
-                        const a: any = {};
-                        for (const [parentCol, childCol] of relation.relations) {
-                            a[parentCol.propertyName] = entity[childCol.propertyName];
+            }
+
+            // resolve parent relation
+            if (parentRelation) {
+                const relation = select.parentRelation as IIncludeRelation<any, any>;
+                const a: any = {};
+                for (const [parentCol, childCol] of relation.relations) {
+                    a[parentCol.propertyName] = entity[childCol.propertyName];
+                }
+                const key = hashCode(JSON.stringify(a));
+                const parentEntity = parentRelation.resultMap.get(key);
+                if (parentRelation.reverseRelationMeta) {
+                    entity[parentRelation.relationMeta.reverseProperty] = parentEntity;
+                }
+                if (parentEntity) {
+                    if (parentRelation.relationMeta.relationType === RelationType.OneToMany) {
+                        if (!parentEntity[relation.name]) {
+                            parentEntity[relation.name] = [];
                         }
-                        parentEntity = parentSet.findLocal(a);
+                        parentEntity[relation.name].add(entity);
                     }
-                    if (parentEntity) {
-                        if (relationMeta.relationType === RelationType.OneToOne) {
-                            parentEntity[relation.name as any] = entity;
-                        }
-                        else {
-                            if (!parentEntity[relation.name]) {
-                                parentEntity[relation.name] = [];
-                            }
-                            parentEntity[relation.name].add(entity);
-                        }
+                    else {
+                        parentEntity[relation.name] = entity;
                     }
-                    if (reverseRelationMeta) {
-                        if (reverseRelationMeta.relationType === RelationType.OneToOne) {
-                            entity[relationMeta.reverseProperty] = parentEntity;
+                }
+            }
+
+            // resolve child relation
+            for (const [include, data] of childRelations) {
+                const a: any = {};
+                for (const [parentCol, childCol] of include.relations) {
+                    a[childCol.propertyName] = entity[parentCol.propertyName];
+                }
+                const key = hashCode(JSON.stringify(a));
+                const childEntity = data.resultMap.get(key);
+                entity[include.name] = childEntity;
+                if (childEntity && data.reverseRelationMeta) {
+                    if (data.reverseRelationMeta.relationType === RelationType.OneToMany) {
+                        if (!childEntity[data.relationMeta.reverseProperty]) {
+                            childEntity[data.relationMeta.reverseProperty] = [];
                         }
-                        else {
-                            if (!entity[relationMeta.reverseProperty]) {
-                                entity[relationMeta.reverseProperty] = [];
-                            }
-                            if (parentEntity)
-                                entity[relationMeta.reverseProperty].add(parentEntity);
-                        }
+                        childEntity[data.relationMeta.reverseProperty].add(entity);
+                    }
+                    else {
+                        childEntity[data.relationMeta.reverseProperty] = entity;
                     }
                 }
             }
             results.push(entity);
         }
         for (const include of select.includes) {
-            this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
+            if (include.type === RelationType.OneToMany)
+                this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
         }
         return results;
     }
