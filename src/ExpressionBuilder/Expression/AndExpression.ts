@@ -22,4 +22,7 @@ export class AndExpression extends ExpressionBase<boolean> implements IBinaryOpe
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) && this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new AndExpression(this.leftOperand, this.rightOperand);
+    }
 }

@@ -23,7 +23,7 @@ export * from "./RightDecrementExpression";
 export * from "./RightIncrementExpression";
 export * from "./SubtractionExpression";
 export * from "./TernaryExpression";
-export * from "./TimesExpression";
+export * from "./MultiplicationExpression";
 export * from "./TypeofExpression";
 export * from "./ValueExpression";
 export * from "./EqualExpression";

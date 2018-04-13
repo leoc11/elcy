@@ -23,4 +23,7 @@ export class NotEqualExpression extends ExpressionBase<boolean> implements IBina
         // tslint:disable-next-line:triple-equals
         return this.leftOperand.execute(transformer) != this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new NotEqualExpression(this.leftOperand, this.rightOperand);
+    }
 }

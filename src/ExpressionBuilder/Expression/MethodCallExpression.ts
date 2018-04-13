@@ -46,4 +46,7 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
             params.push(param.execute(transformer));
         return (objectValue as any)[this.methodName].apply(objectValue, params);
     }
+    public clone() {
+        return new MethodCallExpression(this.objectOperand, this.methodName as any, this.params, this.type);
+    }
 }

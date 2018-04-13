@@ -52,4 +52,7 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
             params.push(param.execute(transformer));
         return this.functionFn.apply(null, params);
     }
+    public clone() {
+        return new FunctionCallExpression(this.functionFn, this.functionName, this.params);
+    }
 }

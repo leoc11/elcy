@@ -20,7 +20,9 @@ export class GreaterEqualExpression<TType> extends ExpressionBase<boolean> imple
         return "(" + this.leftOperand.toString() + " >= " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        // tslint:disable-next-line:triple-equals
         return this.leftOperand.execute(transformer) >= this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new GreaterEqualExpression(this.leftOperand, this.rightOperand);
     }
 }

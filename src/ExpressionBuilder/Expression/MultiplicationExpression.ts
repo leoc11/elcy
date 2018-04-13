@@ -2,9 +2,9 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class TimesExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+export class MultiplicationExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static Create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
-        const result = new TimesExpression(leftOperand, rightOperand);
+        const result = new MultiplicationExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.Create<number>(result);
 
@@ -21,5 +21,8 @@ export class TimesExpression extends ExpressionBase<number> implements IBinaryOp
     }
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) * this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new MultiplicationExpression(this.leftOperand, this.rightOperand);
     }
 }

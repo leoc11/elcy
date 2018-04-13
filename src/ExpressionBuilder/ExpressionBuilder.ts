@@ -84,7 +84,7 @@ export class ExpressionBuilder {
     protected GetOperatorExpression(operator: string = "", ...params: Array<IExpression | undefined>): IExpression {
         switch (operator as string) {
             case "*":
-                return Expression.TimesExpression.Create(params[0] as IExpression, params[1] as IExpression);
+                return Expression.MultiplicationExpression.Create(params[0] as IExpression, params[1] as IExpression);
             case "+":
                 if (!params[0])
                     params[0] = Expression.ValueExpression.Create(0);

@@ -22,4 +22,7 @@ export class StrictNotEqualExpression extends ExpressionBase<boolean> implements
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) !== this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new StrictNotEqualExpression(this.leftOperand, this.rightOperand);
+    }
 }

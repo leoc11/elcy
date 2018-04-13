@@ -20,7 +20,9 @@ export class StrictEqualExpression<TType> extends ExpressionBase<boolean> implem
         return "(" + this.leftOperand.toString() + " === " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        // tslint:disable-next-line:triple-equals
         return this.leftOperand.execute(transformer) === this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new StrictEqualExpression(this.leftOperand, this.rightOperand);
     }
 }

@@ -22,4 +22,7 @@ export class RightDecrementExpression extends ExpressionBase<number> implements 
     public execute(transformer: ExpressionTransformer) {
         return this.operand.execute(transformer);
     }
+    public clone() {
+        return new RightDecrementExpression(this.operand);
+    }
 }

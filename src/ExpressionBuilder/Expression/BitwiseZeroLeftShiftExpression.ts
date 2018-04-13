@@ -25,7 +25,9 @@ export class BitwiseZeroLeftShiftExpression extends BitwiseExpression implements
         return "(" + this.leftOperand.toString() + " << " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        // tslint:disable-next-line:no-bitwise
         return this.leftOperand.execute(transformer) << this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new BitwiseZeroLeftShiftExpression(this.leftOperand, this.rightOperand);
     }
 }

@@ -23,4 +23,7 @@ export class EqualExpression extends ExpressionBase<boolean> implements IBinaryO
         // tslint:disable-next-line:triple-equals
         return this.leftOperand.execute(transformer) == this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new EqualExpression(this.leftOperand, this.rightOperand);
+    }
 }

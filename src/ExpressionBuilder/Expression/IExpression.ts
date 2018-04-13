@@ -4,6 +4,7 @@ export interface IExpression<T = any> {
     type: GenericType<T>;
     toString(transformer?: ExpressionTransformer): string;
     execute(transformer?: ExpressionTransformer): T;
+    clone(): IExpression<T>;
 }
 
 export abstract class ExpressionBase<T = any> implements IExpression<T> {
@@ -23,4 +24,5 @@ export abstract class ExpressionBase<T = any> implements IExpression<T> {
             return new (this.type as IObjectType<T>)();
         return (this.type as () => T)();
     }
+    public abstract clone(): ExpressionBase<T>;
 }

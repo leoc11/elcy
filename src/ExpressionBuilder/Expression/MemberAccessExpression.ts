@@ -48,4 +48,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
 
         return (this.objectOperand.execute(transformer) as any)[member];
     }
+    public clone() {
+        return new MemberAccessExpression(this.objectOperand, this.memberName);
+    }
 }

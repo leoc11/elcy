@@ -26,8 +26,11 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
             this.leftOperand = this.convertToStringOperand(leftOperand) as any;
             this.rightOperand = this.convertToStringOperand(rightOperand) as any;
         }
-        else
+        else {
+            this.leftOperand = leftOperand;
+            this.rightOperand = rightOperand;
             this.type = Number as any;
+        }
     }
     public convertToStringOperand(operand: IExpression): IExpression<string> {
         if (operand.type !== String) {
@@ -43,5 +46,8 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
     }
     public execute(transformer: ExpressionTransformer) {
         return (this.leftOperand.execute(transformer) as any) + (this.rightOperand.execute(transformer) as any);
+    }
+    public clone() {
+        return new AdditionExpression<any>(this.leftOperand, this.rightOperand);
     }
 }
