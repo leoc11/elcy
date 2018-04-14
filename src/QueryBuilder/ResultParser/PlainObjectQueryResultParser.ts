@@ -72,17 +72,16 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
 
         for (const row of queryResult.rows) {
             let entity = new (select.objectType as any)();
-            const relData: any = {};
-            const entityKey: { [key: string]: any } = {};
+            const keyData: { [key: string]: any } = {};
             for (const primaryCol of primaryColumns) {
                 const columnName = primaryCol.columnName;
                 const prop = primaryCol.propertyName;
-                entityKey[prop] = this.convertTo(row[columnName], primaryCol);
+                keyData[prop] = this.convertTo(row[columnName], primaryCol);
                 if (select.selects.contains(primaryCol))
-                    entity[prop] = entityKey[prop];
+                    entity[prop] = keyData[prop];
             }
             let isSkipPopulateEntityData = false;
-            const key = hashCode(JSON.stringify(entityKey));
+            const key = hashCode(JSON.stringify(keyData));
             if (dbSet) {
                 const existing = dbSet.entry(row);
                 if (existing) {
@@ -110,7 +109,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
             }
             for (const column of relColumns) {
-                relData[column.propertyName] = this.convertTo(row[column.columnName], column);
+                keyData[column.propertyName] = this.convertTo(row[column.columnName], column);
             }
 
             // resolve parent relation
@@ -118,7 +117,10 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 const relation = select.parentRelation as IIncludeRelation<any, any>;
                 const a: any = {};
                 for (const [parentCol, childCol] of relation.relations) {
-                    a[parentCol.propertyName] = entity[childCol.propertyName];
+                    if (entity.hasOwnProperty(parentCol.propertyName))
+                        a[childCol.propertyName] = entity[parentCol.propertyName];
+                    else
+                        a[childCol.propertyName] = keyData[parentCol.propertyName];
                 }
                 const key = hashCode(JSON.stringify(a));
                 const parentEntity = parentRelation.resultMap.get(key);
@@ -145,7 +147,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     if (entity.hasOwnProperty(parentCol.propertyName))
                         a[childCol.propertyName] = entity[parentCol.propertyName];
                     else
-                        a[childCol.propertyName] = relData[parentCol.propertyName];
+                        a[childCol.propertyName] = keyData[parentCol.propertyName];
                 }
                 const key = hashCode(JSON.stringify(a));
                 const childEntity = data.resultMap.get(key);

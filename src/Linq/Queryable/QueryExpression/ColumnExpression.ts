@@ -28,14 +28,13 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
             else
                 type = typeOrIsPrimary;
         }
-        if (!type || !name) {
-            const metaData: ColumnMetaData<T> = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
-            if (metaData) {
-                type = metaData.type;
-                this.columnMetaData = metaData;
-                this.columnType = metaData.columnType;
-                if (name === undefined) name = metaData.columnName;
-            }
+
+        const metaData: ColumnMetaData<T> = Reflect.getOwnMetadata(columnMetaKey, this.entity.type, this.propertyName);
+        if (metaData) {
+            this.columnMetaData = metaData;
+            this.columnType = metaData.columnType;
+            if (type === undefined) type = metaData.type;
+            if (name === undefined) name = metaData.columnName;
         }
 
         this.columnName = name!;
@@ -50,8 +49,8 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     }
     public clone(entity?: IEntityExpression<TE>) {
         const clone = new ColumnExpression(entity || this.entity, this.propertyName, this.type, this.isPrimary, this.columnName);
-        clone.columnType = clone.columnType;
-        clone.columnName = clone.columnName;
+        clone.columnType = this.columnType;
+        clone.columnName = this.columnName;
         return clone;
     }
 }

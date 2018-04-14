@@ -8,7 +8,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from ".";
-export interface IIncludeRelation<T, TChild> {
+export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
     relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
@@ -43,8 +43,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.entity = entity;
         this.objectType = entity.type;
         if (entity instanceof ProjectionEntityExpression) {
-            this.selects = entity.selectedColums.slice(0);
-            this.relationColumns = entity.subSelect.relationColumns.slice(0);
+            this.selects = entity.selectedColumns.slice(0);
+            this.relationColumns = entity.relationColumns.slice(0);
         }
         else
             this.selects = entity.columns.slice(0);
@@ -52,7 +52,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         entity.select = this;
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
-        return this.entity.primaryColumns.union(this.selects).union(this.relationColumns);
+        return this.entity.primaryColumns.union(this.relationColumns).union(this.selects);
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
@@ -71,9 +71,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             });
         }
     }
-    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>): void;
-    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: RelationType): void;
-    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: RelationType) {
+    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>): IIncludeRelation<T, TChild>;
+    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: RelationType): IIncludeRelation<T, TChild>;
+    public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: RelationType): IIncludeRelation<T, TChild> {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
         if ((relationMetaOrRelations as IRelationMetaData<T, TChild>).relationMaps) {
             const relationMeta = relationMetaOrRelations as IRelationMetaData<T, TChild>;
@@ -81,12 +81,18 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             for (const [parentProperty, childProperty] of relationMeta.relationMaps!) {
                 const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
                 const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
+                if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
+                if (!childCol.isPrimary) child.relationColumns.add(childCol);
                 relationMap.set(parentCol, childCol);
             }
             type = relationMeta.relationType;
         }
         else {
             relationMap = relationMetaOrRelations as any;
+            for (const [parentCol, childCol] of relationMap) {
+                if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
+                if (!childCol.isPrimary) child.relationColumns.add(childCol);
+            }
         }
         child.parentRelation = {
             name,
@@ -96,7 +102,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             type: type!
         };
         this.includes.push(child.parentRelation);
+        return child.parentRelation;
     }
+
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T>): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
@@ -154,8 +162,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         if (this.isSelectAll) {
             this.isSelectAll = false;
             for (const column of this.entity.columns)
-                if (!column.isPrimary)
-                    this.selects.remove(column);
+                this.selects.remove(column);
         }
     }
     public isSimple() {

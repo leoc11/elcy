@@ -20,6 +20,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     protected _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     private _selectedColumns: IColumnExpression[];
+    private _relationColumns: IColumnExpression[];
     public alias: string;
     constructor(public subSelect: SelectExpression, public readonly type: GenericType<T> = Object as any) {
         this.alias = subSelect.entity.alias;
@@ -32,10 +33,15 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         }).toArray();
         this.defaultOrders = subSelect.orders.slice(0);
     }
-    public get selectedColums() {
+    public get selectedColumns() {
         if (!this._selectedColumns)
             this._selectedColumns = this.subSelect.selects.select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
         return this._selectedColumns;
+    }
+    public get relationColumns() {
+        if (!this._relationColumns)
+            this._relationColumns = this.subSelect.relationColumns.select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
+        return this._relationColumns;
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

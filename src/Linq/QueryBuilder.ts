@@ -284,7 +284,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let result = column.columnName;
         result += " " + this.getColumnType(column);
         if (column instanceof ColumnExpression) {
-            if (typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
+            if (column.columnMetaData && typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
                 result += " not null";
             }
         }

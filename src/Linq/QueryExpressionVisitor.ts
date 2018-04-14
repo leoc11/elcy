@@ -25,7 +25,7 @@ import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
-    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IIncludeRelation
+    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression
 } from "./Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
@@ -96,7 +96,6 @@ export class QueryExpressionVisitor {
                 return this.visitObjectLiteral(expression as ObjectValueExpression<any>, param);
             case ArrayValueExpression:
                 throw new Error(`literal Array not supported`);
-            // Possibly not used
             case FunctionExpression:
                 return this.visitFunction(expression as FunctionExpression, param);
             case ParameterExpression:
@@ -250,38 +249,58 @@ export class QueryExpressionVisitor {
                                 selectOperand = visitParam.commandExpression;
                             }
                             else if (selectExp instanceof ObjectValueExpression) {
-                                selectOperand.selects = [];
+                                const newSelects: IColumnExpression[] = [];
                                 const joinRelations: Array<IPRelation> = [];
                                 for (const prop in selectExp.object) {
                                     const valueExp = selectExp.object[prop];
                                     if (valueExp instanceof ColumnExpression) {
-                                        selectOperand.selects.add(new ColumnExpression(valueExp.entity, prop, valueExp.type, valueExp.isPrimary, valueExp.propertyName));
+                                        const colClone = valueExp.clone();
+                                        colClone.propertyName = prop;
+                                        newSelects.add(colClone);
                                     }
                                     else if ((valueExp as IEntityExpression).primaryColumns) {
                                         // o.Order.Outlet.Store
-                                        const childEntity = valueExp as IEntityExpression;
-                                        let currentPath = childEntity.select!;
-                                        while ((currentPath.parentRelation as IIncludeRelation<any, any>).name === undefined && currentPath.parentRelation.parent !== selectOperand) {
+                                        let childEntity = valueExp as IEntityExpression;
+
+                                        if (childEntity.select === selectOperand) {
+                                            const cloneSelect = childEntity.select.clone();
+                                            childEntity = cloneSelect.entity;
                                             const relationMap = new Map<any, any>();
-                                            for (const [sourceCol, targetCol] of currentPath.parentRelation.relations) {
-                                                relationMap.set(targetCol, sourceCol);
+                                            for (let i = 0; i < selectOperand.entity.primaryColumns.length; i++) {
+                                                const pCol = selectOperand.entity.primaryColumns[i];
+                                                const cCol = childEntity.primaryColumns[i];
+                                                relationMap.set(pCol, cCol);
                                             }
-                                            currentPath.joins.push({
-                                                parent: currentPath,
-                                                child: currentPath.parentRelation.parent,
-                                                type: JoinType.INNER,
-                                                relations: relationMap
-                                            });
+                                            const pr: IPRelation = {
+                                                name: prop,
+                                                child: cloneSelect,
+                                                relationMaps: relationMap,
+                                                type: RelationType.OneToOne
+                                            };
+                                            joinRelations.push(pr);
                                         }
-                                        const joinRelation = selectOperand.joins.first(o => o.child === currentPath);
-                                        const pr: IPRelation = {
-                                            name: prop,
-                                            child: valueExp.select,
-                                            relationMaps: joinRelation.relations,
-                                            type: RelationType.OneToOne
-                                        };
-                                        joinRelations.push(pr);
-                                        Array.prototype.add.apply(selectOperand.relationColumns, Array.from(joinRelation.relations.keys()));
+                                        else {
+                                            let parentRel = childEntity.select.parentRelation as IJoinRelation<any, any>;
+                                            while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
+                                                const relationMap = new Map<any, any>();
+                                                for (const [sourceCol, targetCol] of parentRel.relations) {
+                                                    relationMap.set(targetCol, sourceCol);
+                                                }
+                                                const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
+                                                parentRel.parent.joins.remove(parentRel);
+                                                parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
+                                                if (!parentRel) break;
+                                                parentRel = nextRel;
+                                            }
+                                            selectOperand.joins.remove(parentRel);
+                                            const pr: IPRelation = {
+                                                name: prop,
+                                                child: valueExp.select,
+                                                relationMaps: parentRel.relations,
+                                                type: RelationType.OneToOne
+                                            };
+                                            joinRelations.push(pr);
+                                        }
                                     }
                                     else if (valueExp instanceof SelectExpression) {
                                         // o.Order.Outlet.Registers => Register.Outlet.Order
@@ -306,28 +325,31 @@ export class QueryExpressionVisitor {
                                             type: RelationType.OneToMany
                                         };
                                         joinRelations.push(pr);
-                                        Array.prototype.add.apply(selectOperand.relationColumns, Array.from(parentRel.relations.keys()));
                                     }
                                     else {
-                                        selectOperand.selects.add(new ComputedColumnExpression(valueExp.entity, valueExp, prop));
+                                        newSelects.add(new ComputedColumnExpression(valueExp.entity, valueExp, prop));
                                     }
                                 }
 
-                                selectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, Object));
+                                selectOperand.objectType = Object;
+                                selectOperand.selects = newSelects;
+                                // selectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, Object));
                                 for (const rel of joinRelations)
                                     selectOperand.addInclude(rel.name, rel.child, rel.relationMaps, rel.type);
                             }
                             else if ((selectExp as IColumnExpression).entity) {
                                 const column = selectExp as IColumnExpression;
-                                const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
-                                objectSelectOperand.selects = [column];
-                                selectOperand = objectSelectOperand;
+                                // const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
+                                // selectOperand = objectSelectOperand;
+                                selectOperand.objectType = column.type;
+                                selectOperand.selects = [column];
                             }
                             else {
                                 const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
-                                const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
-                                objectSelectOperand.selects = [column];
-                                selectOperand = objectSelectOperand;
+                                // const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
+                                // selectOperand = objectSelectOperand;
+                                selectOperand.objectType = column.type;
+                                selectOperand.selects = [column];
                             }
                         }
                         else {

@@ -79,12 +79,33 @@ const db = new MyDb();
     // const select1 = new SelectQueryable(db.orders, selectFn1);
     // const s1 = await select1.toArray();
 
+    // select object to scalar navigation
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     prod: new MemberAccessExpression(odParam, "Product"),
+    // }), [odParam]);
+    // const select1 = new SelectQueryable(db.orderDetails, selectFn1);
+    // const s1 = await select1.toArray();
+
     // select object to many navigation
-    const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-        prod: new MemberAccessExpression(odParam, "Product"),
-    }), [odParam]);
-    const select1 = new SelectQueryable(db.orderDetails, selectFn1);
-    const s1 = await select1.toArray();
+    // const innerSelect = new FunctionExpression(new ObjectValueExpression({
+    //     name: new MemberAccessExpression(odParam, "name")
+    // }), [odParam]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
+
+    // select object with self
+    // const innerSelect = new FunctionExpression(new ObjectValueExpression({
+    //     od: odParam,
+    //     Price: new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price")
+    // }), [odParam]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
 
     const d = 1;
 })();
