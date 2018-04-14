@@ -2,13 +2,13 @@ import { Enumerable, keyComparer } from "./Enumerable";
 
 export function* union<T>(enumerable1: Enumerable<T>, enumerable2: Enumerable<T>) {
     enumerable1.resetPointer();
-    let result1 = enumerable1.next();
-    while (!result1.done) {
+
+    let result1: IteratorResult<T>;
+    while ((result1 = enumerable1.next()) && !result1.done) {
         yield result1.value;
     }
     enumerable2.resetPointer();
-    result1 = enumerable2.next();
-    while (!result1.done) {
+    while ((result1 = enumerable2.next()) && !result1.done) {
         yield result1.value;
     }
 }

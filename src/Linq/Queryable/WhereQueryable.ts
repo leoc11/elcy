@@ -3,20 +3,37 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class WhereQueryable<T> extends Queryable<T> {
-    protected readonly predicate: FunctionExpression<T, boolean>;
+    protected readonly predicateFn: (item: T) => boolean;
+    protected _predicate: FunctionExpression<T, boolean>;
+    protected get predicate() {
+        if (!this._predicate && this.predicateFn)
+            this._predicate = ExpressionFactory.prototype.ToExpression(this.predicateFn, this.parent.type);
+        return this._predicate;
+    }
+    protected set predicate(value) {
+        this._predicate = value;
+    }
     constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<T, boolean> | ((item: T) => boolean)) {
         super(parent.type);
-        this.predicate = predicate instanceof FunctionExpression ? predicate : ExpressionFactory.prototype.ToExpression<T, boolean>(predicate, parent.type);
+        if (predicate instanceof FunctionExpression)
+            this.predicate = predicate;
+        else
+            this.predicateFn = predicate;
     }
     public buildQuery(queryBuilder: QueryBuilder): any {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
-            const visitParam = { parent: objectOperand, type: "where" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "where" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
+    }
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("WHERE") + hashCode((this.predicateFn || this.predicate).toString());
     }
 }

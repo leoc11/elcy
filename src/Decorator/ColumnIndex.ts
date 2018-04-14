@@ -29,7 +29,7 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
         const entConstructor = propertyKey ? target.constructor : target;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(() => target);
+            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
         }
         let indexMetaData = entityMetaData.indices[name];
         if (indexMetaData == null) {

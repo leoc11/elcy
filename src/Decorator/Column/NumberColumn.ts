@@ -3,7 +3,7 @@ import { NumericColumnMetaData } from "../../MetaData";
 import { INumericColumnOption } from "../Option";
 import { Column } from "./Column";
 
-export function NumberColumn(option: INumericColumnOption): PropertyDecorator;
+export function NumberColumn(option?: INumericColumnOption): PropertyDecorator;
 // tslint:disable-next-line:ban-types
 export function NumberColumn(name?: string | INumericColumnOption, defaultValue?: number): PropertyDecorator {
     const metadata = new NumericColumnMetaData();
@@ -12,7 +12,7 @@ export function NumberColumn(name?: string | INumericColumnOption, defaultValue?
     }
     else {
         if (typeof name !== "undefined")
-            metadata.name = name as string;
+            metadata.columnName = name as string;
         if (typeof defaultValue !== "undefined")
             metadata.default = defaultValue;
     }

@@ -22,4 +22,7 @@ export class ModulusExpression extends ExpressionBase<number> implements IBinary
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) * this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new ModulusExpression(this.leftOperand, this.rightOperand);
+    }
 }

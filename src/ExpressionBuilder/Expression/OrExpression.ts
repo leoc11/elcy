@@ -22,4 +22,7 @@ export class OrExpression extends ExpressionBase<boolean> implements IBinaryOper
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) || this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new OrExpression(this.leftOperand, this.rightOperand);
+    }
 }

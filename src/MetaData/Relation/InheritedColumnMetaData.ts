@@ -6,8 +6,8 @@ import { ColumnMetaData } from "../../MetaData";
 export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
     public propertyName: string;
     public parentType: GenericType<P>;
-    public get name(): string {
-        return this.columnMetaData.name;
+    public get columnName(): string {
+        return this.columnMetaData.columnName;
     }
     public get nullable(): boolean {
         return this.columnMetaData.nullable;

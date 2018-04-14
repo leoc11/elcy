@@ -25,7 +25,9 @@ export class BitwiseOrExpression extends BitwiseExpression implements IBinaryOpe
         return "(" + this.leftOperand.toString() + " | " + this.rightOperand.toString() + ")";
     }
     public execute(transformer: ExpressionTransformer) {
-        // tslint:disable-next-line:no-bitwise
         return this.leftOperand.execute(transformer) | this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new BitwiseOrExpression(this.leftOperand, this.rightOperand);
     }
 }

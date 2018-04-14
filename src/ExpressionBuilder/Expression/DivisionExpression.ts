@@ -22,4 +22,7 @@ export class DivisionExpression extends ExpressionBase<number> implements IBinar
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) / this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new DivisionExpression(this.leftOperand, this.rightOperand);
+    }
 }

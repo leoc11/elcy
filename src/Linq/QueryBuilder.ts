@@ -9,7 +9,7 @@ import {
     MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, TimesExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
+    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
@@ -20,12 +20,23 @@ import { EntityExpression } from "./Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "./Queryable/QueryExpression/index";
-import { JoinEntityExpression } from "./Queryable/QueryExpression/JoinEntityExpression";
-import { SelectExpression } from "./Queryable/QueryExpression/SelectExpression";
+import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "./Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "./Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
+import { JoinType, ValueType, GenericType } from "../Common/Type";
+import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData } from "../MetaData";
+import { IColumnOption } from "../Decorator/Option";
+import { BinaryColumnMetaData } from "../MetaData/BinaryColumnMetaData";
+import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
+import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
+import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
+import { ColumnType, ColumnTypeMapKey } from "../Common/ColumnType";
+import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
+import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
+import { Enumerable } from "./Enumerable/Enumerable";
+import { CustomEntityExpression } from "./Queryable/QueryExpression/CustomEntityExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -34,12 +45,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
     protected indent = 0;
-
     public newAlias(type?: "entity" | "column") {
         return this.queryVisitor.newAlias(type);
     }
     public escape(identity: string) {
-        if (this.namingStrategy.enableEscape)
+        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
             return "[" + identity + "]";
         else
             return identity;
@@ -47,11 +57,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
     }
-
     public getContainsString(expression: SelectExpression) {
         return "SELECT EXISTS (" + this.getExpressionString(expression) + ")";
     }
-
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {
             return this.getSelectQueryString(expression);
@@ -59,7 +67,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
             return this.getColumnString(expression);
         }
-        else if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
+        else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             return this.getEntityQueryString(expression);
         }
         else if ((expression as IBinaryOperatorExpression).rightOperand) {
@@ -169,7 +177,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case SubtractionExpression:
                 result = this.getSubtractionExpressionString(expression as any);
                 break;
-            case TimesExpression:
+            case MultiplicationExpression:
                 result = this.getTimesExpressionString(expression as any);
                 break;
             case TernaryExpression:
@@ -208,18 +216,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnString(column: IColumnExpression, isSelect = false) {
         if (isSelect) {
             if (column instanceof ComputedColumnExpression) {
-                return this.getExpressionString(column.expression) + " AS " + this.escape(column.alias!);
+                return this.getExpressionString(column.expression) + " AS " + this.escape(column.columnName);
             }
-            return this.escape(column.entity.alias) + "." + this.escape(column.property) + (column.alias ? " AS " + this.escape(column.alias) : "");
+            return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
         }
-        return this.escape(column.entity.alias) + "." + (column.alias ? this.escape(column.alias) : this.escape(column.property));
+        return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
     }
     protected getSelectQueryString(select: SelectExpression): string {
         let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-            " " + select.columns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
+            " " + select.projectedColumns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            (select.where ? this.newLine() + "WHERE " + this.getExpressionString(select.where) : "");
-
+            this.getEntityJoinString(select.entity, select.joins);
+        if (select.where)
+            result += this.newLine() + "WHERE " + this.getExpressionString(select.where);
         if (select instanceof GroupByExpression) {
             if (select.groupBy.length > 0) {
                 result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
@@ -228,8 +237,158 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result += this.newLine() + "HAVING " + this.getExpressionString(select.having);
             }
         }
+        if (select.orders.length > 0)
+            result += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
-        return result + (select.orders.length > 0 ? this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ") : "");
+        // if has other includes, then convert to temp table
+        if (select.includes.length > 0) {
+            const tempTableName = "@temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
+            const tableStr = this.getDeclareTableVariableString(tempTableName, select.projectedColumns);
+            result = tableStr + ";" + this.newLine(0) + "INSERT INTO " + tempTableName +
+                this.newLine(0) + result + ";";
+            result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
+            
+            const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.toArray(), select.objectType, this.newAlias()));
+            // tempSelect.entity.name = tempTableName;
+
+            // render each include here
+            for (const include of select.includes) {
+                // add join to temp table
+                const reverseRelation = new Map();
+                for (const [key, value] of include.relations) {
+                    const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
+                    reverseRelation.set(value, tempKey);
+                }
+                const tempJoin = include.child.addJoinRelation(tempSelect, reverseRelation, JoinType.INNER);
+                result += this.newLine(0) + this.getSelectQueryString(include.child);
+                include.child.joins.remove(tempJoin);
+            }
+        }
+        return result;
+    }
+    protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
+        let result = "CREATE TABLE " + name;
+        result += this.newLine() + "{";
+        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join(this.newLine(this.indent + 1));
+        result += this.newLine() + "}";
+        return result;
+    }
+    protected getDeclareTableVariableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
+        let result = "DECLARE " + name + "  TABLE";
+        result += this.newLine() + "(";
+        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join("," + this.newLine(this.indent + 1));
+        result += this.newLine() + ")";
+        return result;
+    }
+    protected getColumnDeclarationString(column: IColumnExpression) {
+        let result = column.columnName;
+        result += " " + this.getColumnType(column);
+        if (column instanceof ColumnExpression) {
+            if (column.columnMetaData && typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
+                result += " not null";
+            }
+        }
+        return result;
+    }
+    protected abstract supportedColumnTypes: ColumnType[];
+    protected columnTypesWithOption: ColumnType[] = [];
+    protected columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>();
+    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>();
+    protected valueTypeMap = new Map<GenericType, ColumnType>();
+    protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T> | ValueType): string {
+        if ((column as IColumnExpression<T>).entity) {
+            const columnExp = column as ColumnExpression;
+            if (columnExp instanceof ColumnExpression && columnExp.columnMetaData && columnExp.columnType === columnExp.columnMetaData.columnType) {
+                return this.getColumnType(columnExp.columnMetaData);
+            }
+            return columnExp.columnType;
+        }
+
+        let columnOption = column as IColumnOption<T>;
+        let type: ColumnType;
+        if (!(column as IColumnOption).type) {
+            type = this.valueTypeMap.get(column as any);
+        }
+        else {
+            columnOption = column as IColumnOption<T>;
+            if (!columnOption.columnType) {
+                return this.getColumnType(columnOption.type as any);
+            }
+            type = columnOption.columnType;
+            if (!this.supportedColumnTypes.contains(type)) {
+                if (this.columnTypeMap) {
+                    if (this.columnTypeMap.has(type))
+                        type = this.columnTypeMap.get(type);
+                    else if (this.columnTypeMap.has("defaultBinary") && columnOption instanceof StringColumnMetaData)
+                        type = this.columnTypeMap.get("defaultBinary");
+                    else if (this.columnTypeMap.has("defaultBoolean") && columnOption instanceof BooleanColumnMetaData)
+                        type = this.columnTypeMap.get("defaultBoolean");
+                    else if (this.columnTypeMap.has("defaultDataString") && columnOption instanceof StringDataColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDataString");
+                    else if (this.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDate");
+                    else if (this.columnTypeMap.has("defaultDecimal") && columnOption instanceof DecimalColumnMetaData)
+                        type = this.columnTypeMap.get("defaultDecimal");
+                    else if (this.columnTypeMap.has("defaultEnum") && columnOption instanceof EnumColumnMetaData)
+                        type = this.columnTypeMap.get("defaultEnum");
+                    else if (this.columnTypeMap.has("defaultIdentifier") && columnOption instanceof IdentifierColumnMetaData)
+                        type = this.columnTypeMap.get("defaultIdentifier");
+                    else if (this.columnTypeMap.has("defaultNumberic") && columnOption instanceof NumericColumnMetaData)
+                        type = this.columnTypeMap.get("defaultNumberic");
+                    else if (this.columnTypeMap.has("defaultString") && columnOption instanceof StringColumnMetaData)
+                        type = this.columnTypeMap.get("defaultString");
+                    else if (this.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
+                        type = this.columnTypeMap.get("defaultTime");
+                    else if (this.columnTypeMap.has("defaultTimestamp") && columnOption instanceof TimestampColumnMetaData)
+                        type = this.columnTypeMap.get("defaultTimestamp");
+                    else
+                        throw new Error(`${type} is not supported`);
+                }
+            }
+        }
+        const typeDefault = this.columnTypeDefaults.get(columnOption.columnType);
+        const option = columnOption as any;
+        const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
+        const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
+        const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
+        if (this.columnTypesWithOption.contains(type)) {
+            if (typeof size !== "undefined") {
+                if (columnOption instanceof StringColumnMetaData || columnOption instanceof NumericColumnMetaData
+                    || columnOption instanceof BinaryColumnMetaData)
+                    type += `(${size})`;
+            }
+            else if (typeof scale !== "undefined" && typeof precision !== "undefined") {
+                if (columnOption instanceof DecimalColumnMetaData)
+                    type += `(${columnOption.precision}, ${columnOption.scale})`;
+            }
+            else if (typeof precision !== "undefined") {
+                if (columnOption instanceof TimeColumnMetaData || columnOption instanceof DateColumnMetaData)
+                    type += `(${precision})`;
+            }
+        }
+        return type;
+    }
+    protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
+        let result = "";
+        if (joins.length > 0) {
+            result += this.newLine();
+            result += joins.select(o => {
+                let childEntString = "";
+                if (o.child.isSimple())
+                    childEntString = this.getEntityQueryString(o.child.entity);
+                else
+                    childEntString = "(" + this.getSelectQueryString(o.child) + ") AS " + o.child.entity.alias;
+                let join = o.type + " JOIN " + childEntString +
+                    this.newLine(this.indent + 1) + "ON ";
+
+                const jstr: string[] = [];
+                for (const [key, val] of o.relations) {
+                    jstr.push(this.getColumnString(key) + " = " + this.getColumnString(val));
+                }
+                return join + jstr.join(" AND ");
+            }).toArray().join(this.newLine());
+        }
+        return result;
     }
     protected newLine(indent = this.indent) {
         return "\n" + (Array(indent + 1).join("\t"));
@@ -250,12 +409,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine() + "EXCEPT" +
                 this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
         }
-        else if (entity instanceof ProjectionEntityExpression)
-            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
-        else if (entity instanceof JoinEntityExpression)
-            return this.getEntityQueryString(entity.masterEntity) +
-                this.newLine() + entity.relations.select((o) => o.type + " JOIN " + this.getEntityQueryString(o.child) +
-                    this.newLine(this.indent + 1) + "ON " + o.relationMaps.select((r) => this.getColumnString(r.parentColumn) + " = " + this.getColumnString(r.childColumn)).toArray().join(" AND ")).toArray().join(this.newLine());
+        else if (entity instanceof ProjectionEntityExpression) {
+            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+        }
         return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
@@ -490,12 +646,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 }
                 break;
-            // case Symbol:
-            //     switch (expression.methodName) {
-            //         case "toString":
-            //             break;
-            //     }
-            //     break;
+            case Symbol:
+                switch (expression.methodName) {
+                    case "toString":
+                        break;
+                }
+                break;
             case Boolean:
                 switch (expression.methodName) {
                     case "toString":
@@ -676,7 +832,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getFunctionExpressionString<T>(expression: FunctionExpression<T>): string {
         throw new Error(`Function not supported`);
     }
-
     protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
         return "(" + this.newLine(++this.indent) + "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") " + this.newLine() + "THEN " + this.getExpressionString(expression.trueResultOperand) + this.newLine() + "ELSE " + this.getExpressionString(expression.falseResultOperand) + this.newLine() + "END" + this.newLine(--this.indent) + ")";
     }
@@ -686,7 +841,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getArrayValueExpressionString<T>(expression: ArrayValueExpression<T>): string {
         throw new Error(`ArrayValue not supported`);
     }
-
     protected getDivisionExpressionString(expression: DivisionExpression): string {
         return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
@@ -726,10 +880,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getSubtractionExpressionString(expression: SubtractionExpression): string {
         return this.getOperandString(expression.leftOperand) + " - " + this.getOperandString(expression.rightOperand);
     }
-    protected getTimesExpressionString(expression: TimesExpression): string {
+    protected getTimesExpressionString(expression: MultiplicationExpression): string {
         return this.getOperandString(expression.leftOperand) + " * " + this.getOperandString(expression.rightOperand);
     }
-
     protected getAdditionExpressionString<T extends string | number>(expression: AdditionExpression<T>): string {
         if (expression.type as any === String)
             return "CONCAT(" + this.getOperandString(expression.leftOperand) + ", " + this.getOperandString(expression.rightOperand) + ")";
@@ -737,7 +890,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " + " + this.getOperandString(expression.rightOperand);
     }
     protected getOperandString(expression: IExpression, convertBoolean = false): string {
-        if (expression instanceof EntityExpression || expression instanceof JoinEntityExpression || expression instanceof ProjectionEntityExpression) {
+        if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnString(column);
         }
@@ -750,11 +903,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getAndExpressionString(expression: AndExpression): string {
         return this.getOperandString(expression.leftOperand) + " AND " + this.getOperandString(expression.rightOperand);
     }
-    // tslint:disable-next-line:variable-name
     protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
         throw new Error(`LeftDecrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
@@ -764,15 +915,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return operandString + " <> 1";
         return "NOT " + operandString;
     }
-    // tslint:disable-next-line:variable-name
     protected getRightDecrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightDecrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getRightIncrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightIncrement not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getTypeofExpressionString(_expression: TypeofExpression): string {
         throw new Error(`Typeof not supported`);
     }
@@ -791,15 +939,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " ^ " + this.getOperandString(expression.rightOperand);
     }
     // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
-    // tslint:disable-next-line:variable-name
     protected getBitwiseSignedRightShiftExpressionString(_expression: BitwiseSignedRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getBitwiseZeroRightShiftExpressionString(_expression: BitwiseZeroRightShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
-    // tslint:disable-next-line:variable-name
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }

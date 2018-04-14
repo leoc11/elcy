@@ -40,4 +40,7 @@ export class ObjectValueExpression<T extends { [Key: string]: IExpression }> ext
             objectValue[prop] = this.object[prop].execute(transformer);
         return objectValue as T;
     }
+    public clone() {
+        return new ObjectValueExpression(this.object, this.type);
+    }
 }

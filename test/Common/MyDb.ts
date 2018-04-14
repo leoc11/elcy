@@ -1,11 +1,23 @@
 import { IObjectType } from "../../src/Common/Type";
 import { MssqlDbContext } from "../../src/Driver/Mssql/MssqlDbContext";
-import { Order, OrderDetail } from "./Model";
+import { Order, OrderDetail, Product } from "./Model";
 import { DbSet } from "../../src/Linq/DbSet";
 
 export class MyDb extends MssqlDbContext {
-    public database = "mydb";
-    public entityTypes: IObjectType[] = [Order, OrderDetail];
+    constructor() {
+        super({
+            host: "localhost\\SQLEXPRESS",
+            database: "iSeller_Data_Lotte",
+            port: 1433,
+            user: "sa",
+            password: "i1111991",
+            // options: {
+            //     trustedConnection: true
+            // }
+        });
+    }
+    public entityTypes: IObjectType[] = [Order, OrderDetail, Product];
     public orders: DbSet<Order> = this.set(Order);
     public orderDetails: DbSet<OrderDetail> = this.set(OrderDetail);
+    public products: DbSet<Product> = this.set(Product);
 }

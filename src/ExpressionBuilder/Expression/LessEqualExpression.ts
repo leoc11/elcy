@@ -13,7 +13,6 @@ export class LessEqualExpression<TType> extends ExpressionBase<boolean> implemen
     constructor(public leftOperand: IExpression<TType>, public rightOperand: IExpression<TType>) {
         super(Boolean);
     }
-
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -21,5 +20,8 @@ export class LessEqualExpression<TType> extends ExpressionBase<boolean> implemen
     }
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) <= this.rightOperand.execute(transformer);
+    }
+    public clone() {
+        return new LessEqualExpression(this.leftOperand, this.rightOperand);
     }
 }

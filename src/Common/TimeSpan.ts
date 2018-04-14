@@ -4,20 +4,23 @@ export class TimeSpan {
     private epochMilliSeconds: number;
     constructor(date: Date);
     constructor(epochMilliSeconds: number);
-    constructor(hours: number, minutes: number, seconds: number);
+    constructor(hours: number, minutes: number, seconds: number, milliSeconds?: number);
     constructor(hours: number | Date, minutes?: number, seconds?: number, milliSeconds?: number) {
         if (hours instanceof Date) {
-            this.epochMilliSeconds = hours.getTime();
+            milliSeconds = hours.getMilliseconds();
+            seconds = hours.getSeconds();
+            minutes = hours.getMinutes();
+            hours = hours.getHours();
         }
         else if (arguments.length === 1) {
             this.epochMilliSeconds = hours;
+            return;
         }
-        else {
-            this.epochMilliSeconds = hours * 3600000;
-            if (minutes) this.epochMilliSeconds += minutes * 60000;
-            if (seconds) this.epochMilliSeconds += seconds * 1000;
-            if (milliSeconds) this.epochMilliSeconds += milliSeconds;
-        }
+
+        this.epochMilliSeconds = hours * 3600000;
+        if (minutes) this.epochMilliSeconds += minutes * 60000;
+        if (seconds) this.epochMilliSeconds += seconds * 1000;
+        if (milliSeconds) this.epochMilliSeconds += milliSeconds;
     }
     public valueOf() {
         return this.epochMilliSeconds;
@@ -75,9 +78,18 @@ export class TimeSpan {
     }
     public toString() {
         const mili = this.getMilliSeconds();
-        return fillZero(this.getHours()) + ":" + fillZero(this.getMinutes()) + ":" + fillZero(this.getSeconds()) + (mili > 0 ? "." + fillZero(this.getMilliSeconds(), 3) : "");
+        return fillZero(this.getHours()) + ":" + fillZero(this.getMinutes()) + ":" + fillZero(this.getSeconds()) + (mili > 0 ? "." + fillZero(mili, 3) : "");
     }
     public toJSON() {
         return this.toString();
+    }
+    public static parse(timeSpan: string) {
+        const times = timeSpan.split(":");
+        const secondmilis = times[2].split(".");
+        const hours = parseInt(times[0]);
+        const minutes = parseInt(times[1]);
+        const seconds = parseInt(secondmilis[0]);
+        const milliSeconds = secondmilis.length > 1 ? parseInt(secondmilis[1]) : 0;
+        return new TimeSpan(hours, minutes, seconds, milliSeconds);
     }
 }

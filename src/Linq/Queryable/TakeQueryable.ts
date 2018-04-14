@@ -1,6 +1,7 @@
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { hashCode } from "../../Helper/Util";
 
 export class TakeQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
@@ -13,5 +14,8 @@ export class TakeQueryable<T> extends Queryable<T> {
             this.expression.paging.take = this.quantity;
         }
         return this.expression;
+    }
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("TAKE") + this.quantity;
     }
 }

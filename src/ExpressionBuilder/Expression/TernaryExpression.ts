@@ -21,4 +21,7 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
     public execute(transformer: ExpressionTransformer) {
         return this.logicalOperand.execute(transformer) ? this.trueResultOperand.execute(transformer) : this.falseResultOperand.execute(transformer);
     }
+    public clone() {
+        return new TernaryExpression(this.logicalOperand, this.trueResultOperand, this.falseResultOperand);
+    }
 }

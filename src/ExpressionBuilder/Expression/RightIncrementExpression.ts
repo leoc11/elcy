@@ -23,4 +23,7 @@ export class RightIncrementExpression extends ExpressionBase<number> implements 
     public execute(transformer: ExpressionTransformer) {
         return this.operand.execute(transformer);
     }
+    public clone() {
+        return new RightIncrementExpression(this.operand);
+    }
 }

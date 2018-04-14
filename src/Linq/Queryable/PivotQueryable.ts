@@ -1,42 +1,62 @@
-import { FunctionExpression, MethodCallExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IObjectType } from "../../Common/Type";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
-export class PivotQueryable<T, TD extends { [key: string]: FunctionExpression<T, any> }, TM extends { [key: string]: FunctionExpression<T[] | Enumerable<T>, any> }, TResult extends {[key in (keyof TD & keyof TM)]: any }
-    , TD1 extends { [key: string]: (o: T) => any } = any, TM1 extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> extends Queryable<TResult> {
-    constructor(public readonly parent: Queryable<T>, public dimensions: TD1 | ObjectValueExpression<TD>, public metrics: TM1 | ObjectValueExpression<TM>) {
-        super(Object);
+export class PivotQueryable<T,
+    TD extends FunctionExpression<T, any>,
+    TM extends FunctionExpression<T[] | Enumerable<T>, any>,
+    TResult extends { [key in (keyof TD1 & keyof TM1)]: any },
+    TD1 extends { [key: string]: (o: T) => any } = any,
+    TM1 extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> extends Queryable<TResult> {
+    protected readonly dimensionFn: TD1;
+    protected readonly metricFn: TM1;
+    private _dimensions: TD;
+    protected get dimensions() {
+        if (!this._dimensions && this.dimensionFn)
+            this._dimensions = ExpressionFactory.prototype.ToFunctionObjectValueExpression(this.dimensionFn, this.parent.type as IObjectType<T>, "d") as any;
+        return this._dimensions;
     }
-
+    protected set dimensions(value) {
+        this._dimensions = value;
+    }
+    private _metrics: TM;
+    protected get metrics() {
+        if (!this._metrics && this.metricFn)
+            this._metrics = ExpressionFactory.prototype.ToFunctionObjectValueExpression(this.metricFn, this.parent.type as IObjectType<T>, "m") as any;
+        return this._metrics;
+    }
+    protected set metrics(value) {
+        this._metrics = value;
+    }
+    constructor(public readonly parent: Queryable<T>, dimensions: TD1 | TD, metrics: TM1 | TM) {
+        super(Object);
+        if (dimensions instanceof FunctionExpression)
+            this.dimensions = dimensions;
+        else
+            this.dimensionFn = dimensions;
+        if (metrics instanceof FunctionExpression)
+            this.metrics = metrics;
+        else
+            this.metricFn = metrics;
+    }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
         if (!this.expression) {
-            if (!(this.dimensions instanceof ObjectValueExpression)) {
-                const dimension: TD = {} as any;
-                // tslint:disable-next-line:forin
-                for (const key in this.dimensions) {
-                    const val: ((item: T) => any) = this.dimensions[key];
-                    dimension[key] = val instanceof FunctionExpression ? val : ExpressionFactory.prototype.ToExpression(val, this.parent.type);
-                }
-                this.dimensions = new ObjectValueExpression(dimension);
-            }
-            if (!(this.metrics instanceof ObjectValueExpression)) {
-                const metric: TM = {} as any;
-                // tslint:disable-next-line:forin
-                for (const key in this.metrics) {
-                    const val: ((o: T[] | Enumerable<T>) => any) = this.metrics[key];
-                    metric[key] = val instanceof FunctionExpression ? val : ExpressionFactory.prototype.ToExpression<T[] | Enumerable<T>, any, any>(val, Array);
-                }
-                this.metrics = new ObjectValueExpression(metric);
-            }
-
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
+            const objectOperand = this.parent.buildQuery(queryBuilder).clone();
             const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
-            const visitParam = { parent: objectOperand, type: "pivot" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand as SelectExpression, scope: "pivot" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
+    }
+    public hashCode() {
+        let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());
+        code += hashCode(this.metricFn ? JSON.stringify(this.metricFn) : this.metrics.toString());
+        return this.parent.hashCode() + hashCode("PIVOT") + code;
     }
 }

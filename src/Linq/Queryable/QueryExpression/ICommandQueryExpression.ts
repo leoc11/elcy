@@ -2,7 +2,7 @@ import { IExpression } from "../../../ExpressionBuilder/Expression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 
-export interface ICommandQueryExpression<T = any> extends IQueryExpression<T> {
+export interface ICommandQueryExpression<T = any> extends IQueryExpression<T[]> {
     entity: IEntityExpression;
     where: IExpression<boolean>;
     clone(): ICommandQueryExpression<T>;

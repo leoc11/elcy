@@ -19,13 +19,15 @@ import { SkipQueryable } from "./SkipQueryable";
 import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
+import { IOrderQueryExpression } from "../Interface/IOrderQueryExpression";
+import { IQueryableOrderDefinition } from "../Interface/IOrderDefinition";
 
 declare module "./Queryable" {
     interface Queryable<T> {
         select<TReturn>(selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
-        orderBy(selector: (item: T) => any, direction?: OrderDirection): Queryable<T>;
+        orderBy(...selectors: IQueryableOrderDefinition[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
@@ -51,8 +53,8 @@ Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selec
 Queryable.prototype.where = function <T>(this: Queryable<T>, predicate: (item: T) => boolean): Queryable<T> {
     return new WhereQueryable(this, predicate);
 };
-Queryable.prototype.orderBy = function <T>(this: Queryable<T>, selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC): Queryable<T> {
-    return new OrderQueryable(this, selector, direction);
+Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]): Queryable<T> {
+    return new OrderQueryable(this, ...selectors);
 };
 Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Queryable<T> {
     return new SkipQueryable(this, skip);
@@ -65,7 +67,7 @@ Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>, selector?: (item: T) => any): Queryable<T> {
     if (selector)
-        return this.groupBy(selector).select((o) => o.first());
+        return this.groupBy(selector).select((o) => o.first()!);
     return new DistinctQueryable(this);
 };
 Queryable.prototype.innerJoin = function <T, T2, TKey extends ValueType, TResult>(this: Queryable<T>, array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult> {

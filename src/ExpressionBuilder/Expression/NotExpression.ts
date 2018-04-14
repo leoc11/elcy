@@ -37,4 +37,7 @@ export class NotExpression extends ExpressionBase<boolean> implements IUnaryOper
     public execute(transformer: ExpressionTransformer) {
         return !this.operand.execute(transformer);
     }
+    public clone() {
+        return new NotExpression(this.operand);
+    }
 }

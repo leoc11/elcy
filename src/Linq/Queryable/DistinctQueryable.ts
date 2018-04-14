@@ -2,9 +2,21 @@ import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilde
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
+import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class DistinctQueryable<T> extends Queryable<T> {
-    protected readonly selector?: FunctionExpression<T, any>;
+    protected readonly selectorFn?: (item: T) => any;
+    private _selector?: FunctionExpression<T, any>;
+    protected get selector() {
+        if (!this._selector && this.selectorFn)
+            this._selector = ExpressionFactory.prototype.ToExpression<T, any>(this.selectorFn, this.parent.type);
+        return this._selector;
+    }
+    protected set selector(value) {
+        this._selector = value;
+    }
     constructor(public readonly parent: Queryable<T>) {
         super(parent.type);
     }
@@ -16,9 +28,12 @@ export class DistinctQueryable<T> extends Queryable<T> {
                 methodParams.push(this.selector);
 
             const methodExpression = new MethodCallExpression(objectOperand, "distinct", methodParams);
-            const visitParam = { parent: objectOperand, type: "distinct" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "distinct" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;
+    }
+    public hashCode() {
+        return this.parent.hashCode() + hashCode("DISTINCT") + hashCode((this.selectorFn || this.selector || "").toString());
     }
 }

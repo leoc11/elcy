@@ -24,7 +24,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
             else {
                 const relationMeta: IRelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
                 if (relationMeta)
-                    this.type = relationMeta.relationType === RelationType.OneToOne ? relationMeta instanceof MasterRelationMetaData ? relationMeta.slaveType : relationMeta.masterType! : Enumerable;
+                    this.type = relationMeta.relationType === RelationType.OneToOne ? relationMeta instanceof MasterRelationMetaData ? relationMeta.sourceType : relationMeta.targetType! : Enumerable;
             }
         }
     }
@@ -46,6 +46,9 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
         else
             member = this.memberName;
 
-        return this.objectOperand.execute(transformer)[member];
+        return (this.objectOperand.execute(transformer) as any)[member];
+    }
+    public clone() {
+        return new MemberAccessExpression(this.objectOperand, this.memberName);
     }
 }

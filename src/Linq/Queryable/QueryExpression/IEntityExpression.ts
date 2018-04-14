@@ -1,14 +1,16 @@
-import { IObjectType } from "../../../Common/Type";
+import { GenericType } from "../../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
-import { JoinEntityExpression } from "./index";
 import { IQueryExpression } from "./IQueryExpression";
+import { SelectExpression } from "./SelectExpression";
+import { IOrderExpression } from ".";
 
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
-    type: IObjectType<T>;
+    type: GenericType<T>;
     alias: string;
     columns: IColumnExpression[];
     name: string;
-    parent?: JoinEntityExpression<any>;
+    select?: SelectExpression<T>;
     primaryColumns: IColumnExpression[];
-    path?: string;
+    defaultOrders: IOrderExpression[];
+    clone(): IEntityExpression<T>;
 }

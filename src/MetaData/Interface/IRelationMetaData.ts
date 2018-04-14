@@ -1,10 +1,10 @@
 import { IObjectType, RelationType } from "../../Common/Type";
 
-export interface IRelationMetaData<TSlave, TMaster> {
-    slaveType?: IObjectType<TSlave>;
-    masterType?: IObjectType<TMaster>;
+export interface IRelationMetaData<TSource, TTarget> {
+    sourceType?: IObjectType<TSource>;
+    targetType?: IObjectType<TTarget>;
     relationType?: RelationType;
     foreignKeyName?: string;
-    relationMaps?: {[key in keyof TSlave]?: keyof TMaster } | {[key in keyof TMaster]?: keyof TSlave };
+    relationMaps?: Map<keyof TSource, keyof TTarget>;
     reverseProperty?: string;
 }

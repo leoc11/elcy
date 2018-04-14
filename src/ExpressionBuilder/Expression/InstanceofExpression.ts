@@ -22,4 +22,7 @@ export class InstanceofExpression extends ExpressionBase<boolean> implements IBi
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) instanceof this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new InstanceofExpression(this.leftOperand, this.rightOperand);
+    }
 }

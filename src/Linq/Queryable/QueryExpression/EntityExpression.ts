@@ -1,4 +1,4 @@
-import { IObjectType } from "../../../Common/Type";
+import { IObjectType, } from "../../../Common/Type";
 import { entityMetaKey } from "../../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../../../MetaData";
 import { QueryBuilder } from "../../QueryBuilder";
@@ -8,23 +8,27 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
-    public get name() {
-        return this.metaData.name;
-    }
-    public get metaData() {
+    public name: string;
+    protected get metaData() {
         if (!this._metaData)
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
     }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
-            this._columns = this.metaData.properties.select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
+            if (this.metaData)
+                this._columns = this.metaData.properties.select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
+            else
+                this._columns = [];
         }
         return this._columns;
     }
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.property === o)).toArray();
+            if (this.metaData)
+                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.propertyName === o)).toArray();
+            else
+                this._primaryColumns = [];
         }
         return this._primaryColumns;
     }
@@ -32,7 +36,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         if (!this._defaultOrders) {
             if (this.metaData.defaultOrder)
                 this._defaultOrders = this.metaData.defaultOrder!.select((o) => ({
-                    column: this.columns.first((c) => c.property === o.property),
+                    column: this.columns.first((c) => c.propertyName === o.property),
                     direction: o.direction
                 })).toArray();
             else
@@ -40,20 +44,23 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._defaultOrders;
     }
-    // tslint:disable-next-line:variable-name
     private _metaData: EntityMetaData<T>;
-    // tslint:disable-next-line:variable-name
     private _columns: IColumnExpression[];
-    // tslint:disable-next-line:variable-name
     private _primaryColumns: IColumnExpression[];
-    // tslint:disable-next-line:variable-name
     private _defaultOrders: IOrderExpression[];
     constructor(public readonly type: IObjectType<T>, public alias: string) {
+        if (this.metaData)
+            this.name = this.metaData.name;
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
     }
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
+    }
+    public clone(): IEntityExpression<T> {
+        const clone = new EntityExpression(this.type, this.alias);
+        clone.name = this.name;
+        return clone;
     }
 }

@@ -22,4 +22,7 @@ export class LessThanExpression<TType> extends ExpressionBase<boolean> implement
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) < this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new LessThanExpression(this.leftOperand, this.rightOperand);
+    }
 }

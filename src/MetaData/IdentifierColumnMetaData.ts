@@ -1,11 +1,8 @@
-import { IntColumnType } from "../Common/ColumnType";
+import { IdentifierColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-// tslint:disable-next-line:ban-types
-export class IdentifierColumnMetaData extends ColumnMetaData<string> {
-    public autoIncrement: boolean;
-    public length?: number;
-    public columnType: IntColumnType = "int";
 
+export class IdentifierColumnMetaData extends ColumnMetaData<string> {
+    public columnType: IdentifierColumnType = "uniqueidentifier";
     constructor() {
         super(String);
     }

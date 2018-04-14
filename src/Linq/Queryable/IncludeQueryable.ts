@@ -4,20 +4,43 @@ import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
+import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { hashCode } from "../../Helper/Util";
 
 export class IncludeQueryable<T> extends Queryable<T> {
-    protected readonly selectors: Array<FunctionExpression<T, any>>;
-    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any) | FunctionExpression<T, any>>, public type: GenericType<T> = Object) {
+    protected readonly selectorsFn: Array<(item: T) => any>;
+    private _selectors: Array<FunctionExpression<T, any>>;
+    protected get selectors() {
+        if (!this._selectors && this.selectorsFn) {
+            this._selectors = this.selectorsFn.select((o) => ExpressionFactory.prototype.ToExpression<T, any>(o, this.parent.type)).toArray();
+        }
+
+        return this._selectors;
+    }
+    protected set selectors(value) {
+        this._selectors = value;
+    }
+    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression<T, any>>, public type: GenericType<T> = Object) {
         super(type);
-        this.selectors = selectors.select((o) => o instanceof FunctionExpression ? o : ExpressionFactory.prototype.ToExpression<T, any>(o, parent.type)).toArray();
+        if (selectors.length > 0 && selectors[0] instanceof FunctionExpression) {
+            this.selectors = selectors as any;
+        }
+        else {
+            this.selectorsFn = selectors as any;
+        }
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
-            const visitParam = { parent: objectOperand, type: "include" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "include" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
+    }
+    public hashCode(): number {
+        return this.parent.hashCode() + hashCode("INCLUDE") + ((this.selectorsFn || this.selectors) as any[])
+            .select((o) => hashCode(o.toString()))
+            .sum();
     }
 }

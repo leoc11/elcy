@@ -22,4 +22,7 @@ export class TypeofExpression extends ExpressionBase<string> implements IUnaryOp
     public execute(transformer: ExpressionTransformer) {
         return typeof this.operand.execute(transformer);
     }
+    public clone() {
+        return new TypeofExpression(this.operand);
+    }
 }

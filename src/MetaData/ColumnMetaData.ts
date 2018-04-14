@@ -3,7 +3,7 @@ import { GenericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 
 export class ColumnMetaData<T = any> implements IColumnOption<T> {
-    public name: string;
+    public columnName: string;
     public nullable: boolean;
     public default?: T;
     public description: string;
@@ -21,8 +21,8 @@ export class ColumnMetaData<T = any> implements IColumnOption<T> {
      * Copy
      */
     public applyOption(columnMeta: IColumnOption<any>) {
-        if (typeof columnMeta.name !== "undefined")
-            this.name = columnMeta.name;
+        if (typeof columnMeta.columnName !== "undefined")
+            this.columnName = columnMeta.columnName;
         if (columnMeta.description)
             this.description = columnMeta.description;
         if (typeof columnMeta.nullable !== "undefined")

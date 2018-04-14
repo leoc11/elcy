@@ -13,15 +13,15 @@ export class ComputedColumnMetaData<T, R> implements IColumnOption<R> {
         return this._fnExpressionFactory;
     }
     // tslint:disable-next-line:no-shadowed-variable
-    constructor(public type: GenericType<R>, public fn: (item: T) => R, public name: string) {
+    constructor(public type: GenericType<R>, public fn: (item: T) => R, public columnName: string) {
     }
 
     /**
      * Copy
      */
     public Copy(columnMeta: IColumnOption<any>) {
-        if (typeof columnMeta.name !== "undefined")
-            this.name = columnMeta.name;
+        if (typeof columnMeta.columnName !== "undefined")
+            this.columnName = columnMeta.columnName;
         if (columnMeta.description)
             this.description = columnMeta.description;
     }

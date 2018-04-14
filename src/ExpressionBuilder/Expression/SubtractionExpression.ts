@@ -22,4 +22,7 @@ export class SubtractionExpression extends ExpressionBase<number> implements IBi
     public execute(transformer: ExpressionTransformer) {
         return this.leftOperand.execute(transformer) - this.rightOperand.execute(transformer);
     }
+    public clone() {
+        return new SubtractionExpression(this.leftOperand, this.rightOperand);
+    }
 }

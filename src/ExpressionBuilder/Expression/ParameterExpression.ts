@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase } from "./IExpression";
 
 export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
-    public static Create(name: string): ParameterExpression;
+    public static Create(name: string): ParameterExpression<any>;
     public static Create<TType>(ctor: GenericType<TType>, name: string): ParameterExpression<TType>;
     public static Create<TType>(ctor: GenericType<TType> | string, name?: string) {
         if (typeof ctor === "string")
@@ -23,5 +23,8 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
     }
     public execute(transformer: ExpressionTransformer): any {
         return transformer.parameters.get(this.name);
+    }
+    public clone() {
+        return new ParameterExpression(this.name, this.type);
     }
 }

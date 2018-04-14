@@ -1,8 +1,7 @@
-import { OrderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable/Enumerable";
 import "./Enumerable/Enumerable.partial";
 import { GroupedEnumerable } from "./Enumerable/GroupedEnumerable";
-// import { IGroupArray } from "./Interface/IGroupArray";
+import { IOrderDefinition } from "./Interface/IOrderDefinition";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -12,9 +11,8 @@ declare global {
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
-        // last(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(fn: (item: T) => any, orderDirection?: OrderDirection): Enumerable<T>;
+        orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn?: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
@@ -30,7 +28,7 @@ declare global {
         leftJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: T2[], keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        union(array2: T[], all: boolean): Enumerable<T>;
+        union(array2: T[], all?: boolean): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
          */
@@ -58,15 +56,12 @@ Array.prototype.contains = function <T>(this: T[], item: T) {
 Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {
     return this.asEnumerable().where(predicate);
 };
-Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC) {
-    return this.asEnumerable().orderBy(selector, direction);
+Array.prototype.orderBy = function <T>(this: T[], ...selectors: IOrderDefinition<T>[]) {
+    return this.asEnumerable().orderBy(...selectors);
 };
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];
 };
-// Array.prototype.last = function <T>(this: T[], predicate?: (item: T) => boolean) {
-//     return predicate ? this.where(predicate).last() : this[this.length - 1];
-// };
 Array.prototype.any = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().any(predicate) : this.length > 0;
 };

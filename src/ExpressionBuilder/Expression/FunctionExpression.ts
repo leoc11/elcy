@@ -33,5 +33,7 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
     public execute(transformer: ExpressionTransformer): any {
         return transformer.executeExpression(this);
     }
-
+    public clone() {
+        return new FunctionExpression(this.body, this.params);
+    }
 }

@@ -23,7 +23,9 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
         return "~" + this.operand.toString();
     }
     public execute(transformer: ExpressionTransformer) {
-        // tslint:disable-next-line:no-bitwise
         return ~this.operand.execute(transformer);
+    }
+    public clone() {
+        return new BitwiseNotExpression(this.operand);
     }
 }

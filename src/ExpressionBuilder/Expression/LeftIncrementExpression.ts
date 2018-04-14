@@ -22,4 +22,7 @@ export class LeftIncrementExpression extends ExpressionBase<number> implements I
     public execute(transformer: ExpressionTransformer) {
         return this.operand.execute(transformer) + 1;
     }
+    public clone() {
+        return new LeftIncrementExpression(this.operand);
+    }
 }

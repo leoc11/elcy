@@ -14,19 +14,21 @@ export class ValueExpression<T> extends ExpressionBase<T> {
             return NullConstructor as any;
         return this.value.constructor as any;
     }
-    constructor(public readonly value: T, private ExpressionString: string = "") {
+    constructor(public readonly value: T, private expressionString: string = "") {
         super();
-        if (this.ExpressionString === "") {
-            this.ExpressionString = JSON.stringify(this.value);
+        if (this.expressionString === "") {
+            this.expressionString = JSON.stringify(this.value);
         }
     }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
-        return this.ExpressionString;
+        return this.expressionString;
     }
     public execute() {
         return this.value;
     }
-
+    public clone() {
+        return new ValueExpression(this.value, this.expressionString);
+    }
 }

@@ -15,7 +15,7 @@ export function ModifiedDate(name: string | number | IDateColumnOption, dbtype?:
         metadata.dateTimeKind = DateTimeKind.Custom;
     }
     else if (typeof name === "string") {
-        metadata.name = name;
+        metadata.columnName = name;
         if (defaultValue !== undefined) metadata.default = defaultValue;
         if (dateTimeKind !== undefined) metadata.dateTimeKind = dateTimeKind;
         if (dbtype !== undefined) metadata.columnType = dbtype;
