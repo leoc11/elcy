@@ -129,9 +129,6 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
                 if (parentEntity) {
                     if (parentRelation.type === RelationType.OneToMany) {
-                        if (!parentEntity[relation.name]) {
-                            parentEntity[relation.name] = [];
-                        }
                         parentEntity[relation.name].add(entity);
                     }
                     else {
@@ -161,6 +158,15 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     }
                     else {
                         childEntity[data.relationMeta.reverseProperty] = entity;
+                    }
+                }
+            }
+
+            // set relation to Array
+            for (const include of select.includes) {
+                if (include.type === RelationType.OneToMany) {
+                    if (!entity[include.name]) {
+                        entity[include.name] = [];
                     }
                 }
             }

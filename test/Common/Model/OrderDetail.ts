@@ -17,6 +17,8 @@ export class OrderDetail extends EntityBase {
     public ProductId: string;
     @StringColumn({ columnType: "nvarchar", columnName: "ProductName" })
     public name: string;
+    @StringColumn({ columnType: "float", columnName: "Quantity" })
+    public quantity: string;
     @DateColumn()
     public CreatedDate: Date;
     

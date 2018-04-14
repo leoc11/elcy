@@ -1,8 +1,7 @@
-import { OrderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable/Enumerable";
 import "./Enumerable/Enumerable.partial";
 import { GroupedEnumerable } from "./Enumerable/GroupedEnumerable";
-// import { IGroupArray } from "./Interface/IGroupArray";
+import { IOrderDefinition } from "./Interface/IOrderDefinition";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -13,7 +12,7 @@ declare global {
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(fn: (item: T) => any, orderDirection?: OrderDirection): Enumerable<T>;
+        orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn?: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
@@ -57,8 +56,8 @@ Array.prototype.contains = function <T>(this: T[], item: T) {
 Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {
     return this.asEnumerable().where(predicate);
 };
-Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC) {
-    return this.asEnumerable().orderBy(selector, direction);
+Array.prototype.orderBy = function <T>(this: T[], ...selectors: IOrderDefinition<T>[]) {
+    return this.asEnumerable().orderBy(...selectors);
 };
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];

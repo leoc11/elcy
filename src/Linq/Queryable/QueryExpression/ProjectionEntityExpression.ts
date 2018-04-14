@@ -17,7 +17,6 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         return this._primaryColumns;
     }
     public defaultOrders: IOrderExpression[] = [];
-    protected _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     private _selectedColumns: IColumnExpression[];
     private _relationColumns: IColumnExpression[];

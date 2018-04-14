@@ -25,7 +25,7 @@ import { GroupByExpression } from "./Queryable/QueryExpression/GroupByExpression
 import { IColumnExpression } from "./Queryable/QueryExpression/IColumnExpression";
 import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
-    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression
+    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression
 } from "./Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
@@ -208,7 +208,10 @@ export class QueryExpressionVisitor {
                     default:
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
-                            parentEntity.select!.addJoinRelation(child, relationMeta);
+                            let joinType: JoinType;
+                            if (param.scope === "orderBy")
+                                joinType = JoinType.LEFT;
+                            parentEntity.select!.addJoinRelation(child, relationMeta, joinType);
                             return relationMeta.relationType === RelationType.OneToMany ? child : child.entity;
                         }
                 }
@@ -220,7 +223,7 @@ export class QueryExpressionVisitor {
                 return resValue[expression.memberName];
         }
 
-        throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
+        throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
         const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
@@ -385,18 +388,28 @@ export class QueryExpressionVisitor {
                     }
                 case "orderBy":
                     {
-                        const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
-                        const direction = expression.params[1] as ValueExpression<OrderDirection>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
-                        this.parameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
-                        const selectExp = this.visit(selectorFn, visitParam);
-                        this.parameters.remove(selectorFn.params[0].name);
+                        const selectors = expression.params as ObjectValueExpression<any>[];
+                        const orders: IOrderExpression[] = [];
+                        for (const selector of selectors) {
+                            const selectorFn = selector.object.selector as FunctionExpression<TType, any>;
+                            const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression(OrderDirection.ASC);
+                            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
+                            this.parameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                            const selectExp = this.visit(selectorFn, visitParam) as IColumnExpression;
+                            this.parameters.remove(selectorFn.params[0].name);
 
-                        if (!isValueType(selectExp.type)) {
-                            throw new Error(`Queryable<${objectOperand.type}>.orderBy required select with basic type return value.`);
+                            if (!isValueType(selectExp.type)) {
+                                throw new Error(`Queryable<${objectOperand.type}>.orderBy required select with basic type return value.`);
+                            }
+                            orders.push({
+                                column: selectExp,
+                                direction: direction.value
+                            });
                         }
-
-                        objectOperand.addOrder(selectExp, direction.execute());
+                        if (orders.length > 0) {
+                            objectOperand.orders = [];
+                            objectOperand.addOrder(orders);
+                        }
                         return objectOperand;
                     }
                 case "groupBy":

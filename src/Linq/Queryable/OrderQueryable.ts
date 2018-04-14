@@ -1,40 +1,52 @@
-import { OrderDirection, ValueType } from "../../Common/Type";
-import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
+import { OrderDirection } from "../../Common/Type";
+import { FunctionExpression, MethodCallExpression, ObjectValueExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
+import { IQueryableOrderDefinition } from "../Interface/IOrderDefinition";
 
 export class OrderQueryable<T> extends Queryable<T> {
-    protected readonly selectorFn: (item: T) => ValueType;
-    protected _selector: FunctionExpression<T, ValueType>;
-    protected get selector() {
-        if (!this._selector && this.selectorFn)
-            this._selector = ExpressionFactory.prototype.ToExpression(this.selectorFn, this.parent.type);
-        return this._selector;
+    protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
+    protected _selectors: ObjectValueExpression<any>[];
+    protected get selectors() {
+        if (!this._selectors && this.selectorsFn) {
+            this._selectors = this.selectorsFn.select(o => {
+                const a = {
+                    selector: o.selector instanceof FunctionExpression ? o.selector : ExpressionFactory.prototype.ToExpression(o.selector, this.parent.type),
+                    direction: new ValueExpression(o.direction ? o.direction : OrderDirection.ASC)
+                };
+                return new ObjectValueExpression(a);
+            }).toArray();
+        }
+        return this._selectors;
     }
-    protected set selector(value) {
-        this._selector = value;
+    protected set selectors(value) {
+        this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, selector: FunctionExpression<T, ValueType> | ((item: T) => ValueType), protected readonly direction: OrderDirection) {
+    constructor(public readonly parent: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]) {
         super(parent.type);
-        if (selector instanceof FunctionExpression)
-            this.selector = selector;
-        else
-            this.selectorFn = selector;
+        this.selectorsFn = selectors;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            const methodExpression = new MethodCallExpression(objectOperand, "orderBy", [this.selector]);
+            const methodExpression = new MethodCallExpression(objectOperand, "orderBy", this.selectors);
             const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "orderBy" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("ORDERBY") + hashCode((this.selectorFn || this.selector).toString());
+        let code = this.parent.hashCode() + hashCode("ORDERBY");
+        if (this.selectorsFn) {
+            code += this.selectorsFn.sum(o => hashCode(o.selector.toString()) + hashCode(o.direction ? o.direction : OrderDirection.ASC));
+        }
+        else if (this.selectors) {
+            code += this.selectors.sum(o => hashCode(o.toString()));
+        }
+        return code;
     }
 }

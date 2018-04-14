@@ -50,6 +50,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             this.selects = entity.columns.slice(0);
         this.isSelectAll = true;
         entity.select = this;
+        this.orders = entity.defaultOrders.slice(0);
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         return this.entity.primaryColumns.union(this.relationColumns).union(this.selects);
@@ -105,7 +106,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         return child.parentRelation;
     }
 
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T>): IJoinRelation<T, any>;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
@@ -116,7 +117,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         if ((relationMetaOrRelations as IRelationMetaData<any, any>).relationMaps) {
             const relationMeta = relationMetaOrRelations as IRelationMetaData<any, any>;
             const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : RelationType.OneToOne;
-            type = relType === RelationType.OneToOne ? JoinType.INNER : JoinType.LEFT;
+            type = relType === RelationType.OneToOne ? type ? type : JoinType.INNER : JoinType.LEFT;
             relationMap = new Map();
             const isReverse = relationMeta.sourceType !== this.entity.type;
             for (const [sourceProp, targetProp] of relationMeta.relationMaps) {
@@ -141,6 +142,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public clone(entity?: IEntityExpression): SelectExpression<T> {
         const clone = new SelectExpression(entity ? entity : this.entity.clone());
         clone.objectType = this.objectType;
+        clone.orders = this.orders.slice(0);
+        clone.isSelectAll = this.isSelectAll;
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);
             if (!col) {
@@ -149,7 +152,27 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             }
             return col;
         }).toArray();
-        clone.isSelectAll = this.isSelectAll;
+
+        clone.joins = this.joins.select(o => {
+            const relationMap = new Map();
+            for (const [parentCol, childCol] of o.relations) {
+                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
+                relationMap.set(cloneCol, childCol);
+            }
+            const child = o.child.clone();
+            const rel: IJoinRelation = {
+                child: child,
+                parent: clone,
+                relations: relationMap,
+                type: o.type
+            };
+            child.parentRelation = rel;
+            return rel;
+        }).toArray();
+        
+        if (this.where)
+            clone.where = this.where.clone();
+
         return clone;
     }
     public execute(queryBuilder: QueryBuilder) {

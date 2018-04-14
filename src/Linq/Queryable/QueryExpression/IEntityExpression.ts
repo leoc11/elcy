@@ -2,6 +2,7 @@ import { GenericType } from "../../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
+import { IOrderExpression } from ".";
 
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     type: GenericType<T>;
@@ -10,5 +11,6 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     name: string;
     select?: SelectExpression<T>;
     primaryColumns: IColumnExpression[];
+    defaultOrders: IOrderExpression[];
     clone(): IEntityExpression<T>;
 }

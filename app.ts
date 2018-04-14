@@ -1,6 +1,6 @@
 "use strict";
-import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression } from "./src/ExpressionBuilder/Expression/index";
-import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable } from "./src/Linq/Queryable/index";
+import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression, LessEqualExpression, MultiplicationExpression } from "./src/ExpressionBuilder/Expression/index";
+import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable, OrderQueryable } from "./src/Linq/Queryable/index";
 import { JoinQueryable } from "./src/Linq/Queryable/JoinQueryable";
 import { SelectExpression, GroupByExpression } from "./src/Linq/Queryable/QueryExpression/index";
 import { MyDb } from "./test/Common/MyDb";
@@ -11,6 +11,9 @@ import { GroupedExpression } from "./src/Linq/Queryable/QueryExpression/GroupedE
 import { Queryable } from "./src/Linq/Queryable/Queryable";
 import { IncludeQueryable } from "./src/Linq/Queryable/IncludeQueryable";
 import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQueryResultParser";
+import { IOrderQueryExpression } from "./src/Linq/Interface/IOrderQueryExpression";
+import { IQueryableOrderDefinition } from "./src/Linq/Interface/IOrderDefinition";
+import { OrderDirection } from "./src/Common/Type";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -26,6 +29,11 @@ const db = new MyDb();
 
     // toArray
     // const er = await db.orders.toArray();
+
+
+    /**
+     * INCLUDE
+     */
 
     // include projection
     // const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
@@ -51,6 +59,11 @@ const db = new MyDb();
     // const b = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
     // const odInclude = new IncludeQueryable(db.orderDetails, [a, b]);
     // const c = await odInclude.toArray();
+
+
+    /**
+     * SELECT
+     */
 
     // select column
     // const selectFn = new FunctionExpression(new MemberAccessExpression(param, "OrderDate") , [param]);
@@ -86,7 +99,7 @@ const db = new MyDb();
     // const select1 = new SelectQueryable(db.orderDetails, selectFn1);
     // const s1 = await select1.toArray();
 
-    // select object to many navigation
+    // select object to many navigation select
     // const innerSelect = new FunctionExpression(new ObjectValueExpression({
     //     name: new MemberAccessExpression(odParam, "name")
     // }), [odParam]);
@@ -103,6 +116,147 @@ const db = new MyDb();
     // }), [odParam]);
     // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
     //     simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
+
+    /**
+     * WHERE
+     */
+
+    // where
+    // const predicate = new FunctionExpression(
+    //     new LessEqualExpression(
+    //         new MemberAccessExpression(param, "TotalAmount"), 
+    //         new ValueExpression(10000)), 
+    // [param]);
+    // const whereQuery = new WhereQueryable(db.orders, predicate);
+    // const w1 = await whereQuery.toArray();
+
+    // where include
+    // const predicate = new FunctionExpression(
+    //     new LessEqualExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         new ValueExpression(15000)),
+    //     [odParam]);
+    // const whereExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "where", [predicate]);
+    // const include = new IncludeQueryable(db.orders, [new FunctionExpression(whereExp, [param])]);
+    // const c = await include.toArray();
+
+    // where select
+    // const predicate = new FunctionExpression(
+    //     new LessEqualExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         new ValueExpression(15000)),
+    //     [odParam]);
+    // const whereExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "where", [predicate]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     ods: whereExp,
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
+
+    // where where
+    // let predicate = new FunctionExpression(
+    //     new LessEqualExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         new ValueExpression(15000)),
+    // [odParam]);
+    // let whereQuery = new WhereQueryable(db.orderDetails, predicate);
+    // predicate = new FunctionExpression(
+    //     new MethodCallExpression(
+    //         new MemberAccessExpression(odParam, "name"),
+    //         "like", [new ValueExpression("%a%")]),
+    // [odParam]);
+    // whereQuery = new WhereQueryable(whereQuery, predicate);
+    // const w1 = await whereQuery.toArray();
+
+    /**
+     * ORDER
+     */
+
+    // order
+    // const selector: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(param, "TotalAmount"), 
+    //     [param]),
+    //     direction: OrderDirection.DESC
+    // };
+    // const orderQuery = new OrderQueryable(db.orders, selector);
+    // const w1 = await orderQuery.toArray();
+
+    // Order related entity column
+    // const selector: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"), 
+    //     [odParam]),
+    //     direction: OrderDirection.DESC
+    // };
+    // const orderQuery = new OrderQueryable(db.orderDetails, selector);
+    // const w1 = await orderQuery.toArray();
+
+    // Order computed column
+    // const selector: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MultiplicationExpression(new MemberAccessExpression(odParam, "quantity"), new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price")), 
+    //     [odParam]),
+    //     direction: OrderDirection.DESC
+    // };
+    // const orderQuery = new OrderQueryable(db.orderDetails, selector);
+    // const w1 = await orderQuery.toArray();
+
+    // Order.order
+    // const selector: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(odParam, "quantity"),
+    //         [odParam])
+    // };
+    // const selector2: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         [odParam]),
+    //     direction: OrderDirection.DESC
+    // };
+    // const orderQuery = new OrderQueryable(db.orderDetails, ...[selector, selector2]);
+    // const w1 = await orderQuery.toArray();
+
+    // Order + order
+    // Note: thought Product no longer used, it still exist in join statement.
+    // const selector: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         [odParam]),
+    //     direction: OrderDirection.DESC
+    // };
+    // let orderQuery = new OrderQueryable(db.orderDetails, selector);
+    // const selector2: IQueryableOrderDefinition = {
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(odParam, "quantity"),
+    //         [odParam])
+    // };
+    // orderQuery = new OrderQueryable(orderQuery, selector2);
+    // const w1 = await orderQuery.toArray();
+
+    // Order in include
+    // const selector = new ObjectValueExpression({
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
+    //         [odParam]),
+    //     direction: new ValueExpression(OrderDirection.DESC)
+    // });
+    // const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
+    // const include = new IncludeQueryable(db.orders, [new FunctionExpression(orderExp, [param])]);
+    // const c = await include.toArray();
+
+    // order in select
+    // const selector = new ObjectValueExpression({
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(odParam, "quantity"),
+    //         [odParam])
+    // });
+    // const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     ods: orderExp,
     // }), [param]);
     // const select1 = new SelectQueryable(db.orders, selectFn1);
     // const s1 = await select1.toArray();

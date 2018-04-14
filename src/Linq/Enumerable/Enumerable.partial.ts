@@ -16,12 +16,13 @@ import { SkipEnumerable } from "./SkipEnumerable";
 import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
+import { IOrderDefinition } from "../Interface/IOrderDefinition";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
-        orderBy(selector: (item: T) => any, direction?: OrderDirection): Enumerable<T>;
+        orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         skip(skip: number): Enumerable<T>;
         take(take: number): Enumerable<T>;
         groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
@@ -45,8 +46,8 @@ Enumerable.prototype.selectMany = function <T, TReturn>(this: Enumerable<T>, sel
 Enumerable.prototype.where = function <T>(this: Enumerable<T>, predicate: (item: T) => boolean): Enumerable<T> {
     return new WhereEnumerable(this, predicate);
 };
-Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, selector: (item: T) => any, direction: OrderDirection = OrderDirection.ASC): Enumerable<T> {
-    return new OrderEnumerable(this, selector, direction);
+Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, ...selectors: IOrderDefinition<T>[]): Enumerable<T> {
+    return new OrderEnumerable(this, ...selectors);
 };
 Enumerable.prototype.skip = function <T>(this: Enumerable<T>, skip: number): Enumerable<T> {
     return new SkipEnumerable(this, skip);
