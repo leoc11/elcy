@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import "../../Linq/EnumerableExtension";
+import "../../Extensions/EnumerableExtension";
 import { AbstractEntityMetaData, BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation";

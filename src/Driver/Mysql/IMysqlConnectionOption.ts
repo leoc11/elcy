@@ -1,4 +1,4 @@
-import { IConnectionOption, IConnectionPoolOption } from "../../Linq/Interface/IConnectionOption";
+import { IConnectionOption, IConnectionPoolOption } from "../../Data/Interface/IConnectionOption";
 import { SslOptions } from "mysql2";
 export interface IMysqlConnectionOption extends IConnectionOption {
     /**

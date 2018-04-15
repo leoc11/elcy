@@ -3,19 +3,16 @@ import { ExpressionBuilder } from "../ExpressionBuilder";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { ObjectValueExpression } from ".";
+import { ObjectValueExpression } from "./ObjectValueExpression";
 
 export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
     public static Create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
-    public static Create(functionString: string, ctors: Array<{ new(): any }>, params?: any[]): FunctionExpression<any>;
-    public static Create<TType, TResult>(functionFn: ((...params: any[]) => TResult), ctors: Array<{ new(): any }>, params?: any[]): FunctionExpression<TType>;
-    public static Create<TType, TResult>(functionFn: string | ExpressionBase<TResult> | ((...params: any[]) => TResult), ctors: Array<{ new(): any }> | Array<ParameterExpression<TType>>, params?: any[]) {
-        if (typeof functionFn === "function")
-            functionFn = functionFn.toString();
+    public static Create<TType, TResult>(functionFn: ((...params: any[]) => TResult), ctors: GenericType[]): FunctionExpression<TType>;
+    public static Create<TType, TResult>(functionFn: ExpressionBase<TResult> | ((...params: any[]) => TResult), ctors: GenericType[] | Array<ParameterExpression<TType>>) {
         if (functionFn instanceof ExpressionBase)
             return new FunctionExpression(functionFn, ctors as Array<ParameterExpression<TType>>);
 
-        return (new ExpressionBuilder()).ParseToExpression(functionFn, ctors as Array<{ new(): any }>, params);
+        return ExpressionBuilder.parse(functionFn, ctors as GenericType[]);
     }
     // TODO: type must always specified
     constructor(public body: IExpression<TResult>, public params: Array<ParameterExpression<TType>>, type?: GenericType<TResult>) {

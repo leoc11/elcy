@@ -1,5 +1,4 @@
 export class ClassEventListener<TThis, TInput, TResult> {
-    // tslint:disable-next-line:variable-name
     private _eventHandlers: Array<(this: TThis, input?: TInput) => TResult>;
     constructor(public stopOnFalse = false) {
 

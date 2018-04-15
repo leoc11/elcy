@@ -1,18 +1,17 @@
 "use strict";
 import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression, LessEqualExpression, MultiplicationExpression } from "./src/ExpressionBuilder/Expression/index";
-import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable, OrderQueryable } from "./src/Linq/Queryable/index";
-import { JoinQueryable } from "./src/Linq/Queryable/JoinQueryable";
-import { SelectExpression, GroupByExpression } from "./src/Linq/Queryable/QueryExpression/index";
+import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable, OrderQueryable } from "./src/Queryable/index";
+import { JoinQueryable } from "./src/Queryable/JoinQueryable";
+import { SelectExpression, GroupByExpression } from "./src/Queryable/QueryExpression/index";
 import { MyDb } from "./test/Common/MyDb";
 import { Order, OrderDetail } from "./test/Common/Model/index";
-import { WhereEnumerable } from "./src/Linq/Enumerable/WhereEnumerable";
-import { Enumerable } from "./src/Linq/Enumerable/Enumerable";
-import { GroupedExpression } from "./src/Linq/Queryable/QueryExpression/GroupedExpression";
-import { Queryable } from "./src/Linq/Queryable/Queryable";
-import { IncludeQueryable } from "./src/Linq/Queryable/IncludeQueryable";
+import { WhereEnumerable } from "./src/Enumerable/WhereEnumerable";
+import { Enumerable } from "./src/Enumerable/Enumerable";
+import { GroupedExpression } from "./src/Queryable/QueryExpression/GroupedExpression";
+import { Queryable } from "./src/Queryable/Queryable";
+import { IncludeQueryable } from "./src/Queryable/IncludeQueryable";
 import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQueryResultParser";
-import { IOrderQueryExpression } from "./src/Linq/Interface/IOrderQueryExpression";
-import { IQueryableOrderDefinition } from "./src/Linq/Interface/IOrderDefinition";
+import { IQueryableOrderDefinition } from "./src/QueryBuilder/Interface/IOrderDefinition";
 import { OrderDirection } from "./src/Common/Type";
 import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 

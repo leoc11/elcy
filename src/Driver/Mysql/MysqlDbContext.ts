@@ -1,4 +1,4 @@
-import { DbContext } from "../../Linq/DBContext";
+import { DbContext } from "../../Data/DBContext";
 import { MysqlQueryBuilder } from "./MysqlQueryBuilder";
 import { Pool, PoolOptions, createPool, PoolConnection } from "mysql2/promise";
 import { IMysqlConnectionOption } from "./IMysqlConnectionOption";

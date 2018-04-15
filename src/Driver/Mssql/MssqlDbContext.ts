@@ -1,4 +1,4 @@
-import { DbContext } from "../../Linq/DBContext";
+import { DbContext } from "../../Data/DBContext";
 import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
 import { ConnectionPool, config, Request } from "mssql";
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";

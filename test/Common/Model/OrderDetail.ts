@@ -5,6 +5,7 @@ import { Order } from "./Order";
 import { EntityBase } from "../../../src/Data/EntityBase";
 import { Product } from ".";
 import { ScalarRelation } from "../../../src/Decorator/Relation/ScalarRelation";
+import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 
 @Entity("OrderDetails")
 export class OrderDetail extends EntityBase {
@@ -17,7 +18,7 @@ export class OrderDetail extends EntityBase {
     public ProductId: string;
     @StringColumn({ columnType: "nvarchar", columnName: "ProductName" })
     public name: string;
-    @StringColumn({ columnType: "float", columnName: "Quantity" })
+    @DecimalColumn({ columnType: "float", columnName: "Quantity" })
     public quantity: number;
     @DateColumn()
     public CreatedDate: Date;

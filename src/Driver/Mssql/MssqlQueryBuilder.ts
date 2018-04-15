@@ -1,4 +1,4 @@
-import { QueryBuilder } from "../../Linq/QueryBuilder";
+import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType } from "../../Common/Type";

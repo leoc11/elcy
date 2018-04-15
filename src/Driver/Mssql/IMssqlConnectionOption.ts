@@ -1,4 +1,4 @@
-import { IConnectionOption, IConnectionPoolOption } from "../../Linq/Interface/IConnectionOption";
+import { IConnectionOption, IConnectionPoolOption } from "../../Data/Interface/IConnectionOption";
 export interface IMssqlConnectionOption extends IConnectionOption {
     readonly host: string;
     readonly driver?: string;

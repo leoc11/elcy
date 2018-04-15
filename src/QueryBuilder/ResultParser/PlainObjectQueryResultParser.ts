@@ -1,9 +1,9 @@
-import { IColumnExpression } from "../../Linq/Queryable/QueryExpression/IColumnExpression";
-import { DbContext } from "../../Linq/DBContext";
+import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
+import { DbContext } from "../../Data/DBContext";
 import { EntityBase } from "../../Data/EntityBase";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../QueryResult";
-import { SelectExpression, IIncludeRelation } from "../../Linq/Queryable/QueryExpression";
+import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType, RelationType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";

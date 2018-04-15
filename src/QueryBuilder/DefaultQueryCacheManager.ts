@@ -2,7 +2,7 @@ import { IQueryResultParser } from "./ResultParser/IQueryResultParser";
 import { QueryCache } from "./QueryCache";
 import { IQueryCacheManager } from "./IQueryCacheManager";
 import { IObjectType } from "../Common/Type";
-import { DbContext } from "../Linq/DBContext";
+import { DbContext } from "../Data/DBContext";
 
 export const queryCacheKey = Symbol("querycache-key");
 export class DefaultQueryCacheManager implements IQueryCacheManager {
