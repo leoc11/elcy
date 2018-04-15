@@ -17,9 +17,6 @@ export class ColumnMetaData<T = any> implements IColumnOption<T> {
             this.type = type;
     }
 
-    /**
-     * Copy
-     */
     public applyOption(columnMeta: IColumnOption<any>) {
         if (typeof columnMeta.columnName !== "undefined")
             this.columnName = columnMeta.columnName;

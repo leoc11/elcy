@@ -6,7 +6,7 @@ export class GreaterEqualExpression<TType> extends ExpressionBase<boolean> imple
     public static Create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new GreaterEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<boolean>(result);
+            return ValueExpression.create<boolean>(result);
 
         return result;
     }

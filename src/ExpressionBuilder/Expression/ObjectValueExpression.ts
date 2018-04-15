@@ -4,7 +4,7 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
 export class ObjectValueExpression<T extends { [Key: string]: IExpression }> extends ExpressionBase<T> {
-    public static Create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
+    public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
         let isAllValue = true;
         for (const prop in objectValue) {
@@ -14,7 +14,7 @@ export class ObjectValueExpression<T extends { [Key: string]: IExpression }> ext
             }
         }
         if (isAllValue)
-            return ValueExpression.Create<TType>(objectValue);
+            return ValueExpression.create<TType>(objectValue);
 
         return result;
     }

@@ -1,34 +1,37 @@
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { ColumnMetaData } from "../../MetaData/index";
 import { IRelationMetaData } from "../../MetaData/Interface/index";
-import { MasterRelationMetaData } from "../../MetaData/Relation/index";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { RelationType } from "../../Common/Type";
-import { Enumerable } from "../../Linq/Enumerable/Enumerable";
+import { RelationType, GenericType } from "../../Common/Type";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> {
-    public static Create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
+    public static create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);
         if (objectOperand instanceof ValueExpression && (member instanceof ValueExpression || !(member instanceof ExpressionBase)))
-            return ValueExpression.Create<TType[KProp]>(result);
+            return ValueExpression.create<TType[KProp]>(result);
 
         return result;
     }
     constructor(public objectOperand: IExpression<TType>, public memberName: KProp | ExpressionBase<KProp>) {
         super();
-        if (!(memberName instanceof ExpressionBase)) {
+        if (!(memberName instanceof ExpressionBase) && objectOperand.type) {
             const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, memberName);
             if (columnMeta)
                 this.type = columnMeta.type;
             else {
                 const relationMeta: IRelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
-                if (relationMeta)
-                    this.type = relationMeta.relationType === RelationType.OneToOne ? relationMeta instanceof MasterRelationMetaData ? relationMeta.sourceType : relationMeta.targetType! : Enumerable;
+                if (relationMeta) {
+                    if (relationMeta.relationType === RelationType.OneToOne)
+                        this.type = relationMeta.targetType;
+                    else {
+                        this.type = Array as any;
+                        this.objectType = relationMeta.targetType;
+                    }
+                }
             }
         }
     }
-
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

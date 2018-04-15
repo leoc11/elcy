@@ -3,10 +3,10 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class StrictNotEqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
-    public static Create(leftOperand: IExpression, rightOperand: IExpression) {
+    public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new StrictNotEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<boolean>(result);
+            return ValueExpression.create<boolean>(result);
 
         return result;
     }

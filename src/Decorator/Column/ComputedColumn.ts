@@ -6,7 +6,7 @@ import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 
 export function ComputedColumn<T, R>(type: GenericType<R>, fn: (o: T) => R): PropertyDecorator {
     return (target: T, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        const computedMetaData = new ComputedColumnMetaData(type, fn, propertyKey);
+        const computedMetaData = new ComputedColumnMetaData(target.constructor as any, type, fn, propertyKey);
         let entityMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as GenericType<T>);

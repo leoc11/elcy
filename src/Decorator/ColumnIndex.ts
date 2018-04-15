@@ -19,7 +19,7 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
     option.properties = (Array.isArray(optionOrNameOrColumns) ? optionOrNameOrColumns : uniqueOrColumns && Array.isArray(uniqueOrColumns) ? uniqueOrColumns : []).map((item) => {
         if (typeof item === "string")
             return item;
-        return FunctionHelper.PropertyName(item);
+        return FunctionHelper.propertyName(item);
     });
 
     return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {

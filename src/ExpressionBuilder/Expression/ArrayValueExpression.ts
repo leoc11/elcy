@@ -3,10 +3,10 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
 export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
-    public static Create<TType>(...values: Array<IExpression<TType>>) {
+    public static create<TType>(...values: Array<IExpression<TType>>) {
         const result = new ArrayValueExpression<TType>(...values);
         if (values.every((param) => param instanceof ValueExpression))
-            return ValueExpression.Create<TType[]>(result);
+            return ValueExpression.create<TType[]>(result);
 
         return result;
     }
@@ -30,5 +30,7 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
             arrayValues.push(item.execute(transformer));
         return arrayValues;
     }
-
+    public clone() {
+        return new ArrayValueExpression(...this.items.slice(0));
+    }
 }

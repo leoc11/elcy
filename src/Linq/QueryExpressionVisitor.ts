@@ -15,7 +15,6 @@ import {
     TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
-import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { isValueType, isNativeFunction } from "../Helper/Util";
 import { IEntityMetaData, IRelationMetaData } from "../MetaData/Interface/index";
@@ -29,6 +28,7 @@ import {
 } from "./Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "./Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "./Queryable/QueryExpression/GroupedExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
 interface IPRelation {
     name: string;
@@ -913,7 +913,7 @@ export class QueryExpressionVisitor {
         if (methodFn) {
             if (isNativeFunction(methodFn))
                 return expression;
-            const methodExp = ExpressionFactory.prototype.ToExpression(methodFn, objectOperand.type);
+            const methodExp = ExpressionBuilder.parse(methodFn, [objectOperand.type]);
             return this.visitFunction(methodExp, param);
         }
 

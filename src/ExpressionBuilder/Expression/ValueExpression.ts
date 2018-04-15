@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase } from "./IExpression";
 
 export class ValueExpression<T> extends ExpressionBase<T> {
-    public static Create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
+    public static create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
         if (value instanceof ExpressionBase)
             return new ValueExpression<TType>(value.execute(), value.toString());
 

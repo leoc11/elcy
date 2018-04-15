@@ -1,18 +1,18 @@
 import { GenericType } from "../../Common/Type";
 import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
     private _selectors: Array<FunctionExpression<T, any>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionFactory.prototype.ToExpression<T, any>(o, this.parent.type)).toArray();
+            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type])).toArray();
         }
 
         return this._selectors;

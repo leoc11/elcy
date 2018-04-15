@@ -1,11 +1,11 @@
 import { IObjectType, JoinType, ValueType } from "../../Common/Type";
 import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;
@@ -15,7 +15,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _keySelector1: FunctionExpression<T, K>;
     protected get keySelector1() {
         if (!this._keySelector1 && this.keySelector1Fn)
-            this._keySelector1 = ExpressionFactory.prototype.ToExpression<T, K>(this.keySelector1Fn, this.parent.type);
+            this._keySelector1 = ExpressionBuilder.parse(this.keySelector1Fn, [this.parent.type]);
         return this._keySelector1;
     }
     protected set keySelector1(value) {
@@ -24,7 +24,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _keySelector2: FunctionExpression<T2, K>;
     protected get keySelector2() {
         if (!this._keySelector2 && this.keySelector1Fn)
-            this._keySelector2 = ExpressionFactory.prototype.ToExpression<T2, K>(this.keySelector2Fn, this.parent2.type);
+            this._keySelector2 = ExpressionBuilder.parse(this.keySelector2Fn, [this.parent2.type]);
         return this._keySelector2;
     }
     protected set keySelector2(value) {
@@ -33,7 +33,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _resultSelector: FunctionExpression<T | T2, R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionFactory.prototype.ToExpression2<T, T2, R>(this.resultSelectorFn, this.parent.type, this.parent2.type);
+            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn, [this.parent.type, this.parent2.type]);
         return this._resultSelector;
     }
     protected set resultSelector(value) {

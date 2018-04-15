@@ -4,10 +4,10 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class BitwiseZeroLeftShiftExpression extends BitwiseExpression implements IBinaryOperatorExpression {
-    public static Create(leftOperand: IExpression, rightOperand: IExpression) {
+    public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseZeroLeftShiftExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }

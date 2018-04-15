@@ -1,11 +1,11 @@
 import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     public expression: SelectExpression<GroupedEnumerable<T, K>>;
@@ -13,7 +13,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     private _keySelector: FunctionExpression<T, any>;
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn)
-            this._keySelector = ExpressionFactory.prototype.ToExpression(this.keySelectorFn, this.parent.type);
+            this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, [this.parent.type]);
         return this._keySelector;
     }
     protected set keySelector(value) {

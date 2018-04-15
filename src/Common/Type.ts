@@ -1,5 +1,4 @@
 import { TimeSpan } from "./TimeSpan";
-
 export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;

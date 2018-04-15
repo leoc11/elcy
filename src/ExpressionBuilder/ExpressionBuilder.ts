@@ -1,543 +1,539 @@
+import { IExpression, ParameterExpression, ValueExpression, MemberAccessExpression, MethodCallExpression, RightIncrementExpression, RightDecrementExpression, SubtractionExpression, NotExpression, BitwiseNotExpression, FunctionExpression, MultiplicationExpression, AdditionExpression, DivisionExpression, LeftIncrementExpression, LeftDecrementExpression, AndExpression, NotEqualExpression, StrictNotEqualExpression, EqualExpression, StrictEqualExpression, GreaterThanExpression, GreaterEqualExpression, LessThanExpression, LessEqualExpression, OrExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, BitwiseSignedRightShiftExpression, TypeofExpression, InstanceofExpression, FunctionCallExpression, ObjectValueExpression, ArrayValueExpression } from "./Expression";
 import { GenericType } from "../Common/Type";
-import * as Expression from "./Expression/";
-import { IExpression } from "./Expression/";
-import {
-    BinaryOperators,
-    BlockToken,
-    ExpressionOperator,
-    MemberOperators,
-    OperandToken,
-    OperatorToken,
-    RightUnaryOperators,
-    TernaryOperators,
-    UnaryOperators
-} from "./ExpressionToken/";
 
-const GlobalObjects: { [key: string]: any } = global || window;
-export class ExpressionBuilder {
-    public Parse(expressionStr: string, paramContext?: { [key: string]: any }) {
-        expressionStr = this.RemoveComments(expressionStr);
-        const blockResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-        if (!blockResult)
-            return null;
-        expressionStr = blockResult.Remaining;
-        if (expressionStr)
-            throw new Error("Has not parsed string.\n\tRemaining: " + expressionStr +
-                "\n\tResult: " + JSON.stringify(blockResult));
-
-        return blockResult.Value as IExpression;
+export namespace ExpressionBuilder {
+    export function parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, paramTypes?: GenericType<TParam>[], userParameters?: Map<string, any>) {
+        const tokens = analyzeLexical(fn.toString());
+        return analyzeSyntatic(tokens, paramTypes, userParameters) as FunctionExpression<TParam, TResult>;
     }
+    /**
+     * Lexical Analizer / Tokenizer
+     */
+    interface ILexicalPointer {
+        index: number;
+    }
+    enum LexicalTokenType {
+        Identifier,
+        String,
+        Number,
+        Keyword,
+        Operator,
+        Function,
+        Parenthesis,
+        Breaker
+    }
+    interface ILexicalToken {
+        data: string | number;
+        type: LexicalTokenType;
+        childrens?: ILexicalToken[];
+    }
+    const keywordOperator = ["typeof", "instanceof"];
+    const keywords = ["abstract", "arguments", "await", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "delete", "do", "double", "else", "enum", "eval", "export", "extends", "false", "final", "finally", "for", "function", "goto", "if", "implements", "import", "in", "interface", "let", "long", "native", "new", "null", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "true", "try", "var", "void", "volatile", "while", "with", "yield"];
+    function analyzeLexical(fnBody: string): ILexicalToken[] {
+        const pointer = {
+            index: -1
+        };
+        const result = analyzeLexicalParenthesis(pointer, fnBody);
+        return result.childrens;
+    }
+    function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILexicalToken {
+        const start = pointer.index;
+        let char: string;
+        do {
+            pointer.index++;
+            char = input[pointer.index];
+        } while (
+            (char >= "A" && char <= "Z") || (char >= "a" && char <= "z") ||
+            (char >= "0" && char <= "9") || char === "_" || char === "$");
 
-    public ParseToExpression(fn: string, cTor: Array<GenericType<any>>, params?: any[]): Expression.FunctionExpression;
-    public ParseToExpression(fn: string | ((...params: any[]) => any), ctors: Array<GenericType<any>>, params?: any[]) {
-        if (typeof fn === "function")
-            fn = fn.toString();
+        const data = input.slice(start, pointer.index);
+        let type;
 
-        const fnParams = this.GetFunctionParams(fn);
-        const paramObject: { [key: string]: any } = {};
-
-        const fnParamExpressions: Expression.ParameterExpression[] = [];
-        for (let i = 0; i < ctors.length; i++) {
-            fnParamExpressions.push(Expression.ParameterExpression.Create(ctors[i], fnParams[i]));
-        }
-
-        if (params) {
-            if (params.length > fnParams.length - ctors.length)
-                throw new Error("Paramater length mismatch");
-
-            for (let i = 0; i < params.length; i++) {
-                paramObject[fnParams[i]] = params[i];
+        // TODO: Binary search
+        for (const keyword of keywordOperator) {
+            if (keyword === data) {
+                type = LexicalTokenType.Operator;
+                break;
             }
         }
+        if (!type) {
+            for (const keyword of keywords) {
+                if (keyword === data) {
+                    type = LexicalTokenType.Keyword;
+                    break;
+                }
+            }
+        }
+        if (!type) type = LexicalTokenType.Identifier;
 
-        const fnBody = this.GetFunctionBody(fn);
-        const expressionBody = this.Parse(fnBody, paramObject);
-        if (expressionBody == null)
-            return null;
+        return {
+            data: data,
+            type: type
+        };
+    }
+    function analyzeLexicalString(pointer: ILexicalPointer, input: string): ILexicalToken {
+        const start = pointer.index;
+        const stopper = input[start];
+        let char: string;
+        do {
+            pointer.index++;
+            char = input[pointer.index];
+            if (char === "\\")
+                pointer.index++;
+        } while (char !== stopper);
+        const data = input.slice(start + 1, pointer.index);
+        return {
+            data: data,
+            type: LexicalTokenType.String
+        };
+    }
+    function analyzeLexicalTemplateLiteral(pointer: ILexicalPointer, input: string): ILexicalToken {
+        return analyzeLexicalString(pointer, input);
+    }
+    function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexicalToken {
+        const start = pointer.index;
+        let char: string;
+        do {
+            pointer.index++;
+            char = input[pointer.index];
+        } while ((char >= "0" && char <= "9") || char === ".");
+        const data = input.slice(start, pointer.index);
+        return {
+            data: data,
+            type: LexicalTokenType.Number
+        };
+    }
+    function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock = false) {
+        pointer.index++;
+        let char: string;
+        do {
+            char = input[pointer.index++];
+            if (isBlock) {
+                if (char === "*") {
+                    char = input[++pointer.index];
+                    if (char === "/")
+                        break;
+                }
+            }
+            if (char === "\n")
+                break;
+        } while (true);
+    }
+    function analizeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
+        const start = pointer.index;
+        let char: string;
+        do {
+            pointer.index++;
+            char = input[pointer.index];
+        } while (char === "=" || char === "+" || char === "-" || char === "&" || char === "|" || char === ">" || char === "<");
+        const data = input.slice(start, pointer.index);
+        return {
+            data: data,
+            type: LexicalTokenType.Operator
+        };
+    }
+    function analyzeLexicalParenthesis(pointer: ILexicalPointer, input: string, stopper?: string): ILexicalToken {
+        const resultData: ILexicalToken[] = [];
+        const length = input.length;
+        pointer.index++;
+        let char: string;
+        do {
+            char = input[pointer.index];
 
-        return new Expression.FunctionExpression(expressionBody, fnParamExpressions);
+            if (char <= " ") {
+                pointer.index++;
+                continue;
+            }
+            else if ((char >= "A" && char <= "Z") || (char >= "a" && char <= "z")
+                || char === "_" || char === "$") {
+                resultData.push(analyzeLexicalIdentifier(pointer, input));
+            }
+            else if ((char >= "*" && char <= "/") || (char >= "<" && char <= "?")
+                || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
+                resultData.push(analizeLexicalOperator(pointer, input));
+            }
+            else if (char === "'" || char === "\"") {
+                resultData.push(analyzeLexicalString(pointer, input));
+            }
+            else if (char >= "0" && char <= "9") {
+                resultData.push(analyzeLexicalNumber(pointer, input));
+            }
+            else if (char === "(") {
+                resultData.push(analyzeLexicalParenthesis(pointer, input, ")"));
+            }
+            else if (char === "[") {
+                resultData.push(analyzeLexicalParenthesis(pointer, input, "]"));
+            }
+            else if (char === "{") {
+                resultData.push(analyzeLexicalParenthesis(pointer, input, "}"));
+            }
+            else if (char === "`") {
+                resultData.push(analyzeLexicalTemplateLiteral(pointer, input));
+            }
+            if (char === "\n" || char === ";" || char === ":" || char === ",") {
+                resultData.push({
+                    data: char,
+                    type: LexicalTokenType.Breaker
+                });
+                pointer.index++;
+            }
+            else if (char === "/") {
+                const char2 = input[pointer.index + 1];
+                if (char2 === "*") {
+                    analyzeLexicalComment(pointer, input, true);
+                }
+                else if (char2 === "/") {
+                    analyzeLexicalComment(pointer, input, false);
+                }
+                else {
+                    throw new Error("Regex not supported");
+                }
+            }
+            else if (char === stopper) {
+                pointer.index++;
+                break;
+            }
+        } while (pointer.index < length);
+
+        return {
+            data: stopper,
+            type: LexicalTokenType.Parenthesis,
+            childrens: resultData
+        };
     }
 
     /**
-     * GetFunctionParams
+     * Syntactic Analizer / Parser
      */
-    public GetFunctionParams(functionStr: string) {
-        const paramOpenIndex = functionStr.indexOf("(");
-        if (paramOpenIndex >= 0) {
-            const paramCloseIndex = functionStr.indexOf(")");
-            functionStr = functionStr.substring(paramOpenIndex + 1, paramCloseIndex);
-        }
-        return functionStr.split(",");
+    const operatorRankMap = new Map([
+        [".", 10],
+        ["++", 9],
+        ["--", 9],
+        ["!", 9],
+        ["~", 9],
+        ["-", 6],
+        ["?", 4],
+        ["+", 6],
+        ["*", 7],
+        ["/", 7],
+        ["%", 7],
+        ["===", 4],
+        ["!==", 4],
+        [">==", 4],
+        ["<==", 4],
+        ["==", 4],
+        ["!=", 4],
+        [">=", 4],
+        ["<=", 4],
+        [">", 4],
+        ["<", 4],
+        ["&&", 2],
+        ["||", 2],
+        ["&", 2],
+        ["|", 2],
+        ["^", 2],
+        ["<<", 2],
+        [">>", 2],
+        [">>>", 2],
+        ["instanceof", 2],
+        ["typeof", 8],
+    ]);
+    interface SyntaticParameter {
+        index: number;
+        types: GenericType[];
+        scopedParameters: Map<string, ParameterExpression[]>;
+        userParameters: Map<string, any>;
     }
+    const globalObjectMaps = new Map<string, any>([
+        // Global Function
+        ["parseInt", parseInt],
+        ["parseFloat", parseFloat],
+        ["decodeURI", decodeURI],
+        ["decodeURIComponent", decodeURIComponent],
+        ["encodeURI", encodeURI],
+        ["encodeURIComponent", encodeURIComponent],
+        ["isNaN", isNaN],
+        ["isFinite", isFinite],
+        ["eval", eval],
 
-    public GetFunctionBody(functionStr: string) {
-        const arrowIndex = functionStr.indexOf("=>");
-        const fnOpenIndex = functionStr.indexOf("{");
-        if (fnOpenIndex > arrowIndex) {
-            const fnCloseIndex = functionStr.indexOf("}");
-            return functionStr.substring(fnOpenIndex, fnCloseIndex).trim();
-        }
-        // for arrow function (o)=> '123'
-        return functionStr.substring(arrowIndex + 1).trim();
+        // Fundamental Objects
+        ["Object", Object],
+        ["Function", Function],
+        ["Boolean", Boolean],
+        ["Symbol", Symbol],
+
+        // Constructor/ Type
+        ["Error", Error],
+        ["Number", Number],
+        ["Math", Math],
+        ["Date", Date],
+        ["String", String],
+        ["RegExp", RegExp],
+        ["Array", Array],
+        ["Map", Map],
+        ["Set", Set],
+        ["WeakMap", WeakMap],
+        ["WeakSet", WeakSet],
+
+        // Value
+        ["Infinity", Infinity],
+        ["NaN", NaN],
+        ["undefined", undefined],
+        ["null", null],
+    ]);
+    function analyzeSyntatic(tokens: ILexicalToken[], paramTypes: GenericType[] = [], userParameters = new Map<string, any>()) {
+        const param: SyntaticParameter = {
+            index: 0,
+            types: paramTypes,
+            scopedParameters: new Map(),
+            userParameters: new Map()
+        };
+        const result = createExpression(param, tokens);
+        return result;
     }
-
-    protected GetOperatorExpression(operator: string = "", ...params: Array<IExpression | undefined>): IExpression {
-        switch (operator as string) {
-            case "*":
-                return Expression.MultiplicationExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "+":
-                if (!params[0])
-                    params[0] = Expression.ValueExpression.Create(0);
-                return Expression.AdditionExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "-":
-                if (!params[0])
-                    params[0] = Expression.ValueExpression.Create(0);
-                return Expression.SubtractionExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "/":
-                return Expression.DivisionExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "++":
-                if (!params[0])
-                    return Expression.LeftIncrementExpression.Create(params[1] as IExpression);
-                else
-                    return Expression.RightIncrementExpression.Create(params[0] as IExpression);
-            case "--":
-                if (!params[0])
-                    return Expression.LeftDecrementExpression.Create(params[1] as IExpression);
-                else
-                    return Expression.RightDecrementExpression.Create(params[0] as IExpression);
-            case "&&":
-                return Expression.AndExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "!=":
-                return Expression.NotEqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "!==":
-                return Expression.StrictNotEqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "==":
-                return Expression.EqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "===":
-                return Expression.StrictEqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ">":
-                return Expression.GreaterThanExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ">=":
-                return Expression.GreaterEqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "<":
-                return Expression.LessThanExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "<=":
-                return Expression.LessEqualExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "||":
-                return Expression.OrExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "!":
-                return Expression.NotExpression.Create(params[1] as IExpression);
-            case "&":
-                return Expression.BitwiseAndExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "|":
-                return Expression.BitwiseOrExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "~":
-                return Expression.BitwiseNotExpression.Create(params[1] as IExpression);
-            case "^":
-                return Expression.BitwiseXorExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "<<":
-                return Expression.BitwiseZeroLeftShiftExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ">>":
-                return Expression.BitwiseZeroRightShiftExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ">>>":
-                return Expression.BitwiseSignedRightShiftExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ">>>":
-                return Expression.BitwiseOrExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case ".":
-                return Expression.MemberAccessExpression.Create(params[0] as IExpression, params[1] as IExpression);
-            case "typeof":
-                return Expression.TypeofExpression.Create(params[1] as IExpression);
-            case "instanceof":
-                return Expression.InstanceofExpression.Create(params[0] as IExpression, params[1] as IExpression);
-        }
-
-        throw new Error("(" + operator + ") Operator not supported");
-    }
-
-    protected GetBlock(expressionStr: string, expressionResult?: IExpression, prevOperators: OperatorToken[] = [], paramContext?: { [key: string]: any }): BlockToken | null {
-        let prevOperator: OperatorToken | undefined = prevOperators[0];
-        const operandToken = this.GetOperand(expressionStr, prevOperator, paramContext);
-        let closeString = "";
-        let operand;
-        if (operandToken !== null) {
-            expressionStr = operandToken.Remaining;
-            operand = operandToken.Value;
-        }
-        let operatorToken: OperatorToken | null = null;
-
-        if (expressionStr) {
-            operatorToken = this.GetOperator(expressionStr);
-            // binary operator
-            if (operatorToken != null) {
-                expressionStr = operatorToken.Remaining;
-                const isUseNextOperator = !prevOperator || operatorToken.Priority > prevOperator.Priority;
-
-                if (isUseNextOperator) {
-                    prevOperators.unshift(operatorToken);
-                    const nextOperandResult = this.GetBlock(expressionStr, operand, prevOperators, paramContext);
-                    if (nextOperandResult == null) {
-                        throw new Error("Function not valid");
-                    }
-                    expressionStr = nextOperandResult.Remaining;
-
-                    if (prevOperator) {
-                        expressionResult = this.GetOperatorExpression(prevOperator.Value, expressionResult, nextOperandResult.Value);
-                        operatorToken = prevOperators[0] as OperatorToken;
-                        const index = prevOperators.indexOf(prevOperator);
-                        prevOperators.splice(index, 1);
+    function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], expression?: IExpression, prevOperatorRank?: number) {
+        while (param.index < tokens.length) {
+            const token = tokens[param.index];
+            switch (token.type) {
+                case LexicalTokenType.Operator: {
+                    if (token.data === "=>") {
+                        expression = createFunctionExpression(param, [expression] as any, tokens);
                     }
                     else {
-                        expressionResult = nextOperandResult.Value;
-                        return new BlockToken(expressionResult, expressionStr, nextOperandResult.CloseString);
+                        const rank = operatorRankMap.get(token.data as string);
+                        if (prevOperatorRank >= rank)
+                            return expression;
+                        param.index++;
+                        const nextToken = tokens[param.index + 1];
+                        if (nextToken && nextToken.type === LexicalTokenType.Parenthesis && nextToken.data === ")") {
+                            const nameToken = tokens[param.index++];
+                            const paramToken = tokens[param.index++];
+                            if (expression.objectType)
+                                param.types = [expression.objectType];
+                            const params = createParamsExpression(param, paramToken.childrens);
+                            param.types = [];
+                            expression = new MethodCallExpression(expression, nameToken.data as string, params);
+                            continue;
+                        }
+                        const operand = createExpression(param, tokens, undefined, rank);
+                        expression = createOperatorExpression(param, expression, token, operand, tokens);
+                        continue;
+                    }
+                    break;
+                }
+                case LexicalTokenType.Breaker:
+                    return expression;
+                case LexicalTokenType.Keyword:
+                    throw new Error(`keyword ${token.data} not supported`);
+                case LexicalTokenType.Parenthesis: {
+                    if (!expression) {
+                        if (token.data === "}") {
+                            param.index++;
+                            return createObjectExpression(param, token.childrens);
+                        }
+                        else if (token.data === "]") {
+                            param.index++;
+                            return createArrayExpression(param, token.childrens);
+                        }
+                    }
+                    const expressions = createParamsExpression(param, token.childrens);
+                    const nextToken = tokens[param.index + 1];
+                    if (nextToken && nextToken.type === LexicalTokenType.Operator && nextToken.data === "=>") {
+                        param.index += 2;
+                        expression = createFunctionExpression(param, expressions as any, tokens);
+                    }
+                    else {
+                        expression = expressions[0];
+                    }
+                    break;
+                }
+                case LexicalTokenType.Number:
+                case LexicalTokenType.String:
+                case LexicalTokenType.Identifier: {
+                    expression = createOperandExpression(param, token, tokens);
+                    break;
+                }
+                default:
+                    continue;
+            }
+            param.index++;
+        }
+        return expression;
+    }
+    function createParamsExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
+        const index = param.index;
+        param.index = 0;
+        const result: IExpression[] = [];
+        while (param.index < tokens.length) {
+            result.push(createExpression(param, tokens));
+        }
+        param.index = index;
+        return result;
+    }
+    function createArrayExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
+        const arrayVal: any[] = [];
+        const index = param.index;
+        param.index = 0;
+        while (param.index < tokens.length) {
+            arrayVal.push(createExpression(param, tokens));
+        }
+        param.index = index;
+        return ArrayValueExpression.create(...arrayVal);
+    }
+    function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
+        const obj: any = {};
+        const index = param.index;
+        param.index = 0;
+        while (param.index < tokens.length) {
+            const propName = tokens[param.index++].data;
+            param.index++;
+            const value = createExpression(param, tokens);
+            obj[propName] = value;
+        }
+        param.index = index;
+        return ObjectValueExpression.create(obj);
+    }
+    function createOperandExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+        switch (token.type) {
+            case LexicalTokenType.Identifier:
+                if (param.scopedParameters.has(token.data as string)) {
+                    const params = param.scopedParameters.get(token.data as string);
+                    if (params.length > 0)
+                        return params[0];
+                }
+                else if (param.userParameters.has(token.data as string)) {
+                    const data = param.userParameters.get(token.data as string);
+                    if (data instanceof Function) {
+                        const paramToken = tokens[++param.index];
+                        const params = createParamsExpression(param, paramToken.data as any);
+                        return new FunctionCallExpression(data as any, token.data as string, params);
+                    }
+                    else {
+                        return new ParameterExpression(token.data as string, data.constructor);
                     }
                 }
-                else {
-                    expressionResult = this.GetOperatorExpression(prevOperator.Value, expressionResult, operand);
-                    prevOperator = prevOperators.shift();
-                    prevOperators.unshift(operatorToken);
-                    if (prevOperators.length > 1 && prevOperator && prevOperator.Priority > operatorToken.Priority)
-                        return new BlockToken(expressionResult, expressionStr, "");
+                else if (globalObjectMaps.has(token.data as string)) {
+                    const data = param.userParameters.get(token.data as string);
+                    if (data instanceof Function) {
+                        const paramToken = tokens[++param.index];
+                        const params = createParamsExpression(param, paramToken.data as any);
+                        return new FunctionCallExpression(data as any, token.data as string, params);
+                    }
+                    else {
+                        return new ValueExpression(data, token.data as string);
+                    }
                 }
-
-                if (expressionStr) {
-                    const blockResult = this.GetBlock(expressionStr, expressionResult, prevOperators, paramContext) as BlockToken;
-                    expressionResult = blockResult.Value;
-                    expressionStr = blockResult.Remaining;
-                    closeString = blockResult.CloseString;
-                }
-
-                return new BlockToken(expressionResult, expressionStr, closeString);
-            }
+                return new ParameterExpression(token.data as string);
+            case LexicalTokenType.String:
+                return new ValueExpression(token.data as string);
+            case LexicalTokenType.Function:
+                const paramToken = tokens[++param.index];
+                const params = createParamsExpression(param, paramToken.data as any);
+                return FunctionCallExpression.Create(null, params, token.data as string);
+            case LexicalTokenType.Number:
+                return new ValueExpression(Number.parseFloat(token.data as string));
         }
-
-        if (prevOperator != null)
-            expressionResult = this.GetOperatorExpression(prevOperator.Value, expressionResult, operand);
-        else
-            expressionResult = operand;
-
-        if (operatorToken == null) {
-            if (expressionResult != null) {
-                operatorToken = this.GetOperator(expressionStr, TernaryOperators);
-                if (operatorToken != null) {
-                    expressionStr = this.RemoveComments(expressionStr.substr(1));
-                    const trueValueResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                    if (trueValueResult == null)
-                        throw new Error("ternary true value must exist\n\tOrigin: " + expressionStr +
-                            "\n\tBlockResult: null");
-                    if (trueValueResult.CloseString !== ":")
-                        throw new Error("ternary true value must be closed with ':'\n\tOrigin: " + expressionStr +
-                            "\n\tBlockResult: " + JSON.stringify(trueValueResult));
-
-                    const trueOperand = trueValueResult.Value;
-                    const falseValueResult = this.GetBlock(trueValueResult.Remaining, undefined, undefined, paramContext);
-                    if (falseValueResult == null)
-                        throw new Error("ternary false value must exist\n\tOrigin: " + expressionStr +
-                            "\n\tBlockResult: null");
-
-                    const falseOperand = falseValueResult.Value;
-                    expressionResult = Expression.TernaryExpression.Create(expressionResult, trueOperand, falseOperand);
-                    expressionStr = falseValueResult.Remaining;
-                    prevOperators.shift();
-                    return new BlockToken(expressionResult, expressionStr, falseValueResult.CloseString);
-                }
-            }
-        }
-
-        if (expressionStr) {
-            closeString = expressionStr[0];
-            expressionStr = this.RemoveComments(expressionStr.substring(1));
-        }
-
-        if (expressionResult == null)
-            return null;
-
-        return new BlockToken(expressionResult, expressionStr, closeString);
+        throw new Error("asd");
     }
-
-    protected GetOperand(expressionStr: string, prevOperator?: OperatorToken, paramContext?: { [key: string]: any }): OperandToken | null {
-        if (!expressionStr && prevOperator)
-            return null;
-
-        let operand: IExpression | null = null;
-
-        if (prevOperator && prevOperator.Value === ".") {
-            const match = expressionStr.match(/^[_a-z][_a-z0-9]*/i);
-            if (match == null)
-                throw new Error("Access to invalid member name");
-
-            const intValue = parseFloat(match[0]);
-            if (!isNaN(intValue))
-                operand = Expression.ValueExpression.Create(intValue);
-            else
-                operand = Expression.ValueExpression.Create(match[0]);
-
-            expressionStr = this.RemoveComments(expressionStr.substring(match[0].length));
-            return new OperandToken(operand, expressionStr);
+    function createOperatorExpression(param: SyntaticParameter, operand: IExpression, operatorToken: ILexicalToken, operand2: IExpression, tokens: ILexicalToken[]) {
+        switch (operatorToken.data) {
+            case ".":
+                const memberName = (operand2 as ParameterExpression).name;
+                return new MemberAccessExpression(operand, memberName);
+            case "*":
+                return MultiplicationExpression.create(operand as any, operand2 as any);
+            case "+":
+                if (!operand)
+                    operand = ValueExpression.create(0);
+                return AdditionExpression.create(operand, operand2);
+            case "-":
+                if (!operand)
+                    operand = ValueExpression.create(0);
+                return SubtractionExpression.create(operand, operand2);
+            case "/":
+                return DivisionExpression.create(operand, operand2);
+            case "++":
+                if (!operand)
+                    return LeftIncrementExpression.create(operand2);
+                else
+                    return RightIncrementExpression.create(operand);
+            case "--":
+                if (!operand)
+                    return LeftDecrementExpression.create(operand2);
+                else
+                    return RightDecrementExpression.create(operand);
+            case "&&":
+                return AndExpression.create(operand, operand2);
+            case "!=":
+                return NotEqualExpression.create(operand, operand2);
+            case "!==":
+                return StrictNotEqualExpression.create(operand, operand2);
+            case "==":
+                return EqualExpression.create(operand, operand2);
+            case "===":
+                return StrictEqualExpression.create(operand, operand2);
+            case ">":
+                return GreaterThanExpression.create(operand, operand2);
+            case ">=":
+                return GreaterEqualExpression.Create(operand, operand2);
+            case "<":
+                return LessThanExpression.create(operand, operand2);
+            case "<=":
+                return LessEqualExpression.create(operand, operand2);
+            case "||":
+                return OrExpression.create(operand, operand2);
+            case "!":
+                return NotExpression.create(operand2);
+            case "&":
+                return BitwiseAndExpression.create(operand, operand2);
+            case "|":
+                return BitwiseOrExpression.create(operand, operand2);
+            case "~":
+                return BitwiseNotExpression.create(operand2);
+            case "^":
+                return BitwiseXorExpression.create(operand, operand2);
+            case "<<":
+                return BitwiseZeroLeftShiftExpression.create(operand, operand2);
+            case ">>":
+                return BitwiseZeroRightShiftExpression.create(operand, operand2);
+            case ">>>":
+                return BitwiseSignedRightShiftExpression.create(operand, operand2);
+            case ">>>":
+                return BitwiseOrExpression.create(operand, operand2);
+            case ".":
+                return MemberAccessExpression.create(operand, operand2);
+            case "typeof":
+                return TypeofExpression.create(operand2);
+            case "instanceof":
+                return InstanceofExpression.create(operand, operand2);
+        }
+        throw new Error(`${operatorToken.data} operator not supported`);
+    }
+    function createFunctionExpression(param: SyntaticParameter, params: ParameterExpression[], tokens: ILexicalToken[]) {
+        const token = tokens[param.index];
+        for (const paramExp of params) {
+            paramExp.type = param.types.shift();
+            let paramsL = param.scopedParameters.get(paramExp.name);
+            if (!paramsL) {
+                paramsL = [];
+                param.scopedParameters.set(paramExp.name, paramsL);
+            }
+            paramsL.unshift(paramExp);
+        }
+        let body: IExpression;
+        if (token.type === LexicalTokenType.Parenthesis) {
+            param.index++;
+            if (token.data === "}")
+                param.index++;
+            body = createParamsExpression(param, token.childrens)[0];
         }
         else {
-            const singleOperator = this.GetOperator(expressionStr, UnaryOperators);
-            if (singleOperator != null) {
-                const nestOperand = this.GetOperand(singleOperator.Remaining, undefined, paramContext) as OperandToken;
-                operand = this.GetOperatorExpression(singleOperator.Value, undefined, nestOperand.Value);
-                return new OperandToken(operand, nestOperand.Remaining);
-            }
-
-            const firstChar = expressionStr[0];
-            switch (firstChar) {
-                case "'":
-                case "\"":
-                    let startIndex = 0;
-                    while (true) {
-                        startIndex = expressionStr.indexOf(firstChar, startIndex + 1);
-                        if (expressionStr.charAt(startIndex - 1) !== "\\") {
-                            break;
-                        }
-                    }
-                    operand = Expression.ValueExpression.Create(expressionStr.substring(1, startIndex));
-                    expressionStr = this.RemoveComments(expressionStr.substring(startIndex + 1));
-                    break;
-                case "(":
-                    expressionStr = this.RemoveComments(expressionStr.substring(1));
-                    const blockResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                    if (blockResult == null)
-                        throw new Error("block cannot contain empty expression\n\tOrigin: " + expressionStr +
-                            "\n\tBlockResult: null");
-                    if (blockResult.CloseString !== ")")
-                        throw Error("Block not closed correctly.\n\tInput" + expressionStr + "\n\tResult: " + JSON.stringify(blockResult));
-
-                    operand = blockResult.Value;
-                    expressionStr = blockResult.Remaining;
-                    break;
-                case "[":
-                    expressionStr = this.RemoveComments(expressionStr.substring(1));
-                    const arrayValue = [];
-                    while (true) {
-                        const arrayParamResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                        if (arrayParamResult == null)
-                            throw Error("asdasd");
-                        expressionStr = arrayParamResult.Remaining;
-                        if (arrayParamResult.Value !== undefined || arrayParamResult.CloseString !== "]")
-                            arrayValue.push(arrayParamResult.Value);
-                        if (arrayParamResult.CloseString === "]")
-                            break;
-                    }
-                    operand = Expression.ArrayValueExpression.Create(...arrayValue);
-                    break;
-                case "{":
-                    // only for object. not supported for other
-                    expressionStr = this.RemoveComments(expressionStr.substring(1));
-                    const objectValue: { [key: string]: Expression.IExpression } = {};
-                    while (true) {
-                        const operators: OperatorToken[] = [];
-                        if (!(expressionStr[0] === "\"" || expressionStr[0] === "'"))
-                            operators.push(new OperatorToken("", new ExpressionOperator(".", 10)));
-
-                        const objProperty = this.GetOperand(expressionStr, operators[0], paramContext);
-                        if (objProperty == null)
-                            break;
-                        if (objProperty.Remaining[0] !== ":")
-                            throw new Error("object property must be followed by ':'\n\tOrigin: " + expressionStr +
-                                "\n\tBlockResult: " + JSON.stringify(objProperty));
-                        if (!(objProperty.Value instanceof Expression.ValueExpression))
-                            throw new Error("object property don't support expression");
-
-                        const propertyName = objProperty.Value.execute();
-                        if (typeof propertyName !== "string")
-                            throw new Error("object only support string property name");
-
-                        expressionStr = this.RemoveComments(objProperty.Remaining.substr(1));
-                        const objPropertyValue = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                        if (objPropertyValue == null)
-                            throw Error("Property Value must be defined");
-                        expressionStr = objPropertyValue.Remaining;
-                        if (objPropertyValue.Value !== undefined || objPropertyValue.CloseString !== "}")
-                            objectValue[propertyName] = objPropertyValue.Value;
-                        if (objPropertyValue.CloseString === "}")
-                            break;
-                    }
-                    operand = Expression.ObjectValueExpression.Create(objectValue);
-                    break;
-                default:
-                    // TODO: context
-                    const match = expressionStr.match(/^([0-9][\.0-9]*|[_a-z][_a-z0-9]*)/i);
-                    if (match === null) {
-                        return null;
-                    }
-
-                    const matchedStr = match[0];
-                    expressionStr = this.RemoveComments(expressionStr.substring(matchedStr.length));
-                    if (paramContext && paramContext.hasOwnProperty(matchedStr)) {
-                        operand = Expression.ValueExpression.Create(paramContext[matchedStr], matchedStr);
-                    }
-                    else if (GlobalObjects.hasOwnProperty(matchedStr))
-                        operand = Expression.ValueExpression.Create(GlobalObjects[matchedStr], matchedStr);
-                    else if (matchedStr === "undefined") {
-                        operand = Expression.ValueExpression.Create(undefined);
-                    }
-                    else if (matchedStr === "null") {
-                        operand = Expression.ValueExpression.Create(null);
-                    }
-                    else {
-                        const intValue = parseFloat(match[0]);
-                        if (!isNaN(intValue))
-                            operand = Expression.ValueExpression.Create(intValue);
-                        else
-                            throw new Error("Expression not match anywhere. You maybe forgot to add '" + expressionStr + "' param");
-                    }
-                    break;
-            }
+            body = createExpression(param, tokens);
         }
-
-        if (operand === null) {
-            return null;
+        for (const paramExp of params) {
+            let paramsL = param.scopedParameters.get(paramExp.name);
+            paramsL.shift();
         }
-
-        // check member access and method call
-        let memberOperator = this.GetOperator(expressionStr, MemberOperators);
-        while (memberOperator !== null) {
-            expressionStr = memberOperator.Remaining;
-            const nestOperand = this.GetOperand(expressionStr, memberOperator, paramContext);
-            if (nestOperand == null)
-                throw new Error("Access to invalid member name");
-
-            expressionStr = nestOperand.Remaining;
-            if (expressionStr[0] === "(") {
-                expressionStr = this.RemoveComments(expressionStr.substr(1));
-                const fnParams = [];
-                let closeString = "";
-                const errowFunctionRegex = /^([_a-z0-9,\s]+|\([_a-z0-9,\s]+\))\s*=>/;
-                while (true) {
-                    // need check for functionExpression here.
-                    if (expressionStr.search(errowFunctionRegex) === 0) {
-                        // function param
-                        const arrowIndex = expressionStr.indexOf("=>");
-                        const fnParamStr = expressionStr.substring(0, arrowIndex);
-                        const functionBody = this.RemoveComments(expressionStr.substring(arrowIndex + 2));
-                        if (functionBody[0] === "{")
-                            throw new Error("Only simple arrow function allowed here.");
-
-                        const innerFnParams = this.GetFunctionParams(fnParamStr);
-                        const fnParamExpressions: Expression.ParameterExpression[] = [];
-                        const fnParamContext: { [key: string]: any } = {};
-                        for (const fnParam of innerFnParams) {
-                            const paramExpression = Expression.ParameterExpression.Create(fnParam);
-                            fnParamExpressions.push(paramExpression);
-                            fnParamContext[fnParam] = paramExpression;
-                        }
-                        if (paramContext) {
-                            for (const prop in paramContext) {
-                                if (!fnParamContext.hasOwnProperty(prop))
-                                    fnParamContext[prop] = paramContext[prop];
-                            }
-                        }
-
-                        const functionBodyResult = this.GetBlock(functionBody, undefined, undefined, fnParamContext);
-                        if (functionBodyResult == null)
-                            throw new Error("Function must have a body statement");
-
-                        expressionStr = functionBodyResult.Remaining;
-                        closeString = functionBodyResult.CloseString;
-                        fnParams.push(Expression.FunctionExpression.Create(functionBodyResult.Value, fnParamExpressions));
-                    }
-                    else {
-
-                        const fnParamResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                        if (fnParamResult === null) {
-                            throw new Error("asdasda");
-                        }
-
-                        expressionStr = fnParamResult.Remaining;
-                        if (fnParamResult.Value !== undefined || fnParamResult.CloseString !== ")")
-                            fnParams.push(fnParamResult.Value);
-                        closeString = fnParamResult.CloseString;
-                    }
-
-                    if (closeString === ")")
-                        break;
-                    else if (closeString !== ",")
-                        throw new Error("Wrong function parameter sperator.");
-                }
-                operand = Expression.MethodCallExpression.Create(operand as any, fnParams, nestOperand.Value.execute() as never);
-            }
-            else {
-                operand = Expression.MemberAccessExpression.Create(operand as any, nestOperand.Value.execute());
-            }
-
-            memberOperator = this.GetOperator(expressionStr, MemberOperators);
-        }
-
-        // function call check here
-        if (operand instanceof Expression.ValueExpression && expressionStr[0] === "(") {
-            expressionStr = this.RemoveComments(expressionStr.substr(1));
-            const fnParams = [];
-            while (true) {
-                const fnParamResult = this.GetBlock(expressionStr, undefined, undefined, paramContext);
-                if (fnParamResult === null) {
-                    throw new Error("asdasda");
-                }
-
-                expressionStr = fnParamResult.Remaining;
-                if (fnParamResult.Value !== undefined || fnParamResult.CloseString !== ")")
-                    fnParams.push(fnParamResult.Value);
-
-                if (fnParamResult.CloseString === ")")
-                    break;
-            }
-            operand = Expression.FunctionCallExpression.Create(operand.execute(), fnParams);
-        }
-
-        const rightUnaryOperator = this.GetOperator(expressionStr, RightUnaryOperators);
-        if (rightUnaryOperator) {
-            operand = this.GetOperatorExpression(rightUnaryOperator.Value, operand as any);
-            expressionStr = rightUnaryOperator.Remaining;
-        }
-
-        return new OperandToken(operand as IExpression, expressionStr);
-    }
-
-    protected GetOperator(expression: string, operators = BinaryOperators) {
-        if (expression) {
-            let operator: ExpressionOperator | undefined;
-            for (const operatorExp of operators) {
-                if (expression.indexOf(operatorExp.Symbol) === 0) {
-                    operator = operatorExp;
-                    break;
-                }
-            }
-
-            if (operator) {
-                expression = this.RemoveComments(expression.substring(operator.Symbol.length));
-                return new OperatorToken(expression, operator);
-            }
-        }
-
-        return null;
-    }
-
-    protected RemoveComments(expression: string) {
-        expression = expression.trim();
-        if (!expression) {
-            return expression;
-        }
-
-        if (expression.indexOf("/*") === 0) {
-            let lastIndex = expression.indexOf("*/", 2);
-            if (lastIndex < 0) {
-                lastIndex = expression.length - 2;
-            }
-
-            expression = expression.substring(lastIndex + 2);
-            expression = this.RemoveComments(expression);
-        } else if (expression.indexOf("//") === 0) {
-            let lastIndex = expression.indexOf("\n", 2);
-            if (lastIndex < 0) {
-                lastIndex = expression.length - 1;
-            }
-
-            expression = expression.substring(lastIndex + 1);
-            expression = this.RemoveComments(expression);
-        }
-
-        return expression;
+        return new FunctionExpression(body, params);
     }
 }

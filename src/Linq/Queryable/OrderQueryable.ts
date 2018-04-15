@@ -1,12 +1,12 @@
 import { OrderDirection } from "../../Common/Type";
 import { FunctionExpression, MethodCallExpression, ObjectValueExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
 import { IQueryableOrderDefinition } from "../Interface/IOrderDefinition";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
@@ -15,7 +15,7 @@ export class OrderQueryable<T> extends Queryable<T> {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select(o => {
                 const a = {
-                    selector: o.selector instanceof FunctionExpression ? o.selector : ExpressionFactory.prototype.ToExpression(o.selector, this.parent.type),
+                    selector: o.selector instanceof FunctionExpression ? o.selector : ExpressionBuilder.parse(o.selector, [this.parent.type]),
                     direction: new ValueExpression(o.direction ? o.direction : OrderDirection.ASC)
                 };
                 return new ObjectValueExpression(a);

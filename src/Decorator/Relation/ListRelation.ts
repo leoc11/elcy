@@ -18,7 +18,7 @@ export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<
         if (!targetKeySelectors) throw new Error("targetKeySelectors not defined");
         const relationMap: { [key in keyof S]?: keyof T } = {};
 
-        sourceKeySelectors.forEach((o, i) => relationMap[FunctionHelper.PropertyName(o)] = FunctionHelper.PropertyName(targetKeySelectors[i]));
+        sourceKeySelectors.forEach((o, i) => relationMap[FunctionHelper.propertyName(o)] = FunctionHelper.propertyName(targetKeySelectors[i]));
         relationOption = {
             deleteOption,
             masterType,
@@ -26,7 +26,7 @@ export function ListRelation<S, T>(masterType: IObjectType<T> | IRelationOption<
             updateOption
         };
         if (masterRelationPropertySelector)
-            relationOption.masterRelationProperty = FunctionHelper.PropertyName(masterRelationPropertySelector);
+            relationOption.masterRelationProperty = FunctionHelper.propertyName(masterRelationPropertySelector);
     }
     const targetMetaData: EntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, relationOption.masterType);
     const targetUniqueKeys = Object.keys(targetMetaData.indices);

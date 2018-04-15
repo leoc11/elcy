@@ -14,6 +14,7 @@ import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQue
 import { IOrderQueryExpression } from "./src/Linq/Interface/IOrderQueryExpression";
 import { IQueryableOrderDefinition } from "./src/Linq/Interface/IOrderDefinition";
 import { OrderDirection } from "./src/Common/Type";
+import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -260,6 +261,34 @@ const db = new MyDb();
     // }), [param]);
     // const select1 = new SelectQueryable(db.orders, selectFn1);
     // const s1 = await select1.toArray();
+
+    /**
+     * Expression Builder
+     */
+
+    // const ori = new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param]);
+    // const a = Date.now();
+    // const builded = ExpressionBuilder.parse((o: Order) => o.TotalAmount);
+    // console.log(Date.now() - a);
+    // console.log(ori.toString() === builded.toString());
+
+
+    const selector = new ObjectValueExpression({
+        selector: new FunctionExpression(
+            new MemberAccessExpression(odParam, "quantity"),
+            [odParam])
+    });
+    const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
+    const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+        ods: orderExp,
+    }), [param]);
+    const a = Date.now();
+    const build1 = ExpressionBuilder.parse((o: Order) => ({
+        ods: o.OrderDetails.orderBy({
+            selector: (od: OrderDetail) => od.quantity
+        })
+    }), [Order]);
+    console.log(Date.now() - a);
 
     const d = 1;
 })();

@@ -5,10 +5,10 @@ import { NotEqualExpression } from "./NotEqualExpression";
 import { OrExpression } from "./OrExpression";
 import { ValueExpression } from "./ValueExpression";
 export class NotExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
-    public static Create(operand: IExpression<boolean>) {
+    public static create(operand: IExpression<boolean>) {
         const result = new NotExpression(operand);
         if (operand instanceof ValueExpression)
-            return ValueExpression.Create<boolean>(result);
+            return ValueExpression.create<boolean>(result);
 
         return result;
     }

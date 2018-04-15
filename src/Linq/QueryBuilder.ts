@@ -12,7 +12,6 @@ import {
     TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
-import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
@@ -37,6 +36,7 @@ import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "./Enumerable/Enumerable";
 import { CustomEntityExpression } from "./Queryable/QueryExpression/CustomEntityExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public get parameters(): TransformerParameter {
@@ -430,7 +430,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 throw new Error(`${expression.functionName} not supported in linq to sql.`);
         }
         // TODO: ToExpression must support this parameter
-        const fnExpression = ExpressionFactory.prototype.ToExpression(expression.functionFn, expression.params[0].type);
+        const fnExpression = ExpressionBuilder.parse(expression.functionFn, [expression.params[0].type]);
         for (let i = 0; i < fnExpression.params.length; i++) {
             const param = fnExpression.params[i];
             this.parameters.add(param.name, expression.params[i]);
@@ -777,7 +777,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const methodFn = expression.objectOperand.type.prototype[expression.methodName];
         if (methodFn) {
             // TODO: ToExpression must support this parameter
-            const fnExpression = ExpressionFactory.prototype.ToExpression(methodFn, expression.objectOperand.type);
+            const fnExpression = ExpressionBuilder.parse(methodFn, [expression.objectOperand.type]);
             for (let i = 0; i < fnExpression.params.length; i++) {
                 const param = fnExpression.params[i];
                 this.parameters.add(param.name, expression.params[i]);

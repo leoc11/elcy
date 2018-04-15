@@ -2,16 +2,16 @@ import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilde
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export class DistinctQueryable<T> extends Queryable<T> {
     protected readonly selectorFn?: (item: T) => any;
     private _selector?: FunctionExpression<T, any>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
-            this._selector = ExpressionFactory.prototype.ToExpression<T, any>(this.selectorFn, this.parent.type);
+            this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type]);
         return this._selector;
     }
     protected set selector(value) {

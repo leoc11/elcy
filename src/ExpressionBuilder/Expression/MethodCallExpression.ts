@@ -6,7 +6,7 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
     public static Create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
-            return ValueExpression.Create(result);
+            return ValueExpression.create(result);
         }
 
         return result;

@@ -3,10 +3,10 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class MultiplicationExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
-    public static Create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
+    public static create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
         const result = new MultiplicationExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }

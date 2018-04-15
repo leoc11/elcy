@@ -5,15 +5,15 @@ import { ValueExpression } from "./ValueExpression";
 import { MethodCallExpression } from "./index";
 
 export class AdditionExpression<T extends number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
-    public static Create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
-    public static Create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
-    public static Create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;
-    public static Create(leftOperand: IExpression<number>, rightOperand: IExpression): IExpression<number>;
-    public static Create(leftOperand: IExpression, rightOperand: IExpression<number>): IExpression<number>;
-    public static Create(leftOperand: IExpression, rightOperand: IExpression): IExpression {
+    public static create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
+    public static create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
+    public static create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;
+    public static create(leftOperand: IExpression<number>, rightOperand: IExpression): IExpression<number>;
+    public static create(leftOperand: IExpression, rightOperand: IExpression<number>): IExpression<number>;
+    public static create(leftOperand: IExpression, rightOperand: IExpression): IExpression {
         const result = new AdditionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create(result);
+            return ValueExpression.create(result);
 
         return result;
     }

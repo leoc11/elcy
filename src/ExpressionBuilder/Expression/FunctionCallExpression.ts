@@ -8,7 +8,7 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
 
         const result = new FunctionCallExpression<TType>(functionFn, functionName!, params);
         if (params.every((param) => param instanceof ValueExpression)) {
-            return ValueExpression.Create(result);
+            return ValueExpression.create(result);
         }
 
         return result;

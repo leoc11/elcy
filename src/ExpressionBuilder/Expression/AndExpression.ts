@@ -3,10 +3,10 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class AndExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
-    public static Create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
+    public static create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
         const result = new AndExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<boolean>(result);
+            return ValueExpression.create<boolean>(result);
 
         return result;
     }

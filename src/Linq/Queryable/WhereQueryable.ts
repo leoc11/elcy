@@ -1,17 +1,17 @@
 import { FunctionExpression, MethodCallExpression } from "../../ExpressionBuilder/Expression/index";
-import { ExpressionFactory } from "../../ExpressionBuilder/ExpressionFactory";
 import { QueryBuilder } from "../QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryExpressionVisitor";
 import { hashCode } from "../../Helper/Util";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
     protected _predicate: FunctionExpression<T, boolean>;
     protected get predicate() {
         if (!this._predicate && this.predicateFn)
-            this._predicate = ExpressionFactory.prototype.ToExpression(this.predicateFn, this.parent.type);
+            this._predicate = ExpressionBuilder.parse(this.predicateFn, [this.parent.type]);
         return this._predicate;
     }
     protected set predicate(value) {

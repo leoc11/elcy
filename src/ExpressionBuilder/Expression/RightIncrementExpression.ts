@@ -3,10 +3,10 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
 export class RightIncrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
-    public static Create(operand: IExpression<number>) {
+    public static create(operand: IExpression<number>) {
         const result = new RightIncrementExpression(operand);
         if (operand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }

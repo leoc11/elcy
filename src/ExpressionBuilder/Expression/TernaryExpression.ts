@@ -5,7 +5,7 @@ export class TernaryExpression<TType> extends ExpressionBase<TType> {
     public static Create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
         const result = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
         if (logicalOperand instanceof ValueExpression && trueResultOperand instanceof ValueExpression && falseResultOperand instanceof ValueExpression)
-            return ValueExpression.Create<TType>(result);
+            return ValueExpression.create<TType>(result);
 
         return result;
     }

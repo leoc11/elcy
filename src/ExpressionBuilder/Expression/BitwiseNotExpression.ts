@@ -4,10 +4,10 @@ import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
 export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression {
-    public static Create(operand: IExpression) {
+    public static create(operand: IExpression) {
         const result = new BitwiseNotExpression(operand);
         if (operand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }

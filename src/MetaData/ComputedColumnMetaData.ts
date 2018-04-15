@@ -1,24 +1,19 @@
 import { GenericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option";
-import { IExpression } from "../ExpressionBuilder/Expression/index";
-import { ExpressionFactory } from "../ExpressionBuilder/ExpressionFactory";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/index";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
-export class ComputedColumnMetaData<T, R> implements IColumnOption<R> {
+export class ComputedColumnMetaData<TE, T> implements IColumnOption<T> {
     public description: string;
-    // tslint:disable-next-line:variable-name
-    private _fnExpressionFactory: ((item: IExpression<T>) => IExpression<R>);
-    get functionExpressionFactory(): ((item: IExpression<T>) => IExpression<R>) {
-        if (!this._fnExpressionFactory)
-            this._fnExpressionFactory = ExpressionFactory.prototype.GetExpressionFactory(this.fn);
-        return this._fnExpressionFactory;
+    private _fnExpression: FunctionExpression<TE, T>;
+    get functionExpression(): FunctionExpression<TE, T> {
+        if (!this._fnExpression)
+            this._fnExpression = ExpressionBuilder.parse(this.fn, [this.entityType]);
+        return this._fnExpression;
     }
-    // tslint:disable-next-line:no-shadowed-variable
-    constructor(public type: GenericType<R>, public fn: (item: T) => R, public columnName: string) {
+    constructor(public entityType: GenericType<TE>, public type: GenericType<T>, public fn: (item: TE) => T, public columnName: string) {
     }
 
-    /**
-     * Copy
-     */
     public Copy(columnMeta: IColumnOption<any>) {
         if (typeof columnMeta.columnName !== "undefined")
             this.columnName = columnMeta.columnName;

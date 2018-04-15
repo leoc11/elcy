@@ -6,7 +6,7 @@ export class ModulusExpression extends ExpressionBase<number> implements IBinary
     public static Create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
         const result = new ModulusExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }

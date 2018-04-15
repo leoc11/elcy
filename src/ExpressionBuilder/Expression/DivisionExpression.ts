@@ -3,10 +3,10 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class DivisionExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
-    public static Create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
+    public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new DivisionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.Create<number>(result);
+            return ValueExpression.create<number>(result);
 
         return result;
     }
