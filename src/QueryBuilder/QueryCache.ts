@@ -1,10 +1,7 @@
 import { IQueryResultParser } from "./ResultParser/IQueryResultParser";
+import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
 
 export class QueryCache<T = any> {
-    constructor(query: string, queryParser: IQueryResultParser<T>) {
-        this.query = query;
-        this.queryParser = queryParser;
+    constructor(public readonly query: string, public readonly queryParser: IQueryResultParser<T>, public readonly parameterBuilder: ParameterBuilder) {
     }
-    public query: string;
-    public queryParser: IQueryResultParser<T>;
 }

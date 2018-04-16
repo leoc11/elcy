@@ -37,11 +37,17 @@ import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
-    public parameters = new Map<string, any>();
-    public addParameters(map: Map<string, any>) {
-        this.parameters = new Map([... this.parameters, ...map]);
+    protected get userParameters() {
+        return this.queryVisitor.userParameters;
+    }
+    public get sqlParameterBuilderItems(): ISqlParameterBuilderItem[] {
+        return this.queryVisitor.sqlParameterBuilderItems;
+    }
+    public addParameters(param: { [key: string]: any }) {
+        Object.assign(this.userParameters, param);
     }
     public get scopeParameters(): TransformerParameter {
         return this.queryVisitor.scopeParameters;

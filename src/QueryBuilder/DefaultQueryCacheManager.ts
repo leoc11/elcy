@@ -3,6 +3,7 @@ import { QueryCache } from "./QueryCache";
 import { IQueryCacheManager } from "./IQueryCacheManager";
 import { IObjectType } from "../Common/Type";
 import { DbContext } from "../Data/DBContext";
+import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
 
 export const queryCacheKey = Symbol("querycache-key");
 export class DefaultQueryCacheManager implements IQueryCacheManager {
@@ -12,13 +13,13 @@ export class DefaultQueryCacheManager implements IQueryCacheManager {
             return Promise.resolve(cached.get(key));
         return Promise.resolve(undefined);
     }
-    public async set<T>(type: IObjectType<DbContext>, key: number, query: string, queryParser: IQueryResultParser<T>) {
+    public async set<T>(type: IObjectType<DbContext>, key: number, query: string, queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder) {
         let cached: Map<number, QueryCache> = Reflect.getOwnMetadata(queryCacheKey, type);
         if (!cached) {
             cached = new Map<number, QueryCache>();
             Reflect.defineMetadata(queryCacheKey, cached, type);
         }
-        cached.set(key, new QueryCache(query, queryParser));
+        cached.set(key, new QueryCache(query, queryParser, parameterBuilder));
         return Promise.resolve();
     }
 }

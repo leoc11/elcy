@@ -16,7 +16,7 @@ import {
 } from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction } from "../Helper/Util";
+import { isValueType, isNativeFunction, hashCode } from "../Helper/Util";
 import { IEntityMetaData, IRelationMetaData } from "../MetaData/Interface/index";
 import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
@@ -30,6 +30,7 @@ import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/Se
 import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { SqlExpression } from "../Queryable/QueryExpression/SqlExpression";
+import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 
 interface IPRelation {
     name: string;
@@ -42,7 +43,8 @@ export interface IQueryVisitParameter {
     scope?: string;
 }
 export class QueryExpressionVisitor {
-    public sqlParams: Array<{ key: string, value: any }> = [];
+    public sqlParameterBuilderItems: ISqlParameterBuilderItem[] = [];
+    public userParameters: { [key: string]: any } = {};
     public scopeParameters = new TransformerParameter();
     private aliasObj: { [key: string]: number } = {};
     constructor(public namingStrategy: NamingStrategy = new NamingStrategy()) {
@@ -109,7 +111,11 @@ export class QueryExpressionVisitor {
     protected visitParameter<T>(expression: ParameterExpression<T>, param: IQueryVisitParameter) {
         let result = this.scopeParameters.get(expression.name);
         if (!result) {
-            this.sqlParams.push({ key: expression.name, value: expression.name });
+            result = new ParameterExpression("param_" + hashCode(expression.toString()));
+            this.sqlParameterBuilderItems.push({
+                name: result.name,
+                valueGetter: expression
+            });
             return expression;
         }
         return result;
@@ -123,12 +129,12 @@ export class QueryExpressionVisitor {
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
         if (objectOperand instanceof ParameterExpression) {
-            const existing = this.sqlParams.find(o => o.key === objectOperand.name);
+            const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
             if (existing)
-                this.sqlParams.remove(existing);
+                this.sqlParameterBuilderItems.remove(existing);
 
-            const result = new ParameterExpression(expression.toString().replace(/[^a-zA-Z0-9_]/g, "_"));
-            this.sqlParams.push({ key: result.name, value: expression });
+            const result = new ParameterExpression("param_" + hashCode(expression.toString()));
+            this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
             return result;
         }
 
@@ -249,12 +255,12 @@ export class QueryExpressionVisitor {
         if (objectOperand instanceof ParameterExpression) {
             // TODO: may cause issue, coz parameter expression may not mean sql parameter.
             if (expression.params.all(o => (o instanceof ValueExpression || o instanceof ParameterExpression))) {
-                const existing = this.sqlParams.find(o => o.key === objectOperand.name);
+                const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
                 if (existing)
-                    this.sqlParams.remove(existing);
+                    this.sqlParameterBuilderItems.remove(existing);
 
-                const result = new ParameterExpression(expression.toString().replace(/[^a-zA-Z0-9_]/g, "_"));
-                this.sqlParams.push({ key: result.name, value: expression });
+                const result = new ParameterExpression("param_" + hashCode(expression.toString()));
+                this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
                 return result;
             }
         }

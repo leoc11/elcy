@@ -272,23 +272,28 @@ const db = new MyDb();
     // console.log(ori.toString() === builded.toString());
 
 
-    const selector = new ObjectValueExpression({
-        selector: new FunctionExpression(
-            new MemberAccessExpression(odParam, "quantity"),
-            [odParam])
-    });
-    const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
-    const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-        ods: orderExp,
-    }), [param]);
-    const a = Date.now();
-    const build1 = ExpressionBuilder.parse((o: Order) => ({
-        ods: o.OrderDetails.orderBy({
-            selector: (od: OrderDetail) => od.quantity
-        })
-    }), [Order]);
-    console.log(Date.now() - a);
+    // const selector = new ObjectValueExpression({
+    //     selector: new FunctionExpression(
+    //         new MemberAccessExpression(odParam, "quantity"),
+    //         [odParam])
+    // });
+    // const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     ods: orderExp,
+    // }), [param]);
+    // const a = Date.now();
+    // const build1 = ExpressionBuilder.parse((o: Order) => ({
+    //     ods: o.OrderDetails.orderBy({
+    //         selector: (od: OrderDetail) => od.quantity
+    //     })
+    // }), [Order]);
+    // console.log(Date.now() - a);
 
-    const c = await db.orders.any();
+    // const c = await db.orders.any();
+
+    const now = new Date();
+    const c = await db.orders.setParameters({
+        now: now
+    }).where(o => o.OrderDate > now).toArray();
     const d = 1;
 })();

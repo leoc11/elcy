@@ -4,6 +4,7 @@ import { ConnectionPool, config, Request } from "mssql";
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";
 import { IQueryResult } from "../../QueryBuilder/QueryResult";
 import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
+import { ISqlParameterBuilderItem } from "../../QueryBuilder/ParameterBuilder/ISqlParameterBuilderItem";
 
 export abstract class MssqlDbContext extends DbContext {
     public queryParser = PlainObjectQueryResultParser;
@@ -28,8 +29,13 @@ export abstract class MssqlDbContext extends DbContext {
             this.connectionPool = await (new ConnectionPool(this.getConnectionOptions())).connect();
         return this.connectionPool.request();
     }
-    public async executeQuery(query: string, parameters?: any[]) {
+    public async executeQuery(query: string, parameters?: Map<string, any>) {
         const connection = await this.getConnection();
+        if (parameters) {
+            for (const [key, value] of parameters) {
+                connection.input(key, value);
+            }
+        }
         const rows = await connection.query(query);
         const results: IQueryResult[] = [];
         for (let i = 0; i < rows.recordsets.length; i++) {

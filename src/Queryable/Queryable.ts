@@ -9,6 +9,7 @@ import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultPar
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {
@@ -21,14 +22,17 @@ export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
-    protected parameters: Map<string, any>;
+    protected parameters: { [key: string]: any };
     public setParameters(params: { [key: string]: any }) {
         if (!this.parameters)
-            this.parameters = new Map();
-        for (const prop in params) {
-            const value = params[prop];
-            this.parameters.set(prop, value);
-        }
+            this.parameters = {};
+        Object.assign(this.parameters, params);
+        return this;
+    }
+    public getMergedParameter(params: { [key: string]: any }) {
+        if (!this.parameters)
+            Object.assign(params, this.parameters);
+        return params;
     }
     protected expression: ICommandQueryExpression<T>;
     protected parent: Queryable;
@@ -47,6 +51,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             const n = Date.now();
@@ -54,17 +59,18 @@ export abstract class Queryable<T = any> {
             queryStr = commandQuery.toString(queryBuilder);
             console.log("over head: " + (Date.now() - n));
             queryParser = new this.dbContext.queryParser(commandQuery);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
-
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
             // TODO: remove this. this is only for debug purphose.
             this.hashCode();
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const n = Date.now();
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         console.log("query time: " + (Date.now() - n));
         return queryParser.parse(queryResult, this.dbContext);
     }
@@ -73,6 +79,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -83,11 +90,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -97,6 +106,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -107,11 +117,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = queryBuilder.getContainsString(expression);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -124,6 +136,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -138,11 +151,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -155,6 +170,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -169,11 +185,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -186,6 +204,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -200,11 +219,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -217,6 +238,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -231,11 +253,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(queryResult, this.dbContext).first();
@@ -245,6 +269,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -259,11 +284,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return !queryResult.first().rows.any();
@@ -276,6 +303,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -290,11 +318,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const queryResult = await this.dbContext.executeQuery(queryStr);
         return queryResult.first().rows.any();
@@ -307,6 +337,7 @@ export abstract class Queryable<T = any> {
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
+        let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
@@ -320,11 +351,13 @@ export abstract class Queryable<T = any> {
             expression = param.commandExpression;
             queryStr = expression.toString(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
-            this.dbContext.setQueryChache(key, queryStr, queryParser);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
         }
         else {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
+            parameterBuilder = queryCache.parameterBuilder;
         }
         const result = await this.dbContext.executeQuery(queryStr);
         return queryParser.parse(result, this.dbContext).first();

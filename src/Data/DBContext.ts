@@ -8,6 +8,8 @@ import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManag
 import { IConnectionOption } from "./Interface/IConnectionOption";
 import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
+import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
+import { ISqlParameterBuilderItem } from "../QueryBuilder/ParameterBuilder/ISqlParameterBuilderItem";
 
 export abstract class DbContext {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -27,10 +29,10 @@ export abstract class DbContext {
     public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
         return this.queryCacheManager.get<T>(this.constructor as any, key);
     }
-    public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>): Promise<void> {
-        return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser);
+    public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
+        return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser, parameterBuilder);
     }
-    public abstract async executeQuery(query: string): Promise<IQueryResult[]>;
+    public abstract async executeQuery(query: string, parameters: Map<string, any>): Promise<IQueryResult[]>;
     protected readonly connectionOptions: IConnectionOption;
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(connectionOption: IConnectionOption) {

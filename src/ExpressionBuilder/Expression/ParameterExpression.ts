@@ -22,7 +22,7 @@ export class ParameterExpression<TType = any> extends ExpressionBase<TType> {
         return this.name;
     }
     public execute(transformer: ExpressionTransformer): any {
-        return transformer.scopeParameters.get(this.name);
+        return transformer.executeExpression(this);
     }
     public clone() {
         return new ParameterExpression(this.name, this.type);
