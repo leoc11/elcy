@@ -289,5 +289,6 @@ const db = new MyDb();
     }), [Order]);
     console.log(Date.now() - a);
 
+    const c = await db.orders.any();
     const d = 1;
 })();

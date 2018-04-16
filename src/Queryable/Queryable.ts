@@ -12,12 +12,23 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {
-        if (!this._queryBuilder)
+        if (!this._queryBuilder) {
             this._queryBuilder = this.parent.queryBuilder;
+            this._queryBuilder.addParameters(this.parameters);
+        }
         return this._queryBuilder;
     }
     public get dbContext(): DbContext {
         return this.parent.dbContext;
+    }
+    protected parameters: Map<string, any>;
+    public setParameters(params: { [key: string]: any }) {
+        if (!this.parameters)
+            this.parameters = new Map();
+        for (const prop in params) {
+            const value = params[prop];
+            this.parameters.set(prop, value);
+        }
     }
     protected expression: ICommandQueryExpression<T>;
     protected parent: Queryable;
@@ -59,13 +70,14 @@ export abstract class Queryable<T = any> {
     }
     public async count() {
         let key = this.hashCode() + hashCode("COUNT");
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<number>(key);
+        let queryParser: IQueryResultParser<number>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(expression.entity, "count", []);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
+            const methodExpression = new MethodCallExpression(expression, "count", []);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -77,18 +89,19 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
-    public async contains(item: T) {
+    public async contains(item: T): Promise<boolean> {
         let key = this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
+        let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
-            const methodExpression = new MethodCallExpression(expression.entity, "contains", [new ValueExpression(item)]);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
+            const methodExpression = new MethodCallExpression(expression, "contains", [new ValueExpression(item)]);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -100,20 +113,21 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async sum(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("SUM");
         if (selector)
             key += hashCode(selector.toString());
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<number>(key);
+        let queryParser: IQueryResultParser<number>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
@@ -130,25 +144,26 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async max(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("MAX");
         if (selector)
             key += hashCode(selector.toString());
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<number>(key);
+        let queryParser: IQueryResultParser<number>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "max", metParams);
+            const methodExpression = new MethodCallExpression(expression, "max", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -160,25 +175,26 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async min(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("MIN");
         if (selector)
             key += hashCode(selector.toString());
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<number>(key);
+        let queryParser: IQueryResultParser<number>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "min", metParams);
+            const methodExpression = new MethodCallExpression(expression, "min", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -190,25 +206,26 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async avg(selector?: (item: T) => number): Promise<number> {
         let key = this.hashCode() + hashCode("AVG");
         if (selector)
             key += hashCode(selector.toString());
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<number>(key);
+        let queryParser: IQueryResultParser<number>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "avg", metParams);
+            const methodExpression = new MethodCallExpression(expression, "avg", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -220,22 +237,23 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryParser.parse(queryResult, this.dbContext).first();
     }
-    public async all(predicate: (item: T) => boolean) {
+    public async all(predicate: (item: T) => boolean): Promise<boolean> {
         let key = this.hashCode() + hashCode("ALL") + hashCode(predicate.toString());
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
+        let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (predicate) {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "all", metParams);
+            const methodExpression = new MethodCallExpression(expression, "all", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -247,25 +265,26 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return !queryResult.first().rows.any();
     }
-    public async any(predicate?: (item: T) => boolean) {
+    public async any(predicate?: (item: T) => boolean): Promise<boolean> {
         let key = this.hashCode() + hashCode("ANY");
         if (predicate)
             key += hashCode(predicate.toString());
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
+        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
+        let queryParser: IQueryResultParser<boolean>;
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
             const metParams = [];
             if (predicate) {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "any", metParams);
+            const methodExpression = new MethodCallExpression(expression, "any", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -277,8 +296,8 @@ export abstract class Queryable<T = any> {
             queryParser = queryCache.queryParser;
             queryStr = queryCache.query;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        const queryResult = await this.dbContext.executeQuery(queryStr);
+        return queryResult.first().rows.any();
     }
     public async first(predicate?: (item: T) => boolean): Promise<T> {
         let key = this.hashCode() + hashCode("FIRST");
@@ -290,12 +309,12 @@ export abstract class Queryable<T = any> {
         let queryStr: string;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
             const metParams = [];
             if (predicate) {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
-            const methodExpression = new MethodCallExpression(expression.entity, "first", metParams);
+            const methodExpression = new MethodCallExpression(expression, "first", metParams);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
             queryBuilder.visit(methodExpression, param);
             expression = param.commandExpression;
@@ -308,19 +327,23 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
         }
         const result = await this.dbContext.executeQuery(queryStr);
-        return result.first().rows.first();
+        return queryParser.parse(result, this.dbContext).first();
     }
-    public update(setter: { [key in keyof T]: T[key] }) {
+    public async update(setter: { [key in keyof T]: T[key] }) {
         const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
         if (!entityMeta) {
             throw new Error(`Only entity typed supported`);
         }
         const queryBuilder = this.queryBuilder;
-        let expression = new SelectExpression<any>(this.buildQuery(queryBuilder) as any);
+        let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
         const query = expression.toString(queryBuilder);
         return query as any;
     }
-    public delete(forceHardDelete = false, predicate?: (item: T) => boolean) {
+    public async delete(predicate?: (item: T) => boolean, forceHardDelete = false) {
+        const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
+        if (!entityMeta) {
+            throw new Error(`Only entity typed supported`);
+        }
         // delete code here.
     }
 }

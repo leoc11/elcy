@@ -25,6 +25,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
     public selects: IColumnExpression[] = [];
     private isSelectAll = true;
+    public isAggregate: boolean;
     public entity: IEntityExpression;
     public get type() {
         return Array;
@@ -53,6 +54,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.orders = entity.defaultOrders.slice(0);
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
+        if (this.isAggregate)
+            return this.selects.asEnumerable();
         return this.entity.primaryColumns.union(this.relationColumns).union(this.selects);
     }
     public relationColumns: IColumnExpression[] = [];
@@ -169,7 +172,26 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             child.parentRelation = rel;
             return rel;
         }).toArray();
-        
+
+        clone.includes = this.includes.select(o => {
+            const relationMap = new Map();
+            const child = o.child.clone();
+            for (const [parentCol, childCol] of o.relations) {
+                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
+                const cloneChildCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
+                relationMap.set(cloneCol, cloneChildCol);
+            }
+            const rel: IIncludeRelation = {
+                child: child,
+                parent: clone,
+                name: o.name,
+                relations: relationMap,
+                type: o.type
+            };
+            child.parentRelation = rel;
+            return rel;
+        }).toArray();
+
         if (this.where)
             clone.where = this.where.clone();
 

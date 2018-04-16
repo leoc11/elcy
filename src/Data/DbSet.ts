@@ -2,7 +2,7 @@ import { IObjectType, ValueType, RelationType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable";
-import "./Queryable/Queryable.partial";
+import "../Queryable/Queryable.partial";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
@@ -17,7 +17,9 @@ import { MasterRelationMetaData } from "../MetaData/Relation/index";
 
 export class DbSet<T extends EntityBase> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
-        return new this.dbContext.queryBuilder();
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.addParameters(this.parameters);
+        return queryBuilder;
     }
     public get dbContext(): DbContext {
         return this._dbContext;
@@ -107,7 +109,5 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
             return this.primaryKeys.reduce((res, current) => res + "|" + (id as any)[current], "");
         }
     }
-    // public delete(predicate: (item: T) => boolean, isHardDelete = false): number {
-    //     return 0;
-    // }
+
 }

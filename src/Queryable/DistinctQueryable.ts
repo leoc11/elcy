@@ -19,6 +19,7 @@ export class DistinctQueryable<T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<T>) {
         super(parent.type);
+        this.setParameters(this.parent);
     }
     public buildQuery(queryBuilder: QueryBuilder): any {
         if (!this.expression) {

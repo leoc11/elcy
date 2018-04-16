@@ -1,5 +1,6 @@
 import { IExpression, ParameterExpression, ValueExpression, MemberAccessExpression, MethodCallExpression, RightIncrementExpression, RightDecrementExpression, SubtractionExpression, NotExpression, BitwiseNotExpression, FunctionExpression, MultiplicationExpression, AdditionExpression, DivisionExpression, LeftIncrementExpression, LeftDecrementExpression, AndExpression, NotEqualExpression, StrictNotEqualExpression, EqualExpression, StrictEqualExpression, GreaterThanExpression, GreaterEqualExpression, LessThanExpression, LessEqualExpression, OrExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, BitwiseSignedRightShiftExpression, TypeofExpression, InstanceofExpression, FunctionCallExpression, ObjectValueExpression, ArrayValueExpression } from "./Expression";
 import { GenericType } from "../Common/Type";
+import { isNativeFunction } from "../Helper/Util";
 
 export namespace ExpressionBuilder {
     export function parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, paramTypes?: GenericType<TParam>[], userParameters?: Map<string, any>) {
@@ -297,6 +298,7 @@ export namespace ExpressionBuilder {
             switch (token.type) {
                 case LexicalTokenType.Operator: {
                     if (token.data === "=>") {
+                        param.index++;
                         expression = createFunctionExpression(param, [expression] as any, tokens);
                     }
                     else {
@@ -413,8 +415,8 @@ export namespace ExpressionBuilder {
                     }
                 }
                 else if (globalObjectMaps.has(token.data as string)) {
-                    const data = param.userParameters.get(token.data as string);
-                    if (data instanceof Function) {
+                    const data = globalObjectMaps.get(token.data as string);
+                    if (isNativeFunction(data)) {
                         const paramToken = tokens[++param.index];
                         const params = createParamsExpression(param, paramToken.data as any);
                         return new FunctionCallExpression(data as any, token.data as string, params);

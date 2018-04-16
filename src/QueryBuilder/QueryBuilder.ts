@@ -39,8 +39,12 @@ import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntit
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
-    public get parameters(): TransformerParameter {
-        return this.queryVisitor.parameters;
+    public parameters = new Map<string, any>();
+    public addParameters(map: Map<string, any>) {
+        this.parameters = new Map([... this.parameters, ...map]);
+    }
+    public get scopeParameters(): TransformerParameter {
+        return this.queryVisitor.scopeParameters;
     }
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
@@ -247,7 +251,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result = tableStr + ";" + this.newLine(0) + "INSERT INTO " + tempTableName +
                 this.newLine(0) + result + ";";
             result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
-            
+
             const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.toArray(), select.objectType, this.newAlias()));
             // tempSelect.entity.name = tempTableName;
 
@@ -433,7 +437,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const fnExpression = ExpressionBuilder.parse(expression.functionFn, [expression.params[0].type]);
         for (let i = 0; i < fnExpression.params.length; i++) {
             const param = fnExpression.params[i];
-            this.parameters.add(param.name, expression.params[i]);
+            this.scopeParameters.add(param.name, expression.params[i]);
         }
         const result = this.getExpressionString(fnExpression.body);
         return result;
@@ -780,9 +784,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const fnExpression = ExpressionBuilder.parse(methodFn, [expression.objectOperand.type]);
             for (let i = 0; i < fnExpression.params.length; i++) {
                 const param = fnExpression.params[i];
-                this.parameters.add(param.name, expression.params[i]);
+                this.scopeParameters.add(param.name, expression.params[i]);
             }
-            this.parameters.add("this", expression.objectOperand);
+            this.scopeParameters.add("this", expression.objectOperand);
             const result = this.getExpressionString(fnExpression.body);
             return result;
         }

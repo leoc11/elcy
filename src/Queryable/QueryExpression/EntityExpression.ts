@@ -23,6 +23,9 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._columns;
     }
+    public set columns(value) {
+        this._columns = value;
+    }
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
             if (this.metaData)
@@ -31,6 +34,9 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
                 this._primaryColumns = [];
         }
         return this._primaryColumns;
+    }
+    public set primaryColumns(value) {
+        this._primaryColumns = value;
     }
     public get defaultOrders(): IOrderExpression[] {
         if (!this._defaultOrders) {
