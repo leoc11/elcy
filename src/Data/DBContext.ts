@@ -32,7 +32,7 @@ export abstract class DbContext {
     public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
         return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser, parameterBuilder);
     }
-    public abstract async executeQuery(query: string, parameters: Map<string, any>): Promise<IQueryResult[]>;
+    public abstract async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
     protected readonly connectionOptions: IConnectionOption;
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(connectionOption: IConnectionOption) {

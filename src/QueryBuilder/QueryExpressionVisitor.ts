@@ -116,7 +116,7 @@ export class QueryExpressionVisitor {
                 name: result.name,
                 valueGetter: expression
             });
-            return expression;
+            return result;
         }
         return result;
     }
@@ -124,7 +124,7 @@ export class QueryExpressionVisitor {
         return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
@@ -133,10 +133,11 @@ export class QueryExpressionVisitor {
             if (existing)
                 this.sqlParameterBuilderItems.remove(existing);
 
-            const result = new ParameterExpression("param_" + hashCode(expression.toString()));
+            const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
             this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
             return result;
         }
+        expression.objectOperand = objectOperand;
 
         switch (objectOperand.type) {
             case String:
@@ -244,16 +245,15 @@ export class QueryExpressionVisitor {
         else {
             const resValue = objectOperand instanceof ValueExpression ? objectOperand.execute() : objectOperand;
             if (resValue[expression.memberName])
-                return resValue[expression.memberName];
+                return new ValueExpression(resValue[expression.memberName]);
         }
 
         throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = this.visit(expression.objectOperand, param);
 
         if (objectOperand instanceof ParameterExpression) {
-            // TODO: may cause issue, coz parameter expression may not mean sql parameter.
             if (expression.params.all(o => (o instanceof ValueExpression || o instanceof ParameterExpression))) {
                 const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
                 if (existing)
@@ -264,6 +264,8 @@ export class QueryExpressionVisitor {
                 return result;
             }
         }
+        expression.objectOperand = objectOperand;
+
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
@@ -976,6 +978,11 @@ export class QueryExpressionVisitor {
             }
         }
 
+        if (objectOperand instanceof ValueExpression) {
+            if (expression.params.all(o => (o instanceof ValueExpression || o instanceof ParameterExpression))) {
+                return new ValueExpression(expression.execute() as any, expression.toString());
+            }
+        }
         const methodFn: () => any = objectOperand.type.prototype[expression.methodName];
         if (methodFn) {
             if (isNativeFunction(methodFn))

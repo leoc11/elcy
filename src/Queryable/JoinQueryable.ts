@@ -41,6 +41,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     }
     constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
         super(type);
+        this.setParameters(this.parent.parameters);
         if (keySelector1 instanceof FunctionExpression)
             this.keySelector1 = keySelector1;
         else

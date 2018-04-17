@@ -28,6 +28,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]) {
         super(parent.type);
+        this.setParameters(this.parent.parameters);
         this.selectorsFn = selectors;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression {

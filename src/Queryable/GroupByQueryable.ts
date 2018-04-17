@@ -21,6 +21,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     }
     constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<T, K> | ((item: T) => K)) {
         super(Array as any);
+        this.setParameters(this.parent.parameters);
         if (keySelector instanceof FunctionExpression)
             this.keySelector = keySelector;
         else

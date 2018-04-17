@@ -22,17 +22,12 @@ export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
-    protected parameters: { [key: string]: any };
+    public parameters: { [key: string]: any } = {};
     public setParameters(params: { [key: string]: any }) {
         if (!this.parameters)
             this.parameters = {};
         Object.assign(this.parameters, params);
         return this;
-    }
-    public getMergedParameter(params: { [key: string]: any }) {
-        if (!this.parameters)
-            Object.assign(params, this.parameters);
-        return params;
     }
     protected expression: ICommandQueryExpression<T>;
     protected parent: Queryable;
@@ -54,15 +49,15 @@ export abstract class Queryable<T = any> {
         let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            const n = Date.now();
+            let n = Date.now();
             const commandQuery = this.buildQuery(queryBuilder);
+            console.log("over head: " + (Date.now() - n));
+            n = Date.now();
             queryStr = commandQuery.toString(queryBuilder);
             console.log("over head: " + (Date.now() - n));
             queryParser = new this.dbContext.queryParser(commandQuery);
             parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
             this.dbContext.setQueryChache(key, queryStr, queryParser, parameterBuilder);
-            // TODO: remove this. this is only for debug purphose.
-            this.hashCode();
         }
         else {
             queryParser = queryCache.queryParser;
@@ -98,7 +93,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async contains(item: T): Promise<boolean> {
@@ -125,7 +120,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async sum(selector?: (item: T) => number) {
@@ -159,7 +154,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async max(selector?: (item: T) => number) {
@@ -193,7 +188,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async min(selector?: (item: T) => number) {
@@ -227,7 +222,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async avg(selector?: (item: T) => number): Promise<number> {
@@ -261,7 +256,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(queryResult, this.dbContext).first();
     }
     public async all(predicate: (item: T) => boolean): Promise<boolean> {
@@ -292,7 +287,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return !queryResult.first().rows.any();
     }
     public async any(predicate?: (item: T) => boolean): Promise<boolean> {
@@ -326,7 +321,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const queryResult = await this.dbContext.executeQuery(queryStr);
+        const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryResult.first().rows.any();
     }
     public async first(predicate?: (item: T) => boolean): Promise<T> {
@@ -359,7 +354,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const result = await this.dbContext.executeQuery(queryStr);
+        const result = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         return queryParser.parse(result, this.dbContext).first();
     }
     public async update(setter: { [key in keyof T]: T[key] }) {
