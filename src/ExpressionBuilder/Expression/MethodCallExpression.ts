@@ -39,7 +39,7 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
             paramStr.push(param.toString());
         return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
     }
-    public execute(transformer: ExpressionTransformer) {
+    public execute(transformer?: ExpressionTransformer) {
         const objectValue = this.objectOperand.execute(transformer);
         const params = [];
         for (const param of this.params)

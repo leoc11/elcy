@@ -27,6 +27,9 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         const results: T[] = [];
         const queryResult = queryResults.shift();
 
+        if (queryResult.rows.length <= 0)
+            return results;
+
         // parent relation
         let parentRelation: IRelationResolveData<any, any>;
         if (select.parentRelation) {

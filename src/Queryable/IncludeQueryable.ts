@@ -22,6 +22,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression<T, any>>, public type: GenericType<T> = Object) {
         super(type);
+        this.setParameters(this.parent.parameters);
         if (selectors.length > 0 && selectors[0] instanceof FunctionExpression) {
             this.selectors = selectors as any;
         }

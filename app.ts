@@ -14,6 +14,7 @@ import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQue
 import { IQueryableOrderDefinition } from "./src/QueryBuilder/Interface/IOrderDefinition";
 import { OrderDirection } from "./src/Common/Type";
 import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
+import "./src/Extensions/DateExtension";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -291,9 +292,7 @@ const db = new MyDb();
 
     // const c = await db.orders.any();
 
-    const now = new Date();
-    const c = await db.orders.setParameters({
-        now: now
-    }).where(o => o.OrderDate > now).toArray();
+    const paramObj = { now: (new Date()).addYears(-1) };
+    const c = await db.orders.setParameters({ paramObj }).where(o => o.TotalAmount > Math.abs(paramObj.now.getHours())).toArray();
     const d = 1;
 })();

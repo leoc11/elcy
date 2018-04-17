@@ -19,6 +19,7 @@ export class WhereQueryable<T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<T, boolean> | ((item: T) => boolean)) {
         super(parent.type);
+        this.setParameters(this.parent.parameters);
         if (predicate instanceof FunctionExpression)
             this.predicate = predicate;
         else

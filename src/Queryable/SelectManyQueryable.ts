@@ -20,6 +20,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<S>, selector: FunctionExpression<S, T[] | Queryable<T>> | ((item: S) => T[] | Queryable<T>), public type: GenericType<T> = Object) {
         super(type);
+        this.setParameters(this.parent.parameters);
         if (selector instanceof FunctionExpression)
             this.selector = selector;
         else

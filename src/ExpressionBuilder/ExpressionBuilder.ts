@@ -416,7 +416,7 @@ export namespace ExpressionBuilder {
                 }
                 else if (globalObjectMaps.has(token.data as string)) {
                     const data = globalObjectMaps.get(token.data as string);
-                    if (isNativeFunction(data)) {
+                    if (data instanceof Function && isNativeFunction(data)) {
                         const paramToken = tokens[++param.index];
                         const params = createParamsExpression(param, paramToken.data as any);
                         return new FunctionCallExpression(data as any, token.data as string, params);

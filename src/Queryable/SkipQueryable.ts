@@ -7,6 +7,7 @@ export class SkipQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
     constructor(public readonly parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type);
+        this.setParameters(this.parent.parameters);
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {
