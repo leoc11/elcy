@@ -14,6 +14,12 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
     }
+    public get deleteColumn() {
+        if (typeof this._deleteColumn === "undefined") {
+            this._deleteColumn = !this.metaData ? null : this.columns.first(o => o.propertyName === this.metaData.deleteProperty);
+        }
+        return this._deleteColumn;
+    }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
             if (this.metaData)
@@ -54,6 +60,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     private _defaultOrders: IOrderExpression[];
+    private _deleteColumn: IColumnExpression;
     constructor(public readonly type: IObjectType<T>, public alias: string) {
         if (this.metaData)
             this.name = this.metaData.name;

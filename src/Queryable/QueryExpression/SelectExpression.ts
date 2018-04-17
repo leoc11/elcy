@@ -1,5 +1,5 @@
 import { GenericType, OrderDirection, RelationType, JoinType } from "../../Common/Type";
-import { AndExpression, IExpression } from "../../ExpressionBuilder/Expression/index";
+import { AndExpression, IExpression, EqualExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { ICommandQueryExpression } from "./ICommandQueryExpression";
@@ -7,7 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression } from ".";
+import { ProjectionEntityExpression, EntityExpression } from ".";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -52,6 +52,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.isSelectAll = true;
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
+        if (entity.deleteColumn)
+            this.addWhere(new EqualExpression(entity.deleteColumn, new ValueExpression(false)));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)

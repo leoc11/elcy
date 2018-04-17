@@ -292,7 +292,7 @@ const db = new MyDb();
     // const c = await db.orders.any();
 
     const now = new Date();
-    const c = await db.orders.setParameters({
+    const c = await db.orders.include(o => o.OrderDetails).setParameters({
         now: now
     }).where(o => o.OrderDate > now).toArray();
     const d = 1;
