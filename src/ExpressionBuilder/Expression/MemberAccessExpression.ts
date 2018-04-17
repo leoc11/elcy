@@ -42,7 +42,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
             result += "." + this.memberName;
         return result;
     }
-    public execute(transformer: ExpressionTransformer) {
+    public execute(transformer?: ExpressionTransformer) {
         let member = "";
         if (this.memberName instanceof ExpressionBase)
             member = this.memberName.execute(transformer);

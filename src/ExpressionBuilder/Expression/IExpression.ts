@@ -20,8 +20,7 @@ export abstract class ExpressionBase<T = any> implements IExpression<T> {
             return transformer.getExpressionString(this);
         return "";
     }
-    // tslint:disable-next-line:variable-name
-    public execute(_transformer?: ExpressionTransformer): T {
+    public execute(transformer?: ExpressionTransformer): T {
         if ((this.type as IObjectType<T>).prototype)
             return new (this.type as IObjectType<T>)();
         return (this.type as () => T)();

@@ -137,6 +137,11 @@ export class QueryExpressionVisitor {
             this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
             return result;
         }
+
+        if (objectOperand instanceof ValueExpression) {
+            return new ValueExpression(expression.execute());
+        }
+
         expression.objectOperand = objectOperand;
 
         switch (objectOperand.type) {
@@ -156,22 +161,6 @@ export class QueryExpressionVisitor {
                         break;
                 }
                 break;
-        }
-        if ((objectOperand instanceof ValueExpression)) {
-            switch (objectOperand.value) {
-                case Number:
-                    switch (expression.memberName) {
-                        case "MAX_VALUE":
-                        case "MIN_VALUE":
-                        case "NEGATIVE_INFINITY":
-                        case "NaN":
-                        case "POSITIVE_INFINITY":
-                        case "constructor":
-                        case "prototype":
-                            break;
-                    }
-                    break;
-            }
         }
         if (objectOperand instanceof SelectExpression && expression.memberName === "length") {
             return this.visit(new MethodCallExpression(objectOperand, "count", []), param);
@@ -253,19 +242,34 @@ export class QueryExpressionVisitor {
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
         const objectOperand = this.visit(expression.objectOperand, param);
 
-        if (objectOperand instanceof ParameterExpression) {
-            if (expression.params.all(o => (o instanceof ValueExpression || o instanceof ParameterExpression))) {
-                const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
-                if (existing)
-                    this.sqlParameterBuilderItems.remove(existing);
-
-                const result = new ParameterExpression("param_" + hashCode(expression.toString()));
-                this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
-                return result;
+        if (objectOperand instanceof ValueExpression || objectOperand instanceof ParameterExpression) {
+            let hasParameterExp = objectOperand instanceof ParameterExpression;
+            if (expression.params.all(o => {
+                if (o instanceof ParameterExpression) {
+                    hasParameterExp = true;
+                    const scopeParam = this.scopeParameters.get(o.name);
+                    return typeof scopeParam === "undefined";
+                }
+                return o instanceof ValueExpression;
+            })) {
+                if (hasParameterExp) {
+                    if (objectOperand instanceof ParameterExpression) {
+                        const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
+                        if (existing)
+                            this.sqlParameterBuilderItems.remove(existing);
+                    }
+        
+                    const result = new ParameterExpression("param_" + hashCode(expression.toString()));
+                    this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+                    return result;
+                }
+                else {
+                    return new ValueExpression(expression.execute());
+                }
             }
         }
-        expression.objectOperand = objectOperand;
 
+        expression.objectOperand = objectOperand;
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
