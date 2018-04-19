@@ -1,6 +1,7 @@
 import { IExpression, ParameterExpression, ValueExpression, MemberAccessExpression, MethodCallExpression, RightIncrementExpression, RightDecrementExpression, SubtractionExpression, NotExpression, BitwiseNotExpression, FunctionExpression, MultiplicationExpression, AdditionExpression, DivisionExpression, LeftIncrementExpression, LeftDecrementExpression, AndExpression, NotEqualExpression, StrictNotEqualExpression, EqualExpression, StrictEqualExpression, GreaterThanExpression, GreaterEqualExpression, LessThanExpression, LessEqualExpression, OrExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, BitwiseSignedRightShiftExpression, TypeofExpression, InstanceofExpression, FunctionCallExpression, ObjectValueExpression, ArrayValueExpression } from "./Expression";
 import { GenericType } from "../Common/Type";
 import { isNativeFunction } from "../Helper/Util";
+import { InstantiationExpression } from "./Expression/InstantiationExpression";
 
 export namespace ExpressionBuilder {
     export function parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, paramTypes?: GenericType<TParam>[], userParameters?: Map<string, any>) {
@@ -149,7 +150,7 @@ export namespace ExpressionBuilder {
                 || char === "_" || char === "$") {
                 resultData.push(analyzeLexicalIdentifier(pointer, input));
             }
-            else if ((char >= "*" && char <= "/") || (char >= "<" && char <= "?")
+            else if ((char !== "," && char >= "*" && char <= "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
                 resultData.push(analizeLexicalOperator(pointer, input));
             }
@@ -326,7 +327,8 @@ export namespace ExpressionBuilder {
                 case LexicalTokenType.Breaker:
                     return expression;
                 case LexicalTokenType.Keyword:
-                    throw new Error(`keyword ${token.data} not supported`);
+                    param.index++;
+                    return createKeywordExpression(param, token, tokens);
                 case LexicalTokenType.Parenthesis: {
                     if (!expression) {
                         if (token.data === "}") {
@@ -391,6 +393,7 @@ export namespace ExpressionBuilder {
             param.index++;
             const value = createExpression(param, tokens);
             obj[propName] = value;
+            param.index++;
         }
         param.index = index;
         return ObjectValueExpression.create(obj);
@@ -436,6 +439,20 @@ export namespace ExpressionBuilder {
                 return new ValueExpression(Number.parseFloat(token.data as string));
         }
         throw new Error("asd");
+    }
+    function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+        switch (token.data) {
+            case "new":
+                const typeExp = createOperandExpression(param, tokens[param.index++], tokens) as ValueExpression<any>;
+                const paramToken = tokens[param.index];
+                let params: IExpression[] = [];
+                if (paramToken.type === LexicalTokenType.Parenthesis && paramToken.data === ")") {
+                    param.index++;
+                    params = createParamsExpression(param, paramToken.childrens);
+                }
+                return new InstantiationExpression(typeExp.value, params);
+        }
+        throw new Error(`keyword ${token.data} not supported`);
     }
     function createOperatorExpression(param: SyntaticParameter, operand: IExpression, operatorToken: ILexicalToken, operand2: IExpression, tokens: ILexicalToken[]) {
         switch (operatorToken.data) {

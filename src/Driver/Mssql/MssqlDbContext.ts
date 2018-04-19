@@ -4,7 +4,6 @@ import { ConnectionPool, config, Request } from "mssql";
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";
 import { IQueryResult } from "../../QueryBuilder/QueryResult";
 import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
-import { ISqlParameterBuilderItem } from "../../QueryBuilder/ParameterBuilder/ISqlParameterBuilderItem";
 
 export abstract class MssqlDbContext extends DbContext {
     public queryParser = PlainObjectQueryResultParser;
@@ -17,6 +16,10 @@ export abstract class MssqlDbContext extends DbContext {
     protected getConnectionOptions() {
         const config: config = this.connectionOptions as any;
         config.server = this.connectionOptions.host;
+        if (!config.options)
+            config.options = { appName: "lc-framework" };
+        else if (!config.options.appName)
+            config.options.appName = "lc-framework";
         if (this.connectionOptions.poolOption) {
             config.pool = this.connectionOptions.poolOption;
             config.pool.maxWaitingClients = this.connectionOptions.poolOption.queueLimit;

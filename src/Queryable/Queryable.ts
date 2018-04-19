@@ -43,13 +43,13 @@ export abstract class Queryable<T = any> {
     }
     public async toArray(): Promise<T[]> {
         const key = this.hashCode();
+        let n = Date.now();
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
         let queryStr: string;
         let parameterBuilder: ParameterBuilder;
         if (!queryCache) {
             const queryBuilder = this.queryBuilder;
-            let n = Date.now();
             const commandQuery = this.buildQuery(queryBuilder);
             console.log("over head: " + (Date.now() - n));
             n = Date.now();
@@ -64,7 +64,7 @@ export abstract class Queryable<T = any> {
             queryStr = queryCache.query;
             parameterBuilder = queryCache.parameterBuilder;
         }
-        const n = Date.now();
+        n = Date.now();
         const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         console.log("query time: " + (Date.now() - n));
         return queryParser.parse(queryResult, this.dbContext);

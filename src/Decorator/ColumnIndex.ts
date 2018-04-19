@@ -31,10 +31,10 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as any);
         }
-        let indexMetaData = entityMetaData.indices[name];
+        let indexMetaData = entityMetaData.indices[option.name];
         if (indexMetaData == null) {
-            indexMetaData = new IndexMetaData(name);
-            entityMetaData.indices[name] = indexMetaData;
+            indexMetaData = new IndexMetaData(option.name);
+            entityMetaData.indices[option.name] = indexMetaData;
         }
         if (propertyKey)
             option.properties = [propertyKey];

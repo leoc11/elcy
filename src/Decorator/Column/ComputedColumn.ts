@@ -4,9 +4,10 @@ import { AbstractEntityMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 
-export function ComputedColumn<T, R>(type: GenericType<R>, fn: (o: T) => R): PropertyDecorator {
-    return (target: T, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        const computedMetaData = new ComputedColumnMetaData(target.constructor as any, type, fn, propertyKey);
+// TODO: types: Persisted, Virtual, Query
+export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecorator {
+    return (target: T, propertyKey: string) => {
+        const computedMetaData = new ComputedColumnMetaData(target.constructor as any, fn, propertyKey);
         let entityMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as GenericType<T>);
@@ -15,29 +16,31 @@ export function ComputedColumn<T, R>(type: GenericType<R>, fn: (o: T) => R): Pro
         if (entityMetaData.computedProperties.contains(computedMetaData.columnName))
             entityMetaData.computedProperties.push(computedMetaData.columnName);
         Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
-
-        const descriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
-        if (descriptor) {
-            descriptor.set = (value: R) => {
-                descriptor.value = value;
-            };
-            descriptor.get = function(this: T) {
-                if (typeof descriptor.value === "undefined") {
+        const privatePropertySymbol = Symbol(propertyKey);
+        const descriptor: PropertyDescriptor = {
+            set: function (this: any, value: R) {
+                if (!this.hasOwnProperty(privatePropertySymbol)) {
+                    Object.defineProperty(this, privatePropertySymbol, {
+                        value: undefined,
+                        enumerable: false,
+                        writable: true,
+                        configurable: true
+                    });
+                }
+                (this as any)[privatePropertySymbol] = value;
+            },
+            get: function (this: T) {
+                const value = (this as any)[privatePropertySymbol];
+                if (typeof value === "undefined") {
                     try {
                         return fn(this);
-                    } catch (e) {
-                        // console.log(e);
-                    }
+                    } catch (e) { }
                 }
-                return descriptor.value;
-            };
-            descriptor.configurable = true;
-            descriptor.enumerable = true;
-            descriptor.writable = undefined;
-            descriptor.value = undefined;
-        }
-        else {
-            throw new Error("Computed column decorator not supported");
-        }
+                return (this as any)[privatePropertySymbol];
+            },
+            configurable: true,
+            enumerable: true,
+        };
+        Object.defineProperty(target, propertyKey, descriptor);
     };
 }

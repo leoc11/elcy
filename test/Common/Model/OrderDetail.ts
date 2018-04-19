@@ -1,4 +1,4 @@
-import { PrimaryKey, DateColumn, DeleteColumn, StringColumn } from "../../../src/Decorator/Column/index";
+import { PrimaryKey, DateColumn, DeleteColumn, StringColumn, ComputedColumn } from "../../../src/Decorator/Column/index";
 import { Entity } from "../../../src/Decorator/Entity/index";
 import { ListRelation } from "../../../src/Decorator/Relation/ListRelation";
 import { Order } from "./Order";
@@ -6,6 +6,7 @@ import { EntityBase } from "../../../src/Data/EntityBase";
 import { Product } from ".";
 import { ScalarRelation } from "../../../src/Decorator/Relation/ScalarRelation";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
+import { OrderDetailProperty } from "./OrderDetailProperty";
 
 @Entity("OrderDetails")
 export class OrderDetail extends EntityBase {
@@ -22,6 +23,8 @@ export class OrderDetail extends EntityBase {
     public quantity: number;
     @DateColumn()
     public CreatedDate: Date;
+    @ComputedColumn<OrderDetail>(o => o.quantity * o.Product.Price)
+    public GrossSales: number;
     
     @DeleteColumn()
     public isDeleted: boolean;
@@ -30,4 +33,6 @@ export class OrderDetail extends EntityBase {
     
     @ScalarRelation<OrderDetail, Product>(Product, [(s) => s.ProductId], [(a) => a.ProductId])
     public Product: Product;
+    // @ListRelation<OrderDetail, OrderDetailProperty>(OrderDetailProperty, [(s) => s.OrderDetailId], [(a) => a.OrderDetailId])
+    public OrderDetailProperties: OrderDetailProperty[];
 }

@@ -15,6 +15,7 @@ import { IQueryableOrderDefinition } from "./src/QueryBuilder/Interface/IOrderDe
 import { OrderDirection } from "./src/Common/Type";
 import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 import "./src/Extensions/DateExtension";
+import { TakeEnumerable } from "./src/Enumerable";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -110,6 +111,16 @@ const db = new MyDb();
     // const select1 = new SelectQueryable(db.orders, selectFn1);
     // const s1 = await select1.toArray();
 
+    // select object to many navigation select object
+    // const innerSelect = new FunctionExpression(new ObjectValueExpression({
+    //     prod: new MemberAccessExpression(odParam, "Product")
+    // }), [odParam]);
+    // const selectFn1 = new FunctionExpression(new ObjectValueExpression({
+    //     simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
+    // }), [param]);
+    // const select1 = new SelectQueryable(db.orders, selectFn1);
+    // const s1 = await select1.toArray();
+
     // select object with self
     // const innerSelect = new FunctionExpression(new ObjectValueExpression({
     //     od: odParam,
@@ -121,6 +132,10 @@ const db = new MyDb();
     // const select1 = new SelectQueryable(db.orders, selectFn1);
     // const s1 = await select1.toArray();
 
+    // select array
+    // const s1 = await db.orders.select(o => o.OrderDetails).toArray();
+    
+    
     /**
      * WHERE
      */
@@ -292,7 +307,28 @@ const db = new MyDb();
 
     // const c = await db.orders.any();
 
-    const paramObj = { now: (new Date()).addYears(-1) };
-    const c = await db.orders.setParameters({ paramObj }).where(o => o.TotalAmount > Math.abs(paramObj.now.getHours())).toArray();
+    // const paramObj = { now: (new Date()).addYears(-1) };
+    // const c = await db.orders.setParameters({ paramObj }).where(o => o.OrderDate < new Date()).toArray();
+
+    // computed property in memory
+    // const c = await db.orderDetails.include(o => o.Product).take(2).toArray();
+    
+    // computed property in query
+    // const c = await db.orderDetails.include(o => o.GrossSales).take(2).toArray();
+
+    
+    /**
+     * SELECT MANY
+     */
+    
+    // selectMany
+    // const c = await db.orders.selectMany(o => o.OrderDetails).toArray();
+
+    // select selectMany
+    // const c = await db.orders.select(o => ({
+    //     amount: o.TotalAmount,
+    //     orderDs: o.OrderDetails.selectMany(od => od.OrderDetailProperties)
+    // })).toArray();
+
     const d = 1;
 })();

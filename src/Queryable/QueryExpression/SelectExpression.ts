@@ -7,7 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression, EntityExpression } from ".";
+import { ProjectionEntityExpression } from ".";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;

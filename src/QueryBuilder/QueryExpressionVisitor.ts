@@ -1,6 +1,6 @@
 import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationType } from "../Common/Type";
-import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
+import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import {
     AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
     BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
@@ -29,8 +29,9 @@ import {
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { SqlExpression } from "../Queryable/QueryExpression/SqlExpression";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
+import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
+import { ComputedColumnMetaData } from "../MetaData";
 
 interface IPRelation {
     name: string;
@@ -64,6 +65,8 @@ export class QueryExpressionVisitor {
                 return this.visitMethod(expression as any, param);
             case FunctionCallExpression:
                 return this.visitFunctionCall(expression as any, param);
+            case InstantiationExpression:
+                return this.visitInstantiation(expression as any, param);
             case BitwiseNotExpression:
             case LeftDecrementExpression:
             case LeftIncrementExpression:
@@ -111,7 +114,7 @@ export class QueryExpressionVisitor {
     protected visitParameter<T>(expression: ParameterExpression<T>, param: IQueryVisitParameter) {
         let result = this.scopeParameters.get(expression.name);
         if (!result) {
-            result = new ParameterExpression("param_" + hashCode(expression.toString()));
+            result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
             this.sqlParameterBuilderItems.push({
                 name: result.name,
                 valueGetter: expression
@@ -124,55 +127,30 @@ export class QueryExpressionVisitor {
         return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
-        if (objectOperand instanceof ParameterExpression) {
-            const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
-            if (existing)
-                this.sqlParameterBuilderItems.remove(existing);
-
-            const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
-            this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
-            return result;
-        }
-
-        if (objectOperand instanceof ValueExpression) {
-            return new ValueExpression(expression.execute());
-        }
-
-        expression.objectOperand = objectOperand;
-
-        switch (objectOperand.type) {
-            case String:
-                switch (expression.memberName) {
-                    case "length":
-                        return expression;
-                }
-                break;
-            case Function:
-                switch (expression.memberName) {
-                    case "arguments":
-                    case "caller":
-                    case "length":
-                    case "name":
-                    case "prototype":
-                        break;
-                }
-                break;
-        }
-        if (objectOperand instanceof SelectExpression && expression.memberName === "length") {
-            return this.visit(new MethodCallExpression(objectOperand, "count", []), param);
-        }
-        if (objectOperand instanceof GroupedExpression) {
-            if (expression.memberName === "key") {
-                return objectOperand.key;
-            }
-        }
-        else if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression) {
+        if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression) {
             const parentEntity = objectOperand as IEntityExpression;
-            const column = parentEntity.columns.first((c) => c.propertyName === expression.memberName);
+            let column = parentEntity.columns.first((c) => c.propertyName === expression.memberName);
+            if (!column && objectOperand instanceof EntityExpression) {
+                const computedColumnMeta = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, expression.memberName as string);
+                if (computedColumnMeta instanceof ComputedColumnMetaData) {
+                    let paramName: string;
+                    if (computedColumnMeta.functionExpression.params.length > 0)
+                        paramName = computedColumnMeta.functionExpression.params[0].name;
+                    if (paramName)
+                        this.scopeParameters.add(paramName, objectOperand);
+                    const result = this.visit(computedColumnMeta.functionExpression.clone(), { commandExpression: param.commandExpression });
+                    if (paramName)
+                        this.scopeParameters.remove(paramName);
+                    if (result instanceof EntityExpression || result instanceof SelectExpression)
+                        throw new Error(`${objectOperand.type.name}.${expression.memberName} not supported`);
+
+                    column = new ComputedColumnExpression(parentEntity, result, expression.memberName as any);
+                }
+            }
             if (column) {
                 switch (param.scope) {
                     case "include":
@@ -201,12 +179,11 @@ export class QueryExpressionVisitor {
                                 param.commandExpression.selects = [];
 
                                 param.commandExpression.addInclude(relationMeta.foreignKeyName, child, relationMeta);
-                                return child;
+                                return param.commandExpression;
                             }
                             else {
                                 if (param.commandExpression.where || param.commandExpression.orders.length > 0) {
-                                    child.addJoin(param.commandExpression, relationMeta);
-                                    child.addWhere(param.commandExpression.where);
+                                    child.addJoinRelation(param.commandExpression, relationMeta);
                                     child.addOrder(param.commandExpression.orders);
                                 }
                                 param.commandExpression = child;
@@ -231,45 +208,69 @@ export class QueryExpressionVisitor {
                 }
             }
         }
-        else {
-            const resValue = objectOperand instanceof ValueExpression ? objectOperand.execute() : objectOperand;
-            if (resValue[expression.memberName])
-                return new ValueExpression(resValue[expression.memberName]);
+        else if (objectOperand instanceof SelectExpression && expression.memberName === "length") {
+            return this.visit(new MethodCallExpression(objectOperand, "count", []), param);
         }
-
-        throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
-    }
-    protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = this.visit(expression.objectOperand, param);
-
-        if (objectOperand instanceof ValueExpression || objectOperand instanceof ParameterExpression) {
-            let hasParameterExp = objectOperand instanceof ParameterExpression;
-            if (expression.params.all(o => {
-                if (o instanceof ParameterExpression) {
-                    hasParameterExp = true;
-                    const scopeParam = this.scopeParameters.get(o.name);
-                    return typeof scopeParam === "undefined";
-                }
-                return o instanceof ValueExpression;
-            })) {
-                if (hasParameterExp) {
-                    if (objectOperand instanceof ParameterExpression) {
-                        const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
-                        if (existing)
-                            this.sqlParameterBuilderItems.remove(existing);
-                    }
-        
-                    const result = new ParameterExpression("param_" + hashCode(expression.toString()));
-                    this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
-                    return result;
-                }
-                else {
-                    return new ValueExpression(expression.execute());
-                }
+        else if (objectOperand instanceof GroupedExpression) {
+            if (expression.memberName === "key") {
+                return objectOperand.key;
             }
         }
+        else if (objectOperand instanceof ParameterExpression) {
+            const existing = this.sqlParameterBuilderItems.find(o => o.name === objectOperand.name);
+            this.sqlParameterBuilderItems.remove(existing);
+            expression.objectOperand = existing.valueGetter;
+            const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
+            this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+            return result;
+        }
+        else if (objectOperand instanceof ValueExpression) {
+            return new ValueExpression(expression.execute());
+        }
+        else {
+            switch (objectOperand.type) {
+                case String:
+                    switch (expression.memberName) {
+                        case "length":
+                            return expression;
+                    }
+                    break;
+            }
+        }
+        
+        throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
+    }
+    protected visitInstantiation<TType>(expression: InstantiationExpression<TType>, param: IQueryVisitParameter): IExpression {
+        switch (expression.type as any) {
+            case Date:
+                {
+                    const paramExps: ParameterExpression[] = [];
+                    if (expression.params.all(o => {
+                        if (o instanceof ParameterExpression) {
+                            const scopeParam = this.scopeParameters.get(o.name);
+                            paramExps.push(o);
+                            return typeof scopeParam === "undefined";
+                        }
+                        return o instanceof ValueExpression;
+                    })) {
+                        paramExps.forEach(o => {
+                            const existing = this.sqlParameterBuilderItems.find(p => p.name === o.name);
+                            if (existing)
+                                this.sqlParameterBuilderItems.remove(existing);
+                        });
 
-        expression.objectOperand = objectOperand;
+                        const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
+                        this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+                        return result;
+                    }
+                }
+                break;
+        }
+        throw new Error(`${expression.type.name} not supported.`);
+    }
+    protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
+        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
@@ -281,7 +282,7 @@ export class QueryExpressionVisitor {
 
                         const parentRelation = objectOperand.parentRelation;
                         const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: objectOperand instanceof GroupedExpression || parentRelation ? "" : expression.methodName };
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                         this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam);
                         this.scopeParameters.remove(selectorFn.params[0].name);
@@ -952,49 +953,106 @@ export class QueryExpressionVisitor {
                     throw new Error(`${expression.methodName} not supported on expression`);
             }
         }
-        else if (expression.objectOperand instanceof ValueExpression) {
-            switch (expression.objectOperand.value) {
-                case Math:
-                    switch (expression.methodName) {
-                        case "max":
-                        case "min":
-                            {
-                                const entity = this.visit(expression.params[0], param) as IEntityExpression;
-                                return new ComputedColumnExpression(entity, new MethodCallExpression(entity, expression.methodName, []), this.newAlias("column"));
+        else {
+            expression.params = expression.params.select(o => this.visit(o, { commandExpression: param.commandExpression })).toArray();
+
+            if (expression.objectOperand instanceof ValueExpression) {
+                switch (expression.objectOperand.value) {
+                    case Math:
+                        switch (expression.methodName) {
+                            case "random": {
+                                const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
+                                this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+                                return result;
                             }
-                    }
-                    break;
-                case Date:
-                    switch (expression.methodName) {
-                        case "now":
-                            return new SqlExpression(Number, "(CAST(DATEDIFF(DAY, '1970-01-01', GETDATE()) * 1000 * 60 * 60 * 24) + " +
-                                "(DATEPART(HOUR, GETDATE()) * 60 *60 *1000) + " +
-                                "(DATEPART(MINUTE, GETDATE()) * 60 * 1000) + " +
-                                "(DATEPART(SECOND, GETDATE()) * 1000) + DATEPART(MILLISECOND, GETDATE())");
-                    }
-                    break;
+                            case "max":
+                            case "min":
+                                return expression;
+                        }
+                        break;
+                    case Date:
+                        switch (expression.methodName) {
+                            case "now": {
+                                const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
+                                this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+                                return result;
+                            }
+                            case "toDate":
+                            case "toTime":
+                            case "addDays":
+                            case "addMonths":
+                            case "addYears":
+                            case "addHours":
+                            case "addMinutes":
+                            case "addSeconds":
+                            case "addMilliSeconds":
+                                return expression;
+                        }
+                        break;
+                }
             }
-        }
-        else if (objectOperand.type as any === String) {
-            switch (expression.methodName) {
-                case "like":
+            if (objectOperand instanceof ValueExpression || objectOperand instanceof ParameterExpression) {
+                const paramExps: ParameterExpression[] = [];
+                if (objectOperand instanceof ParameterExpression) {
+                    paramExps.push(objectOperand);
+                }
+                const isAllValueOrParam = expression.params.all(o => {
+                    if (o instanceof ParameterExpression) {
+                        const scopeParam = this.scopeParameters.get(o.name);
+                        return typeof scopeParam === "undefined";
+                    }
+                    return o instanceof ValueExpression;
+                });
+                if (isAllValueOrParam) {
+                    let hasParam = false;
+                    if (objectOperand instanceof ParameterExpression) {
+                        hasParam = true;
+                        const existing = this.sqlParameterBuilderItems.find(p => p.name === objectOperand.name);
+                        expression.objectOperand = existing.valueGetter as any;
+                    }
+                    expression.params = expression.params.select(o => {
+                        if (o instanceof ParameterExpression) {
+                            hasParam = true;
+                            const existing = this.sqlParameterBuilderItems.find(p => p.name === o.name);
+                            return existing.valueGetter as any;
+                        }
+                        return o;
+                    }).toArray();
+
+                    if (hasParam) {
+                        const result = new ParameterExpression("param_" + Math.abs(hashCode(expression.toString())));
+                        this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
+                        return result;
+                    }
+                    else {
+                        return new ValueExpression(expression.execute());
+                    }
+                }
+            }
+            if (objectOperand.type as any === String) {
+                switch (expression.methodName) {
+                    case "like":
+                        return expression;
+                }
+            }
+
+            const methodFn: () => any = objectOperand.type.prototype[expression.methodName];
+            if (methodFn) {
+                if (isNativeFunction(methodFn))
                     return expression;
+
+                // try convert user defined method to a FunctionExpression and built it as a query.
+                const methodExp = ExpressionBuilder.parse(methodFn, expression.params.select(o => o.type).toArray());
+                for (let i = 0; i < expression.params.length; i++) {
+                    this.scopeParameters.add(methodExp.params[i].name, expression.params[i]);
+                }
+                const result = this.visitFunction(methodExp, { commandExpression: param.commandExpression });
+                for (let i = 0; i < expression.params.length; i++) {
+                    this.scopeParameters.remove(methodExp.params[i].name);
+                }
+                return result;
             }
         }
-
-        if (objectOperand instanceof ValueExpression) {
-            if (expression.params.all(o => (o instanceof ValueExpression || o instanceof ParameterExpression))) {
-                return new ValueExpression(expression.execute() as any, expression.toString());
-            }
-        }
-        const methodFn: () => any = objectOperand.type.prototype[expression.methodName];
-        if (methodFn) {
-            if (isNativeFunction(methodFn))
-                return expression;
-            const methodExp = ExpressionBuilder.parse(methodFn, [objectOperand.type]);
-            return this.visitFunction(methodExp, param);
-        }
-
         throw new Error(`${expression.methodName} not supported.`);
     }
     protected visitFunctionCall<T>(expression: FunctionCallExpression<T>, param: IQueryVisitParameter): IExpression {

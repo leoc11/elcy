@@ -9,7 +9,6 @@ import { IConnectionOption } from "./Interface/IConnectionOption";
 import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
-import { ISqlParameterBuilderItem } from "../QueryBuilder/ParameterBuilder/ISqlParameterBuilderItem";
 
 export abstract class DbContext {
     public abstract readonly entityTypes: Array<IObjectType<any>>;

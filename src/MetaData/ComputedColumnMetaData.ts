@@ -11,7 +11,10 @@ export class ComputedColumnMetaData<TE, T> implements IColumnOption<T> {
             this._fnExpression = ExpressionBuilder.parse(this.fn, [this.entityType]);
         return this._fnExpression;
     }
-    constructor(public entityType: GenericType<TE>, public type: GenericType<T>, public fn: (item: TE) => T, public columnName: string) {
+    public get type() {
+        return this.functionExpression.type;
+    }
+    constructor(public entityType: GenericType<TE>, public fn: (item: TE) => T, public columnName: string) {
     }
 
     public Copy(columnMeta: IColumnOption<any>) {

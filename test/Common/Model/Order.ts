@@ -18,7 +18,6 @@ export class Order extends EntityBase {
 
     // @TimestampColumn()
     // public Timestamp: string;
-
     public OrderDetails: OrderDetail[];
     // tslint:disable-next-line:no-empty
 }

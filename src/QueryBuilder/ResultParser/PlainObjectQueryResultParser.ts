@@ -100,8 +100,10 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             }
             resultMap.set(key, entity);
 
+            let isValueEntity = Array.isArray(entity);
             if (!isSkipPopulateEntityData) {
                 if (isValue(entity)) {
+                    isValueEntity = true;
                     const column = select.selects.first();
                     entity = this.convertTo(row[column.columnName], column);
                 }
@@ -132,7 +134,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
                 if (parentEntity) {
                     if (parentRelation.type === RelationType.OneToMany) {
-                        parentEntity[relation.name].add(entity);
+                        (Array.isArray(parentEntity) ? parentEntity : parentEntity[relation.name]).add(entity);
                     }
                     else {
                         parentEntity[relation.name] = entity;
@@ -166,10 +168,12 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             }
 
             // set relation to Array
-            for (const include of select.includes) {
-                if (include.type === RelationType.OneToMany) {
-                    if (!entity[include.name]) {
-                        entity[include.name] = [];
+            if (!isValueEntity) {
+                for (const include of select.includes) {
+                    if (include.type === RelationType.OneToMany) {
+                        if (!entity[include.name]) {
+                            entity[include.name] = [];
+                        }
                     }
                 }
             }
