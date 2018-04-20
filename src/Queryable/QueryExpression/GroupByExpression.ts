@@ -6,6 +6,7 @@ import { SelectExpression } from "./SelectExpression";
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
     public select: GroupedExpression<T, any>;
+    public where: IExpression<boolean>;
     constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], public readonly key: IExpression) {
         super(select.entity);
         let groupExp: GroupedExpression;
@@ -13,11 +14,19 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             groupExp = new GroupedExpression(select.select, select.key);
         }
         else {
-            const selectExp = new SelectExpression(select.entity);
-            selectExp.columns = this.groupBy.slice(0);
-            groupExp = new GroupedExpression(select, key);
+            const selectExp = select.clone();
+            selectExp.selects = this.groupBy.slice(0);
+            groupExp = new GroupedExpression(selectExp, key);
         }
         this.select = groupExp;
+        this.where = this.select.where.clone();
+        this.selects = this.select.selects.slice(0);
+        this.includes = this.select.includes.slice(0);
+        this.joins = this.select.joins.slice(0);
+        this.parentRelation = select.parentRelation;
+        if (this.parentRelation) {
+            this.parentRelation.child = this;
+        }
     }
     public getVisitParam() {
         return this.select;
@@ -27,7 +36,6 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
     public clone(): GroupByExpression<T> {
         const clone = new GroupByExpression(this.select, this.groupBy, this.key);
-        clone.copy(this);
         return clone;
     }
 }

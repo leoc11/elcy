@@ -78,12 +78,12 @@ export namespace ExpressionBuilder {
         const stopper = input[start];
         let char: string;
         do {
-            pointer.index++;
-            char = input[pointer.index];
+            char = input[++pointer.index];
             if (char === "\\")
                 pointer.index++;
         } while (char !== stopper);
         const data = input.slice(start + 1, pointer.index);
+        pointer.index++;
         return {
             data: data,
             type: LexicalTokenType.String
@@ -172,7 +172,7 @@ export namespace ExpressionBuilder {
             else if (char === "`") {
                 resultData.push(analyzeLexicalTemplateLiteral(pointer, input));
             }
-            if (char === "\n" || char === ";" || char === ":" || char === ",") {
+            else if (char === "\n" || char === ";" || char === ":" || char === ",") {
                 resultData.push({
                     data: char,
                     type: LexicalTokenType.Breaker

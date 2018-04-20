@@ -237,7 +237,7 @@ export class QueryExpressionVisitor {
                     break;
             }
         }
-        
+
         throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
     }
     protected visitInstantiation<TType>(expression: InstantiationExpression<TType>, param: IQueryVisitParameter): IExpression {
@@ -311,6 +311,7 @@ export class QueryExpressionVisitor {
 
                                         if (childEntity.select === selectOperand) {
                                             const cloneSelect = childEntity.select.clone();
+                                            cloneSelect.joins = [];
                                             childEntity = cloneSelect.entity;
                                             const relationMap = new Map<any, any>();
                                             for (let i = 0; i < selectOperand.entity.primaryColumns.length; i++) {
@@ -686,6 +687,22 @@ export class QueryExpressionVisitor {
                             if (!isAny) {
                                 objectOperand.where = new NotExpression(objectOperand.where);
                             }
+                        }
+                        else {
+                            // group by 
+                            const groupBy = [];
+                            const keyObject: any = {};
+                            for (const [, entityCol] of selectOperand.parentRelation.relations) {
+                                groupBy.push(entityCol);
+                                keyObject[entityCol.propertyName] = entityCol;
+                            }
+                            const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                            const trueColumn = new ComputedColumnExpression(selectOperand.entity, new ValueExpression(true), this.newAlias("column"));
+                            groupExp.selects.push(trueColumn);
+                            groupExp.isAggregate = true;
+
+                            const resultExp = new TernaryExpression(new EqualExpression(trueColumn, new ValueExpression(null)), new ValueExpression(false), new ValueExpression(true));
+                            return new ComputedColumnExpression(selectOperand.entity, resultExp, this.newAlias("column"));
                         }
                         return objectOperand;
                         // if (param.commandExpression === objectOperand || !parentRelation) {

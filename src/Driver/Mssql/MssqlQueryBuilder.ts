@@ -83,6 +83,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         [TimeSpan, "time"],
         [Date, "datetime"],
         [String, "nvarchar"],
-        [Number, "decimal"]
+        [Number, "decimal"],
+        [Boolean, "bit"]
     ]);
 }

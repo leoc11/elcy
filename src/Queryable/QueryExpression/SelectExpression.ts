@@ -7,7 +7,8 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression } from ".";
+import { ProjectionEntityExpression, GroupByExpression, ColumnExpression, ComputedColumnExpression } from ".";
+import { GroupedExpression } from "./GroupedExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -43,6 +44,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
         this.objectType = entity.type;
+
         if (entity instanceof ProjectionEntityExpression) {
             this.selects = entity.selectedColumns.slice(0);
             this.relationColumns = entity.relationColumns.slice(0);
@@ -52,8 +54,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.isSelectAll = true;
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
-        if (entity.deleteColumn)
-            this.addWhere(new EqualExpression(entity.deleteColumn, new ValueExpression(false)));
+        if (entity.deleteColumn && !(this instanceof GroupByExpression))
+            this.addWhere(entity.deleteColumn);
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
@@ -62,6 +64,10 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
+        // TODO: move to queryBuilder or Visitor
+        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+            expression = new EqualExpression(expression, new ValueExpression(false));
+        }
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
     }
     public addOrder(orders: IOrderExpression[]): void;

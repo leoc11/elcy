@@ -2,7 +2,7 @@ import "./EnumerableExtension";
 declare global {
     // tslint:disable-next-line:interface-name
     interface String {
-        like(pattern: string): void;
+        like(pattern: string): boolean;
     }
 }
 

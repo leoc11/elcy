@@ -134,8 +134,8 @@ const db = new MyDb();
 
     // select array
     // const s1 = await db.orders.select(o => o.OrderDetails).toArray();
-    
-    
+
+
     /**
      * WHERE
      */
@@ -312,23 +312,40 @@ const db = new MyDb();
 
     // computed property in memory
     // const c = await db.orderDetails.include(o => o.Product).take(2).toArray();
-    
+
     // computed property in query
     // const c = await db.orderDetails.include(o => o.GrossSales).take(2).toArray();
 
-    
+
     /**
      * SELECT MANY
      */
-    
+
     // selectMany
-    // const c = await db.orders.selectMany(o => o.OrderDetails).toArray();
+    // const sm = await db.orders.selectMany(o => o.OrderDetails).toArray();
 
     // select selectMany
-    // const c = await db.orders.select(o => ({
+    // const sm = await db.orders.select(o => ({
     //     amount: o.TotalAmount,
     //     orderDs: o.OrderDetails.selectMany(od => od.OrderDetailProperties)
     // })).toArray();
+
+
+    /**
+     * ANY
+     */
+
+    // any
+    // const c = await db.orders.any();
+
+    // select any
+    // const any = await db.orders.select(o => ({
+    //     order: o,
+    //     hasDetail: o.OrderDetails.any(od => od.Product.Price < 20000)
+    // })).toArray();
+
+    // where any
+    const any = await db.orders.where(o => o.OrderDetails.any()).toArray();
 
     const d = 1;
 })();

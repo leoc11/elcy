@@ -306,12 +306,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>();
     protected valueTypeMap = new Map<GenericType, ColumnType>();
     protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T> | ValueType): string {
-        if ((column as IColumnExpression<T>).entity) {
+        if (column instanceof ColumnExpression) {
             const columnExp = column as ColumnExpression;
-            if (columnExp instanceof ColumnExpression && columnExp.columnMetaData && columnExp.columnType === columnExp.columnMetaData.columnType) {
-                return this.getColumnType(columnExp.columnMetaData);
+            if (columnExp.columnType) {
+                if (columnExp instanceof ColumnExpression && columnExp.columnMetaData && columnExp.columnType === columnExp.columnMetaData.columnType) {
+                    return this.getColumnType(columnExp.columnMetaData);
+                }
+                return columnExp.columnType;
             }
-            return columnExp.columnType;
         }
 
         let columnOption = column as IColumnOption<T>;
@@ -855,7 +857,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
     protected getEqualExpressionString(expression: EqualExpression): string {
-        return this.getOperandString(expression.leftOperand, true) + " = " + this.getOperandString(expression.rightOperand, true);
+        const leftExpString = this.getOperandString(expression.leftOperand, true);
+        const rightExpString = this.getOperandString(expression.rightOperand, true);
+        if (leftExpString === "NULL")
+            return rightExpString + " IS " + leftExpString;
+        else if (rightExpString === "NULL")
+            return leftExpString + " IS " + rightExpString;
+        return leftExpString + " = " + rightExpString;
     }
     protected getGreaterEqualExpressionString<T>(expression: GreaterEqualExpression<T>): string {
         return this.getOperandString(expression.leftOperand) + " >= " + this.getOperandString(expression.rightOperand);
