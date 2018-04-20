@@ -6,7 +6,7 @@ import {
     GreaterEqualExpression, GreaterThanExpression,
     IExpression, InstanceofExpression,
     LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
+    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NegationExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
     TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
@@ -208,7 +208,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case LeftIncrementExpression:
                 result = this.getLeftIncrementExpressionString(expression as any);
                 break;
-            case NotExpression:
+            case NegationExpression:
                 result = this.getNotExpressionString(expression as any);
                 break;
             case RightDecrementExpression:
@@ -226,7 +226,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnString(column: IColumnExpression, isSelect = false) {
         if (isSelect) {
             if (column instanceof ComputedColumnExpression) {
-                return this.getExpressionString(column.expression) + " AS " + this.escape(column.columnName);
+                return this.getOperandString(column.expression, true) + " AS " + this.escape(column.columnName);
             }
             return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
         }
@@ -884,7 +884,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getOperandString(expression.leftOperand) + " % " + this.getOperandString(expression.rightOperand);
     }
     protected getNotEqualExpressionString(expression: NotEqualExpression): string {
-        return this.getOperandString(expression.leftOperand, true) + " <> " + this.getOperandString(expression.rightOperand, true);
+        const leftExpString = this.getOperandString(expression.leftOperand, true);
+        const rightExpString = this.getOperandString(expression.rightOperand, true);
+        if (leftExpString === "NULL")
+            return rightExpString + " IS NOT " + leftExpString;
+        else if (rightExpString === "NULL")
+            return leftExpString + " IS NOT " + rightExpString;
+        return leftExpString + " <> " + rightExpString;
     }
     protected getOrExpressionString(expression: OrExpression): string {
         return this.getOperandString(expression.leftOperand) + " OR " + this.getOperandString(expression.rightOperand);
@@ -927,7 +933,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
-    protected getNotExpressionString(expression: NotExpression): string {
+    protected getNotExpressionString(expression: NegationExpression): string {
         const operandString = this.getOperandString(expression.operand);
         if (expression.operand instanceof ColumnExpression)
             return operandString + " <> 1";

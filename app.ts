@@ -1,5 +1,5 @@
 "use strict";
-import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NotExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression, LessEqualExpression, MultiplicationExpression } from "./src/ExpressionBuilder/Expression/index";
+import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NegationExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression, LessEqualExpression, MultiplicationExpression } from "./src/ExpressionBuilder/Expression/index";
 import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable, OrderQueryable } from "./src/Queryable/index";
 import { JoinQueryable } from "./src/Queryable/JoinQueryable";
 import { SelectExpression, GroupByExpression } from "./src/Queryable/QueryExpression/index";
@@ -134,6 +134,8 @@ const db = new MyDb();
 
     // select array
     // const s1 = await db.orders.select(o => o.OrderDetails).toArray();
+
+    // select where. for aggregate
 
 
     /**
@@ -336,16 +338,50 @@ const db = new MyDb();
      */
 
     // any
-    // const c = await db.orders.any();
+    // const any = await db.orders.any();
 
     // select any
-    // const any = await db.orders.select(o => ({
+    // const any1 = await db.orders.select(o => ({
     //     order: o,
     //     hasDetail: o.OrderDetails.any(od => od.Product.Price < 20000)
     // })).toArray();
 
     // where any
-    const any = await db.orders.where(o => o.OrderDetails.any()).toArray();
+    // const any2 = await db.orders.where(o => o.OrderDetails.any()).toArray();
 
+
+    /**
+     * ALL
+     */
+
+    // all
+    // const all = await db.orders.all(o => o.TotalAmount <= 20000);
+
+    // select all
+    // const all1 = await db.orders.select(o => ({
+    //     order: o,
+    //     hasDetail: o.OrderDetails.all(od => od.Product.Price < 20000)
+    // })).toArray();
+
+    // where all
+    // const all2 = await db.orders.where(o => o.OrderDetails.all(od => od.Product.Price <= 20000)).toArray();
+
+
+    /**
+     * MAX
+     */
+
+    // max
+    // const max = await db.orders.max(o => o.TotalAmount);
+
+    // select max
+    // const max1 = await db.orders.select(o => ({
+    //     order: o,
+    //     maxProductPrice: o.OrderDetails.max(od => od.Product.Price)
+    // })).toArray();
+    
+    // where all
+    const max2 = await db.orders.where(o => o.OrderDetails.max(od => od.Product.Price) > 20000).toArray();
+    console.log(max2);
     const d = 1;
 })();

@@ -4,9 +4,9 @@ import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";
 import { OrExpression } from "./OrExpression";
 import { ValueExpression } from "./ValueExpression";
-export class NotExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
+export class NegationExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
     public static create(operand: IExpression<boolean>) {
-        const result = new NotExpression(operand);
+        const result = new NegationExpression(operand);
         if (operand instanceof ValueExpression)
             return ValueExpression.create<boolean>(result);
 
@@ -38,6 +38,6 @@ export class NotExpression extends ExpressionBase<boolean> implements IUnaryOper
         return !this.operand.execute(transformer);
     }
     public clone() {
-        return new NotExpression(this.operand);
+        return new NegationExpression(this.operand);
     }
 }

@@ -1,4 +1,4 @@
-import { IExpression, ParameterExpression, ValueExpression, MemberAccessExpression, MethodCallExpression, RightIncrementExpression, RightDecrementExpression, SubtractionExpression, NotExpression, BitwiseNotExpression, FunctionExpression, MultiplicationExpression, AdditionExpression, DivisionExpression, LeftIncrementExpression, LeftDecrementExpression, AndExpression, NotEqualExpression, StrictNotEqualExpression, EqualExpression, StrictEqualExpression, GreaterThanExpression, GreaterEqualExpression, LessThanExpression, LessEqualExpression, OrExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, BitwiseSignedRightShiftExpression, TypeofExpression, InstanceofExpression, FunctionCallExpression, ObjectValueExpression, ArrayValueExpression } from "./Expression";
+import { IExpression, ParameterExpression, ValueExpression, MemberAccessExpression, MethodCallExpression, RightIncrementExpression, RightDecrementExpression, SubtractionExpression, NegationExpression, BitwiseNotExpression, FunctionExpression, MultiplicationExpression, AdditionExpression, DivisionExpression, LeftIncrementExpression, LeftDecrementExpression, AndExpression, NotEqualExpression, StrictNotEqualExpression, EqualExpression, StrictEqualExpression, GreaterThanExpression, GreaterEqualExpression, LessThanExpression, LessEqualExpression, OrExpression, BitwiseAndExpression, BitwiseOrExpression, BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression, BitwiseSignedRightShiftExpression, TypeofExpression, InstanceofExpression, FunctionCallExpression, ObjectValueExpression, ArrayValueExpression } from "./Expression";
 import { GenericType } from "../Common/Type";
 import { isNativeFunction } from "../Helper/Util";
 import { InstantiationExpression } from "./Expression/InstantiationExpression";
@@ -502,7 +502,7 @@ export namespace ExpressionBuilder {
             case "||":
                 return OrExpression.create(operand, operand2);
             case "!":
-                return NotExpression.create(operand2);
+                return NegationExpression.create(operand2);
             case "&":
                 return BitwiseAndExpression.create(operand, operand2);
             case "|":
