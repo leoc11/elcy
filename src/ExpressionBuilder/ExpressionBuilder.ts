@@ -150,7 +150,7 @@ export namespace ExpressionBuilder {
                 || char === "_" || char === "$") {
                 resultData.push(analyzeLexicalIdentifier(pointer, input));
             }
-            else if ((char !== "," && char >= "*" && char <= "/") || (char >= "<" && char <= "?")
+            else if ((char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
                 resultData.push(analizeLexicalOperator(pointer, input));
             }
@@ -187,8 +187,12 @@ export namespace ExpressionBuilder {
                 else if (char2 === "/") {
                     analyzeLexicalComment(pointer, input, false);
                 }
+                // TODO: check regex
+                // else if (resultData.length <= 0 || resultData[resultData.length - 1].type !== LexicalTokenType.Operator) {
+                //     throw new Error("Regex not supported");
+                // }
                 else {
-                    throw new Error("Regex not supported");
+                    resultData.push(analizeLexicalOperator(pointer, input));
                 }
             }
             else if (char === stopper) {

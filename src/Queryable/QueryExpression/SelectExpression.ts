@@ -119,7 +119,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IRelationMetaData<TChild, T> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
-        const existingRelation = this.joins.first((o) => o.child.type === child.type);
+        const existingRelation = this.joins.first((o) => o.child === child);
         if (existingRelation)
             return existingRelation;
 
