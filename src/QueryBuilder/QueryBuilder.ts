@@ -209,7 +209,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result = this.getLeftIncrementExpressionString(expression as any);
                 break;
             case NegationExpression:
-                result = this.getNotExpressionString(expression as any);
+                result = this.getNegationExpressionString(expression as any);
                 break;
             case RightDecrementExpression:
                 result = this.getRightDecrementExpressionString(expression as any);
@@ -223,25 +223,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    protected getColumnString(column: IColumnExpression, isSelect = false) {
-        if (isSelect) {
-            if (column instanceof ComputedColumnExpression) {
-                return this.getOperandString(column.expression, true) + " AS " + this.escape(column.columnName);
-            }
-            return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
+    protected getColumnString(column: IColumnExpression) {
+        if (column instanceof ComputedColumnExpression) {
+            return this.escape(column.columnName);
+        }
+        return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
+    }
+    protected getColumnSelectString(column: IColumnExpression) {
+        let result = this.getColumnDefinitionString(column);
+        if (column instanceof ComputedColumnExpression) {
+            result += " AS " + this.escape(column.columnName);
+        }
+        return result;
+    }
+    protected getColumnDefinitionString(column: IColumnExpression) {
+        if (column instanceof ComputedColumnExpression) {
+            return this.getOperandString(column.expression, true);
         }
         return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
     }
     protected getSelectQueryString(select: SelectExpression): string {
-        let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (select.paging.take && select.paging.take > 0 ? " TOP " + select.paging.take : "") +
-            " " + select.projectedColumns.select((o) => this.getColumnString(o, true)).toArray().join("," + this.newLine(this.indent + 1)) +
+        const skip = select.paging.skip || 0;
+        const take = select.paging.take || 0;
+        let result = "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
+            " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(this.indent + 1)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
             this.getEntityJoinString(select.entity, select.joins);
         if (select.where)
-            result += this.newLine() + "WHERE " + this.getExpressionString(select.where);
+            result += this.newLine() + "WHERE " + this.getOperandString(select.where);
         if (select instanceof GroupByExpression) {
             if (select.groupBy.length > 0) {
-                result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
+                result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
             }
             if (select.having) {
                 result += this.newLine() + "HAVING " + this.getExpressionString(select.having);
@@ -249,6 +261,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         if (select.orders.length > 0)
             result += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+
+        if (skip > 0) {
+            result += this.newLine() + this.getPagingQueryString(select);
+        }
 
         // if has other includes, then convert to temp table
         if (select.includes.length > 0) {
@@ -258,10 +274,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 this.newLine(0) + result + ";";
             result += this.newLine(0) + "SELECT * FROM " + tempTableName + ";";
 
-            const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.toArray(), select.objectType, this.newAlias()));
-            // tempSelect.entity.name = tempTableName;
+            const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
+                if (o instanceof ComputedColumnExpression)
+                    return new ColumnExpression(o.entity, o.propertyName, o.type, o.isPrimary, o.columnName);
+                return o;
+            }).toArray(), select.objectType, this.newAlias()));
 
-            // render each include here
+            // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
                 // add join to temp table
                 const reverseRelation = new Map();
@@ -270,10 +289,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     reverseRelation.set(value, tempKey);
                 }
                 const tempJoin = include.child.addJoinRelation(tempSelect, reverseRelation, JoinType.INNER);
-                result += this.newLine(0) + this.getSelectQueryString(include.child);
+                result += this.newLine(0) + this.newLine(0) + this.getSelectQueryString(include.child) + ";";
                 include.child.joins.remove(tempJoin);
             }
         }
+        return result;
+    }
+    protected getPagingQueryString(select: SelectExpression): string {
+        const take = select.paging.take || 0;
+        let result = "";
+        if (take > 0)
+            result += "LIMIT " + take + " ";
+        result += "OFFSET " + select.paging.skip;
         return result;
     }
     protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
@@ -291,7 +318,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     protected getColumnDeclarationString(column: IColumnExpression) {
-        let result = column.columnName;
+        let result = this.escape(column.columnName);
         result += " " + this.getColumnType(column);
         if (column instanceof ColumnExpression) {
             if (column.columnMetaData && typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
@@ -389,7 +416,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o.child.isSimple())
                     childEntString = this.getEntityQueryString(o.child.entity);
                 else
-                    childEntString = "(" + this.getSelectQueryString(o.child) + ") AS " + o.child.entity.alias;
+                    childEntString = "(" + this.newLine(++this.indent) + this.getSelectQueryString(o.child) + this.newLine(--this.indent) + ") AS " + o.child.entity.alias;
                 let join = o.type + " JOIN " + childEntString +
                     this.newLine(this.indent + 1) + "ON ";
 
@@ -503,9 +530,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case "min":
                 case "max":
                 case "avg":
-                    return expression.methodName.toUpperCase() + "(" + this.getColumnString(expression.params[0] as any) + ")";
+                    return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0] as any) + ")";
                 case "contains":
-                    return this.getExpressionString(expression.params[0]) + " IN (" + this.getExpressionString(expression.objectOperand) + ")";
+                    return this.getExpressionString(expression.params[0]) + " IN (" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
             }
         }
         else if (expression.objectOperand instanceof ValueExpression) {
@@ -788,7 +815,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         const methodFn = expression.objectOperand.type.prototype[expression.methodName];
         if (methodFn) {
-            // TODO: ToExpression must support this parameter
             const fnExpression = ExpressionBuilder.parse(methodFn, [expression.objectOperand.type]);
             for (let i = 0; i < fnExpression.params.length; i++) {
                 const param = fnExpression.params[i];
@@ -856,6 +882,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getDivisionExpressionString(expression: DivisionExpression): string {
         return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
     }
+    protected getEqualityOperandExpressionString(expression: IExpression) {
+        return expression;
+    }
     protected getEqualExpressionString(expression: EqualExpression): string {
         const leftExpString = this.getOperandString(expression.leftOperand, true);
         const rightExpString = this.getOperandString(expression.rightOperand, true);
@@ -893,7 +922,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return leftExpString + " <> " + rightExpString;
     }
     protected getOrExpressionString(expression: OrExpression): string {
-        return this.getOperandString(expression.leftOperand) + " OR " + this.getOperandString(expression.rightOperand);
+        return this.getLogicalOperandString(expression.leftOperand) + " OR " + this.getLogicalOperandString(expression.rightOperand);
     }
     protected getStrictEqualExpressionString<T>(expression: StrictEqualExpression<T>): string {
         return this.getEqualExpressionString(expression);
@@ -924,8 +953,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return this.getExpressionString(expression);
     }
+    protected getLogicalOperandString(expression: IExpression<boolean>) {
+        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+            expression = new EqualExpression(expression, new ValueExpression(true));
+        }
+        return this.getExpressionString(expression);
+    }
     protected getAndExpressionString(expression: AndExpression): string {
-        return this.getOperandString(expression.leftOperand) + " AND " + this.getOperandString(expression.rightOperand);
+        return this.getLogicalOperandString(expression.leftOperand) + " AND " + this.getLogicalOperandString(expression.rightOperand);
     }
     protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
         throw new Error(`LeftDecrement not supported`);
@@ -933,11 +968,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
-    protected getNotExpressionString(expression: NegationExpression): string {
-        const operandString = this.getOperandString(expression.operand);
-        if (expression.operand instanceof ColumnExpression)
-            return operandString + " <> 1";
-        return "NOT " + operandString;
+    protected getNegationExpressionString(expression: NegationExpression): string {
+        const operandString = this.getLogicalOperandString(expression.operand);
+        return "NOT(" + this.newLine(this.indent + 1) + operandString + this.newLine(this.indent) + ")";
     }
     protected getRightDecrementExpressionString(_expression: RightIncrementExpression): string {
         throw new Error(`RightDecrement not supported`);

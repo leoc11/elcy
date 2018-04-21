@@ -9,6 +9,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression, GroupByExpression, ColumnExpression, ComputedColumnExpression } from ".";
 import { GroupedExpression } from "./GroupedExpression";
+import { NegationExpression } from "../../ExpressionBuilder/Expression/NegationExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -26,6 +27,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     [prop: string]: any;
     public selects: IColumnExpression[] = [];
     private isSelectAll = true;
+    public distinct: boolean;
     public isAggregate: boolean;
     public entity: IEntityExpression;
     public get type() {
@@ -55,7 +57,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
         if (entity.deleteColumn && !(this instanceof GroupByExpression))
-            this.addWhere(entity.deleteColumn);
+            this.addWhere(new NegationExpression(entity.deleteColumn));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
@@ -64,10 +66,6 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
-        // TODO: move to queryBuilder or Visitor
-        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
-            expression = new EqualExpression(expression, new ValueExpression(false));
-        }
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
     }
     public addOrder(orders: IOrderExpression[]): void;
@@ -202,7 +200,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
 
         if (this.where)
             clone.where = this.where.clone();
-
+        Object.assign(clone.paging, this.paging);
         return clone;
     }
     public execute(queryBuilder: QueryBuilder) {

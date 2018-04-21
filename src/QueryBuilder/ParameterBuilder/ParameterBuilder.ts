@@ -26,13 +26,7 @@ export class ParameterBuilder {
         const tranformer = new ValueExpressionTransformer();
         tranformer.setParameters(params);
         for (const param of this.items) {
-            let value: any;
-            if (param.valueGetter instanceof Function) {
-                value = param.valueGetter(params);
-            }
-            else {
-                value = param.valueGetter.execute(tranformer);
-            }
+            const value = param.valueGetter.execute(tranformer);
             result.set(param.name, value);
         }
         return result;

@@ -9,6 +9,7 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
         this.joins = this.select.joins.slice(0);
         this.includes = this.select.includes.slice(0);
         this.orders = this.select.orders.slice(0);
-        this.where = this.select.where.clone();
+        if (this.select.where)
+            this.where = this.select.where.clone();
     }
 }

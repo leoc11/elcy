@@ -24,7 +24,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
-    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression
+    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression, IIncludeRelation
 } from "../Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpression";
@@ -495,12 +495,12 @@ export class QueryExpressionVisitor {
                                         groupColumns = groupColumns.concat(childEntity.select.selects);
                                     else
                                         groupColumns = groupColumns.concat(childEntity.columns);
-                                }
+                                        }
                                 else if (valueExp instanceof SelectExpression) {
                                     throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
                                 }
+                                }
                             }
-                        }
                         else if ((selectExp as IColumnExpression).entity) {
                             const column = selectExp as IColumnExpression;
                             groupColumns = [column];
@@ -523,42 +523,16 @@ export class QueryExpressionVisitor {
                 case "skip":
                 case "take":
                     {
-                        if (param.scope !== expression.methodName)
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        const takeExp = expression.params[0] as ValueExpression<number>;
-                        objectOperand.paging[expression.methodName] = takeExp.execute();
-                        return objectOperand;
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
                     }
                 case "distinct":
                     {
-                        const parentRelation = objectOperand.parentRelation;
-                        if (expression.params.length > 0) {
-                            // TODO o.groupBy(o => o.OrderDate).select(o => o.first());
-                            // groupBy select first
-                            const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
-                            let visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
-                            const groupExp: GroupByExpression = this.visit(new MethodCallExpression(objectOperand, "groupBy", [selectorFn]), visitParam) as any;
-                            param.commandExpression = visitParam.commandExpression;
+                        if (param.scope === "include")
+                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                            const paramExp = new ParameterExpression("og", groupExp.getVisitParam().type);
-                            const selectFirstFn = new FunctionExpression(new MethodCallExpression(paramExp, "first", []), [paramExp]);
-                            visitParam = { commandExpression: groupExp, scope: expression.methodName } as IQueryVisitParameter;
-                            const groupFirstExp: SelectExpression = this.visit(new MethodCallExpression(objectOperand, "select", [selectFirstFn]), visitParam) as any;
-                            param.commandExpression = visitParam.commandExpression;
-                            if (parentRelation) {
-                                parentRelation.child = selectOperand;
-                                selectOperand.parentRelation = parentRelation;
-                            }
-                            else {
-                                param.commandExpression = selectOperand;
-                            }
-                            return groupFirstExp;
-                        }
-                        else {
-                            objectOperand.distinct = true;
-                            return objectOperand;
-                        }
+                        objectOperand.distinct = true;
+                        objectOperand.isAggregate = param.scope === expression.methodName;
+                        return objectOperand;
                     }
                 case "include":
                     {
@@ -580,37 +554,28 @@ export class QueryExpressionVisitor {
                         if (param.scope === "include")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const parentRelation = objectOperand.parentRelation;
-                        const column = new ComputedColumnExpression(objectOperand.entity, new MethodCallExpression(objectOperand, expression.methodName, [new ValueExpression("*")], Number), this.newAlias("column"));
-                        if (param.commandExpression === selectOperand || !parentRelation) {
-                            if (objectOperand instanceof GroupedExpression) {
-                                return column.expression;
-                            }
-                            selectOperand.selects = [column];
+                        const column = new ComputedColumnExpression(objectOperand.entity, new MethodCallExpression(objectOperand, expression.methodName, [], Number), this.newAlias("column"));
+                        if (param.scope === expression.methodName) {
+                            // call from queryable
+                            objectOperand.selects = [column];
+                            objectOperand.objectType = Number;
                             objectOperand.isAggregate = true;
-                            selectOperand.objectType = Number;
-                            return column;
+                            return objectOperand;
                         }
                         else {
-                            const colGroups: IColumnExpression[] = [];
-                            const keyObject: { [key: string]: IExpression } = {};
-                            for (const [, childCol] of parentRelation.relations) {
-                                colGroups.add(childCol);
-                                keyObject[childCol.propertyName] = childCol;
+                            // any is used on related entity. change query to groupby.
+                            const groupBy = [];
+                            const keyObject: any = {};
+                            for (const [, entityCol] of selectOperand.parentRelation.relations) {
+                                groupBy.push(entityCol);
+                                keyObject[entityCol.propertyName] = entityCol;
                             }
-                            const key = new ObjectValueExpression(keyObject);
-                            const groupExp = new GroupByExpression(selectOperand, colGroups, key);
-                            groupExp.selects.add(column);
-                            selectOperand = groupExp;
-                            if (parentRelation) {
-                                parentRelation.child = selectOperand;
-                                selectOperand.parentRelation = parentRelation;
-                            }
-                            else {
-                                param.commandExpression = selectOperand;
-                            }
+                            const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                            const flagColumn = column;
+                            groupExp.selects.push(flagColumn);
+                            groupExp.isAggregate = true;
+                            return flagColumn;
                         }
-                        return column;
                     }
                 case "sum":
                 case "avg":
@@ -634,12 +599,16 @@ export class QueryExpressionVisitor {
                             selectOperand = selectExpression;
                         }
 
-                        const column = new ComputedColumnExpression(selectOperand.entity, new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.slice(0), Number), this.newAlias("column"));
+                        const column = new ComputedColumnExpression(selectOperand.entity, new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.select(o => {
+                            if (o instanceof ComputedColumnExpression)
+                                return o.expression;
+                            return o;
+                        }).toArray(), Number), this.newAlias("column"));
                         if (param.scope === expression.methodName) {
                             // call from queryable
                             objectOperand.selects = [column];
-                            objectOperand.paging.take = 1;
                             objectOperand.isAggregate = true;
+                            return objectOperand;
                         }
                         else {
                             // any is used on related entity. change query to groupby.
@@ -655,43 +624,6 @@ export class QueryExpressionVisitor {
                             groupExp.isAggregate = true;
                             return flagColumn;
                         }
-
-                        return objectOperand;
-                        // const column = new ComputedColumnExpression(selectOperand.entity, new MethodCallExpression(selectOperand, expression.methodName, [selectOperand.column], Number), this.newAlias("column"));
-                        // if (param.commandExpression === objectOperand || !parentRelation) {
-                        //     if (parentRelation) {
-                        //         parentRelation.child = selectOperand;
-                        //         selectOperand.parentRelation = parentRelation;
-                        //     }
-                        //     else {
-                        //         param.commandExpression = selectOperand;
-                        //     }
-
-                        //     if (objectOperand instanceof GroupedExpression) {
-                        //         return column.expression;
-                        //     }
-                        //     selectOperand.columns = [column];
-                        // }
-                        // else {
-                        //     const colGroups: IColumnExpression[] = [];
-                        //     const keyObject: { [key: string]: IExpression } = {};
-                        //     for (const [, childCol] of parentRelation.relations) {
-                        //         colGroups.add(childCol);
-                        //         keyObject[childCol.propertyName] = childCol;
-                        //     }
-                        //     const key = new ObjectValueExpression(keyObject);
-                        //     const groupExp = new GroupByExpression(selectOperand, colGroups, key);
-                        //     groupExp.columns.add(column);
-                        //     selectOperand = groupExp;
-                        //     if (parentRelation) {
-                        //         parentRelation.child = selectOperand;
-                        //         selectOperand.parentRelation = parentRelation;
-                        //     }
-                        //     else {
-                        //         param.commandExpression = selectOperand;
-                        //     }
-                        // }
-                        // return column;
                     }
                 case "all":
                 case "any":
@@ -707,11 +639,13 @@ export class QueryExpressionVisitor {
                             const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                             this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
                         }
+                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(isAny), this.newAlias("column"));
                         if (param.scope === expression.methodName) {
                             // call from queryable
-                            objectOperand.selects = [new ComputedColumnExpression(objectOperand.entity, new ValueExpression(isAny), this.newAlias("column"))];
+                            objectOperand.selects = [column];
                             objectOperand.paging.take = 1;
                             objectOperand.isAggregate = true;
+                            return objectOperand;
                         }
                         else {
                             // any is used on related entity. change query to groupby.
@@ -722,87 +656,22 @@ export class QueryExpressionVisitor {
                                 keyObject[entityCol.propertyName] = entityCol;
                             }
                             const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                            const flagColumn = new ComputedColumnExpression(selectOperand.entity, new ValueExpression(isAny), this.newAlias("column"));
-                            groupExp.selects.push(flagColumn);
-                            groupExp.isAggregate = true;
-                            return new (isAny ? NotEqualExpression : EqualExpression)(flagColumn, new ValueExpression(null));
+                            groupExp.selects.push(column);
+                            return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
                         }
-
-                        return objectOperand;
-                    }
-                case "contains":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        const itemExp = expression.params[0];
-                        if ((itemExp as IExpression).type && !(itemExp instanceof ValueExpression)) {
-                            if ((itemExp as IEntityExpression).primaryColumns && (itemExp as IEntityExpression).primaryColumns.length > 0) {
-                                const primaryKeys = (itemExp as IEntityExpression).primaryColumns;
-                                const whereExp = primaryKeys.select((o) => {
-                                    const parentColumn = selectOperand.entity.columns.first((p) => p.propertyName === o.propertyName);
-                                    return new EqualExpression(parentColumn, o);
-                                }).toArray().reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
-                                selectOperand.addWhere(whereExp);
-                            }
-                            else {
-                                if (!isValueType(selectOperand.entity.type))
-                                    throw new Error(`Expression not supported. the supplied item type not match`);
-
-                                selectOperand.addWhere(new EqualExpression(selectOperand.column, itemExp));
-                            }
-                        }
-                        else {
-                            const item = itemExp instanceof ValueExpression ? itemExp.execute() : itemExp;
-                            const entityMeta: IEntityMetaData<TType, any> = Reflect.getOwnMetadata(entityMetaKey, item.constructor);
-                            if (entityMeta) {
-                                const primaryKeys = entityMeta.primaryKeys;
-                                const whereExp = primaryKeys.select((o) => {
-                                    const parentColumn = selectOperand.entity.columns.first((p) => p.propertyName === o);
-                                    return new EqualExpression(parentColumn, new ValueExpression(item[o]));
-                                }).toArray().reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev);
-                                selectOperand.addWhere(whereExp);
-                            }
-                            else {
-                                if (!isValueType(selectOperand.entity.type))
-                                    throw new Error(`Expression not supported. the supplied item type not match`);
-
-                                selectOperand.addWhere(new EqualExpression(selectOperand.column, new ValueExpression(item)));
-                            }
-                        }
-
-                        return this.visit(new MethodCallExpression(selectOperand, "any" as any, []), param);
                     }
                 case "first":
                     {
                         if (param.scope !== "first")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const parentRelation = objectOperand.parentRelation;
                         if (expression.params.length > 0) {
                             const predicateFn = expression.params[0] as FunctionExpression;
                             const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                             this.visit(new MethodCallExpression(selectOperand, "where" as any, [predicateFn]), visitParam);
                             param.commandExpression = visitParam.commandExpression;
                         }
-                        if (param.commandExpression === objectOperand) {
-                            selectOperand.paging.take = 1;
-                        }
-                        else {
-                            const colGroups: IColumnExpression[] = [];
-                            const keyObject: { [key: string]: IExpression } = {};
-                            for (const [, childCol] of parentRelation.relations) {
-                                colGroups.add(childCol);
-                                keyObject[childCol.propertyName] = childCol;
-                            }
-                            const key = new ObjectValueExpression(keyObject);
-                            const groupExp = new GroupByExpression(selectOperand, colGroups, key);
-                            const addExp = groupExp.entity.primaryColumns.reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev, undefined);
-                            groupExp.columns = [new ComputedColumnExpression(groupExp.entity, addExp!, this.newAlias("column"))];
-
-                            const mainColExp = selectOperand.entity.primaryColumns.reduce((result: IExpression<boolean>, prev) => result ? new AndExpression(result, prev) : prev, undefined);
-                            selectOperand.addWhere(new MethodCallExpression(groupExp, "contains", [mainColExp]));
-                        }
+                        selectOperand.paging.take = 1;
                         return selectOperand.entity;
                     }
                 case "innerJoin":

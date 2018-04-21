@@ -12,7 +12,10 @@ export class TakeQueryable<T> extends Queryable<T> {
     public buildQuery(queryBuilder: QueryBuilder) {
         if (!this.expression) {
             this.expression = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            this.expression.paging.take = this.quantity;
+            if (typeof this.expression.paging.take !== "number")
+                this.expression.paging.take = this.quantity;
+            else
+                this.expression.paging.take = Math.min(this.quantity, this.expression.paging.take);
         }
         return this.expression;
     }

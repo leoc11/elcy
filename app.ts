@@ -381,7 +381,131 @@ const db = new MyDb();
     // })).toArray();
     
     // where all
-    const max2 = await db.orders.where(o => o.OrderDetails.max(od => od.Product.Price) > 20000).toArray();
-    console.log(max2);
+    // const max2 = await db.orders.where(o => o.OrderDetails.max(od => od.Product.Price) > 20000).toArray();
+    
+
+    /**
+     * MIN
+     */
+
+    // min
+    // const min = await db.orders.min(o => o.TotalAmount);
+
+    // select min
+    // const min1 = await db.orders.select(o => ({
+    //     order: o,
+    //     minProductPrice: o.OrderDetails.min(od => od.Product.Price)
+    // })).toArray();
+    
+    // where min
+    // const min2 = await db.orders.where(o => o.OrderDetails.min(od => od.Product.Price) > 20000).toArray();
+    
+
+    /**
+     * AVG
+     */
+
+    // avg
+    // const avg = await db.orders.avg(o => o.TotalAmount);
+
+    // select avg
+    // const avg1 = await db.orders.select(o => ({
+    //     order: o,
+    //     avgProductPrice: o.OrderDetails.avg(od => od.Product.Price)
+    // })).toArray();
+    
+    // where avg
+    // const avg2 = await db.orders.where(o => o.OrderDetails.avg(od => od.Product.Price) > 20000).toArray();
+    
+
+    /**
+     * SUM
+     */
+
+    // sum
+    // const sum = await db.orders.sum(o => o.TotalAmount);
+
+    // select sum
+    // const sum1 = await db.orders.select(o => ({
+    //     order: o,
+    //     sumProductPrice: o.OrderDetails.sum(od => od.Product.Price * od.quantity)
+    // })).toArray();
+    
+    // where sum
+    // const sum2 = await db.orders.where(o => o.OrderDetails.sum(od => od.quantity) > 3).toArray();
+    
+
+    /**
+     * COUNT
+     */
+
+    // count
+    // const count = await db.orders.count();
+
+    // select count
+    // const count1 = await db.orders.select(o => ({
+    //     order: o,
+    //     countDetails: o.OrderDetails.count()
+    // })).toArray();
+    
+    // where count
+    // const count2 = await db.orders.where(o => o.OrderDetails.count() > 3).toArray();
+    
+
+    /**
+     * TAKE SKIP
+     */
+
+    // take skip
+    // const take = await db.orders.take(10).skip(4).take(2).skip(1).toArray();
+    
+
+    /**
+     * FIRST
+     */
+
+    // first
+    // const first = await db.orders.first();
+    
+    // first
+    // const first1 = await db.orders.where(o => o.OrderDate < new Date()).first(o => o.TotalAmount > 20000);
+    
+
+    /**
+     * DISTINCT
+     */
+
+    // distinct
+    // const distinct = await db.orders.select(o => o.TotalAmount).distinct().toArray();
+    
+    // select distinct
+    // const distinct1 = await db.orders.select(o => ({
+    //     order: o,
+    //     quantities: o.OrderDetails.select(p => p.quantity).distinct()
+    // })).toArray();
+
+
+    /**
+     * GROUP BY
+     */
+
+    // groupby
+    // const gb1 = await db.orders.groupBy(o => o.OrderDate.getDate()).toArray();
+    
+    // groupby navigation property
+    // const gb2 = await db.orderDetails.groupBy(o => o.Product).toArray();
+    
+    // groupby object
+    const gb3 = await db.orders.groupBy(o => ({
+        date: o.OrderDate,
+        totalItems: o.OrderDetails.sum(p => p.quantity)
+    })).toArray();
+
+    // groupby object with navigation property
+    // const gb4 = await db.orderDetails.groupBy(o => ({
+    //     order: o.Order,
+    //     price: o.Product.Price
+    // })).toArray();
+
     const d = 1;
 })();

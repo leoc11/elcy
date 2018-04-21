@@ -3,6 +3,9 @@ import { ColumnType, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType } from "../../Common/Type";
 import { TimeSpan } from "../../Common/TimeSpan";
+import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
+import { GroupByExpression } from "../../Queryable/QueryExpression";
+import { isNumber } from "util";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     protected supportedColumnTypes: ColumnType[] = [
@@ -86,4 +89,15 @@ export class MssqlQueryBuilder extends QueryBuilder {
         [Number, "decimal"],
         [Boolean, "bit"]
     ]);
+    protected getPagingQueryString(select: SelectExpression): string {
+        const skip = select.paging.skip || 0;
+        const take = select.paging.take || 0;
+        let result = "";
+        if (select.orders.length <= 0)
+            result += "ORDER BY (SELECT NULL)" + this.newLine();
+        result += "OFFSET " + skip + " ROWS";
+        if (take > 0)
+            result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
+        return result;
+    }
 }

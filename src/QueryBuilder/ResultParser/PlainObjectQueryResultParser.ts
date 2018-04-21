@@ -122,10 +122,10 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 const relation = select.parentRelation as IIncludeRelation<any, any>;
                 const a: any = {};
                 for (const [parentCol, childCol] of relation.relations) {
-                    if (entity.hasOwnProperty(parentCol.propertyName))
-                        a[childCol.propertyName] = entity[parentCol.propertyName];
+                    if (entity.hasOwnProperty(childCol.propertyName))
+                        a[parentCol.propertyName] = entity[childCol.propertyName];
                     else
-                        a[childCol.propertyName] = keyData[parentCol.propertyName];
+                        a[parentCol.propertyName] = keyData[childCol.propertyName];
                 }
                 const key = hashCode(JSON.stringify(a));
                 const parentEntity = parentRelation.resultMap.get(key);
@@ -199,7 +199,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                     return 0;
                 }
             case String:
-                return input ? input : input.toString();
+                return input ? input.toString() : input;
             case Date:
                 return new Date(input);
             case TimeSpan:

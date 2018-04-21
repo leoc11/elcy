@@ -29,7 +29,7 @@ declare module "./Queryable" {
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
-        distinct(selector?: (item: T) => any): Queryable<T>;
+        distinct(): Queryable<T>;
         innerJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
@@ -63,9 +63,7 @@ Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Query
 Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>> {
     return new GroupByQueryable(this, keySelector);
 };
-Queryable.prototype.distinct = function <T>(this: Queryable<T>, selector?: (item: T) => any): Queryable<T> {
-    if (selector)
-        return this.groupBy(selector).select((o) => o.first()!);
+Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {
     return new DistinctQueryable(this);
 };
 Queryable.prototype.innerJoin = function <T, T2, TKey extends ValueType, TResult>(this: Queryable<T>, array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult> {

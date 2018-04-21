@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
@@ -23,7 +23,11 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         // if type not defined, check type in runtime.
         if (!type && objectOperand.type) {
             try {
-                this.type = objectOperand.type.prototype[this.methodName]().constructor;
+                try {
+                    this.type = objectOperand.type.prototype[this.methodName]().constructor;
+                } catch (e) {
+                    this.type = (new (objectOperand.type as any)())[this.methodName]().constructor;
+                }
             }
             catch (e) {
                 this.type = Object;
