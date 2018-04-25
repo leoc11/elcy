@@ -15,7 +15,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
         if (result.done && !this.isResultComplete) {
             while (!(result = this.parent.next()).done) {
                 const key = this.selector ? this.selector(result.value) : result.value;
-                if (!this.result.any((o) => keyComparer(key, this.selector ? this.selector(result.value) : result.value)))
+                if (!this.result.any((o) => keyComparer(key, o)))
                     break;
             }
             if (result.done) {
