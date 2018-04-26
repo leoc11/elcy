@@ -1,101 +1,135 @@
-import { IExpression, AndExpression } from "../../ExpressionBuilder/Expression";
+import { IExpression, AndExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { IEntityExpression, ColumnExpression, ComputedColumnExpression, EntityExpression } from ".";
+import { GenericType } from "../../Common/Type";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
     public select: GroupedExpression<T, any>;
     public where: IExpression<boolean>;
-    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], public readonly key: IExpression) {
+    public readonly key: IExpression;
+    protected selectori: SelectExpression<T>;
+    public objectType: GenericType = Array;
+    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression) {
         super(select.entity);
+        this.selects = [];
+        if (select.parentRelation)
+            select.parentRelation.child = this;
+        if (select.where)
+            this.where = select.where.clone();
+        this.selectori = select;
+        this.key = key;
+        for (const join of select.joins) {
+            const child = join.child.clone();
+            if (join.child.entity === this.key as any) {
+                this.key = child.entity as any;
+            }
+            else if (join.child === this.key as any) {
+                this.key = child as any;
+            }
+            const relationMap = new Map();
+            for (const [parentCol, childCol] of join.relations) {
+                const cloneCol = this.entity.columns.first(c => c.columnName === parentCol.columnName);
+                const childCloneCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
+                relationMap.set(cloneCol, childCloneCol);
+            }
+            this.addJoinRelation(child, relationMap, join.type);
+        }
+        for (const include of select.includes) {
+            const child = include.child.clone();
+            if (include.child.entity === this.key as any) {
+                this.key = child.entity as any;
+            }
+            else if (include.child === this.key as any) {
+                this.key = child as any;
+            }
+            const relationMap = new Map();
+            for (const [parentCol, childCol] of include.relations) {
+                let cloneCol = this.entity.columns.first(c => c.columnName === parentCol.columnName);
+                if (!cloneCol) {
+                    const join = select.joins.first(o => o.child.entity.type === parentCol.entity.type);
+                    cloneCol = join.child.entity.columns.first(c => c.columnName === parentCol.columnName);
+                }
+                const childCloneCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
+                relationMap.set(cloneCol, childCloneCol);
+            }
+            this.addInclude(include.name, child, relationMap, include.type);
+        }
         let groupExp: GroupedExpression;
         if (select instanceof GroupedExpression) {
-            groupExp = new GroupedExpression(select.select, select.key);
+            groupExp = new GroupedExpression(select.select);
         }
         else {
-            const selectExp = select.clone();
-            selectExp.selects = this.groupBy.slice(0);
-            groupExp = new GroupedExpression(selectExp, key);
+            groupExp = new GroupedExpression(this);
         }
         this.select = groupExp;
-        this.objectType = Array;
-        this.selects = [];
-        this.primaryColumns = this.select.selects.select(o => {
-            const clone = o.clone();
-            clone.isPrimary = true;
-            return clone;
-        }).toArray();
-        this.includes = this.select.includes.slice(0);
-        this.joins = this.select.joins.slice(0);
-        this.parentRelation = select.parentRelation;
-        if (this.select.where)
-            this.where = this.select.where.clone();
-        if (this.parentRelation)
-            this.parentRelation.child = this;
     }
     public getVisitParam() {
+        if (this.objectType !== Array)
+            return this.entity;
         return this.select;
     }
-    public primaryColumns: IColumnExpression<T>[];
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
-        return this.primaryColumns.union(this.selects);
+        if (this.isAggregate)
+            return this.selects.asEnumerable();
+        return this.groupBy.union(this.relationColumns).union(this.selects);
     }
     public addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
     }
     public clone(): GroupByExpression<T> {
-        const clone = new GroupByExpression(this.select, this.groupBy, this.key);
+        const selectClone = this.selectori.clone();
+        const groupBy = this.groupBy.select(o => {
+            if (o instanceof ComputedColumnExpression) {
+                const comCol = o.clone();
+                comCol.entity = selectClone.entity;
+                return comCol;
+            }
+            let cloneCol = selectClone.entity.columns.first(c => c.columnName === o.columnName);
+            if (!cloneCol) {
+                const join = selectClone.joins.first(j => j.child.entity.type === o.entity.type);
+                cloneCol = join.child.entity.columns.first(c => c.columnName === o.columnName);
+            }
+            return cloneCol;
+        }).toArray();
+        let key: IExpression;
+        if ((this.key as IColumnExpression).entity) {
+            key = groupBy.first(o => o.columnName === (this.key as IColumnExpression).columnName);
+        }
+        else if ((this.key as IEntityExpression).primaryColumns) {
+            if (this.key === this.entity) {
+                key = selectClone.entity;
+            }
+            else {
+                key = selectClone.includes.first(o => o.name === "key").child.entity;
+            }
+        }
+        else if (this.key instanceof ObjectValueExpression) {
+            const obj: any = {};
+            for (const prop in this.key.object) {
+                const value = this.key.object[prop];
+                if ((value as IEntityExpression).primaryColumns) {
+                    if (value === this.entity) {
+                        obj[prop] = selectClone.entity;
+                    }
+                    else {
+                        obj[prop] = selectClone.includes.union(selectClone.joins as any[]).first(o => o.child.entity.type === this.key.object[prop].type).child.entity;
+                    }
+                }
+                else if ((value as IColumnExpression).entity) {
+                    obj[prop] = groupBy.first(o => o.columnName === value.columnName);
+                }
+                else {
+                    obj[prop] = value.clone();
+                }
+            }
+            key = new ObjectValueExpression(obj);
+        }
+        const clone = new GroupByExpression(selectClone, groupBy, key);
         clone.objectType = this.objectType;
-        clone.orders = this.orders.slice(0);
-        clone.selects = this.selects.select(o => {
-            let col = clone.entity.columns.first(c => c.columnName === o.columnName);
-            if (!col) {
-                col = o.clone();
-                col.entity = clone.entity;
-            }
-            return col;
-        }).toArray();
-
-        clone.joins = this.joins.select(o => {
-            const relationMap = new Map();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                relationMap.set(cloneCol, childCol);
-            }
-            const child = o.child.clone();
-            const rel: IJoinRelation = {
-                child: child,
-                parent: clone,
-                relations: relationMap,
-                type: o.type
-            };
-            child.parentRelation = rel;
-            return rel;
-        }).toArray();
-
-        clone.includes = this.includes.select(o => {
-            const relationMap = new Map();
-            const child = o.child.clone();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                const cloneChildCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                relationMap.set(cloneCol, cloneChildCol);
-            }
-            const rel: IIncludeRelation = {
-                child: child,
-                parent: clone,
-                name: o.name,
-                relations: relationMap,
-                type: o.type
-            };
-            child.parentRelation = rel;
-            return rel;
-        }).toArray();
-
-        if (this.where)
-            clone.where = this.where.clone();
         Object.assign(clone.paging, this.paging);
         return clone;
     }

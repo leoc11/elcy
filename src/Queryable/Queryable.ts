@@ -67,7 +67,10 @@ export abstract class Queryable<T = any> {
         n = Date.now();
         const queryResult = await this.dbContext.executeQuery(queryStr, parameterBuilder.getSqlParameters(this.parameters));
         console.log("query time: " + (Date.now() - n));
-        return queryParser.parse(queryResult, this.dbContext);
+        n = Date.now();
+        const result = queryParser.parse(queryResult, this.dbContext);
+        console.log("parse time: " + (Date.now() - n));
+        return result;
     }
     public async count() {
         let key = this.hashCode() + hashCode("COUNT");

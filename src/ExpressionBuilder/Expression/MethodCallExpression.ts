@@ -21,12 +21,15 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
             this.methodName = method;
         }
         // if type not defined, check type in runtime.
-        if (!type && objectOperand.type) {
+        this.assignType();
+    }
+    public assignType() {
+        if (!this.type && this.objectOperand.type) {
             try {
                 try {
-                    this.type = objectOperand.type.prototype[this.methodName]().constructor;
+                    this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
                 } catch (e) {
-                    this.type = (new (objectOperand.type as any)())[this.methodName]().constructor;
+                    this.type = (new (this.objectOperand.type as any)())[this.methodName]().constructor;
                 }
             }
             catch (e) {
@@ -34,7 +37,6 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
             }
         }
     }
-
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

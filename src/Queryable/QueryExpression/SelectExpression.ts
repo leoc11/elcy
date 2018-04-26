@@ -1,5 +1,5 @@
 import { GenericType, OrderDirection, RelationType, JoinType } from "../../Common/Type";
-import { AndExpression, IExpression, EqualExpression, ValueExpression } from "../../ExpressionBuilder/Expression/index";
+import { AndExpression, IExpression, } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { ICommandQueryExpression } from "./ICommandQueryExpression";
@@ -7,8 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression, GroupByExpression, ColumnExpression, ComputedColumnExpression } from ".";
-import { GroupedExpression } from "./GroupedExpression";
+import { ProjectionEntityExpression, GroupByExpression, } from ".";
 import { NegationExpression } from "../../ExpressionBuilder/Expression/NegationExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
@@ -129,14 +128,18 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             type = relType === RelationType.OneToOne ? type ? type : JoinType.INNER : JoinType.LEFT;
             relationMap = new Map();
             const isReverse = relationMeta.sourceType !== this.entity.type;
-            for (const [sourceProp, targetProp] of relationMeta.relationMaps) {
-                const sourceCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? targetProp : sourceProp));
-                const targetCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? sourceProp : targetProp));
-                relationMap.set(sourceCol, targetCol);
+            for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
+                const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childProperty : parentProperty));
+                const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentProperty : childProperty));
+                if (!childCol.isPrimary) child.relationColumns.add(childCol);
+                relationMap.set(parentCol, childCol);
             }
         }
         else {
             relationMap = relationMetaOrRelations as any;
+            for (const [, childCol] of relationMap) {
+                if (!childCol.isPrimary) child.relationColumns.add(childCol);
+            }
         }
 
         child.parentRelation = {
@@ -162,42 +165,28 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             return col;
         }).toArray();
 
-        clone.joins = this.joins.select(o => {
+        for (const join of this.joins) {
+            const child = join.child.clone();
             const relationMap = new Map();
-            for (const [parentCol, childCol] of o.relations) {
+            for (const [parentCol, childCol] of join.relations) {
                 const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
                 relationMap.set(cloneCol, childCol);
             }
-            const child = o.child.clone();
-            const rel: IJoinRelation = {
-                child: child,
-                parent: clone,
-                relations: relationMap,
-                type: o.type
-            };
-            child.parentRelation = rel;
-            return rel;
-        }).toArray();
-
-        clone.includes = this.includes.select(o => {
+            clone.addJoinRelation(child, relationMap, join.type);
+        }
+        for (const include of this.includes) {
+            const child = include.child.clone();
             const relationMap = new Map();
-            const child = o.child.clone();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                const cloneChildCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                relationMap.set(cloneCol, cloneChildCol);
+            for (const [parentCol, childCol] of include.relations) {
+                let cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
+                if (!cloneCol) {
+                    const join = clone.joins.first(o => o.child.entity.type === parentCol.entity.type);
+                    cloneCol = join.child.entity.columns.first(c => c.columnName === parentCol.columnName);
+                }
+                relationMap.set(cloneCol, childCol);
             }
-            const rel: IIncludeRelation = {
-                child: child,
-                parent: clone,
-                name: o.name,
-                relations: relationMap,
-                type: o.type
-            };
-            child.parentRelation = rel;
-            return rel;
-        }).toArray();
-
+            clone.addInclude(include.name, child, relationMap, include.type);
+        }
         if (this.where)
             clone.where = this.where.clone();
         Object.assign(clone.paging, this.paging);

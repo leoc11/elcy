@@ -3,7 +3,7 @@ import { DbContext } from "../../Data/DBContext";
 import { EntityBase } from "../../Data/EntityBase";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../QueryResult";
-import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression";
+import { SelectExpression, IIncludeRelation, GroupByExpression } from "../../Queryable/QueryExpression";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType, RelationType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
@@ -69,7 +69,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
         }
 
         const dbSet = dbContext.set(select.objectType as any);
-        const primaryColumns = select.projectedColumns.where(o => o.isPrimary);
+        const primaryColumns = select instanceof GroupByExpression ? select.groupBy : select.projectedColumns.where(o => o.isPrimary);
         const columns = select.selects.where(o => !o.isPrimary);
         const relColumns = select.relationColumns.except(select.selects);
 
@@ -79,9 +79,10 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             for (const primaryCol of primaryColumns) {
                 const columnName = primaryCol.columnName;
                 const prop = primaryCol.propertyName;
-                keyData[prop] = this.convertTo(row[columnName], primaryCol);
+                const value = this.convertTo(row[columnName], primaryCol);
+                this.setObjectProperty(keyData, prop, value);
                 if (select.selects.contains(primaryCol))
-                    entity[prop] = keyData[prop];
+                    this.setObjectProperty(entity, prop, value);
             }
             let isSkipPopulateEntityData = false;
             const key = hashCode(JSON.stringify(keyData));
@@ -109,12 +110,14 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
                 else {
                     for (const column of columns) {
-                        entity[column.propertyName] = this.convertTo(row[column.columnName], column);
+                        const value = this.convertTo(row[column.columnName], column);
+                        this.setObjectProperty(entity, column.propertyName, value);
                     }
                 }
             }
             for (const column of relColumns) {
-                keyData[column.propertyName] = this.convertTo(row[column.columnName], column);
+                const value = this.convertTo(row[column.columnName], column);
+                this.setObjectProperty(keyData, column.propertyName, value);
             }
 
             // resolve parent relation
@@ -134,10 +137,14 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
                 if (parentEntity) {
                     if (parentRelation.type === RelationType.OneToMany) {
-                        (Array.isArray(parentEntity) ? parentEntity : parentEntity[relation.name]).add(entity);
+                        if (Array.isArray(parentEntity))
+                            parentEntity.add(entity);
+                        else {
+                            this.getObjectProperty<any[]>(parentEntity, relation.name).add(entity);
+                        }
                     }
                     else {
-                        parentEntity[relation.name] = entity;
+                        this.setObjectProperty(parentEntity, relation.name, entity);
                     }
                 }
             }
@@ -153,7 +160,7 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 }
                 const key = hashCode(JSON.stringify(a));
                 const childEntity = data.resultMap.get(key);
-                entity[include.name] = childEntity;
+                this.setObjectProperty(entity, include.name, childEntity);
                 if (childEntity && data.reverseRelationMeta) {
                     if (data.reverseRelationMeta.relationType === RelationType.OneToMany) {
                         if (!childEntity[data.relationMeta.reverseProperty]) {
@@ -171,8 +178,8 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             if (!isValueEntity) {
                 for (const include of select.includes) {
                     if (include.type === RelationType.OneToMany) {
-                        if (!entity[include.name]) {
-                            entity[include.name] = [];
+                        if (!this.getObjectProperty(entity, include.name)) {
+                            this.setObjectProperty(entity, include.name, []);
                         }
                     }
                 }
@@ -184,6 +191,28 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
                 this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
         }
         return results;
+    }
+    private setObjectProperty(obj: any, propertyPath: string, value: any) {
+        const propertyPathes = propertyPath.split(".");
+        const property = propertyPathes.pop();
+        for (const path of propertyPathes) {
+            if (!obj[path]) {
+                obj[path] = {};
+            }
+            obj = obj[path];
+        }
+        obj[property] = value;
+    }
+    private getObjectProperty<T = any>(obj: any, propertyPath: string): T {
+        const propertyPathes = propertyPath.split(".");
+        const property = propertyPathes.pop();
+        for (const path of propertyPathes) {
+            if (!obj[path]) {
+                obj[path] = {};
+            }
+            obj = obj[path];
+        }
+        return obj[property];
     }
     private convertTo<T>(input: any, column: IColumnExpression<T>): any {
         switch (column.type) {

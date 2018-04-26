@@ -229,6 +229,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
     }
+    protected getJoinColumnString(entity: IEntityExpression, column: IColumnExpression) {
+        if (column instanceof ComputedColumnExpression) {
+            return this.getOperandString(column.expression, true);
+        }
+        return this.escape(entity.alias) + "." + this.escape(column.columnName);
+    }
     protected getColumnSelectString(column: IColumnExpression) {
         let result = this.getColumnDefinitionString(column);
         if (column instanceof ComputedColumnExpression) {
@@ -422,7 +428,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 const jstr: string[] = [];
                 for (const [key, val] of o.relations) {
-                    jstr.push(this.getColumnString(key) + " = " + this.getColumnString(val));
+                    jstr.push(this.getJoinColumnString(o.parent.entity, key) + " = " + this.getJoinColumnString(o.child.entity, val));
                 }
                 return join + jstr.join(" AND ");
             }).toArray().join(this.newLine());

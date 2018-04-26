@@ -1,6 +1,6 @@
 import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationType } from "../Common/Type";
-import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
+import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import {
     AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
     BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
@@ -17,14 +17,14 @@ import {
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { isValueType, isNativeFunction, hashCode } from "../Helper/Util";
-import { IEntityMetaData, IRelationMetaData } from "../MetaData/Interface/index";
+import { IRelationMetaData } from "../MetaData/Interface/index";
 import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import {
     ColumnExpression, ComputedColumnExpression, ExceptExpression,
-    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression, IIncludeRelation
+    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression
 } from "../Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpression";
@@ -56,7 +56,9 @@ export class QueryExpressionVisitor {
         return this.namingStrategy.getAlias(type) + this.aliasObj[type]++;
     }
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
-        if (expression !== param.commandExpression)
+        if (!(expression instanceof SelectExpression ||
+            expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression ||
+            expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression))
             expression = expression.clone();
         switch (expression.constructor) {
             case MemberAccessExpression:
@@ -182,10 +184,11 @@ export class QueryExpressionVisitor {
                                 return param.commandExpression;
                             }
                             else {
-                                if (param.commandExpression.where || param.commandExpression.orders.length > 0) {
-                                    child.addJoinRelation(param.commandExpression, relationMeta);
-                                    child.addOrder(param.commandExpression.orders);
-                                }
+                                // always applied join to prev entity so the next one still based on prev entities data.
+                                // if (param.commandExpression.where || param.commandExpression.orders.length > 0) {
+                                child.addJoinRelation(param.commandExpression, relationMeta);
+                                child.addOrder(param.commandExpression.orders);
+                                // }
                                 param.commandExpression = child;
                                 return relationMeta.relationType === RelationType.OneToMany ? child : child.entity;
                             }
@@ -213,7 +216,35 @@ export class QueryExpressionVisitor {
         }
         else if (objectOperand instanceof GroupedExpression) {
             if (expression.memberName === "key") {
-                return objectOperand.key;
+                const result = objectOperand.key;
+                if ((result as IColumnExpression).entity)
+                    return result;
+                else if (result instanceof ObjectValueExpression) {
+                    return result;
+                }
+                else if ((result as IEntityExpression).primaryColumns) {
+                    switch (param.scope) {
+                        case "select":
+                        case "selectMany":
+                            {
+                                let child = new SelectExpression(new EntityExpression(result.type as any, this.newAlias()));
+                                const relMap = new Map();
+                                param.commandExpression.includes = [];
+                                for (const childCol of child.entity.primaryColumns) {
+                                    const parentCol = param.commandExpression.projectedColumns.first(o => o.columnName === childCol.columnName);
+                                    relMap.set(childCol, parentCol);
+                                }
+                                child.addJoinRelation(param.commandExpression, relMap, JoinType.INNER);
+                                child.addOrder(param.commandExpression.orders);
+                                param.commandExpression = child;
+                                return child.entity;
+                            }
+                        default:
+                            {
+                                return result;
+                            }
+                    }
+                }
             }
         }
         else if (objectOperand instanceof ParameterExpression) {
@@ -226,6 +257,9 @@ export class QueryExpressionVisitor {
         }
         else if (objectOperand instanceof ValueExpression) {
             return new ValueExpression(expression.execute());
+        }
+        else if (objectOperand instanceof ObjectValueExpression) {
+            return objectOperand.object[expression.memberName];
         }
         else {
             switch (objectOperand.type) {
@@ -268,6 +302,138 @@ export class QueryExpressionVisitor {
         }
         throw new Error(`${expression.type.name} not supported.`);
     }
+    protected visitObjectSelect(selectOperand: SelectExpression, selectExp: ObjectValueExpression<any>, prevPath?: string) {
+        let newSelects: IColumnExpression[] = [];
+        const joinRelations: Array<IPRelation> = [];
+        for (const prop in selectExp.object) {
+            const propPath = prevPath ? prevPath + "." + prop : prop;
+            const valueExp = selectExp.object[prop];
+            if (valueExp instanceof EntityExpression) {
+                let childEntity = valueExp as IEntityExpression;
+                let parentRel: IJoinRelation<any, any> = childEntity.select.parentRelation as any;
+
+                if (selectOperand instanceof GroupByExpression && childEntity === selectOperand.key) {
+                    const relMap = new Map();
+                    const cloneSelect = childEntity.select.clone();
+                    cloneSelect.joins = [];
+                    childEntity = cloneSelect.entity;
+                    for (const [parentCol, childCol] of (selectOperand.key as any).select.parentRelation.relations) {
+                        const cloneCol = childEntity.columns.first(o => o.columnName === childCol.columnName);
+                        relMap.set(parentCol, cloneCol);
+                    }
+                    const pr: IPRelation = {
+                        name: prop,
+                        child: cloneSelect,
+                        relationMaps: relMap,
+                        type: RelationType.OneToOne
+                    };
+                    joinRelations.push(pr);
+                }
+                else if (childEntity === selectOperand.entity) {
+                    const relationMap = new Map();
+                    const cloneSelect = childEntity.select.clone();
+                    cloneSelect.joins = [];
+                    childEntity = cloneSelect.entity;
+                    for (let i = 0; i < selectOperand.entity.primaryColumns.length; i++) {
+                        const pCol = selectOperand.entity.primaryColumns[i];
+                        const cCol = childEntity.primaryColumns[i];
+                        relationMap.set(pCol, cCol);
+                    }
+                    const pr: IPRelation = {
+                        name: prop,
+                        child: cloneSelect,
+                        relationMaps: relationMap,
+                        type: RelationType.OneToOne
+                    };
+                    joinRelations.push(pr);
+                }
+                else {
+                    while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
+                        const relationMap = new Map<any, any>();
+                        for (const [sourceCol, targetCol] of parentRel.relations) {
+                            relationMap.set(targetCol, sourceCol);
+                        }
+                        const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
+                        parentRel.parent.joins.remove(parentRel);
+                        parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
+                        if (!parentRel) break;
+                        parentRel = nextRel;
+                    }
+                    selectOperand.joins.remove(parentRel);
+                    const pr: IPRelation = {
+                        name: prop,
+                        child: valueExp.select,
+                        relationMaps: parentRel.relations,
+                        type: RelationType.OneToOne
+                    };
+                    joinRelations.push(pr);
+                }
+            }
+            // group only
+            else if (valueExp instanceof GroupedExpression) {
+                let parentRel = valueExp.parentRelation as IJoinRelation<any, any>;
+                selectOperand.joins.remove(parentRel);
+                const childSelect = valueExp.clone();
+                const relMap = new Map();
+                for (const col of selectOperand.groupBy) {
+                    const childCol = childSelect.projectedColumns.union([selectOperand.key as any]).first(o => o.columnName === col.columnName);
+                    relMap.set(col, childCol);
+                }
+                const pr: IPRelation = {
+                    name: prop,
+                    child: childSelect,
+                    relationMaps: relMap,
+                    type: RelationType.OneToMany
+                };
+                joinRelations.push(pr);
+            }
+            // non group only
+            else if (valueExp instanceof SelectExpression) {
+                let parentRel = valueExp.parentRelation as IJoinRelation<any, any>;
+                while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
+                    const relationMap = new Map<any, any>();
+                    for (const [sourceCol, targetCol] of parentRel.relations) {
+                        relationMap.set(targetCol, sourceCol);
+                    }
+                    const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
+                    parentRel.parent.joins.remove(parentRel);
+                    parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
+                    if (!parentRel) break;
+                    parentRel = nextRel;
+                }
+
+                selectOperand.joins.remove(parentRel);
+                const pr: IPRelation = {
+                    name: prop,
+                    child: valueExp,
+                    relationMaps: parentRel.relations,
+                    type: RelationType.OneToMany
+                };
+                joinRelations.push(pr);
+            }
+            else if (valueExp instanceof ObjectValueExpression) {
+                newSelects = newSelects.concat(this.visitObjectSelect(selectOperand, valueExp, prop));
+            }
+            else if ((valueExp as IColumnExpression).entity) {
+                if (!(selectOperand instanceof GroupByExpression) && valueExp instanceof ComputedColumnExpression) {
+                    const column = new ColumnExpression(valueExp.entity, propPath, valueExp.type, valueExp.isPrimary, valueExp.columnName);
+                    newSelects.add(column);
+                }
+                else {
+                    valueExp.propertyName = propPath;
+                    newSelects.add(valueExp);
+                }
+            }
+            else {
+                const column = new ComputedColumnExpression(selectOperand.entity, valueExp, prop);
+                column.propertyName = propPath;
+                newSelects.add(column);
+            }
+        }
+        for (const rel of joinRelations)
+            selectOperand.addInclude(rel.name, rel.child, rel.relationMaps, rel.type);
+        return newSelects;
+    }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
         const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
 
@@ -286,120 +452,33 @@ export class QueryExpressionVisitor {
                         this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam);
                         this.scopeParameters.remove(selectorFn.params[0].name);
-                        param.commandExpression = visitParam.commandExpression;
+                        // todo recheck
+                        selectOperand = param.commandExpression = visitParam.commandExpression;
 
+                        if (selectOperand instanceof GroupByExpression)
+                            selectOperand.includes = [];
+
+                        // 123
                         if (expression.methodName === "select") {
                             if (selectExp instanceof SelectExpression) {
+                                if (selectOperand instanceof GroupByExpression)
+                                    throw new Error(`groupBy did not support to many select result`);
                                 selectOperand = selectExp;
                             }
                             else if ((selectExp as EntityExpression).primaryColumns) {
                                 selectOperand = visitParam.commandExpression;
                             }
                             else if (selectExp instanceof ObjectValueExpression) {
-                                const newSelects: IColumnExpression[] = [];
-                                const joinRelations: Array<IPRelation> = [];
-                                for (const prop in selectExp.object) {
-                                    const valueExp = selectExp.object[prop];
-                                    if (valueExp instanceof ColumnExpression) {
-                                        const colClone = valueExp.clone();
-                                        colClone.propertyName = prop;
-                                        newSelects.add(colClone);
-                                    }
-                                    else if (valueExp instanceof ComputedColumnExpression) {
-                                        const colClone = new ColumnExpression(valueExp.entity, prop, valueExp.type, valueExp.isPrimary, valueExp.columnName);
-                                        newSelects.add(colClone);
-                                    }
-                                    else if ((valueExp as IEntityExpression).primaryColumns) {
-                                        // o.Order.Outlet.Store
-                                        let childEntity = valueExp as IEntityExpression;
-
-                                        if (childEntity.select === selectOperand) {
-                                            const cloneSelect = childEntity.select.clone();
-                                            cloneSelect.joins = [];
-                                            childEntity = cloneSelect.entity;
-                                            const relationMap = new Map<any, any>();
-                                            for (let i = 0; i < selectOperand.entity.primaryColumns.length; i++) {
-                                                const pCol = selectOperand.entity.primaryColumns[i];
-                                                const cCol = childEntity.primaryColumns[i];
-                                                relationMap.set(pCol, cCol);
-                                            }
-                                            const pr: IPRelation = {
-                                                name: prop,
-                                                child: cloneSelect,
-                                                relationMaps: relationMap,
-                                                type: RelationType.OneToOne
-                                            };
-                                            joinRelations.push(pr);
-                                        }
-                                        else {
-                                            let parentRel = childEntity.select.parentRelation as IJoinRelation<any, any>;
-                                            while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
-                                                const relationMap = new Map<any, any>();
-                                                for (const [sourceCol, targetCol] of parentRel.relations) {
-                                                    relationMap.set(targetCol, sourceCol);
-                                                }
-                                                const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
-                                                parentRel.parent.joins.remove(parentRel);
-                                                parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
-                                                if (!parentRel) break;
-                                                parentRel = nextRel;
-                                            }
-                                            selectOperand.joins.remove(parentRel);
-                                            const pr: IPRelation = {
-                                                name: prop,
-                                                child: valueExp.select,
-                                                relationMaps: parentRel.relations,
-                                                type: RelationType.OneToOne
-                                            };
-                                            joinRelations.push(pr);
-                                        }
-                                    }
-                                    else if (valueExp instanceof SelectExpression) {
-                                        // o.Order.Outlet.Registers => Register.Outlet.Order
-                                        let parentRel = valueExp.parentRelation as IJoinRelation<any, any>;
-                                        while ((parentRel as any).name === undefined && parentRel.parent !== selectOperand) {
-                                            const relationMap = new Map<any, any>();
-                                            for (const [sourceCol, targetCol] of parentRel.relations) {
-                                                relationMap.set(targetCol, sourceCol);
-                                            }
-                                            const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
-                                            parentRel.parent.joins.remove(parentRel);
-                                            parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
-                                            if (!parentRel) break;
-                                            parentRel = nextRel;
-                                        }
-
-                                        selectOperand.joins.remove(parentRel);
-                                        const pr: IPRelation = {
-                                            name: prop,
-                                            child: valueExp,
-                                            relationMaps: parentRel.relations,
-                                            type: RelationType.OneToMany
-                                        };
-                                        joinRelations.push(pr);
-                                    }
-                                    else {
-                                        newSelects.add(new ComputedColumnExpression(valueExp.entity, valueExp, prop));
-                                    }
-                                }
-
+                                selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp);
                                 selectOperand.objectType = Object;
-                                selectOperand.selects = newSelects;
-                                // selectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, Object));
-                                for (const rel of joinRelations)
-                                    selectOperand.addInclude(rel.name, rel.child, rel.relationMaps, rel.type);
                             }
                             else if ((selectExp as IColumnExpression).entity) {
                                 const column = selectExp as IColumnExpression;
-                                // const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
-                                // selectOperand = objectSelectOperand;
                                 selectOperand.objectType = column.type;
                                 selectOperand.selects = [column];
                             }
                             else {
                                 const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
-                                // const objectSelectOperand = new SelectExpression(new ProjectionEntityExpression(selectOperand, column.type));
-                                // selectOperand = objectSelectOperand;
                                 selectOperand.objectType = column.type;
                                 selectOperand.selects = [column];
                             }
@@ -423,17 +502,31 @@ export class QueryExpressionVisitor {
                     }
                 case "where":
                     {
+                        if (selectOperand instanceof GroupedExpression) {
+                            const clone = selectOperand.clone();
+                            clone.entity.alias = this.newAlias();
+                            clone.where = null;
+                            const map = new Map();
+                            for (const parentCol of selectOperand.entity.primaryColumns) {
+                                const childCol = clone.entity.columns.first(o => o.columnName === parentCol.columnName);
+                                map.set(parentCol, childCol);
+                            }
+                            param.commandExpression.addJoinRelation(clone, map, JoinType.LEFT);
+                            selectOperand = clone;
+                        }
+
                         const predicateFn = expression.params[0] as FunctionExpression<TType, boolean>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "where" };
-                        this.scopeParameters.add(predicateFn.params[0].name, objectOperand.getVisitParam());
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "where" };
+                        this.scopeParameters.add(predicateFn.params[0].name, selectOperand.getVisitParam());
                         const whereExp = this.visit(predicateFn, visitParam) as IExpression<boolean>;
                         this.scopeParameters.remove(predicateFn.params[0].name);
 
                         if (whereExp.type !== Boolean) {
                             throw new Error(`Queryable<${objectOperand.type}>.where required predicate with boolean return value.`);
                         }
-                        objectOperand.addWhere(whereExp);
-                        return objectOperand;
+
+                        selectOperand.addWhere(whereExp);
+                        return selectOperand;
                     }
                 case "orderBy":
                     {
@@ -468,57 +561,78 @@ export class QueryExpressionVisitor {
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                         const parentRelation = objectOperand.parentRelation;
-                        const selectorFn = expression.params[0] as FunctionExpression<TType, any>;
+                        const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
                         const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                         this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam);
                         this.scopeParameters.remove(selectorFn.params[0].name);
                         param.commandExpression = visitParam.commandExpression;
 
+                        // 123
                         if (selectExp instanceof SelectExpression) {
                             throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
                         }
-                        // selectOperand = visitParam.commandExpression;
+
                         let groupColumns: IColumnExpression[] = [];
-                        if (selectExp instanceof ObjectValueExpression) {
+                        let key = selectExp;
+                        if ((selectExp as IEntityExpression).primaryColumns) {
+                            const entityExp = selectExp as IEntityExpression;
+                            groupColumns.push(...(Array.from(entityExp.select.parentRelation.relations.keys())));
+                            // remove relation
+                            entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
+                            // add include
+                            selectOperand.addInclude("key", entityExp.select, entityExp.select.parentRelation.relations, RelationType.OneToOne);
+                        }
+                        else if (selectExp instanceof ObjectValueExpression) {
                             for (const prop in selectExp.object) {
-                                const valueExp = selectExp.object[prop];
-                                if (valueExp instanceof ColumnExpression) {
-                                    groupColumns.push(new ColumnExpression(valueExp.entity, prop, valueExp.type, valueExp.isPrimary, valueExp.columnName));
+                                const value = selectExp.object[prop];
+                                if ((value as IColumnExpression).entity) {
+                                    value.propertyName = "key." + prop;
+                                    groupColumns.push(value);
                                 }
-                                else if (valueExp instanceof ComputedColumnExpression) {
-                                    groupColumns.push(new ComputedColumnExpression(valueExp.entity, valueExp.expression, prop));
+                                else if ((value as IEntityExpression).primaryColumns) {
+                                    const entityExp = value as IEntityExpression;
+                                    for (const [parentCol] of entityExp.select.parentRelation.relations) {
+                                        groupColumns.push(parentCol);
+                                    }
+                                    // remove relation
+                                    selectOperand.joins.remove(entityExp.select.parentRelation as any);
+                                    // add include
+                                    selectOperand.addInclude("key." + prop, entityExp.select, entityExp.select.parentRelation.relations, RelationType.OneToOne);
                                 }
-                                else if ((valueExp as IEntityExpression).primaryColumns) {
-                                    const childEntity = valueExp as IEntityExpression;
-                                    if (childEntity.select)
-                                        groupColumns = groupColumns.concat(childEntity.select.selects);
-                                    else
-                                        groupColumns = groupColumns.concat(childEntity.columns);
-                                        }
-                                else if (valueExp instanceof SelectExpression) {
-                                    throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
+                                else if (value instanceof SelectExpression) {
+                                    throw new Error(`${prop} Array not supported`);
                                 }
+                                else {
+                                    const col = new ComputedColumnExpression(selectOperand.entity, value, this.newAlias("column"));
+                                    col.propertyName = "key." + prop;
+                                    selectExp.object[prop] = col;
+                                    groupColumns.push(col);
                                 }
                             }
+                        }
                         else if ((selectExp as IColumnExpression).entity) {
-                            const column = selectExp as IColumnExpression;
-                            groupColumns = [column];
+                            const column = (selectExp as IColumnExpression).clone();
+                            column.propertyName = "key";
+                            groupColumns.push(column);
+                            key = column;
                         }
                         else {
-                            const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
-                            groupColumns = [column];
+                            const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
+                            groupColumns.push(column);
+                            key = column;
                         }
 
-                        selectOperand = new GroupByExpression(selectOperand, groupColumns, selectExp);
+                        const groupByExp = new GroupByExpression(selectOperand, groupColumns, key);
+
                         if (parentRelation) {
-                            parentRelation.child = selectOperand;
-                            selectOperand.parentRelation = parentRelation;
+                            parentRelation.child = groupByExp;
+                            groupByExp.parentRelation = parentRelation;
                         }
                         else {
-                            param.commandExpression = selectOperand;
+                            param.commandExpression = groupByExp;
                         }
-                        return selectOperand;
+                        return groupByExp;
                     }
                 case "skip":
                 case "take":
@@ -562,6 +676,9 @@ export class QueryExpressionVisitor {
                             objectOperand.isAggregate = true;
                             return objectOperand;
                         }
+                        else if (selectOperand instanceof GroupedExpression) {
+                            return column;
+                        }
                         else {
                             // any is used on related entity. change query to groupby.
                             const groupBy = [];
@@ -573,7 +690,6 @@ export class QueryExpressionVisitor {
                             const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
                             const flagColumn = column;
                             groupExp.selects.push(flagColumn);
-                            groupExp.isAggregate = true;
                             return flagColumn;
                         }
                     }
@@ -610,6 +726,9 @@ export class QueryExpressionVisitor {
                             objectOperand.isAggregate = true;
                             return objectOperand;
                         }
+                        else if (selectOperand instanceof GroupedExpression) {
+                            return column;
+                        }
                         else {
                             // any is used on related entity. change query to groupby.
                             const groupBy = [];
@@ -621,7 +740,6 @@ export class QueryExpressionVisitor {
                             const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
                             const flagColumn = column;
                             groupExp.selects.push(flagColumn);
-                            groupExp.isAggregate = true;
                             return flagColumn;
                         }
                     }
@@ -834,6 +952,7 @@ export class QueryExpressionVisitor {
             }
         }
         else {
+            expression.assignType();
             expression.params = expression.params.select(o => this.visit(o, { commandExpression: param.commandExpression })).toArray();
 
             if (expression.objectOperand instanceof ValueExpression) {
@@ -857,16 +976,6 @@ export class QueryExpressionVisitor {
                                 this.sqlParameterBuilderItems.push({ name: result.name, valueGetter: expression });
                                 return result;
                             }
-                            case "toDate":
-                            case "toTime":
-                            case "addDays":
-                            case "addMonths":
-                            case "addYears":
-                            case "addHours":
-                            case "addMinutes":
-                            case "addSeconds":
-                            case "addMilliSeconds":
-                                return expression;
                         }
                         break;
                 }
@@ -909,11 +1018,28 @@ export class QueryExpressionVisitor {
                     }
                 }
             }
-            if (objectOperand.type as any === String) {
-                switch (expression.methodName) {
-                    case "like":
-                        return expression;
-                }
+            switch (objectOperand.type) {
+                case String:
+                    switch (expression.methodName) {
+                        case "like":
+                            return expression;
+                    }
+                    break;
+                case Date:
+                    switch (expression.methodName) {
+                        case "getDate":
+                        case "toDate":
+                        case "toTime":
+                        case "addDays":
+                        case "addMonths":
+                        case "addYears":
+                        case "addHours":
+                        case "addMinutes":
+                        case "addSeconds":
+                        case "addMilliSeconds":
+                            return expression;
+                    }
+                    break;
             }
 
             const methodFn: () => any = objectOperand.type.prototype[expression.methodName];

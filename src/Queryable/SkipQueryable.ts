@@ -2,7 +2,6 @@ import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/index";
 import { hashCode } from "../Helper/Util";
-import { isNumber } from "util";
 
 export class SkipQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
@@ -15,6 +14,8 @@ export class SkipQueryable<T> extends Queryable<T> {
             this.expression = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             if (typeof this.expression.paging.skip === "undefined")
                 this.expression.paging.skip = 0;
+            if (typeof this.expression.paging.take === "number")
+                this.expression.paging.take -= this.quantity;
             this.expression.paging.skip += this.quantity;
         }
         return this.expression;

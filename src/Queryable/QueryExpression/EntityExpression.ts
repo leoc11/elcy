@@ -6,9 +6,11 @@ import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
+import { SelectExpression } from "./SelectExpression";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
+    public select?: SelectExpression<T>;
     protected get metaData() {
         if (!this._metaData)
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
@@ -73,6 +75,11 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     }
     public clone(): IEntityExpression<T> {
         const clone = new EntityExpression(this.type, this.alias);
+        clone.columns = this.columns.select(o => {
+            const colClone = o.clone();
+            colClone.entity = clone;
+            return colClone;
+        }).toArray();
         clone.name = this.name;
         return clone;
     }
