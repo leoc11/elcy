@@ -26,7 +26,7 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
                         this.type = relationMeta.targetType;
                     else {
                         this.type = Array as any;
-                        this.objectType = relationMeta.targetType;
+                        this.itemType = relationMeta.targetType;
                     }
                 }
             }

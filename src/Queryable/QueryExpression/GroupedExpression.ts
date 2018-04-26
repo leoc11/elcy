@@ -32,7 +32,7 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
     }
     public clone(): GroupedExpression<T> {
         const clone = new GroupedExpression(this.select.clone());
-        clone.objectType = this.objectType;
+        clone.itemExpression = this.itemExpression;
         clone.orders = this.orders.slice(0);
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);

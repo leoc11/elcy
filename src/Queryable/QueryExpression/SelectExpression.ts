@@ -35,7 +35,10 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public paging: { skip?: number, take?: number } = {};
     public where: IExpression<boolean>;
     public orders: IOrderExpression[] = [];
-    public objectType: GenericType<any>;
+    public itemExpression: IExpression;
+    public get itemType(): GenericType<any> {
+        return this.itemExpression.type;
+    }
     public includes: IIncludeRelation<T, any>[] = [];
     public joins: IJoinRelation<T, any>[] = [];
     public parentRelation: IJoinRelation<any, T> | IIncludeRelation<any, T>;
@@ -44,7 +47,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     }
     constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
-        this.objectType = entity.type;
+        this.itemExpression = entity;
 
         if (entity instanceof ProjectionEntityExpression) {
             this.selects = entity.selectedColumns.slice(0);
@@ -153,7 +156,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     }
     public clone(entity?: IEntityExpression): SelectExpression<T> {
         const clone = new SelectExpression(entity ? entity : this.entity.clone());
-        clone.objectType = this.objectType;
+        if (this.itemExpression !== this.entity)
+            clone.itemExpression = this.itemExpression;
         clone.orders = this.orders.slice(0);
         clone.isSelectAll = this.isSelectAll;
         clone.selects = this.selects.select(o => {

@@ -284,7 +284,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o instanceof ComputedColumnExpression)
                     return new ColumnExpression(o.entity, o.propertyName, o.type, o.isPrimary, o.columnName);
                 return o;
-            }).toArray(), select.objectType, this.newAlias()));
+            }).toArray(), select.itemType, this.newAlias()));
 
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {

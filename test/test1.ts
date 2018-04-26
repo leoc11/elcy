@@ -1241,23 +1241,22 @@ describe("GROUP BY", async () => {
         a[0].should.has.property("sum").which.is.a("number");
         a[0].data.should.has.keys(["day", "price", "avg"]);
     });
-    // it("groupBy.(o => ({col: o.toOneRelation })).select(o => o.key).select(o => o.col.name)", async () => {
-    //     const db = new MyDb();
-    //     const groupBy = db.orderDetailProperties.groupBy(o => ({
-    //         od: o.OrderDetail
-    //     })).select(o => o.key).select(o => o.od.name);
-    //     const queryString = groupBy.toString();
+    it("groupBy.(o => ({col: o.toOneRelation })).select(o => o.key).select(o => o.col.name)", async () => {
+        const db = new MyDb();
+        const groupBy = db.orderDetailProperties.groupBy(o => ({
+            od: o.OrderDetail
+        })).select(o => o.key).select(o => o.od.name);
+        const queryString = groupBy.toString();
 
-    //     expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
-    //         , "query not equals");
+        expect(queryString).to.equal("SELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductName]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tGROUP BY [entity0].[OrderDetailId]\n) AS entity0\n\tON [entity1].[OrderDetailId] = [entity0].[OrderDetailId]\nWHERE NOT(\n\t([entity1].[isDeleted] = CAST (1 AS BIT))\n)"
+            , "query not equals");
 
-    //     const a = await groupBy.toArray();
+        const a = await groupBy.toArray();
 
-    //     should();
-    //     a.should.be.a("array");
-    //     a[0].should.has.property("productid").which.is.a("string");
-    //     a[0].should.has.property("Quantity").which.is.a("number");
-    // });
+        should();
+        a.should.be.a("array");
+        a[0].should.be.a("string");
+    });
 });
 describe("PARAMETERS", async () => {
     it("should work", async () => {

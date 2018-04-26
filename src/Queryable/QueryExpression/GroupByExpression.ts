@@ -1,18 +1,17 @@
 import { IExpression, AndExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
+import { SelectExpression, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { IEntityExpression, ColumnExpression, ComputedColumnExpression, EntityExpression } from ".";
-import { GenericType } from "../../Common/Type";
+import { IEntityExpression, ComputedColumnExpression } from ".";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
     public select: GroupedExpression<T, any>;
     public where: IExpression<boolean>;
     public readonly key: IExpression;
+    public itemExpression: IExpression;
     protected selectori: SelectExpression<T>;
-    public objectType: GenericType = Array;
     constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression) {
         super(select.entity);
         this.selects = [];
@@ -66,11 +65,10 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             groupExp = new GroupedExpression(this);
         }
         this.select = groupExp;
+        this.itemExpression = this.select;
     }
     public getVisitParam() {
-        if (this.objectType !== Array)
-            return this.entity;
-        return this.select;
+        return this.itemExpression;
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
@@ -116,7 +114,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                         obj[prop] = selectClone.entity;
                     }
                     else {
-                        obj[prop] = selectClone.includes.union(selectClone.joins as any[]).first(o => o.child.entity.type === this.key.object[prop].type).child.entity;
+                        obj[prop] = selectClone.includes.union(selectClone.joins as any[]).first(o => o.child.entity.type === (this.key as any).object[prop].type).child.entity;
                     }
                 }
                 else if ((value as IColumnExpression).entity) {
@@ -129,7 +127,8 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             key = new ObjectValueExpression(obj);
         }
         const clone = new GroupByExpression(selectClone, groupBy, key);
-        clone.objectType = this.objectType;
+        if (this.itemExpression !== this.select)
+            clone.itemExpression = this.itemExpression;
         Object.assign(clone.paging, this.paging);
         return clone;
     }

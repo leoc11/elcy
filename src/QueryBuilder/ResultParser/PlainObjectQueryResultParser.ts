@@ -36,12 +36,12 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             const relation = select.parentRelation as IIncludeRelation<any, T>;
             if (relation.type === RelationType.OneToMany) {
                 parentRelation = {
-                    resultMap: customTypeMap.get(relation.parent.objectType),
-                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, relation.parent.objectType, relation.name),
+                    resultMap: customTypeMap.get(relation.parent.itemType),
+                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, relation.parent.itemType, relation.name),
                     type: relation.type
                 };
                 if (parentRelation.relationMeta && parentRelation.relationMeta.reverseProperty) {
-                    parentRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, select.objectType, parentRelation.relationMeta.reverseProperty);
+                    parentRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, select.itemType, parentRelation.relationMeta.reverseProperty);
                 }
             }
         }
@@ -52,29 +52,29 @@ export class PlainObjectQueryResultParser<T extends EntityBase> implements IQuer
             if (include.type === RelationType.OneToOne) {
                 this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
                 const childRelation: IRelationResolveData = {
-                    resultMap: customTypeMap.get(include.child.objectType),
-                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, select.objectType, include.name),
+                    resultMap: customTypeMap.get(include.child.itemType),
+                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, select.itemType, include.name),
                     type: include.type
                 };
                 if (childRelation.relationMeta && childRelation.relationMeta.reverseProperty)
-                    childRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, include.child.objectType, childRelation.relationMeta.reverseProperty);
+                    childRelation.reverseRelationMeta = Reflect.getOwnMetadata(relationMetaKey, include.child.itemType, childRelation.relationMeta.reverseProperty);
                 childRelations.set(include, childRelation);
             }
         }
 
-        let resultMap = customTypeMap.get(select.objectType);
+        let resultMap = customTypeMap.get(select.itemType);
         if (!resultMap) {
             resultMap = new Map<any, any>();
-            customTypeMap.set(select.objectType, resultMap);
+            customTypeMap.set(select.itemType, resultMap);
         }
 
-        const dbSet = dbContext.set(select.objectType as any);
+        const dbSet = dbContext.set(select.itemType as any);
         const primaryColumns = select instanceof GroupByExpression ? select.groupBy : select.projectedColumns.where(o => o.isPrimary);
         const columns = select.selects.where(o => !o.isPrimary);
         const relColumns = select.relationColumns.except(select.selects);
 
         for (const row of queryResult.rows) {
-            let entity = new (select.objectType as any)();
+            let entity = new (select.itemType as any)();
             const keyData: { [key: string]: any } = {};
             for (const primaryCol of primaryColumns) {
                 const columnName = primaryCol.columnName;

@@ -67,10 +67,6 @@ const db = new MyDb();
     //     price: o.Product.Price
     // })).toArray();
 
-
-    // const t27 = await db.orderDetailProperties.groupBy(o => ({
-    //     od: o.OrderDetail
-    // })).select(o => o.key).select(o => o.od.name).toArray();
     const d = 1;
     
 

@@ -315,8 +315,8 @@ export namespace ExpressionBuilder {
                         if (nextToken && nextToken.type === LexicalTokenType.Parenthesis && nextToken.data === ")") {
                             const nameToken = tokens[param.index++];
                             const paramToken = tokens[param.index++];
-                            if (expression.objectType)
-                                param.types = [expression.objectType];
+                            if (expression.itemType)
+                                param.types = [expression.itemType];
                             const params = createParamsExpression(param, paramToken.childrens);
                             param.types = [];
                             expression = new MethodCallExpression(expression, nameToken.data as string, params);
