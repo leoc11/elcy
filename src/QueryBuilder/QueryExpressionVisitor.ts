@@ -179,7 +179,6 @@ export class QueryExpressionVisitor {
                             if (relationMeta.relationType === RelationType.OneToMany && param.scope === "select") {
                                 param.commandExpression.itemExpression = child;
                                 param.commandExpression.selects = [];
-                                param.commandExpression.includes = [];
                                 param.commandExpression.addInclude(relationMeta.foreignKeyName, child, relationMeta);
                                 return param.commandExpression;
                             }
@@ -226,7 +225,6 @@ export class QueryExpressionVisitor {
                             {
                                 let child = new SelectExpression(new EntityExpression(result.type as any, this.newAlias()));
                                 const relMap = new Map();
-                                param.commandExpression.includes = [];
                                 for (const childCol of child.entity.primaryColumns) {
                                     const parentCol = param.commandExpression.projectedColumns.first(o => o.columnName === childCol.columnName);
                                     relMap.set(childCol, parentCol);
@@ -263,7 +261,6 @@ export class QueryExpressionVisitor {
                         throw new Error("select many not support select entity");
                     case "select": {
                         const relMap = new Map();
-                        param.commandExpression.includes = [];
                         for (const childCol of result.primaryColumns) {
                             const parentCol = param.commandExpression.projectedColumns.first(o => o.columnName === childCol.columnName);
                             relMap.set(childCol, parentCol);
@@ -487,6 +484,8 @@ export class QueryExpressionVisitor {
                         if (param.scope === "include")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
+                        // clear includes coz select one return selected value without it's relations
+                        selectOperand.includes = [];
                         const parentRelation = objectOperand.parentRelation;
                         const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
                         const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "select" || param.scope === "selectMany" ? expression.methodName : "" };
@@ -495,9 +494,6 @@ export class QueryExpressionVisitor {
                         this.scopeParameters.remove(selectorFn.params[0].name);
                         // todo recheck
                         selectOperand = param.commandExpression = visitParam.commandExpression;
-
-                        if (selectOperand instanceof GroupByExpression)
-                            selectOperand.includes = [];
 
                         // 123
                         if (expression.methodName === "select") {
