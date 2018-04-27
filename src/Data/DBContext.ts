@@ -9,6 +9,7 @@ import { IConnectionOption } from "./Interface/IConnectionOption";
 import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
+import { EntityEntry, EntityState } from "./Interface/IEntityEntry";
 
 export abstract class DbContext {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -45,7 +46,83 @@ export abstract class DbContext {
         }
         return result;
     }
-    public addedEntities: any[];
-    public removedEntities: any[];
-    public modifedEntities: any[];
+    public async saveChanges(): Promise<number> {
+        let queries = [];
+        const queryBuilder = new this.queryBuilder();
+        for (const addEntry of this.addedEntities) {
+            queries.push(queryBuilder.getInsertString(addEntry));
+        }
+        for (const modifedEntry of this.modifiedEntities) {
+            queries.push(queryBuilder.getInsertString(modifedEntry));
+        }
+        for (const removedEntry of this.deletedEntities) {
+            queries.push(queryBuilder.getInsertString(removedEntry));
+        }
+        const result = await this.executeQuery(queries.join(";\n"));
+        return result.sum(o => o.effectedRows);
+    }
+    public attach<T>(entity: T) {
+        const set = this.set(entity.constructor as any);
+        if (set) {
+            return set.attach(entity);
+        }
+    }
+    public add<T>(entity: T) {
+        const entry = this.attach(entity);
+        if (entry) {
+            this.changeState(entry, EntityState.Added);
+            return true;
+        }
+        return false;
+    }
+    public delete<T>(entity: T) {
+        const entry = this.attach(entity);
+        if (entry) {
+            this.changeState(entry, EntityState.Deleted);
+            return true;
+        }
+        return false;
+    }
+    public update<T>(entity: T, orignalValues: any) {
+        const entry = this.attach(entity);
+        if (entry) {
+            if (orignalValues instanceof Object)
+                entry.orignalValues = orignalValues;
+            this.changeState(entry, EntityState.Modified);
+            return true;
+        }
+        return false;
+    }
+    public changeState(entityEntry: EntityEntry, state: EntityState) {
+        switch (entityEntry.state) {
+            case EntityState.Added:
+                this.addedEntities.remove(entityEntry);
+                break;
+            case EntityState.Deleted:
+                this.deletedEntities.remove(entityEntry);
+                break;
+            case EntityState.Modified:
+                this.modifiedEntities.remove(entityEntry);
+                break;
+            case EntityState.Unchanged:
+                break;
+        }
+        switch (state) {
+            case EntityState.Added:
+                this.addedEntities.push(entityEntry);
+                break;
+            case EntityState.Deleted:
+                this.deletedEntities.push(entityEntry);
+                break;
+            case EntityState.Modified:
+                this.modifiedEntities.push(entityEntry);
+                break;
+            case EntityState.Unchanged:
+                break;
+        }
+        entityEntry.state = state;
+    }
+    public addedEntities: EntityEntry[];
+    public deletedEntities: EntityEntry[];
+    public modifiedEntities: EntityEntry[];
 }

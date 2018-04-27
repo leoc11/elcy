@@ -1,4 +1,4 @@
-import { ClassEventListener } from "../Common/ClassEventListener";
+import { EventListener } from "../Common/EventListener";
 import { GenericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
 import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } from "./Interface";
@@ -28,11 +28,11 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     // -------------------------------------------------------------------------
     // Event Listener
     // -------------------------------------------------------------------------
-    public beforeSave = new ClassEventListener<T, ISaveEventParam, boolean>(true);
-    public beforeDelete = new ClassEventListener<T, IDeleteEventParam, boolean>(true);
-    public afterLoad = new ClassEventListener<T, void, void>(false);
-    public afterSave = new ClassEventListener<T, ISaveEventParam, void>(false);
-    public afterDelete = new ClassEventListener<T, IDeleteEventParam, void>(false);
+    public beforeSave: (entity: T, param: ISaveEventParam) => boolean;
+    public beforeDelete: (entity: T, param: IDeleteEventParam) => boolean;
+    public afterLoad: (entity: T) => void;
+    public afterSave: (entity: T, param: ISaveEventParam) => void;
+    public afterDelete: (entity: T, param: IDeleteEventParam) => void;
 
     constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
         if (typeof name !== "undefined")

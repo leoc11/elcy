@@ -10,12 +10,11 @@ import { isValueType, hashCode } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { EntityEntry } from "./Interface/IEntityEntry";
-import { EntityBase } from "../Data/EntityBase";
+import { EntityEntry, EntityState } from "./Interface/IEntityEntry";
 import { IRelationMetaData } from "../MetaData/Interface/index";
 import { MasterRelationMetaData } from "../MetaData/Relation/index";
 
-export class DbSet<T extends EntityBase> extends Queryable<T> {
+export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.addParameters(this.parameters);
@@ -65,7 +64,7 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
         const key = this.getMapKey(entity);
         return this.dictionary.get(key);
     }
-    public attach(entity: T, loadTime?: Date): T {
+    public attach(entity: T, loadTime?: Date): EntityEntry<T> {
         const key = this.getMapKey(entity as any);
         if (!loadTime) loadTime = new Date();
         let entry = this.entry(key) as EntityEntry<T>;
@@ -88,26 +87,22 @@ export class DbSet<T extends EntityBase> extends Queryable<T> {
                         }).toArray();
                     }
                 }
-                // TODO: move this to EntityBase.OnPropertyChanged
-                // Don't set if value has the same value as current entity original value
-                else if (!entry!.entity.isPropertyModified(prop) || entry!.entity.propertyOriValue(prop) !== value)
-                    entry!.entity[prop] = value;
+
+                else if (!entry.isPropertyModified(prop) || entry.getOriginalValue(prop) !== value)
+                    entry.entity[prop] = value;
             });
         }
         else {
-            entry = new EntityEntry(entity, this.metaData.properties, loadTime);
+            entry = new EntityEntry(this, entity, this.metaData.properties, loadTime);
             this.dictionary.set(key, entry!);
             this.localCache.push(entity);
         }
-        return entry.entity;
+        return entry;
     }
-    protected getMapKey(id: ValueType | { [key in keyof T]: ValueType } | T): string {
-        if (isValueType(id.constructor as any)) {
-            return id.toString();
-        }
-        else {
-            return this.primaryKeys.reduce((res, current) => res + "|" + (id as any)[current], "");
-        }
+
+    protected getMapKey(id: { [key in keyof T]: ValueType } | T): string {
+        const keyString = this.primaryKeys.reduce((res, current) => res + "|" + (id as any)[current], "");
+        return keyString;
     }
 
 }

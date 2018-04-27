@@ -38,6 +38,7 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
+import { EntityEntry } from "../Data/Interface/IEntityEntry";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -1010,5 +1011,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
+    }
+
+    public getInsertString(entity: EntityEntry): string {
+        return "";
     }
 }
