@@ -1,5 +1,4 @@
 import { GenericType, ValueType } from "../Common/Type";
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { Queryable } from "../Queryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
@@ -19,6 +18,7 @@ import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
+import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -28,7 +28,7 @@ declare module "./Queryable" {
         orderBy(...selectors: IQueryableOrderDefinition[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
+        groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
         distinct(): Queryable<T>;
         innerJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
@@ -60,7 +60,7 @@ Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Query
 Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Queryable<T> {
     return new TakeQueryable(this, take);
 };
-Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>> {
+Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<IGroupArray<T, K>> {
     return new GroupByQueryable(this, keySelector);
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {

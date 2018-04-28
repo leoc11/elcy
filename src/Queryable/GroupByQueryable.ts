@@ -6,8 +6,9 @@ import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 
-export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
+export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     public expression: SelectExpression<GroupedEnumerable<T, K>>;
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression<T, any>;

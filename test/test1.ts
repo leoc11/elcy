@@ -1,7 +1,7 @@
 import { IncludeQueryable } from "../src/Queryable/IncludeQueryable";
 import { MyDb } from "./Common/MyDb";
 import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, AdditionExpression, ValueExpression, LessEqualExpression, MultiplicationExpression } from "../src/ExpressionBuilder/Expression";
-import { Order, OrderDetail, Product } from "./Common/Model";
+import { Order, OrderDetail, Product, OrderDetailProperty } from "./Common/Model";
 import "mocha";
 import "../src/Extensions/DateExtension";
 import { expect, should } from "chai";
@@ -381,6 +381,21 @@ describe("WHERE", async () => {
         should();
         a.should.be.an("array").and.has.length.greaterThan(0);
         a[0].should.be.an.instanceof(OrderDetail);
+    });
+    it("work with groupBy", async () => {
+        const db = new MyDb();
+        let where = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate)
+            .where(o => o.count() >= 1)
+            .select(o => o.key).where(o => o.getDate() > 15).orderBy({ selector: o => o });
+        const queryString = where.toString();
+
+        expect(queryString).to.equal("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY [entity0].[OrderDate]\nHAVING ((COUNT(*) >= 1) AND (DAY([entity0].[OrderDate]) > 15))\nORDER BY [entity0].[OrderDate] ASC"
+            , "query not equals");
+
+        const a = await where.toArray();
+        should();
+        a.should.be.an("array").and.has.length.greaterThan(0);
+        a[0].should.be.an("date");
     });
 });
 describe("ORDER BY", async () => {
@@ -995,7 +1010,7 @@ describe("GROUP BY", async () => {
         }));
         const queryString = groupBy.toString();
 
-        expect(queryString).to.equal("SELECT (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate])) AS [key],\n\tCOUNT(*) AS [column0],\n\tSUM([entity1].[TotalAmount]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t[entity1].[TotalAmount]\n\tFROM [Orders] AS [entity1]\n\tWHERE ([entity1].[TotalAmount] < 10000)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nGROUP BY (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate]))"
+        expect(queryString).to.equal("SELECT (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate])) AS [key],\n\tCOUNT(*) AS [count],\n\tSUM([entity1].[TotalAmount]) AS [sum]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t[entity1].[TotalAmount]\n\tFROM [Orders] AS [entity1]\n\tWHERE ([entity1].[TotalAmount] < 10000)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nGROUP BY (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate]))"
             , "query not equals");
 
         const a = await groupBy.toArray();
@@ -1089,7 +1104,7 @@ describe("GROUP BY", async () => {
         }));
         const queryString = groupBy.toString();
 
-        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderId] nvarchar(255),\n\t[column0] decimal,\n\t[column1] decimal\n);\nINSERT INTO @temp_entity0\nSELECT [entity0].[OrderId],\n\tCOUNT(*) AS [column0],\n\tSUM([entity2].[Quantity]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS entity2\n\tON [entity0].[OrderDetailId] = [entity2].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY [entity0].[OrderId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN @temp_entity0 AS [entity3]\n\tON [entity1].[OrderId] = [entity3].[OrderId];"
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderId] nvarchar(255),\n\t[count] decimal,\n\t[sum] decimal\n);\nINSERT INTO @temp_entity0\nSELECT [entity0].[OrderId],\n\tCOUNT(*) AS [count],\n\tSUM([entity2].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS entity2\n\tON [entity0].[OrderDetailId] = [entity2].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY [entity0].[OrderId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN @temp_entity0 AS [entity3]\n\tON [entity1].[OrderId] = [entity3].[OrderId];"
             , "query not equals");
 
         const a = await groupBy.toArray();
@@ -1109,7 +1124,7 @@ describe("GROUP BY", async () => {
         }));
         const queryString = groupBy.toString();
 
-        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderId] nvarchar(255),\n\t[column0] decimal,\n\t[column1] decimal\n);\nINSERT INTO @temp_entity0\nSELECT [entity1].[OrderId],\n\tCOUNT(*) AS [column0],\n\tSUM([entity3].[Amount]) AS [column1]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE NOT(\n\t\t([entity1].[isDeleted] = CAST (1 AS BIT))\n\t)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS entity3\n\tON [entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId]\nGROUP BY [entity1].[OrderId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN @temp_entity0 AS [entity4]\n\tON [entity2].[OrderId] = [entity4].[OrderId];"
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderId] nvarchar(255),\n\t[count] decimal,\n\t[sum] decimal\n);\nINSERT INTO @temp_entity0\nSELECT [entity1].[OrderId],\n\tCOUNT(*) AS [count],\n\tSUM([entity3].[Amount]) AS [sum]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE NOT(\n\t\t([entity1].[isDeleted] = CAST (1 AS BIT))\n\t)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS entity3\n\tON [entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId]\nGROUP BY [entity1].[OrderId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN @temp_entity0 AS [entity4]\n\tON [entity2].[OrderId] = [entity4].[OrderId];"
             , "query not equals");
 
         const a = await groupBy.toArray();
@@ -1203,7 +1218,7 @@ describe("GROUP BY", async () => {
         }));
         const queryString = groupBy.toString();
 
-        expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tAVG([entity0].[Quantity]) AS [column1],\n\tCOUNT(*) AS [column2],\n\tSUM([entity1].[Quantity]) AS [column3]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[Quantity] > 1)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
+        expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT(*) AS [count],\n\tSUM([entity1].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[Quantity] > 1)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
             , "query not equals");
 
         const a = await groupBy.toArray();
@@ -1230,7 +1245,7 @@ describe("GROUP BY", async () => {
         }));
         const queryString = groupBy.toString();
 
-        expect(queryString).to.equal("SELECT DAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price],\n\tAVG([entity0].[Quantity]) AS [column1],\n\tCOUNT(*) AS [column2],\n\tSUM([entity3].[Quantity]) AS [column3]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\t[entity3].[Quantity]\n\tFROM [OrderDetails] AS [entity3]\n\tWHERE ([entity3].[Quantity] > 1)\n) AS entity3\n\tON [entity0].[OrderDetailId] = [entity3].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]"
+        expect(queryString).to.equal("SELECT DAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT(*) AS [count],\n\tSUM([entity3].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\t[entity3].[Quantity]\n\tFROM [OrderDetails] AS [entity3]\n\tWHERE ([entity3].[Quantity] > 1)\n) AS entity3\n\tON [entity0].[OrderDetailId] = [entity3].[OrderDetailId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]"
             , "query not equals");
 
         const a = await groupBy.toArray();
@@ -1256,6 +1271,74 @@ describe("GROUP BY", async () => {
         should();
         a.should.be.a("array");
         a[0].should.be.a("string");
+    });
+
+    it("groupBy.(o => o.column)", async () => {
+        const db = new MyDb();
+        const groupBy = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate.getDate())
+            .where(o => o.count() >= 1);
+        const queryString = groupBy.toString();
+
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[key] decimal\n);\nINSERT INTO @temp_entity0\nSELECT DAY([entity0].[OrderDate]) AS [key]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY DAY([entity0].[OrderDate])\nHAVING (COUNT(*) >= 1);\nSELECT * FROM @temp_entity0;\n\nSELECT [entity0].[OrderId],\n\tDAY([entity0].[OrderDate]) AS [key],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN @temp_entity0 AS [entity1]\n\tON DAY([entity0].[OrderDate]) = [entity1].[key]\nWHERE ([entity0].[TotalAmount] > 20000);"
+            , "query not equals");
+
+        const a = await groupBy.toArray();
+
+        should();
+        a.should.be.a("array");
+        a[0].should.be.a("array").with.property("key").which.is.a("number");
+        a[0][0].should.be.an.instanceof(Order);
+    });
+    it("groupBy.(o => o.toOneRelation.toOneRelation)", async () => {
+        const db = new MyDb();
+        const groupBy = db.orderDetailProperties.groupBy(o => o.OrderDetail.Order);
+        const queryString = groupBy.toString();
+
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderId] nvarchar(255)\n);\nINSERT INTO @temp_entity0\nSELECT [entity1].[OrderId]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE NOT(\n\t\t([entity1].[isDeleted] = CAST (1 AS BIT))\n\t)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nGROUP BY [entity1].[OrderId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN @temp_entity0 AS [entity3]\n\tON [entity2].[OrderId] = [entity3].[OrderId];\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity1].[OrderId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE NOT(\n\t\t([entity1].[isDeleted] = CAST (1 AS BIT))\n\t)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nINNER JOIN @temp_entity0 AS [entity3]\n\tON [entity1].[OrderId] = [entity3].[OrderId];"
+            , "query not equals");
+
+        const a = await groupBy.toArray();
+
+        should();
+        a.should.be.a("array");
+        a[0].should.be.a("array").with.property("key").which.is.an.instanceof(Order);
+        a[0][0].should.be.an.instanceof(OrderDetailProperty);
+    });
+    it("groupBy.(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column }))", async () => {
+        const db = new MyDb();
+        const groupBy = db.orderDetails.groupBy(o => ({
+            date: o.Order.OrderDate.getDate(),
+            price: o.Product.Price
+        }));
+        const queryString = groupBy.toString();
+
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[column0] decimal,\n\t[Price] bigint\n);\nINSERT INTO @temp_entity0\nSELECT DAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity0].[OrderDetailId],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nINNER JOIN @temp_entity0 AS [entity3]\n\tON DAY([entity1].[OrderDate]) = [entity3].[column0] AND [entity2].[Price] = [entity3].[Price]\nWHERE NOT(\n\t([entity0].[isDeleted] = CAST (1 AS BIT))\n);"
+            , "query not equals");
+
+        const a = await groupBy.toArray();
+
+        should();
+        a.should.be.a("array");
+        a[0].should.be.a("array").with.property("key").which.has.property("price").which.is.a("number");
+        a[0].should.has.property("key").which.has.property("price").which.is.a("number");
+        a[0][0].should.be.an.instanceof(OrderDetail);
+    });
+    it("groupBy.(o => ({col: o.toOneRelation }))", async () => {
+        const db = new MyDb();
+        const groupBy = db.orderDetailProperties.groupBy(o => ({
+            od: o.OrderDetail
+        }));
+        const queryString = groupBy.toString();
+
+        expect(queryString).to.equal("DECLARE @temp_entity0  TABLE\n(\n\t[OrderDetailId] nvarchar(255)\n);\nINSERT INTO @temp_entity0\nSELECT [entity0].[OrderDetailId]\nFROM [OrderDetailProperties] AS [entity0]\nGROUP BY [entity0].[OrderDetailId];\nSELECT * FROM @temp_entity0;\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN @temp_entity0 AS [entity2]\n\tON [entity1].[OrderDetailId] = [entity2].[OrderDetailId]\nWHERE NOT(\n\t([entity1].[isDeleted] = CAST (1 AS BIT))\n);\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN @temp_entity0 AS [entity2]\n\tON [entity0].[OrderDetailId] = [entity2].[OrderDetailId];"
+            , "query not equals");
+
+        const a = await groupBy.toArray();
+
+        should();
+        a.should.be.a("array");
+        a[0].should.be.a("array").with.property("key").which.has.property("od").which.is.an.instanceof(OrderDetail);
+        a[0][0].should.be.an.instanceof(OrderDetailProperty);
     });
 });
 describe("PARAMETERS", async () => {

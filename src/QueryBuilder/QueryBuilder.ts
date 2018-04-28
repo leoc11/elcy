@@ -262,7 +262,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
             }
             if (select.having) {
-                result += this.newLine() + "HAVING " + this.getExpressionString(select.having);
+                result += this.newLine() + "HAVING " + this.getOperandString(select.having);
             }
         }
         if (select.orders.length > 0)
@@ -428,7 +428,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 const jstr: string[] = [];
                 for (const [key, val] of o.relations) {
-                    jstr.push(this.getJoinColumnString(o.parent.entity, key) + " = " + this.getJoinColumnString(o.child.entity, val));
+                    jstr.push(this.getJoinColumnString(key.entity, key) + " = " + this.getJoinColumnString(o.child.entity, val));
                 }
                 return join + jstr.join(" AND ");
             }).toArray().join(this.newLine());

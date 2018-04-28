@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";

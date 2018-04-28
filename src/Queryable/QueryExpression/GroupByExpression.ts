@@ -4,6 +4,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IEntityExpression, ComputedColumnExpression } from ".";
+import { RelationType } from "../../Common/Type";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -12,7 +13,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     public readonly key: IExpression;
     public itemExpression: IExpression;
     protected selectori: SelectExpression<T>;
-    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression) {
+    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression, a?: boolean) {
         super(select.entity);
         this.selects = [];
         if (select.parentRelation)
@@ -23,12 +24,6 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         this.key = key;
         for (const join of select.joins) {
             const child = join.child.clone();
-            if (join.child.entity === this.key as any) {
-                this.key = child.entity as any;
-            }
-            else if (join.child === this.key as any) {
-                this.key = child as any;
-            }
             const relationMap = new Map();
             for (const [parentCol, childCol] of join.relations) {
                 const cloneCol = this.entity.columns.first(c => c.columnName === parentCol.columnName);
@@ -39,12 +34,6 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         }
         for (const include of select.includes) {
             const child = include.child.clone();
-            if (include.child.entity === this.key as any) {
-                this.key = child.entity as any;
-            }
-            else if (include.child === this.key as any) {
-                this.key = child as any;
-            }
             const relationMap = new Map();
             for (const [parentCol, childCol] of include.relations) {
                 let cloneCol = this.entity.columns.first(c => c.columnName === parentCol.columnName);
@@ -63,6 +52,13 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         }
         else {
             groupExp = new GroupedExpression(this);
+        }
+        if (a) {
+            const itemRelMap = new Map();
+            for (const col of groupBy) {
+                itemRelMap.set(col, col);
+            }
+            this.addInclude("", groupExp, itemRelMap, RelationType.OneToMany);
         }
         this.select = groupExp;
         this.itemExpression = this.select;
@@ -91,6 +87,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                 const join = selectClone.joins.first(j => j.child.entity.type === o.entity.type);
                 cloneCol = join.child.entity.columns.first(c => c.columnName === o.columnName);
             }
+            cloneCol.propertyName = o.propertyName;
             return cloneCol;
         }).toArray();
         let key: IExpression;
@@ -126,9 +123,22 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             }
             key = new ObjectValueExpression(obj);
         }
-        const clone = new GroupByExpression(selectClone, groupBy, key);
+        const hasItems = this.includes.any(o => o.name === "");
+        const clone = new GroupByExpression(selectClone, groupBy, key, hasItems);
+        if (this.having)
+            clone.having = this.having.clone();
+
         if (this.itemExpression !== this.select)
             clone.itemExpression = this.itemExpression;
+
+        clone.selects = this.selects.select(o => {
+            let col = clone.projectedColumns.first(c => c.columnName === o.columnName);
+            if (!col) {
+                col = o.clone();
+                col.entity = clone.entity;
+            }
+            return col;
+        }).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
     }

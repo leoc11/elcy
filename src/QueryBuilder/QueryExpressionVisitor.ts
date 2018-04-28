@@ -35,7 +35,7 @@ import { ComputedColumnMetaData } from "../MetaData";
 
 interface IPRelation {
     name: string;
-    relationMaps: Map<any, any>;
+    relations: Map<any, any>;
     child: SelectExpression<any>;
     type: RelationType;
 }
@@ -362,7 +362,7 @@ export class QueryExpressionVisitor {
                     const pr: IPRelation = {
                         name: prop,
                         child: cloneSelect,
-                        relationMaps: relMap,
+                        relations: relMap,
                         type: RelationType.OneToOne
                     };
                     joinRelations.push(pr);
@@ -380,7 +380,7 @@ export class QueryExpressionVisitor {
                     const pr: IPRelation = {
                         name: prop,
                         child: cloneSelect,
-                        relationMaps: relationMap,
+                        relations: relationMap,
                         type: RelationType.OneToOne
                     };
                     joinRelations.push(pr);
@@ -401,7 +401,7 @@ export class QueryExpressionVisitor {
                     const pr: IPRelation = {
                         name: prop,
                         child: valueExp.select,
-                        relationMaps: parentRel.relations,
+                        relations: parentRel.relations,
                         type: RelationType.OneToOne
                     };
                     joinRelations.push(pr);
@@ -420,7 +420,7 @@ export class QueryExpressionVisitor {
                 const pr: IPRelation = {
                     name: prop,
                     child: childSelect,
-                    relationMaps: relMap,
+                    relations: relMap,
                     type: RelationType.OneToMany
                 };
                 joinRelations.push(pr);
@@ -444,7 +444,7 @@ export class QueryExpressionVisitor {
                 const pr: IPRelation = {
                     name: prop,
                     child: valueExp,
-                    relationMaps: parentRel.relations,
+                    relations: parentRel.relations,
                     type: RelationType.OneToMany
                 };
                 joinRelations.push(pr);
@@ -469,7 +469,7 @@ export class QueryExpressionVisitor {
             }
         }
         for (const rel of joinRelations)
-            selectOperand.addInclude(rel.name, rel.child, rel.relationMaps, rel.type);
+            selectOperand.addInclude(rel.name, rel.child, rel.relations, rel.type);
         return newSelects;
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
@@ -486,6 +486,7 @@ export class QueryExpressionVisitor {
 
                         // clear includes coz select one return selected value without it's relations
                         selectOperand.includes = [];
+                        
                         const parentRelation = objectOperand.parentRelation;
                         const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
                         const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "select" || param.scope === "selectMany" ? expression.methodName : "" };
@@ -543,6 +544,7 @@ export class QueryExpressionVisitor {
                             const clone = selectOperand.clone();
                             clone.entity.alias = this.newAlias();
                             clone.where = null;
+                            clone.joins = [];
                             const map = new Map();
                             for (const parentCol of selectOperand.entity.primaryColumns) {
                                 const childCol = clone.entity.columns.first(o => o.columnName === parentCol.columnName);
@@ -597,6 +599,7 @@ export class QueryExpressionVisitor {
                         if (param.scope === "include")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
+                        selectOperand.includes = [];
                         const parentRelation = objectOperand.parentRelation;
                         const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
                         const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
@@ -612,6 +615,7 @@ export class QueryExpressionVisitor {
 
                         let groupColumns: IColumnExpression[] = [];
                         let key = selectExp;
+                        let selectColumns: IColumnExpression[] = [];
                         if ((selectExp as IEntityExpression).primaryColumns) {
                             const entityExp = selectExp as IEntityExpression;
                             groupColumns.push(...(Array.from(entityExp.select.parentRelation.relations.keys())));
@@ -623,11 +627,7 @@ export class QueryExpressionVisitor {
                         else if (selectExp instanceof ObjectValueExpression) {
                             for (const prop in selectExp.object) {
                                 const value = selectExp.object[prop];
-                                if ((value as IColumnExpression).entity) {
-                                    value.propertyName = "key." + prop;
-                                    groupColumns.push(value);
-                                }
-                                else if ((value as IEntityExpression).primaryColumns) {
+                                if ((value as IEntityExpression).primaryColumns) {
                                     const entityExp = value as IEntityExpression;
                                     for (const [parentCol] of entityExp.select.parentRelation.relations) {
                                         groupColumns.push(parentCol);
@@ -640,11 +640,17 @@ export class QueryExpressionVisitor {
                                 else if (value instanceof SelectExpression) {
                                     throw new Error(`${prop} Array not supported`);
                                 }
+                                else if ((value as IColumnExpression).entity) {
+                                    value.propertyName = "key." + prop;
+                                    groupColumns.push(value);
+                                    selectColumns.push(value);
+                                }
                                 else {
                                     const col = new ComputedColumnExpression(selectOperand.entity, value, this.newAlias("column"));
                                     col.propertyName = "key." + prop;
                                     selectExp.object[prop] = col;
                                     groupColumns.push(col);
+                                    selectColumns.push(col);
                                 }
                             }
                         }
@@ -652,16 +658,18 @@ export class QueryExpressionVisitor {
                             const column = (selectExp as IColumnExpression).clone();
                             column.propertyName = "key";
                             groupColumns.push(column);
+                            selectColumns.push(column);
                             key = column;
                         }
                         else {
                             const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
                             groupColumns.push(column);
+                            selectColumns.push(column);
                             key = column;
                         }
 
-                        const groupByExp = new GroupByExpression(selectOperand, groupColumns, key);
-
+                        const groupByExp = new GroupByExpression(selectOperand, groupColumns, key, true);
+                        groupByExp.selects = selectColumns.slice(0);
                         if (parentRelation) {
                             parentRelation.child = groupByExp;
                             groupByExp.parentRelation = parentRelation;
@@ -705,19 +713,21 @@ export class QueryExpressionVisitor {
                         if (param.scope === "include")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const column = new ComputedColumnExpression(objectOperand.entity, new MethodCallExpression(objectOperand, expression.methodName, [], Number), this.newAlias("column"));
+                        const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
                         if (param.scope === expression.methodName) {
                             // call from queryable
+                            const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                             objectOperand.selects = [column];
                             objectOperand.itemExpression = column;
                             objectOperand.isAggregate = true;
                             return objectOperand;
                         }
                         else if (selectOperand instanceof GroupedExpression) {
-                            return column;
+                            return countExp;
                         }
                         else {
                             // any is used on related entity. change query to groupby.
+                            const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                             const groupBy = [];
                             const keyObject: any = {};
                             for (const [, entityCol] of selectOperand.parentRelation.relations) {
@@ -752,19 +762,20 @@ export class QueryExpressionVisitor {
                             selectOperand = selectExpression;
                         }
 
-                        const column = new ComputedColumnExpression(selectOperand.entity, new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.select(o => {
+                        const aggregateExp = new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.select(o => {
                             if (o instanceof ComputedColumnExpression)
                                 return o.expression;
                             return o;
-                        }).toArray(), Number), this.newAlias("column"));
+                        }).toArray(), Number);
                         if (param.scope === expression.methodName) {
                             // call from queryable
+                            const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
                             objectOperand.selects = [column];
                             objectOperand.isAggregate = true;
                             return objectOperand;
                         }
                         else if (selectOperand instanceof GroupedExpression) {
-                            return column;
+                            return aggregateExp;
                         }
                         else {
                             // any is used on related entity. change query to groupby.
@@ -775,9 +786,9 @@ export class QueryExpressionVisitor {
                                 keyObject[entityCol.propertyName] = entityCol;
                             }
                             const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                            const flagColumn = column;
-                            groupExp.selects.push(flagColumn);
-                            return flagColumn;
+                            const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
+                            groupExp.selects.push(column);
+                            return column;
                         }
                     }
                 case "all":
@@ -794,13 +805,17 @@ export class QueryExpressionVisitor {
                             const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                             this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
                         }
-                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(isAny), this.newAlias("column"));
+                        const anyExp = new ValueExpression(isAny);
                         if (param.scope === expression.methodName) {
                             // call from queryable
+                            const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                             objectOperand.selects = [column];
                             objectOperand.paging.take = 1;
                             objectOperand.isAggregate = true;
                             return objectOperand;
+                        }
+                        else if (selectOperand instanceof GroupedExpression) {
+                            return anyExp;
                         }
                         else {
                             // any is used on related entity. change query to groupby.
@@ -811,6 +826,7 @@ export class QueryExpressionVisitor {
                                 keyObject[entityCol.propertyName] = entityCol;
                             }
                             const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                            const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                             groupExp.selects.push(column);
                             return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
                         }

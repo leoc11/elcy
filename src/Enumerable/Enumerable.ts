@@ -1,8 +1,13 @@
-export const keyComparer = <T>(a: T, b: T) => {
+export const keyComparer = <T = any>(a: T, b: T) => {
     let result = a === b;
     if (!result && a instanceof Object) {
         try {
-            result = JSON.stringify(a) === JSON.stringify(b);
+            const aKeys = Object.keys(a);
+            const bKeys = Object.keys(b);
+            result = aKeys.length === bKeys.length;
+            if (result) {
+                result = aKeys.all(o => b.hasOwnProperty(o) && (b as any)[o] === (a as any)[o]);
+            }
         }
         catch (e) {
 

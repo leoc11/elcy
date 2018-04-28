@@ -67,7 +67,13 @@ const db = new MyDb();
     //     price: o.Product.Price
     // })).toArray();
 
-    const d = 1;
-    
+    /// const where = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).toArray();
 
+    // const groupBy = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
+    
+    const groupBy = await db.orderDetailProperties.groupBy(o => ({
+        od: o.OrderDetail
+    })).toArray();
+    // const a = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
+    const d = 1;
 })();

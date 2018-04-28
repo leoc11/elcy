@@ -16,13 +16,13 @@ export class ValueExpression<T> extends ExpressionBase<T> {
     }
     constructor(public readonly value: T, private expressionString: string = "") {
         super();
-        if (this.expressionString === "") {
-            this.expressionString = JSON.stringify(this.value);
-        }
     }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
+
+        if (this.expressionString === "")
+            this.expressionString = JSON.stringify(this.value);
         return this.expressionString;
     }
     public execute() {

@@ -1,9 +1,7 @@
-import { IncludeQueryable } from "../src/Queryable/IncludeQueryable";
-import { MyDb } from "./Common/MyDb";
 import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, } from "../src/ExpressionBuilder/Expression";
-import { Order, OrderDetail, Product } from "./Common/Model";
+import { Order, OrderDetail } from "./Common/Model";
 import "mocha";
-import { expect, should } from "chai";
+import { expect } from "chai";
 import { ExpressionBuilder } from "../src/ExpressionBuilder/ExpressionBuilder";
 
 const param = new ParameterExpression("o", Order);

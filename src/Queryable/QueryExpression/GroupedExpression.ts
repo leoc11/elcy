@@ -29,6 +29,8 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
     }
     constructor(public readonly select: GroupByExpression<T>) {
         super(select.entity);
+        this.joins = select.joins.slice(0);
+        this.includes = [];
     }
     public clone(): GroupedExpression<T> {
         const clone = new GroupedExpression(this.select.clone());
