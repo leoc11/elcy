@@ -1,5 +1,3 @@
-export * from "./ForeignKeyMetaData";
-export * from "./MasterRelationMetaData";
-export * from "./SlaveRelationMetaData";
+export * from "./RelationMetaData";
 export * from "./InheritanceMetaData";
 export * from "./InheritedColumnMetaData";

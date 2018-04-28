@@ -17,6 +17,6 @@ export function BeforeSave<T = any>(handler?: (this: T, item?: ISaveEventParam) 
             handler = descriptor.value;
 
         if (handler)
-            entityMetaData.beforeSave.add(handler);
+            entityMetaData.beforeSave = handler;
     };
 }

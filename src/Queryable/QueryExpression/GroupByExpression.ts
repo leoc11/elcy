@@ -4,7 +4,6 @@ import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IEntityExpression, ComputedColumnExpression } from ".";
-import { RelationType } from "../../Common/Type";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -58,7 +57,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             for (const col of groupBy) {
                 itemRelMap.set(col, col);
             }
-            this.addInclude("", groupExp, itemRelMap, RelationType.OneToMany);
+            this.addInclude("", groupExp, itemRelMap, "many");
         }
         this.select = groupExp;
         this.itemExpression = this.select;

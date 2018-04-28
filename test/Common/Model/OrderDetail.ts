@@ -1,15 +1,13 @@
 import { PrimaryKey, DateColumn, DeleteColumn, StringColumn, ComputedColumn } from "../../../src/Decorator/Column/index";
 import { Entity } from "../../../src/Decorator/Entity/index";
-import { ListRelation } from "../../../src/Decorator/Relation/ListRelation";
 import { Order } from "./Order";
-import { EntityBase } from "../../../src/Data/EntityBase";
-import { Product } from ".";
-import { ScalarRelation } from "../../../src/Decorator/Relation/ScalarRelation";
+import { Product } from "./Product";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { OrderDetailProperty } from "./OrderDetailProperty";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 
 @Entity("OrderDetails")
-export class OrderDetail extends EntityBase {
+export class OrderDetail {
     @PrimaryKey()
     @StringColumn({ columnType: "nvarchar" })
     public OrderDetailId: string;
@@ -25,14 +23,13 @@ export class OrderDetail extends EntityBase {
     public CreatedDate: Date;
     @ComputedColumn<OrderDetail>(o => o.quantity * o.Product.Price)
     public GrossSales: number;
-    
+
     @DeleteColumn()
     public isDeleted: boolean;
-    @ListRelation<OrderDetail, Order>(Order, [(s) => s.OrderId], [(a) => a.OrderId], (o) => o.OrderDetails)
+    @Relationship<OrderDetail>("has", "by", "one", Order || "Order", [(o) => o.OrderId])
     public Order: Order;
-    
-    @ScalarRelation<OrderDetail, Product>(Product, [(s) => s.ProductId], [(a) => a.ProductId])
+    @Relationship<OrderDetail>("has", "by", "one", Product || "Product", [(o) => o.ProductId])
     public Product: Product;
-    // @ListRelation<OrderDetail, OrderDetailProperty>(OrderDetailProperty, [(s) => s.OrderDetailId], [(a) => a.OrderDetailId])
+    @Relationship<OrderDetail>("has", "many", OrderDetailProperty || "OrderDetailProperty", [(o) => o.OrderDetailId])
     public OrderDetailProperties: OrderDetailProperty[];
 }

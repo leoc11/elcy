@@ -16,6 +16,6 @@ export function BeforeDelete<T = any>(handler?: (this: T, param?: IDeleteEventPa
             handler = descriptor.value;
 
         if (handler)
-            entityMetaData.beforeDelete.add(handler);
+            entityMetaData.beforeDelete = handler;
     };
 }

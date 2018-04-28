@@ -91,7 +91,7 @@ export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOpt
                 return this[privatePropertySymbol];
             },
             configurable: true,
-            enumerable: true,
+            enumerable: true
         };
 
         Object.defineProperty(target, propertyKey, descriptor);

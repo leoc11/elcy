@@ -138,7 +138,4 @@ export class Enumerable<T = any> {
         }
         return false;
     }
-    public include(...includes: Array<(item: T) => any>): Enumerable<T> {
-        return this;
-    }
 }

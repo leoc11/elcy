@@ -16,6 +16,6 @@ export function AfterLoad<T = any>(handler?: (this: T) => void): MethodDecorator
             handler = descriptor.value;
 
         if (handler)
-            entityMetaData.afterLoad.add(handler);
+            entityMetaData.afterLoad = handler;
     };
 }

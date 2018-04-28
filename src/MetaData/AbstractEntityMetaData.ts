@@ -1,20 +1,19 @@
 import { ClassBase, GenericType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IndexMetaData } from "../MetaData";
-import { InheritanceMetaData } from "../MetaData/Relation";
+import { InheritanceMetaData, RelationMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
 import { IOrderCondition } from "./Interface/IOrderCondition";
-import { ForeignKeyMetaData } from "./Relation";
 
 export class AbstractEntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
     public defaultOrder?: IOrderCondition[];
-    public primaryKeys: string[] = [];
+    public primaryKeys: Array<keyof T> = [];
     public deleteProperty?: string;
+    public relations: { [key: string]: RelationMetaData<T, any> } = {};
     public createDateProperty?: string;
     public modifiedDateProperty?: string;
     public properties: string[] = [];
-    public foreignKeys: { [key: string]: ForeignKeyMetaData<T, any> } = {};
     public indices: { [key: string]: IndexMetaData } = {};
     public computedProperties: string[] = [];
 

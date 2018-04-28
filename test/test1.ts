@@ -17,12 +17,13 @@ describe("INCLUDE", () => {
         const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
         const queryString = projection.toString();
 
-        expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount]\nFROM [Orders] AS [entity0]", "query not equals");
+        expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount]\nFROM [Orders] AS [entity0]"
+            , "query not equals");
 
         const a = await projection.toArray();
         expect(a).length.greaterThan(0);
-        expect(a[0]).has.property("TotalAmount").not.equal(undefined, "TotalAmount not loaded");
-        expect(a[0]).to.not.has.property("OrderDate");
+        expect(a[0]).has.property("TotalAmount").not.equal(undefined);
+        expect(a[0].OrderDate).equal(undefined);
     });
     it("should eager load list navigation property", async () => {
         const db = new MyDb();

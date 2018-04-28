@@ -1,20 +1,20 @@
 import { GenericType } from "../../Common/Type";
 import { IndexMetaData } from "../../MetaData";
-import { ForeignKeyMetaData, InheritanceMetaData } from "../Relation";
+import { InheritanceMetaData, RelationMetaData } from "../Relation";
 import { IOrderCondition } from "./IOrderCondition";
 
 export interface IEntityMetaData<T extends TParent, TParent = any> {
     defaultOrder?: IOrderCondition[];
-    primaryKeys: string[];
+    primaryKeys: Array<keyof T>;
     deleteProperty?: string;
     createDateProperty?: string;
     modifiedDateProperty?: string;
     properties: string[];
-    foreignKeys: { [key: string]: ForeignKeyMetaData<T, any> };
     indices: { [key: string]: IndexMetaData };
     computedProperties: string[];
     type: GenericType<T>;
     descriminatorMember?: string;
     allowInheritance: boolean;
     inheritance: InheritanceMetaData<TParent>;
+    relations: { [key: string]: RelationMetaData<T, any> };
 }

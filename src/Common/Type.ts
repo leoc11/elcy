@@ -4,6 +4,7 @@ export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type ValueType = number | string | Date | TimeSpan;
+export type RelationshipType = "one" | "many";
 export const ClassBase = Object.getPrototypeOf(Function);
 export enum DateTimeKind {
     UTC,
@@ -15,10 +16,6 @@ export enum InheritanceType {
     SingleTable,
     TablePerConcreteClass,
     None
-}
-export enum RelationType {
-    OneToOne,
-    OneToMany
 }
 export enum OrderDirection {
     ASC = "ASC",

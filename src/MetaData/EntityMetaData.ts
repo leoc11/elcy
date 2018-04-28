@@ -1,20 +1,20 @@
-import { EventListener } from "../Common/EventListener";
 import { GenericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
 import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } from "./Interface";
-import { ForeignKeyMetaData, InheritanceMetaData } from "./Relation";
+import { InheritanceMetaData } from "./Relation";
+import { RelationMetaData } from "./Relation/RelationMetaData";
 
 export class EntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
     public schema: string = "dbo";
     public name: string;
     public defaultOrder?: IOrderCondition[];
-    public primaryKeys: string[] = [];
+    public primaryKeys: Array<keyof T> = [];
     public deleteProperty: string;
     public createDateProperty: string;
     public modifiedDateProperty: string;
     public properties: string[] = [];
-    public foreignKeys: { [key: string]: ForeignKeyMetaData<T, any> } = {};
     public indices: { [key: string]: IndexMetaData } = {};
+    public relations: { [key: string]: RelationMetaData<T, any> } = {};
     public computedProperties: string[] = [];
 
     // inheritance
@@ -43,7 +43,7 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
             this.name = type.name!;
     }
 
-    public ApplyOption(entityMeta: IEntityMetaData<any>) {
+    public ApplyOption(entityMeta: IEntityMetaData<T>) {
         if (typeof entityMeta.computedProperties !== "undefined")
             this.computedProperties = entityMeta.computedProperties;
         if (typeof entityMeta.createDateProperty !== "undefined")
@@ -52,14 +52,14 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
             this.defaultOrder = entityMeta.defaultOrder;
         if (typeof entityMeta.deleteProperty !== "undefined")
             this.deleteProperty = entityMeta.deleteProperty;
-        if (typeof entityMeta.foreignKeys !== "undefined")
-            this.foreignKeys = entityMeta.foreignKeys;
         if (typeof entityMeta.indices !== "undefined")
             this.indices = entityMeta.indices;
         if (typeof entityMeta.modifiedDateProperty !== "undefined")
             this.modifiedDateProperty = entityMeta.modifiedDateProperty;
         if (typeof entityMeta.primaryKeys !== "undefined")
             this.primaryKeys = entityMeta.primaryKeys;
+        if (typeof entityMeta.relations !== "undefined")
+            this.relations = entityMeta.relations;
         if (typeof entityMeta.properties !== "undefined")
             this.properties = entityMeta.properties;
     }

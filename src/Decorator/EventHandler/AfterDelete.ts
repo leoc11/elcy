@@ -16,6 +16,6 @@ export function AfterDelete<T = any>(handler?: (this: T, item?: IDeleteEventPara
             handler = descriptor.value;
 
         if (handler)
-            entityMetaData.afterDelete.add(handler);
+            entityMetaData.afterDelete = handler;
     };
 }

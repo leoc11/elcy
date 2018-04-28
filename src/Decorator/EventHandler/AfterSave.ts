@@ -16,6 +16,6 @@ export function AfterSave<T = any>(handler?: (this: T, param: ISaveEventParam) =
             handler = descriptor.value;
 
         if (handler)
-            entityMetaData.afterSave.add(handler);
+            entityMetaData.afterSave = handler;
     };
 }

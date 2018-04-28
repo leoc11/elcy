@@ -1,12 +1,11 @@
 import { PrimaryKey, StringColumn } from "../../../src/Decorator/Column/index";
 import { Entity } from "../../../src/Decorator/Entity/index";
-import { EntityBase } from "../../../src/Data/EntityBase";
 import { OrderDetail } from "./OrderDetail";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
-import { ListRelation } from "../../../src/Decorator/Relation/ListRelation";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 
 @Entity("OrderDetailProperties")
-export class OrderDetailProperty extends EntityBase {
+export class OrderDetailProperty {
     @PrimaryKey()
     @StringColumn({ columnType: "nvarchar" })
     public OrderDetailPropertyId: string;
@@ -17,6 +16,6 @@ export class OrderDetailProperty extends EntityBase {
     public name: string;
     @DecimalColumn({ columnType: "float", columnName: "Amount" })
     public amount: number;
-    @ListRelation<OrderDetailProperty, OrderDetail>(OrderDetail, [(s) => s.OrderDetailId], [(a) => a.OrderDetailId], (o) => o.OrderDetailProperties)
+    @Relationship<OrderDetailProperty>("has", "by", "one", OrderDetail || "OrderDetail", [(o) => o.OrderDetailId])
     public OrderDetail: OrderDetail;
 }

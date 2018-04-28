@@ -1,21 +1,6 @@
 "use strict";
-import { EqualExpression, FunctionExpression, GreaterEqualExpression, MemberAccessExpression, MethodCallExpression, NegationExpression, ParameterExpression, ValueExpression, ObjectValueExpression, GreaterThanExpression, StrictEqualExpression, AndExpression, OrExpression, LessThanExpression, NotEqualExpression, AdditionExpression, LessEqualExpression, MultiplicationExpression } from "./src/ExpressionBuilder/Expression/index";
-import { InnerJoinQueryable, SelectManyQueryable, SelectQueryable, WhereQueryable, UnionQueryable, IntersectQueryable, ExceptQueryable, PivotQueryable, GroupByQueryable, OrderQueryable } from "./src/Queryable/index";
-import { JoinQueryable } from "./src/Queryable/JoinQueryable";
-import { SelectExpression, GroupByExpression } from "./src/Queryable/QueryExpression/index";
 import { MyDb } from "./test/Common/MyDb";
-import { Order, OrderDetail } from "./test/Common/Model/index";
-import { WhereEnumerable } from "./src/Enumerable/WhereEnumerable";
-import { Enumerable } from "./src/Enumerable/Enumerable";
-import { GroupedExpression } from "./src/Queryable/QueryExpression/GroupedExpression";
-import { Queryable } from "./src/Queryable/Queryable";
-import { IncludeQueryable } from "./src/Queryable/IncludeQueryable";
-import { ArrayQueryResultParser } from "./src/QueryBuilder/ResultParser/ArrayQueryResultParser";
-import { IQueryableOrderDefinition } from "./src/QueryBuilder/Interface/IOrderDefinition";
-import { OrderDirection } from "./src/Common/Type";
-import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 import "./src/Extensions/DateExtension";
-import { TakeEnumerable } from "./src/Enumerable";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -26,8 +11,6 @@ import { TakeEnumerable } from "./src/Enumerable";
 
 const db = new MyDb();
 (async () => {
-    const param = new ParameterExpression("o", Order);
-    const odParam = new ParameterExpression("od", OrderDetail);
 
 
 
@@ -70,10 +53,10 @@ const db = new MyDb();
     /// const where = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).toArray();
 
     // const groupBy = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
-    
-    const groupBy = await db.orderDetailProperties.groupBy(o => ({
-        od: o.OrderDetail
-    })).toArray();
-    // const a = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
+    const c = await db.orders.select(o => ({
+        order: o,
+        hasDetail: o.OrderDetails.any(od => od.Product.Price < 20000)
+    })).first();
     const d = 1;
+
 })();

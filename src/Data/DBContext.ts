@@ -1,7 +1,6 @@
 import { IObjectType } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
-import { EntityBase } from "../Data/EntityBase";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
 import { IQueryCacheManager } from "../QueryBuilder/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManager";
@@ -38,7 +37,7 @@ export abstract class DbContext {
     constructor(connectionOption: IConnectionOption) {
         this.connectionOptions = connectionOption;
     }
-    public set<T extends EntityBase>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
+    public set<T>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
         let result: DbSet<T> = isClearCache ? undefined as any : this.cachedDbSets.get(type);
         if (!result && this.entityTypes.contains(type)) {
             result = new DbSet(type, this);
@@ -67,6 +66,12 @@ export abstract class DbContext {
             return set.attach(entity);
         }
     }
+    public entry<T>(entity: T) {
+        const set = this.set(entity.constructor as any);
+        if (set) {
+            return set.entry(entity);
+        }
+    }
     public add<T>(entity: T) {
         const entry = this.attach(entity);
         if (entry) {
@@ -83,11 +88,11 @@ export abstract class DbContext {
         }
         return false;
     }
-    public update<T>(entity: T, orignalValues: any) {
+    public update<T>(entity: T, originalValues: any) {
         const entry = this.attach(entity);
         if (entry) {
-            if (orignalValues instanceof Object)
-                entry.orignalValues = orignalValues;
+            if (originalValues instanceof Object)
+                entry.setOriginalValues(originalValues);
             this.changeState(entry, EntityState.Modified);
             return true;
         }
@@ -122,7 +127,7 @@ export abstract class DbContext {
         }
         entityEntry.state = state;
     }
-    public addedEntities: EntityEntry[];
-    public deletedEntities: EntityEntry[];
-    public modifiedEntities: EntityEntry[];
+    public addedEntities: EntityEntry[] = [];
+    public deletedEntities: EntityEntry[] = [];
+    public modifiedEntities: EntityEntry[] = [];
 }

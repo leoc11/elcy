@@ -1,4 +1,4 @@
-import { IObjectType, ValueType, RelationType } from "../Common/Type";
+import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable";
@@ -6,13 +6,12 @@ import "../Queryable/Queryable.partial";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
-import { isValueType, hashCode } from "../Helper/Util";
+import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { EntityEntry, EntityState } from "./Interface/IEntityEntry";
-import { IRelationMetaData } from "../MetaData/Interface/index";
-import { MasterRelationMetaData } from "../MetaData/Relation/index";
+import { EntityEntry } from "./Interface/IEntityEntry";
+import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -23,7 +22,7 @@ export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
         return this._dbContext;
     }
-    protected get metaData() {
+    public get metaData() {
         if (!this._metaData)
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
@@ -64,27 +63,26 @@ export class DbSet<T> extends Queryable<T> {
         const key = this.getMapKey(entity);
         return this.dictionary.get(key);
     }
-    public attach(entity: T, loadTime?: Date): EntityEntry<T> {
+    public attach(entity: T): EntityEntry<T> {
         const key = this.getMapKey(entity as any);
-        if (!loadTime) loadTime = new Date();
         let entry = this.entry(key) as EntityEntry<T>;
         if (entry) {
             Object.keys(entity).map((prop: keyof T) => {
                 let value = entity[prop];
                 if (value === undefined)
                     return;
-                const relationMeta: IRelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.type, prop);
-                const childSet = relationMeta ? this.dbContext.set(relationMeta instanceof MasterRelationMetaData ? relationMeta.sourceType : relationMeta.targetType!) : undefined;
+                const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.type, prop);
+                const childSet = relationMeta ? this.dbContext.set(relationMeta.targetType) : undefined;
                 if (childSet) {
-                    if (relationMeta.relationType === RelationType.OneToOne) {
-                        const childEntry = childSet.attach(value, loadTime);
+                    if (relationMeta.relationType === "one") {
+                        const childEntry = childSet.attach(value);
                         entity[prop] = value = childEntry.entity;
                     }
                     else if (Array.isArray(value)) {
                         entity[prop] = value = value.select((val: any) => {
-                            const childEntry = childSet.attach(val, loadTime);
+                            const childEntry = childSet.attach(val);
                             return childEntry.entity;
-                        }).toArray();
+                        }).toArray() as any;
                     }
                 }
 
@@ -93,16 +91,15 @@ export class DbSet<T> extends Queryable<T> {
             });
         }
         else {
-            entry = new EntityEntry(this, entity, this.metaData.properties, loadTime);
+            entry = new EntityEntry(this, entity);
             this.dictionary.set(key, entry!);
             this.localCache.push(entity);
         }
         return entry;
     }
-
-    protected getMapKey(id: { [key in keyof T]: ValueType } | T): string {
-        const keyString = this.primaryKeys.reduce((res, current) => res + "|" + (id as any)[current], "");
-        return keyString;
+    protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
+        if (isValue(id))
+            return id.toString();
+        return this.primaryKeys.select(o => (id as any)[o]).toArray().join("|");
     }
-
 }

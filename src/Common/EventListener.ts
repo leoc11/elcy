@@ -1,7 +1,7 @@
 import { hashCode } from "../Helper/Util";
 
 export class EventListener<TInput = any, TEntity = any, TFunc extends (this: TEntity, params: TInput) => boolean | void = any> {
-    private _eventHandlers: Map<number, TFunc>;
+    private _eventHandlers: Map<number, TFunc> = new Map();
     constructor(protected readonly self: TEntity, public stopOnFalse = false) {
     }
     public add(event: TFunc, id?: number) {
@@ -21,7 +21,7 @@ export class EventListener<TInput = any, TEntity = any, TFunc extends (this: TEn
         let result: boolean = true;
         for (const [, ev] of this._eventHandlers) {
             try {
-                const curRes = ev.apply(this.self, params);
+                const curRes = ev.apply(this.self, [params]);
                 if (typeof curRes === "boolean")
                     result = result && curRes;
                 if (this.stopOnFalse && curRes === false)

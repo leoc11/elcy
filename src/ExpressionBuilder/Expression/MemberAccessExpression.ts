@@ -1,10 +1,9 @@
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { ColumnMetaData } from "../../MetaData/index";
-import { IRelationMetaData } from "../../MetaData/Interface/index";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { RelationType } from "../../Common/Type";
+import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> {
     public static create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);
@@ -20,9 +19,9 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
             if (columnMeta)
                 this.type = columnMeta.type;
             else {
-                const relationMeta: IRelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
+                const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
                 if (relationMeta) {
-                    if (relationMeta.relationType === RelationType.OneToOne)
+                    if (relationMeta.relationType === "one")
                         this.type = relationMeta.targetType;
                     else {
                         this.type = Array as any;
