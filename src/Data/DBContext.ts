@@ -9,8 +9,10 @@ import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { EntityEntry, EntityState } from "./Interface/IEntityEntry";
+import { IDBEventListener } from "./Event/IDBEventListener";
+import { ISaveEventParam, IDeleteEventParam } from "../MetaData/Interface";
 
-export abstract class DbContext {
+export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
@@ -99,6 +101,9 @@ export abstract class DbContext {
         return false;
     }
     public changeState(entityEntry: EntityEntry, state: EntityState) {
+        if (entityEntry.state === state)
+            return;
+
         switch (entityEntry.state) {
             case EntityState.Added:
                 this.addedEntities.remove(entityEntry);
@@ -130,4 +135,13 @@ export abstract class DbContext {
     public addedEntities: EntityEntry[] = [];
     public deletedEntities: EntityEntry[] = [];
     public modifiedEntities: EntityEntry[] = [];
+
+    // -------------------------------------------------------------------------
+    // DB Event Listener
+    // -------------------------------------------------------------------------
+    public beforeSave?: <T>(entity: T, param: ISaveEventParam) => boolean;
+    public beforeDelete?: <T>(entity: T, param: IDeleteEventParam) => boolean;
+    public afterLoad?: <T>(entity: T) => void;
+    public afterSave?: <T>(entity: T, param: ISaveEventParam) => void;
+    public afterDelete?: <T>(entity: T, param: IDeleteEventParam) => void;
 }

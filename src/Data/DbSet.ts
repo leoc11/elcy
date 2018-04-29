@@ -27,7 +27,7 @@ export class DbSet<T> extends Queryable<T> {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
     }
-    protected get primaryKeys() {
+    public get primaryKeys() {
         return this.metaData.primaryKeys;
     }
     public readonly namingStrategy: NamingStrategy;
@@ -48,9 +48,8 @@ export class DbSet<T> extends Queryable<T> {
         return hashCode(this.type.name!);
     }
     public get local(): Enumerable<T> {
-        return new Enumerable(this.localCache);
+        return (new Enumerable(this.dictionary.values())).select(o => o.entity);
     }
-    protected localCache: T[] = [];
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
     public find(id: ValueType | { [key in keyof T]: ValueType }): T | undefined {
         return this.findLocal(id);
@@ -85,21 +84,41 @@ export class DbSet<T> extends Queryable<T> {
                         }).toArray() as any;
                     }
                 }
-
                 else if (!entry.isPropertyModified(prop) || entry.getOriginalValue(prop) !== value)
                     entry.entity[prop] = value;
             });
         }
         else {
-            entry = new EntityEntry(this, entity);
-            this.dictionary.set(key, entry!);
-            this.localCache.push(entity);
+            entry = new EntityEntry(this, entity, key);
+            this.dictionary.set(key, entry);
         }
         return entry;
+    }
+    public new(primaryValue: ValueType | { [key in keyof T]: ValueType }) {
+        const entity = new this.type();
+        if (isValue(primaryValue)) {
+            if (this.primaryKeys.length !== 1) {
+                throw new Error(`${this.type.name} has multiple primary keys`);
+            }
+
+            entity[this.primaryKeys.first()] = primaryValue as any;
+        }
+        else {
+            for (const pk of this.primaryKeys) {
+                entity[this.primaryKeys.first()] = primaryValue[pk] as any;
+            }
+        }
+        this.dbContext.add(entity);
+        return entity;
     }
     protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
         if (isValue(id))
             return id.toString();
         return this.primaryKeys.select(o => (id as any)[o]).toArray().join("|");
+    }
+    public updateEntryKey(entry: EntityEntry<T>) {
+        this.dictionary.delete(entry.key);
+        entry.key = this.getMapKey(entry.entity);
+        this.dictionary.set(entry.key, entry);
     }
 }

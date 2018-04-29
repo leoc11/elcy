@@ -8,6 +8,9 @@ import { GenericType, RelationshipType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { EntityEntry } from "../../Data/Interface/IEntityEntry";
+import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
+import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -61,13 +64,16 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             customTypeMap.set(select.itemType, resultMap);
         }
 
-        const dbSet = dbContext.set(select.itemType as any);
+        const dbSet = dbContext.set<T>(select.itemType as any);
         const primaryColumns = select instanceof GroupByExpression ? select.groupBy : select.projectedColumns.where(o => o.isPrimary);
         const columns = select.selects.where(o => !o.isPrimary);
         const relColumns = select.relationColumns.except(select.selects);
 
+        const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
+
         for (const row of queryResult.rows) {
             let entity = new (select.itemType as any)();
+            let entry: EntityEntry<T>;
             const keyData: { [key: string]: any } = {};
             for (const primaryCol of primaryColumns) {
                 const columnName = primaryCol.columnName;
@@ -80,10 +86,10 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             let isSkipPopulateEntityData = false;
             const key = hashCode(JSON.stringify(keyData));
             if (dbSet) {
-                const existing = dbSet.entry(row);
-                if (existing) {
-                    entity = existing.entity;
-                    isSkipPopulateEntityData = existing.isCompletelyLoaded;
+                entry = dbSet.entry(row);
+                if (entry) {
+                    entity = entry.entity;
+                    isSkipPopulateEntityData = entry.isCompletelyLoaded;
                 }
                 else {
                     dbSet.attach(entity);
@@ -101,7 +107,10 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 else {
                     for (const column of columns) {
                         const value = this.convertTo(row[column.columnName], column);
-                        this.setDeepProperty(entity, column.propertyName, value);
+                        if (entry)
+                            entry.setOriginalValue(column.propertyName as any, value);
+                        else
+                            this.setDeepProperty(entity, column.propertyName, value);
                     }
                 }
             }
@@ -177,6 +186,11 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 }
             }
             results.push(entity);
+
+            // emit after load event
+            if (dbEventEmitter) {
+                dbEventEmitter.emitAfterLoadEvent(entity);
+            }
         }
         for (const include of select.includes) {
             if (include.type === "many")
@@ -207,6 +221,9 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
         return obj[property];
     }
     private convertTo<T>(input: any, column: IColumnExpression<T>): any {
+        if (Array.isArray(input))
+            input = input.pop();
+
         switch (column.type) {
             case Boolean:
                 return input;

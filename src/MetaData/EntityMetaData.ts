@@ -1,6 +1,6 @@
 import { GenericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
-import { IDeleteEventParam, IEntityMetaData, IOrderCondition, ISaveEventParam } from "./Interface";
+import { IEntityMetaData, IOrderCondition } from "./Interface";
 import { InheritanceMetaData } from "./Relation";
 import { RelationMetaData } from "./Relation/RelationMetaData";
 
@@ -24,15 +24,6 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
         return !!this.descriminatorMember;
     }
     public inheritance = new InheritanceMetaData<TParent>();
-
-    // -------------------------------------------------------------------------
-    // Event Listener
-    // -------------------------------------------------------------------------
-    public beforeSave: (entity: T, param: ISaveEventParam) => boolean;
-    public beforeDelete: (entity: T, param: IDeleteEventParam) => boolean;
-    public afterLoad: (entity: T) => void;
-    public afterSave: (entity: T, param: ISaveEventParam) => void;
-    public afterDelete: (entity: T, param: IDeleteEventParam) => void;
 
     constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
         if (typeof name !== "undefined")

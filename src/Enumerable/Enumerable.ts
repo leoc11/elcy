@@ -20,20 +20,36 @@ export class Enumerable<T = any> {
     protected isResultComplete = false;
     protected result: T[] = [];
     protected parent: Enumerable;
-    constructor(result?: T[]) {
-        if (result) {
-            this.result = result;
-            this.isResultComplete = true;
+    protected iterators: Iterator<T>;
+    constructor(source?: T[] | Iterator<T>) {
+        if (source) {
+            if (Array.isArray(source)) {
+                this.result = source;
+                this.isResultComplete = true;
+            }
+            else {
+                this.iterators = source;
+            }
         }
     }
     public [Symbol.iterator]() {
         return this;
     }
     public next(): IteratorResult<T> {
-        const rest: IteratorResult<T> = {
-            done: !this.result || this.result.length <= this.pointer,
-            value: this.result ? this.result[this.pointer++] : undefined as any
-        };
+        let rest: IteratorResult<T>;
+        if (this.isResultComplete) {
+            rest = {
+                done: !this.result || this.result.length <= this.pointer,
+                value: this.result ? this.result[this.pointer++] : undefined as any
+            };
+        }
+        else {
+            rest = this.next();
+            if (rest.done)
+                this.isResultComplete = true;
+            else
+                this.result.push(rest.value);
+        }
         if (rest.done)
             this.resetPointer();
         return rest;
