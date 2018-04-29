@@ -7,9 +7,9 @@ import { IEntityMetaData, IOrderCondition } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/index";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 
-export function AbstractEntity<T extends TParent = any, TParent = any>(defaultOrder?: IOrderCondition[]) {
+export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderCondition[]) {
     return (type: IObjectType<T>) => {
-        const entityMetadata = new AbstractEntityMetaData(type, defaultOrder);
+        const entityMetadata = new AbstractEntityMetaData(type, name, defaultOrder);
         const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;
         if (parentType !== ClassBase) {
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);

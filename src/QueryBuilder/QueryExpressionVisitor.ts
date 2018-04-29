@@ -50,7 +50,7 @@ export class QueryExpressionVisitor {
     private aliasObj: { [key: string]: number } = {};
     constructor(public namingStrategy: NamingStrategy = new NamingStrategy()) {
     }
-    public newAlias(type: "entity" | "column" = "entity") {
+    public newAlias(type: "entity" | "column" | "param" = "entity") {
         if (!this.aliasObj[type])
             this.aliasObj[type] = 0;
         return this.namingStrategy.getAlias(type) + this.aliasObj[type]++;

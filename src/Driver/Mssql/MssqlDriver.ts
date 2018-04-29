@@ -11,11 +11,10 @@ export class MssqlDriver implements IDriver {
             this._connectionPool = new ConnectionPool(this.getConnectionOptions());
         return this._connectionPool;
     }
-    protected connectionOptions: IMssqlConnectionOption;
     public get database() {
         return this.connectionOptions.database;
     }
-    constructor(connectionOption: IMssqlConnectionOption) {
+    constructor(protected connectionOptions: IMssqlConnectionOption) {
     }
     protected getConnectionOptions() {
         const config: config = this.connectionOptions as any;
@@ -49,7 +48,7 @@ export class MssqlDriver implements IDriver {
         }
         const rows = await connection.query(query);
         const results: IQueryResult[] = [];
-        for (let i = 0; i < rows.recordsets.length; i++) {
+        for (let i = 0; i < rows.rowsAffected.length; i++) {
             results.push({
                 rows: rows.recordsets[i],
                 effectedRows: rows.rowsAffected[i]
@@ -61,6 +60,7 @@ export class MssqlDriver implements IDriver {
         if (!this.connectionPool.connected)
             await this.connectionPool.connect();
         this.transaction = new Transaction(this.connectionPool);
+        await this.transaction.begin();
     }
     public async commitTransaction(): Promise<void> {
         await this.transaction.commit();

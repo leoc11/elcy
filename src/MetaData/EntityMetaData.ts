@@ -1,6 +1,6 @@
 import { GenericType } from "../Common/Type";
 import { IndexMetaData } from "../MetaData";
-import { IEntityMetaData, IOrderCondition } from "./Interface";
+import { IEntityMetaData, IOrderCondition, ISaveEventParam, IDeleteEventParam } from "./Interface";
 import { InheritanceMetaData } from "./Relation";
 import { RelationMetaData } from "./Relation/RelationMetaData";
 
@@ -54,4 +54,11 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
         if (typeof entityMeta.properties !== "undefined")
             this.properties = entityMeta.properties;
     }
+
+    
+    beforeSave?: (entity: T, param: ISaveEventParam) => boolean;
+    beforeDelete?: (entity: T, param: IDeleteEventParam) => boolean;
+    afterLoad?: (entity: T) => void;
+    afterSave?: (entity: T, param: ISaveEventParam) => void;
+    afterDelete?: (entity: T, param: IDeleteEventParam) => void;
 }

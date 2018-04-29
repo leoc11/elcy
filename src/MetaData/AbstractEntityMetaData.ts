@@ -21,8 +21,11 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
     public parentType?: GenericType<TParent>;
     public allowInheritance = false;
     public inheritance = new InheritanceMetaData<TParent>();
+    public name: string;
 
-    constructor(public type: GenericType<T>, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
+        if (typeof name !== "undefined")
+            this.name = name;
         if (typeof defaultOrder !== "undefined")
             this.defaultOrder = defaultOrder;
 
@@ -32,5 +35,7 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance)
                 this.parentType = parentType;
         }
+        if (!name)
+            this.name = type.name!;
     }
 }

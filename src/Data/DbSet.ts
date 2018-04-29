@@ -1,7 +1,7 @@
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
-import { Queryable } from "../Queryable";
+import { Queryable, WhereQueryable } from "../Queryable";
 import "../Queryable/Queryable.partial";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
@@ -10,8 +10,9 @@ import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { EntityEntry } from "./Interface/IEntityEntry";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
+import { FunctionExpression, ParameterExpression, IExpression, EqualExpression, MemberAccessExpression, AndExpression } from "../ExpressionBuilder/Expression";
+import { EntityEntry } from "./EntityEntry";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -51,10 +52,29 @@ export class DbSet<T> extends Queryable<T> {
         return (new Enumerable(this.dictionary.values())).select(o => o.entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
-    public find(id: ValueType | { [key in keyof T]: ValueType }): T | undefined {
-        return this.findLocal(id);
+    public async find(id: ValueType | { [key in keyof T]: ValueType }): Promise<T> {
+        let entity = this.findLocal(id);
+        if (!entity) {
+            const isValueType = isValue(id);
+            const param = new ParameterExpression("o", this.type);
+            const paramId = new ParameterExpression("id", id.constructor as any);
+            let andExp: IExpression<boolean>;
+            if (isValueType) {
+                andExp = new EqualExpression(new MemberAccessExpression(param, this.primaryKeys.first()), paramId);
+            }
+            else {
+                for (const pk in this.primaryKeys) {
+                    const d = new EqualExpression(new MemberAccessExpression(param, pk), new MemberAccessExpression(paramId, pk));
+                    andExp = andExp ? new AndExpression(andExp, d) : d;
+                }
+            }
+            const a = new FunctionExpression(andExp, [param]);
+            const v = new WhereQueryable(this, a);
+            entity = await v.setParameters({ id }).first();
+        }
+        return entity;
     }
-    public findLocal(id: ValueType | { [key in keyof T]: ValueType }): T | undefined {
+    public findLocal(id: ValueType | { [key in keyof T]: ValueType }): T {
         const entry = this.entry(id);
         return entry ? entry.entity : undefined;
     }
@@ -94,7 +114,7 @@ export class DbSet<T> extends Queryable<T> {
         }
         return entry;
     }
-    public new(primaryValue: ValueType | { [key in keyof T]: ValueType }) {
+    public new(primaryValue: ValueType | { [key in keyof T]?: ValueType }) {
         const entity = new this.type();
         if (isValue(primaryValue)) {
             if (this.primaryKeys.length !== 1) {

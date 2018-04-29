@@ -11,5 +11,5 @@ export interface IRelationOption<TSource, TTarget> {
     deleteOption?: ReferenceOption;
     relationType: "one" | "many";
     manyToManyMapName: string;
-    propertyName?: string;
+    propertyName?: keyof TSource;
 }

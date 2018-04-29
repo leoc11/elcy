@@ -6,7 +6,7 @@ import { FunctionHelper } from "../../Helper/FunctionHelper";
 
 export class RelationMetaData<TSource, TTarget> {
     public relationMaps: Map<any, any> = new Map();
-    public propertyName: string;
+    public propertyName: keyof TSource;
     public reverseRelation: RelationMetaData<TTarget, TSource>;
     public sourceType: IObjectType<TSource>;
     public targetType: IObjectType<TTarget>;

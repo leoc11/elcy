@@ -24,8 +24,8 @@ import { SqlFunctionCallExpression } from "../Queryable/QueryExpression/SqlFunct
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
-import { JoinType, ValueType, GenericType } from "../Common/Type";
-import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData } from "../MetaData";
+import { JoinType, ValueType, GenericType, IObjectType } from "../Common/Type";
+import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData, ColumnMetaData } from "../MetaData";
 import { IColumnOption } from "../Decorator/Option";
 import { BinaryColumnMetaData } from "../MetaData/BinaryColumnMetaData";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
@@ -38,7 +38,10 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
-import { EntityEntry } from "../Data/Interface/IEntityEntry";
+import { entityMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
+import { IEntityMetaData } from "../MetaData/Interface";
+import { IQueryCommand } from "./Interface/IQueryCommand";
+import { EntityEntry } from "../Data/EntityEntry";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -56,10 +59,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public namingStrategy: NamingStrategy = new NamingStrategy();
     protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
     protected indent = 0;
-    public newAlias(type?: "entity" | "column") {
+    public newAlias(type?: "entity" | "column" | "param") {
         return this.queryVisitor.newAlias(type);
     }
-    public escape(identity: string) {
+    public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
             return "[" + identity + "]";
         else
@@ -226,20 +229,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getColumnString(column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
-            return this.escape(column.columnName);
+            return this.enclose(column.columnName);
         }
-        return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
     protected getJoinColumnString(entity: IEntityExpression, column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
             return this.getOperandString(column.expression, true);
         }
-        return this.escape(entity.alias) + "." + this.escape(column.columnName);
+        return this.enclose(entity.alias) + "." + this.enclose(column.columnName);
     }
     protected getColumnSelectString(column: IColumnExpression) {
         let result = this.getColumnDefinitionString(column);
         if (column instanceof ComputedColumnExpression) {
-            result += " AS " + this.escape(column.columnName);
+            result += " AS " + this.enclose(column.columnName);
         }
         return result;
     }
@@ -247,7 +250,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (column instanceof ComputedColumnExpression) {
             return this.getOperandString(column.expression, true);
         }
-        return this.escape(column.entity.alias) + "." + this.escape(column.columnName);
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
     protected getSelectQueryString(select: SelectExpression): string {
         const skip = select.paging.skip || 0;
@@ -325,7 +328,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     protected getColumnDeclarationString(column: IColumnExpression) {
-        let result = this.escape(column.columnName);
+        let result = this.enclose(column.columnName);
         result += " " + this.getColumnType(column);
         if (column instanceof ColumnExpression) {
             if (column.columnMetaData && typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
@@ -443,22 +446,22 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (entity instanceof IntersectExpression) {
             return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
                 this.newLine() + "INTERSECT" +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof UnionExpression) {
             return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
                 this.newLine() + "UNION" + (entity.isUnionAll ? " ALL" : "") +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ExceptExpression) {
             return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
                 this.newLine() + "EXCEPT" +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.escape(entity.alias);
+            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
         }
-        return this.escape(entity.name) + (entity.alias ? " AS " + this.escape(entity.alias) : "");
+        return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
         switch (expression.functionFn) {
@@ -1012,8 +1015,120 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
         throw new Error(`BitwiseSignedRightShift not supported`);
     }
+    public getInsertQuery<T>(type: IObjectType<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
+        if (entries.length <= 0)
+            return null;
 
-    public getInsertString(entity: EntityEntry): string {
-        return "";
+        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
+        const columns = entityMetaData.properties.select(o => ({
+            propertyName: o,
+            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
+        }));
+        const generatedColumns = columns.where(o => {
+            const meta = o.metaData;
+            return meta.default !== undefined || meta instanceof TimeColumnMetaData
+                || meta instanceof IdentifierColumnMetaData || (meta instanceof NumericColumnMetaData && meta.autoIncrement);
+        });
+        const valueColumns = columns.where(o => !(o.metaData instanceof IdentifierColumnMetaData || (o.metaData instanceof NumericColumnMetaData && o.metaData.autoIncrement)));
+        const columnNames = valueColumns.select(o => this.enclose(o.metaData.columnName)).toArray().join(", ");
+        const outputQuery = generatedColumns.select(o => "INSERTED." + this.enclose(o.metaData.columnName)).toArray().join(", ");
+
+        const result: IQueryCommand = {
+            query: "",
+            parameters: new Map()
+        };
+        result.query = `INSERT INTO ${this.enclose(entityMetaData.name)}(${columnNames}) ${outputQuery ? "OUTPUT " + outputQuery : ""} VALUES `;
+        result.query += entries.map((o, i) => {
+            const entry = entries[i];
+            const entity = entry.entity;
+            return "(" + valueColumns.select(o => {
+                const value = entity[o.propertyName as keyof T];
+                if (value === undefined) {
+                    return "DEFAULT";
+                }
+                else {
+                    const paramName = this.newAlias("param");
+                    result.parameters.set(paramName, value);
+                    return "@" + paramName;
+                }
+            }).toArray().join(",") + ")";
+        }).join(", ");
+        return result;
+    }
+    public getUpdateQuery<T>(type: IObjectType<T>, entry: EntityEntry<T>): IQueryCommand {
+        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
+        const modifiedColumns = entry.getModifiedProperties().select(o => ({
+            propertyName: o,
+            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
+        }));
+
+        const result: IQueryCommand = {
+            query: "",
+            parameters: new Map()
+        };
+        const set = modifiedColumns.select(o => {
+            const paramName = this.newAlias("param");
+            result.parameters.set(paramName, entry.entity[o.propertyName as keyof T]);
+            return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
+        }).toArray().join(",\n");
+
+        const where = entityMetaData.primaryKeys.select(o => {
+            const paramName = this.newAlias("param");
+            result.parameters.set(paramName, entry.entity[o]);
+            const metaData = Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData;
+            return this.enclose(metaData.columnName) + " = @" + paramName;
+        }).toArray().join(" AND ");
+
+        result.query = `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`;
+        return result;
+    }
+    public getDeleteQuery<T>(type: IObjectType<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
+        if (entries.length <= 0)
+            return null;
+
+        const result: IQueryCommand = {
+            query: "",
+            parameters: new Map()
+        };
+        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
+        const primaryColumns = entityMetaData.primaryKeys.select(o => ({
+            propertyName: o,
+            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
+        }));
+        let condition = "";
+        if (entityMetaData.primaryKeys.length === 1) {
+            const primaryCol = primaryColumns.first();
+            const primaryValues = entries.select(o => {
+                const paramName = this.newAlias("param");
+                result.parameters.set(paramName, o.entity[primaryCol.propertyName]);
+                return `@${paramName}`;
+            }).toArray().join(",");
+            condition = `WHERE ${primaryCol.propertyName} IN (${primaryValues})`;
+        }
+        else {
+            const columnName = primaryColumns.select(o => o.metaData.columnName).toArray().join(",");
+            const primaryValues = entries.select(o => "(" + primaryColumns.select(c => {
+                const paramName = this.newAlias("param");
+                result.parameters.set(paramName, o.entity[c.propertyName]);
+                return `@${paramName}`;
+            }).toArray().join(",") + ")").toArray().join(",");
+            const entityAlias = this.newAlias();
+            const valueAlias = this.newAlias();
+            const joins = primaryColumns.select(o => `${entityAlias}.${o} = ${valueAlias}.${o}`).toArray().join(" AND ");
+            condition = `${entityAlias} JOIN (VALUES ${primaryValues}) AS ${valueAlias} (${columnName}) ON ${joins}`;
+        }
+        result.query = `DELETE FROM ${this.enclose(entityMetaData.name)} ${condition}`;
+        return result;
+    }
+    public mergeQueryCommand(queries: IQueryCommand[]): IQueryCommand {
+        const result: IQueryCommand = {
+            query: "",
+            parameters: new Map()
+        };
+        for (const query of queries) {
+            result.query += query.query + ";\n";
+            result.parameters = new Map([...result.parameters, ...query.parameters]);
+        }
+        return result;
     }
 }

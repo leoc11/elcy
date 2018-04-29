@@ -25,7 +25,7 @@ declare module "./Queryable" {
         select<TReturn>(selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
-        orderBy(...selectors: IQueryableOrderDefinition[]): Queryable<T>;
+        orderBy(...selectors: IQueryableOrderDefinition<T>[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;

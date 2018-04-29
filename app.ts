@@ -1,6 +1,7 @@
 "use strict";
 import { MyDb } from "./test/Common/MyDb";
 import "./src/Extensions/DateExtension";
+import { OrderDirection } from "./src/Common/Type";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -11,9 +12,6 @@ import "./src/Extensions/DateExtension";
 
 const db = new MyDb();
 (async () => {
-
-
-
     /**
      * GROUP BY
      */
@@ -53,10 +51,9 @@ const db = new MyDb();
     /// const where = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).toArray();
 
     // const groupBy = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
-    const c = await db.orders.select(o => ({
-        order: o,
-        hasDetail: o.OrderDetails.any(od => od.Product.Price < 20000)
-    })).first();
+    const [a1, a2] = await db.tests.orderBy({ selector: (o) => o.ID, direction: OrderDirection.DESC }).take(2).toArray();
+    a1.isDefault = !a1.isDefault;
+    a2.isDefault = !a2.isDefault;
+    const rel = await db.saveChanges();
     const d = 1;
-
 })();

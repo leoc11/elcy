@@ -5,6 +5,7 @@ import { IOrderCondition } from "./IOrderCondition";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 
 export interface IEntityMetaData<T extends TParent, TParent = any> extends IDBEventListener<T> {
+    name: string;
     defaultOrder?: IOrderCondition[];
     primaryKeys: Array<keyof T>;
     deleteProperty?: string;
