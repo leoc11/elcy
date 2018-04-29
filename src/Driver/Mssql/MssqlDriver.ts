@@ -1,18 +1,21 @@
-import { DbContext } from "../../Data/DBContext";
-import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
-import { ConnectionPool, config, Request } from "mssql";
+import { ConnectionPool, config, Request, Transaction } from "mssql";
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";
 import { IQueryResult } from "../../QueryBuilder/QueryResult";
-import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
 import { IDriver } from "../IDriver";
 
-export abstract class MssqlDbContext extends DbContext {
-    public queryParser = PlainObjectQueryResultParser;
-    public queryBuilder = MssqlQueryBuilder;
-    private connectionPool: ConnectionPool;
+export class MssqlDriver implements IDriver {
+    private transaction: Transaction;
+    private _connectionPool: ConnectionPool;
+    protected get connectionPool(): ConnectionPool {
+        if (!this._connectionPool)
+            this._connectionPool = new ConnectionPool(this.getConnectionOptions());
+        return this._connectionPool;
+    }
     protected connectionOptions: IMssqlConnectionOption;
-    constructor(driver: IDriver) {
-        super(driver);
+    public get database() {
+        return this.connectionOptions.database;
+    }
+    constructor(connectionOption: IMssqlConnectionOption) {
     }
     protected getConnectionOptions() {
         const config: config = this.connectionOptions as any;
@@ -29,8 +32,12 @@ export abstract class MssqlDbContext extends DbContext {
         return config;
     }
     protected async getConnection(): Promise<Request> {
-        if (!this.connectionPool)
-            this.connectionPool = await (new ConnectionPool(this.getConnectionOptions())).connect();
+        if (!this.connectionPool.connected)
+            await this.connectionPool.connect();
+
+        if (this.transaction)
+            return new Request(this.transaction);
+
         return this.connectionPool.request();
     }
     public async executeQuery(query: string, parameters?: Map<string, any>) {
@@ -49,5 +56,18 @@ export abstract class MssqlDbContext extends DbContext {
             });
         }
         return results;
+    }
+    public async startTransaction(): Promise<void> {
+        if (!this.connectionPool.connected)
+            await this.connectionPool.connect();
+        this.transaction = new Transaction(this.connectionPool);
+    }
+    public async commitTransaction(): Promise<void> {
+        await this.transaction.commit();
+        this.transaction = null;
+    }
+    public async rollbackTransaction(): Promise<void> {
+        await this.transaction.rollback();
+        this.transaction = null;
     }
 }

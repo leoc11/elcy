@@ -11,13 +11,14 @@ import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuil
 import { EntityEntry, EntityState } from "./Interface/IEntityEntry";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { ISaveEventParam, IDeleteEventParam } from "../MetaData/Interface";
+import { IDriver } from "../Driver/IDriver";
 
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
     public get database() {
-        return this.connectionOptions.database;
+        return this.driver.database;
     }
     public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
     private _queryCacheManager: IQueryCacheManager;
@@ -33,11 +34,8 @@ export abstract class DbContext implements IDBEventListener<any> {
     public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
         return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser, parameterBuilder);
     }
-    public abstract async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    protected readonly connectionOptions: IConnectionOption;
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
-    constructor(connectionOption: IConnectionOption) {
-        this.connectionOptions = connectionOption;
+    constructor(protected readonly driver: IDriver) {
     }
     public set<T>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
         let result: DbSet<T> = isClearCache ? undefined as any : this.cachedDbSets.get(type);
@@ -47,32 +45,19 @@ export abstract class DbContext implements IDBEventListener<any> {
         }
         return result;
     }
-    public async saveChanges(): Promise<number> {
-        let queries = [];
-        const queryBuilder = new this.queryBuilder();
-        for (const addEntry of this.addedEntities) {
-            queries.push(queryBuilder.getInsertString(addEntry));
-        }
-        for (const modifedEntry of this.modifiedEntities) {
-            queries.push(queryBuilder.getInsertString(modifedEntry));
-        }
-        for (const removedEntry of this.deletedEntities) {
-            queries.push(queryBuilder.getInsertString(removedEntry));
-        }
-        const result = await this.executeQuery(queries.join(";\n"));
-        return result.sum(o => o.effectedRows);
-    }
     public attach<T>(entity: T) {
         const set = this.set(entity.constructor as any);
         if (set) {
             return set.attach(entity);
         }
+        return undefined;
     }
     public entry<T>(entity: T) {
         const set = this.set(entity.constructor as any);
         if (set) {
             return set.entry(entity);
         }
+        return undefined;
     }
     public add<T>(entity: T) {
         const entry = this.attach(entity);
@@ -144,4 +129,39 @@ export abstract class DbContext implements IDBEventListener<any> {
     public afterLoad?: <T>(entity: T) => void;
     public afterSave?: <T>(entity: T, param: ISaveEventParam) => void;
     public afterDelete?: <T>(entity: T, param: IDeleteEventParam) => void;
+
+    public async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]> {
+        return await this.driver.executeQuery(query, parameters);
+    }
+    public async transaction(transactionBody: () => Promise<void>): Promise<void> {
+        try {
+            await this.driver.startTransaction();
+            await transactionBody();
+            await this.driver.commitTransaction();
+        }
+        catch (e) {
+            await this.driver.rollbackTransaction();
+            throw e;
+        }
+    }
+    public async saveChanges(): Promise<number> {
+        let queries: string[] = [];
+        const queryBuilder = new this.queryBuilder();
+        for (const addEntry of this.addedEntities) {
+            queries.push(queryBuilder.getInsertString(addEntry));
+        }
+        for (const modifedEntry of this.modifiedEntities) {
+            queries.push(queryBuilder.getInsertString(modifedEntry));
+        }
+        for (const removedEntry of this.deletedEntities) {
+            queries.push(queryBuilder.getInsertString(removedEntry));
+        }
+        let result: IQueryResult[];
+
+        // execute all in transaction;
+        await this.transaction(async () => {
+            result = await this.executeQuery(queries.join(";\n"));
+        });
+        return result.sum(o => o.effectedRows);
+    }
 }
