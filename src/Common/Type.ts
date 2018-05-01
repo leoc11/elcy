@@ -5,6 +5,7 @@ export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type ValueType = number | string | Date | TimeSpan;
 export type RelationshipType = "one" | "many";
+export type CompleteRelationshipType = "one-one" | "one-many" | "many-one" | "many-many";
 export const ClassBase = Object.getPrototypeOf(Function);
 export enum DateTimeKind {
     UTC,

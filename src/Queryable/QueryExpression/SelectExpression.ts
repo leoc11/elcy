@@ -6,9 +6,11 @@ import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression, GroupByExpression, } from ".";
+import { ProjectionEntityExpression, GroupByExpression } from ".";
 import { NegationExpression } from "../../ExpressionBuilder/Expression/NegationExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { RelationDataExpression } from "./RelationDataExpression";
+import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -87,10 +89,55 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: RelationshipType): IIncludeRelation<T, TChild>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: RelationshipType): IIncludeRelation<T, TChild> {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
-        if ((relationMetaOrRelations as RelationMetaData<T, TChild>).relationMaps) {
-            const relationMeta = relationMetaOrRelations as RelationMetaData<T, TChild>;
-            relationMap = new Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>();
-            for (const [parentProperty, childProperty] of relationMeta.relationMaps!) {
+        if (relationMetaOrRelations instanceof RelationMetaData) {
+            const relationMeta = relationMetaOrRelations;
+            if (relationMeta.completeRelationType === "many-many") {
+                // include to relationSelect
+                relationMap = new Map();
+                let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
+                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
+                relationSelect.distinct = true;
+                for (const [relProperty, parentProperty] of relMap) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                    if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
+                    if (!relationCol.isPrimary) relationSelect.relationColumns.add(relationCol);
+                    relationMap.set(parentCol, relationCol);
+                }
+                relationSelect.parentRelation = {
+                    name,
+                    child: relationSelect,
+                    parent: this,
+                    relations: relationMap,
+                    type: "many"
+                };
+                this.includes.push(relationSelect.parentRelation);
+                relationSelect.distinct = true;
+
+                // include child to relationSelect
+                relationMap = new Map();
+                relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
+                for (const [relProperty, childProperty] of relMap) {
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                    const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
+                    if (!relationCol.isPrimary) this.relationColumns.add(relationCol);
+                    if (!childCol.isPrimary) child.relationColumns.add(childCol);
+                    relationMap.set(relationCol, childCol);
+                }
+                child.parentRelation = {
+                    name,
+                    child,
+                    parent: relationSelect,
+                    relations: relationMap,
+                    type: "one"
+                };
+                relationSelect.includes.push(child.parentRelation);
+                child.distinct = true;
+                return child.parentRelation;
+            }
+
+            relationMap = new Map();
+            for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
                 const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
                 const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
                 if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
@@ -98,6 +145,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 relationMap.set(parentCol, childCol);
             }
             type = relationMeta.relationType;
+
+            // if it many-* relation, set distinct to avoid duplicate records
+            child.distinct = relationMeta.reverseRelation.relationType === "many";
         }
         else {
             relationMap = relationMetaOrRelations as any;
@@ -105,6 +155,8 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
                 if (!childCol.isPrimary) child.relationColumns.add(childCol);
             }
+            // always distinct to avoid getting duplicate entry
+            child.distinct = true;
         }
         child.parentRelation = {
             name,
@@ -116,26 +168,64 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.includes.push(child.parentRelation);
         return child.parentRelation;
     }
-
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: RelationMetaData<T, TChild> | RelationMetaData<TChild, T>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: RelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | RelationMetaData<TChild, T> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
         const existingRelation = this.joins.first((o) => o.child === child);
         if (existingRelation)
             return existingRelation;
 
-        if ((relationMetaOrRelations as RelationMetaData<any, any>).relationMaps) {
-            const relationMeta = relationMetaOrRelations as RelationMetaData<any, any>;
-            const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : "one";
-            type = relType === "one" ? type ? type : JoinType.INNER : JoinType.LEFT;
-            relationMap = new Map();
-            const isReverse = relationMeta.sourceType !== this.entity.type;
-            for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childProperty : parentProperty));
-                const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentProperty : childProperty));
-                if (!childCol.isPrimary) child.relationColumns.add(childCol);
-                relationMap.set(parentCol, childCol);
+        if (relationMetaOrRelations instanceof RelationMetaData) {
+            const relationMeta = relationMetaOrRelations;
+            if (relationMeta.completeRelationType === "many-many") {
+                // include to relationSelect
+                relationMap = new Map();
+                let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
+                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
+                for (const [relProperty, parentProperty] of relMap) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                    if (!relationCol.isPrimary) relationSelect.relationColumns.add(relationCol);
+                    relationMap.set(parentCol, relationCol);
+                }
+                relationSelect.parentRelation = {
+                    child: relationSelect,
+                    parent: this,
+                    relations: relationMap,
+                    type: JoinType.LEFT
+                };
+                this.joins.push(relationSelect.parentRelation);
+
+                // include child to relationSelect
+                relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
+                for (const [relProperty, childProperty] of relMap) {
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                    const childCol = this.entity.columns.first((o) => o.propertyName === childProperty);
+                    if (!relationCol.isPrimary) this.relationColumns.add(relationCol);
+                    if (!childCol.isPrimary) child.relationColumns.add(childCol);
+                    relationMap.set(relationCol, childCol);
+                }
+                child.parentRelation = {
+                    child,
+                    parent: relationSelect,
+                    relations: relationMap,
+                    type: JoinType.INNER
+                };
+                relationSelect.joins.push(child.parentRelation);
+                return child.parentRelation;
+            }
+            else {
+                const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : relationMeta.reverseRelation.relationType;
+                type = relType === "one" ? type ? type : JoinType.INNER : JoinType.LEFT;
+                relationMap = new Map();
+                const isReverse = relationMeta.sourceType !== this.entity.type;
+                for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childProperty : parentProperty));
+                    const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentProperty : childProperty));
+                    if (!childCol.isPrimary) child.relationColumns.add(childCol);
+                    relationMap.set(parentCol, childCol);
+                }
             }
         }
         else {
@@ -196,6 +286,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             clone.where = this.where.clone();
         Object.assign(clone.paging, this.paging);
         return clone;
+    }
+    public toQueryCommands(queryBuilder: QueryBuilder): IQueryCommand[] {
+        return queryBuilder.getSelectQuery(this);
     }
     public execute(queryBuilder: QueryBuilder) {
         return this as any;

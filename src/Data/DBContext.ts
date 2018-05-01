@@ -17,6 +17,7 @@ import { EntityEntry } from "./EntityEntry";
 
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
+    public abstract readonly relationDataTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
     public get database() {
@@ -33,8 +34,8 @@ export abstract class DbContext implements IDBEventListener<any> {
     public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
         return this.queryCacheManager.get<T>(this.constructor as any, key);
     }
-    public setQueryChache<T>(key: number, query: string, queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
-        return this.queryCacheManager.set<T>(this.constructor as any, key, query, queryParser, parameterBuilder);
+    public setQueryChache<T>(key: number, queryCommands: IQueryCommand[], queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
+        return this.queryCacheManager.set<T>(this.constructor as any, key, queryCommands, queryParser, parameterBuilder);
     }
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(protected readonly driver: IDriver) {
@@ -149,6 +150,14 @@ export abstract class DbContext implements IDBEventListener<any> {
     public addEntries: Map<IObjectType, Array<EntityEntry>> = new Map();
     public modifyEntries: Map<IObjectType, Array<EntityEntry>> = new Map();
     public deleteEntries: Map<IObjectType, Array<EntityEntry>> = new Map();
+    public clear() {
+        this.addEntries = new Map();
+        this.modifyEntries = new Map();
+        this.deleteEntries = new Map();
+        for (const [, dbSet] of this.cachedDbSets) {
+            dbSet.clear();
+        }
+    }
 
     // -------------------------------------------------------------------------
     // DB Event Listener
@@ -161,6 +170,13 @@ export abstract class DbContext implements IDBEventListener<any> {
 
     public async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]> {
         return await this.driver.executeQuery(query, parameters);
+    }
+    public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
+        const mergedCommand = this.mergeQueryCommand(queryCommands);
+        if (parameters)
+            mergedCommand.parameters = mergedCommand.parameters ? new Map([...mergedCommand.parameters, ...parameters]) : parameters;
+
+        return await this.driver.executeQuery(mergedCommand.query, mergedCommand.parameters);
     }
     public async transaction(transactionBody: () => Promise<void>): Promise<void> {
         try {
@@ -206,7 +222,7 @@ export abstract class DbContext implements IDBEventListener<any> {
         queries = queries.concat(insertQueries).concat(updateQueries).concat(deleteQueries);
 
         // TODO: modified and deleted entities
-        const mergedQuery = queryBuilder.mergeQueryCommand(queries);
+        const mergedQuery = this.mergeQueryCommand(queries);
         let result: IQueryResult[];
 
         // execute all in transaction;
@@ -249,5 +265,17 @@ export abstract class DbContext implements IDBEventListener<any> {
         }
         this.deleteEntries = new Map();
         return result.sum(o => o.effectedRows);
+    }
+    public mergeQueryCommand(queries: IQueryCommand[]): IQueryCommand {
+        const result: IQueryCommand = {
+            query: "",
+            parameters: new Map()
+        };
+        for (const query of queries) {
+            result.query += (result.query ? "\n\n" : "") + query.query + ";";
+            if (query.parameters)
+                result.parameters = new Map([...result.parameters, ...query.parameters]);
+        }
+        return result;
     }
 }

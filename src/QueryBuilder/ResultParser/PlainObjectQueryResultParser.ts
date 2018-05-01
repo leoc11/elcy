@@ -1,3 +1,4 @@
+import "../../Extensions/QueryableExtension";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
@@ -8,9 +9,10 @@ import { GenericType, RelationshipType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { EntityEntry } from "../../Data/Interface/IEntityEntry";
+import { EntityEntry } from "../../Data/EntityEntry";
 import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
+import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -32,7 +34,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             return results;
 
         // parent relation
-        let parentRelation: IRelationResolveData<any, any>;
+        let parentRelation: IRelationResolveData<T, any>;
         if (select.parentRelation) {
             const relation = select.parentRelation as IIncludeRelation<any, T>;
             if (relation.type === "many") {
@@ -70,6 +72,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
         const relColumns = select.relationColumns.except(select.selects);
 
         const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
+        const isRelationData = select.entity instanceof RelationDataExpression;
 
         for (const row of queryResult.rows) {
             let entity = new (select.itemType as any)();
@@ -83,40 +86,74 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 if (select.entity === select.itemExpression || select.selects.contains(primaryCol))
                     this.setDeepProperty(entity, prop, value);
             }
-            let isSkipPopulateEntityData = false;
             const key = hashCode(JSON.stringify(keyData));
+
+            // load existing entity
             if (dbSet) {
                 entry = dbSet.entry(row);
-                if (entry) {
+                if (entry)
                     entity = entry.entity;
-                    isSkipPopulateEntityData = entry.isCompletelyLoaded;
-                }
-                else {
+                else
                     dbSet.attach(entity);
-                }
             }
             resultMap.set(key, entity);
 
+            // set all entity value
             let isValueEntity = Array.isArray(entity);
-            if (!isSkipPopulateEntityData) {
-                if (isValue(entity)) {
-                    isValueEntity = true;
-                    const column = select.selects.first();
-                    entity = this.convertTo(row[column.columnName], column);
-                }
-                else {
-                    for (const column of columns) {
-                        const value = this.convertTo(row[column.columnName], column);
-                        if (entry)
-                            entry.setOriginalValue(column.propertyName as any, value);
-                        else
-                            this.setDeepProperty(entity, column.propertyName, value);
-                    }
+            if (isValue(entity)) {
+                isValueEntity = true;
+                const column = select.selects.first();
+                entity = this.convertTo(row[column.columnName], column);
+            }
+            else {
+                for (const column of columns) {
+                    const value = this.convertTo(row[column.columnName], column);
+                    if (entry)
+                        entry.setOriginalValue(column.propertyName as any, value);
+                    else
+                        this.setDeepProperty(entity, column.propertyName, value);
                 }
             }
             for (const column of relColumns) {
                 const value = this.convertTo(row[column.columnName], column);
                 this.setDeepProperty(keyData, column.propertyName, value);
+            }
+            results.push(entity);
+
+            if (isRelationData) {
+                const relationDataMeta = parentRelation.relationMeta.relationData;
+                let a: any = {};
+                for (const [sourceProperty, relationProperty] of relationDataMeta.sourceRelationMaps) {
+                    let value = this.getDeepProperty(keyData, relationProperty);
+                    if (value === undefined)
+                        value = this.getDeepProperty(entity, relationProperty);
+
+                    this.setDeepProperty(a, sourceProperty, value);
+                }
+                let key = hashCode(JSON.stringify(a));
+                const sourceEntity = customTypeMap.get(relationDataMeta.sourceType).get(key);
+
+                a = {};
+                for (const [relationProperty, targetProperty] of relationDataMeta.targetRelationMaps) {
+                    let value = this.getDeepProperty(keyData, relationProperty);
+                    if (value === undefined)
+                        value = this.getDeepProperty(entity, relationProperty);
+
+                    this.setDeepProperty(a, targetProperty, value);
+                }
+                key = hashCode(JSON.stringify(a));
+                const targetEntity = customTypeMap.get(relationDataMeta.targetType).get(key);
+                Reflect.setRelationData(sourceEntity, relationDataMeta.sourceRelationMeta.propertyName, targetEntity, entity);
+
+                if (relationDataMeta.completeRelationType === "many-many") {
+                    if (!sourceEntity[relationDataMeta.sourceRelationMeta.propertyName])
+                        sourceEntity[relationDataMeta.sourceRelationMeta.propertyName] = [];
+                    sourceEntity[relationDataMeta.sourceRelationMeta.propertyName].push(targetEntity);
+                    if (!targetEntity[relationDataMeta.targetRelationMeta.propertyName])
+                        targetEntity[relationDataMeta.targetRelationMeta.propertyName] = [];
+                    targetEntity[relationDataMeta.targetRelationMeta.propertyName].push(sourceEntity);
+                }
+                continue;
             }
 
             // resolve parent relation
@@ -185,16 +222,18 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                     }
                 }
             }
-            results.push(entity);
 
             // emit after load event
             if (dbEventEmitter) {
                 dbEventEmitter.emitAfterLoadEvent(entity);
             }
         }
-        for (const include of select.includes) {
-            if (include.type === "many")
-                this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
+
+        if (!isRelationData) {
+            for (const include of select.includes) {
+                if (include.type === "many")
+                    this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
+            }
         }
         return results;
     }
@@ -226,7 +265,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
 
         switch (column.type) {
             case Boolean:
-                return input;
+                return Boolean(input);
             case Number:
                 let result = Number.parseFloat(input);
                 if (isFinite(result))

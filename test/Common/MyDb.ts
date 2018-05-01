@@ -1,6 +1,6 @@
 import { IObjectType } from "../../src/Common/Type";
 import { MssqlDbContext } from "../../src/Driver/Mssql/MssqlDbContext";
-import { Order, OrderDetail, Product, OrderDetailProperty, Test } from "./Model";
+import { Order, OrderDetail, Product, OrderDetailProperty, Test, Collection, CollectionProductData } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
 import { MssqlDriver } from "../../src/Driver/Mssql/MssqlDriver";
 
@@ -17,10 +17,15 @@ export class MyDb extends MssqlDbContext {
             // }
         }));
     }
-    public entityTypes: IObjectType[] = [Order, OrderDetail, Product, OrderDetailProperty, Test];
+    public entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
+        Test,
+        Collection
+    ];
+    public relationDataTypes = [CollectionProductData];
     public orders: DbSet<Order> = this.set(Order);
     public orderDetails: DbSet<OrderDetail> = this.set(OrderDetail);
     public orderDetailProperties: DbSet<OrderDetailProperty> = this.set(OrderDetailProperty);
     public products: DbSet<Product> = this.set(Product);
     public tests = this.set(Test);
+    public collections = this.set(Collection);
 }

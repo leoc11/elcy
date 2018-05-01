@@ -168,7 +168,7 @@ export class QueryExpressionVisitor {
                 }
                 return column;
             }
-            const relationMeta: RelationMetaData<any, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
+            const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
             if (relationMeta) {
                 const targetType = relationMeta.targetType;
                 switch (param.scope) {
@@ -183,7 +183,7 @@ export class QueryExpressionVisitor {
                                 return param.commandExpression;
                             }
                             else {
-                                child.addJoinRelation(param.commandExpression, relationMeta);
+                                child.addJoinRelation(param.commandExpression, relationMeta.reverseRelation);
                                 child.addOrder(param.commandExpression.orders);
                                 param.commandExpression = child;
                                 return relationMeta.relationType === "many" ? child : child.entity;
@@ -1127,6 +1127,17 @@ export class QueryExpressionVisitor {
     }
     protected visitFunctionCall<T>(expression: FunctionCallExpression<T>, param: IQueryVisitParameter): IExpression {
         expression.params = expression.params.select((o) => this.visit(o, param)).toArray();
+        if (expression.functionFn && !isNativeFunction(expression.functionFn)) {
+            const functionExp = ExpressionBuilder.parse(expression.functionFn, expression.params.select(o => o.type).toArray(), this.userParameters);
+            for (let i = 0; i < functionExp.params.length; i++) {
+                this.scopeParameters.add(functionExp.params[i].name, expression.params[i]);
+            }
+            const result = this.visit(functionExp, { commandExpression: param.commandExpression });
+            for (let i = 0; i < functionExp.params.length; i++) {
+                this.scopeParameters.remove(functionExp.params[i].name);
+            }
+            return result;
+        }
         return expression;
     }
     protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: IQueryVisitParameter): IExpression {

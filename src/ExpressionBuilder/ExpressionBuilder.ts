@@ -4,7 +4,7 @@ import { isNativeFunction } from "../Helper/Util";
 import { InstantiationExpression } from "./Expression/InstantiationExpression";
 
 export namespace ExpressionBuilder {
-    export function parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, paramTypes?: GenericType<TParam>[], userParameters?: Map<string, any>) {
+    export function parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, paramTypes?: GenericType<TParam>[], userParameters?: { [key: string]: any }) {
         const tokens = analyzeLexical(fn.toString());
         return analyzeSyntatic(tokens, paramTypes, userParameters) as FunctionExpression<TParam, TResult>;
     }
@@ -248,7 +248,7 @@ export namespace ExpressionBuilder {
         index: number;
         types: GenericType[];
         scopedParameters: Map<string, ParameterExpression[]>;
-        userParameters: Map<string, any>;
+        userParameters: { [key: string]: any };
     }
     const globalObjectMaps = new Map<string, any>([
         // Global Function
@@ -287,12 +287,12 @@ export namespace ExpressionBuilder {
         ["undefined", undefined],
         ["null", null],
     ]);
-    function analyzeSyntatic(tokens: ILexicalToken[], paramTypes: GenericType[] = [], userParameters = new Map<string, any>()) {
+    function analyzeSyntatic(tokens: ILexicalToken[], paramTypes: GenericType[] = [], userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {
             index: 0,
             types: paramTypes,
             scopedParameters: new Map(),
-            userParameters: new Map()
+            userParameters: userParameters
         };
         const result = createExpression(param, tokens);
         return result;
@@ -410,11 +410,11 @@ export namespace ExpressionBuilder {
                     if (params.length > 0)
                         return params[0];
                 }
-                else if (param.userParameters.has(token.data as string)) {
-                    const data = param.userParameters.get(token.data as string);
+                else if (param.userParameters[token.data as string] !== undefined) {
+                    const data = param.userParameters[token.data as string];
                     if (data instanceof Function) {
                         const paramToken = tokens[++param.index];
-                        const params = createParamsExpression(param, paramToken.data as any);
+                        const params = createParamsExpression(param, paramToken.childrens);
                         return new FunctionCallExpression(data as any, token.data as string, params);
                     }
                     else {

@@ -34,7 +34,7 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
                 this.type = Function as any;
                 break;
             default:
-                try { this.type = functionFn("").constructor as any; } catch (e) {}
+                try { this.type = functionFn().constructor as any; } catch (e) {}
         }
     }
 

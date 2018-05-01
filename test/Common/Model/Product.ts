@@ -1,6 +1,6 @@
 import { NumberColumn, PrimaryKey, StringColumn } from "../../../src/Decorator/Column/index";
 import { Entity } from "../../../src/Decorator/Entity/index";
-import { OrderDetail } from ".";
+import { OrderDetail, Collection } from ".";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 
 @Entity("Products")
@@ -13,4 +13,6 @@ export class Product {
     public Price: number;
     @Relationship<Product>("has", "many", OrderDetail || "OrderDetail", [(o) => o.ProductId])
     public OrderDetails: OrderDetail[];
+    @Relationship<Product>("Contain", "by", "many", Collection || "Collection", [(o) => o.ProductId])
+    public Collections: Collection[];
 }

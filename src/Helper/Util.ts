@@ -7,7 +7,7 @@ export const isValueType = <T>(type: GenericType<T>) => {
     return [Number, String, Date].contains(type as any);
 };
 export const isNativeFunction = (fn: Function) => {
-    return !("prototype" in fn);
+    return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
 };
 // export const toTimezone = (date: Date, targetTimezoneOffset: number, sourceTimezoneOffset?: number) => {
 //     sourceTimezoneOffset = sourceTimezoneOffset !== undefined ? sourceTimezoneOffset : date.getTimezoneOffset();

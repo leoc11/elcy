@@ -11,7 +11,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
         this.state = EntityState.Unchanged;
         const eventListener = new EventListener(entity);
         Reflect.defineMetadata("PropertyChangeEventListener", eventListener, entity);
-        eventListener.add(this.propertyChangedHandler.bind(this), 0);
+        eventListener.add(this.onPropertyChanged.bind(this), 0);
     }
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.properties.all(o => (this.entity as any)[o] !== undefined);
@@ -23,7 +23,31 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
     public getOriginalValue(prop: string) {
         return this.originalValues.get(prop);
     }
-    public propertyChangedHandler(param: IChangeEventParam) {
+    public onPropertyChanged(param: IChangeEventParam) {
+        if (this.dbSet.primaryKeys.contains(param.property as any)) {
+            // primary key changed, update dbset entry dictionary
+            this.dbSet.updateEntryKey(this);
+        }
+        if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
+            const oriValue = this.originalValues.get(param.property);
+            if (oriValue === param.newValue) {
+                this.originalValues.delete(param.property);
+                if (this.originalValues.size <= 0) {
+                    this.state = EntityState.Unchanged;
+                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.type);
+                    if (modEntries)
+                        modEntries.remove(this);
+                }
+            }
+            else if (oriValue === undefined && param.oldValue !== undefined) {
+                this.originalValues.set(param.property, param.oldValue);
+                if (this.state === EntityState.Unchanged) {
+                    this.dbSet.dbContext.changeState(this, EntityState.Modified);
+                }
+            }
+        }
+    }
+    public onRelationChanged(param: IChangeEventParam) {
         if (this.dbSet.primaryKeys.contains(param.property as any)) {
             // primary key changed, update dbset entry dictionary
             this.dbSet.updateEntryKey(this);

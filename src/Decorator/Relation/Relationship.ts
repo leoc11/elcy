@@ -5,10 +5,10 @@ import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
 import { IRelationOption } from "../Option";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 
-export function Relationship<S, T = any>(name: string, type: RelationshipType, targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>, mapName?: string): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, type: RelationshipType, targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>, relationMetaType?: IObjectType<T>): PropertyDecorator;
+export function Relationship<S, T = any>(name: string, type: RelationshipType, targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
+export function Relationship<S, T = any>(name: string, type: RelationshipType, targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, direction: "by", type: RelationshipType, targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType, relationKeysOrTargetType: Array<keyof S | ((source: S) => any)> | IObjectType<T> | string, mapNameOrRelationMetaOrRelationKey: string | IObjectType<T> | Array<keyof S | ((source: S) => any)>): PropertyDecorator {
+export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType, relationKeysOrTargetType: Array<keyof S | ((source: S) => any)> | IObjectType<T> | string, relationKey?: Array<keyof S | ((source: S) => any)>): PropertyDecorator {
     let relationOption: IRelationOption<S, T> = {
         name
     } as any;
@@ -24,7 +24,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             relationOption.targetType = relationKeysOrTargetType as any;
             targetName = relationOption.targetType.name;
         }
-        relationOption.relationKeys = mapNameOrRelationMetaOrRelationKey as any;
+        relationOption.relationKeys = relationKey as any;
     }
     else {
         // master relation.
@@ -38,10 +38,6 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             targetName = relationOption.targetType.name;
         }
         relationOption.relationKeys = relationKeysOrTargetType as any;
-        if (typeof mapNameOrRelationMetaOrRelationKey === "string")
-            relationOption.manyToManyMapName = mapNameOrRelationMetaOrRelationKey;
-        else
-            relationOption.metaType = mapNameOrRelationMetaOrRelationKey as any;
     }
     // TODO: FOR SQL TO-ONE relation target must be a unique or primarykeys
     // TODO: Foreignkey for SQL DB

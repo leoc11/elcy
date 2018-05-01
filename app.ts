@@ -2,6 +2,11 @@
 import { MyDb } from "./test/Common/MyDb";
 import "./src/Extensions/DateExtension";
 import { OrderDirection } from "./src/Common/Type";
+import { entityMetaKey } from "./src/Decorator/DecoratorKey";
+import { CollectionProductData, Collection, Product, Order } from "./test/Common/Model";
+import { IncludeQueryable } from "./src/Queryable/IncludeQueryable";
+import { FunctionExpression } from "./src/ExpressionBuilder/Expression/FunctionExpression";
+import { MemberAccessExpression } from "./src/ExpressionBuilder/Expression/MemberAccessExpression";
 
 // // import { ExpressionBuilder } from "./src/ExpressionBuilder/ExpressionBuilder";
 
@@ -51,9 +56,6 @@ const db = new MyDb();
     /// const where = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).toArray();
 
     // const groupBy = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
-    const [a1, a2] = await db.tests.orderBy({ selector: (o) => o.ID, direction: OrderDirection.DESC }).take(2).toArray();
-    a1.isDefault = !a1.isDefault;
-    a2.isDefault = !a2.isDefault;
-    const rel = await db.saveChanges();
+    const any = await db.collections.include(o => o.Products).toArray();
     const d = 1;
 })();

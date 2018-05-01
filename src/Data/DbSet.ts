@@ -131,6 +131,9 @@ export class DbSet<T> extends Queryable<T> {
         this.dbContext.add(entity);
         return entity;
     }
+    public clear() {
+        this.dictionary = new Map();
+    }
     protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
         if (isValue(id))
             return id.toString();
