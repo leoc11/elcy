@@ -65,7 +65,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
             const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
             const type = this.joinType.toLowerCase() + "Join";
             const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: type };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

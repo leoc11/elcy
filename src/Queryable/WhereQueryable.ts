@@ -29,7 +29,7 @@ export class WhereQueryable<T> extends Queryable<T> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "where" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

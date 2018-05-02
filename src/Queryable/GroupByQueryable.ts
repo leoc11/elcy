@@ -32,7 +32,7 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         if (!this.expression) {
             const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
             const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "groupBy" };
+            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
             this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
         }
         return this.expression;

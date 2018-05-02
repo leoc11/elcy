@@ -16,7 +16,7 @@ export class IntersectQueryable<T> extends Queryable<T> {
                 const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
                 const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
                 const methodExpression = new MethodCallExpression(objectOperand, "intersect", [childOperand]);
-                const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "intersect" };
+                const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
                 this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
             }
         }

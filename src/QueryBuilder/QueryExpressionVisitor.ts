@@ -725,7 +725,7 @@ export class QueryExpressionVisitor {
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                         const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
-                        if (param.scope === expression.methodName) {
+                        if (param.scope === "queryable") {
                             // call from queryable
                             const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                             objectOperand.selects = [column];
@@ -778,7 +778,7 @@ export class QueryExpressionVisitor {
                                 return o.expression;
                             return o;
                         }).toArray(), Number);
-                        if (param.scope === expression.methodName) {
+                        if (param.scope === "queryable") {
                             // call from queryable
                             const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
                             objectOperand.selects = [column];
@@ -817,7 +817,7 @@ export class QueryExpressionVisitor {
                             this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
                         }
                         const anyExp = new ValueExpression(isAny);
-                        if (param.scope === expression.methodName) {
+                        if (param.scope === "queryable") {
                             // call from queryable
                             const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                             objectOperand.selects = [column];
