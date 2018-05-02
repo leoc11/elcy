@@ -14,12 +14,14 @@ import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { EntityState } from "./EntityState";
 import { EntityEntry } from "./EntityEntry";
+import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
     public abstract readonly relationDataTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
+    public deferredQueries: DeferredQuery[] = [];
     public get database() {
         return this.driver.database;
     }

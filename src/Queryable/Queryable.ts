@@ -11,6 +11,7 @@ import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
+import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {
@@ -43,6 +44,46 @@ export abstract class Queryable<T = any> {
         return this.buildQuery(this.queryBuilder).toString(this.queryBuilder);
     }
     public async toArray(): Promise<T[]> {
+        const query = await this.defferedToArray();
+        return await query.execute();
+    }
+    public async count() {
+        const query = await this.defferedCount();
+        return await query.execute();
+    }
+    public async contains(item: T) {
+        const query = await this.defferedContains(item);
+        return await query.execute();
+    }
+    public async sum(selector?: (item: T) => number) {
+        const query = await this.deferredSum(selector);
+        return await query.execute();
+    }
+    public async max(selector?: (item: T) => number) {
+        const query = await this.deferredMax(selector);
+        return await query.execute();
+    }
+    public async min(selector?: (item: T) => number) {
+        const query = await this.deferredMin(selector);
+        return await query.execute();
+    }
+    public async avg(selector?: (item: T) => number) {
+        const query = await this.deferredAvg(selector);
+        return await query.execute();
+    }
+    public async all(predicate: (item: T) => boolean) {
+        const query = await this.deferredAll(predicate);
+        return await query.execute();
+    }
+    public async any(predicate?: (item: T) => boolean) {
+        const query = await this.deferredAny(predicate);
+        return await query.execute();
+    }
+    public async first(predicate?: (item: T) => boolean) {
+        const query = await this.deferredFirst(predicate);
+        return await query.execute();
+    }
+    public async defferedToArray() {
         const key = this.hashCode();
         let n = Date.now();
         const queryCache = await this.dbContext.getQueryChache<T>(key);
@@ -67,14 +108,10 @@ export abstract class Queryable<T = any> {
         }
         n = Date.now();
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        console.log("query time: " + (Date.now() - n));
-        n = Date.now();
-        const result = queryParser.parse(queryResult, this.dbContext);
-        console.log("parse time: " + (Date.now() - n));
-        return result;
+        const query = new DeferredQuery(this.dbContext, queryCommands, params, (result) => queryParser.parse(result, this.dbContext));
+         return query;
     }
-    public async count() {
+    public async defferedCount() {
         let key = this.hashCode() + hashCode("COUNT");
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
@@ -99,40 +136,11 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        const query = new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
+         return query;
     }
-    public async contains(item: T): Promise<boolean> {
-        let key = this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
-        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
-        let queryParser: IQueryResultParser<boolean>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
-        if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
-            expression.includes = [];
-            const methodExpression = new MethodCallExpression(expression, "contains", [new ValueExpression(item)]);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
-            queryBuilder.visit(methodExpression, param);
-            const commandQuery = param.commandExpression;
-            queryCommands = [{
-                query: queryBuilder.getContainsString(expression)
-            }];
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
-        }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
-    }
-    public async sum(selector?: (item: T) => number) {
+    public async deferredSum(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("SUM");
         if (selector)
             key += hashCode(selector.toString());
@@ -164,10 +172,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
     }
-    public async max(selector?: (item: T) => number) {
+    public async deferredMax(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("MAX");
         if (selector)
             key += hashCode(selector.toString());
@@ -199,10 +207,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
     }
-    public async min(selector?: (item: T) => number) {
+    public async deferredMin(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("MIN");
         if (selector)
             key += hashCode(selector.toString());
@@ -234,10 +242,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
     }
-    public async avg(selector?: (item: T) => number): Promise<number> {
+    public async deferredAvg(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("AVG");
         if (selector)
             key += hashCode(selector.toString());
@@ -269,10 +277,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
     }
-    public async all(predicate: (item: T) => boolean): Promise<boolean> {
+    public async deferredAll(predicate: (item: T) => boolean) {
         let key = this.hashCode() + hashCode("ALL") + hashCode(predicate.toString());
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
@@ -301,10 +309,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return !queryResult.first().rows.any();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => !result.first().rows.any());
     }
-    public async any(predicate?: (item: T) => boolean): Promise<boolean> {
+    public async deferredAny(predicate?: (item: T) => boolean) {
         let key = this.hashCode() + hashCode("ANY");
         if (predicate)
             key += hashCode(predicate.toString());
@@ -336,10 +344,10 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryResult.first().rows.any();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => result.first().rows.any());
     }
-    public async first(predicate?: (item: T) => boolean): Promise<T> {
+    public async deferredFirst(predicate?: (item: T) => boolean) {
         let key = this.hashCode() + hashCode("FIRST");
         if (predicate)
             key += hashCode(predicate.toString());
@@ -370,8 +378,37 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const queryResult = await this.dbContext.executeCommands(queryCommands, params);
-        return queryParser.parse(queryResult, this.dbContext).first();
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
+    }
+    public async defferedContains(item: T) {
+        let key = this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
+        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
+        let queryParser: IQueryResultParser<boolean>;
+        let queryCommands: IQueryCommand[];
+        let parameterBuilder: ParameterBuilder;
+        if (!queryCache) {
+            const queryBuilder = this.queryBuilder;
+            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            expression.includes = [];
+            const methodExpression = new MethodCallExpression(expression, "contains", [new ValueExpression(item)]);
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            queryBuilder.visit(methodExpression, param);
+            queryCommands = [{
+                query: queryBuilder.getContainsString(expression)
+            }];
+            queryParser = new this.dbContext.queryParser(expression);
+            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
+            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+        }
+        else {
+            queryParser = queryCache.queryParser;
+            queryCommands = queryCache.queryCommands;
+            parameterBuilder = queryCache.parameterBuilder;
+        }
+        const params = parameterBuilder.getSqlParameters(this.parameters);
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async update(setter: { [key in keyof T]: T[key] }) {
         const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
