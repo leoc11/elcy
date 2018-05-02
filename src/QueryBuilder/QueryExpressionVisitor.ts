@@ -527,7 +527,7 @@ export class QueryExpressionVisitor {
 
                         const parentRelation = objectOperand.parentRelation;
                         const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "select" || param.scope === "selectMany" ? expression.methodName : "" };
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "queryable" ? expression.methodName : "" };
                         this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam);
                         this.scopeParameters.remove(selectorFn.params[0].name);
@@ -701,7 +701,7 @@ export class QueryExpressionVisitor {
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                         objectOperand.distinct = true;
-                        objectOperand.isAggregate = param.scope === expression.methodName;
+                        objectOperand.isAggregate = param.scope === "queryable";
                         return objectOperand;
                     }
                 case "include":
@@ -842,9 +842,35 @@ export class QueryExpressionVisitor {
                             return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
                         }
                     }
+                case "contains":
+                    {
+                        if (param.scope === "include")
+                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                        const item = expression.params[0];
+                        let andExp: IExpression<boolean>;
+                        if (objectOperand.itemType === objectOperand.entity.type) {
+                            for (const primaryCol of objectOperand.entity.primaryColumns) {
+                                const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
+                                andExp = andExp ? new AndExpression(andExp, d) : d;
+                            }
+                        }
+                        else {
+                            andExp = new EqualExpression(objectOperand.selects.first(), item);
+                        }
+                        if (param.scope === "queryable") {
+                            objectOperand.addWhere(andExp);
+                            const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
+                            objectOperand.selects = [column];
+                            objectOperand.paging.take = 1;
+                            objectOperand.isAggregate = true;
+                            return objectOperand;
+                        }
+                        return andExp;
+                    }
                 case "first":
                     {
-                        if (param.scope !== "first")
+                        if (param.scope !== "queryable")
                             throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                         if (expression.params.length > 0) {

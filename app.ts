@@ -56,6 +56,7 @@ const db = new MyDb();
     /// const where = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).toArray();
 
     // const groupBy = await db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate).toArray();
-    const any = await db.collections.include(o => o.Products).toArray();
+    
+    const distinct = await db.orders.select(o => o.TotalAmount).contains(20000);
     const d = 1;
 })();

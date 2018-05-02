@@ -491,8 +491,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case "max":
                 case "avg":
                     return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0] as any) + ")";
-                case "contains":
-                    return this.getExpressionString(expression.params[0]) + " IN (" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
             }
         }
         else if (expression.objectOperand instanceof ValueExpression) {
