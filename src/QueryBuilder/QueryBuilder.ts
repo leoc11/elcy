@@ -729,6 +729,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         throw new Error(`${expression.methodName} deprecated.`);
                 }
                 break;
+            case RegExp:
+                switch (expression.methodName) {
+                    case "test":
+                        return this.getExpressionString(expression.params[0]) + " REGEXP " + this.getExpressionString(expression.objectOperand);
+                    case "exec":
+                    case "toString":
+                        throw new Error(`${expression.methodName} not supported.`);
+                    default:
+                        throw new Error(`non-standard/deprecated ${expression.methodName} method not supported.`);
+                }
             case Function:
                 switch (expression.methodName) {
                     case "apply":
@@ -939,7 +949,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getTypeofExpressionString(_expression: TypeofExpression): string {
         throw new Error(`Typeof not supported`);
     }
-
     protected getBitwiseNotExpressionString(expression: BitwiseNotExpression): string {
         const operandString = this.getOperandString(expression.operand);
         return "~ " + operandString;

@@ -18,9 +18,9 @@ export namespace ExpressionBuilder {
         Identifier,
         String,
         Number,
+        Regexp,
         Keyword,
         Operator,
-        Function,
         Parenthesis,
         Breaker
     }
@@ -105,6 +105,23 @@ export namespace ExpressionBuilder {
             type: LexicalTokenType.Number
         };
     }
+    function analyzeRegexp(pointer: ILexicalPointer, input: string): ILexicalToken {
+        const start = pointer.index;
+        let isFoundEnd = false;
+        let char: string;
+        do {
+            if (!isFoundEnd)
+                isFoundEnd = char === "/";
+            char = input[++pointer.index];
+            if (char === "\\")
+                char = input[pointer.index += 2];
+        } while (!isFoundEnd || char === "i" || char === "g" || char === "m" || char === "u" || char === "y");
+        const data = input.slice(start, pointer.index);
+        return {
+            data: data,
+            type: LexicalTokenType.Regexp
+        };
+    }
     function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock = false) {
         pointer.index++;
         let char: string;
@@ -187,12 +204,14 @@ export namespace ExpressionBuilder {
                 else if (char2 === "/") {
                     analyzeLexicalComment(pointer, input, false);
                 }
-                // TODO: check regex
-                // else if (resultData.length <= 0 || resultData[resultData.length - 1].type !== LexicalTokenType.Operator) {
-                //     throw new Error("Regex not supported");
-                // }
                 else {
-                    resultData.push(analizeLexicalOperator(pointer, input));
+                    const lastToken = resultData[resultData.length - 1];
+                    if (!lastToken || lastToken.type > LexicalTokenType.Regexp) {
+                        resultData.push(analyzeRegexp(pointer, input));
+                    }
+                    else {
+                        resultData.push(analizeLexicalOperator(pointer, input));
+                    }
                 }
             }
             else if (char === stopper) {
@@ -356,9 +375,19 @@ export namespace ExpressionBuilder {
                     break;
                 }
                 case LexicalTokenType.Number:
+                    expression = new ValueExpression(Number.parseFloat(token.data as string));
+                    break;
                 case LexicalTokenType.String:
+                    expression = new ValueExpression(token.data as string);
+                    break;
+                case LexicalTokenType.Regexp: {
+                    const dataStr = token.data as string;
+                    const last = dataStr.lastIndexOf("/");
+                    expression = new ValueExpression(new RegExp(dataStr.substring(1, last), dataStr.substring(last + 1)));
+                    break;
+                }
                 case LexicalTokenType.Identifier: {
-                    expression = createOperandExpression(param, token, tokens);
+                    expression = createIdentifierExpression(param, token, tokens);
                     break;
                 }
                 default:
@@ -402,52 +431,40 @@ export namespace ExpressionBuilder {
         param.index = index;
         return ObjectValueExpression.create(obj);
     }
-    function createOperandExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
-        switch (token.type) {
-            case LexicalTokenType.Identifier:
-                if (param.scopedParameters.has(token.data as string)) {
-                    const params = param.scopedParameters.get(token.data as string);
-                    if (params.length > 0)
-                        return params[0];
-                }
-                else if (param.userParameters[token.data as string] !== undefined) {
-                    const data = param.userParameters[token.data as string];
-                    if (data instanceof Function) {
-                        const paramToken = tokens[++param.index];
-                        const params = createParamsExpression(param, paramToken.childrens);
-                        return new FunctionCallExpression(data as any, token.data as string, params);
-                    }
-                    else {
-                        return new ParameterExpression(token.data as string, data.constructor);
-                    }
-                }
-                else if (globalObjectMaps.has(token.data as string)) {
-                    const data = globalObjectMaps.get(token.data as string);
-                    if (data instanceof Function && isNativeFunction(data)) {
-                        const paramToken = tokens[++param.index];
-                        const params = createParamsExpression(param, paramToken.data as any);
-                        return new FunctionCallExpression(data as any, token.data as string, params);
-                    }
-                    else {
-                        return new ValueExpression(data, token.data as string);
-                    }
-                }
-                return new ParameterExpression(token.data as string);
-            case LexicalTokenType.String:
-                return new ValueExpression(token.data as string);
-            case LexicalTokenType.Function:
+    function createIdentifierExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+        if (param.scopedParameters.has(token.data as string)) {
+            const params = param.scopedParameters.get(token.data as string);
+            if (params.length > 0)
+                return params[0];
+        }
+        else if (param.userParameters[token.data as string] !== undefined) {
+            const data = param.userParameters[token.data as string];
+            if (data instanceof Function) {
+                const paramToken = tokens[++param.index];
+                const params = createParamsExpression(param, paramToken.childrens);
+                return new FunctionCallExpression(data as any, token.data as string, params);
+            }
+            else {
+                return new ParameterExpression(token.data as string, data.constructor);
+            }
+        }
+        else if (globalObjectMaps.has(token.data as string)) {
+            const data = globalObjectMaps.get(token.data as string);
+            if (data instanceof Function && isNativeFunction(data)) {
                 const paramToken = tokens[++param.index];
                 const params = createParamsExpression(param, paramToken.data as any);
-                return FunctionCallExpression.Create(null, params, token.data as string);
-            case LexicalTokenType.Number:
-                return new ValueExpression(Number.parseFloat(token.data as string));
+                return new FunctionCallExpression(data as any, token.data as string, params);
+            }
+            else {
+                return new ValueExpression(data, token.data as string);
+            }
         }
-        throw new Error("asd");
+        return new ParameterExpression(token.data as string);
     }
     function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
         switch (token.data) {
             case "new":
-                const typeExp = createOperandExpression(param, tokens[param.index++], tokens) as ValueExpression<any>;
+                const typeExp = createIdentifierExpression(param, tokens[param.index++], tokens) as ValueExpression<any>;
                 const paramToken = tokens[param.index];
                 let params: IExpression[] = [];
                 if (paramToken.type === LexicalTokenType.Parenthesis && paramToken.data === ")") {
