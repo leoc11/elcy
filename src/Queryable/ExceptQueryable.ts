@@ -7,8 +7,8 @@ import { hashCode } from "../Helper/Util";
 
 export class ExceptQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
-        super(parent.type);
-        this.setParameters(this.parent.parameters);
+        super(parent.type, parent);
+        this.setOption(this.parent2.options);
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {

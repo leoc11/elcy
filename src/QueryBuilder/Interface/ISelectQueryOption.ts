@@ -1,7 +1,8 @@
 export interface IQueryOption {
-    recompile: boolean;
-    isolationLevel: transactionIsolationLevel;
-    userParameters?: Map<string, any>;
+    recompile?: boolean;
+    noTracking?: boolean;
+    isolationLevel?: transactionIsolationLevel;
+    userParameters?: { [key: string]: any };
     batchSize?: number;
     batchDelay?: number;
 }

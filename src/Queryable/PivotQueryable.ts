@@ -50,8 +50,7 @@ export class PivotQueryable<T,
         this._metrics = value;
     }
     constructor(public readonly parent: Queryable<T>, dimensions: TD1 | TD, metrics: TM1 | TM) {
-        super(Object);
-        this.setParameters(this.parent.parameters);
+        super(Object, parent);
         if (dimensions instanceof FunctionExpression)
             this.dimensions = dimensions;
         else

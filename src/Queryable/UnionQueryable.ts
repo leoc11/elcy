@@ -8,8 +8,7 @@ import { hashCode } from "../Helper/Util";
 export class UnionQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>, public readonly isUnionAll = false) {
-        super(parent.type);
-        this.setParameters(this.parent.parameters);
+        super(parent.type, parent);
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
         if (!this.expression) {

@@ -12,6 +12,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
+import { IQueryOption } from "../QueryBuilder/Interface/ISelectQueryOption";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {
@@ -25,16 +26,34 @@ export abstract class Queryable<T = any> {
         return this.parent.dbContext;
     }
     public parameters: { [key: string]: any } = {};
+    public options: IQueryOption = {};
     public setParameters(params: { [key: string]: any }) {
-        if (!this.parameters)
-            this.parameters = {};
-        Object.assign(this.parameters, params);
+        if (!this.options.userParameters)
+            this.options.userParameters = {};
+        Object.assign(this.options.userParameters, params);
         return this;
+    }
+    public setOption(option: IQueryOption) {
+        for (const prop in option) {
+            const value = (option as any)[prop];
+            if (value instanceof Object) {
+                if (!(this.options as any)[prop])
+                    (this.options as any)[prop] = {};
+                Object.assign((this.options as any)[prop], value);
+            }
+            else {
+                (this.options as any)[prop] = value;
+            }
+        }
     }
     protected expression: ICommandQueryExpression<T>;
     protected parent: Queryable;
     private _queryBuilder: QueryBuilder;
-    constructor(public type: GenericType<T>) {
+    constructor(public type: GenericType<T>, parent?: Queryable) {
+        if (parent) {
+            this.parent = parent;
+            this.setOption(this.parent.options);
+        }
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
         return this.expression;
@@ -109,7 +128,7 @@ export abstract class Queryable<T = any> {
         n = Date.now();
         const params = parameterBuilder.getSqlParameters(this.parameters);
         const query = new DeferredQuery(this.dbContext, queryCommands, params, (result) => queryParser.parse(result, this.dbContext));
-         return query;
+        return query;
     }
     public async defferedCount() {
         let key = this.hashCode() + hashCode("COUNT");
@@ -136,9 +155,9 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        const query = new DeferredQuery(this.dbContext, queryCommands, params, 
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
-         return query;
+        return query;
     }
     public async deferredSum(selector?: (item: T) => number) {
         let key = this.hashCode() + hashCode("SUM");
@@ -172,7 +191,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredMax(selector?: (item: T) => number) {
@@ -207,7 +226,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredMin(selector?: (item: T) => number) {
@@ -242,7 +261,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredAvg(selector?: (item: T) => number) {
@@ -277,7 +296,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredAll(predicate: (item: T) => boolean) {
@@ -309,7 +328,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => !result.first().rows.any());
     }
     public async deferredAny(predicate?: (item: T) => boolean) {
@@ -344,7 +363,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => result.first().rows.any());
     }
     public async deferredFirst(predicate?: (item: T) => boolean) {
@@ -378,7 +397,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async defferedContains(item: T) {
@@ -407,7 +426,7 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params, 
+        return new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async update(setter: { [key in keyof T]: T[key] }) {
