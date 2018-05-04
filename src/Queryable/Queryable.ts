@@ -141,7 +141,7 @@ export abstract class Queryable<T = any> {
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
             expression.includes = [];
             const methodExpression = new MethodCallExpression(expression, "count", []);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -177,7 +177,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "sum", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -212,7 +212,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "max", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -247,7 +247,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "min", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -282,7 +282,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, number>(selector, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "avg", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -314,7 +314,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "all", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -349,7 +349,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "any", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -383,7 +383,7 @@ export abstract class Queryable<T = any> {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate, [this.type]));
             }
             const methodExpression = new MethodCallExpression(expression, "first", metParams);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
             queryCommands = commandQuery.toQueryCommands(queryBuilder);
@@ -411,11 +411,10 @@ export abstract class Queryable<T = any> {
             let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
             expression.includes = [];
             const methodExpression = new MethodCallExpression(expression, "contains", [new ValueExpression(item)]);
-            const param: IQueryVisitParameter = { commandExpression: expression, scope: methodExpression.methodName };
+            const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
-            queryCommands = [{
-                query: queryBuilder.getContainsString(expression)
-            }];
+            const commandQuery = param.commandExpression;
+            queryCommands = commandQuery.toQueryCommands(queryBuilder);
             queryParser = new this.dbContext.queryParser(expression);
             parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
             this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
@@ -426,8 +425,8 @@ export abstract class Queryable<T = any> {
             parameterBuilder = queryCache.parameterBuilder;
         }
         const params = parameterBuilder.getSqlParameters(this.parameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+        return new DeferredQuery(this.dbContext, queryCommands, params, 
+            (result) => queryParser.parse(result, this.dbContext).any());
     }
     public async update(setter: { [key in keyof T]: T[key] }) {
         const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
