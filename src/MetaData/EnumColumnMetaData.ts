@@ -1,11 +1,14 @@
 import { EnumColumnType } from "../Common/ColumnType";
 import { GenericType } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
+import { IEntityMetaData } from "./Interface";
 
 // TODO: for not supported db, use Check constraint
-export class EnumColumnMetaData<T extends string | number> extends ColumnMetaData<T> {
+export class EnumColumnMetaData<TE = any, T extends string | number = any> extends ColumnMetaData<TE, T> {
     public columnType: EnumColumnType = "enum";
-    constructor(public type: GenericType<T>, public options: T[]) {
-        super(type);
+    public type: GenericType<T>;
+    public options: T[];
+    constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
+        super(type, entityMeta);
     }
 }

@@ -1,10 +1,11 @@
 import { DecimalColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-export class DecimalColumnMetaData extends ColumnMetaData<number> {
+import { IEntityMetaData } from "./Interface";
+export class DecimalColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public precision?: number;
     public scale?: number;
     public columnType: DecimalColumnType = "decimal";
-    constructor() {
-        super(Number);
+    constructor(entityMeta?: IEntityMetaData<TE>) {
+        super(Number, entityMeta);
     }
 }

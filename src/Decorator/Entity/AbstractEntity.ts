@@ -35,12 +35,12 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                     isInheritance = true;
                 }
                 if (isInheritance) {
-                    if (parentMetaData.createDateProperty)
-                        entityMetadata.createDateProperty = parentMetaData.createDateProperty;
-                    if (parentMetaData.modifiedDateProperty)
-                        entityMetadata.modifiedDateProperty = parentMetaData.modifiedDateProperty;
-                    if (parentMetaData.deleteProperty)
-                        entityMetadata.deleteProperty = parentMetaData.deleteProperty;
+                    if (parentMetaData.createDateColumn)
+                        entityMetadata.createDateColumn = parentMetaData.createDateColumn;
+                    if (parentMetaData.modifiedDateColumn)
+                        entityMetadata.modifiedDateColumn = parentMetaData.modifiedDateColumn;
+                    if (parentMetaData.deleteColumn)
+                        entityMetadata.deleteColumn = parentMetaData.deleteColumn;
                     if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                         entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 

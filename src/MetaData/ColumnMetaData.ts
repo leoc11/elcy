@@ -1,8 +1,12 @@
 import { ColumnType } from "../Common/ColumnType";
 import { GenericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
+import { IColumnMetaData } from "./Interface/IColumnMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class ColumnMetaData<T = any> implements IColumnOption<T> {
+export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {
+    public entity: IEntityMetaData<TE>;
+    public propertyName?: keyof TE;
     public columnName: string;
     public nullable: boolean;
     public default?: T;
@@ -11,10 +15,11 @@ export class ColumnMetaData<T = any> implements IColumnOption<T> {
     public type: GenericType<T>;
     public collation: string;
     public charset: string;
-    // tslint:disable-next-line:no-shadowed-variable
-    constructor(type?: GenericType<T>) {
+    constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         if (typeof type !== "undefined")
             this.type = type;
+        if (entityMeta)
+            this.entity = entityMeta;
     }
 
     public applyOption(columnMeta: IColumnOption<any>) {

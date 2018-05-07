@@ -1,15 +1,12 @@
 import { DateColumnType } from "../Common/ColumnType";
 import { DateTimeKind } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
-export class DateColumnMetaData extends ColumnMetaData<Date> {
+import { IEntityMetaData } from "./Interface";
+export class DateColumnMetaData<TE = any> extends ColumnMetaData<TE, Date> {
     public columnType: DateColumnType = "datetime";
     public precision?: number;
     public dateTimeKind = DateTimeKind.UTC;
-    /*
-    * UTC TimeZone offset in minute.
-    */
-    public timezoneOffset: number;
-    constructor() {
-        super(Date);
+    constructor(entityMeta?: IEntityMetaData<TE>) {
+        super(Date, entityMeta);
     }
 }

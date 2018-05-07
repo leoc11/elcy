@@ -5,15 +5,16 @@ import { InheritanceMetaData, RelationMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
 import { IOrderCondition } from "./Interface/IOrderCondition";
+import { IColumnMetaData } from "./Interface/IColumnMetaData";
 
-export class AbstractEntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
+export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderCondition[];
-    public primaryKeys: Array<keyof T> = [];
-    public deleteProperty?: string;
-    public relations: { [key: string]: RelationMetaData<T, any> } = {};
-    public createDateProperty?: string;
-    public modifiedDateProperty?: string;
-    public properties: string[] = [];
+    public primaryKeys: Array<IColumnMetaData<TE>> = [];
+    public deleteColumn?: IColumnMetaData<TE>;
+    public relations: { [key: string]: RelationMetaData<TE, any> } = {};
+    public createDateColumn?: IColumnMetaData<TE>;
+    public modifiedDateColumn?: IColumnMetaData<TE>;
+    public properties: IColumnMetaData<TE>[] = [];
     public indices: { [key: string]: IndexMetaData } = {};
     public computedProperties: string[] = [];
 
@@ -23,7 +24,7 @@ export class AbstractEntityMetaData<T extends TParent, TParent = any> implements
     public inheritance = new InheritanceMetaData<TParent>();
     public name: string;
 
-    constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<TE>, name?: string, defaultOrder?: IOrderCondition[]) {
         if (typeof name !== "undefined")
             this.name = name;
         if (typeof defaultOrder !== "undefined")

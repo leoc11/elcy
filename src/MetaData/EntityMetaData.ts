@@ -9,9 +9,9 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public name: string;
     public defaultOrder?: IOrderCondition[];
     public primaryKeys: Array<keyof T> = [];
-    public deleteProperty: string;
-    public createDateProperty: string;
-    public modifiedDateProperty: string;
+    public deleteColumn: string;
+    public createDateColumn: string;
+    public modifiedDateColumn: string;
     public properties: string[] = [];
     public indices: { [key: string]: IndexMetaData } = {};
     public relations: { [key: string]: RelationMetaData<T, any> } = {};
@@ -37,16 +37,16 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public ApplyOption(entityMeta: IEntityMetaData<T>) {
         if (typeof entityMeta.computedProperties !== "undefined")
             this.computedProperties = entityMeta.computedProperties;
-        if (typeof entityMeta.createDateProperty !== "undefined")
-            this.createDateProperty = entityMeta.createDateProperty;
+        if (typeof entityMeta.createDateColumn !== "undefined")
+            this.createDateColumn = entityMeta.createDateColumn;
         if (typeof entityMeta.defaultOrder !== "undefined")
             this.defaultOrder = entityMeta.defaultOrder;
-        if (typeof entityMeta.deleteProperty !== "undefined")
-            this.deleteProperty = entityMeta.deleteProperty;
+        if (typeof entityMeta.deleteColumn !== "undefined")
+            this.deleteColumn = entityMeta.deleteColumn;
         if (typeof entityMeta.indices !== "undefined")
             this.indices = entityMeta.indices;
-        if (typeof entityMeta.modifiedDateProperty !== "undefined")
-            this.modifiedDateProperty = entityMeta.modifiedDateProperty;
+        if (typeof entityMeta.modifiedDateColumn !== "undefined")
+            this.modifiedDateColumn = entityMeta.modifiedDateColumn;
         if (typeof entityMeta.primaryKeys !== "undefined")
             this.primaryKeys = entityMeta.primaryKeys;
         if (typeof entityMeta.relations !== "undefined")
