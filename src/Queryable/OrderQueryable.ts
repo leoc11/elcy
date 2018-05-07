@@ -27,8 +27,7 @@ export class OrderQueryable<T> extends Queryable<T> {
         this._selectors = value;
     }
     constructor(public readonly parent: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]) {
-        super(parent.type);
-        this.setParameters(this.parent.parameters);
+        super(parent.type, parent);
         this.selectorsFn = selectors;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression {

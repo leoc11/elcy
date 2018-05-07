@@ -21,8 +21,7 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         this._keySelector = value;
     }
     constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<T, K> | ((item: T) => K)) {
-        super(Array as any);
-        this.setParameters(this.parent.parameters);
+        super(Array as any, parent);
         if (keySelector instanceof FunctionExpression)
             this.keySelector = keySelector;
         else
