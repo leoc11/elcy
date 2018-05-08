@@ -131,7 +131,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                     this.setDeepProperty(a, sourceProperty, value);
                 }
                 let key = hashCode(JSON.stringify(a));
-                const sourceEntity = customTypeMap.get(relationDataMeta.sourceType).get(key);
+                const sourceEntity = customTypeMap.get(relationDataMeta.source.type).get(key);
 
                 a = {};
                 for (const [relationProperty, targetProperty] of relationDataMeta.targetRelationMaps) {
@@ -142,7 +142,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                     this.setDeepProperty(a, targetProperty, value);
                 }
                 key = hashCode(JSON.stringify(a));
-                const targetEntity = customTypeMap.get(relationDataMeta.targetType).get(key);
+                const targetEntity = customTypeMap.get(relationDataMeta.target.type).get(key);
                 Reflect.setRelationData(sourceEntity, relationDataMeta.sourceRelationMeta.propertyName, targetEntity, entity);
 
                 if (relationDataMeta.completeRelationType === "many-many") {

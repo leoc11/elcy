@@ -19,7 +19,7 @@ export class RelationDataExpression<T = any> implements IEntityExpression<T> {
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
             if (this.metaData) {
-                const primaryKeys = this.metaData.sourceRelationKeys.union(this.metaData.targetRelationKeys);
+                const primaryKeys = this.metaData.sourceRelationColumns.union(this.metaData.targetRelationColumns);
                 this._columns = this.metaData.columns.select((o) => new ColumnExpression(this, o.propertyName, primaryKeys.contains(o))).toArray();
             }
             else

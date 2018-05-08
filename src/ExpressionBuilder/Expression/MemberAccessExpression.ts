@@ -22,10 +22,10 @@ export class MemberAccessExpression<TType, KProp extends keyof TType> extends Ex
                 const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, memberName);
                 if (relationMeta) {
                     if (relationMeta.relationType === "one")
-                        this.type = relationMeta.targetType;
+                        this.type = relationMeta.target.type;
                     else {
                         this.type = Array as any;
-                        this.itemType = relationMeta.targetType;
+                        this.itemType = relationMeta.target.type;
                     }
                 }
             }

@@ -170,7 +170,7 @@ export class QueryExpressionVisitor {
             }
             const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
             if (relationMeta) {
-                const targetType = relationMeta.targetType;
+                const targetType = relationMeta.target.type;
                 switch (param.scope) {
                     case "select":
                     case "selectMany":

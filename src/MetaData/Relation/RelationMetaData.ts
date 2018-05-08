@@ -1,60 +1,69 @@
-import { IObjectType, RelationshipType, CompleteRelationshipType } from "../../Common/Type";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
-import { EntityMetaData } from "../EntityMetaData";
+import { RelationshipType, CompleteRelationshipType, ReferenceOption } from "../../Common/Type";
+import { entityMetaKey, columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationOption } from "../../Decorator/Option";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { RelationDataMetaData } from "./RelationDataMetaData";
+import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { IColumnMetaData } from "../Interface/IColumnMetaData";
+import { IEntityMetaData } from "../Interface";
 
-export class RelationMetaData<TSource, TTarget> {
+export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {
     public relationMaps: Map<any, any> = new Map();
     public propertyName: keyof TSource;
     public reverseRelation: RelationMetaData<TTarget, TSource>;
     public relationData: RelationDataMetaData;
-    public sourceType: IObjectType<TSource>;
-    public targetType: IObjectType<TTarget>;
+
+    public source: IEntityMetaData<TSource>;
+    public target: IEntityMetaData<TTarget>;
     public name: string;
     public relationType: RelationshipType;
-    public relationKeys: Array<keyof TSource> = [];
+    public relationColumns: Array<IColumnMetaData<TSource>> = [];
     public isMaster: boolean;
+    public updateOption?: ReferenceOption;
+    public deleteOption?: ReferenceOption;
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
     constructor(relationOption: IRelationOption<TSource, TTarget>) {
-        this.sourceType = relationOption.sourceType;
-        this.targetType = relationOption.targetType;
         this.name = relationOption.name;
         this.isMaster = relationOption.isMaster;
         this.relationType = relationOption.relationType;
         this.propertyName = relationOption.propertyName;
-        this.relationKeys = relationOption.relationKeys.select(o => typeof o === "string" ? o : FunctionHelper.propertyName(o)).toArray();
+
+        this.source = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
+
+        if (relationOption.targetType)
+            this.target = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
+
+        this.relationColumns = relationOption.relationKeys.select(o => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+            .select(o => Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>).toArray();
     }
     public completeRelation(reverseRelation: RelationMetaData<TTarget, TSource>) {
         if (this.isMaster) {
             this.reverseRelation = reverseRelation;
             this.reverseRelation.reverseRelation = this;
             // set each target for to make sure no problem
-            this.targetType = this.reverseRelation.sourceType;
-            this.reverseRelation.targetType = this.sourceType;
+            this.target = this.reverseRelation.source;
+            this.reverseRelation.target = this.source;
 
             this.reverseRelation.isMaster = false;
 
             const isManyToMany = this.relationType === "many" && reverseRelation.relationType === "many";
             if (!isManyToMany) {
                 // set relation maps. Many to Many relation map will be set by RelationData
-                if (this.relationKeys.length <= 0) {
+                if (this.relationColumns.length <= 0) {
                     // set default value.
                     if (this.relationType === "many" && this.reverseRelation.relationType === "one") {
                         // this is a foreignkey
-                        this.relationKeys = [this.name + "_" + this.targetType.name + "_Id" as any];
+                        this.relationColumns = [this.name + "_" + this.target.type.name + "_Id" as any];
                     }
                     else {
-                        const entityMeta: EntityMetaData<TSource> = Reflect.getOwnMetadata(entityMetaKey, this.sourceType);
-                        this.relationKeys = this.relationKeys.concat(entityMeta.primaryKeys);
+                        this.relationColumns = this.relationColumns.concat(this.source.primaryKeys);
                     }
                 }
-                for (let i = 0; i < this.relationKeys.length; i++) {
-                    this.relationMaps.set(this.relationKeys[i], this.reverseRelation.relationKeys[i]);
-                    this.reverseRelation.relationMaps.set(this.reverseRelation.relationKeys[i], this.relationKeys[i]);
+                for (let i = 0; i < this.relationColumns.length; i++) {
+                    this.relationMaps.set(this.relationColumns[i], this.reverseRelation.relationColumns[i]);
+                    this.reverseRelation.relationMaps.set(this.reverseRelation.relationColumns[i], this.relationColumns[i]);
                 }
             }
         }

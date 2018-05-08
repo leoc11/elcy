@@ -3,16 +3,18 @@ import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption"
 import { IObjectType } from "../../Common/Type";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
+import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
+import { columnMetaKey } from "../../Decorator/DecoratorKey";
 
-export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataOption<TType, TSource, TTarget> {
-    public get sourceType(): IObjectType<TSource> {
-        return this.sourceRelationMeta.sourceType;
+export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataMetaData<TType, TSource, TTarget> {
+    public get source() {
+        return this.sourceRelationMeta.source;
     }
-    public get targetType(): IObjectType<TTarget> {
-        return this.targetRelationMeta.sourceType;
+    public get target() {
+        return this.targetRelationMeta.source;
     }
-    public sourceRelationKeys: string[] = [];
-    public targetRelationKeys: string[] = [];
+    public sourceRelationColumns: IColumnMetaData<TSource>[] = [];
+    public targetRelationColumns: IColumnMetaData<TTarget>[] = [];
     public sourceRelationMeta: RelationMetaData<TSource, TTarget>;
     public targetRelationMeta: RelationMetaData<TTarget, TSource>;
     public columns: IColumnMetaData<TType>[] = [];
@@ -27,8 +29,10 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     constructor(relationOption: IRelationDataOption<TType, TSource, TTarget>) {
         this.name = relationOption.name;
         this.relationName = relationOption.relationName;
-        this.sourceRelationKeys = relationOption.sourceRelationKeys;
-        this.targetRelationKeys = relationOption.targetRelationKeys;
+
+        // TODO: possible failed coz relationOption.targetType / sourceType may undefined|string
+        this.sourceRelationColumns = relationOption.sourceRelationKeys.select(o => Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o)).toArray();
+        this.targetRelationColumns = relationOption.targetRelationKeys.select(o => Reflect.getOwnMetadata(columnMetaKey, relationOption.targetType, o)).toArray();
         this.type = relationOption.type;
     }
     public completeRelation(sourceRelation: RelationMetaData<TSource, TTarget>, targetRelation: RelationMetaData<TTarget, TSource>) {
@@ -39,16 +43,16 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.sourceRelationMeta.completeRelation(this.targetRelationMeta);
 
         const isManyToMany = (this.sourceRelationMeta.relationType === "many") && (this.targetRelationMeta.relationType === "many");
-        for (let i = 0; i < this.sourceRelationKeys.length; i++) {
-            const dataKey = this.sourceRelationKeys[i];
-            const sourceKey = this.sourceRelationMeta.relationKeys[i];
+        for (let i = 0; i < this.sourceRelationColumns.length; i++) {
+            const dataKey = this.sourceRelationColumns[i];
+            const sourceKey = this.sourceRelationMeta.relationColumns[i];
             this.sourceRelationMaps.set(dataKey, sourceKey);
             if (isManyToMany)
                 this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey);
         }
-        for (let i = 0; i < this.targetRelationKeys.length; i++) {
-            const dataKey = this.targetRelationKeys[i];
-            const targetKey = this.targetRelationMeta.relationKeys[i];
+        for (let i = 0; i < this.targetRelationColumns.length; i++) {
+            const dataKey = this.targetRelationColumns[i];
+            const targetKey = this.targetRelationMeta.relationColumns[i];
             this.targetRelationMaps.set(dataKey, targetKey);
             if (isManyToMany)
                 this.targetRelationMeta.relationMaps.set(targetKey, dataKey);

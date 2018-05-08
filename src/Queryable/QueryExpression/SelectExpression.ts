@@ -216,10 +216,10 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 return child.parentRelation;
             }
             else {
-                const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : relationMeta.reverseRelation.relationType;
+                const relType = relationMeta.source.type === this.entity.type ? relationMeta.relationType : relationMeta.reverseRelation.relationType;
                 type = relType === "one" ? type ? type : JoinType.INNER : JoinType.LEFT;
                 relationMap = new Map();
-                const isReverse = relationMeta.sourceType !== this.entity.type;
+                const isReverse = relationMeta.source.type !== this.entity.type;
                 for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childProperty : parentProperty));
                     const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentProperty : childProperty));

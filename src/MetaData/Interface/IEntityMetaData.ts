@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IndexMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { InheritanceMetaData, RelationMetaData } from "../Relation";
 import { IOrderMetaData } from "./IOrderMetaData";
@@ -16,7 +16,7 @@ export interface IEntityMetaData<TE extends TParent, TParent = any> extends IDBE
     columns: IColumnMetaData<TE>[];
     indices: { [key: string]: IndexMetaData };
     computedProperties: ComputedColumnMetaData<TE>[];
-    type: GenericType<TE>;
+    type: IObjectType<TE>;
     descriminatorMember?: string;
     allowInheritance: boolean;
     inheritance: InheritanceMetaData<TParent>;

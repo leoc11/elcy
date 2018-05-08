@@ -4,17 +4,16 @@ import { IStringColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function StringColumn(option?: IStringColumnOption): PropertyDecorator;
-// tslint:disable-next-line:ban-types
-export function StringColumn(name?: string | IStringColumnOption, defaultValue?: string): PropertyDecorator {
-    const metadata = new StringColumnMetaData();
-    if (name && typeof name !== "string") {
-        metadata.applyOption(name);
+export function StringColumn(optionOrName?: IStringColumnOption | string, defaultValue?: string): PropertyDecorator {
+    let option: IStringColumnOption = {};
+    if (optionOrName && typeof optionOrName !== "string") {
+        option = optionOrName;
     }
     else {
-        if (typeof name !== "undefined")
-            metadata.columnName = name as string;
+        if (typeof optionOrName !== "undefined")
+            option.columnName = optionOrName as string;
         if (typeof defaultValue !== "undefined")
-            metadata.default = defaultValue;
+            option.default = defaultValue;
     }
-    return Column(metadata);
+    return Column(StringColumnMetaData, option);
 }
