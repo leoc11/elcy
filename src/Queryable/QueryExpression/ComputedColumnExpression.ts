@@ -10,19 +10,19 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         return this.expression.type;
     }
     public columnType: ColumnType;
-    public propertyName: string;
+    public columnName: string;
     public isPrimary = false;
-    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public columnName: string) {
+    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: string) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
         }
-        this.propertyName = columnName;
+        this.columnName = propertyName;
     }
     public clone() {
-        const clone = new ComputedColumnExpression(this.entity, this.expression, this.columnName);
+        const clone = new ComputedColumnExpression(this.entity, this.expression, this.propertyName);
         clone.isPrimary = this.isPrimary;
         clone.columnType = this.columnType;
-        clone.propertyName = this.propertyName;
+        clone.columnName = this.columnName;
         return clone;
     }
     public toString(transformer: QueryBuilder): string {

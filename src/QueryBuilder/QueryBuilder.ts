@@ -1000,7 +1000,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
                 if (o instanceof ComputedColumnExpression)
-                    return new ColumnExpression(o.entity, o.propertyName, o.type, o.isPrimary, o.columnName);
+                    return new ColumnExpression(o.entity, o.type, o.propertyName, o.columnName, o.isPrimary);
                 return o;
             }).toArray(), select.itemType, this.newAlias()));
             // select each include as separated query as it more beneficial for performance
