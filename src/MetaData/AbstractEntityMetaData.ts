@@ -1,30 +1,31 @@
 import { ClassBase, GenericType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { IndexMetaData } from "../MetaData";
+import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
 import { InheritanceMetaData, RelationMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
-import { IOrderCondition } from "./Interface/IOrderCondition";
+import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
-    public defaultOrder?: IOrderCondition[];
+    public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
     public deleteColumn?: IColumnMetaData<TE>;
     public relations: { [key: string]: RelationMetaData<TE, any> } = {};
     public createDateColumn?: IColumnMetaData<TE>;
     public modifiedDateColumn?: IColumnMetaData<TE>;
-    public properties: IColumnMetaData<TE>[] = [];
+    public columns: IColumnMetaData<TE>[] = [];
     public indices: { [key: string]: IndexMetaData } = {};
-    public computedProperties: string[] = [];
+    public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance
     public parentType?: GenericType<TParent>;
     public allowInheritance = false;
-    public inheritance = new InheritanceMetaData<TParent>();
+    public inheritance: InheritanceMetaData<TParent>;
     public name: string;
 
-    constructor(public type: GenericType<TE>, name?: string, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<TE>, name?: string, defaultOrder?: IOrderMetaData[]) {
+        this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")
             this.name = name;
         if (typeof defaultOrder !== "undefined")

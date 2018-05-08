@@ -1027,9 +1027,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return null;
 
         const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
-        const columns = entityMetaData.properties.select(o => ({
-            propertyName: o,
-            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
+        const columns = entityMetaData.columns.select(o => ({
+            propertyName: o.propertyName,
+            metaData: o
         }));
         const generatedColumns = columns.where(o => {
             const meta = o.metaData;
@@ -1081,9 +1081,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         const where = entityMetaData.primaryKeys.select(o => {
             const paramName = this.newAlias("param");
-            result.parameters.set(paramName, entry.entity[o]);
-            const metaData = Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData;
-            return this.enclose(metaData.columnName) + " = @" + paramName;
+            result.parameters.set(paramName, entry.entity[o.propertyName]);
+            return this.enclose(o.columnName) + " = @" + paramName;
         }).toArray().join(" AND ");
 
         result.query = `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`;
@@ -1098,13 +1097,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             parameters: new Map()
         };
         const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
-        const primaryColumns = entityMetaData.primaryKeys.select(o => ({
-            propertyName: o,
-            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
-        }));
         let condition = "";
         if (entityMetaData.primaryKeys.length === 1) {
-            const primaryCol = primaryColumns.first();
+            const primaryCol = entityMetaData.primaryKeys.first();
             const primaryValues = entries.select(o => {
                 const paramName = this.newAlias("param");
                 result.parameters.set(paramName, o.entity[primaryCol.propertyName]);
@@ -1113,15 +1108,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             condition = `WHERE ${primaryCol.propertyName} IN (${primaryValues})`;
         }
         else {
-            const columnName = primaryColumns.select(o => o.metaData.columnName).toArray().join(",");
-            const primaryValues = entries.select(o => "(" + primaryColumns.select(c => {
+            const columnName =  entityMetaData.primaryKeys.select(o => o.columnName).toArray().join(",");
+            const primaryValues = entries.select(o => "(" + entityMetaData.primaryKeys.select(c => {
                 const paramName = this.newAlias("param");
                 result.parameters.set(paramName, o.entity[c.propertyName]);
                 return `@${paramName}`;
             }).toArray().join(",") + ")").toArray().join(",");
             const entityAlias = this.newAlias();
             const valueAlias = this.newAlias();
-            const joins = primaryColumns.select(o => `${entityAlias}.${o} = ${valueAlias}.${o}`).toArray().join(" AND ");
+            const joins = entityMetaData.primaryKeys.select(o => `${entityAlias}.${o.columnName} = ${valueAlias}.${o.columnName}`).toArray().join(" AND ");
             condition = `${entityAlias} JOIN (VALUES ${primaryValues}) AS ${valueAlias} (${columnName}) ON ${joins}`;
         }
         result.query = `DELETE FROM ${this.enclose(entityMetaData.name)} ${condition}`;

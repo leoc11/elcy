@@ -1,20 +1,21 @@
 import { GenericType } from "../../Common/Type";
-import { IndexMetaData } from "../../MetaData";
+import { IndexMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { InheritanceMetaData, RelationMetaData } from "../Relation";
-import { IOrderCondition } from "./IOrderCondition";
+import { IOrderMetaData } from "./IOrderMetaData";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IColumnMetaData } from "./IColumnMetaData";
 
 export interface IEntityMetaData<TE extends TParent, TParent = any> extends IDBEventListener<TE> {
     name: string;
-    defaultOrder?: IOrderCondition[];
+    schema?: string;
+    defaultOrder?: IOrderMetaData[];
     primaryKeys: Array<IColumnMetaData<TE>>;
     deleteColumn?: IColumnMetaData<TE, boolean>;
     createDateColumn?: IColumnMetaData<TE, Date>;
     modifiedDateColumn?: IColumnMetaData<TE, Date>;
-    properties: IColumnMetaData<TE>[];
+    columns: IColumnMetaData<TE>[];
     indices: { [key: string]: IndexMetaData };
-    computedProperties: string[];
+    computedProperties: ComputedColumnMetaData<TE>[];
     type: GenericType<TE>;
     descriminatorMember?: string;
     allowInheritance: boolean;

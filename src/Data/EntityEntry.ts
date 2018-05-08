@@ -14,7 +14,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
         eventListener.add(this.onPropertyChanged.bind(this), 0);
     }
     public get isCompletelyLoaded() {
-        return this.dbSet.metaData.properties.all(o => (this.entity as any)[o] !== undefined);
+        return this.dbSet.metaData.columns.all(o => (this.entity as any)[o] !== undefined);
     }
     private originalValues: Map<string, any> = new Map();
     public isPropertyModified(prop: string) {

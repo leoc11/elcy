@@ -2,6 +2,7 @@
 import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
 import { IEntityMetaData } from ".";
+import { IColumnOption } from "../../Decorator/Option";
 export interface IColumnMetaData<TE = any, T = any> {
     entity?: IEntityMetaData<TE>;
     schema?: string;
@@ -18,4 +19,6 @@ export interface IColumnMetaData<TE = any, T = any> {
     isCreatedDate?: boolean;
     isModifiedDate?: boolean;
     isDeleteColumn?: boolean;
+
+    applyOption(option: IColumnMetaData | IColumnOption): void;
 }

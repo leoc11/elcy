@@ -1,21 +1,22 @@
 import { GenericType } from "../Common/Type";
-import { IndexMetaData } from "../MetaData";
-import { IEntityMetaData, IOrderCondition, ISaveEventParam, IDeleteEventParam } from "./Interface";
+import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
+import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
 import { InheritanceMetaData } from "./Relation";
 import { RelationMetaData } from "./Relation/RelationMetaData";
+import { IColumnMetaData } from "./Interface/IColumnMetaData";
 
-export class EntityMetaData<T extends TParent, TParent = any> implements IEntityMetaData<T, TParent> {
+export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
     public name: string;
-    public defaultOrder?: IOrderCondition[];
-    public primaryKeys: Array<keyof T> = [];
-    public deleteColumn: string;
-    public createDateColumn: string;
-    public modifiedDateColumn: string;
-    public properties: string[] = [];
+    public defaultOrder?: IOrderMetaData[];
+    public primaryKeys: Array<IColumnMetaData<TE>> = [];
+    public deleteColumn: IColumnMetaData<TE>;
+    public createDateColumn: IColumnMetaData<TE>;
+    public modifiedDateColumn: IColumnMetaData<TE>;
+    public columns: IColumnMetaData<TE>[] = [];
     public indices: { [key: string]: IndexMetaData } = {};
-    public relations: { [key: string]: RelationMetaData<T, any> } = {};
-    public computedProperties: string[] = [];
+    public relations: { [key: string]: RelationMetaData<TE, any> } = {};
+    public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance
     public parentType?: GenericType<TParent>;
@@ -23,20 +24,26 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
-    public inheritance = new InheritanceMetaData<TParent>();
+    public inheritance: InheritanceMetaData<TParent>;
 
-    constructor(public type: GenericType<T>, name?: string, defaultOrder?: IOrderCondition[]) {
+    constructor(public type: GenericType<TE>, name?: string) {
+        this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")
             this.name = name;
-        if (typeof defaultOrder !== "undefined")
-            this.defaultOrder = defaultOrder;
         if (!name)
             this.name = type.name!;
     }
 
-    public ApplyOption(entityMeta: IEntityMetaData<T>) {
-        if (typeof entityMeta.computedProperties !== "undefined")
+    public ApplyOption(entityMeta: IEntityMetaData<TE>) {
+        if (typeof entityMeta.columns !== "undefined") {
+            this.columns = entityMeta.columns;
+            this.columns.forEach(o => o.entity = this);
+        }
+        if (typeof entityMeta.computedProperties !== "undefined") {
             this.computedProperties = entityMeta.computedProperties;
+            this.computedProperties.forEach(o => o.entity = this);
+        }
+
         if (typeof entityMeta.createDateColumn !== "undefined")
             this.createDateColumn = entityMeta.createDateColumn;
         if (typeof entityMeta.defaultOrder !== "undefined")
@@ -51,14 +58,10 @@ export class EntityMetaData<T extends TParent, TParent = any> implements IEntity
             this.primaryKeys = entityMeta.primaryKeys;
         if (typeof entityMeta.relations !== "undefined")
             this.relations = entityMeta.relations;
-        if (typeof entityMeta.properties !== "undefined")
-            this.properties = entityMeta.properties;
     }
-
-    
-    beforeSave?: (entity: T, param: ISaveEventParam) => boolean;
-    beforeDelete?: (entity: T, param: IDeleteEventParam) => boolean;
-    afterLoad?: (entity: T) => void;
-    afterSave?: (entity: T, param: ISaveEventParam) => void;
-    afterDelete?: (entity: T, param: IDeleteEventParam) => void;
+    beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
+    beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
+    afterLoad?: (entity: TE) => void;
+    afterSave?: (entity: TE, param: ISaveEventParam) => void;
+    afterDelete?: (entity: TE, param: IDeleteEventParam) => void;
 }

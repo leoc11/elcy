@@ -2,61 +2,58 @@ import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option";
 import { ColumnMetaData } from "../../MetaData";
+import { IColumnMetaData } from "../Interface/IColumnMetaData";
+import { IEntityMetaData } from "../Interface";
 
-export class InheritedColumnMetaData<P, T> implements IColumnOption<T> {
-    public propertyName: string;
-    public parentType: GenericType<P>;
+export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMetaData<TE, T> {
     public get columnName(): string {
-        return this.columnMetaData.columnName;
+        return this.parentColumnMetaData.columnName;
+    }
+    public get propertyName() {
+        return this.parentColumnMetaData.propertyName;
     }
     public get nullable(): boolean {
-        return this.columnMetaData.nullable;
+        return this.parentColumnMetaData.nullable;
     }
     public get default(): T | undefined {
-        return this.columnMetaData.default;
+        return this.parentColumnMetaData.default;
     }
     public get description(): string {
-        return this.columnMetaData.description;
+        return this.parentColumnMetaData.description;
     }
     public get columnType(): ColumnType {
-        return this.columnMetaData.columnType;
+        return this.parentColumnMetaData.columnType;
     }
     public get type(): GenericType<T> {
-        return this.columnMetaData.type;
+        return this.parentColumnMetaData.type;
     }
     public get collation(): string {
-        return this.columnMetaData.collation;
+        return this.parentColumnMetaData.collation;
     }
     public get charset(): string {
-        return this.columnMetaData.charset;
+        return this.parentColumnMetaData.charset;
     }
-    private columnMetaData: ColumnMetaData<T>;
-    // tslint:disable-next-line:no-shadowed-variable
-    constructor(parentMetaData: ColumnMetaData<T>, parentType?: GenericType<P>, propertyName?: string) {
-        if (parentMetaData instanceof InheritedColumnMetaData) {
-            this.columnMetaData = parentMetaData.columnMetaData;
-            this.parentType = parentMetaData.parentType;
-            this.propertyName = parentMetaData.propertyName;
+    public get parentEntity(): IEntityMetaData<TP> {
+        return this.parentColumnMetaData.entity;
+    }
+    constructor(public entity: IEntityMetaData<TE>, public parentColumnMetaData: IColumnMetaData<TP, T>) {
+        if (parentColumnMetaData instanceof InheritedColumnMetaData) {
+            this.parentColumnMetaData = parentColumnMetaData.parentColumnMetaData;
         }
-        else if (parentMetaData instanceof ColumnMetaData) {
-            this.columnMetaData = parentMetaData;
-            this.parentType = parentType as GenericType<P>;
-            this.propertyName = propertyName as string;
+        else if (parentColumnMetaData instanceof ColumnMetaData) {
+            this.parentColumnMetaData = parentColumnMetaData;
         }
     }
 
     /**
      * Copy
      */
-    // tslint:disable-next-line:no-empty
-    public applyOption(columnMeta: IColumnOption<any>) {
+    public applyOption(columnMeta: IColumnOption<TE>) {
         if (columnMeta instanceof InheritedColumnMetaData) {
-            this.columnMetaData = columnMeta.columnMetaData;
-            this.parentType = columnMeta.parentType;
-            this.propertyName = columnMeta.propertyName;
+            this.parentColumnMetaData = columnMeta.parentColumnMetaData;
         }
         else if (columnMeta instanceof ColumnMetaData) {
-            this.columnMetaData = columnMeta;
+            this.parentColumnMetaData = columnMeta as ColumnMetaData<TP>;
         }
     }
 }

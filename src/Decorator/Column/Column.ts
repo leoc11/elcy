@@ -11,7 +11,7 @@ import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IObjectType } from "../../Common/Type";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
-    return (target: TE, propertyKey: keyof TE /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+    return (target: TE, propertyKey: keyof TE) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
@@ -30,10 +30,16 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         const columnMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (columnMetaData != null) {
             metadata.applyOption(columnMetaData);
-            entityMetaData.properties.remove(columnMetaData);
+            entityMetaData.columns.remove(columnMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
-        entityMetaData.properties.push(metadata);
+        entityMetaData.columns.push(metadata);
+
+        const pk = entityMetaData.primaryKeys.first(o => o.propertyName === metadata.propertyName);
+        if (pk) {
+            entityMetaData.primaryKeys.remove(pk);
+            entityMetaData.primaryKeys.push(metadata);
+        }
 
         if (metadata instanceof DateColumnMetaData) {
             if (columnOption.isCreatedDate)
@@ -44,12 +50,6 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         else if (metadata instanceof BooleanColumnMetaData) {
             if (columnOption.isDeleteColumn)
                 entityMetaData.deleteColumn = metadata;
-        }
-
-        if (entityMetaData instanceof AbstractEntityMetaData && entityMetaData.inheritance.parentType) {
-            const inheritColumnMeta = new InheritedColumnMetaData(columnMetaData, entityMetaData.inheritance.parentType, propertyKey);
-            Reflect.defineMetadata(columnMetaKey, inheritColumnMeta, entityMetaData.type, propertyKey);
-            Reflect.defineMetadata(columnMetaKey, columnMetaData, entityMetaData.inheritance.parentType, propertyKey);
         }
 
         // add property to use setter getter.

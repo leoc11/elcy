@@ -2,7 +2,6 @@ import { IntColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { INumericColumnOption } from "../Decorator/Option";
 import { IEntityMetaData } from "./Interface";
-// tslint:disable-next-line:ban-types
 export class NumericColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public autoIncrement: boolean;
     public size?: number;

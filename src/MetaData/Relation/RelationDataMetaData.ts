@@ -2,6 +2,7 @@ import { RelationMetaData } from ".";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
 import { IObjectType } from "../../Common/Type";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
+import { IColumnMetaData } from "../Interface/IColumnMetaData";
 
 export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataOption<TType, TSource, TTarget> {
     public get sourceType(): IObjectType<TSource> {
@@ -14,7 +15,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     public targetRelationKeys: string[] = [];
     public sourceRelationMeta: RelationMetaData<TSource, TTarget>;
     public targetRelationMeta: RelationMetaData<TTarget, TSource>;
-    public properties: string[] = [];
+    public columns: IColumnMetaData<TType>[] = [];
     public relationName: string;
     public name: string;
     public type: IObjectType<TType>;
@@ -55,7 +56,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     }
 
     public ApplyOption(entityMeta: IEntityMetaData<TType>) {
-        if (typeof entityMeta.properties !== "undefined")
-            this.properties = entityMeta.properties;
+        if (typeof entityMeta.columns !== "undefined")
+            this.columns = entityMeta.columns;
     }
 }

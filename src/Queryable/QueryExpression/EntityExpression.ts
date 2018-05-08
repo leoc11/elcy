@@ -18,14 +18,14 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData ? null : this.columns.first(o => o.propertyName === this.metaData.deleteColumn);
+            this._deleteColumn = !this.metaData ? null : this.columns.first(o => o.propertyName === this.metaData.deleteColumn.propertyName);
         }
         return this._deleteColumn;
     }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
             if (this.metaData)
-                this._columns = this.metaData.properties.select((o: keyof T) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
+                this._columns = this.metaData.columns.select((o) => new ColumnExpression(this, o.propertyName, this.metaData.primaryKeys.contains(o))).toArray();
             else
                 this._columns = [];
         }
@@ -37,7 +37,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
             if (this.metaData)
-                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.propertyName === o)).toArray();
+                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.propertyName === o.propertyName)).toArray();
             else
                 this._primaryColumns = [];
         }
@@ -50,7 +50,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         if (!this._defaultOrders) {
             if (this.metaData.defaultOrder)
                 this._defaultOrders = this.metaData.defaultOrder!.select((o) => ({
-                    column: this.columns.first((c) => c.propertyName === o.property),
+                    column: this.columns.first((c) => c.propertyName === o.column.propertyName),
                     direction: o.direction
                 })).toArray();
             else
