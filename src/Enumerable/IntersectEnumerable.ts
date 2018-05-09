@@ -5,7 +5,7 @@ export class IntersectEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T>) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: T[] = [];
         for (const value of this.parent) {
             for (const value2 of this.parent2) {

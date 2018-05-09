@@ -4,7 +4,7 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly skipCount: number) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: T[] = [];
         let index = 0;
         for (const value of this.parent) {

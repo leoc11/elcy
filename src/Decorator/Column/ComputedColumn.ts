@@ -9,7 +9,7 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
     return (target: T, propertyKey: keyof T) => {
         let entityMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(target.constructor as GenericType<T>);
+            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
         const computedMetaData = new ComputedColumnMetaData(entityMetaData, fn, propertyKey);

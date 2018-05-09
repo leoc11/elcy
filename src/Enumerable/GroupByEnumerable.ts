@@ -3,51 +3,39 @@ import { GroupedEnumerable } from "./GroupedEnumerable";
 
 export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>> {
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
-        super();
+        super(parent);
     }
-    public get isComplete() {
-        return this.isResultComplete;
-    }
-    public set isComplete(value: boolean) {
-        this.isResultComplete = value;
-    }
-    public iterator: Iterator<T>;
-    public addResult(key: K, value: T) {
-        let group = this.result.first((o) => keyComparer(o.key, key));
-        if (!group) {
-            group = new GroupedEnumerable(this, key, this.iterator);
-            group.addResult(value);
-            this.result.push(group);
-        }
-        group.addResult(value);
-    }
-    public *generator() {
-        this.iterator = this.parent[Symbol.iterator]();
+    public isResultComplete: boolean;
+    protected *generator() {
+        const iterator = this.iterator;
+        const result = this.result;
+
         let iteratorResult: IteratorResult<T>;
         let index = 0;
         do {
-            while (this.result.length > index) {
-                yield this.result[index++];
+            while (result.length > index) {
+                yield result[index++];
             }
-            iteratorResult = this.iterator.next();
-            if (iteratorResult.done) {
-                while (this.result.length > index) {
-                    yield this.result[index++];
-                }
+
+            if (iteratorResult && iteratorResult.done)
                 break;
-            }
-            const key = this.keySelector(iteratorResult.value);
-            let prev = this.result.first((o) => keyComparer(key, o.key));
-            if (!prev) {
-                const value = new GroupedEnumerable<T, K>(this, key, this.iterator);
-                value.addResult(iteratorResult.value);
-                this.result.push(value);
-                yield this.result[index++];
-            }
-            else {
-                prev.addResult(iteratorResult.value);
+
+            iteratorResult = iterator.next();
+            if (!iteratorResult.done) {
+                const key = this.keySelector(iteratorResult.value);
+                let prev = result.first((o) => keyComparer(key, o.key));
+                if (!prev) {
+                    const value = new GroupedEnumerable<T, K>(this, key, iterator, result);
+                    value.addResult(iteratorResult.value);
+                    result.push(value);
+                }
+                else {
+                    prev.addResult(iteratorResult.value);
+                }
             }
         } while (true);
-        this.isResultComplete = true;
+
+        if (result === this.result)
+            this.isResultComplete = true;
     }
 }

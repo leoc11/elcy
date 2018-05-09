@@ -5,7 +5,7 @@ export class LeftJoinEnumerable<T = any, T2 = any, K = any, R = any> extends Enu
     constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T2>, protected readonly keySelector1: (item: T) => K, protected readonly keySelector2: (item: T2) => K, protected readonly resultSelector: (item1: T, item2: T2 | null) => R = defaultResultFn) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: R[] = [];
         for (const value1 of this.parent) {
             const key = this.keySelector1(value1);

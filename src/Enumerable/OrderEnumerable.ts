@@ -13,7 +13,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
         super();
         this.selectors = selectors;
     }
-    public *generator() {
+    protected *generator() {
         let index = 0;
         const result: T[] = [];
         const array = this.parent.toArray();

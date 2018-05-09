@@ -4,7 +4,7 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T>, public readonly isUnionAll = false) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: T[] = [];
         for (const value of this.parent) {
             if (!result.any(o => keyComparer(o, value))) {

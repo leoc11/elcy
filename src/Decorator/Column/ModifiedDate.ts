@@ -4,7 +4,6 @@ import { DateColumnMetaData } from "../../MetaData";
 import { Column } from "./Column";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
 import { DateColumnType } from "../../Common/ColumnType";
-import { IColumnOption } from "../Option";
 
 export function ModifiedDate(option: IDateColumnOption): PropertyDecorator;
 export function ModifiedDate(name: string, dbtype: DateColumnType, dateTimeKind: DateTimeKind, defaultValue?: Date): PropertyDecorator;

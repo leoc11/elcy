@@ -4,7 +4,7 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => K[] | Enumerable<K>) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: K[] = [];
         for (const value1 of this.parent) {
             const values = this.selector(value1);

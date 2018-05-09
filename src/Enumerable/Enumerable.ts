@@ -21,6 +21,27 @@ export class Enumerable<T = any> implements Iterable<T> {
     protected result: T[] = [];
     protected parent: Iterable<any>;
     protected iterator: Iterator<any>;
+    constructor(source?: Iterable<any> | Iterator<T>) {
+        if (source) {
+            if (Array.isArray(source)) {
+                this.result = source;
+                this.parent = source;
+                this.isResultComplete = true;
+            }
+            else if ((source as Iterator<T>).next) {
+                this.iterator = source as Iterator<T>;
+            }
+            else {
+                this.parent = source as Iterable<T>;
+                this.iterator = this.parent[Symbol.iterator]();
+            }
+        }
+    }
+    public [Symbol.iterator](): IterableIterator<T> {
+        if (this.isResultComplete)
+            return this.result[Symbol.iterator]();
+        return this.generator();
+    }
     protected *generator() {
         const result = [];
         for (const value of this.parent) {
@@ -30,21 +51,12 @@ export class Enumerable<T = any> implements Iterable<T> {
         this.result = result;
         this.isResultComplete = true;
     }
-    constructor(source?: T[] | Iterator<T>) {
-        if (source) {
-            if (Array.isArray(source)) {
-                this.result = source;
-                this.isResultComplete = true;
-            }
-            else {
-                this.iterator = source;
-            }
+    public reset() {
+        if (this.parent) {
+            this.iterator = this.parent[Symbol.iterator]();
+            this.result = [];
+            this.isResultComplete = false;
         }
-    }
-    public [Symbol.iterator](): IterableIterator<T> {
-        if (this.isResultComplete)
-            return this.result[Symbol.iterator]();
-        return this.generator();
     }
     public toArray(): T[] {
         const arr = [];

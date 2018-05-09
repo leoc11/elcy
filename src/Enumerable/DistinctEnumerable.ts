@@ -4,7 +4,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector?: (item: T) => any) {
         super();
     }
-    public *generator() {
+    protected *generator() {
         const result: T[] = [];
         for (const value of this.parent) {
             const key = this.selector ? this.selector(value) : value;
