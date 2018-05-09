@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 import { IndexMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { InheritanceMetaData, RelationMetaData } from "../Relation";
 import { IOrderMetaData } from "./IOrderMetaData";

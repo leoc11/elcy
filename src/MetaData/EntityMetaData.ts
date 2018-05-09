@@ -1,4 +1,4 @@
-import { GenericType } from "../Common/Type";
+import { GenericType, IObjectType } from "../Common/Type";
 import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
 import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
 import { InheritanceMetaData } from "./Relation";
@@ -26,7 +26,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     }
     public inheritance: InheritanceMetaData<TParent>;
 
-    constructor(public type: GenericType<TE>, name?: string) {
+    constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")
             this.name = name;

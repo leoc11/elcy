@@ -8,35 +8,37 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> /*implements IGroupAr
     public get keySelector() {
         return this.parent.keySelector;
     }
-    constructor(protected readonly parent: GroupByEnumerable<T, K>, public readonly key: K) {
+    constructor(protected readonly parent: GroupByEnumerable<T, K>, public readonly key: K, protected iterator: Iterator<T>) {
         super();
     }
     public addResult(value: T) {
         this.result.push(value);
     }
-    public next() {
-        let result: IteratorResult<T> = {
-            done: this.result.length <= this.pointer,
-            value: this.result[this.pointer]
-        };
-        if (result.done && !this.parent.isComplete) {
-            let curKey: K | undefined;
-            do {
-                if (curKey && result) {
-                    this.parent.addResult(curKey, result.value);
+    public *generator() {
+        let index = 0;
+        let iteratorResult: IteratorResult<T>;
+        do {
+            while (this.result.length > index) {
+                yield this.result[index++];
+            }
+            iteratorResult = this.iterator.next();
+            if (iteratorResult.done) {
+                while (this.result.length > index) {
+                    yield this.result[index++];
                 }
-                result = this.source.next();
-                if (result.done) {
-                    this.parent.isComplete = true;
-                    this.resetPointer();
-                    return result;
+                break;
+            }
+            else {
+                const key = this.keySelector(iteratorResult.value);
+                if (keyComparer(this.key, key)) {
+                    this.result.push(iteratorResult.value);
+                    yield this.result[index++];
                 }
-                curKey = this.keySelector(result.value);
-            } while (!keyComparer(curKey, this.key));
-            this.result[this.pointer] = result.value;
-            result.done = false;
-        }
-        result.done ? this.resetPointer() : this.pointer++;
-        return result;
+                else {
+                    this.parent.addResult(key, iteratorResult.value);
+                }
+            }
+        } while (true);
+        this.isResultComplete = true;
     }
 }

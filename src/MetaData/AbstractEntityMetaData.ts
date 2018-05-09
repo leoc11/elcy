@@ -1,4 +1,4 @@
-import { ClassBase, GenericType } from "../Common/Type";
+import { ClassBase, GenericType, IObjectType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
 import { InheritanceMetaData, RelationMetaData } from "../MetaData/Relation";
@@ -24,7 +24,7 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public inheritance: InheritanceMetaData<TParent>;
     public name: string;
 
-    constructor(public type: GenericType<TE>, name?: string, defaultOrder?: IOrderMetaData[]) {
+    constructor(public type: IObjectType<TE>, name?: string, defaultOrder?: IOrderMetaData[]) {
         this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")
             this.name = name;

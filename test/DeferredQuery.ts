@@ -314,7 +314,7 @@ describe("ADVANCE", async () => {
         const any = await db.orders.deferredAny(o => o.TotalAmount < 1000000000);
         const array = await db.orders.include(o => o.OrderDetails).defferedToArray();
         // do something here.
-        const a = await any.execute();
+        await any.execute();
 
         should();
         sum.value.should.be.a("number");

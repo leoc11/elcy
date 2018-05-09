@@ -4,27 +4,20 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly predicate: (item: T) => boolean) {
         super();
     }
-    public [Symbol.iterator]() {
-        return this;
-    }
-    public next(): IteratorResult<T> {
-        let result: IteratorResult<T> = {
-            done: this.result.length <= this.pointer,
-            value: this.result[this.pointer]
-        };
-        if (result.done && !this.isResultComplete) {
-            do {
-                result = this.parent.next();
-                if (result.done) {
-                    this.isResultComplete = true;
-                    this.resetPointer();
-                    return result;
+    public *[Symbol.iterator](): IterableIterator<T> {
+        if (this.isResultComplete)
+            return this.result[Symbol.iterator];
+        const self = this;
+        return function* () {
+            const result: T[] = [];
+            for (const value of self.parent) {
+                if (self.predicate(value)) {
+                    result.push(value);
+                    yield value;
                 }
-            } while (!this.predicate(result.value));
-            this.result[this.pointer] = result.value;
-
-        }
-        result.done ? this.resetPointer() : this.pointer++;
-        return result;
+            }
+            self.result = result;
+            self.isResultComplete = true;
+        };
     }
 }
