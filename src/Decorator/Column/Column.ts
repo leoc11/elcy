@@ -1,8 +1,7 @@
 import "reflect-metadata";
 import "../../Extensions/EnumerableExtension";
-import { AbstractEntityMetaData, BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
+import { BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
-import { InheritedColumnMetaData } from "../../MetaData/Relation";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity";
 import { IColumnOption } from "../Option";

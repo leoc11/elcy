@@ -1,4 +1,4 @@
-import { GenericType, InheritanceType } from "../../Common/Type";
+import { InheritanceType } from "../../Common/Type";
 import { IEntityMetaData } from "../Interface";
 
 export class InheritanceMetaData<TE = any, TParent = any> {
