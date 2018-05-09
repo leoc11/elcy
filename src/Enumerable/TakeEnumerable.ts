@@ -8,11 +8,10 @@ export class TakeEnumerable<T = any> extends Enumerable<T> {
         const result: T[] = [];
         let index = 0;
         for (const value of this.parent) {
-            if (index >= this.takeCount)
-                break;
-
             result.push(value);
             yield value;
+            if (++index >= this.takeCount)
+                break;
         }
         this.result = result;
         this.isResultComplete = true;

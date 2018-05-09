@@ -19,12 +19,12 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
         const array = this.parent.toArray();
         const comparers = (a: any, b: any) => {
             for (const selector of this.selectors) {
-                const aVal = selector.selector(a);
-                const bVal = selector.selector(b);
+                const aVal = selector[0](a);
+                const bVal = selector[0](b);
                 // tslint:disable-next-line:triple-equals
                 if (aVal == bVal)
                     continue;
-                return (aVal > bVal ? 1 : -1) * (selector.direction === OrderDirection.DESC ? -1 : 1);
+                return (aVal > bVal ? 1 : -1) * (selector[1] === OrderDirection.DESC ? -1 : 1);
             }
             return 0;
         };

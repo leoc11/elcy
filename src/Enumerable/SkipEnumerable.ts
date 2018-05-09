@@ -8,7 +8,7 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
         const result: T[] = [];
         let index = 0;
         for (const value of this.parent) {
-            if (index < this.skipCount)
+            if (index++ < this.skipCount)
                 continue;
 
             result.push(value);

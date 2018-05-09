@@ -17,7 +17,7 @@ export const keyComparer = <T = any>(a: T, b: T) => {
 };
 export class Enumerable<T = any> implements Iterable<T> {
     protected pointer = 0;
-    protected isResultComplete = false;
+    protected isResultComplete: boolean;
     protected result: T[] = [];
     protected parent: Iterable<any>;
     protected iterator: Iterator<any>;

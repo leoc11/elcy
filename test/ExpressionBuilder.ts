@@ -1,4 +1,4 @@
-import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, } from "../src/ExpressionBuilder/Expression";
+import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, ArrayValueExpression, } from "../src/ExpressionBuilder/Expression";
 import { Order, OrderDetail } from "./Common/Model";
 import "mocha";
 import { expect } from "chai";
@@ -13,19 +13,17 @@ describe("Query builder Parse", () => {
         expect(ori.toString() === builded.toString());
     });
     it("ObjectValueExpression", async () => {
-        const selector = new ObjectValueExpression({
-            selector: new FunctionExpression(
+        const selector = new ArrayValueExpression(...[
+            new FunctionExpression(
                 new MemberAccessExpression(odParam, "quantity"),
                 [odParam])
-        });
+        ]);
         const orderExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "orderBy", [selector]);
         const ori = new FunctionExpression(new ObjectValueExpression({
             ods: orderExp,
         }), [param]);
         const build = ExpressionBuilder.parse((o: Order) => ({
-            ods: o.OrderDetails.orderBy({
-                selector: (od: OrderDetail) => od.quantity
-            })
+            ods: o.OrderDetails.orderBy([(od: OrderDetail) => od.quantity])
         }), [Order]);
         expect(ori.toString() === build.toString());
     });
