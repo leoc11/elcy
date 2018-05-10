@@ -1,4 +1,4 @@
-import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, ArrayValueExpression, } from "../src/ExpressionBuilder/Expression";
+import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, ArrayValueExpression, ValueExpression } from "../src/ExpressionBuilder/Expression";
 import { Order, OrderDetail } from "./Common/Model";
 import "mocha";
 import { expect } from "chai";

@@ -1,16 +1,15 @@
 import { StringColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { IStringColumnOption } from "../Decorator/Option";
 
 export class StringColumnMetaData extends ColumnMetaData<string> {
-    public size?: number;
+    public maxLength?: number;
     public columnType: StringColumnType = "nvarchar";
     constructor() {
         super(String);
     }
-    public applyOption(columnMeta: IStringColumnOption) {
+    public applyOption(columnMeta: StringColumnMetaData) {
         if (typeof columnMeta.maxLength !== "undefined")
-            this.size = columnMeta.maxLength;
+            this.maxLength = columnMeta.maxLength;
         super.applyOption(columnMeta);
     }
 }

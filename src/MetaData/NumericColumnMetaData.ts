@@ -1,6 +1,5 @@
 import { IntColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { INumericColumnOption } from "../Decorator/Option";
 import { IEntityMetaData } from "./Interface";
 export class NumericColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public autoIncrement: boolean;
@@ -10,7 +9,7 @@ export class NumericColumnMetaData<TE = any> extends ColumnMetaData<TE, number> 
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Number, entityMeta);
     }
-    public applyOption(columnMeta: INumericColumnOption) {
+    public applyOption(columnMeta: NumericColumnMetaData<TE>) {
         if (typeof columnMeta.autoIncrement !== "undefined")
             this.autoIncrement = columnMeta.autoIncrement;
         if (typeof columnMeta.size !== "undefined")

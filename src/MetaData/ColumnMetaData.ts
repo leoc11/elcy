@@ -1,6 +1,5 @@
 import { ColumnType } from "../Common/ColumnType";
 import { GenericType } from "../Common/Type";
-import { IColumnOption } from "../Decorator/Option/IColumnOption";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 

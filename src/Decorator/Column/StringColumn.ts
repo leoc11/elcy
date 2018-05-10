@@ -15,5 +15,5 @@ export function StringColumn(optionOrName?: IStringColumnOption | string, defaul
         if (typeof defaultValue !== "undefined")
             option.default = defaultValue;
     }
-    return Column(StringColumnMetaData, option);
+    return Column<any, string>(StringColumnMetaData, option);
 }
