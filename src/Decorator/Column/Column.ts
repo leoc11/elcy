@@ -18,13 +18,12 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
 
         const metadata = new columnMetaType();
+        metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
             if (typeof (propertyKey) === "string")
                 metadata.columnName = propertyKey;
         }
-        if (!metadata.propertyName) {
-            metadata.propertyName = propertyKey;
-        }
+        metadata.propertyName = propertyKey;
 
         const columnMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (columnMetaData != null) {

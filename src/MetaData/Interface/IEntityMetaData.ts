@@ -14,11 +14,11 @@ export interface IEntityMetaData<TE extends TParent, TParent = any> extends IDBE
     createDateColumn?: IColumnMetaData<TE, Date>;
     modifiedDateColumn?: IColumnMetaData<TE, Date>;
     columns: IColumnMetaData<TE>[];
-    indices: { [key: string]: IndexMetaData };
-    computedProperties: ComputedColumnMetaData<TE>[];
+    indices?: { [key: string]: IndexMetaData };
+    computedProperties?: ComputedColumnMetaData<TE>[];
     type: IObjectType<TE>;
     descriminatorMember?: string;
-    allowInheritance: boolean;
+    allowInheritance?: boolean;
     inheritance: InheritanceMetaData<TParent>;
-    relations: { [key: string]: RelationMetaData<TE, any> };
+    relations?: { [key: string]: RelationMetaData<TE, any> };
 }

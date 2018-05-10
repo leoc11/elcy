@@ -22,7 +22,9 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
             this.entity = entityMeta;
     }
 
-    public applyOption(columnMeta: IColumnOption<any>) {
+    public applyOption(columnMeta: IColumnMetaData<TE>) {
+        if (typeof columnMeta.propertyName !== "undefined")
+            this.propertyName = columnMeta.propertyName;
         if (typeof columnMeta.columnName !== "undefined")
             this.columnName = columnMeta.columnName;
         if (columnMeta.description)

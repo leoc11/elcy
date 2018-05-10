@@ -15,9 +15,10 @@ export function PrimaryKey(): PropertyDecorator {
         }
 
         if (!entityMetaData.primaryKeys.any(o => o.propertyName === propertyKey)) {
-            let columnMeta: IColumnMetaData<TE> = Reflect.getOwnMetadata(columnMetaKey, target, propertyKey);
+            let columnMeta: IColumnMetaData<TE> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
             if (!columnMeta) {
                 columnMeta = new ColumnMetaData<TE, any>();
+                columnMeta.propertyName = propertyKey;
             }
             entityMetaData.primaryKeys.push(columnMeta);
         }

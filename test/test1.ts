@@ -46,12 +46,12 @@ describe("INCLUDE", () => {
         const include = new IncludeQueryable(db.orders, [pa1]);
         const queryString = include.toString();
 
-        should();
         expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nINTO #temp_entity0\nFROM [Orders] AS [entity0];\n\nSELECT * FROM #temp_entity0;\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nINTO #temp_entity1\nFROM [OrderDetails] AS [entity1]\nINNER JOIN #temp_entity0 AS [entity3]\n\tON [entity1].[OrderId] = [entity3].[OrderId]\nWHERE NOT(\n\t([entity1].[isDeleted] = CAST(1 AS BIT))\n);\n\nSELECT * FROM #temp_entity1;\n\nSELECT DISTINCT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN #temp_entity1 AS [entity4]\n\tON [entity2].[ProductId] = [entity4].[ProductId];\n\nDROP TABLE #temp_entity1;\n\nDROP TABLE #temp_entity0;"
             , "query not equals");
 
         const a = await include.toArray();
 
+        should();
         a.should.be.an("array");
         a.should.has.length.greaterThan(0);
         a[0].should.be.instanceof(Order);

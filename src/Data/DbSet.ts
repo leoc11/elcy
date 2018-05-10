@@ -18,7 +18,8 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.addParameters(this.parameters);
+        if (this.options.userParameters)
+            queryBuilder.addParameters(this.options.userParameters);
         return queryBuilder;
     }
     public get dbContext(): DbContext {

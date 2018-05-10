@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import { GenericType } from "../../Common/Type";
 import { AbstractEntityMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";

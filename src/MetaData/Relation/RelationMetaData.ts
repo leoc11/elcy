@@ -8,7 +8,7 @@ import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface";
 
 export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {
-    public relationMaps: Map<any, any> = new Map();
+    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData> = new Map();
     public propertyName: keyof TSource;
     public reverseRelation: RelationMetaData<TTarget, TSource>;
     public relationData: RelationDataMetaData;
