@@ -3,50 +3,39 @@ import { GroupedEnumerable } from "./GroupedEnumerable";
 
 export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>> {
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
-        super();
+        super(parent);
     }
-    public [Symbol.iterator]() {
-        return this;
-    }
-    public get isComplete() {
-        return this.isResultComplete;
-    }
-    public set isComplete(value: boolean) {
-        this.isResultComplete = value;
-    }
-    public addResult(key: K, value: T) {
-        let group = this.result.first((o) => keyComparer(o.key, key));
-        if (!group) {
-            group = new GroupedEnumerable(this, key);
-            this.result.push(group);
-        }
-        group.addResult(value);
-    }
-    public next(): IteratorResult<GroupedEnumerable<T, K>> {
-        const result: IteratorResult<GroupedEnumerable<T, K>> = {
-            done: this.result.length <= this.pointer,
-            value: this.result[this.pointer]
-        };
-        if (result.done && !this.isResultComplete) {
-            let isFounded = false;
-            do {
-                const nResult = this.parent.next();
-                if (nResult.done) {
-                    this.isResultComplete = true;
-                    this.resetPointer();
-                    return result;
-                }
-                const curKey = this.keySelector(nResult.value);
-                let prev = this.result.first((o) => keyComparer(curKey, o.key));
+    public isResultComplete: boolean;
+    protected *generator() {
+        const iterator = this.iterator;
+        const result = this.result;
+
+        let iteratorResult: IteratorResult<T>;
+        let index = 0;
+        do {
+            while (result.length > index) {
+                yield result[index++];
+            }
+
+            if (iteratorResult && iteratorResult.done)
+                break;
+
+            iteratorResult = iterator.next();
+            if (!iteratorResult.done) {
+                const key = this.keySelector(iteratorResult.value);
+                let prev = result.first((o) => keyComparer(key, o.key));
                 if (!prev) {
-                    prev = result.value = this.result[this.pointer] = new GroupedEnumerable(this, curKey);
-                    isFounded = true;
+                    const value = new GroupedEnumerable<T, K>(this, key, iterator, result);
+                    value.addResult(iteratorResult.value);
+                    result.push(value);
                 }
-                prev.addResult(nResult.value);
-            } while (!isFounded);
-            result.done = false;
-        }
-        result.done ? this.resetPointer() : this.pointer++;
-        return result;
+                else {
+                    prev.addResult(iteratorResult.value);
+                }
+            }
+        } while (true);
+
+        if (result === this.result)
+            this.isResultComplete = true;
     }
 }

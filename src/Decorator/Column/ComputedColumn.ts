@@ -1,21 +1,21 @@
 import "reflect-metadata";
-import { GenericType } from "../../Common/Type";
 import { AbstractEntityMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 
 // TODO: types: Persisted, Virtual, Query
 export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecorator {
-    return (target: T, propertyKey: string) => {
-        const computedMetaData = new ComputedColumnMetaData(target.constructor as any, fn, propertyKey);
+    return (target: T, propertyKey: keyof T) => {
         let entityMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(target.constructor as GenericType<T>);
+            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
-        if (entityMetaData.computedProperties.contains(computedMetaData.columnName))
-            entityMetaData.computedProperties.push(computedMetaData.columnName);
+        const computedMetaData = new ComputedColumnMetaData(entityMetaData, fn, propertyKey);
+        if (entityMetaData.computedProperties.contains(computedMetaData))
+            entityMetaData.computedProperties.push(computedMetaData);
         Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
+
         const privatePropertySymbol = Symbol(propertyKey);
         const descriptor: PropertyDescriptor = {
             set: function (this: any, value: R) {

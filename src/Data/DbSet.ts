@@ -13,11 +13,13 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { FunctionExpression, ParameterExpression, IExpression, EqualExpression, MemberAccessExpression, AndExpression } from "../ExpressionBuilder/Expression";
 import { EntityEntry } from "./EntityEntry";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.addParameters(this.parameters);
+        if (this.options.userParameters)
+            queryBuilder.addParameters(this.options.userParameters);
         return queryBuilder;
     }
     public get dbContext(): DbContext {
@@ -28,7 +30,7 @@ export class DbSet<T> extends Queryable<T> {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
     }
-    public get primaryKeys() {
+    public get primaryKeys(): IColumnMetaData<T>[] {
         return this.metaData.primaryKeys;
     }
     public readonly namingStrategy: NamingStrategy;
@@ -60,11 +62,11 @@ export class DbSet<T> extends Queryable<T> {
             const paramId = new ParameterExpression("id", id.constructor as any);
             let andExp: IExpression<boolean>;
             if (isValueType) {
-                andExp = new EqualExpression(new MemberAccessExpression(param, this.primaryKeys.first()), paramId);
+                andExp = new EqualExpression(new MemberAccessExpression(param, this.primaryKeys.first().propertyName), paramId);
             }
             else {
-                for (const pk in this.primaryKeys) {
-                    const d = new EqualExpression(new MemberAccessExpression(param, pk), new MemberAccessExpression(paramId, pk));
+                for (const pk of this.primaryKeys) {
+                    const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName));
                     andExp = andExp ? new AndExpression(andExp, d) : d;
                 }
             }
@@ -91,7 +93,7 @@ export class DbSet<T> extends Queryable<T> {
                 if (value === undefined)
                     return;
                 const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.type, prop);
-                const childSet = relationMeta ? this.dbContext.set(relationMeta.targetType) : undefined;
+                const childSet = relationMeta ? this.dbContext.set(relationMeta.target.type) : undefined;
                 if (childSet) {
                     if (relationMeta.relationType === "one") {
                         const childEntry = childSet.attach(value);
@@ -121,11 +123,11 @@ export class DbSet<T> extends Queryable<T> {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.first()] = primaryValue as any;
+            entity[this.primaryKeys.first().propertyName] = primaryValue as any;
         }
         else {
             for (const pk of this.primaryKeys) {
-                entity[this.primaryKeys.first()] = primaryValue[pk] as any;
+                entity[pk.propertyName] = primaryValue[pk.propertyName] as any;
             }
         }
         this.dbContext.add(entity);
@@ -137,7 +139,7 @@ export class DbSet<T> extends Queryable<T> {
     protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
         if (isValue(id))
             return id.toString();
-        return this.primaryKeys.select(o => (id as any)[o]).toArray().join("|");
+        return this.primaryKeys.select(o => (id as any)[o.propertyName]).toArray().join("|");
     }
     public updateEntryKey(entry: EntityEntry<T>) {
         this.dictionary.delete(entry.key);

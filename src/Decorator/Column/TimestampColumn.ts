@@ -4,16 +4,16 @@ import { ITimestampColumnOption } from "../Option/ITimestampColumnOption";
 import { TimestampColumnMetaData } from "../../MetaData/TimestampColumnMetaData";
 
 export function TimestampColumn(option?: ITimestampColumnOption): PropertyDecorator;
-export function TimestampColumn(name?: string | ITimestampColumnOption, defaultValue?: string): PropertyDecorator {
-    const metadata = new TimestampColumnMetaData();
-    if (name && typeof name !== "string") {
-        metadata.applyOption(name);
+export function TimestampColumn(optionOrName?: ITimestampColumnOption | string, defaultValue?: string): PropertyDecorator {
+    let option: ITimestampColumnOption = {};
+    if (optionOrName && typeof optionOrName !== "string") {
+        option = optionOrName;
     }
     else {
-        if (typeof name !== "undefined")
-            metadata.columnName = name as string;
+        if (typeof optionOrName !== "undefined")
+            option.columnName = optionOrName as string;
         if (typeof defaultValue !== "undefined")
-            metadata.default = defaultValue;
+            option.default = defaultValue;
     }
-    return Column(metadata);
+    return Column(TimestampColumnMetaData, option);
 }

@@ -44,7 +44,7 @@ export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRela
             relationOption.name = target.name;
 
         const relationDataMeta = new RelationDataMetaData<M, S, T>(relationOption);
-        const entityMet: IEntityMetaData<T, any> = Reflect.getOwnMetadata(entityMetaKey, relationOption.type);
+        const entityMet: IEntityMetaData<M, any> = Reflect.getOwnMetadata(entityMetaKey, relationOption.type);
         if (entityMet)
             relationDataMeta.ApplyOption(entityMet);
 

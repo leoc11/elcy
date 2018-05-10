@@ -1,9 +1,11 @@
-import { GenericType, InheritanceType } from "../../Common/Type";
+import { InheritanceType } from "../../Common/Type";
+import { IEntityMetaData } from "../Interface";
 
-export class InheritanceMetaData<TParent> {
+export class InheritanceMetaData<TE = any, TParent = any> {
+    constructor(public child: IEntityMetaData<TE>) { }
     /**
-     * parentType will always point to first concrete ancestor
+     * parent will always point to first concrete ancestor
      */
-    public parentType?: GenericType<TParent>;
+    public parent: IEntityMetaData<TParent>;
     public inheritanceType?: InheritanceType;
 }

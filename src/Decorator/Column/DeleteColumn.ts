@@ -5,13 +5,14 @@ import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 // TODO: casecade soft delete.
 export function DeleteColumn(option: IBooleanColumnOption): PropertyDecorator;
 export function DeleteColumn(name?: string, defaultValue?: boolean): PropertyDecorator;
-export function DeleteColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
-    const metadata = new BooleanColumnMetaData();
-    if (typeof name === "string") {
-        metadata.columnName = name;
-        if (defaultValue !== undefined) metadata.default = defaultValue;
+export function DeleteColumn(optionOrName?: IBooleanColumnOption | string, defaultValue?: boolean): PropertyDecorator {
+    let option: IBooleanColumnOption = {};
+    if (typeof optionOrName === "string") {
+        option.columnName = optionOrName;
+        if (defaultValue !== undefined) option.default = defaultValue;
     }
-    else if (name) metadata.applyOption(name);
+    else if (optionOrName) option = optionOrName;
 
-    return Column(metadata, { isDeleteColumn: true });
+    option.isDeleteColumn = true;
+    return Column<any, boolean>(BooleanColumnMetaData, { isDeleteColumn: true });
 }

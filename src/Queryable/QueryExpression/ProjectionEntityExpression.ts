@@ -25,8 +25,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = subSelect.projectedColumns.select(o => {
-            const col = new ColumnExpression(this, o.propertyName, o.type, o.isPrimary, o.columnName);
-            col.columnType = o.columnType;
+            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.columnType);
             col.columnMetaData = o.columnMetaData;
             return col;
         }).toArray();

@@ -170,7 +170,7 @@ export class QueryExpressionVisitor {
             }
             const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
             if (relationMeta) {
-                const targetType = relationMeta.targetType;
+                const targetType = relationMeta.target.type;
                 switch (param.scope) {
                     case "select":
                     case "selectMany":
@@ -454,7 +454,7 @@ export class QueryExpressionVisitor {
             }
             else if ((valueExp as IColumnExpression).entity) {
                 if (!(selectOperand instanceof GroupByExpression) && valueExp instanceof ComputedColumnExpression) {
-                    const column = new ColumnExpression(valueExp.entity, propPath, valueExp.type, valueExp.isPrimary, valueExp.columnName);
+                    const column = new ColumnExpression(valueExp.entity, valueExp.type, propPath, valueExp.columnName, valueExp.isPrimary, valueExp.columnType);
                     newSelects.add(column);
                 }
                 else {

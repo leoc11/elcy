@@ -1,10 +1,11 @@
 import "reflect-metadata";
-import { IEnumType, IObjectType } from "../../Common/Type";
+import { IEnumType } from "../../Common/Type";
 import { EnumColumnMetaData } from "../../MetaData";
 import { IEnumColumnOption } from "../Option/IEnumColumnOption";
 import { Column } from "./Column";
 
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): PropertyDecorator;
+export function EnumColumn<T extends string | number>(options: IEnumType<T> | T[], defaultValue?: T): PropertyDecorator;
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<T> | T[], defaultValue?: T): PropertyDecorator {
     let option: IEnumColumnOption<T> = { type: String as any };
     if (!Array.isArray(options) && (options as IEnumColumnOption<T>).options) {
@@ -12,10 +13,12 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
     }
     else {
         option.options = options as IEnumType<T> | T[];
+        if (defaultValue)
+            option.default = defaultValue;
     }
 
     let valueOptions: T[] = [];
-    if (!option.type && option.options) {
+    if (option.options) {
         if (Array.isArray(option.options)) {
             valueOptions = option.options;
             if (option.options.length > 0) {
@@ -37,9 +40,6 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
             }
         }
     }
-
-    const metadata = new EnumColumnMetaData(option.type as IObjectType<T>, valueOptions);
-    if (defaultValue)
-        metadata.default = defaultValue;
-    return Column(metadata);
+    option.options = valueOptions;
+    return Column<any, string | number>(EnumColumnMetaData, option);
 }

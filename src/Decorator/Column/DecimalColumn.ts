@@ -4,16 +4,16 @@ import { IDecimalColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function DecimalColumn(option?: IDecimalColumnOption): PropertyDecorator;
-export function DecimalColumn(name?: string | IDecimalColumnOption, defaultValue?: number): PropertyDecorator {
-    const metadata = new DecimalColumnMetaData();
-    if (name && typeof name !== "string") {
-        metadata.applyOption(name);
+export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defaultValue?: number): PropertyDecorator {
+    let option: IDecimalColumnOption = {};
+    if (optionOrName && typeof optionOrName !== "string") {
+        option = optionOrName;
     }
     else {
-        if (typeof name !== "undefined")
-            metadata.columnName = name as string;
+        if (typeof optionOrName !== "undefined")
+            option.columnName = optionOrName as string;
         if (typeof defaultValue !== "undefined")
-            metadata.default = defaultValue;
+            option.default = defaultValue;
     }
-    return Column(metadata);
+    return Column<any, number>(DecimalColumnMetaData, option);
 }

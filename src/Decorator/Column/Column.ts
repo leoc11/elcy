@@ -1,52 +1,53 @@
 import "reflect-metadata";
 import "../../Extensions/EnumerableExtension";
-import { AbstractEntityMetaData, BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
+import { BooleanColumnMetaData, ColumnMetaData, DateColumnMetaData } from "../../MetaData";
 import { IEntityMetaData } from "../../MetaData/Interface";
-import { InheritedColumnMetaData } from "../../MetaData/Relation";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity";
 import { IColumnOption } from "../Option";
 import { EventListener } from "../../Common/EventListener";
 import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
+import { IObjectType } from "../../Common/Type";
 
-export function Column<T>(metadata: ColumnMetaData<T>, columnOption?: IColumnOption): PropertyDecorator {
-    return <TE = any>(target: TE, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
+    return (target: TE, propertyKey: keyof TE) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
             entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         }
+
+        const metadata = new columnMetaType();
+        metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
             if (typeof (propertyKey) === "string")
                 metadata.columnName = propertyKey;
         }
+        metadata.propertyName = propertyKey;
 
-        const columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
+        const columnMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (columnMetaData != null) {
             metadata.applyOption(columnMetaData);
+            entityMetaData.columns.remove(columnMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
+        entityMetaData.columns.push(metadata);
 
-        if (!entityMetaData.properties.contains(propertyKey))
-            entityMetaData.properties.push(propertyKey);
-        if (columnOption) {
-            if (metadata instanceof DateColumnMetaData) {
-                if (columnOption.isCreatedDate)
-                    entityMetaData.createDateProperty = propertyKey;
-                else if (columnOption.isModifiedDate)
-                    entityMetaData.modifiedDateProperty = propertyKey;
-            }
-            else if (metadata instanceof BooleanColumnMetaData) {
-                if (columnOption.isDeleteColumn)
-                    entityMetaData.deleteProperty = propertyKey;
-            }
+        const pk = entityMetaData.primaryKeys.first(o => o.propertyName === metadata.propertyName);
+        if (pk) {
+            entityMetaData.primaryKeys.remove(pk);
+            entityMetaData.primaryKeys.push(metadata);
         }
 
-        if (entityMetaData instanceof AbstractEntityMetaData && entityMetaData.inheritance.parentType) {
-            const columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, propertyKey);
-            const inheritColumnMeta = new InheritedColumnMetaData(columnMeta, entityMetaData.inheritance.parentType, propertyKey);
-            Reflect.defineMetadata(columnMetaKey, inheritColumnMeta, entityMetaData.type, propertyKey);
-            Reflect.defineMetadata(columnMetaKey, columnMeta, entityMetaData.inheritance.parentType, propertyKey);
+        if (metadata instanceof DateColumnMetaData) {
+            if (columnOption.isCreatedDate)
+                entityMetaData.createDateColumn = metadata;
+            else if (columnOption.isModifiedDate)
+                entityMetaData.modifiedDateColumn = metadata;
+        }
+        else if (metadata instanceof BooleanColumnMetaData) {
+            if (columnOption.isDeleteColumn)
+                entityMetaData.deleteColumn = metadata;
         }
 
         // add property to use setter getter.

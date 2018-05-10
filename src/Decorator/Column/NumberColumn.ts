@@ -4,16 +4,17 @@ import { INumericColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function NumberColumn(option?: INumericColumnOption): PropertyDecorator;
-export function NumberColumn(name?: string | INumericColumnOption, defaultValue?: number): PropertyDecorator {
-    const metadata = new NumericColumnMetaData();
-    if (name && typeof name !== "string") {
-        metadata.applyOption(name);
+export function NumberColumn(name?: string, defaultValue?: number): PropertyDecorator;
+export function NumberColumn(optionOrName?: string | INumericColumnOption, defaultValue?: number): PropertyDecorator {
+    let option: INumericColumnOption = {};
+    if (optionOrName && typeof optionOrName !== "string") {
+        option = optionOrName;
     }
     else {
-        if (typeof name !== "undefined")
-            metadata.columnName = name as string;
+        if (typeof optionOrName !== "undefined")
+            option.columnName = optionOrName as string;
         if (typeof defaultValue !== "undefined")
-            metadata.default = defaultValue;
+            option.default = defaultValue;
     }
-    return Column(metadata);
+    return Column<any, number>(NumericColumnMetaData, option);
 }

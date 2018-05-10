@@ -46,12 +46,12 @@ describe("INCLUDE", () => {
         const include = new IncludeQueryable(db.orders, [pa1]);
         const queryString = include.toString();
 
-        should();
         expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nINTO #temp_entity0\nFROM [Orders] AS [entity0];\n\nSELECT * FROM #temp_entity0;\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nINTO #temp_entity1\nFROM [OrderDetails] AS [entity1]\nINNER JOIN #temp_entity0 AS [entity3]\n\tON [entity1].[OrderId] = [entity3].[OrderId]\nWHERE NOT(\n\t([entity1].[isDeleted] = CAST(1 AS BIT))\n);\n\nSELECT * FROM #temp_entity1;\n\nSELECT DISTINCT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN #temp_entity1 AS [entity4]\n\tON [entity2].[ProductId] = [entity4].[ProductId];\n\nDROP TABLE #temp_entity1;\n\nDROP TABLE #temp_entity0;"
             , "query not equals");
 
         const a = await include.toArray();
 
+        should();
         a.should.be.an("array");
         a.should.has.length.greaterThan(0);
         a[0].should.be.instanceof(Order);
@@ -402,7 +402,7 @@ describe("WHERE", async () => {
         const db = new MyDb();
         let where = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate)
             .where(o => o.count() >= 1)
-            .select(o => o.key).where(o => o.getDate() > 15).orderBy({ selector: o => o });
+            .select(o => o.key).where(o => o.getDate() > 15).orderBy([o => o]);
         const queryString = where.toString();
 
         expect(queryString).to.equal("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY [entity0].[OrderDate]\nHAVING ((COUNT(*) >= 1) AND (DAY([entity0].[OrderDate]) > 15))\nORDER BY [entity0].[OrderDate] ASC;"
@@ -417,12 +417,10 @@ describe("WHERE", async () => {
 describe("ORDER BY", async () => {
     it("should work", async () => {
         const db = new MyDb();
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
-                new MemberAccessExpression(param, "TotalAmount"),
-                [param]),
-            direction: OrderDirection.DESC
-        };
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param]),
+            OrderDirection.DESC
+        ];
         const order = new OrderQueryable(db.orders, selector);
         const queryString = order.toString();
 
@@ -437,12 +435,12 @@ describe("ORDER BY", async () => {
     });
     it("by related entity", async () => {
         const db = new MyDb();
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
                 [odParam]),
-            direction: OrderDirection.DESC
-        };
+            OrderDirection.DESC
+        ];
         const order = new OrderQueryable(db.orderDetails, selector);
         const queryString = order.toString();
 
@@ -457,12 +455,12 @@ describe("ORDER BY", async () => {
     });
     it("by computed column", async () => {
         const db = new MyDb();
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MultiplicationExpression(new MemberAccessExpression(odParam, "quantity"), new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price")),
                 [odParam]),
-            direction: OrderDirection.DESC
-        };
+            OrderDirection.DESC
+        ];
         const order = new OrderQueryable(db.orderDetails, selector);
         const queryString = order.toString();
 
@@ -477,17 +475,17 @@ describe("ORDER BY", async () => {
     });
     it("by multiple column", async () => {
         const db = new MyDb();
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(odParam, "quantity"),
                 [odParam])
-        };
-        const selector2: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        ];
+        const selector2: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
                 [odParam]),
-            direction: OrderDirection.DESC
-        };
+            OrderDirection.DESC
+        ];
         const order = new OrderQueryable(db.orderDetails, ...[selector, selector2]);
         const queryString = order.toString();
 
@@ -503,18 +501,18 @@ describe("ORDER BY", async () => {
     it("should used last defined order", async () => {
         const db = new MyDb();
         // Note: thought Product no longer used, it still exist in join statement.
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
                 [odParam]),
-            direction: OrderDirection.DESC
-        };
+            OrderDirection.DESC
+        ];
         let order = new OrderQueryable(db.orderDetails, selector);
-        const selector2: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector2: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(odParam, "quantity"),
                 [odParam])
-        };
+        ];
         order = new OrderQueryable(order, selector2);
         const queryString = order.toString();
 
@@ -577,12 +575,12 @@ describe("ORDER BY", async () => {
 describe("SELECT MANY", async () => {
     it("should work", async () => {
         const db = new MyDb();
-        const selector: IQueryableOrderDefinition = {
-            selector: new FunctionExpression(
+        const selector: IQueryableOrderDefinition = [
+            new FunctionExpression(
                 new MemberAccessExpression(param, "TotalAmount"),
                 [param]),
-            direction: OrderDirection.DESC
-        };
+            OrderDirection.DESC
+        ];
         const order = new OrderQueryable(db.orders, selector);
         const queryString = order.toString();
 

@@ -4,17 +4,17 @@ import { IBooleanColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function BooleanColumn(option: IBooleanColumnOption): PropertyDecorator;
-// tslint:disable-next-line:ban-types
-export function BooleanColumn(name?: string | IBooleanColumnOption, defaultValue?: boolean): PropertyDecorator {
-    const metadata = new BooleanColumnMetaData();
-    if (name && typeof name !== "string") {
-        metadata.applyOption(name);
+export function BooleanColumn(optionOrName: IBooleanColumnOption | string, defaultValue?: boolean): PropertyDecorator {
+    let option: IBooleanColumnOption;
+    if (optionOrName && typeof optionOrName !== "string") {
+        option = optionOrName;
     }
     else {
-        if (typeof name !== "undefined")
-            metadata.columnName = name as string;
+        option = {};
+        if (typeof optionOrName !== "undefined")
+            option.columnName = optionOrName as string;
         if (typeof defaultValue !== "undefined")
-            metadata.default = defaultValue;
+            option.default = defaultValue;
     }
-    return Column(metadata);
+    return Column<any, boolean>(BooleanColumnMetaData, option);
 }

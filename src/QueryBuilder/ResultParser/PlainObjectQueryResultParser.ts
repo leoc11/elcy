@@ -123,26 +123,26 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             if (isRelationData) {
                 const relationDataMeta = parentRelation.relationMeta.relationData;
                 let a: any = {};
-                for (const [sourceProperty, relationProperty] of relationDataMeta.sourceRelationMaps) {
-                    let value = this.getDeepProperty(keyData, relationProperty);
+                for (const [sourceColMeta, relColMeta] of relationDataMeta.sourceRelationMaps) {
+                    let value = this.getDeepProperty(keyData, relColMeta.propertyName);
                     if (value === undefined)
-                        value = this.getDeepProperty(entity, relationProperty);
+                        value = this.getDeepProperty(entity, relColMeta.propertyName);
 
-                    this.setDeepProperty(a, sourceProperty, value);
+                    this.setDeepProperty(a, sourceColMeta.propertyName, value);
                 }
                 let key = hashCode(JSON.stringify(a));
-                const sourceEntity = customTypeMap.get(relationDataMeta.sourceType).get(key);
+                const sourceEntity = customTypeMap.get(relationDataMeta.source.type).get(key);
 
                 a = {};
-                for (const [relationProperty, targetProperty] of relationDataMeta.targetRelationMaps) {
-                    let value = this.getDeepProperty(keyData, relationProperty);
+                for (const [relColMeta, targetColMeta] of relationDataMeta.targetRelationMaps) {
+                    let value = this.getDeepProperty(keyData, relColMeta.propertyName);
                     if (value === undefined)
-                        value = this.getDeepProperty(entity, relationProperty);
+                        value = this.getDeepProperty(entity, relColMeta.propertyName);
 
-                    this.setDeepProperty(a, targetProperty, value);
+                    this.setDeepProperty(a, targetColMeta.propertyName, value);
                 }
                 key = hashCode(JSON.stringify(a));
-                const targetEntity = customTypeMap.get(relationDataMeta.targetType).get(key);
+                const targetEntity = customTypeMap.get(relationDataMeta.target.type).get(key);
                 Reflect.setRelationData(sourceEntity, relationDataMeta.sourceRelationMeta.propertyName, targetEntity, entity);
 
                 if (relationDataMeta.completeRelationType === "many-many") {

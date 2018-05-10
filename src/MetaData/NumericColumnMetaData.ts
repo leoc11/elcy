@@ -1,14 +1,14 @@
 import { IntColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { INumericColumnOption } from "../Decorator/Option";
-// tslint:disable-next-line:ban-types
-export class NumericColumnMetaData extends ColumnMetaData<number> {
+import { IEntityMetaData } from "./Interface";
+export class NumericColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public autoIncrement: boolean;
     public size?: number;
     public columnType: IntColumnType = "int";
 
-    constructor() {
-        super(Number);
+    constructor(entityMeta?: IEntityMetaData<TE>) {
+        super(Number, entityMeta);
     }
     public applyOption(columnMeta: INumericColumnOption) {
         if (typeof columnMeta.autoIncrement !== "undefined")

@@ -97,9 +97,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
                 relationSelect.distinct = true;
-                for (const [relProperty, parentProperty] of relMap) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
-                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                for (const [relColMeta, parentColMeta] of relMap) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
                     if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
                     if (!relationCol.isPrimary) relationSelect.relationColumns.add(relationCol);
                     relationMap.set(parentCol, relationCol);
@@ -117,9 +117,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 // include child to relationSelect
                 relationMap = new Map();
                 relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                for (const [relProperty, childProperty] of relMap) {
-                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
-                    const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
+                for (const [relColMeta, childColMeta] of relMap) {
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
+                    const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
                     if (!relationCol.isPrimary) this.relationColumns.add(relationCol);
                     if (!childCol.isPrimary) child.relationColumns.add(childCol);
                     relationMap.set(relationCol, childCol);
@@ -137,9 +137,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             }
 
             relationMap = new Map();
-            for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
-                const childCol = child.entity.columns.first((o) => o.propertyName === childProperty);
+            for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
+                const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
+                const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
                 if (!parentCol.isPrimary) this.relationColumns.add(parentCol);
                 if (!childCol.isPrimary) child.relationColumns.add(childCol);
                 relationMap.set(parentCol, childCol);
@@ -183,9 +183,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 relationMap = new Map();
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
-                for (const [relProperty, parentProperty] of relMap) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentProperty);
-                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
+                for (const [relColMeta, parentColMeta] of relMap) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
                     if (!relationCol.isPrimary) relationSelect.relationColumns.add(relationCol);
                     relationMap.set(parentCol, relationCol);
                 }
@@ -199,9 +199,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
 
                 // include child to relationSelect
                 relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                for (const [relProperty, childProperty] of relMap) {
-                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relProperty);
-                    const childCol = this.entity.columns.first((o) => o.propertyName === childProperty);
+                for (const [relColMeta, childColMeta] of relMap) {
+                    const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
+                    const childCol = this.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
                     if (!relationCol.isPrimary) this.relationColumns.add(relationCol);
                     if (!childCol.isPrimary) child.relationColumns.add(childCol);
                     relationMap.set(relationCol, childCol);
@@ -216,13 +216,13 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 return child.parentRelation;
             }
             else {
-                const relType = relationMeta.sourceType === this.entity.type ? relationMeta.relationType : relationMeta.reverseRelation.relationType;
+                const relType = relationMeta.source.type === this.entity.type ? relationMeta.relationType : relationMeta.reverseRelation.relationType;
                 type = relType === "one" ? type ? type : JoinType.INNER : JoinType.LEFT;
                 relationMap = new Map();
-                const isReverse = relationMeta.sourceType !== this.entity.type;
-                for (const [parentProperty, childProperty] of relationMeta.relationMaps) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childProperty : parentProperty));
-                    const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentProperty : childProperty));
+                const isReverse = relationMeta.source.type !== this.entity.type;
+                for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
+                    const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childColMeta : parentColMeta).propertyName);
+                    const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentColMeta : childColMeta).propertyName);
                     if (!childCol.isPrimary) child.relationColumns.add(childCol);
                     relationMap.set(parentCol, childCol);
                 }

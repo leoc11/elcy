@@ -1,15 +1,15 @@
 import { GenericType } from "../../Common/Type";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
-import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { ColumnType } from "../../Common/ColumnType";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T> {
     type: GenericType<T>;
     alias?: string;
     columnName: string;
     columnType: ColumnType;
-    columnMetaData?: IColumnOption<T>;
+    columnMetaData?: IColumnMetaData<TE, T>;
     entity: IEntityExpression<TE>;
     propertyName: string;
     isPrimary: boolean;

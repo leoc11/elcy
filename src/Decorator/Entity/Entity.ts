@@ -1,21 +1,30 @@
 import "reflect-metadata";
 import { ClassBase, GenericType, InheritanceType, IObjectType } from "../../Common/Type";
-import { AbstractEntityMetaData, ColumnMetaData } from "../../MetaData";
+import { AbstractEntityMetaData, ColumnMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { IEntityMetaData, IOrderCondition } from "../../MetaData/Interface";
+import { IEntityMetaData } from "../../MetaData/Interface";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/index";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
-import { IColumnOption } from "../Option";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
+import { IOrderOption } from "../Option/IOrderOption";
 
-export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderCondition[], allowInheritance = true) {
+export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderOption<T>[], allowInheritance = true) {
     return (type: IObjectType<T>) => {
         if (!name)
             name = type.name;
 
-        const entityMetadata = new EntityMetaData(type, name, defaultOrder);
+        const entityMetadata = new EntityMetaData(type, name);
         const entityMet: IEntityMetaData<T, any> = Reflect.getOwnMetadata(entityMetaKey, type);
         if (entityMet)
             entityMetadata.ApplyOption(entityMet);
+
+        if (defaultOrder) {
+            entityMetadata.defaultOrder = defaultOrder.select(o => ({
+                column: entityMetadata.columns.first(c => c.propertyName === o.property),
+                direction: o.direction
+            })).toArray();
+        }
 
         if (!allowInheritance)
             entityMetadata.descriminatorMember = "";
@@ -25,49 +34,61 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
             const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             let isInheritance = false;
             if (parentMetaData instanceof AbstractEntityMetaData) {
-                if (parentMetaData.inheritance.parentType) {
-                    entityMetadata.inheritance.parentType = parentMetaData.inheritance.parentType;
+                if (parentMetaData.inheritance.parent) {
+                    entityMetadata.inheritance.parent = parentMetaData.inheritance.parent;
                     entityMetadata.inheritance.inheritanceType = InheritanceType.TablePerClass;
                 }
                 else {
-                    entityMetadata.inheritance.parentType = parentType;
+                    entityMetadata.inheritance.parent = parentMetaData;
                     entityMetadata.inheritance.inheritanceType = InheritanceType.TablePerConcreteClass;
                 }
-                if (parentMetaData.primaryKeys.length > 0)
-                    entityMetadata.primaryKeys = parentMetaData.primaryKeys;
                 isInheritance = true;
             }
             else if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance && parentMetaData.primaryKeys.length > 0) {
-                entityMetadata.inheritance.parentType = parentType;
+                entityMetadata.inheritance.parent = parentMetaData;
                 entityMetadata.inheritance.inheritanceType = InheritanceType.TablePerClass;
-                entityMetadata.primaryKeys = parentMetaData.primaryKeys;
                 isInheritance = true;
             }
             if (isInheritance) {
-                if (parentMetaData.createDateProperty)
-                    entityMetadata.createDateProperty = parentMetaData.createDateProperty;
-                if (parentMetaData.modifiedDateProperty)
-                    entityMetadata.modifiedDateProperty = parentMetaData.modifiedDateProperty;
-                if (parentMetaData.deleteProperty)
-                    entityMetadata.deleteProperty = parentMetaData.deleteProperty;
+                parentMetaData.columns.forEach((parentColumnMeta) => {
+                    let columnMeta: IColumnMetaData<T> = entityMetadata.columns.first(p => p.propertyName === parentColumnMeta.propertyName);
+                    if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
+                        if (!columnMeta) {
+                            columnMeta = new ColumnMetaData<T>(parentColumnMeta.type, entityMetadata);
+                            columnMeta.applyOption(parentColumnMeta);
+                        }
+                    }
+                    else {
+                        columnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
+                    }
+                    entityMetadata.columns.push(columnMeta);
+                    Reflect.defineMetadata(columnMetaKey, columnMeta, type, parentColumnMeta.propertyName);
+                });
+
+                if (parentMetaData.primaryKeys.length > 0)
+                    entityMetadata.primaryKeys = parentMetaData.primaryKeys.select(o => entityMetadata.columns.first(p => p.propertyName === o.propertyName)).toArray();
+
+                if (parentMetaData.createDateColumn)
+                    entityMetadata.createDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.createDateColumn.propertyName);
+                if (parentMetaData.modifiedDateColumn)
+                    entityMetadata.modifiedDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.modifiedDateColumn.propertyName);
+                if (parentMetaData.deleteColumn)
+                    entityMetadata.deleteColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deleteColumn.propertyName);
                 if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                     entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 
-                parentMetaData.properties.forEach((prop) => {
-                    if (!entityMetadata.properties.contains(prop)) {
-                        entityMetadata.properties.push(prop);
-                        let columnMeta: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
-                        if (entityMetadata.inheritance.inheritanceType !== InheritanceType.TablePerConcreteClass)
-                            columnMeta = new InheritedColumnMetaData(columnMeta, parentType, prop);
-                        Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);
-                    }
-                });
-
-                parentMetaData.computedProperties.forEach((prop) => {
-                    if (!entityMetadata.computedProperties.contains(prop)) {
-                        entityMetadata.computedProperties.push(prop);
-                        const columnMeta: IColumnOption<TParent> = Reflect.getOwnMetadata(columnMetaKey, parentType, prop);
-                        Reflect.defineMetadata(columnMetaKey, columnMeta, type, prop);
+                parentMetaData.computedProperties.forEach((parentColumnMeta) => {
+                    if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {
+                        let computedMeta: ComputedColumnMetaData<T, TParent>;
+                        if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
+                            computedMeta = new ComputedColumnMetaData();
+                            computedMeta.applyOption(parentColumnMeta);
+                        }
+                        else {
+                            computedMeta = new InheritedComputedColumnMetaData(entityMetadata, parentColumnMeta);
+                        }
+                        entityMetadata.computedProperties.push(computedMeta);
+                        Reflect.defineMetadata(columnMetaKey, computedMeta, type, parentColumnMeta.propertyName);
                     }
                 });
             }
