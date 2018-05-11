@@ -7,14 +7,14 @@ import { IEntityEntryOption } from "./Interface/IEntityEntry";
 export class EntityEntry<T = any> implements IEntityEntryOption {
     public state: EntityState;
     public enableTrackChanges = true;
-    constructor(protected dbSet: DbSet<T>, public entity: T, public key: string) {
+    constructor(public dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
         const eventListener = new EventListener(entity);
         Reflect.defineMetadata("PropertyChangeEventListener", eventListener, entity);
         eventListener.add(this.onPropertyChanged.bind(this), 0);
     }
     public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all(o => (this.entity as any)[o] !== undefined);
+        return this.dbSet.metaData.columns.all(o => (this.entity as any)[o.propertyName] !== undefined);
     }
     private originalValues: Map<string, any> = new Map();
     public isPropertyModified(prop: string) {
@@ -34,7 +34,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
                 this.originalValues.delete(param.property);
                 if (this.originalValues.size <= 0) {
                     this.state = EntityState.Unchanged;
-                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.type);
+                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.metaData);
                     if (modEntries)
                         modEntries.remove(this);
                 }
@@ -58,7 +58,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
                 this.originalValues.delete(param.property);
                 if (this.originalValues.size <= 0) {
                     this.state = EntityState.Unchanged;
-                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.type);
+                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.metaData);
                     if (modEntries)
                         modEntries.remove(this);
                 }

@@ -1,4 +1,3 @@
-import { IObjectType } from "../../src/Common/Type";
 import { MssqlDbContext } from "../../src/Driver/Mssql/MssqlDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Test, Collection, CollectionProductData } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";

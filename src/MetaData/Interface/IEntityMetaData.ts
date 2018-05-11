@@ -21,4 +21,5 @@ export interface IEntityMetaData<TE extends TParent, TParent = any> extends IDBE
     allowInheritance?: boolean;
     inheritance: InheritanceMetaData<TParent>;
     relations?: { [key: string]: RelationMetaData<TE, any> };
+    priority?: number;
 }

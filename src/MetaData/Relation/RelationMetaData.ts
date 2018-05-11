@@ -21,6 +21,7 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
     public isMaster: boolean;
     public updateOption?: ReferenceOption;
     public deleteOption?: ReferenceOption;
+    public nullable?: boolean;
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }

@@ -1031,11 +1031,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    public getInsertQuery<T>(type: IObjectType<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
+    public getInsertQuery<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
         if (entries.length <= 0)
             return null;
 
-        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
         const columns = entityMetaData.columns.select(o => ({
             propertyName: o.propertyName,
             metaData: o
@@ -1071,11 +1070,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }).join(", ");
         return result;
     }
-    public getUpdateQuery<T>(type: IObjectType<T>, entry: EntityEntry<T>): IQueryCommand {
-        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
+    public getUpdateQuery<T>(entityMetaData: IEntityMetaData<T>, entry: EntityEntry<T>): IQueryCommand {
         const modifiedColumns = entry.getModifiedProperties().select(o => ({
             propertyName: o,
-            metaData: Reflect.getMetadata(columnMetaKey, type, o) as ColumnMetaData
+            metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
         }));
 
         const result: IQueryCommand = {
@@ -1097,7 +1095,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         result.query = `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`;
         return result;
     }
-    public getDeleteQuery<T>(type: IObjectType<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
+    public getDeleteQuery<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
         if (entries.length <= 0)
             return null;
 
@@ -1105,7 +1103,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             query: "",
             parameters: new Map()
         };
-        const entityMetaData: IEntityMetaData<T> = Reflect.getMetadata(entityMetaKey, type);
         let condition = "";
         if (entityMetaData.primaryKeys.length === 1) {
             const primaryCol = entityMetaData.primaryKeys.first();

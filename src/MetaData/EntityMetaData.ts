@@ -1,8 +1,7 @@
-import { GenericType, IObjectType } from "../Common/Type";
+import { IObjectType } from "../Common/Type";
 import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
 import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
-import { InheritanceMetaData } from "./Relation";
-import { RelationMetaData } from "./Relation/RelationMetaData";
+import { InheritanceMetaData, RelationMetaData } from "./Relation";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
@@ -19,12 +18,21 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance
-    public parentType?: GenericType<TParent>;
     public descriminatorMember = "__type__";
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
     public inheritance: InheritanceMetaData<TParent>;
+    public get priority(): number {
+        let priority = 1;
+        for (const relName in this.relations) {
+            const relation = this.relations[relName];
+            if (!relation.isMaster && !relation.nullable) {
+                priority += relation.target.priority + 1;
+            }
+        }
+        return priority;
+    }
 
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
@@ -32,6 +40,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.name = name;
         if (!name)
             this.name = type.name!;
+        this.relations = {};
     }
 
     public ApplyOption(entityMeta: IEntityMetaData<TE>) {
@@ -59,9 +68,9 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         if (typeof entityMeta.relations !== "undefined")
             this.relations = entityMeta.relations;
     }
-    beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
-    beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
-    afterLoad?: (entity: TE) => void;
-    afterSave?: (entity: TE, param: ISaveEventParam) => void;
-    afterDelete?: (entity: TE, param: IDeleteEventParam) => void;
+    public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
+    public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
+    public afterLoad?: (entity: TE) => void;
+    public afterSave?: (entity: TE, param: ISaveEventParam) => void;
+    public afterDelete?: (entity: TE, param: IDeleteEventParam) => void;
 }

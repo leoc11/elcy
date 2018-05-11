@@ -12,4 +12,5 @@ export interface IRelationMetaData<TSource = any, TTarget = any> {
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     updateOption?: ReferenceOption;
     deleteOption?: ReferenceOption;
+    nullable?: boolean;
 }
