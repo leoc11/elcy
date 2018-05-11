@@ -6,7 +6,7 @@ import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 @Entity("Products")
 export class Product {
     @PrimaryKey()
-    @StringColumn({ columnType: "nvarchar", maxLength: 100 })
+    @StringColumn({ columnType: "nvarchar", length: 100 })
     public ProductId: string;
 
     @NumberColumn({ columnType: "bigint" })

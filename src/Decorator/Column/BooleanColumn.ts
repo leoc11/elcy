@@ -4,7 +4,7 @@ import { IBooleanColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function BooleanColumn(option: IBooleanColumnOption): PropertyDecorator;
-export function BooleanColumn(optionOrName: IBooleanColumnOption | string, defaultValue?: boolean): PropertyDecorator {
+export function BooleanColumn(optionOrName: IBooleanColumnOption | string, defaultValue?: () => boolean): PropertyDecorator {
     let option: IBooleanColumnOption;
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;

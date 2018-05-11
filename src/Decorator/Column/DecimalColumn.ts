@@ -4,7 +4,7 @@ import { IDecimalColumnOption } from "../Option";
 import { Column } from "./Column";
 
 export function DecimalColumn(option?: IDecimalColumnOption): PropertyDecorator;
-export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defaultValue?: number): PropertyDecorator {
+export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defaultValue?: () => number): PropertyDecorator {
     let option: IDecimalColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;

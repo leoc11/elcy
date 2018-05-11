@@ -2,11 +2,10 @@
 import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
 export interface IColumnOption<T = any> {
-    schema?: string;
     columnName?: string;
     indexed?: boolean;
     nullable?: boolean;
-    default?: T;
+    default?: () => T;
     type?: GenericType<T>;
     description?: string;
     columnType?: ColumnType;

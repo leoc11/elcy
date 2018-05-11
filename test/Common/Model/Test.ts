@@ -9,6 +9,6 @@ export class Test {
     public ID: number;
     @StringColumn()
     public name: string;
-    @BooleanColumn({ columnType: "bit", default: false })
+    @BooleanColumn({ columnType: "bit", default: () => false })
     public isDefault: boolean;
 }

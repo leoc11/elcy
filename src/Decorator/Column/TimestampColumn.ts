@@ -4,7 +4,7 @@ import { ITimestampColumnOption } from "../Option/ITimestampColumnOption";
 import { TimestampColumnMetaData } from "../../MetaData/TimestampColumnMetaData";
 
 export function TimestampColumn(option?: ITimestampColumnOption): PropertyDecorator;
-export function TimestampColumn(optionOrName?: ITimestampColumnOption | string, defaultValue?: string): PropertyDecorator {
+export function TimestampColumn(optionOrName?: ITimestampColumnOption | string, defaultValue?: () => string): PropertyDecorator {
     let option: ITimestampColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
