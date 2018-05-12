@@ -3,7 +3,8 @@ import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { IEntityExpression, ComputedColumnExpression } from ".";
+import { IEntityExpression } from "./IEntityExpression";
+import { ComputedColumnExpression } from "./ComputedColumnExpression";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -14,6 +15,8 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     protected selectori: SelectExpression<T>;
     constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression, a?: boolean) {
         super(select.entity);
+        // reset having added by parent constructor
+        this.having = undefined;
         this.selects = [];
         if (select.parentRelation)
             select.parentRelation.child = this;

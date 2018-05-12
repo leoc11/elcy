@@ -1,6 +1,7 @@
-import { SelectExpression } from "./SelectExpression";
+import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { GroupByExpression, IJoinRelation, IIncludeRelation, IOrderExpression } from ".";
+import { GroupByExpression } from "./GroupByExpression";
+import { IOrderExpression } from "./IOrderExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression";
 
 export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
