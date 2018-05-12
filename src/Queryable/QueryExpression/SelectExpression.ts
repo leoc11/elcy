@@ -6,11 +6,13 @@ import { ICommandQueryExpression } from "./ICommandQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ProjectionEntityExpression, GroupByExpression } from ".";
+import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
+import { GroupByExpression } from "./GroupByExpression";
 import { NegationExpression } from "../../ExpressionBuilder/Expression/NegationExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -168,9 +170,9 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         this.includes.push(child.parentRelation);
         return child.parentRelation;
     }
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: RelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
         const existingRelation = this.joins.first((o) => o.child === child);
         if (existingRelation)

@@ -10,3 +10,4 @@ export * from "./AbstractEntityMetaData";
 export * from "./ComputedColumnMetaData";
 export * from "./EnumColumnMetaData";
 export * from "./EmbeddedColumnMetaData";
+export * from "./CheckConstraintMetaData";

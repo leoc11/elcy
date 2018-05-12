@@ -1,10 +1,11 @@
-import { RelationMetaData, InheritanceMetaData } from ".";
+import { InheritanceMetaData } from ".";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
 import { IObjectType } from "../../Common/Type";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
+import { IRelationMetaData } from "../Interface/IRelationMetaData";
 
 export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataMetaData<TType, TSource, TTarget> {
     public inheritance: InheritanceMetaData<TType>;
@@ -19,8 +20,8 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     }
     public sourceRelationColumns: IColumnMetaData<TType>[] = [];
     public targetRelationColumns: IColumnMetaData<TType>[] = [];
-    public sourceRelationMeta: RelationMetaData<TSource, TTarget>;
-    public targetRelationMeta: RelationMetaData<TTarget, TSource>;
+    public sourceRelationMeta: IRelationMetaData<TSource, TTarget>;
+    public targetRelationMeta: IRelationMetaData<TTarget, TSource>;
     public columns: IColumnMetaData<TType>[] = [];
     public relationName: string;
     public name: string;
@@ -40,7 +41,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.targetRelationColumns = relationOption.targetRelationKeys.select(o => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o)).toArray();
         this.type = relationOption.type;
     }
-    public completeRelation(sourceRelation: RelationMetaData<TSource, TTarget>, targetRelation: RelationMetaData<TTarget, TSource>) {
+    public completeRelation(sourceRelation: IRelationMetaData<TSource, TTarget>, targetRelation: IRelationMetaData<TTarget, TSource>) {
         this.sourceRelationMeta = sourceRelation;
         this.targetRelationMeta = targetRelation;
         sourceRelation.relationData = sourceRelation.relationData = this;

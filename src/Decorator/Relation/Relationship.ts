@@ -47,15 +47,17 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             relationOption.sourceType = target.constructor as any;
         relationOption.propertyName = propertyKey as any;
         const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType!);
-        
+
         const relationMeta = new RelationMetaData(relationOption);
         Reflect.defineMetadata(relationMetaKey, relationMeta, relationOption.sourceType!, propertyKey);
-
-        sourceMetaData.relations[relationMeta.name + "_" + targetName] = relationMeta;
+        
+        const relationName = relationMeta.name + "_" + (relationOption.isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
+        relationMeta.name = relationName;
+        sourceMetaData.relations.push(relationMeta);
 
         if (relationOption.targetType) {
             const targetMetaData: EntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
-            const reverseRelation = targetMetaData.relations[relationMeta.name + "_" + relationMeta.source.type.name];
+            const reverseRelation = targetMetaData.relations.first(o => o.name === relationName);
 
             if (reverseRelation) {
                 relationMeta.completeRelation(reverseRelation);

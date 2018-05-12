@@ -30,7 +30,7 @@ export namespace ExpressionBuilder {
         childrens?: ILexicalToken[];
     }
     const keywordOperator = ["typeof", "instanceof"];
-    const keywords = ["abstract", "arguments", "await", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "delete", "do", "double", "else", "enum", "eval", "export", "extends", "false", "final", "finally", "for", "function", "goto", "if", "implements", "import", "in", "interface", "let", "long", "native", "new", "null", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "true", "try", "var", "void", "volatile", "while", "with", "yield"];
+    const keywords = ["abstract", "arguments", "await", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "delete", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "function", "goto", "if", "implements", "import", "in", "interface", "let", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "void", "volatile", "while", "with", "yield"];
     function analyzeLexical(fnBody: string): ILexicalToken[] {
         const pointer = {
             index: -1
@@ -305,6 +305,8 @@ export namespace ExpressionBuilder {
         ["NaN", NaN],
         ["undefined", undefined],
         ["null", null],
+        ["true", true],
+        ["false", false],
     ]);
     function analyzeSyntatic(tokens: ILexicalToken[], paramTypes: GenericType[] = [], userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {

@@ -10,9 +10,8 @@ import { IEntityMetaData } from "../Interface";
 export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {
     public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData> = new Map();
     public propertyName: keyof TSource;
-    public reverseRelation: RelationMetaData<TTarget, TSource>;
+    public reverseRelation: IRelationMetaData<TTarget, TSource>;
     public relationData: RelationDataMetaData;
-
     public source: IEntityMetaData<TSource>;
     public target: IEntityMetaData<TTarget>;
     public name: string;
@@ -39,7 +38,7 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
         this.relationColumns = relationOption.relationKeys.select(o => typeof o === "string" ? o : FunctionHelper.propertyName(o))
             .select(o => Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>).toArray();
     }
-    public completeRelation(reverseRelation: RelationMetaData<TTarget, TSource>) {
+    public completeRelation(reverseRelation: IRelationMetaData<TTarget, TSource>) {
         if (this.isMaster) {
             this.reverseRelation = reverseRelation;
             this.reverseRelation.reverseRelation = this;

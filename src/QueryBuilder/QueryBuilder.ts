@@ -24,24 +24,27 @@ import { SqlFunctionCallExpression } from "../Queryable/QueryExpression/SqlFunct
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
-import { JoinType, ValueType, GenericType, IObjectType } from "../Common/Type";
+import { JoinType, ValueType, GenericType } from "../Common/Type";
 import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData, ColumnMetaData } from "../MetaData";
-import { IColumnOption } from "../Decorator/Option";
-import { BinaryColumnMetaData } from "../MetaData/BinaryColumnMetaData";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
 import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
 import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
-import { ColumnType, ColumnTypeMapKey } from "../Common/ColumnType";
+import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
-import { entityMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
+import { columnMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface";
 import { IQueryCommand } from "./Interface/IQueryCommand";
 import { EntityEntry } from "../Data/EntityEntry";
+import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
+import { ICheckConstraintMetaData } from "../MetaData/Interface/ICheckConstraintMetaData";
+import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -70,9 +73,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
-    }
-    public getContainsString(expression: SelectExpression) {
-        return "SELECT EXISTS (" + this.getExpressionString(expression) + ")";
     }
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {
@@ -266,33 +266,23 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "CREATE TABLE " + name;
         result += this.newLine() + "{";
-        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join(this.newLine(this.indent + 1));
+        result += this.newLine(this.indent + 1) + columns.select(o => this.columnDeclaration(o)).toArray().join(this.newLine(this.indent + 1));
         result += this.newLine() + "}";
         return result;
     }
     protected getDeclareTableVariableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "DECLARE " + name + "  TABLE";
         result += this.newLine() + "(";
-        result += this.newLine(this.indent + 1) + columns.select(o => this.getColumnDeclarationString(o)).toArray().join("," + this.newLine(this.indent + 1));
+        result += this.newLine(this.indent + 1) + columns.select(o => this.columnDeclaration(o)).toArray().join("," + this.newLine(this.indent + 1));
         result += this.newLine() + ")";
         return result;
     }
-    protected getColumnDeclarationString(column: IColumnExpression) {
-        let result = this.enclose(column.columnName);
-        result += " " + this.getColumnType(column);
-        if (column instanceof ColumnExpression) {
-            if (column.columnMetaData && typeof column.columnMetaData.nullable !== "undefined" && !column.columnMetaData.nullable) {
-                result += " not null";
-            }
-        }
-        return result;
-    }
-    protected abstract supportedColumnTypes: ColumnType[];
-    protected columnTypesWithOption: ColumnType[] = [];
-    protected columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>();
-    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>();
-    protected valueTypeMap = new Map<GenericType, ColumnType>();
-    protected getColumnType<T>(column: IColumnOption<T> | IColumnExpression<T> | ValueType): string {
+    public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
+    public abstract columnTypesWithOption: ColumnType[];
+    public abstract columnTypeDefaults: Map<ColumnType, IColumnTypeDefaults>;
+    public abstract columnTypeMap: Map<ColumnTypeMapKey, ColumnType>;
+    public abstract valueTypeMap: Map<GenericType, ColumnType>;
+    protected getColumnType<T>(column: IColumnMetaData<T> | IColumnExpression<T> | ValueType): string {
         if (column instanceof ColumnExpression) {
             const columnExp = column as ColumnExpression;
             if (columnExp.columnType) {
@@ -303,18 +293,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
         }
 
-        let columnOption = column as IColumnOption<T>;
+        let columnOption = column as IColumnMetaData<T>;
         let type: ColumnType;
-        if (!(column as IColumnOption).type) {
+        if (!(column as IColumnMetaData).columnType) {
             type = this.valueTypeMap.get(column as any);
         }
         else {
-            columnOption = column as IColumnOption<T>;
+            columnOption = column as IColumnMetaData<T>;
             if (!columnOption.columnType) {
                 return this.getColumnType(columnOption.type as any);
             }
             type = columnOption.columnType;
-            if (!this.supportedColumnTypes.contains(type)) {
+            if (!this.supportedColumnTypes.has(type)) {
                 if (this.columnTypeMap) {
                     if (this.columnTypeMap.has(type))
                         type = this.columnTypeMap.get(type);
@@ -348,21 +338,21 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const typeDefault = this.columnTypeDefaults.get(columnOption.columnType);
         const option = columnOption as any;
         const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
+        const length: number = option && typeof option.length !== "undefined" ? option.length : typeDefault ? typeDefault.length : undefined;
         const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
         const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
         if (this.columnTypesWithOption.contains(type)) {
-            if (typeof size !== "undefined") {
-                if (columnOption instanceof StringColumnMetaData || columnOption instanceof NumericColumnMetaData
-                    || columnOption instanceof BinaryColumnMetaData)
-                    type += `(${size})`;
+            if (typeof length !== "undefined") {
+                type += `(${length})`;
+            }
+            else if (typeof size !== "undefined") {
+                type += `(${size})`;
             }
             else if (typeof scale !== "undefined" && typeof precision !== "undefined") {
-                if (columnOption instanceof DecimalColumnMetaData)
-                    type += `(${columnOption.precision}, ${columnOption.scale})`;
+                type += `(${precision}, ${scale})`;
             }
             else if (typeof precision !== "undefined") {
-                if (columnOption instanceof TimeColumnMetaData || columnOption instanceof DateColumnMetaData)
-                    type += `(${precision})`;
+                type += `(${precision})`;
             }
         }
         return type;
@@ -412,6 +402,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
         }
         return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
+    }
+    public entityName(entityMeta: IEntityMetaData<any>) {
+        return `${entityMeta.schema ? this.enclose(entityMeta.schema) + "." : ""}${this.enclose(entityMeta.name)}`;
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
         switch (expression.functionFn) {
@@ -800,7 +793,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getValueExpressionString(expression: ValueExpression<any>): string {
         return this.getValueString(expression.value);
     }
-    protected getValueString(value: any): string {
+    public getValueString(value: any): string {
         switch (typeof value) {
             case "number":
                 return this.getNumberString(value);
@@ -827,7 +820,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return "NULL";
     }
     protected getString(value: string) {
-        return "'" + value + "'";
+        return "'" + this.escapeString(value) + "'";
+    }
+    protected escapeString(value: string) {
+        return value.replace(/'/ig, "''");
     }
     protected getBooleanString(value: boolean) {
         return "CAST(" + (value ? "1" : "0") + " AS BIT)";
@@ -1114,7 +1110,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             condition = `WHERE ${primaryCol.propertyName} IN (${primaryValues})`;
         }
         else {
-            const columnName =  entityMetaData.primaryKeys.select(o => o.columnName).toArray().join(",");
+            const columnName = entityMetaData.primaryKeys.select(o => o.columnName).toArray().join(",");
             const primaryValues = entries.select(o => "(" + entityMetaData.primaryKeys.select(c => {
                 const paramName = this.newAlias("param");
                 result.parameters.set(paramName, o.entity[c.propertyName]);
@@ -1127,5 +1123,359 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         result.query = `DELETE FROM ${this.enclose(entityMetaData.name)} ${condition}`;
         return result;
+    }
+
+    /**
+     * SCHEMA BUILDER QUERY
+     */
+    public rebuildEntitySchemaQuery<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
+        const columnMetas = schema.columns.select(o => ({
+            columnSchema: o,
+            oldColumnSchema: oldSchema.columns.first(c => c.columnName === o.columnName)
+        }));
+
+        let result: IQueryCommand[] = [];
+
+        const cloneSchema = Object.assign({}, schema);
+        cloneSchema.name = "TEMP_" + this.newAlias();
+
+        result = result.concat(this.createEntitySchemaQuery(cloneSchema));
+
+        // turn on identity insert coz rebuild schema most likely called because identity insert issue.
+        result.push({
+            query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} ON`
+        });
+
+        // copy value
+        const newColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.enclose(o.columnSchema.columnName)).toArray().join(",");
+        const copyColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
+        result.push({
+            query: `INSERT INTO ${this.entityName(cloneSchema)} (${newColumns}) SELECT ${copyColumns} FROM ${this.entityName(oldSchema)} WITH (HOLDLOCK TABLOCKX)`
+        });
+
+        // turn of identity insert
+        result.push({
+            query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} OFF`
+        });
+
+        // remove all foreignkey reference to current table
+        result = result.concat(this.dropAllMasterRelationsQuery(oldSchema));
+
+        // rename temp table
+        result = result.concat(this.renameTableQuery(cloneSchema, this.entityName(schema)));
+
+        // re-add all foreignkey reference to table
+        result = result.concat(this.addAllMasterRelationsQuery(schema));
+
+        return result;
+    }
+    public dropAllOldRelationsQueries<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQueryCommand[] {
+        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+        };
+
+        const relations = schema.relations.slice(0);
+        return oldSchema.relations.where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
+            .selectMany(o => this.dropForeignKeyQuery(o)).toArray();
+    }
+    public addAllNewRelationsQueries<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQueryCommand[] {
+        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+        };
+
+        const oldRelations = oldSchema.relations.slice(0);
+        return schema.relations.where(o => !oldRelations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
+            .selectMany(o => this.addForeignKeyQuery(o)).toArray();
+    }
+    public updateEntitySchemaQuery<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
+        let result: IQueryCommand[] = [];
+        const columnMetas = schema.columns.select(o => ({
+            columnSchema: o,
+            oldColumnSchema: oldSchema.columns.first(c => c.columnName.toLowerCase() === o.columnName.toLowerCase())
+        }));
+
+        result = columnMetas.selectMany(o => this.getColumnChangesQuery(o.columnSchema, o.oldColumnSchema)).toArray();
+
+        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+        };
+        // primary key changes
+        if (!isColumnsEquals(schema.primaryKeys, oldSchema.primaryKeys)) {
+            result = result.concat(this.dropPrimaryKeyQuery(oldSchema));
+            result = result.concat(this.addPrimaryKeyQuery(schema));
+        }
+
+        const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
+            const check1 = cons1 as ICheckConstraintMetaData;
+            const check2 = cons2 as ICheckConstraintMetaData;
+            const checkDef1 = !check1.definition ? undefined : check1.definition instanceof FunctionExpression ? this.getExpressionString(check1.definition) : check1.definition;
+            const checkDef2 = !check2.definition ? undefined : check2.definition instanceof FunctionExpression ? this.getExpressionString(check2.definition) : check2.definition;
+            return checkDef1 === checkDef2 && isColumnsEquals(cons1.columns, cons2.columns);
+        };
+        // remove old constraint
+        result = result.concat(oldSchema.constraints.where(o => !schema.constraints.any(or => isConstraintEquals(o, or)))
+            .selectMany(o => this.dropConstraintQuery(o)).toArray());
+        // add new constraint
+        result = result.concat(schema.constraints.where(o => !oldSchema.constraints.any(or => isConstraintEquals(o, or)))
+            .selectMany(o => this.addConstraintQuery(o)).toArray());
+
+        const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
+            return !!index1.unique === !!index2.unique && index1.type === index2.type && isColumnsEquals(index1.columns, index1.columns);
+        };
+
+        // index
+        const oldIndices = oldSchema.indices.slice(0);
+        const indexMap = schema.indices.select(o => ({
+            index: o,
+            oldIndex: oldIndices.first(c => c.name === o.name)
+        }));
+
+        // modify old index by drop and add index with newer definition
+        result = result.concat(indexMap.where(o => o.oldIndex && !isIndexEquals(o.index, o.oldIndex)).selectMany(o => {
+            oldIndices.remove(o.oldIndex);
+            return this.dropIndexQuery(o.oldIndex).concat(this.addIndexQuery(o.index));
+        }).toArray());
+
+        // add new index
+        result = result.concat(indexMap.where(o => !o.oldIndex && !oldIndices.any(oi => isIndexEquals(o.index, oi)))
+            .selectMany(o => this.addIndexQuery(o.index)).toArray());
+
+        return result;
+    }
+    public createEntitySchemaQuery<T>(schema: IEntityMetaData<T>): IQueryCommand[] {
+        return this.createTableQuery(schema)
+            .union(schema.indices.selectMany(o => this.addIndexQuery(o))).toArray();
+    }
+    public getColumnChangesQuery<TE>(columnSchema: IColumnMetaData<TE>, oldColumnSchema: IColumnMetaData<TE>) {
+        let result: IQueryCommand[] = [];
+        const entitySchema = oldColumnSchema.entity;
+        // If auto increment, column must be not nullable.
+        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement);
+        let isDefaultChange = (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
+        const isIdentityChange = !!(columnSchema as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as NumericColumnMetaData).autoIncrement;
+        const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
+            || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
+            || ((columnSchema as NumericColumnMetaData).size !== undefined && (oldColumnSchema as NumericColumnMetaData).size !== undefined && (columnSchema as NumericColumnMetaData).size !== (oldColumnSchema as NumericColumnMetaData).size)
+            || ((columnSchema as DecimalColumnMetaData).length !== undefined && (oldColumnSchema as DecimalColumnMetaData).length !== undefined && (columnSchema as DecimalColumnMetaData).length !== (oldColumnSchema as DecimalColumnMetaData).length)
+            || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
+            || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
+
+        if (isDefaultChange && oldColumnSchema.default) {
+            result = result.concat(this.dropDefaultContraintQuery(oldColumnSchema));
+        }
+        if (isNullableChange) {
+            if (!columnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement) {
+                // if change from nullable to not nullable, set all existing data to default value.
+                const fallbackValue = this.defaultValue(columnSchema);
+                result.push({
+                    query: `UPDATE ${this.entityName(entitySchema)} SET ${this.enclose(columnSchema.columnName)} = ${fallbackValue} WHERE ${this.enclose(columnSchema.columnName)} IS NULL`
+                });
+            }
+        }
+        if (isIdentityChange) {
+            const toAutoIncrement = (columnSchema as NumericColumnMetaData).autoIncrement;
+            // add new column.
+            const newName = "NEW_" + columnSchema.columnName;
+            const cloneColumn = Object.assign({}, columnSchema);
+            cloneColumn.columnName = newName;
+            cloneColumn.entity = oldColumnSchema.entity;
+
+            result = result.concat(this.addColumnQuery(cloneColumn));
+
+            // turn on identity insert coz rebuild schema most likely called because identity insert issue.
+            if (toAutoIncrement) {
+                result.push({
+                    query: `SET IDENTITY_INSERT ${this.entityName(entitySchema)} ON`
+                });
+            }
+            // compilation will failed without exec
+            result.push({
+                query: `EXEC('UPDATE ${this.entityName(entitySchema)} WITH (HOLDLOCK TABLOCKX) SET ${this.enclose(cloneColumn.columnName)} = ${this.enclose(oldColumnSchema.columnName)}')`
+            });
+            if (toAutoIncrement) {
+                result.push({
+                    query: `SET IDENTITY_INSERT ${this.entityName(entitySchema)} OFF`
+                });
+            }
+
+            // remove old column
+            result = result.concat(this.dropColumnQuery(oldColumnSchema));
+            // rename temp column
+            result = result.concat(this.renameColumnQuery(cloneColumn, columnSchema.columnName));
+        }
+        else if (isColumnChange) {
+            result = result.concat(this.alterColumnQuery(columnSchema));
+        }
+        if (isDefaultChange && columnSchema.default) {
+            result = result.concat(this.addDefaultContraintQuery(columnSchema));
+        }
+
+        return result;
+    }
+    public createTableQuery<TE>(entityMetaData: IEntityMetaData<TE>): IQueryCommand[] {
+        const columnDefinitions = entityMetaData.columns.select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.newLine(this.indent + 1));
+        const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.newLine(this.indent + 1));
+        let query = `CREATE TABLE ${this.enclose(entityMetaData.schema)}.${this.enclose(entityMetaData.name)}` +
+            `${this.newLine()}(` +
+            `${this.newLine(this.indent + 1)}${columnDefinitions}` +
+            `,${this.newLine(this.indent + 1)}${this.primaryKeyDeclaration(entityMetaData)}` +
+            (constraints ? `,${this.newLine(this.indent + 1)}${constraints}` : "") +
+            `${this.newLine()})`;
+        return [{ query }];
+    }
+    public renameTableQuery<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQueryCommand[] {
+        let query = `EXEC sp_rename '${this.entityName(entityMetaData)}', '${this.enclose(newName)}', 'OBJECT'`;
+        return [{ query }];
+    }
+    public columnDeclaration(column: IColumnMetaData | IColumnExpression, type: "alter" | "create" | "add" = "alter") {
+        let result = `${this.enclose(column.columnName)} ${this.getColumnType(column)}`;
+        if (column instanceof ColumnExpression && column.columnMetaData) {
+            column = column.columnMetaData;
+        }
+        if ((column as IColumnExpression).isPrimary === undefined) {
+            const columnMetaData = column as IColumnMetaData;
+            if (type !== "alter") {
+                if (columnMetaData.default) {
+                    result += ` DEFAULT ${this.defaultValue(columnMetaData)}`;
+                }
+            }
+            if (columnMetaData.collation)
+                result += " COLLATE " + columnMetaData.collation;
+            if (columnMetaData.nullable === false)
+                result += " NOT NULL";
+            if (type !== "alter") {
+                if ((columnMetaData as NumericColumnMetaData).autoIncrement)
+                    result += " IDENTITY(1,1)";
+            }
+            if (type === "create") {
+                if (columnMetaData.description)
+                    result += " COMMENT " + this.getString(columnMetaData.description);
+            }
+        }
+        return result;
+    }
+    public addColumnQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
+        return [{ query }];
+    }
+    public renameColumnQuery(columnMeta: IColumnMetaData, newName: string): IQueryCommand[] {
+        let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
+        return [{ query }];
+    }
+    public alterColumnQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.columnDeclaration(columnMeta, "alter")}`;
+        return [{ query }];
+    }
+    public dropColumnQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} DROP COLUMN ${this.enclose(columnMeta.columnName)}`;
+        return [{ query }];
+    }
+    public addDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.enclose(columnMeta.columnName)}` +
+            ` SET DEFAULT ${this.defaultValue(columnMeta)}`;
+        return [{ query }];
+    }
+    public dropDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.enclose(columnMeta.columnName)}` +
+            ` DROP DEFAULT`;
+        return [{ query }];
+    }
+    public constraintDeclaration(constraintMeta: IConstraintMetaData) {
+        let result = "";
+        if ((constraintMeta as ICheckConstraintMetaData).definition) {
+            const checkConstriant = constraintMeta as ICheckConstraintMetaData;
+            const definition = checkConstriant.definition instanceof FunctionExpression ? this.getExpressionString(checkConstriant.definition) : checkConstriant.definition;
+            result = `CONSTRAINT ${this.enclose(constraintMeta.name)} CHECK (${definition})`;
+        }
+        else {
+            const columns = constraintMeta.columns.select(o => this.enclose(o.columnName)).toArray().join(",");
+            result = `CONSTRAINT ${this.enclose(constraintMeta.name)} UNIQUE (${columns})`;
+        }
+        return result;
+    }
+    public primaryKeyDeclaration(entityMeta: IEntityMetaData) {
+        const pkName = "PK_" + entityMeta.name;
+        const columnQuery = entityMeta.primaryKeys.select(o => this.enclose(o.columnName)).toArray().join(",");
+
+        return `CONSTRAINT ${this.enclose(pkName)} PRIMARY KEY (${columnQuery})`;
+    }
+    public foreignKeyDeclaration(relationMeta: IRelationMetaData) {
+        const columns = relationMeta.relationColumns.select(o => this.enclose(o.columnName)).toArray().join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.select(o => this.enclose(o.columnName)).toArray().join(", ");
+        return `CONSTRAINT ${this.enclose(relationMeta.name)}` +
+            ` FOREIGN KEY (${columns})` +
+            ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})` +
+            ` ON UPDATE ${relationMeta.updateOption} ON DELETE ${relationMeta.deleteOption}`;
+    }
+    public dropTableQuery(entityMeta: IEntityMetaData<any>): IQueryCommand[] {
+        const query = `DROP TABLE ${this.entityName(entityMeta)}`;
+        return [{ query }];
+    }
+    public defaultValue(columnMeta: IColumnMetaData) {
+        if (columnMeta.default) {
+            return columnMeta.default instanceof FunctionExpression ? this.getExpressionString(columnMeta.default.body) : columnMeta.default;
+        }
+        const groupType = this.supportedColumnTypes.get(columnMeta.columnType);
+        if (groupType === "Numeric" || groupType === "Decimal" || columnMeta instanceof NumericColumnMetaData || columnMeta instanceof DecimalColumnMetaData)
+            return this.getValueString(0);
+        if (groupType === "Identifier" || columnMeta instanceof IdentifierColumnMetaData)
+            return "NEWID()";
+        if (groupType === "String" || groupType === "DataString" || columnMeta instanceof StringColumnMetaData || columnMeta instanceof StringDataColumnMetaData)
+            return this.getValueString("");
+        if (groupType === "Date" || columnMeta instanceof DateColumnMetaData)
+            return "GETUTCDATE()";
+        if (groupType === "Time" || columnMeta instanceof TimeColumnMetaData)
+            return "CONVERT(TIME, GETUTCDATE())";
+
+        throw new Error(`${columnMeta.columnType} not supported`);
+    }
+    public foreignKeyQuery(relationMeta: IRelationMetaData) {
+        return `ALTER TABLE ${this.entityName(relationMeta.target)} ADD CONSTRAINT ${this.enclose(relationMeta.name)} FOREIGN KEY` +
+            ` (${relationMeta.reverseRelation.relationColumns.select(r => this.enclose(r.columnName)).toArray().join(",")})` +
+            ` REFERENCES ${this.entityName(relationMeta.source)} (${relationMeta.relationColumns.select(r => r.columnName).toArray().join(",")})` +
+            ` ON UPDATE ${relationMeta.updateOption} ON DELETE ${relationMeta.deleteOption}`;
+    }
+    public dropForeignKeyQuery(relationMeta: IRelationMetaData): IQueryCommand[] {
+        const query = `ALTER TABLE ${this.entityName(relationMeta.source)} DROP CONSTRAINT ${this.enclose(relationMeta.name)}`;
+        return [{ query }];
+    }
+    public addForeignKeyQuery(relationMeta: IRelationMetaData): IQueryCommand[] {
+        const query = `ALTER TABLE ${this.entityName(relationMeta.source)} ADD ${this.foreignKeyDeclaration(relationMeta)}`;
+        return [{ query }];
+    }
+    public addConstraintQuery(constraintMeta: IConstraintMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(constraintMeta.entity)}` +
+            ` ADD CONSTRAINT ${this.constraintDeclaration(constraintMeta)}`;
+        return [{ query }];
+    }
+    public dropConstraintQuery(constraintMeta: IConstraintMetaData): IQueryCommand[] {
+        const query = `ALTER TABLE ${this.entityName(constraintMeta.entity)} DROP CONSTRAINT ${this.enclose(constraintMeta.name)}`;
+        return [{ query }];
+    }
+    public dropAllMasterRelationsQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
+        return entityMeta.relations.where(o => o.isMaster)
+            .selectMany(o => this.dropForeignKeyQuery(o.reverseRelation)).toArray();
+    }
+    public addAllMasterRelationsQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
+        return entityMeta.relations.where(o => o.isMaster)
+            .selectMany(o => this.addForeignKeyQuery(o.reverseRelation)).toArray();
+    }
+    public dropPrimaryKeyQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
+        const pkName = "PK_" + entityMeta.name;
+        const query = `ALTER TABLE ${this.entityName(entityMeta)} DROP CONSTRAINT ${this.enclose(pkName)}`;
+        return [{ query }];
+    }
+    public addPrimaryKeyQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
+        const query = `ALTER TABLE ${this.entityName(entityMeta)} ADD ${this.primaryKeyDeclaration(entityMeta)}`;
+        return [{ query }];
+    }
+    public addIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
+        const columns = indexMeta.columns.select(o => this.enclose(o.columnName)).toArray().join(",");
+        const query = `CREATE${indexMeta.unique ? " UNIQUE" : ""} INDEX ${indexMeta.name} ON ${this.entityName(indexMeta.entity)} (${columns})`;
+        return [{ query }];
+    }
+    public dropIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
+        const query = `DROP INDEX ${indexMeta.name}`;
+        return [{ query }];
     }
 }

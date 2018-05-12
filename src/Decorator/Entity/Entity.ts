@@ -17,7 +17,7 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
         const entityMetadata = new EntityMetaData(type, name);
         const entityMet: IEntityMetaData<T, any> = Reflect.getOwnMetadata(entityMetaKey, type);
         if (entityMet)
-            entityMetadata.ApplyOption(entityMet);
+            entityMetadata.applyOption(entityMet);
 
         if (defaultOrder) {
             entityMetadata.defaultOrder = defaultOrder.select(o => ({
@@ -79,13 +79,13 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
 
                 parentMetaData.computedProperties.forEach((parentColumnMeta) => {
                     if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {
-                        let computedMeta: ComputedColumnMetaData<T, TParent>;
+                        let computedMeta: ComputedColumnMetaData<T>;
                         if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
-                            computedMeta = new ComputedColumnMetaData();
-                            computedMeta.applyOption(parentColumnMeta);
+                            computedMeta = new ComputedColumnMetaData<T>();
+                            computedMeta.applyOption(parentColumnMeta as any);
                         }
                         else {
-                            computedMeta = new InheritedComputedColumnMetaData(entityMetadata, parentColumnMeta);
+                            computedMeta = new InheritedComputedColumnMetaData<T, TParent>(entityMetadata, parentColumnMeta);
                         }
                         entityMetadata.computedProperties.push(computedMeta);
                         Reflect.defineMetadata(columnMetaKey, computedMeta, type, parentColumnMeta.propertyName);

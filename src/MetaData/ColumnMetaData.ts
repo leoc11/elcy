@@ -9,8 +9,8 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public entity: IEntityMetaData<TE>;
     public propertyName?: keyof TE;
     public columnName: string;
-    public nullable: boolean;
-    public default?: FunctionExpression<any, T>;
+    public nullable = true;
+    public default?: FunctionExpression<any, T> | string;
     public description: string;
     public columnType: ColumnType;
     public type: GenericType<T>;
@@ -42,8 +42,12 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
                 if (columnMeta.default.type === this.type)
                     this.default = columnMeta.default;
             }
+            // NOTE: Column decorator default support Function declaration
             else if (columnMeta.default as any instanceof Function) {
-                this.default = ExpressionBuilder.parse(columnMeta.default);
+                this.default = ExpressionBuilder.parse(columnMeta.default as any);
+            }
+            else {
+                this.default = columnMeta.default;
             }
         }
     }

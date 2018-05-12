@@ -4,7 +4,7 @@ import { IEntityMetaData } from "../Interface";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 
-export class InheritedComputedColumnMetaData<TE extends TP, TP, T> extends ComputedColumnMetaData<TE, T> {
+export class InheritedComputedColumnMetaData<TE extends TP, TP, T = any> extends ComputedColumnMetaData<TE, T> {
     public get propertyName(): keyof TE {
         return this.parentColumnMetaData.propertyName;
     }
@@ -16,9 +16,6 @@ export class InheritedComputedColumnMetaData<TE extends TP, TP, T> extends Compu
     }
     public get description() {
         return this.parentColumnMetaData.description;
-    }
-    public get fn() {
-        return this.parentColumnMetaData.fn;
     }
     public get functionExpression() {
         return this.parentColumnMetaData.functionExpression as FunctionExpression<TE, T>;

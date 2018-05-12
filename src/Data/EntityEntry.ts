@@ -88,8 +88,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
     public acceptChanges(...properties: string[]) {
         if (this.state === EntityState.Deleted) {
             this.changeState(EntityState.Unchanged);
-            for (const prop in this.dbSet.metaData.relations) {
-                const relMeta = this.dbSet.metaData.relations[prop];
+            for (const relMeta of this.dbSet.metaData.relations) {
                 let relEntities: any[] = [];
                 const relProp = this.entity[relMeta.propertyName];
                 if (Array.isArray(relProp))

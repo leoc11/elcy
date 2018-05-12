@@ -1,48 +1,53 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { ColumnType, ColumnTypeMapKey } from "../../Common/ColumnType";
+import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
-import { GenericType } from "../../Common/Type";
+import { GenericType, ReferenceOption } from "../../Common/Type";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
+import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 
 export class MssqlQueryBuilder extends QueryBuilder {
-    protected supportedColumnTypes: ColumnType[] = [
-        "bigint",
-        "bit",
-        "decimal",
-        "int",
-        "money",
-        "numeric",
-        "smallint",
-        "smallmoney",
-        "tinyint",
-        "float",
-        "real",
-        "date",
-        "datetime2",
-        "datetime",
-        "datetimeoffset",
-        "smalldatetime",
-        "time",
-        "char",
-        "text",
-        "varchar",
-        "nchar",
-        "ntext",
-        "nvarchar",
+    public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
+        ["bigint", "Numeric"],
+        ["bit", "Boolean"],
+        ["decimal", "Decimal"],
+        ["int", "Numeric"],
+        ["money", "Decimal"],
+        ["numeric", "Decimal"],
+        ["smallint", "Numeric"],
+        ["smallmoney", "Decimal"],
+        ["tinyint", "Numeric"],
+        ["float", "Decimal"],
+        ["real", "Decimal"],
+        ["date", "Date"],
+        ["datetime2", "Date"],
+        ["datetime", "Date"],
+        ["datetimeoffset", "Time"],
+        ["smalldatetime", "Date"],
+        ["time", "Time"],
+        ["char", "String"],
+        ["text", "String"],
+        ["varchar", "String"],
+        ["nchar", "String"],
+        ["ntext", "String"],
+        ["nvarchar", "String"],
+        ["binary", "Binary"],
+        ["image", "Binary"],
+        ["varbinary", "Binary"],
+        ["cursor", "Binary"],
+        ["hierarchyid", "Binary"],
+        ["sql_variant", "Binary"],
+        ["table", "Binary"],
+        ["timestamp", "Timestamp"],
+        ["uniqueidentifier", "Identifier"],
+        ["xml", "DataString"]
+    ]);
+    public columnTypesWithOption: ColumnType[] = [
         "binary",
-        "image",
-        "varbinary",
-        "cursor",
-        "hierarchyid",
-        "sql_variant",
-        "table",
-        "timestamp",
-        "uniqueidentifier",
-        "xml"
-    ];
-    protected columnTypesWithOption: ColumnType[] = [
-        "binary",
         "char",
         "datetime2",
         "datetimeoffset",
@@ -54,20 +59,20 @@ export class MssqlQueryBuilder extends QueryBuilder {
         "varbinary",
         "varchar",
     ];
-    protected columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>([
+    public columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>([
         ["binary", { size: 50 }],
-        ["char", { size: 10 }],
+        ["char", { length: 10 }],
         ["datetime2", { precision: 1 }],
         ["datetimeoffset", { precision: 7 }],
         ["decimal", { precision: 18, scale: 0 }],
-        ["nchar", { size: 10 }],
+        ["nchar", { length: 10 }],
         ["numeric", { precision: 18, scale: 0 }],
-        ["nvarchar", { size: 255 }],
+        ["nvarchar", { length: 255 }],
         ["time", { precision: 7 }],
-        ["varbinary", { size: 50 }],
-        ["varchar", { size: 50 }]
+        ["varbinary", { length: 50 }],
+        ["varchar", { length: 50 }]
     ]);
-    protected columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
+    public columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
         ["defaultBoolean", "bit"],
         ["defaultBinary", "binary"],
         ["defaultDataString", "xml"],
@@ -80,7 +85,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["defaultTime", "time"],
         ["defaultTimestamp", "timestamp"]
     ]);
-    protected valueTypeMap = new Map<GenericType, ColumnType>([
+    public valueTypeMap = new Map<GenericType, ColumnType>([
         [TimeSpan, "time"],
         [Date, "datetime"],
         [String, "nvarchar"],
@@ -96,6 +101,64 @@ export class MssqlQueryBuilder extends QueryBuilder {
         result += "OFFSET " + skip + " ROWS";
         if (take > 0)
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
+        return result;
+    }
+
+    /**
+     * SCHEMA BUILDER QUERY
+     */
+    public foreignKeyQuery(relation: IRelationMetaData) {
+        return `ALTER TABLE ${this.entityName(relation.target)} ADD CONSTRAINT ${this.enclose(relation.name)} FOREIGN KEY` +
+            ` (${relation.reverseRelation.relationColumns.select(r => r.columnName).toArray().join(",")})` +
+            ` REFERENCES ${this.entityName(relation.source)} (${relation.relationColumns.select(r => r.columnName).toArray().join(",")})` +
+            ` ON UPDATE ${this.referenceOption(relation.updateOption)} ON DELETE ${this.referenceOption(relation.deleteOption)}`;
+    }
+    protected referenceOption(option: ReferenceOption) {
+        if (option === "RESTRICT")
+            return "NO ACTION";
+        return option;
+    }
+    public renameColumnQuery(columnMeta: IColumnMetaData, newName: string): IQueryCommand[] {
+        let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
+        return [{ query }];
+    }
+    public addDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
+            ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.enclose(columnMeta.columnName)}`;
+        return [{ query }];
+    }
+    public dropIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
+        const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
+        return [{ query }];
+    }
+    public dropDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
+        const result: IQueryCommand[] = [];
+        const variableName = this.newAlias("param");
+        result.push({
+            query: `DECLARE @${variableName} nvarchar(255) = (` +
+                ` SELECT dc.name AS ConstraintName` +
+                ` FROM sys.default_constraints dc` +
+                ` join sys.columns c on dc.parent_object_id = c.object_id and dc.parent_column_id = c.column_id` +
+                ` where SCHEMA_NAME(schema_id) = '${columnMeta.entity.schema}' and OBJECT_NAME(parent_object_id) = '${columnMeta.entity.name}' and c.name = '${columnMeta.columnName}'` +
+                ` )`
+        });
+        result.push({
+            query: `EXEC('ALTER TABLE ${this.entityName(columnMeta.entity)} DROP CONSTRAINT [' + @${variableName} + ']')`
+        });
+        return result;
+    }
+    public dropPrimaryKeyQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
+        const result: IQueryCommand[] = [];
+        const variableName = this.newAlias("param");
+        result.push({
+            query: `DECLARE @${variableName} nvarchar(255) = (` +
+                ` SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS` +
+                ` where CONSTRAINT_TYPE = 'PRIMARY KEY' and TABLE_SCHEMA = '${entityMeta.schema}' and TABLE_NAME = '${entityMeta.name}'` +
+                ` )`
+        });
+        result.push({
+            query: `EXEC('ALTER TABLE ${this.entityName(entityMeta)} DROP CONSTRAINT [' + @${variableName} + ']')`
+        });
         return result;
     }
 }

@@ -1,8 +1,11 @@
 import { IObjectType } from "../Common/Type";
-import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
+import { ComputedColumnMetaData } from "../MetaData";
 import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
-import { InheritanceMetaData, RelationMetaData } from "./Relation";
+import { InheritanceMetaData } from "./Relation";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
+import { IRelationMetaData } from "./Interface/IRelationMetaData";
+import { IIndexMetaData } from "./Interface/IIndexMetaData";
+import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
@@ -13,8 +16,9 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public createDateColumn: IColumnMetaData<TE>;
     public modifiedDateColumn: IColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
-    public indices: { [key: string]: IndexMetaData } = {};
-    public relations: { [key: string]: RelationMetaData<TE, any> } = {};
+    public indices: IIndexMetaData<TE>[] = [];
+    public constraints: IConstraintMetaData<TE>[] = [];
+    public relations: IRelationMetaData<TE, any>[] = [];
     public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance
@@ -25,8 +29,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public inheritance: InheritanceMetaData<TParent>;
     public get priority(): number {
         let priority = 1;
-        for (const relName in this.relations) {
-            const relation = this.relations[relName];
+        for (const relation of this.relations) {
             if (!relation.isMaster && !relation.nullable) {
                 priority += relation.target.priority + 1;
             }
@@ -40,10 +43,9 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.name = name;
         if (!name)
             this.name = type.name!;
-        this.relations = {};
     }
 
-    public ApplyOption(entityMeta: IEntityMetaData<TE>) {
+    public applyOption(entityMeta: IEntityMetaData<TE>) {
         if (typeof entityMeta.columns !== "undefined") {
             this.columns = entityMeta.columns;
             this.columns.forEach(o => o.entity = this);

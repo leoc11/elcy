@@ -4,7 +4,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
-import { ColumnExpression } from ".";
+import { ColumnExpression } from "./ColumnExpression";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";

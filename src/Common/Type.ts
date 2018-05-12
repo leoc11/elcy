@@ -28,13 +28,7 @@ export enum JoinType {
     RIGHT = "RIGHT",
     LEFT = "LEFT"
 }
-export enum ReferenceOption {
-    RESTRICT = "restricted",
-    CASCADE = "cascade",
-    SET_NULL = "set-null",
-    NO_ACTION = "no-action",
-    SET_DEFAULT = "set-default"
-}
+export type ReferenceOption = "NO ACTION" | "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";
 
 export enum EventListenerType {
     /**

@@ -171,3 +171,6 @@ export type ColumnType = IntColumnType
 export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
     | "defaultDecimal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
     | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultTimestamp";
+
+export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Binary" | "DataString"
+    | "Date" | "Time" | "Enum" | "Identifier" | "Timestamp";

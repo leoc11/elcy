@@ -1,21 +1,22 @@
 import { ClassBase, GenericType, IObjectType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
-import { InheritanceMetaData, RelationMetaData } from "../MetaData/Relation";
+import { InheritanceMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface";
 import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
+import { IRelationMetaData } from "./Interface/IRelationMetaData";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
     public deleteColumn?: IColumnMetaData<TE>;
-    public relations: { [key: string]: RelationMetaData<TE, any> } = {};
+    public relations: IRelationMetaData<TE, any>[] = [];
     public createDateColumn?: IColumnMetaData<TE>;
     public modifiedDateColumn?: IColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
-    public indices: { [key: string]: IndexMetaData } = {};
+    public indices: IndexMetaData<TE>[] = [];
     public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance

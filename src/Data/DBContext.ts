@@ -16,12 +16,12 @@ import { EntityState } from "./EntityState";
 import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { Enumerable } from "../Enumerable";
-import { Order } from "../../test/Common/Model";
+import { SchemaBuilder } from "./SchemaBuilder";
 
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
-    public abstract readonly relationDataTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
+    public abstract readonly schemaBuilder: IObjectType<SchemaBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
     public deferredQueries: DeferredQuery[] = [];
     public get database() {
@@ -287,5 +287,14 @@ export abstract class DbContext implements IDBEventListener<any> {
                 result.parameters = new Map([...result.parameters, ...query.parameters]);
         }
         return result;
+    }
+    public buildSchema() {
+        const queryBuilder = new this.queryBuilder();
+        const schemaBuilder = new this.schemaBuilder(this.driver, queryBuilder);
+
+        this.transaction(async () => {
+            const schemaQuery = await schemaBuilder.getSchemaQuery(this.entityTypes);
+            this.executeCommands(schemaQuery.commit);
+        });
     }
 }

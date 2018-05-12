@@ -3,8 +3,9 @@ import { GenericType } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData, IndexMetaData } from "../MetaData";
 import { IEntityMetaData } from "../MetaData/Interface";
-import { entityMetaKey } from "./DecoratorKey";
+import { entityMetaKey, columnMetaKey } from "./DecoratorKey";
 import { IIndexOption } from "./Option/IIndexOption";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
 export function ColumnIndex(option: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex(name: string, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
@@ -25,20 +26,27 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
     return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         if (!option.name)
             option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as GenericType<T>).name);
+        if (propertyKey)
+            option.properties = [propertyKey];
 
         const entConstructor = propertyKey ? target.constructor : target;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as any);
         }
-        let indexMetaData = entityMetaData.indices[option.name];
-        if (indexMetaData == null) {
-            indexMetaData = new IndexMetaData(option.name);
-            entityMetaData.indices[option.name] = indexMetaData;
+        let indexMetaData = entityMetaData.indices.first(o => o.name === option.name);
+        if (indexMetaData) {
+            entityMetaData.indices.remove(indexMetaData);
         }
-        if (propertyKey)
-            option.properties = [propertyKey];
-        indexMetaData.Apply(option);
+        indexMetaData = new IndexMetaData(entityMetaData, option.name);
+        entityMetaData.indices.push(indexMetaData);
+
+        indexMetaData.apply(option as any);
+        if (option.properties) {
+            indexMetaData.columns = option.properties
+                .select(o => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o) as IColumnMetaData)
+                .toArray();
+        }
         Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
     };
 }

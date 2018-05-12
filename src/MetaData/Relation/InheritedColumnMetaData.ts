@@ -4,6 +4,7 @@ import { IColumnOption } from "../../Decorator/Option";
 import { ColumnMetaData } from "../../MetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression";
 
 export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMetaData<TE, T> {
     public get columnName(): string {
@@ -15,7 +16,7 @@ export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMet
     public get nullable(): boolean {
         return this.parentColumnMetaData.nullable;
     }
-    public get default(): T | undefined {
+    public get default(): FunctionExpression<void, T> | string {
         return this.parentColumnMetaData.default;
     }
     public get description(): string {
