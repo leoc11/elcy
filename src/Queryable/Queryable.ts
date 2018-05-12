@@ -100,7 +100,8 @@ export abstract class Queryable<T = any> {
         return await query.execute();
     }
     public async defferedToArray() {
-        const key = this.hashCode();
+        const key = this.parameterHasCode() + this.hashCode();
+        console.log("query cache key: " + key);
         let n = Date.now();
         const queryCache = await this.dbContext.getQueryChache<T>(key);
         let queryParser: IQueryResultParser<T>;
@@ -124,11 +125,14 @@ export abstract class Queryable<T = any> {
         }
         n = Date.now();
         const params = parameterBuilder.getSqlParameters(this.options.userParameters);
+        console.log("Query:\n" + queryCommands.select(o => o.query).toArray().join(";\n"));
+        console.log("parameters");
+        console.log(params);
         const query = new DeferredQuery(this.dbContext, queryCommands, params, (result) => queryParser.parse(result, this.dbContext));
         return query;
     }
     public async defferedCount() {
-        let key = this.hashCode() + hashCode("COUNT");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("COUNT");
         const queryCache = await this.dbContext.getQueryChache<number>(key);
         let queryParser: IQueryResultParser<number>;
         let queryCommands: IQueryCommand[];
@@ -157,7 +161,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public async deferredSum(selector?: (item: T) => number) {
-        let key = this.hashCode() + hashCode("SUM");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("SUM");
         if (selector)
             key += hashCode(selector.toString());
 
@@ -192,7 +196,7 @@ export abstract class Queryable<T = any> {
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredMax(selector?: (item: T) => number) {
-        let key = this.hashCode() + hashCode("MAX");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("MAX");
         if (selector)
             key += hashCode(selector.toString());
 
@@ -227,7 +231,7 @@ export abstract class Queryable<T = any> {
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredMin(selector?: (item: T) => number) {
-        let key = this.hashCode() + hashCode("MIN");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("MIN");
         if (selector)
             key += hashCode(selector.toString());
 
@@ -262,7 +266,7 @@ export abstract class Queryable<T = any> {
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredAvg(selector?: (item: T) => number) {
-        let key = this.hashCode() + hashCode("AVG");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("AVG");
         if (selector)
             key += hashCode(selector.toString());
 
@@ -297,7 +301,7 @@ export abstract class Queryable<T = any> {
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async deferredAll(predicate: (item: T) => boolean) {
-        let key = this.hashCode() + hashCode("ALL") + hashCode(predicate.toString());
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("ALL") + hashCode(predicate.toString());
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
         let queryCommands: IQueryCommand[];
@@ -329,7 +333,7 @@ export abstract class Queryable<T = any> {
             (result) => !result.first().rows.any());
     }
     public async deferredAny(predicate?: (item: T) => boolean) {
-        let key = this.hashCode() + hashCode("ANY");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("ANY");
         if (predicate)
             key += hashCode(predicate.toString());
 
@@ -364,7 +368,7 @@ export abstract class Queryable<T = any> {
             (result) => result.first().rows.any());
     }
     public async deferredFirst(predicate?: (item: T) => boolean) {
-        let key = this.hashCode() + hashCode("FIRST");
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("FIRST");
         if (predicate)
             key += hashCode(predicate.toString());
 
@@ -398,7 +402,7 @@ export abstract class Queryable<T = any> {
             (result) => queryParser.parse(result, this.dbContext).first());
     }
     public async defferedContains(item: T) {
-        let key = this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
+        let key = this.parameterHasCode() + this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
         const queryCache = await this.dbContext.getQueryChache<boolean>(key);
         let queryParser: IQueryResultParser<boolean>;
         let queryCommands: IQueryCommand[];
@@ -441,5 +445,15 @@ export abstract class Queryable<T = any> {
             throw new Error(`Only entity typed supported`);
         }
         // delete code here.
+    }
+    private parameterHasCode() {
+        let result = 0;
+        for (const prop in this.options.userParameters) {
+            const value = this.options.userParameters[prop];
+            if (typeof value === "function") {
+                result += hashCode(value.toString());
+            }
+        }
+        return result;
     }
 }
