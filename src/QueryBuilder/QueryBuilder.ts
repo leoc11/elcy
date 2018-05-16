@@ -45,6 +45,8 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
 import { ICheckConstraintMetaData } from "../MetaData/Interface/ICheckConstraintMetaData";
 import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
+import { EmbeddedColumn } from "../Decorator/Column";
+import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -67,7 +69,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
-            return "[" + identity + "]";
+            return "\"" + identity + "\"";
         else
             return identity;
     }
@@ -239,16 +241,22 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return this.enclose(entity.alias) + "." + this.enclose(column.columnName);
     }
-    protected getColumnSelectString(column: IColumnExpression) {
+    protected getColumnSelectString(column: IColumnExpression): string {
+        if (column instanceof EmbeddedColumnExpression) {
+            return column.selects.select(o => this.getColumnSelectString(o)).toArray().join(",");
+        }
         let result = this.getColumnDefinitionString(column);
         if (column instanceof ComputedColumnExpression) {
             result += " AS " + this.enclose(column.columnName);
         }
         return result;
     }
-    protected getColumnDefinitionString(column: IColumnExpression) {
+    protected getColumnDefinitionString(column: IColumnExpression): string {
         if (column instanceof ComputedColumnExpression) {
             return this.getOperandString(column.expression, true);
+        }
+        else if (column instanceof EmbeddedColumnExpression) {
+            return column.selects.select(o => this.getColumnDefinitionString(o)).toArray().join(",");
         }
         return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }

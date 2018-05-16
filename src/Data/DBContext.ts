@@ -17,6 +17,7 @@ import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { Enumerable } from "../Enumerable";
 import { SchemaBuilder } from "./SchemaBuilder";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -96,61 +97,81 @@ export abstract class DbContext implements IDBEventListener<any> {
         if (entityEntry.state === state)
             return;
 
-        switch (entityEntry.state) {
-            case EntityState.Added: {
-                const typedAddEntries = this.addEntries.get(entityEntry.entity.constructor);
-                if (typedAddEntries)
-                    typedAddEntries.remove(entityEntry);
+        if (entityEntry instanceof EmbeddedEntityEntry) {
+            const isModified = (entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && !(state === EntityState.Detached || state === EntityState.Unchanged);
+            const isUnchanged = !(entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && (state === EntityState.Detached || state === EntityState.Unchanged);
+            if (isUnchanged) {
+                const embeddedEntries = this.modifiedEmbeddedEntries.get(entityEntry.entity.constructor);
+                if (embeddedEntries)
+                    embeddedEntries.remove(entityEntry);
             }
-                break;
-            case EntityState.Deleted: {
-                const typedEntries = this.deleteEntries.get(entityEntry.entity.constructor);
-                if (typedEntries)
-                    typedEntries.remove(entityEntry);
+            else if (isModified) {
+                let typedEntries = this.modifiedEmbeddedEntries.get(entityEntry.dbSet.metaData);
+                if (!typedEntries) {
+                    typedEntries = [];
+                    this.modifiedEmbeddedEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                }
+                typedEntries.push(entityEntry);
             }
-                break;
-            case EntityState.Modified: {
-                const typedEntries = this.modifyEntries.get(entityEntry.entity.constructor);
-                if (typedEntries)
-                    typedEntries.remove(entityEntry);
-            }
-                break;
-            case EntityState.Unchanged:
-                break;
         }
-        switch (state) {
-            case EntityState.Added: {
-                let typedEntries = this.addEntries.get(entityEntry.dbSet.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.addEntries.set(entityEntry.dbSet.metaData, typedEntries);
+        else {
+            switch (entityEntry.state) {
+                case EntityState.Added: {
+                    const typedAddEntries = this.addEntries.get(entityEntry.entity.constructor);
+                    if (typedAddEntries)
+                        typedAddEntries.remove(entityEntry);
                 }
-                typedEntries.push(entityEntry);
-            }
-                break;
-            case EntityState.Deleted: {
-                let typedEntries = this.deleteEntries.get(entityEntry.dbSet.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.deleteEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                    break;
+                case EntityState.Deleted: {
+                    const typedEntries = this.deleteEntries.get(entityEntry.entity.constructor);
+                    if (typedEntries)
+                        typedEntries.remove(entityEntry);
                 }
-                typedEntries.push(entityEntry);
-            }
-                break;
-            case EntityState.Modified: {
-                let typedEntries = this.modifyEntries.get(entityEntry.dbSet.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.modifyEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                    break;
+                case EntityState.Modified: {
+                    const typedEntries = this.modifyEntries.get(entityEntry.entity.constructor);
+                    if (typedEntries)
+                        typedEntries.remove(entityEntry);
                 }
-                typedEntries.push(entityEntry);
+                    break;
+                case EntityState.Unchanged:
+                    break;
             }
-                break;
-            case EntityState.Unchanged:
-                break;
+            switch (state) {
+                case EntityState.Added: {
+                    let typedEntries = this.addEntries.get(entityEntry.dbSet.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        this.addEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                    }
+                    typedEntries.push(entityEntry);
+                }
+                    break;
+                case EntityState.Deleted: {
+                    let typedEntries = this.deleteEntries.get(entityEntry.dbSet.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        this.deleteEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                    }
+                    typedEntries.push(entityEntry);
+                }
+                    break;
+                case EntityState.Modified: {
+                    let typedEntries = this.modifyEntries.get(entityEntry.dbSet.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        this.modifyEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                    }
+                    typedEntries.push(entityEntry);
+                }
+                    break;
+                case EntityState.Unchanged:
+                    break;
+            }
         }
         entityEntry.state = state;
     }
+    public modifiedEmbeddedEntries: Map<IEntityMetaData<any>, Array<EmbeddedEntityEntry>> = new Map();
     public addEntries: Map<IEntityMetaData<any>, Array<EntityEntry>> = new Map();
     public modifyEntries: Map<IEntityMetaData<any>, Array<EntityEntry>> = new Map();
     public deleteEntries: Map<IEntityMetaData<any>, Array<EntityEntry>> = new Map();
@@ -202,9 +223,19 @@ export abstract class DbContext implements IDBEventListener<any> {
         const deleteQueries = [];
 
         // order by priority
-        const orderedInsert = new Enumerable(this.addEntries.entries()).orderBy([o => o[0].priority, OrderDirection.DESC]);
-        const orderedUpdate = new Enumerable(this.addEntries.entries()).orderBy([o => o[0].priority, OrderDirection.DESC]);
+        const orderedInsert = new Enumerable(this.addEntries.entries()).orderBy([o => o[0].priority, OrderDirection.ASC]);
+        const orderedUpdate = new Enumerable(this.addEntries.entries()).orderBy([o => o[0].priority, OrderDirection.ASC]);
         const orderedDelete = new Enumerable(this.addEntries.entries()).orderBy([o => o[0].priority, OrderDirection.DESC]);
+
+        // apply embedded entity changes
+        for (const [, embeddedEntries] of this.modifiedEmbeddedEntries) {
+            // TODO: decide whether event emitter required here
+            for (const entry of embeddedEntries) {
+                if (entry.parentEntry.state === EntityState.Unchanged)
+                    entry.parentEntry.changeState(EntityState.Modified);
+                continue;
+            }
+        }
 
         // trigger before save event.
         for (const [metaData, addEntries] of orderedInsert) {
@@ -214,6 +245,7 @@ export abstract class DbContext implements IDBEventListener<any> {
             }
             insertQueries.push(queryBuilder.getInsertQuery(metaData, addEntries));
         }
+
         for (const [metaData, modifyEntries] of orderedUpdate) {
             const eventEmitter = new DBEventEmitter(this, metaData);
             for (const entry of modifyEntries) {
@@ -221,6 +253,7 @@ export abstract class DbContext implements IDBEventListener<any> {
                 updateQueries.push(queryBuilder.getUpdateQuery(metaData, entry));
             }
         }
+
         for (const [metaData, deleteEntries] of orderedDelete) {
             const eventEmitter = new DBEventEmitter(this, metaData);
             for (const entry of deleteEntries) {

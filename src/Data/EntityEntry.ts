@@ -3,6 +3,8 @@ import { DbSet } from "./DbSet";
 import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { EntityState } from "./EntityState";
 import { IEntityEntryOption } from "./Interface/IEntityEntry";
+import { EmbeddedColumnMetaData } from "../MetaData";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 
 export class EntityEntry<T = any> implements IEntityEntryOption {
     public state: EntityState;
@@ -23,50 +25,29 @@ export class EntityEntry<T = any> implements IEntityEntryOption {
     public getOriginalValue(prop: string) {
         return this.originalValues.get(prop);
     }
-    public onPropertyChanged(param: IChangeEventParam) {
-        if (this.dbSet.primaryKeys.contains(param.property as any)) {
+    public onPropertyChanged(param: IChangeEventParam<T>) {
+        if (this.dbSet.primaryKeys.contains(param.column)) {
             // primary key changed, update dbset entry dictionary
             this.dbSet.updateEntryKey(this);
         }
+
+        if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
+            const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
+            new EmbeddedEntityEntry(embeddedDbSet, param.newValue, this);
+        }
+
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
-            const oriValue = this.originalValues.get(param.property);
+            const oriValue = this.originalValues.get(param.column.propertyName);
             if (oriValue === param.newValue) {
-                this.originalValues.delete(param.property);
+                this.originalValues.delete(param.column.propertyName);
                 if (this.originalValues.size <= 0) {
-                    this.state = EntityState.Unchanged;
-                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.metaData);
-                    if (modEntries)
-                        modEntries.remove(this);
+                    this.changeState(EntityState.Unchanged);
                 }
             }
             else if (oriValue === undefined && param.oldValue !== undefined) {
-                this.originalValues.set(param.property, param.oldValue);
+                this.originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
-                    this.dbSet.dbContext.changeState(this, EntityState.Modified);
-                }
-            }
-        }
-    }
-    public onRelationChanged(param: IChangeEventParam) {
-        if (this.dbSet.primaryKeys.contains(param.property as any)) {
-            // primary key changed, update dbset entry dictionary
-            this.dbSet.updateEntryKey(this);
-        }
-        if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
-            const oriValue = this.originalValues.get(param.property);
-            if (oriValue === param.newValue) {
-                this.originalValues.delete(param.property);
-                if (this.originalValues.size <= 0) {
-                    this.state = EntityState.Unchanged;
-                    const modEntries = this.dbSet.dbContext.modifyEntries.get(this.dbSet.metaData);
-                    if (modEntries)
-                        modEntries.remove(this);
-                }
-            }
-            else if (oriValue === undefined && param.oldValue !== undefined) {
-                this.originalValues.set(param.property, param.oldValue);
-                if (this.state === EntityState.Unchanged) {
-                    this.dbSet.dbContext.changeState(this, EntityState.Modified);
+                    this.changeState(EntityState.Modified);
                 }
             }
         }

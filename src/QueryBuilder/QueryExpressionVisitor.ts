@@ -30,8 +30,9 @@ import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpressio
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
-import { ComputedColumnMetaData } from "../MetaData";
+import { ComputedColumnMetaData, EmbeddedColumnMetaData } from "../MetaData";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
+import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 
 interface IPRelation {
     name: string;
@@ -133,7 +134,7 @@ export class QueryExpressionVisitor {
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
-        if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression) {
+        if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression || objectOperand instanceof EmbeddedColumnExpression) {
             const parentEntity = objectOperand as IEntityExpression;
             let column = parentEntity.columns.first((c) => c.propertyName === expression.memberName);
             if (!column && objectOperand instanceof EntityExpression) {
@@ -152,18 +153,29 @@ export class QueryExpressionVisitor {
 
                     column = new ComputedColumnExpression(parentEntity, result, expression.memberName as any);
                 }
+                else if (computedColumnMeta instanceof EmbeddedColumnMetaData) {
+                    column = new EmbeddedColumnExpression(parentEntity, computedColumnMeta);
+                }
             }
             if (column) {
                 switch (param.scope) {
                     case "include":
+                        if (parentEntity instanceof EmbeddedColumnExpression) {
+                            if (!(column instanceof ComputedColumnExpression) && !(column instanceof EmbeddedColumnExpression)) {
+                                parentEntity.clearDefaultColumns();
+                            }
+                        }
                         if (parentEntity.select) {
-                            if (!(column instanceof ComputedColumnExpression)) {
+                            if (!(column instanceof ComputedColumnExpression) && !(column instanceof EmbeddedColumnExpression)) {
                                 parentEntity.select.clearDefaultColumns();
                             }
                         }
                         break;
                 }
-                if (parentEntity.select) {
+                if (parentEntity instanceof EmbeddedColumnExpression) {
+                    parentEntity.selects.add(column);
+                }
+                else if (parentEntity.select) {
                     parentEntity.select.selects.add(column);
                 }
                 return column;
@@ -298,6 +310,9 @@ export class QueryExpressionVisitor {
                 }
             }
             return result;
+        }
+        else if (objectOperand instanceof EmbeddedColumnExpression) {
+
         }
         else {
             switch (objectOperand.type) {

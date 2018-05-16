@@ -7,13 +7,14 @@ import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQu
 import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { hashCode, isValue } from "../Helper/Util";
-import { entityMetaKey, relationMetaKey } from "../Decorator/DecoratorKey";
+import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { FunctionExpression, ParameterExpression, IExpression, EqualExpression, MemberAccessExpression, AndExpression } from "../ExpressionBuilder/Expression";
 import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { EmbeddedColumnMetaData } from "../MetaData";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -106,8 +107,19 @@ export class DbSet<T> extends Queryable<T> {
                         }).toArray() as any;
                     }
                 }
-                else if (!entry.isPropertyModified(prop) || entry.getOriginalValue(prop) !== value)
-                    entry.entity[prop] = value;
+                else {
+                    const columnMeta: IColumnMetaData<T, any> = Reflect.getOwnMetadata(columnMetaKey, this.type, prop);
+                    if (columnMeta instanceof EmbeddedColumnMetaData) {
+                        const childSet = this.dbContext.set(columnMeta.type);
+                        if (childSet) {
+                            // TODO
+                            const childEntry = childSet.attach(value);
+                            entity[prop] = value = childEntry.entity;
+                        }
+                    }
+                    else if (!entry.isPropertyModified(prop) || entry.getOriginalValue(prop) !== value)
+                        entry.entity[prop] = value;
+                }
             });
         }
         else {

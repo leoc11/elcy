@@ -13,6 +13,8 @@ import { EntityEntry } from "../../Data/EntityEntry";
 import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
+import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
+import { EmbeddedEntityEntry } from "../../Data/EmbeddedEntityEntry";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -108,10 +110,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             else {
                 for (const column of columns) {
                     const value = this.convertTo(row[column.columnName], column);
-                    if (entry)
-                        entry.setOriginalValue(column.propertyName as any, value);
-                    else
-                        this.setDeepProperty(entity, column.propertyName, value);
+                    this.setPropertyValue(entry || entity, column, value, dbContext);
                 }
             }
             for (const column of relColumns) {
@@ -236,6 +235,38 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             }
         }
         return results;
+    }
+    private setPropertyValue<T>(entryOrEntity: EntityEntry<T> | T, column: IColumnExpression<T>, data: any, dbContext: DbContext) {
+        if (column instanceof EmbeddedColumnExpression) {
+            const entity = (entryOrEntity instanceof EntityEntry ? entryOrEntity.entity : entryOrEntity);
+            let entityEntry: EntityEntry;
+            if (entryOrEntity instanceof EntityEntry)
+                entityEntry = entryOrEntity;
+
+            const embeddedColumn = column as EmbeddedColumnExpression<T>;
+            let embeddedEntity = entity[embeddedColumn.propertyName];
+            if (!embeddedEntity) {
+                embeddedEntity = new embeddedColumn.type();
+                if (entityEntry) {
+                    entityEntry.setOriginalValue(column.propertyName as any, embeddedEntity);
+                }
+                else {
+                    // TODO: possible not used
+                    entity[embeddedColumn.propertyName] = embeddedEntity;
+                }
+            }
+
+            for (const select of column.selects) {
+                this.setPropertyValue(embeddedEntity, select, data, dbContext);
+            }
+            return;
+        }
+
+        const value = this.convertTo(data[column.columnName], column);
+        if (entryOrEntity instanceof EntityEntry)
+            entryOrEntity.setOriginalValue(column.propertyName as any, value);
+        else
+            this.setDeepProperty(entryOrEntity, column.propertyName, value);
     }
     private setDeepProperty(obj: any, propertyPath: string, value: any) {
         const propertyPathes = propertyPath.split(".");

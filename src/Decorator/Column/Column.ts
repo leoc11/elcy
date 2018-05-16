@@ -82,7 +82,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
 
                     const changeListener: EventListener<IChangeEventParam> = Reflect.getOwnMetadata("PropertyChangeEventListener", this);
                     if (changeListener) {
-                        changeListener.emit({ property: propertyKey, oldValue, newValue: value });
+                        changeListener.emit({ column: columnMetaData, oldValue, newValue: value });
                     }
                 }
             },
