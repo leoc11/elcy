@@ -18,18 +18,17 @@ export type IntColumnType = IntLengthColumnType
     | "integer" // postgres, oracle, sqlite
     | "unsigned big int"; // sqlite
 
+export type ApproximateNumericColumnType = "float" // mysql, mssql, oracle, sqlite
+    | "real" | "float4" // mysql, postgres, mssql, oracle, sqlite
+    | "double precision" | "float8" // postgres, oracle, sqlite
+    | "double"; // mysql, sqlite
+
 /**
  * Decimal column types
  */
-export type DecimalColumnType = "float" // mysql, mssql, oracle, sqlite
-    | "float4" // postgres
-    | "float8" // postgres
-    | "double" // mysql, sqlite
-    | "dec" // oracle, mssql
+export type DecimalColumnType = "dec" // oracle, mssql
     | "decimal" // mysql, postgres, mssql, sqlite
     | "numeric" // postgres, mssql, sqlite
-    | "real" // mysql, postgres, mssql, oracle, sqlite
-    | "double precision" // postgres, oracle, sqlite
     | "number" // oracle
     | "smallmoney" // mssql
     | "money"; // postgres, mssql
@@ -155,6 +154,7 @@ export type OtherColumnType = "rowid" // oracle
  */
 export type ColumnType = IntColumnType
     | DecimalColumnType
+    | ApproximateNumericColumnType
     | DateColumnType
     | TimeColumnType
     | TimestampColumnType
