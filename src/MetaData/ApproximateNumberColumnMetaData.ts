@@ -1,14 +1,14 @@
-import { ApproximateNumericColumnType } from "../Common/ColumnType";
+import { ApproximateNumberColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface";
-export class ApproximateColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
+export class ApproximateNumberColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public precision?: number;
     public scale?: number;
-    public columnType: ApproximateNumericColumnType = "real";
+    public columnType: ApproximateNumberColumnType = "real";
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Number, entityMeta);
     }
-    public applyOption(columnMeta: ApproximateColumnMetaData<TE>) {
+    public applyOption(columnMeta: ApproximateNumberColumnMetaData<TE>) {
         if (typeof columnMeta.precision !== "undefined")
             this.precision = columnMeta.precision;
         if (typeof columnMeta.scale !== "undefined")
