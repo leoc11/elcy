@@ -18,7 +18,7 @@ export type IntColumnType = IntLengthColumnType
     | "integer" // postgres, oracle, sqlite
     | "unsigned big int"; // sqlite
 
-export type ApproximateNumericColumnType = "float" // mysql, mssql, oracle, sqlite
+export type ApproximateNumberColumnType = "float" // mysql, mssql, oracle, sqlite
     | "real" | "float4" // mysql, postgres, mssql, oracle, sqlite
     | "double precision" | "float8" // postgres, oracle, sqlite
     | "double"; // mysql, sqlite
@@ -154,7 +154,7 @@ export type OtherColumnType = "rowid" // oracle
  */
 export type ColumnType = IntColumnType
     | DecimalColumnType
-    | ApproximateNumericColumnType
+    | ApproximateNumberColumnType
     | DateColumnType
     | TimeColumnType
     | TimestampColumnType
