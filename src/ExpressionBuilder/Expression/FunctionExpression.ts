@@ -4,6 +4,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
+import { ValueExpressionTransformer } from "../ValueExpressionTransformer";
 
 export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
     public static Create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
@@ -30,7 +31,9 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
             return "(" + params.join(", ") + ") => (" + this.body.toString(transformer) + ")";
         return "(" + params.join(", ") + ") => " + this.body.toString(transformer);
     }
-    public execute(transformer: ExpressionTransformer): any {
+    public execute(transformer?: ExpressionTransformer): any {
+        if (!transformer)
+            transformer = new ValueExpressionTransformer();
         return transformer.executeExpression(this);
     }
     public clone() {

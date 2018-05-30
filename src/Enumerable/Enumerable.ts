@@ -20,8 +20,8 @@ export class Enumerable<T = any> implements Iterable<T> {
     protected isResultComplete: boolean;
     protected result: T[] = [];
     protected parent: Iterable<any>;
-    protected iterator: Iterator<any>;
-    constructor(source?: Iterable<any> | Iterator<T>) {
+    protected iterator: Iterator<T>;
+    constructor(source?: Iterable<T> | Iterator<T>) {
         if (source) {
             if (Array.isArray(source)) {
                 this.result = source;
@@ -136,5 +136,13 @@ export class Enumerable<T = any> implements Iterable<T> {
                 return true;
         }
         return false;
+    }
+
+    // Helper extension
+    public each(executor: (item: T, index: number) => void): void {
+        let index = 0;
+        for (const item of this) {
+            executor(item, index++);
+        }
     }
 }

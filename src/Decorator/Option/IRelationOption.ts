@@ -1,4 +1,4 @@
-import { IObjectType, ReferenceOption } from "../../Common/Type";
+import { IObjectType, ReferenceOption, RelationshipType } from "../../Common/Type";
 
 export interface IRelationOption<TSource, TTarget> {
     sourceType?: IObjectType<TSource>;
@@ -6,10 +6,13 @@ export interface IRelationOption<TSource, TTarget> {
     metaType?: IObjectType;
     relationKeys?: Array<keyof TSource | ((source: TSource) => any)>;
     name?: string;
+    // used for sql foreign key constraint name
+    relationKeyName?: string;
     isMaster: boolean;
     updateOption?: ReferenceOption;
     deleteOption?: ReferenceOption;
-    relationType: "one" | "many";
+    relationType: RelationshipType | "one?";
     manyToManyMapName: string;
     propertyName?: keyof TSource;
+    nullable?: boolean;
 }

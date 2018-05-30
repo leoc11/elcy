@@ -2,9 +2,11 @@ import { RelationshipType, ReferenceOption } from "../../Common/Type";
 import { IEntityMetaData } from ".";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export interface IRelationMetaData<TSource = any, TTarget = any> {
-    name: string;
+    name?: string;
+    fullName: string;
     propertyName?: keyof TSource;
     relationType: RelationshipType;
     relationColumns: Array<IColumnMetaData<TSource>>;
@@ -12,11 +14,17 @@ export interface IRelationMetaData<TSource = any, TTarget = any> {
     source: IEntityMetaData<TSource>;
     target: IEntityMetaData<TTarget>;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
-    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     updateOption?: ReferenceOption;
     deleteOption?: ReferenceOption;
     nullable?: boolean;
     completeRelation?(reverseRelation: IRelationMetaData<TTarget, TSource>): void;
-    relationData?: IRelationDataMetaData<any, TSource, TTarget>;
+    relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
     completeRelationType?: string;
+
+    // Helper property to improve hydration performance issue
+    /**
+     * Column used in relation that has been mapped to an entity's property.
+     */
+    mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource>>;
 }

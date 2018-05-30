@@ -11,7 +11,14 @@ declare global {
         toDate(): Date;
         toTime(): TimeSpan;
     }
+    interface DateConstructor {
+        getDate(): Date;
+    }
 }
+
+Date.getDate = function () {
+    return new Date();
+};
 
 Date.prototype.addDays = function (days: number): Date {
     const dat = new Date(this.valueOf());

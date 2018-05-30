@@ -16,7 +16,7 @@ export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMet
     public get nullable(): boolean {
         return this.parentColumnMetaData.nullable;
     }
-    public get default(): FunctionExpression<void, T> | string {
+    public get default(): FunctionExpression<void, T> {
         return this.parentColumnMetaData.default;
     }
     public get description(): string {

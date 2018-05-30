@@ -51,10 +51,10 @@ export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRela
             relationDataMeta.ApplyOption(entityMet);
 
         const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
-        const sourceRelationMeta = sourceMetaData.relations.first(o => o.name === relationDataMeta.relationName);
+        const sourceRelationMeta = sourceMetaData.relations.first(o => o.fullName === relationDataMeta.relationName);
 
         const targetMetaData: EntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
-        const targetRelationMeta = targetMetaData.relations.first(o => o.name === relationDataMeta.relationName);
+        const targetRelationMeta = targetMetaData.relations.first(o => o.fullName === relationDataMeta.relationName);
 
         relationDataMeta.completeRelation(sourceRelationMeta, targetRelationMeta);
         Reflect.defineMetadata(entityMetaKey, relationDataMeta, target);

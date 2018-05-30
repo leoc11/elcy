@@ -8,6 +8,7 @@ import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
+import { FunctionExpression } from "../ExpressionBuilder/Expression";
 
 export abstract class SchemaBuilder {
     constructor(public driver: IDriver, public q: QueryBuilder) { }
@@ -137,7 +138,10 @@ export abstract class SchemaBuilder {
                 collation: columnSchema["COLLATION_NAME"]
             };
             if (defaultExpression) {
-                column.default = defaultExpression.substring(1, defaultExpression.length - 1);
+                const defaultExp = new FunctionExpression(null, []);
+                const defaultString = defaultExpression.substring(1, defaultExpression.length - 1);
+                defaultExp.toString = () => defaultString;
+                column.default = defaultExp;
             }
             if (this.q.columnTypesWithOption.contains(column.columnType)) {
                 (column as StringColumnMetaData).length = columnSchema["CHARACTER_MAXIMUM_LENGTH"];
@@ -200,7 +204,7 @@ export abstract class SchemaBuilder {
             const fkRelation: IRelationMetaData = {
                 source: foreignKey.meta.entity,
                 target: targetConstraint.meta.entity,
-                name: relationName,
+                fullName: relationName,
                 relationColumns: foreignKey.meta.columns,
                 isMaster: false,
                 relationType: relationType,
@@ -209,7 +213,7 @@ export abstract class SchemaBuilder {
             const reverseFkRelation: IRelationMetaData = {
                 source: targetConstraint.meta.entity,
                 target: foreignKey.meta.entity,
-                name: relationName,
+                fullName: relationName,
                 relationColumns: targetConstraint.meta.columns,
                 isMaster: true,
                 relationType: "one",

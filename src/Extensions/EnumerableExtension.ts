@@ -39,8 +39,14 @@ declare global {
         except(array2: Iterable<T>): Enumerable<T>;
         pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): Enumerable<TResult>;
     }
+    interface Map<K, V> {
+        asEnumerable(): Enumerable<[K, V]>;
+    }
 }
 
+Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
+    return new Enumerable(this);
+};
 Array.prototype.asEnumerable = function <T>(this: T[]) {
     return new Enumerable(this);
 };

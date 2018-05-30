@@ -10,7 +10,7 @@ export interface IColumnMetaData<TE = any, T = any> {
     propertyName?: keyof TE;
     indexed?: boolean;
     nullable?: boolean;
-    default?: FunctionExpression<void, T> | string;
+    default?: FunctionExpression<void, T>;
     type?: GenericType<T>;
     description?: string;
     columnType?: ColumnType;
@@ -19,5 +19,6 @@ export interface IColumnMetaData<TE = any, T = any> {
     isCreatedDate?: boolean;
     isModifiedDate?: boolean;
     isDeleteColumn?: boolean;
+    isPrimaryColumn?: boolean;
     applyOption?(option: IColumnMetaData | IColumnOption): void;
 }

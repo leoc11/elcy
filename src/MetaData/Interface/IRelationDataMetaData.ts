@@ -9,5 +9,7 @@ export interface IRelationDataMetaData<TType, TSource, TTarget> extends IEntityM
     target?: IEntityMetaData<TTarget>;
     sourceRelationColumns?: IColumnMetaData<TType>[];
     targetRelationColumns?: IColumnMetaData<TType>[];
+    sourceRelationMaps?: Map<IColumnMetaData<TType>, IColumnMetaData<TSource>>;
+    targetRelationMaps?: Map<IColumnMetaData<TType>, IColumnMetaData<TTarget>>;
     relationName?: string;
 }

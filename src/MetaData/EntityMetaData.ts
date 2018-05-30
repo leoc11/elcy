@@ -1,5 +1,5 @@
 import { IObjectType } from "../Common/Type";
-import { ComputedColumnMetaData } from "../MetaData";
+import { ComputedColumnMetaData, NumericColumnMetaData } from "../MetaData";
 import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
 import { InheritanceMetaData } from "./Relation";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
@@ -36,7 +36,9 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         }
         return priority;
     }
-
+    public get hasIncrementPrimary(): boolean {
+        return this.primaryKeys.any(o => (o as NumericColumnMetaData).autoIncrement);
+    }
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")

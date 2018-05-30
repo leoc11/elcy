@@ -6,6 +6,7 @@ import { RelationDataMetaData } from "./RelationDataMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {
     public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData> = new Map();
@@ -15,6 +16,7 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
     public source: IEntityMetaData<TSource>;
     public target: IEntityMetaData<TTarget>;
     public name: string;
+    public fullName: string;
     public relationType: RelationshipType;
     public relationColumns: Array<IColumnMetaData<TSource>> = [];
     public isMaster: boolean;
@@ -24,10 +26,19 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
+    public get mappedRelationColumns(): Enumerable {
+        return this.relationColumns.intersect(this.source.columns);
+    }
     constructor(relationOption: IRelationOption<TSource, TTarget>) {
         this.name = relationOption.name;
         this.isMaster = relationOption.isMaster;
-        this.relationType = relationOption.relationType;
+        if (relationOption.relationType === "one?") {
+            this.relationType = "one";
+            this.nullable = true;
+        }
+        else {
+            this.relationType = relationOption.relationType;
+        }
         this.propertyName = relationOption.propertyName;
 
         this.source = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
@@ -55,7 +66,7 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
                     // set default value.
                     if (this.relationType === "many" && this.reverseRelation.relationType === "one") {
                         // this is a foreignkey
-                        this.relationColumns = [this.name + "_" + this.target.type.name + "_Id" as any];
+                        this.relationColumns = [this.fullName + "_" + this.target.type.name + "_Id" as any];
                     }
                     else {
                         this.relationColumns = this.relationColumns.concat(this.source.primaryKeys);

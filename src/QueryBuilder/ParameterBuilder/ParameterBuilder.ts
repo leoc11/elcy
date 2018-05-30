@@ -1,22 +1,6 @@
 import { ISqlParameterBuilderItem } from "./ISqlParameterBuilderItem";
-import { ExpressionTransformer } from "../../ExpressionBuilder/ExpressionTransformer";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression";
-import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
+import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 
-class ValueExpressionTransformer extends ExpressionTransformer {
-    public scopeParameters = new TransformerParameter();
-    public setParameters(params: { [key: string]: any }) {
-        for (const key in params) {
-            this.scopeParameters.add(key, params[key]);
-        }
-    }
-    public executeExpression(expression: IExpression): any {
-        if (expression instanceof ParameterExpression) {
-            return this.scopeParameters.get(expression.name);
-        }
-    }
-}
 export class ParameterBuilder {
     constructor(protected readonly items: ISqlParameterBuilderItem[]) {
 

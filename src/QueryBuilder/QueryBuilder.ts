@@ -18,7 +18,7 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
-import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression } from "../Queryable/QueryExpression/index";
+import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression, SqlExpression } from "../Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "../Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
@@ -36,7 +36,7 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
-import { columnMetaKey } from "../Decorator/DecoratorKey";
+import { columnMetaKey, entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface";
 import { IQueryCommand } from "./Interface/IQueryCommand";
 import { EntityEntry } from "../Data/EntityEntry";
@@ -45,6 +45,8 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
 import { ICheckConstraintMetaData } from "../MetaData/Interface/ICheckConstraintMetaData";
 import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
+import { EntityState } from "../Data/EntityState";
+import { RelationEntry } from "../Data/RelationEntry";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -1027,102 +1029,428 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    public getInsertQuery<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
-        if (entries.length <= 0)
-            return null;
+    public updateQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
+        let result: IQueryCommand[] = [];
+        const setQuery = Object.keys(set).select(o => {
+            const value = set[o];
+            const valueStr = (value as IExpression).type ? this.getExpressionString(value as IExpression) : this.getValueString(value);
+            return `${select.entity.alias}.${o} = ${valueStr}`;
+        }).toArray().join(", ");
+        let updateQuery = `UPDATE ${this.enclose(select.entity.alias)}` +
+            this.newLine() + `SET ${setQuery}` +
+            this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
+            this.getEntityJoinString(select.entity, select.joins);
+        if (select.where)
+            updateQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
 
-        const columns = entityMetaData.columns.select(o => ({
-            propertyName: o.propertyName,
-            metaData: o
-        }));
-        const generatedColumns = columns.where(o => {
-            const meta = o.metaData;
-            return meta.default !== undefined || meta instanceof TimeColumnMetaData
-                || meta instanceof IdentifierColumnMetaData || (meta instanceof NumericColumnMetaData && meta.autoIncrement);
+        result.push({
+            query: updateQuery,
+            parameters: parameters
         });
-        const valueColumns = columns.where(o => !(o.metaData instanceof IdentifierColumnMetaData || (o.metaData instanceof NumericColumnMetaData && o.metaData.autoIncrement)));
-        const columnNames = valueColumns.select(o => this.enclose(o.metaData.columnName)).toArray().join(", ");
-        const outputQuery = generatedColumns.select(o => "INSERTED." + this.enclose(o.metaData.columnName)).toArray().join(", ");
 
-        const result: IQueryCommand = {
-            query: "",
-            parameters: new Map()
-        };
-        result.query = `INSERT INTO ${this.enclose(entityMetaData.name)}(${columnNames}) ${outputQuery ? "OUTPUT " + outputQuery : ""} VALUES `;
-        result.query += entries.map((o, i) => {
-            const entry = entries[i];
-            const entity = entry.entity;
-            return "(" + valueColumns.select(o => {
-                const value = entity[o.propertyName as keyof T];
+        return result;
+    }
+    public deleteQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, isHardDelete = false): IQueryCommand[] {
+        let result: IQueryCommand[] = [];
+        if (!isHardDelete)
+            isHardDelete = !select.entity.deleteColumn;
+
+        // remove all entity related to this one.
+        const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, select.entity.type);
+        const relations = entityMeta.relations.where(o => o.isMaster);
+        result = result.concat(relations.selectMany(o => {
+            let child = new SelectExpression(new EntityExpression(o.target.type, this.newAlias()));
+            child.addJoinRelation(select, o.reverseRelation);
+            return this.deleteQueries(select, parameters, isHardDelete);
+        }).toArray());
+
+        if (!isHardDelete) {
+            // if soft delete, set delete column to true
+            const set: { [key: string]: any } = {};
+            set[select.entity.deleteColumn.columnName] = true;
+
+            return this.updateQueries(select, parameters, set);
+        }
+        else {
+            let selectQuery = `DELETE ${this.enclose(select.entity.alias)}` +
+                this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
+                this.getEntityJoinString(select.entity, select.joins);
+            if (select.where)
+                selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
+            result.push({
+                query: selectQuery,
+                parameters: parameters
+            });
+        }
+
+        return result;
+    }
+    public lastInsertedIdentity() {
+        return "LAST_INSERT_ID()";
+    }
+    public getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
+        const results: IQueryCommand[] = [];
+        
+        const columns = entityMetaData.columns;
+        const relations = entityMetaData.relations
+            .where(o => !o.nullable && !o.isMaster && o.relationType === "one");
+        const relationDatas = relations.selectMany(o => o.relationColumns.select(c => ({
+            column: c,
+            relationProperty: o.propertyName,
+            fullName: o.fullName,
+            relationColumn: o.relationMaps.get(c)
+        })));
+        const relationColumns = relationDatas.select(o => o.column);
+        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || (o instanceof NumericColumnMetaData && o.autoIncrement)));
+        const columnNames = relationDatas.select(o => o.column).union(valueColumns).select(o => this.enclose(o.columnName)).toArray().join(", ");
+
+        const getEntryValues = (entry: EntityEntry<T>, insertQuery: IQueryCommand, selectQuery: IQueryCommand, wheres: string[]) => {
+            const res = relationDatas.select(o => {
+                // set relation as unchanged (coz already handled here)
+                const parentEntity = entry.entity[o.relationProperty] as any;
+                if (!parentEntity) {
+                    throw new Error(`${o.relationProperty} cannot be null`);
+                }
+
+                // TODO: need revisit. coz should not change any state before all data has been saved.
+                // Don't set relation entry to unchanged, but filter logic should be implemented on relation add.
+                const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
+                if (parentEntry) {
+                    const relationGroup = entry.relationMap[o.fullName];
+                    if (relationGroup) {
+                        const relationEntry = relationGroup.get(parentEntry.key);
+                        if (relationEntry)
+                            relationEntry.changeState(EntityState.Unchanged);
+                    }
+                }
+
+                let paramName = "";
+                let value: any = undefined;
+                if (parentEntry.state === EntityState.Added) {
+                    // if parent entry is added, to used inserted values in case column is auto increment or use default.
+                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
+                    paramName = `__${parentEntry.dbSet.metaData.name}_${o.relationColumn.columnName}_${index}`;
+                }
+                else {
+                    value = parentEntity[o.relationColumn.propertyName];
+                    paramName = this.newAlias("param");
+                }
+
+                insertQuery.parameters.set(paramName, value);
+                if (o.column.isPrimaryColumn) {
+                    wheres.push(`${this.enclose(o.column.columnName)} = @${paramName}`);
+                    selectQuery.parameters.set(paramName, value);
+                }
+                return "@" + paramName;
+            }).union(valueColumns.select(o => {
+                let value = entry.entity[o.propertyName as keyof T];
                 if (value === undefined) {
-                    return "DEFAULT";
+                    if (o.default)
+                        return "DEFAULT";
+                    return "NULL";
                 }
                 else {
                     const paramName = this.newAlias("param");
-                    result.parameters.set(paramName, value);
+                    insertQuery.parameters.set(paramName, value);
+
+                    if (o.isPrimaryColumn) {
+                        wheres.push(`${this.enclose(o.columnName)} = @${paramName}`);
+                        selectQuery.parameters.set(paramName, value);
+                    }
+
                     return "@" + paramName;
                 }
-            }).toArray().join(",") + ")";
-        }).join(", ");
-        return result;
-    }
-    public getUpdateQuery<T>(entityMetaData: IEntityMetaData<T>, entry: EntityEntry<T>): IQueryCommand {
-        const modifiedColumns = entry.getModifiedProperties().select(o => ({
-            propertyName: o,
-            metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
-        }));
+            })).toArray().join(",");
 
-        const result: IQueryCommand = {
-            query: "",
-            parameters: new Map()
+            return res;
         };
-        const set = modifiedColumns.select(o => {
-            const paramName = this.newAlias("param");
-            result.parameters.set(paramName, entry.entity[o.propertyName as keyof T]);
-            return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
-        }).toArray().join(",\n");
 
-        const where = entityMetaData.primaryKeys.select(o => {
-            const paramName = this.newAlias("param");
-            result.parameters.set(paramName, entry.entity[o.propertyName]);
-            return this.enclose(o.columnName) + " = @" + paramName;
-        }).toArray().join(" AND ");
+        const generatedColumns = columns.where(o => {
+            return o.default !== undefined || (o as NumericColumnMetaData).autoIncrement;
+        }).select(o => this.enclose(o.columnName)).toArray().join(",");
 
-        result.query = `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`;
-        return result;
+        if (entityMetaData.hasIncrementPrimary) {
+            // if primary key is auto increment, then need to split all query per entry.
+            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as NumericColumnMetaData).autoIncrement);
+
+            for (const entry of entries) {
+                const insertQuery: IQueryCommand = {
+                    query: "",
+                    parameters: new Map()
+                };
+                const selectQuery: IQueryCommand = {
+                    query: "",
+                    parameters: new Map()
+                };
+                const wheres: string[] = [];
+                insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
+                    ` VALUES (${getEntryValues(entry, insertQuery, selectQuery, wheres)})`;
+                results.push(insertQuery);
+
+                // get all inserted value to map all auto generated or default value to model.
+                wheres.push(`${this.enclose(incrementColumn.columnName)} = ${this.lastInsertedIdentity()}`);
+                selectQuery.query = `SELECT ${generatedColumns} FROM ${this.entityName(entityMetaData)} WHERE (${wheres.join(" AND ")})`;
+
+                results.push(selectQuery);
+            }
+        }
+        else {
+            const insertQuery: IQueryCommand = {
+                query: "",
+                parameters: new Map()
+            };
+            const selectQuery: IQueryCommand = {
+                query: "",
+                parameters: new Map()
+            };
+            let selectWheres: string[] = [];
+
+            insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames}) VALUES `;
+            insertQuery.query += entries.select(entry => {
+                const wheres: string[] = [];
+                const res = "(" + getEntryValues(entry, insertQuery, selectQuery, wheres) + ")";
+                selectWheres.push(wheres.join(" AND "));
+                return res;
+            }).toArray().join(",");
+
+            results.push(insertQuery);
+
+            // get all inserted value to map all auto generated or default value to model.
+            selectQuery.query = `SELECT ${generatedColumns} FROM ${this.entityName(entityMetaData)} WHERE (${selectWheres.join(") OR (")})`;
+
+            results.push(selectQuery);
+        }
+
+        return results;
     }
-    public getDeleteQuery<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand {
+    public getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
+        return entries.select(entry => {
+            const modifiedColumns = entry.getModifiedProperties().select(o => ({
+                propertyName: o,
+                metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
+            }));
+
+            const result: IQueryCommand = {
+                query: "",
+                parameters: new Map()
+            };
+            const set = modifiedColumns.select(o => {
+                const paramName = this.newAlias("param");
+                result.parameters.set(paramName, entry.entity[o.propertyName as keyof T]);
+                return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
+            }).toArray().join(",\n");
+
+            const where = entityMetaData.primaryKeys.select(o => {
+                const paramName = this.newAlias("param");
+                result.parameters.set(paramName, entry.entity[o.propertyName]);
+                return this.enclose(o.columnName) + " = @" + paramName;
+            }).toArray().join(" AND ");
+
+            result.query = `UPDATE ${this.entityName(entityMetaData)} SET ${set} WHERE ${where}`;
+            return result;
+        }).toArray();
+    }
+    public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand[] {
+        let results: IQueryCommand[] = [];
         if (entries.length <= 0)
             return null;
 
-        const result: IQueryCommand = {
-            query: "",
-            parameters: new Map()
-        };
-        let condition = "";
+        const deleteExp = new SelectExpression(new EntityExpression(entityMetaData.type, this.newAlias()));
         if (entityMetaData.primaryKeys.length === 1) {
+            const parameters = new Map();
             const primaryCol = entityMetaData.primaryKeys.first();
             const primaryValues = entries.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, o.entity[primaryCol.propertyName]);
+                parameters.set(paramName, o.entity[primaryCol.propertyName]);
                 return `@${paramName}`;
             }).toArray().join(",");
-            condition = `WHERE ${primaryCol.propertyName} IN (${primaryValues})`;
+            const condition = `${primaryCol.propertyName} IN (${primaryValues})`;
+            deleteExp.addWhere(new SqlExpression<boolean>(Boolean, condition));
+
+            return this.deleteQueries(deleteExp, parameters);
         }
         else {
-            const columnName = entityMetaData.primaryKeys.select(o => o.columnName).toArray().join(",");
+            const tempTableName = "#" + this.newAlias();
+            const tempEntity = new CustomEntityExpression(tempTableName, [], deleteExp.itemType, this.newAlias());
+            tempEntity.columns = entityMetaData.primaryKeys.select(o => {
+                return new ColumnExpression(tempEntity, o.type, o.propertyName, o.columnName, true);
+            }).toArray();
+            const tempSelect = new SelectExpression(tempEntity);
+
+            const relationMap = new Map();
+            for (const primaryCol of deleteExp.entity.primaryColumns) {
+                const childCol = tempEntity.columns.first(o => o.columnName === primaryCol.columnName);
+                relationMap.set(primaryCol, childCol);
+            }
+            deleteExp.addJoinRelation(tempSelect, relationMap, JoinType.INNER);
+
+            // set temp table data.
+            results.push({
+                query: this.getCreateTempTableString(tempTableName, tempEntity.columns)
+            });
+
+            // add value to temp table.
+            const parameters = new Map();
             const primaryValues = entries.select(o => "(" + entityMetaData.primaryKeys.select(c => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, o.entity[c.propertyName]);
+                parameters.set(paramName, o.entity[c.propertyName]);
                 return `@${paramName}`;
             }).toArray().join(",") + ")").toArray().join(",");
-            const entityAlias = this.newAlias();
-            const valueAlias = this.newAlias();
-            const joins = entityMetaData.primaryKeys.select(o => `${entityAlias}.${o.columnName} = ${valueAlias}.${o.columnName}`).toArray().join(" AND ");
-            condition = `${entityAlias} JOIN (VALUES ${primaryValues}) AS ${valueAlias} (${columnName}) ON ${joins}`;
+            results.push({
+                query: `INSERT INTO ${tempTableName} VALUES ${primaryValues}`,
+                parameters: parameters
+            });
+            results = results.concat(this.deleteQueries(deleteExp, new Map()));
+
+            // remove temp table
+            results.push({
+                query: `DROP TABLE ${tempTableName}`
+            });
+
+            return results;
         }
-        result.query = `DELETE FROM ${this.enclose(entityMetaData.name)} ${condition}`;
-        return result;
+    }
+    public getRelationAddQueries<T, T2, TData>(slaveEntityMetaData: IEntityMetaData<T>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
+        return relationEntries.selectMany(relationEntry => {
+            const results: IQueryCommand[] = [];
+
+            const isMasterAdded = relationEntry.masterEntry.state === EntityState.Added;
+            if (relationEntry.slaveRelation.relationType === "one") {
+                const parameters = new Map();
+                const set = relationEntry.slaveRelation.relationColumns.select(o => {
+                    let paramName = "";
+                    let value: any;
+                    if (isMasterAdded) {
+                        // if parent entry is added, to used inserted values in case column is auto increment or use default.
+                        const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
+                        paramName = `__${relationEntry.masterEntry.dbSet.metaData.name}_${o.columnName}_${index}`;
+                    }
+                    else {
+                        const reverseProperty = relationEntry.slaveRelation.relationMaps.get(o).propertyName;
+                        value = relationEntry.masterEntry.entity[reverseProperty as keyof T2];
+                        paramName = this.newAlias("param");
+                    }
+                    parameters.set(paramName, value);
+
+                    return `${this.enclose(o.columnName)} = @${paramName}`;
+                }).toArray().join(",\n");
+                const where = slaveEntityMetaData.primaryKeys.select(o => {
+                    const paramName = this.newAlias("param");
+                    parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                    return this.enclose(o.columnName) + " = @" + paramName;
+                }).toArray().join(" AND ");
+
+                results.push({
+                    query: `UPDATE ${slaveEntityMetaData.name} SET ${set} WHERE ${where}`,
+                    parameters: parameters
+                });
+            }
+            else {
+                const parameters = new Map();
+                const relationDataMeta = relationEntry.slaveRelation.relationData;
+                const columnNames = relationDataMeta.sourceRelationColumns.union(relationDataMeta.targetRelationColumns)
+                    .select(o => o.columnName).toArray().join(",");
+                const values = relationDataMeta.sourceRelationColumns.select(o => {
+                    let paramName = "";
+                    let value: any;
+                    const sourceCol = relationDataMeta.sourceRelationMaps.get(o);
+                    if (isMasterAdded) {
+                        // if parent entry is added, to used inserted values in case column is auto increment or use default.
+                        const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
+                        paramName = `__${relationEntry.masterEntry.dbSet.metaData.name}_${sourceCol.columnName}_${index}`;
+                    }
+                    else {
+                        const relProperty = sourceCol.propertyName as keyof T2;
+                        value = relationEntry.masterEntry.entity[relProperty];
+                        paramName = this.newAlias("param");
+                    }
+
+                    parameters.set(paramName, value);
+                    return "@" + paramName;
+                }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
+                    let paramName = "";
+                    let value: any;
+                    const targetCol = relationDataMeta.targetRelationMaps.get(o);
+                    if (isMasterAdded) {
+                        // if parent entry is added, to used inserted values in case column is auto increment or use default.
+                        const index = relationEntry.slaveEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.slaveEntry.dbSet.metaData).indexOf(relationEntry.slaveEntry);
+                        paramName = `__${relationEntry.masterEntry.dbSet.metaData.name}_${targetCol.columnName}_${index}`;
+                    }
+                    else {
+                        const relProperty = targetCol.propertyName as keyof T;
+                        value = relationEntry.slaveEntry.entity[relProperty];
+                        paramName = this.newAlias("param");
+                    }
+
+                    parameters.set(paramName, value);
+                    return "@" + paramName;
+                })).toArray().join(",");
+
+                results.push({
+                    query: `INSERT INTO ${this.enclose(relationDataMeta.name)}(${columnNames}) VALUES (${values})`,
+                    parameters: parameters
+                });
+            }
+            return results;
+        }).toArray();
+    }
+    public getRelationDeleteQueries<T, T2, TData>(entityMetaData: IEntityMetaData<T>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
+        return relationEntries.selectMany(relationEntry => {
+            const relations = relationEntry.slaveEntry.relationMap[relationEntry.slaveRelation.fullName];
+            if (relationEntry.slaveRelation.relationType === "one") {
+                // if there is existing same relation but not deleted, then no need delete.
+                // don't re delete FK for the same relation. only execute first.
+                const relationKeys = Object.keys(relations);
+                if (relations.get(relationKeys.first()) !== relationEntry || relationKeys.any(o => relations.get(o).state !== EntityState.Deleted)) {
+                    return [];
+                }
+
+                if (relationEntry.slaveRelation.nullable) {
+                    // Set foreignkey to null query.
+                    const set = relationEntry.slaveRelation.relationColumns.select(o =>
+                        `${this.enclose(o.columnName)} = NULL`
+                    ).toArray().join(",\n");
+                    const parameters = new Map();
+                    const where = entityMetaData.primaryKeys.select(o => {
+                        const paramName = this.newAlias("param");
+                        parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                        return this.enclose(o.columnName) + " = @" + paramName;
+                    }).toArray().join(" AND ");
+                    return [{
+                        query: `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`,
+                        parameters: parameters
+                    }];
+                }
+                else {
+                    // if not nullable, then delete slave entity.
+                    return this.getDeleteQueries(relationEntry.slaveRelation.source, [relationEntry.slaveEntry]);
+                }
+            }
+            else {
+                // remove relation table.
+                // after save remove all reference to this relation entry
+                const parameter = new Map();
+                const relationDataMeta = relationEntry.slaveRelation.relationData;
+                const condition = relationDataMeta.sourceRelationColumns.select(o => {
+                    const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T2;
+                    const value = relationEntry.masterEntry.entity[relProperty];
+                    const paramName = this.newAlias("param");
+                    parameter.set(paramName, value);
+                    return this.enclose(o.columnName) + " = @" + paramName;
+                }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
+                    const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T;
+                    const value = relationEntry.slaveEntry.entity[relProperty];
+                    const paramName = this.newAlias("param");
+                    parameter.set(paramName, value);
+                    return this.enclose(o.columnName) + " = @" + paramName;
+                })).toArray().join(" AND ");
+
+                return [{
+                    query: `DELETE FROM ${this.enclose(entityMetaData.name)} WHERE ${condition}`,
+                    parameters: parameter
+                }];
+            }
+        }).toArray();
     }
 
     /**
@@ -1315,7 +1643,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public createTableQuery<TE>(entityMetaData: IEntityMetaData<TE>): IQueryCommand[] {
         const columnDefinitions = entityMetaData.columns.select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.newLine(this.indent + 1));
         const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.newLine(this.indent + 1));
-        let query = `CREATE TABLE ${this.enclose(entityMetaData.schema)}.${this.enclose(entityMetaData.name)}` +
+        let query = `CREATE TABLE ${this.entityName(entityMetaData)}` +
             `${this.newLine()}(` +
             `${this.newLine(this.indent + 1)}${columnDefinitions}` +
             `,${this.newLine(this.indent + 1)}${this.primaryKeyDeclaration(entityMetaData)}` +
@@ -1402,7 +1730,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public foreignKeyDeclaration(relationMeta: IRelationMetaData) {
         const columns = relationMeta.relationColumns.select(o => this.enclose(o.columnName)).toArray().join(", ");
         const referenceColumns = relationMeta.reverseRelation.relationColumns.select(o => this.enclose(o.columnName)).toArray().join(", ");
-        return `CONSTRAINT ${this.enclose(relationMeta.name)}` +
+        return `CONSTRAINT ${this.enclose(relationMeta.fullName)}` +
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})` +
             ` ON UPDATE ${relationMeta.updateOption} ON DELETE ${relationMeta.deleteOption}`;
@@ -1413,7 +1741,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public defaultValue(columnMeta: IColumnMetaData) {
         if (columnMeta.default) {
-            return columnMeta.default instanceof FunctionExpression ? this.getExpressionString(columnMeta.default.body) : columnMeta.default;
+            return this.getExpressionString(columnMeta.default.body);
         }
         const groupType = this.supportedColumnTypes.get(columnMeta.columnType);
         if (groupType === "Numeric" || groupType === "Decimal" || columnMeta instanceof NumericColumnMetaData || columnMeta instanceof DecimalColumnMetaData)
@@ -1430,13 +1758,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`${columnMeta.columnType} not supported`);
     }
     public foreignKeyQuery(relationMeta: IRelationMetaData) {
-        return `ALTER TABLE ${this.entityName(relationMeta.target)} ADD CONSTRAINT ${this.enclose(relationMeta.name)} FOREIGN KEY` +
+        return `ALTER TABLE ${this.entityName(relationMeta.target)} ADD CONSTRAINT ${this.enclose(relationMeta.fullName)} FOREIGN KEY` +
             ` (${relationMeta.reverseRelation.relationColumns.select(r => this.enclose(r.columnName)).toArray().join(",")})` +
             ` REFERENCES ${this.entityName(relationMeta.source)} (${relationMeta.relationColumns.select(r => r.columnName).toArray().join(",")})` +
             ` ON UPDATE ${relationMeta.updateOption} ON DELETE ${relationMeta.deleteOption}`;
     }
     public dropForeignKeyQuery(relationMeta: IRelationMetaData): IQueryCommand[] {
-        const query = `ALTER TABLE ${this.entityName(relationMeta.source)} DROP CONSTRAINT ${this.enclose(relationMeta.name)}`;
+        const query = `ALTER TABLE ${this.entityName(relationMeta.source)} DROP CONSTRAINT ${this.enclose(relationMeta.fullName)}`;
         return [{ query }];
     }
     public addForeignKeyQuery(relationMeta: IRelationMetaData): IQueryCommand[] {

@@ -1,8 +1,9 @@
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
-import { Queryable, WhereQueryable } from "../Queryable";
+import { Queryable } from "../Queryable/Queryable";
 import "../Queryable/Queryable.partial";
+import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
@@ -14,6 +15,7 @@ import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { FunctionExpression, ParameterExpression, IExpression, EqualExpression, MemberAccessExpression, AndExpression } from "../ExpressionBuilder/Expression";
 import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { RelationEntry } from "./RelationEntry";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {
@@ -54,6 +56,7 @@ export class DbSet<T> extends Queryable<T> {
         return (new Enumerable(this.dictionary.values())).select(o => o.entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
+    protected relationDictionary: Map<string, RelationEntry<T>> = new Map();
     public async find(id: ValueType | { [key in keyof T]: ValueType }): Promise<T> {
         let entity = this.findLocal(id);
         if (!entity) {
