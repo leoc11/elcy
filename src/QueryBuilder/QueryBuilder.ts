@@ -638,9 +638,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "toExponential":
                     case "toFixed":
                     case "toPrecision":
-                    case "toString":
-                    case "valueOf":
                         break;
+                    case "toString":
+                        return `CAST(${this.getExpressionString(expression.objectOperand)} AS nvarchar(255))`;
+                    case "valueOf":
+                        return this.getExpressionString(expression.objectOperand);
 
                 }
                 break;
@@ -1263,7 +1265,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const isIdentityChange = !!(columnSchema as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as NumericColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
             || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as NumericColumnMetaData).size !== undefined && (oldColumnSchema as NumericColumnMetaData).size !== undefined && (columnSchema as NumericColumnMetaData).size !== (oldColumnSchema as NumericColumnMetaData).size)
+            || ((columnSchema as NumericColumnMetaData).length !== undefined && (oldColumnSchema as NumericColumnMetaData).length !== undefined && (columnSchema as NumericColumnMetaData).length !== (oldColumnSchema as NumericColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).length !== undefined && (oldColumnSchema as DecimalColumnMetaData).length !== undefined && (columnSchema as DecimalColumnMetaData).length !== (oldColumnSchema as DecimalColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
             || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
