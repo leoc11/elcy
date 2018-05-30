@@ -8,7 +8,7 @@ export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T
     type: GenericType<T>;
     alias?: string;
     columnName: string;
-    columnType: ColumnType;
+    columnType?: ColumnType;
     columnMetaData?: IColumnMetaData<TE, T>;
     entity: IEntityExpression<TE>;
     propertyName: string;

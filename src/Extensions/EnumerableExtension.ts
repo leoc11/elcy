@@ -6,6 +6,7 @@ import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
+        cast<TReturn>(): TReturn[];
         asEnumerable(): Enumerable<T>;
         selectMany<TReturn>(fn: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
@@ -46,6 +47,9 @@ declare global {
 
 Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
     return new Enumerable(this);
+};
+Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
+    return this as TTarget[];
 };
 Array.prototype.asEnumerable = function <T>(this: T[]) {
     return new Enumerable(this);

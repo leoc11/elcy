@@ -18,6 +18,7 @@ import { WhereEnumerable } from "./WhereEnumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
 declare module "./Enumerable" {
     interface Enumerable<T> {
+        cast<TReturn>(): Enumerable<TReturn>;
         select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
@@ -36,6 +37,9 @@ declare module "./Enumerable" {
         pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
     }
 }
+Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
+    return this as any;
+};
 Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, selector: (item: T) => TReturn): Enumerable<TReturn> {
     return new SelectEnumerable(this, selector);
 };

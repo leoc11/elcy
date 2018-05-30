@@ -15,11 +15,11 @@ import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { EntityState } from "./EntityState";
 import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
-import { Enumerable } from "../Enumerable";
 import { SchemaBuilder } from "./SchemaBuilder";
 import { RelationEntry } from "./RelationEntry";
 import { NumericColumnMetaData } from "../MetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 export abstract class DbContext implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -107,6 +107,25 @@ export abstract class DbContext implements IDBEventListener<any> {
     public changeState(entityEntry: EntityEntry, state: EntityState) {
         if (entityEntry.state === state)
             return;
+
+        if (entityEntry instanceof EmbeddedEntityEntry) {
+            const isModified = (entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && !(state === EntityState.Detached || state === EntityState.Unchanged);
+            const isUnchanged = !(entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && (state === EntityState.Detached || state === EntityState.Unchanged);
+            if (isUnchanged) {
+                const embeddedEntries = this.modifiedEmbeddedEntries.get(entityEntry.entity.constructor);
+                if (embeddedEntries)
+                    embeddedEntries.remove(entityEntry);
+            }
+            else if (isModified) {
+                let typedEntries = this.modifiedEmbeddedEntries.get(entityEntry.dbSet.metaData);
+                if (!typedEntries) {
+                    typedEntries = [];
+                    this.modifiedEmbeddedEntries.set(entityEntry.dbSet.metaData, typedEntries);
+                }
+                typedEntries.push(entityEntry);
+            }
+            return;
+        }
 
         switch (entityEntry.state) {
             case EntityState.Added: {
@@ -217,7 +236,9 @@ export abstract class DbContext implements IDBEventListener<any> {
     }
     public entityEntries: IChangeEntryMap<"add" | "update" | "delete", IEntityMetaData, EntityEntry>;
     public relationEntries: IChangeEntryMap<"add" | "delete", IRelationMetaData, RelationEntry>;
+    public modifiedEmbeddedEntries: Map<IEntityMetaData<any>, Array<EmbeddedEntityEntry>> = new Map();
     public clear() {
+        this.modifiedEmbeddedEntries.clear();
         this.relationEntries.add.clear();
         this.relationEntries.delete.clear();
         this.entityEntries.delete.clear();
@@ -267,10 +288,20 @@ export abstract class DbContext implements IDBEventListener<any> {
         // order by priority
         const orderedEntityAdd = this.entityEntries.add.asEnumerable().orderBy([o => o[0].priority, OrderDirection.ASC]);
         const orderedEntityUpdate = this.entityEntries.update.asEnumerable().orderBy([o => o[0].priority, OrderDirection.ASC]);
-        const orderedEntityDelete = this.entityEntries.delete.asEnumerable().orderBy([o => o[0].priority, OrderDirection.ASC]);
+        const orderedEntityDelete = this.entityEntries.delete.asEnumerable().orderBy([o => o[0].priority, OrderDirection.DESC]);
 
         const orderedRelationAdd = this.relationEntries.add.asEnumerable().orderBy([o => o[0].source.priority, OrderDirection.ASC]);
         const orderedRelationDelete = this.relationEntries.delete.asEnumerable().orderBy([o => o[0].source.priority, OrderDirection.DESC]);
+
+        // apply embedded entity changes
+        for (const [, embeddedEntries] of this.modifiedEmbeddedEntries) {
+            // TODO: decide whether event emitter required here
+            for (const entry of embeddedEntries) {
+                if (entry.parentEntry.state === EntityState.Unchanged)
+                    entry.parentEntry.changeState(EntityState.Modified);
+                continue;
+            }
+        }
 
         // Before add event and generate query
         orderedEntityAdd.each(([metaData, addEntries]) => {

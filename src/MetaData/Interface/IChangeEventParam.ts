@@ -1,10 +1,10 @@
-import { IObjectType } from "../../Common/Type";
+import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IChangeEventParam {
-    property: string;
-    oldValue: any;
-    newValue: any;
+export interface IChangeEventParam<TE = any, T = any> {
+    column: IColumnMetaData<TE, T>;
+    oldValue: T;
+    newValue: T;
 }
 export type RelationChangeType = "add" | "del";
 export interface IRelationChangeEventParam {

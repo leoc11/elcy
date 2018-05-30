@@ -47,6 +47,7 @@ import { ICheckConstraintMetaData } from "../MetaData/Interface/ICheckConstraint
 import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
 import { EntityState } from "../Data/EntityState";
 import { RelationEntry } from "../Data/RelationEntry";
+import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -69,7 +70,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
-            return "[" + identity + "]";
+            return "\"" + identity + "\"";
         else
             return identity;
     }
@@ -241,16 +242,22 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return this.enclose(entity.alias) + "." + this.enclose(column.columnName);
     }
-    protected getColumnSelectString(column: IColumnExpression) {
+    protected getColumnSelectString(column: IColumnExpression): string {
+        if (column instanceof EmbeddedColumnExpression) {
+            return column.selects.select(o => this.getColumnSelectString(o)).toArray().join(",");
+        }
         let result = this.getColumnDefinitionString(column);
         if (column instanceof ComputedColumnExpression) {
             result += " AS " + this.enclose(column.columnName);
         }
         return result;
     }
-    protected getColumnDefinitionString(column: IColumnExpression) {
+    protected getColumnDefinitionString(column: IColumnExpression): string {
         if (column instanceof ComputedColumnExpression) {
             return this.getOperandString(column.expression, true);
+        }
+        else if (column instanceof EmbeddedColumnExpression) {
+            return column.selects.select(o => this.getColumnDefinitionString(o)).toArray().join(",");
         }
         return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
@@ -632,9 +639,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     case "toExponential":
                     case "toFixed":
                     case "toPrecision":
-                    case "toString":
-                    case "valueOf":
                         break;
+                    case "toString":
+                        return `CAST(${this.getExpressionString(expression.objectOperand)} AS nvarchar(255))`;
+                    case "valueOf":
+                        return this.getExpressionString(expression.objectOperand);
 
                 }
                 break;
@@ -1583,8 +1592,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const isIdentityChange = !!(columnSchema as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as NumericColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
             || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as NumericColumnMetaData).size !== undefined && (oldColumnSchema as NumericColumnMetaData).size !== undefined && (columnSchema as NumericColumnMetaData).size !== (oldColumnSchema as NumericColumnMetaData).size)
-            || ((columnSchema as DecimalColumnMetaData).length !== undefined && (oldColumnSchema as DecimalColumnMetaData).length !== undefined && (columnSchema as DecimalColumnMetaData).length !== (oldColumnSchema as DecimalColumnMetaData).length)
+            || ((columnSchema as NumericColumnMetaData).length !== undefined && (oldColumnSchema as NumericColumnMetaData).length !== undefined && (columnSchema as NumericColumnMetaData).length !== (oldColumnSchema as NumericColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
             || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
 

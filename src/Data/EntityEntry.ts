@@ -5,9 +5,9 @@ import { EntityState } from "./EntityState";
 import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
 import { EntityMetaData } from "../MetaData";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { IRelationDataMetaData } from "../MetaData/Interface/IRelationDataMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { EmbeddedColumnMetaData } from "../MetaData";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public state: EntityState;
@@ -35,8 +35,8 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public getOriginalValue(prop: string) {
         return this.originalValues.get(prop);
     }
-    public onPropertyChanged(param: IChangeEventParam) {
-        if (this.dbSet.primaryKeys.contains(param.property as any)) {
+    public onPropertyChanged(param: IChangeEventParam<T>) {
+        if (this.dbSet.primaryKeys.contains(param.column)) {
             // primary key changed, update dbset entry dictionary.
             const oldKey = this.key;
             this.dbSet.updateEntryKey(this);
@@ -55,16 +55,22 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 }
             }
         }
+
+        if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
+            const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
+            new EmbeddedEntityEntry(embeddedDbSet, param.newValue, this);
+        }
+
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
-            const oriValue = this.originalValues.get(param.property);
+            const oriValue = this.originalValues.get(param.column.propertyName);
             if (oriValue === param.newValue) {
-                this.originalValues.delete(param.property);
+                this.originalValues.delete(param.column.propertyName);
                 if (this.originalValues.size <= 0) {
                     this.changeState(EntityState.Unchanged);
                 }
             }
             else if (oriValue === undefined && param.oldValue !== undefined) {
-                this.originalValues.set(param.property, param.oldValue);
+                this.originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
                     this.changeState(EntityState.Modified);
                 }
