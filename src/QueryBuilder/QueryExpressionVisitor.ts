@@ -33,6 +33,7 @@ import { InstantiationExpression } from "../ExpressionBuilder/Expression/Instant
 import { ComputedColumnMetaData, EmbeddedColumnMetaData } from "../MetaData";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
+import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
 
 interface IPRelation {
     name: string;
@@ -62,10 +63,20 @@ export class QueryExpressionVisitor {
             expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression))
             expression = expression.clone();
         switch (expression.constructor) {
-            case MemberAccessExpression:
-                return this.visitMember(expression as any, param);
             case MethodCallExpression:
-                return this.visitMethod(expression as any, param);
+            case MemberAccessExpression: {
+                const memberExpression = expression as IMemberOperatorExpression<any>;
+                memberExpression.objectOperand = this.visit(memberExpression.objectOperand, param);
+                if (memberExpression.objectOperand instanceof TernaryExpression) {
+                    const ternaryExp = memberExpression.objectOperand as TernaryExpression<any, any>;
+                    const trueOperand = memberExpression.clone();
+                    trueOperand.objectOperand = ternaryExp.trueResultOperand;
+                    const falseOperand = memberExpression.clone();
+                    falseOperand.objectOperand = ternaryExp.falseResultOperand;
+                    return new TernaryExpression(ternaryExp.logicalOperand, this.visit(trueOperand, param), this.visit(falseOperand, param));
+                }
+                return expression instanceof MemberAccessExpression ? this.visitMember(expression as any, param) : this.visitMethod(expression as any, param);
+            }
             case FunctionCallExpression:
                 return this.visitFunctionCall(expression as any, param);
             case InstantiationExpression:
@@ -99,10 +110,11 @@ export class QueryExpressionVisitor {
             case StrictEqualExpression:
             case StrictNotEqualExpression:
             case SubtractionExpression:
-            case MultiplicationExpression:
+            case MultiplicationExpression: {
                 return this.visitBinaryOperator(expression as any as IBinaryOperatorExpression, param);
+            }
             case TernaryExpression:
-                return this.visitTernaryOperator(expression as TernaryExpression<any>, param);
+                return this.visitTernaryOperator(expression as any, param);
             case ObjectValueExpression:
                 return this.visitObjectLiteral(expression as ObjectValueExpression<any>, param);
             case ArrayValueExpression:
@@ -130,7 +142,7 @@ export class QueryExpressionVisitor {
         return this.visit(expression.body, param);
     }
     protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand;
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
@@ -526,532 +538,519 @@ export class QueryExpressionVisitor {
         return selectColumns;
     }
     protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IQueryVisitParameter): IExpression {
-        const objectOperand = expression.objectOperand = this.visit(expression.objectOperand, param);
+        const objectOperand = expression.objectOperand;
 
         if (objectOperand instanceof SelectExpression) {
             let selectOperand = objectOperand as SelectExpression;
             switch (expression.methodName) {
                 case "select":
-                case "selectMany":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                case "selectMany": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        // clear includes coz select one return selected value without it's relations
-                        selectOperand.includes = [];
+                    // clear includes coz select one return selected value without it's relations
+                    selectOperand.includes = [];
 
-                        const parentRelation = objectOperand.parentRelation;
-                        const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "queryable" ? expression.methodName : "" };
-                        this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
-                        const selectExp = this.visit(selectorFn, visitParam);
-                        this.scopeParameters.remove(selectorFn.params[0].name);
-                        // todo recheck
-                        selectOperand = param.commandExpression = visitParam.commandExpression;
+                    const parentRelation = objectOperand.parentRelation;
+                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                    const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: param.scope === "queryable" ? expression.methodName : "" };
+                    this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                    const selectExp = this.visit(selectorFn, visitParam);
+                    this.scopeParameters.remove(selectorFn.params[0].name);
+                    // todo recheck
+                    selectOperand = param.commandExpression = visitParam.commandExpression;
 
-                        // 123
-                        if (expression.methodName === "select") {
-                            if (selectExp instanceof SelectExpression) {
-                                if (selectOperand instanceof GroupByExpression)
-                                    throw new Error(`groupBy did not support to many select result`);
-                                selectOperand = selectExp;
-                            }
-                            else if ((selectExp as EntityExpression).primaryColumns) {
-                                selectOperand = visitParam.commandExpression;
-                            }
-                            else if (selectExp instanceof ObjectValueExpression) {
-                                selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp);
-                                selectOperand.itemExpression = selectExp;
-                            }
-                            else if ((selectExp as IColumnExpression).entity) {
-                                const column = selectExp as IColumnExpression;
-                                selectOperand.itemExpression = column;
-                                selectOperand.selects = [column];
-                            }
-                            else {
-                                const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
-                                selectOperand.itemExpression = column;
-                                selectOperand.selects = [column];
-                            }
-                        }
-                        else {
-                            if (!(selectExp instanceof SelectExpression)) {
-                                throw new Error(`Queryable<${objectOperand.type}>.selectMany required selector with array or queryable or enumerable return value.`);
-                            }
+                    // 123
+                    if (expression.methodName === "select") {
+                        if (selectExp instanceof SelectExpression) {
+                            if (selectOperand instanceof GroupByExpression)
+                                throw new Error(`groupBy did not support to many select result`);
                             selectOperand = selectExp;
                         }
-
-                        if (parentRelation) {
-                            parentRelation.child = selectOperand;
-                            selectOperand.parentRelation = parentRelation;
-                        }
-                        else {
-                            param.commandExpression = selectOperand;
-                        }
-
-                        return selectOperand;
-                    }
-                case "where":
-                    {
-                        if (selectOperand instanceof GroupedExpression) {
-                            const clone = selectOperand.clone();
-                            clone.entity.alias = this.newAlias();
-                            clone.where = null;
-                            clone.joins = [];
-                            const map = new Map();
-                            for (const parentCol of selectOperand.entity.primaryColumns) {
-                                const childCol = clone.entity.columns.first(o => o.columnName === parentCol.columnName);
-                                map.set(parentCol, childCol);
-                            }
-                            param.commandExpression.addJoinRelation(clone, map, JoinType.LEFT);
-                            selectOperand = clone;
-                        }
-
-                        const predicateFn = expression.params[0] as FunctionExpression<TType, boolean>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "where" };
-                        this.scopeParameters.add(predicateFn.params[0].name, selectOperand.getVisitParam());
-                        const whereExp = this.visit(predicateFn, visitParam) as IExpression<boolean>;
-                        this.scopeParameters.remove(predicateFn.params[0].name);
-
-                        if (whereExp.type !== Boolean) {
-                            throw new Error(`Queryable<${objectOperand.type}>.where required predicate with boolean return value.`);
-                        }
-
-                        selectOperand.addWhere(whereExp);
-                        return selectOperand;
-                    }
-                case "orderBy":
-                    {
-                        const selectors = expression.params as ObjectValueExpression<any>[];
-                        const orders: IOrderExpression[] = [];
-                        for (const selector of selectors) {
-                            const selectorFn = selector.object.selector as FunctionExpression<TType, any>;
-                            const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression(OrderDirection.ASC);
-                            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
-                            this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
-                            const selectExp = this.visit(selectorFn, visitParam) as IColumnExpression;
-                            this.scopeParameters.remove(selectorFn.params[0].name);
-
-                            if (!isValueType(selectExp.type)) {
-                                throw new Error(`Queryable<${objectOperand.type}>.orderBy required select with basic type return value.`);
-                            }
-                            orders.push({
-                                column: selectExp,
-                                direction: direction.value
-                            });
-                        }
-                        if (orders.length > 0) {
-                            objectOperand.orders = [];
-                            objectOperand.addOrder(orders);
-                        }
-                        return objectOperand;
-                    }
-                case "groupBy":
-                    {
-                        // TODO: queryable end with group by. Orders.groupBy(o => o.OrderDate).toArray();
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        selectOperand.includes = [];
-                        const parentRelation = objectOperand.parentRelation;
-                        const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
-                        this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
-                        const selectExp = this.visit(selectorFn, visitParam);
-                        this.scopeParameters.remove(selectorFn.params[0].name);
-                        param.commandExpression = visitParam.commandExpression;
-
-                        // 123
-                        if (selectExp instanceof SelectExpression) {
-                            throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
-                        }
-
-                        let groupColumns: IColumnExpression[] = [];
-                        let key = selectExp;
-                        let selectColumns: IColumnExpression[] = [];
-                        if ((selectExp as IEntityExpression).primaryColumns) {
-                            const entityExp = selectExp as IEntityExpression;
-                            groupColumns.push(...(Array.from(entityExp.select.parentRelation.relations.keys())));
-                            // remove relation
-                            entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
-                            // add include
-                            selectOperand.addInclude("key", entityExp.select, entityExp.select.parentRelation.relations, "one");
+                        else if ((selectExp as EntityExpression).primaryColumns) {
+                            selectOperand = visitParam.commandExpression;
                         }
                         else if (selectExp instanceof ObjectValueExpression) {
-                            this.visitObjectGroup(selectOperand, selectExp, groupColumns, selectColumns, "key");
+                            selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp);
+                            selectOperand.itemExpression = selectExp;
                         }
                         else if ((selectExp as IColumnExpression).entity) {
-                            const column = (selectExp as IColumnExpression).clone();
-                            column.propertyName = "key";
-                            groupColumns.push(column);
-                            selectColumns.push(column);
-                            key = column;
+                            const column = selectExp as IColumnExpression;
+                            selectOperand.itemExpression = column;
+                            selectOperand.selects = [column];
+                        }
+                        else if (selectExp instanceof TernaryExpression) {
+                            // TODO
                         }
                         else {
-                            const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
-                            groupColumns.push(column);
-                            selectColumns.push(column);
-                            key = column;
+                            const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
+                            selectOperand.itemExpression = column;
+                            selectOperand.selects = [column];
                         }
-
-                        const groupByExp = new GroupByExpression(selectOperand, groupColumns, key, true);
-                        groupByExp.selects = selectColumns.slice(0);
-                        if (parentRelation) {
-                            parentRelation.child = groupByExp;
-                            groupByExp.parentRelation = parentRelation;
-                        }
-                        else {
-                            param.commandExpression = groupByExp;
-                        }
-                        return groupByExp;
                     }
-                case "skip":
-                case "take":
-                    {
+                    else {
+                        if (!(selectExp instanceof SelectExpression)) {
+                            throw new Error(`Queryable<${objectOperand.type}>.selectMany required selector with array or queryable or enumerable return value.`);
+                        }
+                        selectOperand = selectExp;
+                    }
+
+                    if (parentRelation) {
+                        parentRelation.child = selectOperand;
+                        selectOperand.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.commandExpression = selectOperand;
+                    }
+
+                    return selectOperand;
+                }
+                case "where": {
+                    if (selectOperand instanceof GroupedExpression) {
+                        const clone = selectOperand.clone();
+                        clone.entity.alias = this.newAlias();
+                        clone.where = null;
+                        clone.joins = [];
+                        const map = new Map();
+                        for (const parentCol of selectOperand.entity.primaryColumns) {
+                            const childCol = clone.entity.columns.first(o => o.columnName === parentCol.columnName);
+                            map.set(parentCol, childCol);
+                        }
+                        param.commandExpression.addJoinRelation(clone, map, JoinType.LEFT);
+                        selectOperand = clone;
+                    }
+
+                    const predicateFn = expression.params[0] as FunctionExpression<TType, boolean>;
+                    const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "where" };
+                    this.scopeParameters.add(predicateFn.params[0].name, selectOperand.getVisitParam());
+                    const whereExp = this.visit(predicateFn, visitParam) as IExpression<boolean>;
+                    this.scopeParameters.remove(predicateFn.params[0].name);
+
+                    if (whereExp.type !== Boolean) {
+                        throw new Error(`Queryable<${objectOperand.type}>.where required predicate with boolean return value.`);
+                    }
+
+                    selectOperand.addWhere(whereExp);
+                    return selectOperand;
+                }
+                case "orderBy": {
+                    const selectors = expression.params as ObjectValueExpression<any>[];
+                    const orders: IOrderExpression[] = [];
+                    for (const selector of selectors) {
+                        const selectorFn = selector.object.selector as FunctionExpression<TType, any>;
+                        const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression(OrderDirection.ASC);
+                        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
+                        this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                        const selectExp = this.visit(selectorFn, visitParam) as IColumnExpression;
+                        this.scopeParameters.remove(selectorFn.params[0].name);
+
+                        if (!isValueType(selectExp.type)) {
+                            throw new Error(`Queryable<${objectOperand.type}>.orderBy required select with basic type return value.`);
+                        }
+                        orders.push({
+                            column: selectExp,
+                            direction: direction.value
+                        });
+                    }
+                    if (orders.length > 0) {
+                        objectOperand.orders = [];
+                        objectOperand.addOrder(orders);
+                    }
+                    return objectOperand;
+                }
+                case "groupBy": {
+                    // TODO: queryable end with group by. Orders.groupBy(o => o.OrderDate).toArray();
+                    if (param.scope === "include")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
-                    }
-                case "distinct":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        objectOperand.distinct = true;
-                        objectOperand.isAggregate = param.scope === "queryable";
-                        return objectOperand;
-                    }
-                case "include":
-                    {
-                        for (const paramFn of expression.params) {
-                            const selectorFn = paramFn as FunctionExpression<TType, TResult>;
-                            this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
-                            let visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "include" };
-                            this.visit(selectorFn, visitParam);
-                            this.scopeParameters.remove(selectorFn.params[0].name);
-                        }
-                        return objectOperand;
-                    }
-                case "toArray":
-                    {
-                        return objectOperand;
-                    }
-                case "count":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                    selectOperand.includes = [];
+                    const parentRelation = objectOperand.parentRelation;
+                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                    const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
+                    this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                    const selectExp = this.visit(selectorFn, visitParam);
+                    this.scopeParameters.remove(selectorFn.params[0].name);
+                    param.commandExpression = visitParam.commandExpression;
 
-                        const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
-                        if (param.scope === "queryable") {
-                            // call from queryable
-                            const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
-                            objectOperand.selects = [column];
-                            objectOperand.itemExpression = column;
-                            objectOperand.isAggregate = true;
-                            return objectOperand;
-                        }
-                        else if (selectOperand instanceof GroupedExpression) {
-                            return countExp;
-                        }
-                        else {
-                            // any is used on related entity. change query to groupby.
-                            const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
-                            const groupBy = [];
-                            const keyObject: any = {};
-                            for (const [, entityCol] of selectOperand.parentRelation.relations) {
-                                groupBy.push(entityCol);
-                                keyObject[entityCol.propertyName] = entityCol;
-                            }
-                            const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                            const flagColumn = column;
-                            groupExp.selects.push(flagColumn);
-                            return flagColumn;
-                        }
+                    // 123
+                    if (selectExp instanceof SelectExpression) {
+                        throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
                     }
+
+                    let groupColumns: IColumnExpression[] = [];
+                    let key = selectExp;
+                    let selectColumns: IColumnExpression[] = [];
+                    if ((selectExp as IEntityExpression).primaryColumns) {
+                        const entityExp = selectExp as IEntityExpression;
+                        groupColumns.push(...(Array.from(entityExp.select.parentRelation.relations.keys())));
+                        // remove relation
+                        entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
+                        // add include
+                        selectOperand.addInclude("key", entityExp.select, entityExp.select.parentRelation.relations, "one");
+                    }
+                    else if (selectExp instanceof ObjectValueExpression) {
+                        this.visitObjectGroup(selectOperand, selectExp, groupColumns, selectColumns, "key");
+                    }
+                    else if ((selectExp as IColumnExpression).entity) {
+                        const column = (selectExp as IColumnExpression).clone();
+                        column.propertyName = "key";
+                        groupColumns.push(column);
+                        selectColumns.push(column);
+                        key = column;
+                    }
+                    else {
+                        const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
+                        groupColumns.push(column);
+                        selectColumns.push(column);
+                        key = column;
+                    }
+
+                    const groupByExp = new GroupByExpression(selectOperand, groupColumns, key, true);
+                    groupByExp.selects = selectColumns.slice(0);
+                    if (parentRelation) {
+                        parentRelation.child = groupByExp;
+                        groupByExp.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.commandExpression = groupByExp;
+                    }
+                    return groupByExp;
+                }
+                case "skip":
+                case "take": {
+                    throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                }
+                case "distinct": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    objectOperand.distinct = true;
+                    objectOperand.isAggregate = param.scope === "queryable";
+                    return objectOperand;
+                }
+                case "include": {
+                    for (const paramFn of expression.params) {
+                        const selectorFn = paramFn as FunctionExpression<TType, TResult>;
+                        this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                        let visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "include" };
+                        this.visit(selectorFn, visitParam);
+                        this.scopeParameters.remove(selectorFn.params[0].name);
+                    }
+                    return objectOperand;
+                }
+                case "toArray": {
+                    return objectOperand;
+                }
+                case "count": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
+                    if (param.scope === "queryable") {
+                        // call from queryable
+                        const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.itemExpression = column;
+                        objectOperand.isAggregate = true;
+                        return objectOperand;
+                    }
+                    else if (selectOperand instanceof GroupedExpression) {
+                        return countExp;
+                    }
+                    else {
+                        // any is used on related entity. change query to groupby.
+                        const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
+                        const groupBy = [];
+                        const keyObject: any = {};
+                        for (const [, entityCol] of selectOperand.parentRelation.relations) {
+                            groupBy.push(entityCol);
+                            keyObject[entityCol.propertyName] = entityCol;
+                        }
+                        const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                        const flagColumn = column;
+                        groupExp.selects.push(flagColumn);
+                        return flagColumn;
+                    }
+                }
                 case "sum":
                 case "avg":
                 case "max":
-                case "min":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                case "min": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        if (expression.params.length > 0) {
-                            const selectorFn = expression.params[0] as FunctionExpression;
-                            this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
-                            const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
-                            const selectExpression: SelectExpression = this.visit(new MethodCallExpression(objectOperand, "select", [selectorFn]), visitParam) as any;
-                            this.scopeParameters.remove(selectorFn.params[0].name);
-                            param.commandExpression = visitParam.commandExpression;
+                    if (expression.params.length > 0) {
+                        const selectorFn = expression.params[0] as FunctionExpression;
+                        this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
+                        const selectExpression: SelectExpression = this.visit(new MethodCallExpression(objectOperand, "select", [selectorFn]), visitParam) as any;
+                        this.scopeParameters.remove(selectorFn.params[0].name);
+                        param.commandExpression = visitParam.commandExpression;
 
-                            if (!isValueType(selectExpression.itemType))
-                                throw new Error(`Queryable<${selectOperand.type.name}> required select with basic type return value.`);
+                        if (!isValueType(selectExpression.itemType))
+                            throw new Error(`Queryable<${selectOperand.type.name}> required select with basic type return value.`);
 
-                            selectOperand = selectExpression;
-                        }
-
-                        const aggregateExp = new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.select(o => {
-                            if (o instanceof ComputedColumnExpression)
-                                return o.expression;
-                            return o;
-                        }).toArray(), Number);
-                        if (param.scope === "queryable") {
-                            // call from queryable
-                            const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
-                            objectOperand.selects = [column];
-                            objectOperand.isAggregate = true;
-                            return objectOperand;
-                        }
-                        else if (selectOperand instanceof GroupedExpression) {
-                            return aggregateExp;
-                        }
-                        else {
-                            // any is used on related entity. change query to groupby.
-                            const groupBy = [];
-                            const keyObject: any = {};
-                            for (const [, entityCol] of selectOperand.parentRelation.relations) {
-                                groupBy.push(entityCol);
-                                keyObject[entityCol.propertyName] = entityCol;
-                            }
-                            const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                            const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
-                            groupExp.selects.push(column);
-                            return column;
-                        }
+                        selectOperand = selectExpression;
                     }
+
+                    const aggregateExp = new MethodCallExpression(selectOperand, expression.methodName, selectOperand.selects.select(o => {
+                        if (o instanceof ComputedColumnExpression)
+                            return o.expression;
+                        return o;
+                    }).toArray(), Number);
+                    if (param.scope === "queryable") {
+                        // call from queryable
+                        const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.isAggregate = true;
+                        return objectOperand;
+                    }
+                    else if (selectOperand instanceof GroupedExpression) {
+                        return aggregateExp;
+                    }
+                    else {
+                        // any is used on related entity. change query to groupby.
+                        const groupBy = [];
+                        const keyObject: any = {};
+                        for (const [, entityCol] of selectOperand.parentRelation.relations) {
+                            groupBy.push(entityCol);
+                            keyObject[entityCol.propertyName] = entityCol;
+                        }
+                        const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                        const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
+                        groupExp.selects.push(column);
+                        return column;
+                    }
+                }
                 case "all":
-                case "any":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                case "any": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const isAny = expression.methodName === "any";
-                        if (expression.params.length > 0) {
-                            let predicateFn = expression.params[0] as FunctionExpression;
-                            if (!isAny)
-                                predicateFn.body = new NegationExpression(predicateFn.body);
-                            const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
-                            this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
+                    const isAny = expression.methodName === "any";
+                    if (expression.params.length > 0) {
+                        let predicateFn = expression.params[0] as FunctionExpression;
+                        if (!isAny)
+                            predicateFn.body = new NegationExpression(predicateFn.body);
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
+                        this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
+                    }
+                    const anyExp = new ValueExpression(isAny);
+                    if (param.scope === "queryable") {
+                        // call from queryable
+                        const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.paging.take = 1;
+                        objectOperand.isAggregate = true;
+                        return objectOperand;
+                    }
+                    else if (selectOperand instanceof GroupedExpression) {
+                        return anyExp;
+                    }
+                    else {
+                        // any is used on related entity. change query to groupby.
+                        const groupBy = [];
+                        const keyObject: any = {};
+                        for (const [, entityCol] of selectOperand.parentRelation.relations) {
+                            groupBy.push(entityCol);
+                            keyObject[entityCol.propertyName] = entityCol;
                         }
-                        const anyExp = new ValueExpression(isAny);
-                        if (param.scope === "queryable") {
-                            // call from queryable
-                            const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
-                            objectOperand.selects = [column];
-                            objectOperand.paging.take = 1;
-                            objectOperand.isAggregate = true;
-                            return objectOperand;
-                        }
-                        else if (selectOperand instanceof GroupedExpression) {
-                            return anyExp;
-                        }
-                        else {
-                            // any is used on related entity. change query to groupby.
-                            const groupBy = [];
-                            const keyObject: any = {};
-                            for (const [, entityCol] of selectOperand.parentRelation.relations) {
-                                groupBy.push(entityCol);
-                                keyObject[entityCol.propertyName] = entityCol;
-                            }
-                            const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                            const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
-                            groupExp.selects.push(column);
-                            return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
+                        const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
+                        const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
+                        groupExp.selects.push(column);
+                        return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
+                    }
+                }
+                case "contains": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const item = expression.params[0];
+                    let andExp: IExpression<boolean>;
+                    if (objectOperand.itemType === objectOperand.entity.type) {
+                        for (const primaryCol of objectOperand.entity.primaryColumns) {
+                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
+                            andExp = andExp ? new AndExpression(andExp, d) : d;
                         }
                     }
-                case "contains":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        const item = expression.params[0];
-                        let andExp: IExpression<boolean>;
-                        if (objectOperand.itemType === objectOperand.entity.type) {
-                            for (const primaryCol of objectOperand.entity.primaryColumns) {
-                                const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
-                                andExp = andExp ? new AndExpression(andExp, d) : d;
-                            }
-                        }
-                        else {
-                            andExp = new EqualExpression(objectOperand.selects.first(), item);
-                        }
-                        if (param.scope === "queryable") {
-                            objectOperand.addWhere(andExp);
-                            const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
-                            objectOperand.selects = [column];
-                            objectOperand.paging.take = 1;
-                            objectOperand.isAggregate = true;
-                            return objectOperand;
-                        }
-                        return andExp;
+                    else {
+                        andExp = new EqualExpression(objectOperand.selects.first(), item);
                     }
-                case "first":
-                    {
-                        if (param.scope !== "queryable")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        if (expression.params.length > 0) {
-                            const predicateFn = expression.params[0] as FunctionExpression;
-                            const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
-                            this.visit(new MethodCallExpression(selectOperand, "where" as any, [predicateFn]), visitParam);
-                            param.commandExpression = visitParam.commandExpression;
-                        }
-                        selectOperand.paging.take = 1;
-                        return selectOperand.entity;
+                    if (param.scope === "queryable") {
+                        objectOperand.addWhere(andExp);
+                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.paging.take = 1;
+                        objectOperand.isAggregate = true;
+                        return objectOperand;
                     }
+                    return andExp;
+                }
+                case "first": {
+                    if (param.scope !== "queryable")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    if (expression.params.length > 0) {
+                        const predicateFn = expression.params[0] as FunctionExpression;
+                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
+                        this.visit(new MethodCallExpression(selectOperand, "where" as any, [predicateFn]), visitParam);
+                        param.commandExpression = visitParam.commandExpression;
+                    }
+                    selectOperand.paging.take = 1;
+                    return selectOperand.entity;
+                }
                 case "innerJoin":
                 case "leftJoin":
                 case "rightJoin":
-                case "fullJoin":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                case "fullJoin": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const parentRelation = objectOperand.parentRelation;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "join" };
-                        const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
-                        const childVisitParam: IQueryVisitParameter = { commandExpression: childSelectOperand, scope: "join" };
+                    const parentRelation = objectOperand.parentRelation;
+                    const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "join" };
+                    const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
+                    const childVisitParam: IQueryVisitParameter = { commandExpression: childSelectOperand, scope: "join" };
 
-                        const parentKeySelector = expression.params[1] as FunctionExpression;
-                        this.scopeParameters.add(parentKeySelector.params[0].name, selectOperand.getVisitParam());
-                        let parentKey = this.visit(parentKeySelector, visitParam);
-                        this.scopeParameters.remove(parentKeySelector.params[0].name);
+                    const parentKeySelector = expression.params[1] as FunctionExpression;
+                    this.scopeParameters.add(parentKeySelector.params[0].name, selectOperand.getVisitParam());
+                    let parentKey = this.visit(parentKeySelector, visitParam);
+                    this.scopeParameters.remove(parentKeySelector.params[0].name);
 
-                        const childKeySelector = expression.params[2] as FunctionExpression;
-                        this.scopeParameters.add(childKeySelector.params[0].name, childSelectOperand.getVisitParam());
-                        let childKey = this.visit(childKeySelector, childVisitParam);
-                        this.scopeParameters.remove(childKeySelector.params[0].name);
+                    const childKeySelector = expression.params[2] as FunctionExpression;
+                    this.scopeParameters.add(childKeySelector.params[0].name, childSelectOperand.getVisitParam());
+                    let childKey = this.visit(childKeySelector, childVisitParam);
+                    this.scopeParameters.remove(childKeySelector.params[0].name);
 
-                        let joinRelationMap = new Map<IColumnExpression<any, any>, IColumnExpression<any, any>>();
+                    let joinRelationMap = new Map<IColumnExpression<any, any>, IColumnExpression<any, any>>();
 
-                        if (parentKey.type !== childKey.type) {
-                            throw new Error(`Key type not match`);
-                        }
-                        else if ((parentKey as IEntityExpression).primaryColumns) {
-                            const parentEntity = parentKey as IEntityExpression;
-                            const childEntity = childKey as IEntityExpression;
-                            for (const parentCol of parentEntity.primaryColumns) {
-                                const childCol = childEntity.primaryColumns.first((c) => c.propertyName === parentCol.propertyName);
-                                joinRelationMap.set(parentCol, childCol);
-                            }
-                        }
-                        else {
-                            if (!(childKey as IColumnExpression).entity)
-                                childKey = new ComputedColumnExpression(childSelectOperand.entity, childKey, this.newAlias());
-                            if (!(parentKey as IColumnExpression).entity)
-                                parentKey = new ComputedColumnExpression(selectOperand.entity, parentKey, this.newAlias());
-                            joinRelationMap.set(parentKey as any, childKey as any);
-                        }
-
-                        let jointType: JoinType;
-                        switch (expression.methodName) {
-                            case "leftJoin":
-                                jointType = JoinType.LEFT;
-                                break;
-                            case "rightJoin":
-                                jointType = JoinType.RIGHT;
-                                break;
-                            case "fullJoin":
-                                jointType = JoinType.FULL;
-                                break;
-                            default:
-                                jointType = JoinType.INNER;
-                                break;
-                        }
-
-                        selectOperand.addJoinRelation(childSelectOperand, joinRelationMap, jointType);
-
-                        const resultVisitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "join" };
-                        const resultSelector = expression.params[3] as FunctionExpression;
-                        this.scopeParameters.add(resultSelector.params[1].name, childSelectOperand.getVisitParam());
-                        this.visit(new MethodCallExpression(selectOperand, "select", [resultSelector]), resultVisitParam);
-                        this.scopeParameters.remove(resultSelector.params[1].name);
-                        if (parentRelation) {
-                            parentRelation.child = selectOperand;
-                            selectOperand.parentRelation = parentRelation;
-                        }
-                        else {
-                            param.commandExpression = selectOperand;
-                        }
-
-                        return selectOperand;
+                    if (parentKey.type !== childKey.type) {
+                        throw new Error(`Key type not match`);
                     }
+                    else if ((parentKey as IEntityExpression).primaryColumns) {
+                        const parentEntity = parentKey as IEntityExpression;
+                        const childEntity = childKey as IEntityExpression;
+                        for (const parentCol of parentEntity.primaryColumns) {
+                            const childCol = childEntity.primaryColumns.first((c) => c.propertyName === parentCol.propertyName);
+                            joinRelationMap.set(parentCol, childCol);
+                        }
+                    }
+                    else {
+                        if (!(childKey as IColumnExpression).entity)
+                            childKey = new ComputedColumnExpression(childSelectOperand.entity, childKey, this.newAlias());
+                        if (!(parentKey as IColumnExpression).entity)
+                            parentKey = new ComputedColumnExpression(selectOperand.entity, parentKey, this.newAlias());
+                        joinRelationMap.set(parentKey as any, childKey as any);
+                    }
+
+                    let jointType: JoinType;
+                    switch (expression.methodName) {
+                        case "leftJoin":
+                            jointType = JoinType.LEFT;
+                            break;
+                        case "rightJoin":
+                            jointType = JoinType.RIGHT;
+                            break;
+                        case "fullJoin":
+                            jointType = JoinType.FULL;
+                            break;
+                        default:
+                            jointType = JoinType.INNER;
+                            break;
+                    }
+
+                    selectOperand.addJoinRelation(childSelectOperand, joinRelationMap, jointType);
+
+                    const resultVisitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: "join" };
+                    const resultSelector = expression.params[3] as FunctionExpression;
+                    this.scopeParameters.add(resultSelector.params[1].name, childSelectOperand.getVisitParam());
+                    this.visit(new MethodCallExpression(selectOperand, "select", [resultSelector]), resultVisitParam);
+                    this.scopeParameters.remove(resultSelector.params[1].name);
+                    if (parentRelation) {
+                        parentRelation.child = selectOperand;
+                        selectOperand.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.commandExpression = selectOperand;
+                    }
+
+                    return selectOperand;
+                }
                 case "union":
                 case "intersect":
-                case "except":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                case "except": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                        const parentRelation = objectOperand.parentRelation;
-                        const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
-                        const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
-                        param.commandExpression = visitParam.commandExpression;
+                    const parentRelation = objectOperand.parentRelation;
+                    const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
+                    const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
+                    param.commandExpression = visitParam.commandExpression;
 
-                        let entityExp: IEntityExpression;
-                        switch (expression.methodName) {
-                            case "union":
-                                const isUnionAll = expression.params.length <= 1 ? false : expression.params[1].execute();
-                                entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAll);
-                                break;
-                            case "intersect":
-                                entityExp = new IntersectExpression(selectOperand, childSelectOperand);
-                                break;
-                            case "except":
-                                entityExp = new ExceptExpression(selectOperand, childSelectOperand);
-                                break;
-                        }
-                        selectOperand = new SelectExpression(entityExp);
-                        if (parentRelation) {
-                            parentRelation.child = selectOperand;
-                            selectOperand.parentRelation = parentRelation;
-                        }
-                        else {
-                            param.commandExpression = selectOperand;
-                        }
-                        return selectOperand;
+                    let entityExp: IEntityExpression;
+                    switch (expression.methodName) {
+                        case "union":
+                            const isUnionAll = expression.params.length <= 1 ? false : expression.params[1].execute();
+                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAll);
+                            break;
+                        case "intersect":
+                            entityExp = new IntersectExpression(selectOperand, childSelectOperand);
+                            break;
+                        case "except":
+                            entityExp = new ExceptExpression(selectOperand, childSelectOperand);
+                            break;
                     }
-                case "pivot":
-                    {
-                        if (param.scope === "include")
-                            throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                        const parentRelation = objectOperand.parentRelation;
-
-                        const dimensions = expression.params[0] as FunctionExpression<TType, any>;
-                        const metrics = expression.params[1] as FunctionExpression<TType, any>;
-
-                        // groupby
-                        let visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
-                        const groupExp: GroupByExpression = this.visit(new MethodCallExpression(objectOperand, "groupBy", [dimensions]), visitParam) as any;
-                        param.commandExpression = visitParam.commandExpression;
-
-                        const dObject = (dimensions.body as ObjectValueExpression<any>).object;
-                        const mObject = (metrics.body as ObjectValueExpression<any>).object;
-                        const dmObject: { [key: string]: IExpression } = {};
-                        for (const prop in dObject)
-                            dmObject[prop] = dObject[prop];
-                        for (const prop in mObject)
-                            dmObject[prop] = dObject[prop];
-
-                        // select
-                        const selectorFn = new FunctionExpression(new ObjectValueExpression(dmObject), metrics.params);
-                        this.scopeParameters.add(dimensions.params[0].name, groupExp.key);
-                        this.scopeParameters.add(selectorFn.params[0].name, groupExp.getVisitParam());
-                        visitParam = { commandExpression: groupExp, scope: expression.methodName };
-                        const selectExpression: SelectExpression = this.visit(new MethodCallExpression(groupExp, "select", [selectorFn]), visitParam) as any;
-                        this.scopeParameters.remove(selectorFn.params[0].name);
-                        this.scopeParameters.remove(dimensions.params[0].name);
-                        param.commandExpression = visitParam.commandExpression;
-                        selectOperand = selectExpression;
-
-                        if (parentRelation) {
-                            parentRelation.child = selectOperand;
-                            selectOperand.parentRelation = parentRelation;
-                        }
-                        else {
-                            param.commandExpression = selectOperand;
-                        }
-                        return selectOperand;
+                    selectOperand = new SelectExpression(entityExp);
+                    if (parentRelation) {
+                        parentRelation.child = selectOperand;
+                        selectOperand.parentRelation = parentRelation;
                     }
+                    else {
+                        param.commandExpression = selectOperand;
+                    }
+                    return selectOperand;
+                }
+                case "pivot": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const parentRelation = objectOperand.parentRelation;
+
+                    const dimensions = expression.params[0] as FunctionExpression<TType, any>;
+                    const metrics = expression.params[1] as FunctionExpression<TType, any>;
+
+                    // groupby
+                    let visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: expression.methodName };
+                    const groupExp: GroupByExpression = this.visit(new MethodCallExpression(objectOperand, "groupBy", [dimensions]), visitParam) as any;
+                    param.commandExpression = visitParam.commandExpression;
+
+                    const dObject = (dimensions.body as ObjectValueExpression<any>).object;
+                    const mObject = (metrics.body as ObjectValueExpression<any>).object;
+                    const dmObject: { [key: string]: IExpression } = {};
+                    for (const prop in dObject)
+                        dmObject[prop] = dObject[prop];
+                    for (const prop in mObject)
+                        dmObject[prop] = dObject[prop];
+
+                    // select
+                    const selectorFn = new FunctionExpression(new ObjectValueExpression(dmObject), metrics.params);
+                    this.scopeParameters.add(dimensions.params[0].name, groupExp.key);
+                    this.scopeParameters.add(selectorFn.params[0].name, groupExp.getVisitParam());
+                    visitParam = { commandExpression: groupExp, scope: expression.methodName };
+                    const selectExpression: SelectExpression = this.visit(new MethodCallExpression(groupExp, "select", [selectorFn]), visitParam) as any;
+                    this.scopeParameters.remove(selectorFn.params[0].name);
+                    this.scopeParameters.remove(dimensions.params[0].name);
+                    param.commandExpression = visitParam.commandExpression;
+                    selectOperand = selectExpression;
+
+                    if (parentRelation) {
+                        parentRelation.child = selectOperand;
+                        selectOperand.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.commandExpression = selectOperand;
+                    }
+                    return selectOperand;
+                }
                 default:
                     throw new Error(`${expression.methodName} not supported on expression`);
             }
@@ -1184,10 +1183,36 @@ export class QueryExpressionVisitor {
     protected visitBinaryOperator(expression: IBinaryOperatorExpression, param: IQueryVisitParameter): IExpression {
         expression.leftOperand = this.visit(expression.leftOperand, param);
         expression.rightOperand = this.visit(expression.rightOperand, param);
+
+        if (expression.leftOperand instanceof TernaryExpression) {
+            const ternaryExp = expression.leftOperand as TernaryExpression;
+            const falseOperand = expression.clone();
+            falseOperand.leftOperand = ternaryExp.falseResultOperand;
+            const trueOperand = expression.clone();
+            trueOperand.leftOperand = ternaryExp.trueResultOperand;
+            return new TernaryExpression(ternaryExp.logicalOperand, this.visit(trueOperand, param), this.visit(falseOperand, param));
+        }
+        else if (expression.rightOperand instanceof TernaryExpression) {
+            const ternaryExp = expression.rightOperand as TernaryExpression;
+            const falseOperand = expression.clone();
+            falseOperand.rightOperand = ternaryExp.falseResultOperand;
+            const trueOperand = expression.clone();
+            trueOperand.rightOperand = ternaryExp.trueResultOperand;
+            return new TernaryExpression(ternaryExp.logicalOperand, this.visit(trueOperand, param), this.visit(falseOperand, param));
+        }
+
         return expression;
     }
     protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: IQueryVisitParameter): IExpression {
         expression.operand = this.visit(expression.operand, param);
+        if (expression.operand instanceof TernaryExpression) {
+            const ternaryExp = expression.operand as TernaryExpression;
+            const falseOperand = expression.clone();
+            falseOperand.operand = ternaryExp.falseResultOperand;
+            const trueOperand = expression.clone();
+            trueOperand.operand = ternaryExp.trueResultOperand;
+            return new TernaryExpression(ternaryExp.logicalOperand, trueOperand, falseOperand);
+        }
         return expression;
     }
     protected visitTernaryOperator(expression: TernaryExpression<any>, param: IQueryVisitParameter): IExpression {
