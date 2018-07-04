@@ -14,7 +14,7 @@ export interface IRelationMetaData<TSource = any, TTarget = any> {
     source: IEntityMetaData<TSource>;
     target: IEntityMetaData<TTarget>;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
-    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
+    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData>;
     updateOption?: ReferenceOption;
     deleteOption?: ReferenceOption;
     nullable?: boolean;

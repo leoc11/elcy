@@ -291,7 +291,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract columnTypeDefaults: Map<ColumnType, IColumnTypeDefaults>;
     public abstract columnTypeMap: Map<ColumnTypeMapKey, ColumnType>;
     public abstract valueTypeMap: Map<GenericType, ColumnType>;
-    protected getColumnType<T>(column: IColumnMetaData<T> | IColumnExpression<T> | ValueType): string {
+    public getColumnType<T>(column: IColumnMetaData<T> | IColumnExpression<T> | ValueType): string {
         if (column instanceof ColumnExpression) {
             const columnExp = column as ColumnExpression;
             if (columnExp.columnType) {
@@ -1099,7 +1099,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
         const results: IQueryCommand[] = [];
-        
+
         const columns = entityMetaData.columns;
         const relations = entityMetaData.relations
             .where(o => !o.nullable && !o.isMaster && o.relationType === "one");
@@ -1259,7 +1259,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return result;
         }).toArray();
     }
-    public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>): IQueryCommand[] {
+    public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>, forceHardDelete?: boolean): IQueryCommand[] {
         let results: IQueryCommand[] = [];
         if (entries.length <= 0)
             return null;
@@ -1276,7 +1276,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const condition = `${primaryCol.propertyName} IN (${primaryValues})`;
             deleteExp.addWhere(new SqlExpression<boolean>(Boolean, condition));
 
-            return this.deleteQueries(deleteExp, parameters);
+            return this.deleteQueries(deleteExp, parameters, forceHardDelete);
         }
         else {
             const tempTableName = "#" + this.newAlias();

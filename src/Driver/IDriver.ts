@@ -1,10 +1,10 @@
-import { IQueryResult } from "../QueryBuilder/QueryResult";
+import { IConnection } from "../Connection/IConnection";
+import { DbType } from "../Common/Type";
 
-export interface IDriver {
+export interface IDriver<T extends DbType> {
+    dbType: T;
+    allowPooling: boolean;
+    getConnection(): Promise<IConnection>;
     database: string;
     schema?: string;
-    executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    startTransaction(): Promise<any>;
-    commitTransaction(): Promise<any>;
-    rollbackTransaction(): Promise<any>;
 }

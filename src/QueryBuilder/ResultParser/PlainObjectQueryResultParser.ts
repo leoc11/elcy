@@ -14,7 +14,6 @@ import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
-import { EmbeddedEntityEntry } from "../../Data/EmbeddedEntityEntry";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;

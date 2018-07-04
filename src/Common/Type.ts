@@ -4,6 +4,7 @@ export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type ValueType = number | string | Date | TimeSpan;
+export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
 export type RelationshipType = "one" | "many";
 export type CompleteRelationshipType = "one-one" | "one-many" | "many-one" | "many-many";
 export const ClassBase = Object.getPrototypeOf(Function);
@@ -29,7 +30,7 @@ export enum JoinType {
     LEFT = "LEFT"
 }
 export type ReferenceOption = "NO ACTION" | "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";
-
+export type IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" | "SNAPSHOT";
 export enum EventListenerType {
     /**
      * Run after entity completely loaded from database.

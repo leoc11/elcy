@@ -17,7 +17,7 @@ export class OrderDetail {
     public ProductId: string;
     @StringColumn({ columnType: "nvarchar", columnName: "ProductName" })
     public name: string;
-    @DecimalColumn({ columnType: "float", columnName: "Quantity" })
+    @DecimalColumn({ columnType: "decimal", columnName: "Quantity" })
     public quantity: number;
     @DateColumn()
     public CreatedDate: Date;

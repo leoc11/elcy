@@ -50,18 +50,21 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
             }
         };
         const stack: IRange[] = [];
-        stack.push({ first: 0, last: array.length - 1 });
-        while (stack.length > 0) {
-            const currentRange = stack.pop() as IRange;
-            if (currentRange.last - currentRange.first === 0) {
-                const value = array[index++];
-                result.push(value);
-                yield value;
-            }
-            else {
-                const pivotIndex = partition(array, currentRange.first, currentRange.last);
-                stack.push({ first: pivotIndex + 1, last: currentRange.last });
-                stack.push({ first: currentRange.first, last: pivotIndex });
+
+        if (array.length > 0) {
+            stack.push({ first: 0, last: array.length - 1 });
+            while (stack.length > 0) {
+                const currentRange = stack.pop() as IRange;
+                if (currentRange.last - currentRange.first === 0) {
+                    const value = array[index++];
+                    result.push(value);
+                    yield value;
+                }
+                else {
+                    const pivotIndex = partition(array, currentRange.first, currentRange.last);
+                    stack.push({ first: pivotIndex + 1, last: currentRange.last });
+                    stack.push({ first: currentRange.first, last: pivotIndex });
+                }
             }
         }
 

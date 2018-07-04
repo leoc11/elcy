@@ -1,4 +1,4 @@
-import { IObjectType, OrderDirection } from "../Common/Type";
+import { IObjectType, OrderDirection, GenericType, DbType, IsolationLevel } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -20,16 +20,20 @@ import { RelationEntry } from "./RelationEntry";
 import { NumericColumnMetaData } from "../MetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+import { isValue } from "../Helper/Util";
+import { ISaveChangesOption } from "../QueryBuilder/Interface/ISelectQueryOption";
+import { IConnectionManager } from "../Connection/IConnectionManager";
+import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
+import { IConnection } from "../Connection/IConnection";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
-export abstract class DbContext implements IDBEventListener<any> {
+const connectionManagerKey = Symbol("connectionManagerKey");
+export abstract class DbContext<T extends DbType> implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly schemaBuilder: IObjectType<SchemaBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
     public deferredQueries: DeferredQuery[] = [];
-    public get database() {
-        return this.driver.database;
-    }
+    public dbType: T;
     public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
     private _queryCacheManager: IQueryCacheManager;
     protected get queryCacheManager() {
@@ -38,6 +42,39 @@ export abstract class DbContext implements IDBEventListener<any> {
 
         return this._queryCacheManager;
     }
+    private _connectionManager: IConnectionManager;
+    protected get connectionManager() {
+        if (!this._connectionManager) {
+            this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
+            if (!this._connectionManager) {
+                const val = this.factory();
+                if ((val as IConnectionManager).release) {
+                    this._connectionManager = val as IConnectionManager;
+                }
+                else {
+                    const driver = val as IDriver<T>;
+                    this._connectionManager = new DefaultConnectionManager(driver);
+                }
+                Reflect.defineMetadata(connectionManagerKey, this._connectionManager, this.constructor);
+            }
+        }
+
+        return this._connectionManager;
+    }
+    private connection?: IConnection;
+    protected async getConnection() {
+        const con = this.connection ? this.connection : await this.connectionManager.getConnection();
+        if (!con.isOpen)
+            con.open();
+        return con;
+    }
+    public async closeConnection() {
+        if (this.connection && !this.connection.inTransaction) {
+            const con = this.connection;
+            this.connection = null;
+            await con.close();
+        }
+    }
     public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
         return this.queryCacheManager.get<T>(this.constructor as any, key);
     }
@@ -45,7 +82,9 @@ export abstract class DbContext implements IDBEventListener<any> {
         return this.queryCacheManager.set<T>(this.constructor as any, key, queryCommands, queryParser, parameterBuilder);
     }
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
-    constructor(protected readonly driver: IDriver) {
+    constructor(driverFactory: () => IDriver<T>);
+    constructor(connectionManagerFactory: () => IConnectionManager);
+    constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
         this.relationEntries = {
             add: new Map(),
             delete: new Map()
@@ -249,33 +288,47 @@ export abstract class DbContext implements IDBEventListener<any> {
         }
     }
     public async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]> {
-        return await this.driver.executeQuery(query, parameters);
+        const con = await this.getConnection();
+        const result = await con.executeQuery(query, parameters);
+        await con.close();
+        return result;
     }
     public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
         const mergedCommands = this.mergeQueries(queryCommands);
         let results: IQueryResult[] = [];
+        const con = await this.getConnection();
         for (const query of mergedCommands) {
             if (parameters)
                 query.parameters = query.parameters ? new Map([...query.parameters, ...parameters]) : parameters;
 
-            const res = await this.driver.executeQuery(query.query, query.parameters);
+            const res = await con.executeQuery(query.query, query.parameters);
             results = results.concat(res);
         }
 
         return results;
     }
-    public async transaction(transactionBody: () => Promise<void>): Promise<void> {
+    public async transaction(transactionBody: () => Promise<void>): Promise<void>;
+    public async transaction(isolationLevel: IsolationLevel, transactionBody: () => Promise<void>): Promise<void>;
+    public async transaction(isolationOrBody: IsolationLevel | (() => Promise<void>), transactionBody?: () => Promise<void>): Promise<void> {
         try {
-            await this.driver.startTransaction();
+            let isolationLevel: IsolationLevel;
+            if (typeof isolationOrBody === "function")
+                transactionBody = isolationOrBody;
+            else
+                isolationLevel = isolationOrBody;
+
+            this.connection = await this.getConnection();
+            await this.connection.startTransaction(isolationLevel);
             await transactionBody();
-            await this.driver.commitTransaction();
+            await this.connection.commitTransaction();
         }
         catch (e) {
-            await this.driver.rollbackTransaction();
+            await this.connection.rollbackTransaction();
+            await this.closeConnection();
             throw e;
         }
     }
-    public async saveChanges(): Promise<number> {
+    public async saveChanges(options?: ISaveChangesOption): Promise<number> {
         let queries: IQueryCommand[] = [];
         const queryBuilder = new this.queryBuilder();
 
@@ -346,10 +399,13 @@ export abstract class DbContext implements IDBEventListener<any> {
             const eventEmitter = new DBEventEmitter(this, metaData);
             // TODO: soft delete or hard delete.
             // TODO: for non RDMS, implement cascade delete manually
+            const deleteParam: IDeleteEventParam = {
+                type: metaData.deleteColumn && !(options && options.forceHardDelete) ? "soft" : "hard"
+            };
             for (const entry of deleteEntries) {
-                eventEmitter.emitBeforeDeleteEvent(entry.entity, { type: "soft" });
+                eventEmitter.emitBeforeDeleteEvent(entry.entity, deleteParam);
             }
-            deleteQueries = deleteQueries.concat(queryBuilder.getDeleteQueries(metaData, deleteEntries));
+            deleteQueries = deleteQueries.concat(queryBuilder.getDeleteQueries(metaData, deleteEntries, deleteParam.type === "hard"));
         });
 
         queries = queries.concat(updateQueries)
@@ -357,10 +413,11 @@ export abstract class DbContext implements IDBEventListener<any> {
             .concat(deleteQueries);
 
         const mergedQueries = this.mergeQueries(queries);
-        let results: IQueryResult[];
+        let results: IQueryResult[] = [];
 
         // execute all in transaction;
         await this.transaction(async () => {
+            const d = 1;
             // execute all insert
             for (const [meta, queries] of insertQueries) {
                 const mergedQueries = this.mergeQueries(queries);
@@ -409,6 +466,7 @@ export abstract class DbContext implements IDBEventListener<any> {
                 const res = await this.executeQuery(query.query, query.parameters);
                 results = results.concat(res);
             }
+            throw new Error("asd");
         });
 
         // reflect all changes to current model
@@ -478,14 +536,48 @@ export abstract class DbContext implements IDBEventListener<any> {
         results.push(result);
         return results;
     }
-    public buildSchema() {
+    public async buildSchema() {
         const queryBuilder = new this.queryBuilder();
-        const schemaBuilder = new this.schemaBuilder(this.driver, queryBuilder);
+        const con = await this.getConnection();
+        const schemaBuilder = new this.schemaBuilder(con, queryBuilder);
 
-        this.transaction(async () => {
+        await this.transaction(async () => {
             const schemaQuery = await schemaBuilder.getSchemaQuery(this.entityTypes);
             this.executeCommands(schemaQuery.commit);
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Query Function
+    // -------------------------------------------------------------------------
+    public async defferedFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
+        const queryCommand: IQueryCommand = {
+            query: rawQuery,
+            parameters: new Map()
+        };
+        if (parameters) {
+            for (const prop in parameters) {
+                const value = parameters[prop];
+                queryCommand.parameters.set(prop, value);
+            }
+        }
+        const query = new DeferredQuery(this, [queryCommand], null, (result) => result.selectMany(o => o.rows).select(o => {
+            let item = new (type as any)();
+            if (isValue(item)) {
+                item = o[Object.keys(o).first()];
+            }
+            else {
+                for (const prop in o) {
+                    item[prop] = o[prop];
+                }
+            }
+            return item;
+        }).toArray());
+        return query;
+    }
+    public async fromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }): Promise<T[]> {
+        const query = await this.defferedFromSql(type, rawQuery, parameters);
+        return await query.execute();
     }
 
     // -------------------------------------------------------------------------

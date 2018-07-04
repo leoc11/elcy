@@ -14,7 +14,7 @@ export class OrderDetailProperty {
     public OrderDetailId: string;
     @StringColumn({ columnType: "nvarchar", columnName: "Name" })
     public name: string;
-    @DecimalColumn({ columnType: "float", columnName: "Amount" })
+    @DecimalColumn({ columnType: "decimal", columnName: "Amount" })
     public amount: number;
     @Relationship<OrderDetailProperty>("has", "by", "one", OrderDetail || "OrderDetail", [(o) => o.OrderDetailId])
     public OrderDetail: OrderDetail;

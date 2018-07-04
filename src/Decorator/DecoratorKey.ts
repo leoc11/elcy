@@ -2,6 +2,10 @@ export const columnMetaKey = Symbol("column-meta");
 export const entityMetaKey = Symbol("entity-meta");
 export const relationMetaKey = Symbol("relation-meta");
 export const inheritanceMetaKey = Symbol("inheritance-meta");
+export const propertyChangeHandlerMetaKey = Symbol("property-change-handler");
+export const propertyChangeDispatherMetaKey = Symbol("property-change-dispatcher");
+export const relationChangeHandlerMetaKey = Symbol("relation-change-handler");
+export const relationChangeDispatherMetaKey = Symbol("relation-change-dispatcher");
 
 // specific type modifier
 // DateTime: timezone

@@ -20,8 +20,8 @@ export class Enumerable<T = any> implements Iterable<T> {
     protected isResultComplete: boolean;
     protected result: T[] = [];
     protected parent: Iterable<any>;
-    protected iterator: Iterator<T>;
-    constructor(source?: Iterable<T> | Iterator<T>) {
+    protected iterator: Iterator<any>;
+    constructor(source?: Iterable<any> | Iterator<any>) {
         if (source) {
             if (Array.isArray(source)) {
                 this.result = source;

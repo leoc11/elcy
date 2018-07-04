@@ -5,12 +5,12 @@ import { IEntityMetaData } from "../../MetaData/Interface";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity";
 import { IColumnOption } from "../Option";
-import { EventListener } from "../../Common/EventListener";
 import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IObjectType } from "../../Common/Type";
+import { IEventDispacher } from "../../Event/IEventHandler";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
-    return (target: TE, propertyKey: keyof TE) => {
+    return (target: TE, propertyKey: any) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
@@ -80,9 +80,13 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                     else
                         this[privatePropertySymbol] = value;
 
-                    const changeListener: EventListener<IChangeEventParam> = Reflect.getOwnMetadata("PropertyChangeEventListener", this);
-                    if (changeListener) {
-                        changeListener.emit({ column: columnMetaData, oldValue, newValue: value });
+                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = Reflect.getOwnMetadata("PropertyChangeEventListener", this);
+                    if (propertyChangeDispatcher) {
+                        propertyChangeDispatcher({
+                            column: columnMetaData,
+                            oldValue,
+                            newValue: value
+                        });
                     }
                 }
             },

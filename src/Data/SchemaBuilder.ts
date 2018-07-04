@@ -9,14 +9,15 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { FunctionExpression } from "../ExpressionBuilder/Expression";
+import { IConnection } from "../Connection/IConnection";
 
 export abstract class SchemaBuilder {
-    constructor(public driver: IDriver, public q: QueryBuilder) { }
+    constructor(public connection: IConnection, public q: QueryBuilder) { }
     public async getSchemaQuery(entityTypes: IObjectType[]) {
         let commitQueries: IQueryCommand[] = [];
         let rollbackQueries: IQueryCommand[] = [];
 
-        const defaultSchema = (await this.driver.executeQuery(`SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`)).first().rows.first()["SCHEMA"];
+        const defaultSchema = (await this.connection.executeQuery(`SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`)).first().rows.first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
@@ -68,40 +69,40 @@ export abstract class SchemaBuilder {
     }
     public async loadSchemas(entities: IEntityMetaData<any>[]) {
         const schemaGroups = entities.groupBy(o => o.schema).toArray();
-        const tableFilters = `TABLE_CATALOG = '${this.driver.database}' AND ((${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.q.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")}))`;
+        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND ((${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.q.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")}))`;
         const queries =
             // table schema
-            `SELECT * FROM ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};` +
+            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};` +
 
             // column schema
-            `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters};` +
+            `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters};` +
 
             // all table constrains
-            `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
-            ` LEFT JOIN  ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
+            `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
+            ` LEFT JOIN  ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
             ` on a.CONSTRAINT_NAME = b.CONSTRAINT_NAME` +
             ` WHERE ${tableFilters};` +
             `SELECT * FROM #tempConstraint;` +
 
             // relation constraint for FK
-            `SELECT a.* FROM ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
+            `SELECT a.* FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
             ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters};` +
             `DROP TABLE #tempConstraint;` +
 
             // map constrain to column
-            `SELECT * FROM ${this.q.enclose(this.driver.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters};` +
+            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters};` +
 
             // all table index
             `SELECT s.name [TABLE_SCHEMA], t.name [TABLE_NAME], i.name [INDEX_NAME], i.is_unique [IS_UNIQUE], i.type_desc [TYPE], c.name [COLUMN_NAME]` +
-            ` from ${this.q.enclose(this.driver.database)}.sys.index_columns ic` +
-            ` join ${this.q.enclose(this.driver.database)}.sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id` +
-            ` join ${this.q.enclose(this.driver.database)}.sys.indexes i on i.index_id = ic.index_id` +
-            ` join ${this.q.enclose(this.driver.database)}.sys.tables t on t.object_id = i.object_id` +
-            ` join ${this.q.enclose(this.driver.database)}.sys.schemas s on t.schema_id = s.schema_id` +
+            ` from ${this.q.enclose(this.connection.database)}.sys.index_columns ic` +
+            ` join ${this.q.enclose(this.connection.database)}.sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id` +
+            ` join ${this.q.enclose(this.connection.database)}.sys.indexes i on i.index_id = ic.index_id` +
+            ` join ${this.q.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
+            ` join ${this.q.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
             ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
             ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`;
 
-        const schemaDatas = await this.driver.executeQuery(queries);
+        const schemaDatas = await this.connection.executeQuery(queries);
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[2];

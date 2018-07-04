@@ -9,7 +9,6 @@ import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
 import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
 import { EntityEntry } from "../../Data/EntityEntry";
@@ -108,6 +107,12 @@ export class MssqlQueryBuilder extends QueryBuilder {
         if (take > 0)
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         return result;
+    }
+    public enclose(identity: string) {
+        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
+            return "[" + identity + "]";
+        else
+            return identity;
     }
 
     /**

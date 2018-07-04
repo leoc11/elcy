@@ -1,4 +1,3 @@
-import { EventListener } from "../Common/EventListener";
 import { DbSet } from "./DbSet";
 import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { EntityState } from "./EntityState";
@@ -7,7 +6,9 @@ import { RelationEntry } from "./RelationEntry";
 import { EntityMetaData } from "../MetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedColumnMetaData } from "../MetaData";
-import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+import { EventHandlerFactory } from "../Event/EventHandlerFactory";
+import { IEventHandler } from "../Event/IEventHandler";
+import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public state: EntityState;
@@ -18,24 +19,36 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public relationMap: { [relationName: string]: Map<string, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
-        const eventListener = new EventListener(entity);
-        const relationListener = new EventListener(entity);
-        Reflect.defineMetadata("PropertyChangeEventListener", eventListener, entity);
-        Reflect.defineMetadata("RelationChangeEventListener", eventListener, entity);
-        eventListener.add(this.onPropertyChanged.bind(this), 0);
-        relationListener.add(this.onRelationChanged.bind(this), 0);
+        
+        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = Reflect.getOwnMetadata(propertyChangeHandlerMetaKey, entity);
+        if (!propertyChangeHandler) {
+            let propertyChangeDispatcher: any;
+            [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
+            Reflect.defineMetadata(propertyChangeHandlerMetaKey, propertyChangeHandler, entity);
+            Reflect.defineMetadata(propertyChangeDispatherMetaKey, propertyChangeDispatcher, entity);
+        }
+        propertyChangeHandler.add(this.onPropertyChanged);
+
+        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeHandlerMetaKey, entity);
+        if (!relationChangeHandler) {
+            let relationChangeDispatcher: any;
+            [relationChangeHandler, relationChangeDispatcher] = EventHandlerFactory<T, IRelationChangeEventParam>(entity);
+            Reflect.defineMetadata(relationChangeHandlerMetaKey, relationChangeHandler, entity);
+            Reflect.defineMetadata(relationChangeDispatherMetaKey, relationChangeDispatcher, entity);
+        }
+        relationChangeHandler.add(this.onRelationChanged);
     }
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.columns.all(o => (this.entity as any)[o.propertyName] !== undefined);
     }
-    private originalValues: Map<string, any> = new Map();
-    public isPropertyModified(prop: string) {
+    private originalValues: Map<keyof T, any> = new Map();
+    public isPropertyModified(prop: keyof T) {
         return this.originalValues.has(prop);
     }
-    public getOriginalValue(prop: string) {
+    public getOriginalValue(prop: keyof T) {
         return this.originalValues.get(prop);
     }
-    public onPropertyChanged(param: IChangeEventParam<T>) {
+    public onPropertyChanged(entity: T, param: IChangeEventParam<T>) {
         if (this.dbSet.primaryKeys.contains(param.column)) {
             // primary key changed, update dbset entry dictionary.
             const oldKey = this.key;
@@ -58,7 +71,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
-            new EmbeddedEntityEntry(embeddedDbSet, param.newValue, this);
+            new (require("./EmbeddedEntityEntry"))(embeddedDbSet, param.newValue, this);
         }
 
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
@@ -77,7 +90,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             }
         }
     }
-    public onRelationChanged(param: IRelationChangeEventParam) {
+    public onRelationChanged(entity: T, param: IRelationChangeEventParam) {
         if (!this.enableTrackChanges)
             return;
         for (const item of param.entities) {
@@ -126,7 +139,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         this.relationMap[oldKey] = undefined;
         this.registerRelation(relationEntry);
     }
-    public resetChanges(...properties: string[]) {
+    public resetChanges(...properties: Array<keyof T>) {
         if (properties) {
             for (const prop of properties) {
                 if (this.originalValues.has(prop))
@@ -140,13 +153,13 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             }
         }
     }
-    public acceptChanges(...properties: string[]) {
+    public acceptChanges(...properties: Array<keyof T>) {
         if (properties && this.state !== EntityState.Modified)
             return;
 
         switch (this.state) {
             case EntityState.Modified: {
-                let acceptedProperties: string[] = [];
+                let acceptedProperties: Array<keyof T> = [];
                 if (properties) {
                     for (const prop of properties) {
                         const isDeleted = this.originalValues.delete(prop);

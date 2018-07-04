@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { IObjectType, RelationshipType } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
+import { entityMetaKey, relationMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
 import { IRelationOption } from "../Option";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationChangeType, IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
-import { EventListener } from "../../Common/EventListener";
+import { IEventDispacher } from "../../Event/IEventHandler";
 
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
@@ -44,7 +44,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
     // TODO: FOR SQL TO-ONE relation target must be a unique or primarykeys
     // TODO: Foreignkey for SQL DB
 
-    return (target: S, propertyKey: keyof S) => {
+    return (target: S, propertyKey: any) => {
         if (!relationOption.sourceType)
             relationOption.sourceType = target.constructor as any;
         relationOption.propertyName = propertyKey as any;
@@ -53,7 +53,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
         const relationMeta = new RelationMetaData(relationOption);
         Reflect.defineMetadata(relationMetaKey, relationMeta, relationOption.sourceType!, propertyKey);
 
-        const relationName = relationOption.relationKeyName ? relationOption.relationKeyName : relationMeta.fullName + "_" + (relationOption.isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
+        const relationName = relationOption.relationKeyName ? relationOption.relationKeyName : relationOption.name + "_" + (relationOption.isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
         relationMeta.fullName = relationName;
         sourceMetaData.relations.push(relationMeta);
 
@@ -94,9 +94,9 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                     if (relationMeta.relationType === "many") {
                         const observed = new ObservableArray(value);
                         observed.register((type, items) => {
-                            const changeListener: EventListener<IRelationChangeEventParam> = Reflect.getOwnMetadata("RelationChangeEventListener", this);
+                            const changeListener: IEventDispacher<IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeDispatherMetaKey, this);
                             if (changeListener) {
-                                changeListener.emit({ type, relation: relationMeta, entities: items });
+                                changeListener({ type, relation: relationMeta, entities: items });
                             }
                         });
                         value = observed;
@@ -105,19 +105,19 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                         oldSet.apply(this, value);
                     else
                         this[privatePropertySymbol] = value;
-                    const changeListener: EventListener<IRelationChangeEventParam> = Reflect.getOwnMetadata("RelationChangeEventListener", this);
+                    const changeListener: IEventDispacher<IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeDispatherMetaKey, this.constructor);
                     if (changeListener) {
                         if (relationMeta.relationType === "many") {
                             if (oldValue && Array.isArray(oldValue) && oldValue.length > 0)
-                                changeListener.emit({ relation: relationMeta, type: "del", entities: oldValue });
+                                changeListener({ relation: relationMeta, type: "del", entities: oldValue });
                             if (value && Array.isArray(value) && value.length > 0)
-                                changeListener.emit({ relation: relationMeta, type: "add", entities: value });
+                                changeListener({ relation: relationMeta, type: "add", entities: value });
                         }
                         else {
                             if (oldValue)
-                                changeListener.emit({ relation: relationMeta, type: "del", entities: [oldValue] });
+                                changeListener({ relation: relationMeta, type: "del", entities: [oldValue] });
                             if (value)
-                                changeListener.emit({ relation: relationMeta, type: "add", entities: [value] });
+                                changeListener({ relation: relationMeta, type: "add", entities: [value] });
                         }
                     }
                 }
