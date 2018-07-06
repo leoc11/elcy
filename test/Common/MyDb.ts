@@ -5,7 +5,7 @@ import { MssqlDriver } from "../../src/Driver/Mssql/MssqlDriver";
 
 export class MyDb extends MssqlDbContext {
     constructor() {
-        super(new MssqlDriver({
+        super(() => new MssqlDriver({
             host: "localhost\\SQLEXPRESS",
             database: "iSeller_Data_Lotte",
             port: 1433,

@@ -175,7 +175,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
     public getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
         const columns = entityMetaData.columns;
         const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as NumericColumnMetaData).autoIncrement;
+            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement;
         });
         const relations = entityMetaData.relations
             .where(o => !o.nullable && !o.isMaster && o.relationType === "one");

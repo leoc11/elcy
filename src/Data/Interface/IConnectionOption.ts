@@ -8,7 +8,7 @@ export interface IConnectionOption {
      * The milliseconds before a timeout occurs during the initial connection to DB server.
      */
     readonly connectTimeout?: number;
-    readonly poolOption?: IConnectionPoolOption;
+    readonly requestTimeout?: number;
 }
 export interface IConnectionPoolOption {
     /**

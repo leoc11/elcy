@@ -27,7 +27,7 @@ import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager
 import { IConnection } from "../Connection/IConnection";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
-export abstract class DbContext<T extends DbType> implements IDBEventListener<any> {
+export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
     public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
     public abstract readonly schemaBuilder: IObjectType<SchemaBuilder>;
@@ -65,12 +65,13 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
     protected async getConnection() {
         const con = this.connection ? this.connection : await this.connectionManager.getConnection();
         if (!con.isOpen)
-            con.open();
+            await con.open();
         return con;
     }
-    public async closeConnection() {
-        if (this.connection && !this.connection.inTransaction) {
-            const con = this.connection;
+    public async closeConnection(con?: IConnection) {
+        if (!con)
+            con = this.connection;
+        if (con && !con.inTransaction) {
             this.connection = null;
             await con.close();
         }
@@ -82,8 +83,6 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
         return this.queryCacheManager.set<T>(this.constructor as any, key, queryCommands, queryParser, parameterBuilder);
     }
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
-    constructor(driverFactory: () => IDriver<T>);
-    constructor(connectionManagerFactory: () => IConnectionManager);
     constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
         this.relationEntries = {
             add: new Map(),
@@ -287,10 +286,10 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
             dbSet.clear();
         }
     }
-    public async executeQuery(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]> {
+    public async executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
         const con = await this.getConnection();
-        const result = await con.executeQuery(query, parameters);
-        await con.close();
+        const result = await con.executeQuery(command);
+        await this.closeConnection(con);
         return result;
     }
     public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
@@ -301,7 +300,7 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
             if (parameters)
                 query.parameters = query.parameters ? new Map([...query.parameters, ...parameters]) : parameters;
 
-            const res = await con.executeQuery(query.query, query.parameters);
+            const res = await con.executeQuery(query);
             results = results.concat(res);
         }
 
@@ -422,7 +421,7 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
             for (const [meta, queries] of insertQueries) {
                 const mergedQueries = this.mergeQueries(queries);
                 for (const query of mergedQueries) {
-                    const res = await this.executeQuery(query.query, query.parameters);
+                    const res = await this.executeQuery(query);
                     const generatedPrimaryCols = meta.primaryKeys.where(o => !!o.default || (o as NumericColumnMetaData).autoIncrement);
                     if (generatedPrimaryCols.count() > 0) {
                         // TODO: need refactor
@@ -463,7 +462,7 @@ export abstract class DbContext<T extends DbType> implements IDBEventListener<an
             }
 
             for (const query of mergedQueries) {
-                const res = await this.executeQuery(query.query, query.parameters);
+                const res = await this.executeQuery(query);
                 results = results.concat(res);
             }
             throw new Error("asd");
