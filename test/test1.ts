@@ -1419,4 +1419,24 @@ describe("PARAMETERS", async () => {
         a.should.has.length.greaterThan(0);
         a[0].should.be.an("number");
     });
+    it("should re-build query if function parameter changed", async () => {
+        const db = new MyDb();
+        let fn = (o: number) => o + 1;
+        for (let i = 0; i < 2; i++) {
+            fn = i % 2 === 0 ? (o: number) => o + 1 : (o: number) => o - 1;
+            const where = await db.orders.setParameters({ fn })
+                .select(o => fn(o.TotalAmount));
+
+            const queryString = where.toString();
+
+            if (i % 2 === 0) {
+                expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount] + 1) AS [column0]\nFROM [Orders] AS [entity0];"
+                    , "query not equals");
+            }
+            else {
+                expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount] - 1) AS [column0]\nFROM [Orders] AS [entity0];"
+                    , "query not equals");
+            }
+        }
+    });
 });
