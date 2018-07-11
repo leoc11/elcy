@@ -1,5 +1,5 @@
 import { RelationshipType, ReferenceOption } from "../../Common/Type";
-import { IEntityMetaData } from ".";
+import { IEntityMetaData } from "./IEntityMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";

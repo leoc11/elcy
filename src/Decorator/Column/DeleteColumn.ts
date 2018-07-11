@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { BooleanColumnMetaData } from "../../MetaData";
+import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { Column } from "./Column";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 // TODO: casecade soft delete.

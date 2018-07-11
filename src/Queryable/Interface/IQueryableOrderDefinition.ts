@@ -1,4 +1,4 @@
-import { FunctionExpression } from "../../ExpressionBuilder/Expression";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { OrderDirection, ValueType } from "../../Common/Type";
 
 export interface IQueryableOrderDefinition<T = any> {

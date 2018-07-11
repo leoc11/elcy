@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { IEnumType } from "../../Common/Type";
-import { EnumColumnMetaData } from "../../MetaData";
+import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
 import { IEnumColumnOption } from "../Option/IEnumColumnOption";
 import { Column } from "./Column";
 

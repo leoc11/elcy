@@ -1,11 +1,12 @@
 import { IObjectType, JoinType, ValueType } from "../Common/Type";
-import { FunctionExpression, MethodCallExpression } from "../ExpressionBuilder/Expression";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     public expression: SelectExpression<R>;

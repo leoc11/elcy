@@ -1,10 +1,11 @@
-import { FunctionExpression, MethodCallExpression } from "../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/index";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;

@@ -1,6 +1,6 @@
 import { DecimalColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { IEntityMetaData } from "./Interface";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 export class DecimalColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public precision?: number;
     public scale?: number;

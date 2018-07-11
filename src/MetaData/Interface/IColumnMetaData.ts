@@ -1,9 +1,9 @@
 
 import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
-import { IEntityMetaData } from ".";
-import { IColumnOption } from "../../Decorator/Option";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression";
+import { IEntityMetaData } from "./IEntityMetaData";
+import { IColumnOption } from "../../Decorator/Option/IColumnOption";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 export interface IColumnMetaData<TE = any, T = any> {
     entity?: IEntityMetaData<TE>;
     columnName?: string;

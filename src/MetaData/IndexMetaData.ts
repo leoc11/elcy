@@ -1,6 +1,6 @@
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
-import { IEntityMetaData } from "./Interface";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class IndexMetaData<TE = any> implements IIndexMetaData<TE> {
     public columns: Array<IColumnMetaData<TE>> = [];

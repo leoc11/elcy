@@ -1,22 +1,28 @@
+import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable/Queryable";
-import "../Queryable/Queryable.partial";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
-import { EntityExpression, SelectExpression } from "../Queryable/QueryExpression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
-import { FunctionExpression, ParameterExpression, IExpression, EqualExpression, MemberAccessExpression, AndExpression } from "../ExpressionBuilder/Expression";
 import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { RelationEntry } from "./RelationEntry";
-import { EmbeddedColumnMetaData } from "../MetaData";
+import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
+import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 
 export class DbSet<T> extends Queryable<T> {
     public get queryBuilder(): QueryBuilder {

@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { DecimalColumnMetaData } from "../../MetaData";
-import { IDecimalColumnOption } from "../Option";
+import { DecimalColumnMetaData } from "../../MetaData/DecimalColumnMetaData";
+import { IDecimalColumnOption } from "../Option/IDecimalColumnOption";
 import { Column } from "./Column";
 
 export function DecimalColumn(option?: IDecimalColumnOption): PropertyDecorator;

@@ -3,7 +3,7 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
 export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T2> {
-    public static Create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
+    public static create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
         const result = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
         if (logicalOperand instanceof ValueExpression && trueResultOperand instanceof ValueExpression && falseResultOperand instanceof ValueExpression)
             return ValueExpression.create<TType>(result);

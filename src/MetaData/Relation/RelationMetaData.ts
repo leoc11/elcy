@@ -1,11 +1,11 @@
 import { RelationshipType, CompleteRelationshipType, ReferenceOption } from "../../Common/Type";
 import { entityMetaKey, columnMetaKey } from "../../Decorator/DecoratorKey";
-import { IRelationOption } from "../../Decorator/Option";
+import { IRelationOption } from "../../Decorator/Option/IRelationOption";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { RelationDataMetaData } from "./RelationDataMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
-import { IEntityMetaData } from "../Interface";
+import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {

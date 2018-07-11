@@ -8,7 +8,6 @@ import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
 import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { IDBEventListener } from "./Event/IDBEventListener";
-import { ISaveEventParam, IDeleteEventParam, IEntityMetaData } from "../MetaData/Interface";
 import { IDriver } from "../Driver/IDriver";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
@@ -17,7 +16,6 @@ import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { SchemaBuilder } from "./SchemaBuilder";
 import { RelationEntry } from "./RelationEntry";
-import { NumericColumnMetaData } from "../MetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 import { isValue } from "../Helper/Util";
@@ -25,6 +23,10 @@ import { ISaveChangesOption } from "../QueryBuilder/Interface/ISelectQueryOption
 import { IConnectionManager } from "../Connection/IConnectionManager";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { IDeleteEventParam } from "../MetaData/Interface/IDeleteEventParam";
+import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
@@ -416,7 +418,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // execute all in transaction;
         await this.transaction(async () => {
-            const d = 1;
             // execute all insert
             for (const [meta, queries] of insertQueries) {
                 const mergedQueries = this.mergeQueries(queries);

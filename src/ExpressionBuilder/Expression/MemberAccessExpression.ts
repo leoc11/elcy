@@ -1,10 +1,10 @@
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
-import { ColumnMetaData } from "../../MetaData/index";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 export class MemberAccessExpression<TType, KProp extends keyof TType> extends ExpressionBase<TType[KProp]> implements IMemberOperatorExpression<TType> {
     public static create<TType, KProp extends keyof TType>(objectOperand: IExpression<TType>, member: KProp | ExpressionBase<KProp>) {
         const result = new MemberAccessExpression(objectOperand, member);

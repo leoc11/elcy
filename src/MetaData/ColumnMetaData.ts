@@ -2,7 +2,7 @@ import { ColumnType } from "../Common/ColumnType";
 import { GenericType } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { FunctionExpression } from "../ExpressionBuilder/Expression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 
 export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {

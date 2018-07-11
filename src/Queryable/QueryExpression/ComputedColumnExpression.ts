@@ -1,5 +1,5 @@
 import { GenericType } from "../../Common/Type";
-import { IExpression } from "../../ExpressionBuilder/Expression/index";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";

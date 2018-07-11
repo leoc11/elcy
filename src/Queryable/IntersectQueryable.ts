@@ -1,7 +1,7 @@
-import { MethodCallExpression } from "../ExpressionBuilder/Expression/index";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 

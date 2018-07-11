@@ -1,13 +1,15 @@
 import "reflect-metadata";
 import { ClassBase, GenericType, InheritanceType, IObjectType } from "../../Common/Type";
-import { AbstractEntityMetaData, ColumnMetaData, ComputedColumnMetaData } from "../../MetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface";
-import { InheritedColumnMetaData } from "../../MetaData/Relation/index";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
 import { IOrderOption } from "../Option/IOrderOption";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
+import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 
 export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderOption<T>[], allowInheritance = true) {
     return (type: IObjectType<T>) => {

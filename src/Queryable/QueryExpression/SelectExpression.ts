@@ -1,5 +1,4 @@
 import { GenericType, OrderDirection, JoinType, RelationshipType } from "../../Common/Type";
-import { AndExpression, IExpression, } from "../../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { ICommandQueryExpression } from "./ICommandQueryExpression";
@@ -12,6 +11,8 @@ import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;

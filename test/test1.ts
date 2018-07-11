@@ -1,13 +1,23 @@
 import { IncludeQueryable } from "../src/Queryable/IncludeQueryable";
 import { MyDb } from "./Common/MyDb";
-import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, AdditionExpression, ValueExpression, LessEqualExpression, MultiplicationExpression } from "../src/ExpressionBuilder/Expression";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection } from "./Common/Model";
 import "mocha";
 import "../src/Extensions/DateExtension";
 import { expect, should } from "chai";
-import { SelectQueryable, WhereQueryable, OrderQueryable } from "../src/Queryable";
 import { IQueryableOrderDefinition } from "../src/Queryable/Interface/IQueryableOrderDefinition";
 import { OrderDirection } from "../src/Common/Type";
+import { OrderQueryable } from "../src/Queryable/OrderQueryable";
+import { SelectQueryable } from "../src/Queryable/SelectQueryable";
+import { WhereQueryable } from "../src/Queryable/WhereQueryable";
+import { ParameterExpression } from "../src/ExpressionBuilder/Expression/ParameterExpression";
+import { FunctionExpression } from "../src/ExpressionBuilder/Expression/FunctionExpression";
+import { MemberAccessExpression } from "../src/ExpressionBuilder/Expression/MemberAccessExpression";
+import { MethodCallExpression } from "../src/ExpressionBuilder/Expression/MethodCallExpression";
+import { ObjectValueExpression } from "../src/ExpressionBuilder/Expression/ObjectValueExpression";
+import { AdditionExpression } from "../src/ExpressionBuilder/Expression/AdditionExpression";
+import { ValueExpression } from "../src/ExpressionBuilder/Expression/ValueExpression";
+import { LessEqualExpression } from "../src/ExpressionBuilder/Expression/LessEqualExpression";
+import { MultiplicationExpression } from "../src/ExpressionBuilder/Expression/MultiplicationExpression";
 
 const param = new ParameterExpression("o", Order);
 const odParam = new ParameterExpression("od", OrderDetail);

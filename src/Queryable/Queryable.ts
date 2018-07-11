@@ -1,8 +1,7 @@
 import { GenericType } from "../Common/Type";
-import { MethodCallExpression, ValueExpression } from "../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
-import { SelectExpression } from "./QueryExpression/index";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -13,6 +12,8 @@ import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuil
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { IQueryOption } from "../QueryBuilder/Interface/ISelectQueryOption";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 
 export abstract class Queryable<T = any> {
     public get queryBuilder(): QueryBuilder {

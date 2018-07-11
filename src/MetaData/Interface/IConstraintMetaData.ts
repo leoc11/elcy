@@ -1,5 +1,5 @@
 import { IColumnMetaData } from "./IColumnMetaData";
-import { IEntityMetaData } from ".";
+import { IEntityMetaData } from "./IEntityMetaData";
 
 export interface IConstraintMetaData<TE = any> {
     name: string;

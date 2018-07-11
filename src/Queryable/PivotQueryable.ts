@@ -1,4 +1,3 @@
-import { FunctionExpression, MethodCallExpression, ParameterExpression, IExpression, ObjectValueExpression } from "../ExpressionBuilder/Expression/index";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
@@ -7,6 +6,11 @@ import { IObjectType } from "../Common/Type";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression<T, any> | ((item: T) => any) }>(objectFn: KE, sourceType: IObjectType<T>, paramName: string): FunctionExpression<T, { [key in keyof KE]?: IExpression }> {
     const param = new ParameterExpression(paramName, sourceType);

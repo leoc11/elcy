@@ -1,5 +1,6 @@
-import { FunctionExpression, IExpression } from "./Expression";
 import { TransformerParameter } from "./TransformerParameter";
+import { IExpression } from "./Expression/IExpression";
+import { FunctionExpression } from "./Expression/FunctionExpression";
 
 export abstract class ExpressionTransformer {
     public scopeParameters: TransformerParameter;

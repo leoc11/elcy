@@ -1,6 +1,6 @@
 import { IntColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { IEntityMetaData } from "./Interface";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 export class NumericColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
     public autoIncrement: boolean;
     public length?: number;

@@ -1,19 +1,6 @@
 import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
-import {
-    AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
-    BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
-    BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression,
-    DivisionExpression, EqualExpression, FunctionCallExpression,
-    FunctionExpression, GreaterEqualExpression, GreaterThanExpression, IBinaryOperatorExpression,
-    IExpression, InstanceofExpression, IUnaryOperatorExpression,
-    LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
-    OrExpression, ParameterExpression, RightDecrementExpression,
-    RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression
-} from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { isValueType, isNativeFunction, hashCode } from "../Helper/Util";
@@ -21,19 +8,64 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
-import {
-    ColumnExpression, ComputedColumnExpression, ExceptExpression,
-    IEntityExpression, IntersectExpression, ProjectionEntityExpression, UnionExpression, IOrderExpression, IIncludeRelation
-} from "../Queryable/QueryExpression/index";
-import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
+import { SelectExpression, IJoinRelation, IIncludeRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { GroupedExpression } from "../Queryable/QueryExpression/GroupedExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
-import { ComputedColumnMetaData, EmbeddedColumnMetaData } from "../MetaData";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { ProjectionEntityExpression } from "../Queryable/QueryExpression/ProjectionEntityExpression";
+import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
+import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
+import { BitwiseNotExpression } from "../ExpressionBuilder/Expression/BitwiseNotExpression";
+import { LeftDecrementExpression } from "../ExpressionBuilder/Expression/LeftDecrementExpression";
+import { LeftIncrementExpression } from "../ExpressionBuilder/Expression/LeftIncrementExpression";
+import { NotExpression } from "../ExpressionBuilder/Expression/NotExpression";
+import { RightDecrementExpression } from "../ExpressionBuilder/Expression/RightDecrementExpression";
+import { RightIncrementExpression } from "../ExpressionBuilder/Expression/RightIncrementExpression";
+import { TypeofExpression } from "../ExpressionBuilder/Expression/TypeofExpression";
+import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
+import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
+import { BitwiseAndExpression } from "../ExpressionBuilder/Expression/BitwiseAndExpression";
+import { BitwiseOrExpression } from "../ExpressionBuilder/Expression/BitwiseOrExpression";
+import { BitwiseSignedRightShiftExpression } from "../ExpressionBuilder/Expression/BitwiseSignedRightShiftExpression";
+import { BitwiseXorExpression } from "../ExpressionBuilder/Expression/BitwiseXorExpression";
+import { BitwiseZeroLeftShiftExpression } from "../ExpressionBuilder/Expression/BitwiseZeroLeftShiftExpression";
+import { BitwiseZeroRightShiftExpression } from "../ExpressionBuilder/Expression/BitwiseZeroRightShiftExpression";
+import { DivisionExpression } from "../ExpressionBuilder/Expression/DivisionExpression";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
+import { GreaterEqualExpression } from "../ExpressionBuilder/Expression/GreaterEqualExpression";
+import { GreaterThanExpression } from "../ExpressionBuilder/Expression/GreaterThanExpression";
+import { InstanceofExpression } from "../ExpressionBuilder/Expression/InstanceofExpression";
+import { LessEqualExpression } from "../ExpressionBuilder/Expression/LessEqualExpression";
+import { LessThanExpression } from "../ExpressionBuilder/Expression/LessThanExpression";
+import { NotEqualExpression } from "../ExpressionBuilder/Expression/NotEqualExpression";
+import { OrExpression } from "../ExpressionBuilder/Expression/OrExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
+import { SubtractionExpression } from "../ExpressionBuilder/Expression/SubtractionExpression";
+import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { MultiplicationExpression } from "../ExpressionBuilder/Expression/MultiplicationExpression";
+import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
+import { IOrderExpression } from "../Queryable/QueryExpression/IOrderExpression";
+import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
+import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpression";
+import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
+import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 
 interface IPRelation {
     name: string;
@@ -111,7 +143,7 @@ export class QueryExpressionVisitor {
             case StrictNotEqualExpression:
             case SubtractionExpression:
             case MultiplicationExpression: {
-                return this.visitBinaryOperator(expression as any as IBinaryOperatorExpression, param);
+                return this.visitBinaryOperator(expression as IBinaryOperatorExpression, param);
             }
             case TernaryExpression:
                 return this.visitTernaryOperator(expression as any, param);
@@ -327,7 +359,7 @@ export class QueryExpressionVisitor {
 
         }
         else {
-            switch (objectOperand.type) {
+            switch (objectOperand.type as any) {
                 case String:
                     switch (expression.memberName) {
                         case "length":
@@ -1122,7 +1154,7 @@ export class QueryExpressionVisitor {
                     }
                 }
             }
-            switch (objectOperand.type) {
+            switch (objectOperand.type as any) {
                 case String:
                     switch (expression.methodName) {
                         case "like":

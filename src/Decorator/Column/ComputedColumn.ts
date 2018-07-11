@@ -1,7 +1,8 @@
 import "reflect-metadata";
-import { AbstractEntityMetaData, ComputedColumnMetaData } from "../../MetaData";
-import { IEntityMetaData } from "../../MetaData/Interface";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
+import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 
 // TODO: types: Persisted, Virtual, Query
 export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecorator {

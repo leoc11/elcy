@@ -1,9 +1,10 @@
-import { MethodCallExpression, ValueExpression } from "../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/index";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 
 export class UnionQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;

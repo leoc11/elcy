@@ -1,8 +1,9 @@
-import { PrimaryKey, StringColumn } from "../../../src/Decorator/Column/index";
-import { Entity } from "../../../src/Decorator/Entity/index";
 import { OrderDetail } from "./OrderDetail";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 
 @Entity("OrderDetailProperties")
 export class OrderDetailProperty {

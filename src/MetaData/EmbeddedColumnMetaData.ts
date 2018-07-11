@@ -1,6 +1,6 @@
 import { IObjectType } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
-import { AbstractEntityMetaData } from ".";
+import { AbstractEntityMetaData } from "./AbstractEntityMetaData";
 
 export class EmbeddedColumnMetaData<TE, T> implements IColumnMetaData<TE, T> {
     public get type(): IObjectType<T> {

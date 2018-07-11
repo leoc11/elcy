@@ -3,7 +3,6 @@ import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpres
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../QueryResult";
-import { SelectExpression, IIncludeRelation, GroupByExpression } from "../../Queryable/QueryExpression";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType, RelationshipType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
@@ -14,6 +13,8 @@ import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
+import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
+import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;

@@ -1,16 +1,3 @@
-import {
-    AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
-    BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
-    BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression,
-    DivisionExpression, EqualExpression, FunctionCallExpression, FunctionExpression,
-    GreaterEqualExpression, GreaterThanExpression,
-    IExpression, InstanceofExpression,
-    LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
-    OrExpression, ParameterExpression, RightDecrementExpression,
-    RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
-} from "../ExpressionBuilder/Expression";
 import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
@@ -18,14 +5,12 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
-import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression, SqlExpression } from "../Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { SqlFunctionCallExpression } from "../Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero } from "../Helper/Util";
 import { JoinType, ValueType, GenericType } from "../Common/Type";
-import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData, ColumnMetaData } from "../MetaData";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
 import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
 import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
@@ -37,7 +22,7 @@ import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntit
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 import { columnMetaKey, entityMetaKey } from "../Decorator/DecoratorKey";
-import { IEntityMetaData } from "../MetaData/Interface";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQueryCommand } from "./Interface/IQueryCommand";
 import { EntityEntry } from "../Data/EntityEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
@@ -48,6 +33,60 @@ import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
 import { EntityState } from "../Data/EntityState";
 import { RelationEntry } from "../Data/RelationEntry";
 import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
+import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
+import { ProjectionEntityExpression } from "../Queryable/QueryExpression/ProjectionEntityExpression";
+import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
+import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
+import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
+import { BitwiseAndExpression } from "../ExpressionBuilder/Expression/BitwiseAndExpression";
+import { BitwiseOrExpression } from "../ExpressionBuilder/Expression/BitwiseOrExpression";
+import { BitwiseSignedRightShiftExpression } from "../ExpressionBuilder/Expression/BitwiseSignedRightShiftExpression";
+import { BitwiseXorExpression } from "../ExpressionBuilder/Expression/BitwiseXorExpression";
+import { BitwiseZeroLeftShiftExpression } from "../ExpressionBuilder/Expression/BitwiseZeroLeftShiftExpression";
+import { BitwiseZeroRightShiftExpression } from "../ExpressionBuilder/Expression/BitwiseZeroRightShiftExpression";
+import { DivisionExpression } from "../ExpressionBuilder/Expression/DivisionExpression";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
+import { GreaterEqualExpression } from "../ExpressionBuilder/Expression/GreaterEqualExpression";
+import { GreaterThanExpression } from "../ExpressionBuilder/Expression/GreaterThanExpression";
+import { InstanceofExpression } from "../ExpressionBuilder/Expression/InstanceofExpression";
+import { LessEqualExpression } from "../ExpressionBuilder/Expression/LessEqualExpression";
+import { LessThanExpression } from "../ExpressionBuilder/Expression/LessThanExpression";
+import { NotEqualExpression } from "../ExpressionBuilder/Expression/NotEqualExpression";
+import { OrExpression } from "../ExpressionBuilder/Expression/OrExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
+import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { SubtractionExpression } from "../ExpressionBuilder/Expression/SubtractionExpression";
+import { MultiplicationExpression } from "../ExpressionBuilder/Expression/MultiplicationExpression";
+import { BitwiseNotExpression } from "../ExpressionBuilder/Expression/BitwiseNotExpression";
+import { LeftDecrementExpression } from "../ExpressionBuilder/Expression/LeftDecrementExpression";
+import { LeftIncrementExpression } from "../ExpressionBuilder/Expression/LeftIncrementExpression";
+import { NotExpression } from "../ExpressionBuilder/Expression/NotExpression";
+import { RightDecrementExpression } from "../ExpressionBuilder/Expression/RightDecrementExpression";
+import { RightIncrementExpression } from "../ExpressionBuilder/Expression/RightIncrementExpression";
+import { TypeofExpression } from "../ExpressionBuilder/Expression/TypeofExpression";
+import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
+import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
+import { DateColumnMetaData } from "../MetaData/DateColumnMetaData";
+import { DecimalColumnMetaData } from "../MetaData/DecimalColumnMetaData";
+import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
+import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
+import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpression";
+import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
+import { ColumnMetaData } from "../MetaData/ColumnMetaData";
+import { SqlExpression } from "../Queryable/QueryExpression/SqlExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     protected get userParameters() {
@@ -1175,12 +1214,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         };
 
         const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as NumericColumnMetaData).autoIncrement;
+            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement;
         }).select(o => this.enclose(o.columnName)).toArray().join(",");
 
         if (entityMetaData.hasIncrementPrimary) {
             // if primary key is auto increment, then need to split all query per entry.
-            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as NumericColumnMetaData).autoIncrement);
+            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as any as NumericColumnMetaData).autoIncrement);
 
             for (const entry of entries) {
                 const insertQuery: IQueryCommand = {
@@ -1587,12 +1626,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let result: IQueryCommand[] = [];
         const entitySchema = oldColumnSchema.entity;
         // If auto increment, column must be not nullable.
-        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement);
+        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement);
         let isDefaultChange = (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
-        const isIdentityChange = !!(columnSchema as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as NumericColumnMetaData).autoIncrement;
+        const isIdentityChange = !!(columnSchema as any as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as NumericColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
             || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as NumericColumnMetaData).length !== undefined && (oldColumnSchema as NumericColumnMetaData).length !== undefined && (columnSchema as NumericColumnMetaData).length !== (oldColumnSchema as NumericColumnMetaData).length)
+            || ((columnSchema as any as NumericColumnMetaData).length !== undefined && (oldColumnSchema as any as NumericColumnMetaData).length !== undefined && (columnSchema as any as NumericColumnMetaData).length !== (oldColumnSchema as any as NumericColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
             || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
 
@@ -1600,7 +1639,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result = result.concat(this.dropDefaultContraintQuery(oldColumnSchema));
         }
         if (isNullableChange) {
-            if (!columnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement) {
+            if (!columnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement) {
                 // if change from nullable to not nullable, set all existing data to default value.
                 const fallbackValue = this.defaultValue(columnSchema);
                 result.push({
@@ -1609,7 +1648,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
         }
         if (isIdentityChange) {
-            const toAutoIncrement = (columnSchema as NumericColumnMetaData).autoIncrement;
+            const toAutoIncrement = (columnSchema as any as NumericColumnMetaData).autoIncrement;
             // add new column.
             const newName = "NEW_" + columnSchema.columnName;
             const cloneColumn = Object.assign({}, columnSchema);

@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { IObjectType, RelationshipType } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { entityMetaKey, relationMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
-import { IRelationOption } from "../Option";
+import { entityMetaKey, relationMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
+import { IRelationOption } from "../Option/IRelationOption";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationChangeType, IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IEventDispacher } from "../../Event/IEventHandler";

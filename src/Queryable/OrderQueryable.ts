@@ -1,12 +1,15 @@
 import { OrderDirection } from "../Common/Type";
-import { FunctionExpression, MethodCallExpression, ObjectValueExpression, ValueExpression } from "../ExpressionBuilder/Expression/index";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: IQueryableOrderDefinition<T>[];

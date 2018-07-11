@@ -2,7 +2,7 @@ import { GenericType } from "../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
-import { IOrderExpression } from ".";
+import { IOrderExpression } from "./IOrderExpression";
 
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     type: GenericType<T>;

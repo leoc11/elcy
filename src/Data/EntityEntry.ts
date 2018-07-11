@@ -3,9 +3,9 @@ import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interf
 import { EntityState } from "./EntityState";
 import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
-import { EntityMetaData } from "../MetaData";
+import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
-import { EmbeddedColumnMetaData } from "../MetaData";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";

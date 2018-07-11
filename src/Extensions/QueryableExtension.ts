@@ -1,7 +1,7 @@
-import { Enumerable } from "../Enumerable/Enumerable";
 import "../Enumerable/Enumerable.partial";
+import { Enumerable } from "../Enumerable/Enumerable";
 import { relationMetaKey } from "../Decorator/DecoratorKey";
-import { RelationMetaData } from "../MetaData/Relation";
+import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 
 
 declare global {

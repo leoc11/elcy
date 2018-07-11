@@ -1,11 +1,12 @@
 import { GenericType } from "../Common/Type";
-import { FunctionExpression, MethodCallExpression } from "../ExpressionBuilder/Expression";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;

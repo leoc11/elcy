@@ -1,4 +1,4 @@
-import { InheritanceMetaData } from ".";
+import { InheritanceMetaData } from "./InheritanceMetaData";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
 import { IObjectType } from "../../Common/Type";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";

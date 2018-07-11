@@ -1,10 +1,10 @@
 import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
-import { IColumnOption } from "../../Decorator/Option";
-import { ColumnMetaData } from "../../MetaData";
+import { IColumnOption } from "../../Decorator/Option/IColumnOption";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
+import { IEntityMetaData } from "../Interface/IEntityMetaData";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
-import { IEntityMetaData } from "../Interface";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression";
 
 export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMetaData<TE, T> {
     public get columnName(): string {

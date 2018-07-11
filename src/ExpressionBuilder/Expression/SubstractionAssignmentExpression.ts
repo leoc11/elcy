@@ -2,7 +2,6 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { MethodCallExpression } from "./MethodCallExpression";
 export class SubstractionAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new SubstractionAssignmentExpression(leftOperand, rightOperand);

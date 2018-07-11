@@ -1,5 +1,5 @@
 import { IObjectType } from "../../Common/Type";
-import { IEntityMetaData } from ".";
+import { IEntityMetaData } from "./IEntityMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 
 export interface IRelationDataMetaData<TType, TSource, TTarget> extends IEntityMetaData<TType> {

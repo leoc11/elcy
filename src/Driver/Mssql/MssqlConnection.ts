@@ -39,7 +39,7 @@ export class MssqlConnection implements IConnection {
     public open(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const con = new tedious.Connection(this.connectionOption);
-            con.once("connect", (error) => {
+            con.once("connect", (error?: any) => {
                 if (error) {
                     reject(error);
                 }
@@ -57,7 +57,7 @@ export class MssqlConnection implements IConnection {
                 const transactionName = "transaction_" + this.transactions.length;
                 const useSavePoint = this.inTransaction;
                 const curIsolationLevel = this.isolationLevel;
-                const cb = async (error) => {
+                const cb = async (error?: any) => {
                     if (error)
                         return reject(error);
 
@@ -96,7 +96,7 @@ export class MssqlConnection implements IConnection {
     public commitTransaction(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.isOpen && this.inTransaction) {
-                const cb = async (error?) => {
+                const cb = async (error?: Error) => {
                     if (error)
                         return reject(error);
 
@@ -119,7 +119,7 @@ export class MssqlConnection implements IConnection {
     public rollbackTransaction(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.isOpen && this.inTransaction) {
-                const cb = async (error?) => {
+                const cb = async (error?: Error) => {
                     if (error)
                         return reject(error);
 
@@ -142,7 +142,7 @@ export class MssqlConnection implements IConnection {
                 effectedRows: 0
             };
 
-            const request = new tedious.Request(command.query, (error, rowCount, rows) => {
+            const request = new tedious.Request(command.query, (error: string, rowCount: number, rows: any[]) => {
                 if (error) {
                     reject(error);
                 }
@@ -187,7 +187,7 @@ export class MssqlConnection implements IConnection {
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.execSqlBatch(new tedious.Request("SET TRANSACTION ISOLATION LEVEL " + isolationLevel, (error) => {
+            this.connection.execSqlBatch(new tedious.Request("SET TRANSACTION ISOLATION LEVEL " + isolationLevel, (error: string) => {
                 if (error)
                     reject(error);
 

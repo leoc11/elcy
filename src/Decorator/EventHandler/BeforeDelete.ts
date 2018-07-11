@@ -1,8 +1,9 @@
 import "reflect-metadata";
 import { IObjectType } from "../../Common/Type";
-import { IDeleteEventParam, IEntityMetaData } from "../../MetaData/Interface";
 import { entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity/AbstractEntity";
+import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 /**
  * Register before save event. only for concrete entity
  */

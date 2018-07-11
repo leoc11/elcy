@@ -1,4 +1,4 @@
-import { StringColumn } from "../../../src/Decorator/Column/index";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 import { Product, Collection } from ".";
 import { RelationshipData } from "../../../src/Decorator/Relation/RelationshipData";
 @RelationshipData<CollectionProductData>(Collection || "Collection", "Contain", Product || "Product", "CollectionProducts", [(o) => o.CollectionId], [(o) => o.ProductId])

@@ -1,6 +1,6 @@
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/index";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { hashCode } from "../Helper/Util";
 
 export class TakeQueryable<T> extends Queryable<T> {

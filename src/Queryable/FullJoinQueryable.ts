@@ -1,5 +1,5 @@
 import { IObjectType, JoinType, ValueType } from "../Common/Type";
-import { FunctionExpression } from "../ExpressionBuilder/Expression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { JoinQueryable } from "./JoinQueryable";
 import { Queryable } from "./Queryable";
 import { hashCode } from "../Helper/Util";
