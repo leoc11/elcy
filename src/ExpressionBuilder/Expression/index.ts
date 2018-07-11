@@ -16,7 +16,7 @@ export * from "./LeftDecrementExpression";
 export * from "./LeftIncrementExpression";
 export * from "./MemberAccessExpression";
 export * from "./MethodCallExpression";
-export * from "./NegationExpression";
+export * from "./NotExpression";
 export * from "./OrExpression";
 export * from "./ParameterExpression";
 export * from "./RightDecrementExpression";

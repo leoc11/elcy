@@ -6,7 +6,7 @@ import {
     GreaterEqualExpression, GreaterThanExpression,
     IExpression, InstanceofExpression,
     LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NegationExpression, ObjectValueExpression,
+    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
     TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
@@ -215,8 +215,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case LeftIncrementExpression:
                 result = this.getLeftIncrementExpressionString(expression as any);
                 break;
-            case NegationExpression:
-                result = this.getNegationExpressionString(expression as any);
+            case NotExpression:
+                result = this.getNotExpressionString(expression as any);
                 break;
             case RightDecrementExpression:
                 result = this.getRightDecrementExpressionString(expression as any);
@@ -943,7 +943,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
         throw new Error(`LeftIncrement not supported`);
     }
-    protected getNegationExpressionString(expression: NegationExpression): string {
+    protected getNotExpressionString(expression: NotExpression): string {
         const operandString = this.getLogicalOperandString(expression.operand);
         return "NOT(" + this.newLine(this.indent + 1) + operandString + this.newLine(this.indent) + ")";
     }

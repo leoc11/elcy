@@ -7,7 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
-import { NegationExpression } from "../../ExpressionBuilder/Expression/NegationExpression";
+import { NotExpression } from "../../ExpressionBuilder/Expression/NotExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
@@ -62,7 +62,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
         if (entity.deleteColumn)
-            this.addWhere(new NegationExpression(entity.deleteColumn));
+            this.addWhere(new NotExpression(entity.deleteColumn));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)

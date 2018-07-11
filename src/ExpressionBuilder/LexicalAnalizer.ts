@@ -1,5 +1,4 @@
-import { operators } from "./IOperator";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { operators, IOperator } from "./IOperator";
 
 interface ILexicalPointer {
     index: number;
@@ -15,21 +14,87 @@ export enum LexicalTokenType {
     Breaker
 }
 export interface ILexicalToken {
-    data: string | number;
     type: LexicalTokenType;
-    childrens?: ILexicalToken[];
+    data: string | number;
 }
 export class LexicalAnalizer {
-    public static parse(fnBody: string): ILexicalToken[] {
+    public static *parse(input: string): IterableIterator<ILexicalToken> {
         const pointer: ILexicalPointer = {
             index: -1
         };
-        const result = analyzeLexicalParenthesis(pointer, fnBody);
-        return result.childrens;
+        const length = input.length;
+        pointer.index++;
+        let char: string;
+        let lastToken: ILexicalToken;
+        do {
+            char = input[pointer.index];
+
+            if (char <= " ") {
+                pointer.index++;
+                continue;
+            }
+            else if ((char >= "A" && char <= "Z") || (char >= "a" && char <= "z")
+                || char === "_" || char === "$") {
+                lastToken = analyzeLexicalIdentifier(pointer, input);
+                yield lastToken;
+            }
+            else if ((char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
+                || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
+                lastToken = analizeLexicalOperator(pointer, input);
+                yield lastToken;
+            }
+            else if (char === "'" || char === "\"") {
+                lastToken = analyzeLexicalString(pointer, input);
+                yield lastToken;
+            }
+            else if (char >= "0" && char <= "9") {
+                lastToken = analyzeLexicalNumber(pointer, input);
+                yield lastToken;
+            }
+            else if ((["(", "[", "{"]).indexOf(char) >= 0) {
+                lastToken = {
+                    data: char,
+                    type: LexicalTokenType.Parenthesis
+                };
+                yield lastToken;
+                pointer.index++;
+            }
+            else if (char === "`") {
+                lastToken = analyzeLexicalTemplateLiteral(pointer, input);
+                yield lastToken;
+            }
+            else if ((["\n", ";", ":", ",", "}", "]", ")"]).indexOf(char) >= 0) {
+                lastToken = {
+                    data: char,
+                    type: LexicalTokenType.Breaker
+                };
+                yield lastToken;
+                pointer.index++;
+            }
+            else if (char === "/") {
+                const char2 = input[pointer.index + 1];
+                if (char2 === "*") {
+                    analyzeLexicalComment(pointer, input, true);
+                }
+                else if (char2 === "/") {
+                    analyzeLexicalComment(pointer, input, false);
+                }
+                else {
+                    if (!lastToken || lastToken.type > LexicalTokenType.Regexp) {
+                        lastToken = analyzeRegexp(pointer, input);
+                        yield lastToken;
+                    }
+                    else {
+                        lastToken = analizeLexicalOperator(pointer, input);
+                        yield lastToken;
+                    }
+                }
+            }
+        } while (pointer.index < length);
     }
 }
 
-const keywordOperator = new Enumerable(operators.keys()).where(o => o[0] >= "a" && o[0] <= "z").toArray();
+const keywordOperators = operators.where(o => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select(o => o.identifier).toArray();
 const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with"];
 
 function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILexicalToken {
@@ -45,8 +110,7 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
     const data = input.slice(start, pointer.index);
     let type;
 
-    // TODO: Binary search
-    for (const keyword of keywordOperator) {
+    for (const keyword of keywordOperators) {
         if (keyword === data) {
             type = LexicalTokenType.Operator;
             break;
@@ -145,80 +209,5 @@ function analizeLexicalOperator(pointer: ILexicalPointer, input: string): ILexic
     return {
         data: data,
         type: LexicalTokenType.Operator
-    };
-}
-function analyzeLexicalParenthesis(pointer: ILexicalPointer, input: string, stopper?: string): ILexicalToken {
-    const resultData: ILexicalToken[] = [];
-    const length = input.length;
-    pointer.index++;
-    let char: string;
-    do {
-        char = input[pointer.index];
-
-        if (char <= " ") {
-            pointer.index++;
-            continue;
-        }
-        else if ((char >= "A" && char <= "Z") || (char >= "a" && char <= "z")
-            || char === "_" || char === "$") {
-            resultData.push(analyzeLexicalIdentifier(pointer, input));
-        }
-        else if ((char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
-            || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
-            resultData.push(analizeLexicalOperator(pointer, input));
-        }
-        else if (char === "'" || char === "\"") {
-            resultData.push(analyzeLexicalString(pointer, input));
-        }
-        else if (char >= "0" && char <= "9") {
-            resultData.push(analyzeLexicalNumber(pointer, input));
-        }
-        else if (char === "(") {
-            resultData.push(analyzeLexicalParenthesis(pointer, input, ")"));
-        }
-        else if (char === "[") {
-            resultData.push(analyzeLexicalParenthesis(pointer, input, "]"));
-        }
-        else if (char === "{") {
-            resultData.push(analyzeLexicalParenthesis(pointer, input, "}"));
-        }
-        else if (char === "`") {
-            resultData.push(analyzeLexicalTemplateLiteral(pointer, input));
-        }
-        else if (char === "\n" || char === ";" || char === ":" || char === ",") {
-            resultData.push({
-                data: char,
-                type: LexicalTokenType.Breaker
-            });
-            pointer.index++;
-        }
-        else if (char === "/") {
-            const char2 = input[pointer.index + 1];
-            if (char2 === "*") {
-                analyzeLexicalComment(pointer, input, true);
-            }
-            else if (char2 === "/") {
-                analyzeLexicalComment(pointer, input, false);
-            }
-            else {
-                const lastToken = resultData[resultData.length - 1];
-                if (!lastToken || lastToken.type > LexicalTokenType.Regexp) {
-                    resultData.push(analyzeRegexp(pointer, input));
-                }
-                else {
-                    resultData.push(analizeLexicalOperator(pointer, input));
-                }
-            }
-        }
-        else if (char === stopper) {
-            pointer.index++;
-            break;
-        }
-    } while (pointer.index < length);
-
-    return {
-        data: stopper,
-        type: LexicalTokenType.Parenthesis,
-        childrens: resultData
     };
 }

@@ -9,7 +9,7 @@ import {
     FunctionExpression, GreaterEqualExpression, GreaterThanExpression, IBinaryOperatorExpression,
     IExpression, InstanceofExpression, IUnaryOperatorExpression,
     LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NegationExpression, ObjectValueExpression,
+    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NotExpression, ObjectValueExpression,
     OrExpression, ParameterExpression, RightDecrementExpression,
     RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
     TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression
@@ -84,7 +84,7 @@ export class QueryExpressionVisitor {
             case BitwiseNotExpression:
             case LeftDecrementExpression:
             case LeftIncrementExpression:
-            case NegationExpression:
+            case NotExpression:
             case RightDecrementExpression:
             case RightIncrementExpression:
             case TypeofExpression:
@@ -831,7 +831,7 @@ export class QueryExpressionVisitor {
                     if (expression.params.length > 0) {
                         let predicateFn = expression.params[0] as FunctionExpression;
                         if (!isAny)
-                            predicateFn.body = new NegationExpression(predicateFn.body);
+                            predicateFn.body = new NotExpression(predicateFn.body);
                         const visitParam: IQueryVisitParameter = { commandExpression: selectOperand, scope: expression.methodName };
                         this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
                     }
