@@ -11,7 +11,8 @@ import { InstantiationExpression } from "./Expression/InstantiationExpression";
 import { FunctionExpression } from "./Expression/FunctionExpression";
 import { IOperator, Associativity, operators, OperatorType, IUnaryOperator, UnaryPosition, IOperatorPrecedence } from "./IOperator";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { MethodCallExpression, MemberAccessExpression } from "./Expression";
+import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
+import { MethodCallExpression } from "./Expression/MethodCallExpression";
 interface SyntaticParameter {
     index: number;
     types: GenericType[];
@@ -150,7 +151,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                         else {
                             throw new Error("expression not supported");
                         }
-                        break;
                     }
                     case "[": {
                         // TODO
@@ -161,7 +161,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                         else {
                             throw new Error("expression not supported");
                         }
-                        break;
                     }
                     case "(": {
                         const paramExpression = createParamExpression(param, tokens);

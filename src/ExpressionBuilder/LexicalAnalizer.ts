@@ -1,4 +1,4 @@
-import { operators, IOperator } from "./IOperator";
+import { operators } from "./IOperator";
 
 interface ILexicalPointer {
     index: number;
