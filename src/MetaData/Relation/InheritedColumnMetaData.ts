@@ -1,7 +1,7 @@
 import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option/IColumnOption";
-import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
+import { ColumnMetaData } from "../ColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";

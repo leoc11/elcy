@@ -1,7 +1,16 @@
 import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
+import { ValueExpression } from "./ValueExpression";
 export class InstantiationExpression<TType> extends ExpressionBase<TType> {
+    public static create<TType>(type: IObjectType<TType>, params: IExpression[]) {
+        const result = new InstantiationExpression(type, params);
+        if (params.every((param) => param instanceof ValueExpression)) {
+            return ValueExpression.create(result);
+        }
+
+        return result;
+    }
     constructor(public type: IObjectType<TType>, public params: IExpression[]) {
         super(type);
     }

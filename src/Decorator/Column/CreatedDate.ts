@@ -1,6 +1,6 @@
 import { DateTimeKind } from "../../Common/Type";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
-import { Column } from "../Column/Column";
+import { Column } from "./Column";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
 import { DateColumnType } from "../../Common/ColumnType";
 

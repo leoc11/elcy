@@ -1,4 +1,4 @@
-import { ILexicalToken, LexicalTokenType } from "./LexicalAnalizer";
+import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
 import { GenericType } from "../Common/Type";
 import { ParameterExpression } from "./Expression/ParameterExpression";
 import { IExpression } from "./Expression/IExpression";
@@ -6,7 +6,6 @@ import { ValueExpression } from "./Expression/ValueExpression";
 import { ArrayValueExpression } from "./Expression/ArrayValueExpression";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
 import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
-import { isNativeFunction } from "../Helper/Util";
 import { InstantiationExpression } from "./Expression/InstantiationExpression";
 import { FunctionExpression } from "./Expression/FunctionExpression";
 import { IOperator, Associativity, operators, OperatorType, IUnaryOperator, UnaryPosition, IOperatorPrecedence } from "./IOperator";
@@ -60,7 +59,7 @@ const globalObjectMaps = new Map<string, any>([
 ]);
 const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toArray().toMap(o => o.identifier);
 const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toArray().toMap(o => o.identifier);
-export class SyntacticAnalizer {
+export class SyntacticAnalyzer {
     public static parse(tokens: IterableIterator<ILexicalToken>, paramTypes: GenericType[] = [], userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {
             index: 0,
@@ -89,7 +88,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 }
                 else {
                     const operator = (!expression ? prefixOperators : postfixOperators).get(token.data as string);
-                    if (isGreatherThan(prevOperator.precedence, operator.precedence))
+                    if (prevOperator && isGreatherThan(prevOperator.precedence, operator.precedence))
                         return expression;
 
                     param.index++;
@@ -97,28 +96,29 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                         case OperatorType.Unary: {
                             const unaryOperator = operator as IUnaryOperator;
                             if (unaryOperator.position === UnaryPosition.Postfix) {
+                                expression = operator.expressionFactory(expression);
+                            }
+                            else {
                                 if (operator.identifier === "new") {
                                     const typeExp = createIdentifierExpression(param, tokens[param.index++], tokens) as ValueExpression<any>;
                                     const paramToken = tokens[param.index];
                                     let params: IExpression[] = [];
                                     if (paramToken.type === LexicalTokenType.Parenthesis && paramToken.data === "(") {
+                                        param.index++;
                                         const exp = createParamExpression(param, tokens);
                                         params = exp.items;
                                     }
-                                    expression = new InstantiationExpression(typeExp.value, params);
+                                    expression = InstantiationExpression.create(typeExp.value, params);
                                 }
                                 else {
-                                    expression = operator.expressionFactory(expression);
+                                    const operand = createExpression(param, tokens, undefined, operator);
+                                    expression = operator.expressionFactory(operand);
                                 }
-                            }
-                            else {
-                                const operand = createExpression(param, tokens, undefined, operator);
-                                expression = operator.expressionFactory(operand);
                             }
                             break;
                         }
                         case OperatorType.Binary: {
-                            const operand = createExpression(param, tokens, undefined, operator);
+                            const operand = operator.identifier === "." ? tokens[param.index++].data : createExpression(param, tokens, undefined, operator);
                             expression = operator.expressionFactory(expression, operand);
                             break;
                         }
@@ -163,17 +163,21 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                         }
                     }
                     case "(": {
+                        param.index++;
                         const paramExpression = createParamExpression(param, tokens);
                         if (expression) {
                             if (expression instanceof MemberAccessExpression) {
                                 expression = MethodCallExpression.Create(expression.objectOperand, paramExpression.items, expression.memberName);
+                            }
+                            else if (expression instanceof ValueExpression && expression.value instanceof Function) {
+                                expression = FunctionCallExpression.create(expression.value, paramExpression.items, expression.toString());
                             }
                             else {
                                 throw new Error("expression not supported");
                             }
                         }
                         else {
-                            return paramExpression;
+                            expression = paramExpression;
                         }
                     }
                 }
@@ -210,34 +214,33 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
 }
 function createArrayExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
     const arrayVal: any[] = [];
-    const index = param.index;
-    param.index = 0;
     while (param.index < tokens.length && (tokens[param.index].data !== "]")) {
         arrayVal.push(createExpression(param, tokens));
     }
-    param.index = index;
+    param.index++;
     return ArrayValueExpression.create(...arrayVal);
 }
 function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
     const obj: any = {};
     while (param.index < tokens.length && (tokens[param.index].data !== "}")) {
-        const propName = tokens[param.index++].data;
-        param.index++;
+        const propName = tokens[param.index].data;
+        param.index += 2;
         const value = createExpression(param, tokens);
         obj[propName] = value;
-        param.index++;
+        if (tokens[param.index].data === ",")
+            param.index++;
     }
     return ObjectValueExpression.create(obj);
 }
 function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
     const expressions: IExpression[] = [];
     while (param.index < tokens.length && (tokens[param.index].data !== ")")) {
-        param.index++;
         expressions.push(createExpression(param, tokens));
     }
+    param.index++;
     return new ArrayValueExpression(...expressions);
 }
-function createIdentifierExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+function createIdentifierExpression(param: SyntaticParameter, token: ILexicalToken): IExpression {
     if (param.scopedParameters.has(token.data as string)) {
         const params = param.scopedParameters.get(token.data as string);
         if (params.length > 0)
@@ -246,9 +249,7 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
     else if (param.userParameters[token.data as string] !== undefined) {
         const data = param.userParameters[token.data as string];
         if (data instanceof Function) {
-            param.index++;
-            const params = createParamExpression(param, tokens);
-            return new FunctionCallExpression(data as any, token.data as string, params.items);
+            return new ValueExpression(data, token.data as string);
         }
         else {
             return new ParameterExpression(token.data as string, data.constructor);
@@ -256,18 +257,11 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
     }
     else if (globalObjectMaps.has(token.data as string)) {
         const data = globalObjectMaps.get(token.data as string);
-        if (data instanceof Function && isNativeFunction(data)) {
-            param.index++;
-            const params = createParamExpression(param, tokens);
-            return new FunctionCallExpression(data as any, token.data as string, params.items);
-        }
-        else {
-            return new ValueExpression(data, token.data as string);
-        }
+        return new ValueExpression(data, token.data as string);
     }
     return new ParameterExpression(token.data as string);
 }
-function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+function createKeywordExpression(token: ILexicalToken): IExpression {
     throw new Error(`keyword ${token.data} not supported`);
 }
 function createFunctionExpression(param: SyntaticParameter, expression: IExpression, tokens: ILexicalToken[]) {

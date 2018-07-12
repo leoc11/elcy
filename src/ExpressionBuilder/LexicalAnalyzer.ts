@@ -1,3 +1,4 @@
+import "../Extensions/EnumerableExtension";
 import { operators } from "./IOperator";
 
 interface ILexicalPointer {
@@ -17,7 +18,7 @@ export interface ILexicalToken {
     type: LexicalTokenType;
     data: string | number;
 }
-export class LexicalAnalizer {
+export class LexicalAnalyzer {
     public static *parse(input: string): IterableIterator<ILexicalToken> {
         const pointer: ILexicalPointer = {
             index: -1
@@ -40,7 +41,7 @@ export class LexicalAnalizer {
             }
             else if ((char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
-                lastToken = analizeLexicalOperator(pointer, input);
+                lastToken = analyzeLexicalOperator(pointer, input);
                 yield lastToken;
             }
             else if (char === "'" || char === "\"") {
@@ -85,7 +86,7 @@ export class LexicalAnalizer {
                         yield lastToken;
                     }
                     else {
-                        lastToken = analizeLexicalOperator(pointer, input);
+                        lastToken = analyzeLexicalOperator(pointer, input);
                         yield lastToken;
                     }
                 }
@@ -196,12 +197,12 @@ function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock 
             break;
     } while (true);
 }
-function analizeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
+function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
     const start = pointer.index;
     let char = input[++pointer.index];
-    if (["=", "+", "-", "*", "&", "|", ">", "<"].indexOf(char)) {
+    if (["=", "+", "-", "*", "&", "|", ">", "<"].indexOf(char) >= 0) {
         char = input[++pointer.index];
-        if (["=", ">"].indexOf(char)) {
+        if (["=", ">"].indexOf(char) >= 0) {
             pointer.index++;
         }
     }

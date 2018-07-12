@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
-    public static Create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
+    public static create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
         if (typeof functionName !== "string")
             functionName = (functionFn as any).name;
 

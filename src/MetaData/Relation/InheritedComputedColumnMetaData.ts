@@ -1,5 +1,5 @@
 import { GenericType } from "../../Common/Type";
-import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
+import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
