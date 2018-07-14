@@ -3,7 +3,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-export class AdditionAssignmentExpression<T extends number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
+export class AdditionAssignmentExpression<T extends number | string = number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression, rightOperand: IExpression) {
         return new AdditionAssignmentExpression(leftOperand, rightOperand);
     }

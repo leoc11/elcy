@@ -2,7 +2,7 @@ import { GenericType } from "../../Common/Type";
 import { ExpressionBase } from "../../ExpressionBuilder/Expression/IExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 
-export class SqlExpression<T> extends ExpressionBase<T> {
+export class RawSqlExpression<T> extends ExpressionBase<T> {
     constructor(public readonly type: GenericType<T>, public readonly sqlStatement: string) {
         super();
     }
@@ -10,6 +10,6 @@ export class SqlExpression<T> extends ExpressionBase<T> {
         throw new Error("method not implemented");
     }
     public clone() {
-        return new SqlExpression(this.type, this.sqlStatement);
+        return new RawSqlExpression(this.type, this.sqlStatement);
     }
 }

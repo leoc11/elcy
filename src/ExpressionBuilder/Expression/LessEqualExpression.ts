@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class LessEqualExpression<TType> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
+export class LessEqualExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new LessEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)

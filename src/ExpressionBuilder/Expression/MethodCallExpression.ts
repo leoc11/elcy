@@ -4,7 +4,7 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType> {
-    public static Create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
+    public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.create(result);
