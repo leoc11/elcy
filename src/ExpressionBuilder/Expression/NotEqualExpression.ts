@@ -2,6 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { GenericType } from "../../Common/Type";
 export class NotEqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new NotEqualExpression(leftOperand, rightOperand);
@@ -13,6 +14,7 @@ export class NotEqualExpression extends ExpressionBase<boolean> implements IBina
     constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
         super(Boolean);
     }
+    public type: GenericType<boolean>;
 
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)

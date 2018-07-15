@@ -294,18 +294,17 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         await this.closeConnection(con);
         return result;
     }
-    public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
+    protected async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
         const mergedCommands = this.mergeQueries(queryCommands);
         let results: IQueryResult[] = [];
         const con = await this.getConnection();
         for (const query of mergedCommands) {
             if (parameters)
                 query.parameters = query.parameters ? new Map([...query.parameters, ...parameters]) : parameters;
-
             const res = await con.executeQuery(query);
             results = results.concat(res);
         }
-
+        await this.closeConnection(con);
         return results;
     }
     public async transaction(transactionBody: () => Promise<void>): Promise<void>;
@@ -466,13 +465,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const res = await this.executeQuery(query);
                 results = results.concat(res);
             }
-            throw new Error("asd");
         });
 
         // reflect all changes to current model
 
-        let i = 0;
-        const datas = results.selectMany(o => o.rows);
+        const datas = results.where(o => Array.isArray(o.rows)).selectMany(o => o.rows);
         const dataIterator = datas[Symbol.iterator]();
         // apply insert changes
         orderedEntityAdd.each(([metaData, addEntries]) => {
@@ -520,7 +517,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         });
 
-        return results.sum(o => o.effectedRows) - i;
+        return results.sum(o => o.effectedRows);
     }
     public mergeQueries(queries: IQueryCommand[]): IQueryCommand[] {
         const results: IQueryCommand[] = [];
@@ -529,7 +526,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             parameters: new Map()
         };
         for (const query of queries) {
-            result.query += (result.query ? "\n\n" : "") + query.query + ";";
+            result.query += (result.query ? ";\n\n" : "") + query.query;
             if (query.parameters)
                 result.parameters = new Map([...result.parameters, ...query.parameters]);
         }

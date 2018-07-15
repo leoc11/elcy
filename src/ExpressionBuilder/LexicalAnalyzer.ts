@@ -11,7 +11,7 @@ export enum LexicalTokenType {
     Regexp,
     Keyword,
     Operator,
-    Parenthesis,
+    Block,
     Breaker
 }
 export interface ILexicalToken {
@@ -39,7 +39,7 @@ export class LexicalAnalyzer {
                 lastToken = analyzeLexicalIdentifier(pointer, input);
                 yield lastToken;
             }
-            else if ((char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
+            else if (char === "(" || char === "[" || (char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
                 lastToken = analyzeLexicalOperator(pointer, input);
                 yield lastToken;
@@ -52,10 +52,10 @@ export class LexicalAnalyzer {
                 lastToken = analyzeLexicalNumber(pointer, input);
                 yield lastToken;
             }
-            else if ((["(", "[", "{"]).indexOf(char) >= 0) {
+            else if (char === "{") {
                 lastToken = {
                     data: char,
-                    type: LexicalTokenType.Parenthesis
+                    type: LexicalTokenType.Block
                 };
                 yield lastToken;
                 pointer.index++;
@@ -64,7 +64,7 @@ export class LexicalAnalyzer {
                 lastToken = analyzeLexicalTemplateLiteral(pointer, input);
                 yield lastToken;
             }
-            else if ((["\n", ";", ":", ",", "}", "]", ")"]).indexOf(char) >= 0) {
+            else if ((["\n", ";", ",", ":", "}", "]", ")"]).indexOf(char) >= 0) {
                 lastToken = {
                     data: char,
                     type: LexicalTokenType.Breaker

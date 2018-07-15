@@ -6,6 +6,9 @@ export const isValue = (data: any): data is ValueType => {
 export const isValueType = <T>(type: GenericType<T>) => {
     return [Number, String, Date].contains(type as any);
 };
+export const isNotNull = (value: any) => {
+    return value !== null && value !== undefined;
+};
 export const isNativeFunction = (fn: Function) => {
     return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
 };

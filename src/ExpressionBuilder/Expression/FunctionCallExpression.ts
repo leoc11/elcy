@@ -1,43 +1,67 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
-    public static create<TType>(functionFn: ((...params: any[]) => TType), params: IExpression[], functionName?: string) {
-        if (typeof functionName !== "string")
-            functionName = (functionFn as any).name;
+import { GenericType } from "../../Common/Type";
+export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
+    public static create<T>(functionFn: ((...params: any[]) => T) | IExpression<(...params: any[]) => T>, params: IExpression[], functionName?: string) {
+        let fnExp: IExpression<(...params: any[]) => T>;
+        if ((functionFn as IExpression).type) {
+            fnExp = functionFn as IExpression<(...params: any[]) => T>;
+        }
+        else {
+            const fn = functionFn as (...params: any[]) => T;
+            if (typeof functionName !== "string")
+                functionName = fn.name;
+            fnExp = new ValueExpression(fn);
+        }
 
-        const result = new FunctionCallExpression<TType>(functionFn, functionName!, params);
-        if (params.every((param) => param instanceof ValueExpression)) {
+        const result = new FunctionCallExpression<T>(fnExp, params, functionName);
+        if (fnExp instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.create(result);
         }
 
         return result;
     }
-    constructor(public readonly functionFn: ((...params: any[]) => TType), public readonly functionName: string, public params: IExpression[]) {
+    constructor(public fnExpression: IExpression<(...params: any[]) => T>, public params: IExpression[], functionName?: string) {
         super();
-        switch (functionFn as any) {
-            case parseInt:
-            case parseFloat:
-                this.type = Number as any;
-                break;
-            case decodeURI:
-            case decodeURIComponent:
-            case encodeURI:
-            case encodeURIComponent:
-                this.type = String as any;
-                break;
-            case isNaN:
-            case isFinite:
-                this.type = Boolean as any;
-                break;
-            case eval:
-                this.type = Function as any;
-                break;
-            default:
-                try { this.type = functionFn().constructor as any; } catch (e) {}
-        }
     }
+    public get functionName() {
+        return this.fnExpression.toString();
+    }
+    private _type: GenericType<T>;
+    public get type() {
+        if (!this._type) {
+            try {
+                const fn = this.fnExpression.execute();
+                switch (fn as any) {
+                    case parseInt:
+                    case parseFloat:
+                        this._type = Number as any;
+                        break;
+                    case decodeURI:
+                    case decodeURIComponent:
+                    case encodeURI:
+                    case encodeURIComponent:
+                        this._type = String as any;
+                        break;
+                    case isNaN:
+                    case isFinite:
+                        this._type = Boolean as any;
+                        break;
+                    case eval:
+                        this._type = Function as any;
+                        break;
+                    default:
+                        try { this._type = fn().constructor as any; } catch (e) { }
+                }
+            }
+            catch (e) {
+                return Object;
+            }
+        }
 
+        return this._type;
+    }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -46,13 +70,14 @@ export class FunctionCallExpression<TType> extends ExpressionBase<TType> {
             paramStr.push(param.toString());
         return this.functionName + "(" + paramStr.join(", ") + ")";
     }
-    public execute(transformer: ExpressionTransformer) {
+    public execute(transformer?: ExpressionTransformer) {
         const params = [];
         for (const param of this.params)
             params.push(param.execute(transformer));
-        return this.functionFn.apply(null, params);
+        const fn = this.fnExpression.execute(transformer);
+        return fn.apply(null, params);
     }
     public clone() {
-        return new FunctionCallExpression(this.functionFn, this.functionName, this.params);
+        return new FunctionCallExpression(this.fnExpression, this.params);
     }
 }

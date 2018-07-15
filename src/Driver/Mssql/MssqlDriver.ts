@@ -13,6 +13,9 @@ export class MssqlDriver implements IDriver<"mssql"> {
         const config = Object.assign({}, this.connectionOptions) as any;
         const host = this.connectionOptions.host.split("\\");
         config.userName = this.connectionOptions.user;
+        config.options = {
+            database: this.connectionOptions.database
+        };
         config.server = host[0];
         if (!config.options)
             config.options = { appName: "lc-framework" };

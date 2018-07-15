@@ -11,7 +11,7 @@ export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T
     columnType?: ColumnType;
     columnMetaData?: IColumnMetaData<TE, T>;
     entity: IEntityExpression<TE>;
-    propertyName: string;
+    propertyName: keyof TE;
     isPrimary: boolean;
     isShadow?: boolean;
     clone(): IColumnExpression<TE, T>;

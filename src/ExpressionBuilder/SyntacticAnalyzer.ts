@@ -1,5 +1,5 @@
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
-import { GenericType } from "../Common/Type";
+import { NullConstructor } from "../Common/Type";
 import { ParameterExpression } from "./Expression/ParameterExpression";
 import { IExpression } from "./Expression/IExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
@@ -14,9 +14,9 @@ import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
 import { MethodCallExpression } from "./Expression/MethodCallExpression";
 interface SyntaticParameter {
     index: number;
-    types: GenericType[];
     scopedParameters: Map<string, ParameterExpression[]>;
     userParameters: { [key: string]: any };
+    scopeFunctions: IExpression<Function>[];
 }
 const globalObjectMaps = new Map<string, any>([
     // Global Function
@@ -60,20 +60,27 @@ const globalObjectMaps = new Map<string, any>([
 const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toArray().toMap(o => o.identifier);
 const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toArray().toMap(o => o.identifier);
 export class SyntacticAnalyzer {
-    public static parse(tokens: IterableIterator<ILexicalToken>, paramTypes: GenericType[] = [], userParameters: { [key: string]: any } = {}) {
+    public static parse(tokens: IterableIterator<ILexicalToken>, userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {
             index: 0,
-            types: paramTypes,
             scopedParameters: new Map(),
-            userParameters: userParameters
+            userParameters: userParameters,
+            scopeFunctions: []
         };
-        const result = createExpression(param, new Enumerable(tokens).toArray());
+        const result = createExpression(param, new Enumerable(tokens).toArray()) as FunctionExpression;
+        result.scopeFunctions = param.scopeFunctions;
         return result;
     }
 }
 function isGreatherThan(precedence1: IOperatorPrecedence, precedence2: IOperatorPrecedence) {
     if (precedence1.precedence === precedence2.precedence) {
-        return precedence1.associativity !== Associativity.Right;
+        if (precedence1.associativity === Associativity.None) {
+            return false;
+        }
+        else if (precedence2.associativity === Associativity.None) {
+            return true;
+        }
+        return precedence1.associativity === Associativity.Left;
     }
     return precedence1.precedence >= precedence2.precedence;
 }
@@ -88,7 +95,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 }
                 else {
                     const operator = (!expression ? prefixOperators : postfixOperators).get(token.data as string);
-                    if (prevOperator && isGreatherThan(prevOperator.precedence, operator.precedence))
+                    if (!operator || (prevOperator && isGreatherThan(prevOperator.precedence, operator.precedence)))
                         return expression;
 
                     param.index++;
@@ -99,27 +106,74 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                 expression = operator.expressionFactory(expression);
                             }
                             else {
-                                if (operator.identifier === "new") {
-                                    const typeExp = createIdentifierExpression(param, tokens[param.index++], tokens) as ValueExpression<any>;
-                                    const paramToken = tokens[param.index];
-                                    let params: IExpression[] = [];
-                                    if (paramToken.type === LexicalTokenType.Parenthesis && paramToken.data === "(") {
-                                        param.index++;
-                                        const exp = createParamExpression(param, tokens);
-                                        params = exp.items;
+                                switch (operator.identifier) {
+                                    case "new": {
+                                        const typeExp = createExpression(param, tokens, null, operator);
+                                        if (!(typeExp instanceof ValueExpression)) {
+                                            param.scopeFunctions.push(typeExp);
+                                        }
+                                        const paramToken = tokens[param.index];
+                                        let params: IExpression[] = [];
+                                        if (paramToken.type === LexicalTokenType.Operator && paramToken.data === "(") {
+                                            param.index++;
+                                            let exp = createParamExpression(param, tokens, ")");
+                                            params = exp.items;
+                                        }
+                                        expression = new InstantiationExpression(typeExp, params);
+                                        break;
                                     }
-                                    expression = InstantiationExpression.create(typeExp.value, params);
-                                }
-                                else {
-                                    const operand = createExpression(param, tokens, undefined, operator);
-                                    expression = operator.expressionFactory(operand);
+                                    case "[": {
+                                        // TODO
+                                        if (!expression) {
+                                            return createArrayExpression(param, tokens);
+                                        }
+                                        else {
+                                            throw new Error("expression not supported");
+                                        }
+                                    }
+                                    case "(": {
+                                        if (expression) {
+                                            throw new Error("expression not supported");
+                                        }
+                                        const arrayExp = createParamExpression(param, tokens, ")");
+                                        if (arrayExp.items.length === 1) {
+                                            expression = arrayExp.items[0];
+                                        }
+                                        else {
+                                            expression = arrayExp;
+                                        }
+                                        break;
+                                    }
+                                    default: {
+                                        const operand = createExpression(param, tokens, undefined, operator);
+                                        expression = operator.expressionFactory(operand);
+                                    }
                                 }
                             }
                             break;
                         }
                         case OperatorType.Binary: {
-                            const operand = operator.identifier === "." ? tokens[param.index++].data : createExpression(param, tokens, undefined, operator);
-                            expression = operator.expressionFactory(expression, operand);
+                            if (operator.identifier === "(") {
+                                let params = createParamExpression(param, tokens, ")");
+                                if (expression instanceof MemberAccessExpression) {
+                                    expression = MethodCallExpression.create(expression.objectOperand, params.items, expression.memberName);
+                                }
+                                else {
+                                    if (!(expression instanceof ValueExpression)) {
+                                        param.scopeFunctions.push(expression);
+                                    }
+                                    expression = FunctionCallExpression.create(expression, params.items);
+                                }
+                                continue;
+                            }
+                            const operand = createExpression(param, tokens, undefined, operator);
+                            if (operator.identifier === ".") {
+                                const memberName = operand.toString();
+                                expression = MemberAccessExpression.create(expression, memberName);
+                            }
+                            else {
+                                expression = operator.expressionFactory(expression, operand);
+                            }
                             break;
                         }
                         case OperatorType.Ternary: {
@@ -133,55 +187,22 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 }
                 break;
             }
+            case LexicalTokenType.Block: {
+                param.index++;
+                // TODO
+                if (!expression) {
+                    return createObjectExpression(param, tokens);
+                }
+                else {
+                    throw new Error("expression not supported");
+                }
+            }
             case LexicalTokenType.Breaker: {
                 return expression;
             }
             case LexicalTokenType.Keyword: {
                 param.index++;
                 return createKeywordExpression(param, token, tokens);
-            }
-            case LexicalTokenType.Parenthesis: {
-                switch (token.data) {
-                    case "{": {
-                        // TODO
-                        param.index++;
-                        if (!expression) {
-                            return createObjectExpression(param, tokens);
-                        }
-                        else {
-                            throw new Error("expression not supported");
-                        }
-                    }
-                    case "[": {
-                        // TODO
-                        param.index++;
-                        if (!expression) {
-                            return createArrayExpression(param, tokens);
-                        }
-                        else {
-                            throw new Error("expression not supported");
-                        }
-                    }
-                    case "(": {
-                        param.index++;
-                        const paramExpression = createParamExpression(param, tokens);
-                        if (expression) {
-                            if (expression instanceof MemberAccessExpression) {
-                                expression = MethodCallExpression.Create(expression.objectOperand, paramExpression.items, expression.memberName);
-                            }
-                            else if (expression instanceof ValueExpression && expression.value instanceof Function) {
-                                expression = FunctionCallExpression.create(expression.value, paramExpression.items, expression.toString());
-                            }
-                            else {
-                                throw new Error("expression not supported");
-                            }
-                        }
-                        else {
-                            expression = paramExpression;
-                        }
-                    }
-                }
-                break;
             }
             case LexicalTokenType.Number: {
                 expression = ValueExpression.create(Number.parseFloat(token.data as string));
@@ -230,45 +251,41 @@ function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[
         if (tokens[param.index].data === ",")
             param.index++;
     }
+    param.index++;
     return ObjectValueExpression.create(obj);
 }
-function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
-    const expressions: IExpression[] = [];
-    while (param.index < tokens.length && (tokens[param.index].data !== ")")) {
-        expressions.push(createExpression(param, tokens));
+function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[], stopper: string) {
+    const arrayVal = [];
+    while (param.index < tokens.length && (tokens[param.index].data !== stopper)) {
+        arrayVal.push(createExpression(param, tokens));
     }
     param.index++;
-    return new ArrayValueExpression(...expressions);
+    return new ArrayValueExpression(...arrayVal);
 }
-function createIdentifierExpression(param: SyntaticParameter, token: ILexicalToken): IExpression {
-    if (param.scopedParameters.has(token.data as string)) {
+function createIdentifierExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
+    if (typeof token.data === "string" && param.scopedParameters.has(token.data)) {
         const params = param.scopedParameters.get(token.data as string);
         if (params.length > 0)
             return params[0];
     }
-    else if (param.userParameters[token.data as string] !== undefined) {
-        const data = param.userParameters[token.data as string];
-        if (data instanceof Function) {
-            return new ValueExpression(data, token.data as string);
-        }
-        else {
-            return new ParameterExpression(token.data as string, data.constructor);
-        }
+    if (param.userParameters.hasOwnProperty(token.data)) {
+        const data = param.userParameters[token.data];
+        return new ParameterExpression(token.data as string, data ? data.constructor : NullConstructor);
     }
     else if (globalObjectMaps.has(token.data as string)) {
         const data = globalObjectMaps.get(token.data as string);
         return new ValueExpression(data, token.data as string);
     }
+
     return new ParameterExpression(token.data as string);
 }
-function createKeywordExpression(token: ILexicalToken): IExpression {
+function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
     throw new Error(`keyword ${token.data} not supported`);
 }
 function createFunctionExpression(param: SyntaticParameter, expression: IExpression, tokens: ILexicalToken[]) {
-    const params: ParameterExpression[] = expression instanceof ArrayValueExpression ? expression.items as any : [expression] as any;
+    const params: ParameterExpression[] = expression instanceof ArrayValueExpression ? expression.items as any : expression ? [expression] : [];
     const token = tokens[param.index];
     for (const paramExp of params) {
-        paramExp.type = param.types.shift();
         let paramsL = param.scopedParameters.get(paramExp.name);
         if (!paramsL) {
             paramsL = [];
@@ -277,10 +294,8 @@ function createFunctionExpression(param: SyntaticParameter, expression: IExpress
         paramsL.unshift(paramExp);
     }
     let body: IExpression;
-    if (token.type === LexicalTokenType.Parenthesis) {
-        param.index++;
-        if (token.data === "{")
-            param.index++;
+    if (token.type === LexicalTokenType.Block) {
+        param.index += 2;
     }
     body = createExpression(param, tokens);
     for (const paramExp of params) {

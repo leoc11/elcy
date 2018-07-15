@@ -30,7 +30,10 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
     }
     private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext, select: SelectExpression<T>, loadTime: Date, customTypeMap = new Map<GenericType, Map<number, any>>()): T[] {
         const results: T[] = [];
-        const queryResult = queryResults.shift();
+        let queryResult: IQueryResult;
+        do {
+            queryResult = queryResults.shift();
+        } while (!queryResult.rows);
 
         if (queryResult.rows.length <= 0)
             return results;
@@ -96,7 +99,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 if (entry)
                     entity = entry.entity;
                 else
-                    dbSet.attach(entity);
+                    entry = dbSet.attach(entity);
             }
             resultMap.set(key, entity);
 
@@ -109,8 +112,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             }
             else {
                 for (const column of columns) {
-                    const value = this.convertTo(row[column.columnName], column);
-                    this.setPropertyValue(entry || entity, column, value, dbContext);
+                    this.setPropertyValue(entry || entity, column, row, dbContext);
                 }
             }
             for (const column of relColumns) {

@@ -21,7 +21,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     private _selectedColumns: IColumnExpression[];
     private _relationColumns: IColumnExpression[];
     public alias: string;
-    constructor(public subSelect: SelectExpression, public readonly type: GenericType<T> = Object as any) {
+    constructor(public subSelect: SelectExpression<T>, public readonly type: GenericType<T> = Object as any) {
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = subSelect.projectedColumns.select(o => {

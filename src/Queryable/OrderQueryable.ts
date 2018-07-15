@@ -20,7 +20,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                 const selector = o[0];
                 const direction = o[1];
                 const a = {
-                    selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, [this.parent.type]),
+                    selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector),
                     direction: new ValueExpression(direction ? direction : OrderDirection.ASC)
                 };
                 return new ObjectValueExpression(a);

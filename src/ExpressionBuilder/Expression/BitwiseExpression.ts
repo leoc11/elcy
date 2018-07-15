@@ -7,10 +7,10 @@ export abstract class BitwiseExpression extends ExpressionBase<number> {
     }
     protected convertOperand(operand: IExpression): IExpression<number> {
         if (operand.type === String) {
-            operand = new FunctionCallExpression(parseInt, "parseInt", [operand]);
+            operand = FunctionCallExpression.create(parseInt, [operand], "parseInt");
         }
         else if (operand.type !== Number) {
-            operand = new FunctionCallExpression(parseInt, "parseInt", [new MethodCallExpression(operand, "toString", [])]);
+            operand = FunctionCallExpression.create(parseInt, [new MethodCallExpression(operand, "toString", [])], "parseInt");
         }
         return operand as any;
     }

@@ -15,7 +15,6 @@ import { BitwiseAndAssignmentExpression } from "./Expression/BitwiseAndAssignmen
 import { BitwiseXorAssignmentExpression } from "./Expression/BitwiseXorAssignmentExpression";
 import { BitwiseOrAssignmentExpression } from "./Expression/BitwiseOrAssignmentExpression";
 import { IExpression } from "./Expression/IExpression";
-import { ParameterExpression } from "./Expression/ParameterExpression";
 import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
 import { RightIncrementExpression } from "./Expression/RightIncrementExpression";
 import { RightDecrementExpression } from "./Expression/RightDecrementExpression";
@@ -75,11 +74,13 @@ export interface IUnaryOperator extends IOperator {
     position: UnaryPosition;
 }
 export const operators: IOperator[] = [
+    <IUnaryOperator>{ identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
     <IUnaryOperator>{ identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
     { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: MemberAccessExpression.create },
     { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
     <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } },
-    <IUnaryOperator>{ identifier: "function", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.Left } },
+    { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } },
+    // <IUnaryOperator>{ identifier: "function", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.Left } },
     // <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 18, associativity: Associativity.Right } },
     <IUnaryOperator>{ identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: RightIncrementExpression.create },
     <IUnaryOperator>{ identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: RightDecrementExpression.create },

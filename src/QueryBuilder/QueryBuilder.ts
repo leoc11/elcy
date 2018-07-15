@@ -1,4 +1,4 @@
-import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
+import "reflect-metadata";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
@@ -45,25 +45,7 @@ import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpres
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
-import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
-import { BitwiseAndExpression } from "../ExpressionBuilder/Expression/BitwiseAndExpression";
-import { BitwiseOrExpression } from "../ExpressionBuilder/Expression/BitwiseOrExpression";
-import { BitwiseXorExpression } from "../ExpressionBuilder/Expression/BitwiseXorExpression";
-import { DivisionExpression } from "../ExpressionBuilder/Expression/DivisionExpression";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
-import { GreaterEqualExpression } from "../ExpressionBuilder/Expression/GreaterEqualExpression";
-import { GreaterThanExpression } from "../ExpressionBuilder/Expression/GreaterThanExpression";
-import { LessEqualExpression } from "../ExpressionBuilder/Expression/LessEqualExpression";
-import { LessThanExpression } from "../ExpressionBuilder/Expression/LessThanExpression";
-import { NotEqualExpression } from "../ExpressionBuilder/Expression/NotEqualExpression";
-import { OrExpression } from "../ExpressionBuilder/Expression/OrExpression";
-import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
-import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
-import { SubtractionExpression } from "../ExpressionBuilder/Expression/SubtractionExpression";
-import { MultiplicationExpression } from "../ExpressionBuilder/Expression/MultiplicationExpression";
-import { BitwiseNotExpression } from "../ExpressionBuilder/Expression/BitwiseNotExpression";
-import { NotExpression } from "../ExpressionBuilder/Expression/NotExpression";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
 import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
 import { DateColumnMetaData } from "../MetaData/DateColumnMetaData";
@@ -75,210 +57,13 @@ import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpre
 import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
 import { ColumnMetaData } from "../MetaData/ColumnMetaData";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
-import { AssignmentExpression } from "../ExpressionBuilder/Expression/AssignmentExpression";
-import { AdditionAssignmentExpression } from "../ExpressionBuilder/Expression/AdditionAssignmentExpression";
-import { SubstractionAssignmentExpression } from "../ExpressionBuilder/Expression/SubstractionAssignmentExpression";
-import { MultiplicationAssignmentExpression } from "../ExpressionBuilder/Expression/MultiplicationAssignmentExpression";
-import { DivisionAssignmentExpression } from "../ExpressionBuilder/Expression/DivisionAssignmentExpression";
-import { ExponentiationAssignmentExpression } from "../ExpressionBuilder/Expression/ExponentiationAssignmentExpression";
-import { ModulusAssignmentExpression } from "../ExpressionBuilder/Expression/ModulusAssignmentExpression";
-import { BitwiseAndAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseAndAssignmentExpression";
-import { BitwiseXorAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseXorAssignmentExpression";
-import { BitwiseOrAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseOrAssignmentExpression";
-import { BitwiseZeroLeftShiftAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseZeroLeftShiftAssignmentExpression";
-import { BitwiseZeroRightShiftAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseZeroRightShiftAssignmentExpression";
-import { BitwiseSignedRightShiftAssignmentExpression } from "../ExpressionBuilder/Expression/BitwiseSignedRightShiftAssignmentExpression";
-
-const transformerKey = Symbol("querybuilder-tkey");
-// Date: UTC,now,parse
-// Array: isArray
-
-Reflect.defineMetadata(transformerKey, (expression: MemberAccessExpression<any, any>, querybuilder: QueryBuilder) => "LEN(" + querybuilder.getExpressionString(expression.objectOperand) + ")", String, "length");
-Reflect.defineMetadata(transformerKey, () => "EXP(1)", Math, "E");
-Reflect.defineMetadata(transformerKey, () => "LOG(10)", Math, "LN10");
-Reflect.defineMetadata(transformerKey, () => "LOG(2)", Math, "LN2");
-Reflect.defineMetadata(transformerKey, () => "LOG10(EXP(1))", Math, "LOG10E");
-Reflect.defineMetadata(transformerKey, () => "LOG(EXP(1), 2)", Math, "LOG2E");
-Reflect.defineMetadata(transformerKey, () => "PI()", Math, "PI");
-Reflect.defineMetadata(transformerKey, () => "SQRT(0.5)", Math, "SQRT1_2");
-Reflect.defineMetadata(transformerKey, () => "SQRT(2)", Math, "SQRT2");
-
-// SelextExpression
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `NOT EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`, SelectExpression, "all");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`, SelectExpression, "any");
-Reflect.defineMetadata(transformerKey, () => "COUNT(*)", SelectExpression, "count");
-const aggregateTranslater = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${exp.methodName.toUpperCase()}(${qb.getExpressionString(exp.params[0] as any)})`;
-Reflect.defineMetadata(transformerKey, aggregateTranslater, SelectExpression, "sum");
-Reflect.defineMetadata(transformerKey, aggregateTranslater, SelectExpression, "min");
-Reflect.defineMetadata(transformerKey, aggregateTranslater, SelectExpression, "max");
-Reflect.defineMetadata(transformerKey, aggregateTranslater, SelectExpression, "avg");
-
-// Math: max,min,acosh,asinh,atanh,cbrt,clz32,fround,imul
-const trigonoTranslater = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => exp.methodName.toUpperCase() + "(" + qb.getExpressionString(exp.params[0]) + ")";
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "abs");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "acos");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "asin");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "atan");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "cos");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "exp");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "sin");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "sqrt");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "tan");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "floor");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "log");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "log10");
-Reflect.defineMetadata(transformerKey, trigonoTranslater, Math, "sign");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CEILING(" + qb.getExpressionString(exp.params[0]) + ")", Math, "ceil");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "ATN2(" + qb.getExpressionString(exp.params[0]) + "," + qb.getExpressionString(exp.params[1]) + ")", Math, "atan2");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "POWER(" + qb.getExpressionString(exp.params[0]) + "," + qb.getExpressionString(exp.params[1]) + ")", Math, "pow");
-Reflect.defineMetadata(transformerKey, () => "RAND()", Math, "random");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "ROUND(" + qb.getExpressionString(exp.params[0]) + ", 0)", Math, "round");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(EXP(" + qb.getExpressionString(exp.params[0]) + ") - 1)", Math, "expm1");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SQRT(" + exp.params.select((p) => "POWER(" + qb.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")", Math, "hypot");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOG(1 + " + qb.getExpressionString(exp.params[0]) + ")", Math, "log1p");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOG(" + qb.getExpressionString(exp.params[0]) + ", 2)", Math, "log2");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(" + qb.getExpressionString(exp.params[0]) + ") - EXP(-" + qb.getExpressionString(exp.params[0]) + ")) / 2)", Math, "sinh");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(" + qb.getExpressionString(exp.params[0]) + ") + EXP(-" + qb.getExpressionString(exp.params[0]) + ")) / 2)", Math, "cosh");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(2 * " + qb.getExpressionString(exp.params[0]) + ") - 1) / (EXP(2 * " + qb.getExpressionString(exp.params[0]) + ") + 1))", Math, "tanh");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.params[0]) + " | 0)", Math, "trunc");
-
-// String: localeCompare,match,normalize,padEnd,padStart,search,slice
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", 1)", String, "charAt");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "UNICODE(SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", 1))", String, "charCodeAt");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CONCAT(" + qb.getExpressionString(exp.objectOperand) + ", " + exp.params.select((p) => qb.getExpressionString(p)).toArray().join(", ") + ")", String, "concat");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getValueString("%") + ", " + qb.getExpressionString(exp.params[0]) + "))", String, "endsWith");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => exp.params.length > 1 ? "(" + qb.getExpressionString(exp.params[0]) + " + RIGHT(" + qb.getExpressionString(exp.objectOperand) + ", (LEN(" + qb.getExpressionString(exp.objectOperand) + ") - " + qb.getExpressionString(exp.params[0]) + "))))" : "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getValueString("%") + ", " + qb.getExpressionString(exp.params[0]) + ", " + qb.getValueString("%") + ")", String, "includes");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CHARINDEX(" + qb.getExpressionString(exp.params[0]) + ", " + qb.getExpressionString(exp.objectOperand) + (exp.params.length > 1 ? ", " + qb.getExpressionString(exp.params[1]) : "") + ") - 1)", String, "indexOf");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(LEN(" + qb.getExpressionString(exp.objectOperand) + ") - CHARINDEX(" + qb.getExpressionString(exp.params[0]) + ", REVERSE(" + qb.getExpressionString(exp.objectOperand) + ")" + (exp.params.length > 1 ? ", " + qb.getExpressionString(exp.params[1]) : "") + "))", String, "lastIndexOf");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE " + qb.getExpressionString(exp.params[0]) + ")", String, "like");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "REPLICATE(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ")", String, "repeat");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "REPLACE(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", " + qb.getExpressionString(exp.params[1]) + ")", String, "replace");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "STRING_SPLIT(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ")", String, "split");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getExpressionString(exp.params[0]) + ", " + qb.getValueString("%") + "))", String, "startsWith");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + "(" + qb.getExpressionString(exp.params[0]) + " + 1), " + (exp.params.length > 1 ? qb.getExpressionString(exp.params[1]) : "8000") + ")", String, "substr");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + "(" + qb.getExpressionString(exp.params[0]) + " + 1), " + (exp.params.length > 1 ? "(" + qb.getExpressionString(exp.params[1]) + " - " + qb.getExpressionString(exp.params[0]) + ")" : "8000") + ")", String, "substring");
-const tolowerTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOWER(" + qb.getExpressionString(exp.objectOperand) + ")";
-Reflect.defineMetadata(transformerKey, tolowerTranslator, String, "toLowerCase");
-Reflect.defineMetadata(transformerKey, tolowerTranslator, String, "toLocaleLowerCase");
-const toupperTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "UPPER(" + qb.getExpressionString(exp.objectOperand) + ")";
-Reflect.defineMetadata(transformerKey, toupperTranslator, String, "toUpperCase");
-Reflect.defineMetadata(transformerKey, toupperTranslator, String, "toLocaleUpperCase");
-const stringValueOf = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => qb.getExpressionString(exp.objectOperand);
-Reflect.defineMetadata(transformerKey, stringValueOf, String, "toString");
-Reflect.defineMetadata(transformerKey, stringValueOf, String, "valueOf");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "RTRIM(LTRIM(" + qb.getExpressionString(exp.objectOperand) + "))", String, "trim");
-
-// Number: isFinite,isInteger,isNaN,isSafeInteger,toExponential,toFixed,toPrecision
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CAST(${qb.getExpressionString(exp.objectOperand)} AS nvarchar(255))`, Number, "toString");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => qb.getExpressionString(exp.objectOperand), Number, "valueOf");
-
-// Symbol: toString
-
-// Boolean: 
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CASE WHEN (" + qb.getExpressionString(exp.objectOperand) + ") THEN " + qb.getValueString("true") + " ELSE " + qb.getValueString("false") + " END)", Number, "toString");
-
-// Date: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DAY(" + qb.getExpressionString(exp.objectOperand) + ")", Date, "getDate");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(DATEPART(weekday, " + qb.getExpressionString(exp.objectOperand) + ") - 1)", Date, "getDay");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "YEAR(" + qb.getExpressionString(exp.objectOperand) + ")", Date, "getFullYear");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEPART(hour, " + qb.getExpressionString(exp.objectOperand) + ")", Date, "getHours");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEPART(minute, " + qb.getExpressionString(exp.objectOperand) + ")", Date, "getMinutes");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(MONTH(" + qb.getExpressionString(exp.objectOperand) + ") - 1)", Date, "getMonth");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEPART(second, " + qb.getExpressionString(exp.objectOperand) + ")", Date, "getSeconds");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEPART(millisecond, " + qb.getExpressionString(exp.objectOperand) + ")", Date, "getMilliseconds");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(DAY, (" + qb.getExpressionString(exp.params[0]) + " - DAY(" + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setDate");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(YYYY, (" + qb.getExpressionString(exp.params[0]) + " - YEAR(" + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setFullYear");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(HH, (" + qb.getExpressionString(exp.params[0]) + " - DATEPART(hour, " + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setHours");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(MS, (" + qb.getExpressionString(exp.params[0]) + " - DATEPART(millisecond, " + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setMilliseconds");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(MI, (" + qb.getExpressionString(exp.params[0]) + " - DATEPART(minute, " + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setMinutes");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(MM, (" + qb.getExpressionString(exp.params[0]) + " - (MONTH(" + qb.getExpressionString(exp.objectOperand) + ") - 1)), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setMonth");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "DATEADD(SS, (" + qb.getExpressionString(exp.params[0]) + " - DATEPART(second, " + qb.getExpressionString(exp.objectOperand) + ")), " + qb.getExpressionString(exp.objectOperand) + ")", Date, "setSeconds");
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CONCAT(LEFT(DATENAME(WEEKDAY, " + qb.getExpressionString(exp.objectOperand) + "), 3), " + qb.getValueString(" ") + ", " + "LEFT(DATENAME(MONTH, " + qb.getExpressionString(exp.objectOperand) + "), 3), " + qb.getValueString(" ") + ", " + "RIGHT(CONCAT(" + qb.getValueString("0") + ", RTRIM(MONTH(" + qb.getExpressionString(exp.objectOperand) + "))), 2)" + qb.getValueString(" ") + ", " + "RIGHT(CONCAT(" + qb.getValueString("0") + ", RTRIM(MONTH(" + qb.getExpressionString(exp.objectOperand) + "))), 2))", Date, "toDateString");
-
-// RegExp: exec,toString
-Reflect.defineMetadata(transformerKey, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} REGEXP ${qb.getExpressionString(exp.objectOperand)}`, RegExp, "pow");
-
-// Function: apply,bind,call,toSource,toString
-// Array: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
-
-// Operator
-// http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
-// LeftDecrementExpression, LeftIncrementExpression, RightDecrementExpression,RightIncrementExpression,TypeofExpression
-// BitwiseSignedRightShiftExpression, BitwiseZeroRightShiftExpression, BitwiseZeroLeftShiftExpression,InstanceofExpression
-
-const aritAssignmentTranlator = (exp: IBinaryOperatorExpression, qb: QueryBuilder, operator: string) => {
-    const varString = qb.getExpressionString(exp.leftOperand);
-    return `${varString} = ${varString} ${operator} ${qb.getOperandString(exp.rightOperand)}`;
-};
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "+"), AdditionAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "-"), SubstractionAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "*"), MultiplicationAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "/"), DivisionAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "**"), ExponentiationAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "%"), ModulusAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "&"), BitwiseAndAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "|"), BitwiseOrAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "^"), BitwiseXorAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "<<"), BitwiseZeroLeftShiftAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, ">>"), BitwiseZeroRightShiftAssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, ">>>"), BitwiseSignedRightShiftAssignmentExpression);
-
-const binaryTranslator = (exp: IBinaryOperatorExpression, qb: QueryBuilder, operator: string) => `${qb.getOperandString(exp.leftOperand)} ${operator} ${qb.getOperandString(exp.rightOperand)}`;
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "="), AssignmentExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, ">="), GreaterEqualExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, ">"), GreaterThanExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "<="), LessEqualExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "<"), LessThanExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "%"), ModulusExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "-"), SubtractionExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "*"), MultiplicationExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "/"), DivisionExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => {
-    if (exp.type as any === String)
-        return `CONCAT(${qb.getOperandString(exp.leftOperand)}, ${qb.getOperandString(exp.rightOperand)})`;
-
-    return `${qb.getOperandString(exp.leftOperand)} + ${qb.getOperandString(exp.rightOperand)}`;
-}, AdditionExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "&"), BitwiseAndExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "|"), BitwiseOrExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "^"), BitwiseXorExpression);
-
-const notEqualTranslator = (exp: NotEqualExpression | StrictNotEqualExpression, qb: QueryBuilder) => {
-    const leftExpString = qb.getOperandString(exp.leftOperand, true);
-    const rightExpString = qb.getOperandString(exp.rightOperand, true);
-    if (leftExpString === "NULL")
-        return rightExpString + " IS NOT " + leftExpString;
-    else if (rightExpString === "NULL")
-        return leftExpString + " IS NOT " + rightExpString;
-    return leftExpString + " <> " + rightExpString;
-};
-Reflect.defineMetadata(transformerKey, notEqualTranslator, NotEqualExpression);
-Reflect.defineMetadata(transformerKey, notEqualTranslator, StrictNotEqualExpression);
-
-const equalTransalator = (exp: EqualExpression | StrictEqualExpression, qb: QueryBuilder) => {
-    const leftExpString = qb.getOperandString(exp.leftOperand, true);
-    const rightExpString = qb.getOperandString(exp.rightOperand, true);
-    if (leftExpString === "NULL")
-        return rightExpString + " IS " + leftExpString;
-    else if (rightExpString === "NULL")
-        return leftExpString + " IS " + rightExpString;
-    return leftExpString + " = " + rightExpString;
-};
-Reflect.defineMetadata(transformerKey, equalTransalator, EqualExpression);
-Reflect.defineMetadata(transformerKey, equalTransalator, StrictEqualExpression);
-
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `${qb.getLogicalOperandString(exp.leftOperand)} OR ${qb.getLogicalOperandString(exp.rightOperand)}`, OrExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `${qb.getLogicalOperandString(exp.leftOperand)} AND ${qb.getLogicalOperandString(exp.rightOperand)}`, AndExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `NOT(${qb.getLogicalOperandString(exp.operand)})`, NotExpression);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `~(${qb.getLogicalOperandString(exp.operand)})`, BitwiseNotExpression);
-Reflect.defineMetadata(transformerKey, (exp: TernaryExpression, qb: QueryBuilder) => `(${qb.newLine(1)}CASE WHEN (${qb.getExpressionString(exp.logicalOperand)}) ${qb.newLine()}THEN ${qb.getOperandString(exp.trueResultOperand, true)}${qb.newLine()}ELSE ${qb.getOperandString(exp.falseResultOperand, true)}${qb.newLine()}END${qb.newLine(-1)})`, TernaryExpression);
-
-// Function call : isFinite,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `CAST(${qb.getExpressionString(exp.params[0])} AS INT)`, parseInt);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `CAST(${qb.getExpressionString(exp.params[0])} AS FLOAT)`, parseFloat);
-Reflect.defineMetadata(transformerKey, (exp: any, qb: QueryBuilder) => `ISNUMERIC(${qb.getExpressionString(exp.params[0])}) = 0`, isNaN);
+import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator";
+import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
+    public resolveTranslator(object: any, memberName?: string) {
+        return defaultQueryTranslator.resolve(object, memberName);
+    }
     protected get userParameters() {
         return this.queryVisitor.userParameters;
     }
@@ -298,7 +83,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getExpressionString(expression);
     }
     public namingStrategy: NamingStrategy = new NamingStrategy();
-    protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
+    protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this);
     protected indent = 0;
     public newAlias(type?: "entity" | "column" | "param") {
         return this.queryVisitor.newAlias(type);
@@ -322,11 +107,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             return this.getEntityQueryString(expression);
         }
+        else if (expression instanceof TernaryExpression) {
+            return this.getOperatorString(expression as any);
+        }
         else if ((expression as IBinaryOperatorExpression).rightOperand) {
-            return this.getBinaryOperatorString(expression as any);
+            return `(${this.getOperatorString(expression as any)})`;
         }
         else if ((expression as IUnaryOperatorExpression).operand) {
-            return this.getUnaryOperatorString(expression as any);
+            return this.getOperatorString(expression as any);
         }
         else {
             let result = "";
@@ -352,19 +140,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return result;
         }
     }
-    protected getBinaryOperatorString(expression: IBinaryOperatorExpression) {
-        const translator = Reflect.getOwnMetadata(transformerKey, expression.constructor);
+    protected getOperatorString(expression: IBinaryOperatorExpression) {
+        const translator = this.resolveTranslator(expression.constructor);
         if (!translator) {
-            throw new Error(`operator "${expression.toString()}" not supported`);
+            throw new Error(`operator "${expression.constructor.name}" not supported`);
         }
-        return `(${translator(expression, this)})`;
-    }
-    protected getUnaryOperatorString(expression: IUnaryOperatorExpression) {
-        const translator = Reflect.getOwnMetadata(transformerKey, expression.constructor);
-        if (!translator) {
-            throw new Error(`operator "${expression.toString()}" not supported`);
-        }
-        return translator(expression, this);
+        return translator.translate(expression, this);
     }
     protected getColumnString(column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
@@ -511,9 +292,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o.child.isSimple())
                     childEntString = this.getEntityQueryString(o.child.entity);
                 else
-                    childEntString = "(" + this.newLine(++this.indent) + this.getSelectQueryString(o.child) + this.newLine(--this.indent) + ") AS " + o.child.entity.alias;
+                    childEntString = "(" + this.newLine(1) + this.getSelectQueryString(o.child) + this.newLine(-1) + ") AS " + o.child.entity.alias;
                 let join = o.type + " JOIN " + childEntString +
-                    this.newLine(this.indent + 1) + "ON ";
+                    this.newLine(1, false) + "ON ";
 
                 const jstr: string[] = [];
                 for (const [key, val] of o.relations) {
@@ -556,14 +337,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return `${entityMeta.schema ? this.enclose(entityMeta.schema) + "." : ""}${this.enclose(entityMeta.name)}`;
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
-        let transformer = Reflect.getOwnMetadata(transformerKey, expression.functionFn);
+        const fn = expression.fnExpression.execute();
+        let transformer = this.resolveTranslator(fn);
         if (transformer) {
-            return transformer(expression, this);
+            return transformer.translate(expression, this);
         }
 
-        if (isNativeFunction(expression.functionFn)) {
+        if (isNativeFunction(fn)) {
             // TODO: ToExpression must support this parameter
-            const fnExpression = ExpressionBuilder.parse(expression.functionFn, [expression.params[0].type]);
+            const fnExpression = ExpressionBuilder.parse(fn);
             for (let i = 0; i < fnExpression.params.length; i++) {
                 const param = fnExpression.params[i];
                 this.scopeParameters.add(param.name, expression.params[i]);
@@ -573,39 +355,39 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`function "${expression.functionName}" not suported`);
     }
     protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
-        let translater: any;
+        let translater: IQueryTranslatorItem;
         if (expression.objectOperand.type === Object && expression.objectOperand instanceof ValueExpression) {
-            translater = Reflect.getOwnMetadata(transformerKey, expression.objectOperand.value, expression.memberName);
+            translater = this.resolveTranslator(expression.objectOperand.value, expression.memberName);
         }
         if (!translater) {
-            translater = Reflect.getOwnMetadata(transformerKey, expression.objectOperand.type, expression.memberName);
+            translater = this.resolveTranslator(expression.objectOperand.type.prototype, expression.memberName);
         }
 
         if (translater) {
-            return translater(expression, this);
+            return translater.translate(expression, this);
         }
         throw new Error(`${expression.memberName} not supported.`);
     }
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
-        let translater: any;
+        let translator: IQueryTranslatorItem;
         if (expression.objectOperand instanceof SelectExpression) {
-            translater = Reflect.getOwnMetadata(transformerKey, SelectExpression, expression.methodName);
+            translator = this.resolveTranslator(SelectExpression.prototype, expression.methodName);
         }
         else if (expression.objectOperand instanceof ValueExpression) {
-            translater = Reflect.getOwnMetadata(transformerKey, expression.objectOperand.value, expression.methodName);
+            translator = this.resolveTranslator(expression.objectOperand.value, expression.methodName);
         }
 
-        if (!translater) {
-            translater = Reflect.getOwnMetadata(transformerKey, expression.objectOperand.type, expression.methodName);
+        if (!translator) {
+            translator = this.resolveTranslator(expression.objectOperand.type.prototype, expression.methodName);
         }
 
-        if (translater) {
-            return translater(expression, this);
+        if (translator) {
+            return translator.translate(expression, this);
         }
 
         const methodFn = expression.objectOperand.type.prototype[expression.methodName];
         if (!isNativeFunction(methodFn)) {
-            const fnExpression = ExpressionBuilder.parse(methodFn, [expression.objectOperand.type]);
+            const fnExpression = ExpressionBuilder.parse(methodFn);
             for (let i = 0; i < fnExpression.params.length; i++) {
                 const param = fnExpression.params[i];
                 this.scopeParameters.add(param.name, expression.params[i]);

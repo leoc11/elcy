@@ -7,8 +7,7 @@ export class ParameterBuilder {
     }
     public getSqlParameters(params: { [key: string]: any }): Map<string, any> {
         const result = new Map<string, any>();
-        const tranformer = new ValueExpressionTransformer();
-        tranformer.setParameters(params);
+        const tranformer = new ValueExpressionTransformer(params);
         for (const param of this.items) {
             const value = param.valueGetter.execute(tranformer);
             result.set(param.name, value);

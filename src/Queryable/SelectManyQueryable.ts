@@ -13,7 +13,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected _selector: FunctionExpression<S, T[] | Queryable<T>>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
-            this._selector = ExpressionBuilder.parse<S, T[] | Queryable<T>>(this.selectorFn, [this.parent.type]);
+            this._selector = ExpressionBuilder.parse<S, T[] | Queryable<T>>(this.selectorFn);
         return this._selector;
     }
     protected set selector(value) {

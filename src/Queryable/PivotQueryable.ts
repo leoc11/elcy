@@ -21,7 +21,7 @@ function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionEx
         if (value instanceof FunctionExpression)
             fnExpression = value;
         else
-            fnExpression = ExpressionBuilder.parse(value as (item: T) => any, [sourceType]);
+            fnExpression = ExpressionBuilder.parse(value as (item: T) => any);
         objectValue[prop] = fnExpression.body;
     }
     const objExpression = new ObjectValueExpression(objectValue);

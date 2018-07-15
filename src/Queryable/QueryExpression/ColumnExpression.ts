@@ -7,7 +7,7 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: GenericType<T>;
-    public propertyName: string;
+    public propertyName: keyof TE;
     public columnType: ColumnType;
     public columnName: string;
     public columnMetaData: IColumnMetaData<TE, T>;
@@ -15,8 +15,8 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     public isPrimary: boolean;
     public isShadow?: boolean;
     constructor(entity: IEntityExpression<TE>, columnMeta: IColumnMetaData<TE, T>, isPrimary?: boolean);
-    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: string, columnName: string, isPrimary?: boolean, columnType?: ColumnType);
-    constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | string, columnName?: string, isPrimary?: boolean, columnType?: ColumnType) {
+    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: keyof TE, columnName: string, isPrimary?: boolean, columnType?: ColumnType);
+    constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | keyof TE, columnName?: string, isPrimary?: boolean, columnType?: ColumnType) {
         this.entity = entity;
         if ((columnMetaOrType as IColumnMetaData).entity) {
             this.columnMetaData = columnMetaOrType as IColumnMetaData<TE, T>;
@@ -28,7 +28,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         }
         else {
             this.type = columnMetaOrType as GenericType<T>;
-            this.propertyName = isPrimaryOrPropertyName as string;
+            this.propertyName = isPrimaryOrPropertyName as keyof TE;
             this.columnName = columnName;
             this.isPrimary = isPrimary;
             this.columnType = columnType;

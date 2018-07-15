@@ -18,7 +18,7 @@ export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaDat
         if (entity)
             this.entity = entity;
         if (fn)
-            this.functionExpression = ExpressionBuilder.parse(fn, [this.entity.type]);
+            this.functionExpression = ExpressionBuilder.parse(fn);
         if (propertyName)
             this.propertyName = propertyName;
     }

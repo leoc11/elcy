@@ -12,7 +12,7 @@ export class WhereQueryable<T> extends Queryable<T> {
     protected _predicate: FunctionExpression<T, boolean>;
     protected get predicate() {
         if (!this._predicate && this.predicateFn)
-            this._predicate = ExpressionBuilder.parse(this.predicateFn, [this.parent.type]);
+            this._predicate = ExpressionBuilder.parse(this.predicateFn);
         return this._predicate;
     }
     protected set predicate(value) {

@@ -1,4 +1,4 @@
 export interface IQueryResult {
     effectedRows: number;
-    rows: any[];
+    rows?: any[];
 }

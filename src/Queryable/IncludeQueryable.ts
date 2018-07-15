@@ -13,7 +13,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
     private _selectors: Array<FunctionExpression<T, any>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type])).toArray();
+            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o)).toArray();
         }
 
         return this._selectors;

@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import "../../Extensions/EnumerableExtension";
-import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
+import { columnMetaKey, entityMetaKey, propertyChangeDispatherMetaKey } from "../DecoratorKey";
 import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IObjectType } from "../../Common/Type";
 import { IEventDispacher } from "../../Event/IEventHandler";
@@ -27,10 +27,10 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
         metadata.propertyName = propertyKey;
 
-        const columnMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
-        if (columnMetaData != null) {
-            metadata.applyOption(columnMetaData);
-            entityMetaData.columns.remove(columnMetaData);
+        const existingMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
+        if (existingMetaData != null) {
+            metadata.applyOption(existingMetaData);
+            entityMetaData.columns.remove(existingMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
         entityMetaData.columns.push(metadata);
@@ -82,10 +82,10 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                     else
                         this[privatePropertySymbol] = value;
 
-                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = Reflect.getOwnMetadata("PropertyChangeEventListener", this);
+                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = Reflect.getOwnMetadata(propertyChangeDispatherMetaKey, this);
                     if (propertyChangeDispatcher) {
                         propertyChangeDispatcher({
-                            column: columnMetaData,
+                            column: metadata,
                             oldValue,
                             newValue: value
                         });

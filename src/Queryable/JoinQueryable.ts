@@ -16,7 +16,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _keySelector1: FunctionExpression<T, K>;
     protected get keySelector1() {
         if (!this._keySelector1 && this.keySelector1Fn)
-            this._keySelector1 = ExpressionBuilder.parse(this.keySelector1Fn, [this.parent.type]);
+            this._keySelector1 = ExpressionBuilder.parse(this.keySelector1Fn);
         return this._keySelector1;
     }
     protected set keySelector1(value) {
@@ -25,7 +25,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _keySelector2: FunctionExpression<T2, K>;
     protected get keySelector2() {
         if (!this._keySelector2 && this.keySelector1Fn)
-            this._keySelector2 = ExpressionBuilder.parse(this.keySelector2Fn, [this.parent2.type]);
+            this._keySelector2 = ExpressionBuilder.parse(this.keySelector2Fn);
         return this._keySelector2;
     }
     protected set keySelector2(value) {
@@ -34,7 +34,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _resultSelector: FunctionExpression<T | T2, R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn, [this.parent.type, this.parent2.type]);
+            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn);
         return this._resultSelector;
     }
     protected set resultSelector(value) {
