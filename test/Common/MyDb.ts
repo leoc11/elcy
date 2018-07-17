@@ -9,8 +9,8 @@ export class MyDb extends MssqlDbContext {
             host: "localhost\\SQLEXPRESS",
             database: "iSeller_Data_Lotte",
             port: 1433,
-            user: "sa",
-            password: "i1111991",
+            user: "xxx",
+            password: "xxx",
             // options: {
             //     trustedConnection: true
             // }
