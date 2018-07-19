@@ -40,12 +40,4 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
     public clone() {
         return new FunctionExpression(this.body, this.params);
     }
-    public scopeFunctions: IExpression[];
-    public getScopeHashCode(params?: { [key: string]: any }) {
-        const transformer = new ValueExpressionTransformer(params);
-        return this.scopeFunctions.select(o => {
-            const fn = o.execute(transformer);
-            return hashCode(fn.name + ":" + fn.toString());
-        }).sum();
-    }
 }

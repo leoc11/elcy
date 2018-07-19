@@ -80,7 +80,6 @@ export interface IQueryVisitParameter {
 }
 export class QueryExpressionVisitor {
     public sqlParameterBuilderItems: ISqlParameterBuilderItem[] = [];
-    public userParameters: { [key: string]: any } = {};
     public scopeParameters = new TransformerParameter();
     private aliasObj: { [key: string]: number } = {};
     constructor(protected queryBuilder: QueryBuilder) {
@@ -93,7 +92,7 @@ export class QueryExpressionVisitor {
     private _expressionTransformer: ExpressionTransformer;
     public get expressionTransformer() {
         if (!this._expressionTransformer) {
-            this._expressionTransformer = new ValueExpressionTransformer(this.userParameters);
+            this._expressionTransformer = new ValueExpressionTransformer(this.queryBuilder.options.parameters);
         }
         return this._expressionTransformer;
     }
@@ -360,7 +359,7 @@ export class QueryExpressionVisitor {
                 if (translator)
                     return expression;
             }
-            
+
             // Execute in app if all parameter is available.
             if (isExpressionSafe) {
                 let hasParam = false;
@@ -1166,7 +1165,7 @@ export class QueryExpressionVisitor {
 
         // Try convert function as Expression
         if (!isNativeFunction(fn)) {
-            const functionExp = ExpressionBuilder.parse(fn, this.userParameters);
+            const functionExp = ExpressionBuilder.parse(fn, this.queryBuilder.options.parameters);
             for (let i = 0; i < functionExp.params.length; i++) {
                 this.scopeParameters.add(functionExp.params[i].name, expression.params[i]);
             }

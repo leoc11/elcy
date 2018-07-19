@@ -4,34 +4,24 @@ import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpressi
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
 import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
-import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { IQueryOption } from "../QueryBuilder/Interface/ISelectQueryOption";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 
 export abstract class Queryable<T = any> {
-    public get queryBuilder(): QueryBuilder {
-        if (!this._queryBuilder) {
-            this._queryBuilder = this.parent.queryBuilder;
-            this._queryBuilder.addParameters(this.options.userParameters);
-        }
-        return this._queryBuilder;
-    }
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
-    public options: IQueryOption = { userParameters: {} };
-    public setParameters(params: { [key: string]: any }) {
-        Object.assign(this.options.userParameters, params);
+    public options: IQueryOption = { parameters: {} };
+    public parameter(params: { [key: string]: any }) {
+        Object.assign(this.options.parameters, params);
         return this;
     }
-    public setOption(option: IQueryOption) {
+    public option(option: IQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {
@@ -43,22 +33,41 @@ export abstract class Queryable<T = any> {
                 (this.options as any)[prop] = value;
             }
         }
+        return this;
     }
-    protected expression: ICommandQueryExpression<T>;
     protected parent: Queryable;
-    private _queryBuilder: QueryBuilder;
     constructor(public type: GenericType<T>, parent?: Queryable) {
         if (parent) {
             this.parent = parent;
-            this.setOption(this.parent.options);
+            this.option(this.parent.options);
         }
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        return this.expression;
-    }
+    public abstract buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T>;
     public abstract hashCode(): number;
     public toString() {
-        return this.buildQuery(this.queryBuilder).toString(this.queryBuilder);
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, this.hashCode());
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
+        if (!queryCache) {
+            n = Date.now();
+            const commandQuery = this.buildQuery(queryBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
+        }
+
+        return queryCache.commandQuery.toString(queryBuilder);
     }
     public async toArray(): Promise<T[]> {
         const query = await this.defferedToArray();
@@ -101,78 +110,92 @@ export abstract class Queryable<T = any> {
         return await query.execute();
     }
     public async defferedToArray() {
-        const key = this.parameterHasCode() + this.hashCode();
-        console.log("query cache key: " + key);
         let n = Date.now();
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
-        if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            const commandQuery = this.buildQuery(queryBuilder);
-            console.log("over head: " + (Date.now() - n));
-            n = Date.now();
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            console.log("over head: " + (Date.now() - n));
-            queryParser = new this.dbContext.queryParser(commandQuery);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
-        }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
+        let cacheKey = hashCode(this.options.buildKey, this.hashCode());
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+
         n = Date.now();
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        console.log("Query:\n" + queryCommands.select(o => o.query).toArray().join(";\n"));
-        console.log("parameters");
-        console.log(params);
-        const query = new DeferredQuery(this.dbContext, queryCommands, params, (result) => queryParser.parse(result, this.dbContext));
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
+        if (!queryCache) {
+            n = Date.now();
+            const commandQuery = this.buildQuery(queryBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
+        }
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params, (result) => queryCache.resultParser.parse(result, this.dbContext));
         return query;
     }
     public async defferedCount() {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("COUNT");
-        const queryCache = await this.dbContext.getQueryChache<number>(key);
-        let queryParser: IQueryResultParser<number>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("COUNT", this.hashCode()));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const methodExpression = new MethodCallExpression(expression, "count", []);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
         const query = new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
         return query;
     }
     public async deferredSum(selector?: (item: T) => number) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("SUM");
-        if (selector)
-            key += hashCode(selector.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("SUM", hashCode(selector ? selector.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<number>(key);
-        let queryParser: IQueryResultParser<number>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (selector) {
@@ -182,32 +205,41 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+        return query;
     }
     public async deferredMax(selector?: (item: T) => number) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("MAX");
-        if (selector)
-            key += hashCode(selector.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("MAX", hashCode(selector ? selector.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<number>(key);
-        let queryParser: IQueryResultParser<number>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (selector) {
@@ -217,32 +249,41 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+        return query;
     }
     public async deferredMin(selector?: (item: T) => number) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("MIN");
-        if (selector)
-            key += hashCode(selector.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("MIN", hashCode(selector ? selector.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<number>(key);
-        let queryParser: IQueryResultParser<number>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (selector) {
@@ -252,32 +293,41 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+        return query;
     }
     public async deferredAvg(selector?: (item: T) => number) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("AVG");
-        if (selector)
-            key += hashCode(selector.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("AVG", hashCode(selector ? selector.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<number>(key);
-        let queryParser: IQueryResultParser<number>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (selector) {
@@ -287,29 +337,41 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+        return query;
     }
     public async deferredAll(predicate: (item: T) => boolean) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("ALL") + hashCode(predicate.toString());
-        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
-        let queryParser: IQueryResultParser<boolean>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("ALL", hashCode(predicate.toString(), this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (predicate) {
@@ -319,32 +381,40 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder()
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => !result.first().rows.any());
+        return query;
     }
     public async deferredAny(predicate?: (item: T) => boolean) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("ANY");
-        if (predicate)
-            key += hashCode(predicate.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("ANY", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
-        let queryParser: IQueryResultParser<boolean>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const metParams = [];
             if (predicate) {
@@ -354,32 +424,40 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder()
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
             (result) => result.first().rows.any());
+        return query;
     }
     public async deferredFirst(predicate?: (item: T) => boolean) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("FIRST");
-        if (predicate)
-            key += hashCode(predicate.toString());
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("FIRST", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
 
-        const queryCache = await this.dbContext.getQueryChache<T>(key);
-        let queryParser: IQueryResultParser<T>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             const metParams = [];
             if (predicate) {
                 metParams.push(ExpressionBuilder.parse<T, boolean>(predicate));
@@ -388,55 +466,74 @@ export abstract class Queryable<T = any> {
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder(),
+                resultParser: new this.dbContext.queryParser(commandQuery)
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).first());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+        return query;
     }
     public async defferedContains(item: T) {
-        let key = this.parameterHasCode() + this.hashCode() + hashCode("CONTAINS") + hashCode(JSON.stringify(item));
-        const queryCache = await this.dbContext.getQueryChache<boolean>(key);
-        let queryParser: IQueryResultParser<boolean>;
-        let queryCommands: IQueryCommand[];
-        let parameterBuilder: ParameterBuilder;
+        let n = Date.now();
+        let cacheKey = hashCode(this.options.buildKey, hashCode("CONTAINS", hashCode(JSON.stringify(item), this.hashCode())));
+        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+
+        n = Date.now();
+        const cacheManager = this.dbContext.queryCacheManager;
+        let queryCache = cacheManager.get<T>(cacheKey);
+        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
         if (!queryCache) {
-            const queryBuilder = this.queryBuilder;
-            let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+            n = Date.now();
+            let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
             expression.includes = [];
             const methodExpression = new MethodCallExpression(expression, "contains", [new ValueExpression(item)]);
             const param: IQueryVisitParameter = { commandExpression: expression, scope: "queryable" };
             queryBuilder.visit(methodExpression, param);
             const commandQuery = param.commandExpression;
-            queryCommands = commandQuery.toQueryCommands(queryBuilder);
-            queryParser = new this.dbContext.queryParser(expression);
-            parameterBuilder = new ParameterBuilder(queryBuilder.sqlParameterBuilderItems);
-            this.dbContext.setQueryChache(key, queryCommands, queryParser, parameterBuilder);
+            console.log(`build query expression time: ${Date.now() - n}`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+                parameterBuilder: queryBuilder.getParameterBuilder()
+            };
+            cacheManager.set(cacheKey, queryCache);
         }
-        else {
-            queryParser = queryCache.queryParser;
-            queryCommands = queryCache.queryCommands;
-            parameterBuilder = queryCache.parameterBuilder;
-        }
-        const params = parameterBuilder.getSqlParameters(this.options.userParameters);
-        return new DeferredQuery(this.dbContext, queryCommands, params,
-            (result) => queryParser.parse(result, this.dbContext).any());
+
+        n = Date.now();
+        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
+        console.log(`build query time: ${Date.now() - n}`);
+        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
+        // console.log(`parameters: ${JSON.stringify(params)}`);
+
+        const query = new DeferredQuery(this.dbContext, queryCommands, params,
+            (result) => result.first().rows.any());
+        return query;
     }
     public async update(setter: { [key in keyof T]: T[key] }) {
         const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type);
         if (!entityMeta) {
             throw new Error(`Only entity typed supported`);
         }
-        const queryBuilder = this.queryBuilder;
-        let expression = this.buildQuery(queryBuilder).clone() as SelectExpression;
+        const queryBuilder = new this.dbContext.queryBuilder();
+        queryBuilder.options = this.options;
+        let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
         const query = expression.toString(queryBuilder);
         return query as any;
     }
@@ -446,15 +543,5 @@ export abstract class Queryable<T = any> {
             throw new Error(`Only entity typed supported`);
         }
         // delete code here.
-    }
-    private parameterHasCode() {
-        let result = 0;
-        for (const prop in this.options.userParameters) {
-            const value = this.options.userParameters[prop];
-            if (typeof value === "function") {
-                result += hashCode(value.toString());
-            }
-        }
-        return result;
     }
 }

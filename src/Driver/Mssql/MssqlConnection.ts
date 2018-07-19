@@ -46,10 +46,7 @@ export class MssqlConnection implements IConnection {
                 this.connection = con;
                 resolve();
             });
-            con.once("error", () => {
-                this.close();
-            });
-            con.once("errorMessage", (error: any) => {
+            con.once("error", (error: any) => {
                 this.close();
             });
         });

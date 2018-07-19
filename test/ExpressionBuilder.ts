@@ -40,21 +40,4 @@ describe("EXPRESSION BUILDER", () => {
         const build = ExpressionBuilder.parse((a: string) => /test/ig.test(a));
         expect(ori.toString() === build.toString());
     });
-    it("should return different scope hash code for varying used function params", async () => {
-        const orderBy = (a: any) => a;
-        const orderBy2 = (a: any) => a + 1;
-        const p = {
-            OrderDetail
-        };
-        const c = ExpressionBuilder.parse((o: Order) => ({
-            ods: o.OrderDetails.orderBy([(od: OrderDetail) => od.quantity]),
-            asd: orderBy(1),
-            ad2: new Number("10"),
-            od: new p.OrderDetail()
-        }), { orderBy, p });
-        expect(c.toString()).to.equal(`(o) => ({ods: o.OrderDetails.orderBy([(od) => od.quantity]), asd: orderBy(1), ad2: new Number("10"), od: new p.OrderDetail()})`
-            , "query not equals");
-        expect(c.scopeFunctions).has.lengthOf(2);
-        expect(c.getScopeHashCode({ orderBy, p })).to.not.equal(c.getScopeHashCode({ orderBy: orderBy2, p }));
-    });
 });

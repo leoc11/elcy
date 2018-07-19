@@ -25,12 +25,6 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 
 export class DbSet<T> extends Queryable<T> {
-    public get queryBuilder(): QueryBuilder {
-        const queryBuilder = new this.dbContext.queryBuilder();
-        if (this.options.userParameters)
-            queryBuilder.addParameters(this.options.userParameters);
-        return queryBuilder;
-    }
     public get dbContext(): DbContext {
         return this._dbContext;
     }
@@ -51,10 +45,6 @@ export class DbSet<T> extends Queryable<T> {
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
         return new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias()));
-    }
-    public toString() {
-        const q = this.queryBuilder;
-        return this.buildQuery(q).toString(q);
     }
     public hashCode() {
         return hashCode(this.type.name!);
@@ -82,7 +72,7 @@ export class DbSet<T> extends Queryable<T> {
             }
             const a = new FunctionExpression(andExp, [param]);
             const v = new WhereQueryable(this, a);
-            entity = await v.setParameters({ id }).first();
+            entity = await v.parameter({ id }).first();
         }
         return entity;
     }

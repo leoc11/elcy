@@ -16,7 +16,6 @@ interface SyntaticParameter {
     index: number;
     scopedParameters: Map<string, ParameterExpression[]>;
     userParameters: { [key: string]: any };
-    scopeFunctions: IExpression<Function>[];
 }
 const globalObjectMaps = new Map<string, any>([
     // Global Function
@@ -64,11 +63,9 @@ export class SyntacticAnalyzer {
         const param: SyntaticParameter = {
             index: 0,
             scopedParameters: new Map(),
-            userParameters: userParameters,
-            scopeFunctions: []
+            userParameters: userParameters
         };
         const result = createExpression(param, new Enumerable(tokens).toArray()) as FunctionExpression;
-        result.scopeFunctions = param.scopeFunctions;
         return result;
     }
 }
@@ -109,9 +106,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                 switch (operator.identifier) {
                                     case "new": {
                                         const typeExp = createExpression(param, tokens, null, operator);
-                                        if (!(typeExp instanceof ValueExpression)) {
-                                            param.scopeFunctions.push(typeExp);
-                                        }
                                         const paramToken = tokens[param.index];
                                         let params: IExpression[] = [];
                                         if (paramToken.type === LexicalTokenType.Operator && paramToken.data === "(") {
@@ -159,9 +153,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                     expression = MethodCallExpression.create(expression.objectOperand, params.items, expression.memberName);
                                 }
                                 else {
-                                    if (!(expression instanceof ValueExpression)) {
-                                        param.scopeFunctions.push(expression);
-                                    }
                                     expression = FunctionCallExpression.create(expression, params.items);
                                 }
                                 continue;

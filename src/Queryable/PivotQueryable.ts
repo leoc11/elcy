@@ -65,13 +65,10 @@ export class PivotQueryable<T,
             this.metricFn = metrics;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
-        if (!this.expression) {
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone();
-            const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand as SelectExpression, scope: "queryable" };
-            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
-        }
-        return this.expression as any;
+        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+        const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
+        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand as SelectExpression, scope: "queryable" };
+        return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());

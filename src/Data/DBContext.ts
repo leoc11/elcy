@@ -4,9 +4,7 @@ import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
 import { IQueryCacheManager } from "../QueryBuilder/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManager";
-import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
-import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { IDriver } from "../Driver/IDriver";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
@@ -38,10 +36,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public dbType: T;
     public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
     private _queryCacheManager: IQueryCacheManager;
-    protected get queryCacheManager() {
-        if (!this._queryCacheManager)
-            this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType() : new DefaultQueryCacheManager();
-
+    public get queryCacheManager() {
+        if (!this._queryCacheManager) {
+            this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType(this.constructor) : new DefaultQueryCacheManager(this.constructor as any);
+        }
+        
         return this._queryCacheManager;
     }
     private _connectionManager: IConnectionManager;
@@ -77,12 +76,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             this.connection = null;
             await con.close();
         }
-    }
-    public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
-        return this.queryCacheManager.get<T>(this.constructor as any, key);
-    }
-    public setQueryChache<T>(key: number, queryCommands: IQueryCommand[], queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
-        return this.queryCacheManager.set<T>(this.constructor as any, key, queryCommands, queryParser, parameterBuilder);
     }
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
@@ -294,7 +287,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         await this.closeConnection(con);
         return result;
     }
-    protected async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
+    public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
         const mergedCommands = this.mergeQueries(queryCommands);
         let results: IQueryResult[] = [];
         const con = await this.getConnection();

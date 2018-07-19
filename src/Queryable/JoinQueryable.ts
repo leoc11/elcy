@@ -9,8 +9,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
-    public expression: SelectExpression<R>;
-    protected readonly keySelector1Fn: (intem: T) => K;
+    protected readonly keySelector1Fn: (item: T) => K;
     protected readonly keySelector2Fn: (item: T2) => K;
     protected readonly resultSelectorFn: (item1: T | null, item2: T2 | null) => R;
     private _keySelector1: FunctionExpression<T, K>;
@@ -61,14 +60,11 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
         }
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
-        if (!this.expression) {
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            const childOperand = this.parent2.buildQuery(queryBuilder).clone() as SelectExpression;
-            const type = this.joinType.toLowerCase() + "Join";
-            const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
-        }
-        return this.expression;
+        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+        const childOperand = this.parent2.buildQuery(queryBuilder) as SelectExpression;
+        const type = this.joinType.toLowerCase() + "Join";
+        const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
+        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
+        return queryBuilder.visit(methodExpression, visitParam) as any;
     }
 }

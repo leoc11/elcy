@@ -9,14 +9,12 @@ export class TakeQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
     }
     public buildQuery(queryBuilder: QueryBuilder) {
-        if (!this.expression) {
-            this.expression = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            if (typeof this.expression.paging.take !== "number")
-                this.expression.paging.take = this.quantity;
-            else
-                this.expression.paging.take = Math.min(this.quantity, this.expression.paging.take);
-        }
-        return this.expression;
+        const res = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+        if (typeof res.paging.take !== "number")
+            res.paging.take = this.quantity;
+        else
+            res.paging.take = Math.min(this.quantity, res.paging.take);
+        return res;
     }
     public hashCode() {
         return this.parent.hashCode() + hashCode("TAKE") + this.quantity;

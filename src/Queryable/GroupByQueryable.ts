@@ -10,7 +10,6 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
-    public expression: SelectExpression<GroupedEnumerable<T, K>>;
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression<T, any>;
     protected get keySelector() {
@@ -29,13 +28,10 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
             this.keySelectorFn = keySelector;
     }
     public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
-        if (!this.expression) {
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
-        }
-        return this.expression;
+        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+        const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
+        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
+        return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return this.parent.hashCode() + hashCode("GROUPBY") + hashCode((this.keySelectorFn || this.keySelector || "").toString());

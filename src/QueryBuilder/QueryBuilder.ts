@@ -59,19 +59,16 @@ import { ColumnMetaData } from "../MetaData/ColumnMetaData";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator";
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
+import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
+import { IQueryOption } from "./Interface/ISelectQueryOption";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public resolveTranslator(object: any, memberName?: string) {
         return defaultQueryTranslator.resolve(object, memberName);
     }
-    protected get userParameters() {
-        return this.queryVisitor.userParameters;
-    }
-    public get sqlParameterBuilderItems(): ISqlParameterBuilderItem[] {
-        return this.queryVisitor.sqlParameterBuilderItems;
-    }
-    public addParameters(param: { [key: string]: any }) {
-        Object.assign(this.userParameters, param);
+    public options: IQueryOption;
+    public getParameterBuilder(): ParameterBuilder {
+        return new ParameterBuilder(this.queryVisitor.sqlParameterBuilderItems);
     }
     public get scopeParameters(): TransformerParameter {
         return this.queryVisitor.scopeParameters;
@@ -343,15 +340,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return transformer.translate(expression, this);
         }
 
-        if (isNativeFunction(fn)) {
-            // TODO: ToExpression must support this parameter
-            const fnExpression = ExpressionBuilder.parse(fn);
-            for (let i = 0; i < fnExpression.params.length; i++) {
-                const param = fnExpression.params[i];
-                this.scopeParameters.add(param.name, expression.params[i]);
-            }
-            return this.getExpressionString(fnExpression.body);
-        }
         throw new Error(`function "${expression.functionName}" not suported`);
     }
     protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
@@ -385,17 +373,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return translator.translate(expression, this);
         }
 
-        const methodFn = expression.objectOperand.type.prototype[expression.methodName];
-        if (!isNativeFunction(methodFn)) {
-            const fnExpression = ExpressionBuilder.parse(methodFn);
-            for (let i = 0; i < fnExpression.params.length; i++) {
-                const param = fnExpression.params[i];
-                this.scopeParameters.add(param.name, expression.params[i]);
-            }
-            this.scopeParameters.add("this", expression.objectOperand);
-            const result = this.getExpressionString(fnExpression.body);
-            return result;
-        }
         throw new Error(`${(expression.objectOperand.type as any).name}.${expression.methodName} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
@@ -492,7 +469,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o instanceof ComputedColumnExpression)
                     return new ColumnExpression(o.entity, o.type, o.propertyName, o.columnName, o.isPrimary);
                 return o;
-            }).toArray(), select.itemType, this.newAlias()));
+            }).toArray(), select.itemType, tempTableName.substr(1)));
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
                 // add join to temp table

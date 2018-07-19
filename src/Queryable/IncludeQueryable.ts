@@ -7,6 +7,7 @@ import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
@@ -30,14 +31,11 @@ export class IncludeQueryable<T> extends Queryable<T> {
             this.selectorsFn = selectors as any;
         }
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
-        if (!this.expression) {
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
-        }
-        return this.expression as any;
+    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+        const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
+        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
+        return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
         return this.parent.hashCode() + hashCode("INCLUDE") + ((this.selectorsFn || this.selectors) as any[])

@@ -7,13 +7,14 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
     protected _selector: FunctionExpression<S, T>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
-            this._selector = ExpressionBuilder.parse(this.selectorFn, this.options.userParameters);
+            this._selector = ExpressionBuilder.parse(this.selectorFn, this.options.parameters);
         return this._selector;
     }
     protected set selector(value) {
@@ -26,14 +27,11 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         else
             this.selectorFn = selector;
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
-        if (!this.expression) {
-            const objectOperand = this.parent.buildQuery(queryBuilder).clone() as SelectExpression;
-            const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
-            const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-            this.expression = queryBuilder.visit(methodExpression, visitParam) as SelectExpression;
-        }
-        return this.expression as any;
+    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+        const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
+        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
+        return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return this.parent.hashCode() + hashCode("SELECT") + hashCode((this.selectorFn || this.selector).toString());
