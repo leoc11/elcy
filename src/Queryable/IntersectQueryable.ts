@@ -9,7 +9,7 @@ import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpressi
 export class IntersectQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
         super(parent.type, parent);
-        this.setOption(this.parent2.options);
+        this.option(this.parent2.options);
     }
     public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;

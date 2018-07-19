@@ -149,7 +149,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -189,7 +189,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -233,7 +233,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -277,7 +277,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -321,7 +321,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -365,7 +365,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -408,7 +408,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
@@ -494,7 +494,7 @@ export abstract class Queryable<T = any> {
 
         n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
+        let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
         queryBuilder.options = this.options;
