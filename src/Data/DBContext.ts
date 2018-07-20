@@ -40,7 +40,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         if (!this._queryCacheManager) {
             this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType(this.constructor) : new DefaultQueryCacheManager(this.constructor as any);
         }
-        
+
         return this._queryCacheManager;
     }
     private _connectionManager: IConnectionManager;
@@ -287,13 +287,13 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         await this.closeConnection(con);
         return result;
     }
-    public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
+    public async executeCommands(queryCommands: IQueryCommand[], parameters?: { [key: string]: any }): Promise<IQueryResult[]> {
         const mergedCommands = this.mergeQueries(queryCommands);
         let results: IQueryResult[] = [];
         const con = await this.getConnection();
         for (const query of mergedCommands) {
             if (parameters)
-                query.parameters = query.parameters ? new Map([...query.parameters, ...parameters]) : parameters;
+                query.parameters = query.parameters ? Object.assign(query.parameters, parameters) : parameters;
             const res = await con.executeQuery(query);
             results = results.concat(res);
         }
@@ -431,7 +431,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                                 queries = queries.concat(targetRelInsertQueries);
                             if (queries) {
                                 for (const q of queries.where(o => !!o.parameters)) {
-                                    for (const [key] of q.parameters) {
+                                    for (const key in q.parameters) {
                                         if (key.startsWith(paramKey)) {
                                             const sp = key.lastIndexOf("_");
                                             const colName = key.substr(paramKey.length, sp);
@@ -441,7 +441,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                                                 if (!isNaN(index) && datas.length > index) {
                                                     const data = datas[index];
                                                     if (data && data[colName])
-                                                        q.parameters.set(key, data[colName]);
+                                                        q.parameters[key] = data[colName];
                                                 }
                                             }
                                         }
@@ -516,12 +516,12 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const results: IQueryCommand[] = [];
         const result: IQueryCommand = {
             query: "",
-            parameters: new Map()
+            parameters: {}
         };
         for (const query of queries) {
             result.query += (result.query ? ";\n\n" : "") + query.query;
             if (query.parameters)
-                result.parameters = new Map([...result.parameters, ...query.parameters]);
+                Object.assign(result.parameters, query.parameters);
         }
         results.push(result);
         return results;
@@ -543,13 +543,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async defferedFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
         const queryCommand: IQueryCommand = {
             query: rawQuery,
-            parameters: new Map()
+            parameters: {}
         };
         if (parameters) {
-            for (const prop in parameters) {
-                const value = parameters[prop];
-                queryCommand.parameters.set(prop, value);
-            }
+            Object.assign(queryCommand.parameters, parameters);
         }
         const query = new DeferredQuery(this, [queryCommand], null, (result) => result.selectMany(o => o.rows).select(o => {
             let item = new (type as any)();
