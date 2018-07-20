@@ -1,16 +1,34 @@
-import { IExpression } from "./IExpression";
-export class ValueExpression<T> implements IExpression {
-    public readonly Type: string;
+import { GenericType, NullConstructor } from "../../Common/Type";
+import { ExpressionTransformer } from "../ExpressionTransformer";
+import { ExpressionBase } from "./IExpression";
 
-    constructor(protected Value: T) {
-        this.Type = typeof this.Value;
-    }
+export class ValueExpression<T> extends ExpressionBase<T> {
+    public static create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
+        if (value instanceof ExpressionBase)
+            return new ValueExpression<TType>(value.execute(), value.toString());
 
-    public ToString(): string {
-        throw new Error("Method not implemented.");
+        return new ValueExpression(value, expressionString);
     }
-    public Execute() {
-        throw new Error("Method not implemented.");
+    public get type(): GenericType<T> {
+        if (this.value === null || this.value === undefined)
+            return NullConstructor as any;
+        return this.value.constructor as any;
     }
+    constructor(public readonly value: T, private expressionString: string = "") {
+        super();
+    }
+    public toString(transformer?: ExpressionTransformer): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
 
+        if (this.expressionString === "")
+            this.expressionString = JSON.stringify(this.value);
+        return this.expressionString;
+    }
+    public execute() {
+        return this.value;
+    }
+    public clone() {
+        return new ValueExpression(this.value, this.expressionString);
+    }
 }

@@ -10,7 +10,7 @@
             "name": "Test",
             "program": "${workspaceRoot}/build/app.js",
             "outFiles": [
-                "${workspaceRoot}/build/**/*.js"
+                "${workspaceRoot}/build/test/**/*.js"
             ],
             "env": {
                 "NODE_ENV" : "development"
@@ -21,7 +21,7 @@
             "type": "node",
             "request": "launch",
             "name": "Source",
-            "program": "${workspaceRoot}/build/src/HelloWorld.js",
+            "program": "${workspaceRoot}/build/app.js",
             "outFiles": [
                 "${workspaceRoot}/build/src/**/*.js"
             ],

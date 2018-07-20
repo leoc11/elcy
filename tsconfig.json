@@ -1,32 +1,43 @@
 {
     "version": "2.1.1",
+    "compileOnSave": false,
     "compilerOptions": {
-        "lib": ["es5", "es6", "dom"],
+        "lib": [
+            "es2015",
+            "es5"
+        ],
+        "types":[
+            "node"
+        ],
         "outDir": "build",
-        "rootDir": "src",
-        "target": "es5",
+        "rootDir": "",
+        "target": "es2015",
         "module": "commonjs",
         "moduleResolution": "node",
-        "emitDecoratorMetadata": true,
+        "emitDecoratorMetadata": false,
         "experimentalDecorators": true,
         "sourceMap": true,
         "noImplicitAny": true,
+        "keyofStringsOnly": true,
         "declaration": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,
         "stripInternal": true,
         "pretty": true,
-        "strictNullChecks": true,
+        "strictNullChecks": false,
         "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noImplicitThis": true
+        "noUnusedParameters": false,
+        "noImplicitThis": true,
+        "watch": true,
+        "noStrictGenericChecks": true
     },
     "include": [
+        "app.ts",
+        "test/*.ts",
         "src/**/*.ts"
     ],
     "exclude": [
         "tmp",
-        "test",
         "temp",
         "build",
         "node_modules",

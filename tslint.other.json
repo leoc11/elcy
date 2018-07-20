@@ -9,6 +9,9 @@
             true,
             "spaces"
         ],
+        "no-console": [
+            false
+        ],
         "no-unused-variable": true,
         "no-duplicate-variable": true,
         "no-eval": true,
@@ -38,8 +41,9 @@
                 "variable-declaration": "nospace"
             }
         ],
+        "object-literal-shorthand": false,
         "variable-name": [
-            true,
+            false,
             "ban-keywords"
         ],
         "whitespace": [

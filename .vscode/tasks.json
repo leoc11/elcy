@@ -5,7 +5,7 @@
     "tasks": [
         {
             "type": "typescript",
-            "tsconfig": "tsconfig.test.json",
+            "tsconfig": "tsconfig.json",
             "problemMatcher": [
                 "$tsc"
             ],
@@ -16,7 +16,7 @@
         },
         {
             "type": "shell",
-            "taskName": "on save watcher",
+            "label": "on save watcher",
             "command": "tsc",
             "args": ["-w", "-p", "."],
             "options": {

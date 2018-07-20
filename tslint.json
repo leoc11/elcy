@@ -1,29 +1,58 @@
 {
-    "defaultSeverity": "error",
-    "extends": [
-        "tslint:recommended"
-    ],
-    "jsRules": {},
-    "rulesDirectory": [],
     "rules": {
-        "max-line-length": [
+        "class-name": true,
+        "comment-format": [
+            true,
+            "check-space"
+        ],
+        "indent": [
+            true,
+            "spaces"
+        ],
+        "no-console": [
             false
         ],
-        "curly": [
-            false,
-            "ignore-same-line"
-        ],
+        "no-unused-variable": true,
+        "no-duplicate-variable": true,
+        "no-eval": true,
+        "no-internal-module": true,
+        "no-var-keyword": true,
         "one-line": [
             true,
-            "check-whitespace",
-            "check-open-brace"
+            "check-open-brace",
+            "check-whitespace"
         ],
-        "trailing-comma": [
+        "quotemark": [
+            true,
+            "double"
+        ],
+        "semicolon": true,
+        "triple-equals": [
+            true,
+            "allow-null-check"
+        ],
+        "typedef-whitespace": [
             true,
             {
-                "multiline": "never",
-                "singleline": "never"
+                "call-signature": "nospace",
+                "index-signature": "nospace",
+                "parameter": "nospace",
+                "property-declaration": "nospace",
+                "variable-declaration": "nospace"
             }
+        ],
+        "object-literal-shorthand": false,
+        "variable-name": [
+            false,
+            "ban-keywords"
+        ],
+        "whitespace": [
+            true,
+            "check-branch",
+            "check-decl",
+            "check-operator",
+            "check-separator",
+            "check-type"
         ]
     }
 }
