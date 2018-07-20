@@ -15,6 +15,7 @@ import { RelationDataExpression } from "../../Queryable/QueryExpression/Relation
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
+import { UUID } from "../../Data/UUID";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -314,6 +315,11 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 return new Date(input);
             case TimeSpan:
                 return new TimeSpan(Number.parseFloat(input)) as any;
+            case UUID: {
+                if (input)
+                    return new UUID(input.toString());
+                return UUID.empty;
+            }
             default:
                 throw new Error(`${column.type.name} not supported`);
         }

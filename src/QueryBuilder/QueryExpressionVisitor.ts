@@ -1181,6 +1181,20 @@ export class QueryExpressionVisitor {
         expression.leftOperand = this.visit(expression.leftOperand, param);
         expression.rightOperand = this.visit(expression.rightOperand, param);
 
+        const isExpressionSafe = isSafe(expression.leftOperand, this) && isSafe(expression.rightOperand, this);
+        if (isExpressionSafe) {
+            let hasParam = false;
+            let hasParam2 = false;
+            [expression.leftOperand, hasParam] = extract(expression.leftOperand, this);
+            [expression.rightOperand, hasParam2] = extract(expression.rightOperand, this);
+            if (hasParam || hasParam2) {
+                const result = this.createParamBuilderItem(expression);
+                return result;
+            }
+
+            return new ValueExpression(expression.execute());
+        }
+
         if (expression.leftOperand instanceof TernaryExpression) {
             const ternaryExp = expression.leftOperand as TernaryExpression;
             const falseOperand = expression.clone();
@@ -1202,6 +1216,18 @@ export class QueryExpressionVisitor {
     }
     protected visitUnaryOperator(expression: IUnaryOperatorExpression, param: IQueryVisitParameter): IExpression {
         expression.operand = this.visit(expression.operand, param);
+
+        const isExpressionSafe = isSafe(expression.operand, this);
+        if (isExpressionSafe) {
+            let hasParam = false;
+            [expression.operand, hasParam] = extract(expression.operand, this);
+            if (hasParam) {
+                const result = this.createParamBuilderItem(expression);
+                return result;
+            }
+            return new ValueExpression(expression.execute());
+        }
+
         if (expression.operand instanceof TernaryExpression) {
             const ternaryExp = expression.operand as TernaryExpression;
             const falseOperand = expression.clone();
@@ -1216,6 +1242,20 @@ export class QueryExpressionVisitor {
         expression.logicalOperand = this.visit(expression.logicalOperand, param);
         expression.trueResultOperand = this.visit(expression.trueResultOperand, param);
         expression.falseResultOperand = this.visit(expression.falseResultOperand, param);
+
+
+        const isExpressionSafe = isSafe(expression.logicalOperand, this) && isSafe(expression.trueResultOperand, this) && isSafe(expression.falseResultOperand, this);
+        if (isExpressionSafe) {
+            let hasParam = expression.logicalOperand instanceof ParameterExpression || expression.trueResultOperand instanceof ParameterExpression || expression.falseResultOperand instanceof ParameterExpression;
+            [expression.logicalOperand] = extract(expression.logicalOperand, this);
+            [expression.trueResultOperand] = extract(expression.trueResultOperand, this);
+            [expression.falseResultOperand] = extract(expression.falseResultOperand, this);
+            if (hasParam) {
+                const result = this.createParamBuilderItem(expression);
+                return result;
+            }
+            return new ValueExpression(expression.execute());
+        }
         return expression;
     }
     protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: IQueryVisitParameter) {

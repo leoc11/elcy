@@ -15,7 +15,7 @@ export class QueryTranslator {
     // Register Function Implementation
     public register(fn: Function, translate: (exp: FunctionCallExpression, qb: QueryBuilder) => string, preferApp?: boolean): void;
     // Register Member and Method Implementation
-    public register(object: any, memberName: string, translate: (exp: IMemberOperatorExpression, qb: QueryBuilder) => string, preferApp?: boolean): void;
+    public register<T>(object: T, memberName: keyof T, translate: (exp: IMemberOperatorExpression, qb: QueryBuilder) => string, preferApp?: boolean): void;
     public register(object: any, translateOrMember: ((exp: IExpression, qb: QueryBuilder) => string) | string, translateOrpreferApp?: ((exp: IExpression, qb: QueryBuilder) => string) | boolean, preferApp?: boolean) {
         let translate: any;
         let memberName: string;

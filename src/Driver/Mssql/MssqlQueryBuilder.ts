@@ -14,7 +14,11 @@ import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
+import { UUID } from "../../Data/UUID";
 
+export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
+mssqlQueryTranslator.register(UUID, "new", () => "NEWID()");
 export class MssqlQueryBuilder extends QueryBuilder {
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
         ["bigint", "Numeric"],
@@ -97,6 +101,12 @@ export class MssqlQueryBuilder extends QueryBuilder {
         [Number, "decimal"],
         [Boolean, "bit"]
     ]);
+    public resolveTranslator(object: any, memberName?: string) {
+        let result = mssqlQueryTranslator.resolve(object, memberName);
+        if (!result)
+            result = super.resolveTranslator(object, memberName);
+        return result;
+    }
     protected getPagingQueryString(select: SelectExpression): string {
         const skip = select.paging.skip || 0;
         const take = select.paging.take || 0;
