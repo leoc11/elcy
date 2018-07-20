@@ -1,11 +1,12 @@
 import "reflect-metadata";
 import { GenericType } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
-import { AbstractEntityMetaData, IndexMetaData } from "../MetaData";
-import { IEntityMetaData } from "../MetaData/Interface";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { entityMetaKey, columnMetaKey } from "./DecoratorKey";
 import { IIndexOption } from "./Option/IIndexOption";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
+import { IndexMetaData } from "../MetaData/IndexMetaData";
 
 export function ColumnIndex(option: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex(name: string, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;

@@ -192,7 +192,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
 
         const result: IQueryCommand = {
             query: "",
-            parameters: new Map()
+            parameters: {}
         };
         result.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames}) ${outputQuery ? "OUTPUT " + outputQuery : ""} VALUES `;
 
@@ -228,7 +228,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                     paramName = this.newAlias("param");
                 }
 
-                result.parameters.set(paramName, value);
+                result.parameters[paramName] = value;
                 return "@" + paramName;
             }).union(valueColumns.select(o => {
                 let value = entry.entity[o.propertyName as keyof T];
@@ -239,7 +239,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 }
                 else {
                     const paramName = this.newAlias("param");
-                    result.parameters.set(paramName, value);
+                    result.parameters[paramName] = value;
                     return "@" + paramName;
                 }
             })).toArray().join(",");

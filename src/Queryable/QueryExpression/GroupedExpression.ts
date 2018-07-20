@@ -2,7 +2,7 @@ import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpre
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { AndExpression } from "../../ExpressionBuilder/Expression";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 
 export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
     public get where() {

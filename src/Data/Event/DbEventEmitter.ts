@@ -1,5 +1,6 @@
 import { IDBEventListener } from "./IDBEventListener";
-import { ISaveEventParam, IDeleteEventParam } from "../../MetaData/Interface";
+import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
+import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
 
 export class DBEventEmitter<T> {
     public eventListeners: IDBEventListener<T>[];

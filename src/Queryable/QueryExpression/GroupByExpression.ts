@@ -1,10 +1,12 @@
-import { IExpression, AndExpression, ObjectValueExpression } from "../../ExpressionBuilder/Expression";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IEntityExpression } from "./IEntityExpression";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;

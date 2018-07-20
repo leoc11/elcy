@@ -1,26 +1,18 @@
-import { IQueryResultParser } from "./ResultParser/IQueryResultParser";
-import { QueryCache } from "./QueryCache";
+import { IQueryCache } from "./IQueryCache";
 import { IQueryCacheManager } from "./IQueryCacheManager";
 import { IObjectType } from "../Common/Type";
 import { DbContext } from "../Data/DBContext";
-import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
-import { IQueryCommand } from "./Interface/IQueryCommand";
 
 export const queryCacheKey = Symbol("querycache-key");
+export const expressionCacheKey = Symbol("expressioncache-key");
 export class DefaultQueryCacheManager implements IQueryCacheManager {
-    public async get(type: IObjectType<DbContext>, key: number) {
-        const cached: Map<number, QueryCache> = Reflect.getOwnMetadata(queryCacheKey, type);
-        if (cached && cached.has(key))
-            return Promise.resolve(cached.get(key));
-        return Promise.resolve(undefined);
+    constructor(protected type: IObjectType<DbContext>) {
+
     }
-    public async set<T>(type: IObjectType<DbContext>, key: number, queryCommands: IQueryCommand[], queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder) {
-        let cached: Map<number, QueryCache> = Reflect.getOwnMetadata(queryCacheKey, type);
-        if (!cached) {
-            cached = new Map<number, QueryCache>();
-            Reflect.defineMetadata(queryCacheKey, cached, type);
-        }
-        cached.set(key, new QueryCache(queryCommands, queryParser, parameterBuilder));
-        return Promise.resolve();
+    public get(key: number) {
+        return Reflect.getOwnMetadata(queryCacheKey, this.type, key.toString());
+    }
+    public set<T>(key: number, cache: IQueryCache) {
+        Reflect.defineMetadata(queryCacheKey, cache, this.type, key.toString());
     }
 }

@@ -12,11 +12,11 @@ declare global {
         toTime(): TimeSpan;
     }
     interface DateConstructor {
-        getDate(): Date;
+        currentTimestamp(): Date;
     }
 }
 
-Date.getDate = function () {
+Date.currentTimestamp = function () {
     return new Date();
 };
 

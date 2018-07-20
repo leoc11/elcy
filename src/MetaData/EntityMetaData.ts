@@ -1,11 +1,15 @@
-import { IObjectType } from "../Common/Type";
-import { ComputedColumnMetaData, NumericColumnMetaData } from "../MetaData";
-import { IEntityMetaData, IOrderMetaData, ISaveEventParam, IDeleteEventParam } from "./Interface";
-import { InheritanceMetaData } from "./Relation";
+import { IObjectType, ConcurrencyModel } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
+import { IOrderMetaData } from "./Interface/IOrderMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
+import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
+import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
+import { NumericColumnMetaData } from "./NumericColumnMetaData";
+import { ISaveEventParam } from "./Interface/ISaveEventParam";
+import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
@@ -21,6 +25,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public relations: IRelationMetaData<TE, any>[] = [];
     public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
+    public concurencyModel: ConcurrencyModel;
     // inheritance
     public descriminatorMember = "__type__";
     public get allowInheritance(): boolean {
@@ -37,7 +42,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         return priority;
     }
     public get hasIncrementPrimary(): boolean {
-        return this.primaryKeys.any(o => (o as NumericColumnMetaData).autoIncrement);
+        return this.primaryKeys.any(o => (o as any as NumericColumnMetaData).autoIncrement);
     }
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);

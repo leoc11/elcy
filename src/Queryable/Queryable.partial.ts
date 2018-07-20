@@ -1,5 +1,5 @@
 import { GenericType, ValueType } from "../Common/Type";
-import { Queryable } from "../Queryable";
+import { Queryable } from "../Queryable/Queryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
 import { FullJoinQueryable } from "./FullJoinQueryable";

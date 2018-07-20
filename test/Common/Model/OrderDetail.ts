@@ -1,10 +1,14 @@
-import { PrimaryKey, DateColumn, DeleteColumn, StringColumn, ComputedColumn } from "../../../src/Decorator/Column/index";
-import { Entity } from "../../../src/Decorator/Entity/index";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { Order } from "./Order";
 import { Product } from "./Product";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { OrderDetailProperty } from "./OrderDetailProperty";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
+import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
+import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
+import { DeleteColumn } from "../../../src/Decorator/Column/DeleteColumn";
 
 @Entity("OrderDetails")
 export class OrderDetail {

@@ -1,4 +1,4 @@
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/index";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IEntityQueryExpression } from "./IEntityQueryExpression";
 
 export interface IColumnQueryExpression<T> {

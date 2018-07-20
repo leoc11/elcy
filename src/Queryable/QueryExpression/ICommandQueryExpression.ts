@@ -1,4 +1,4 @@
-import { IExpression } from "../../ExpressionBuilder/Expression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";

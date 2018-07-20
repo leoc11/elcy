@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { StringColumnMetaData } from "../../MetaData";
-import { IStringColumnOption } from "../Option";
+import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
+import { IStringColumnOption } from "../Option/IStringColumnOption";
 import { Column } from "./Column";
 
 export function StringColumn(option?: IStringColumnOption): PropertyDecorator;

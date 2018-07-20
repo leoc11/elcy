@@ -3,7 +3,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class ModulusExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
-    public static Create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
+    public static create(leftOperand: ExpressionBase<number>, rightOperand: ExpressionBase<number>) {
         const result = new ModulusExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.create<number>(result);

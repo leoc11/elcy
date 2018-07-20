@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { BooleanColumnMetaData } from "../../MetaData";
-import { IBooleanColumnOption } from "../Option";
+import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
+import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { Column } from "./Column";
 
 export function BooleanColumn(option: IBooleanColumnOption): PropertyDecorator;

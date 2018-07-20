@@ -3,7 +3,5 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class UniqueConstraintMetaData<TE = any> implements IConstraintMetaData<TE> {
-    public entity: IEntityMetaData<TE, any>;
-    public name: string;
-    public columns: Array<IColumnMetaData<TE>>;
+    constructor(public readonly name: string, public readonly entity: IEntityMetaData<TE, any>, public readonly columns: Array<IColumnMetaData<TE>>) { }
 }

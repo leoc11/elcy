@@ -1,7 +1,7 @@
 import { IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IEntityExpression } from "./IEntityExpression";
-import { EmbeddedColumnMetaData } from "../../MetaData";
+import { EmbeddedColumnMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { ColumnExpression } from "./ColumnExpression";
 

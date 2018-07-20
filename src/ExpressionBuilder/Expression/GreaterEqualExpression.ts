@@ -2,8 +2,8 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class GreaterEqualExpression<TType> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
-    public static Create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
+export class GreaterEqualExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
+    public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new GreaterEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.create<boolean>(result);

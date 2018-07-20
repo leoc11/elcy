@@ -6,6 +6,9 @@ export const isValue = (data: any): data is ValueType => {
 export const isValueType = <T>(type: GenericType<T>) => {
     return [Number, String, Date].contains(type as any);
 };
+export const isNotNull = (value: any) => {
+    return value !== null && value !== undefined;
+};
 export const isNativeFunction = (fn: Function) => {
     return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
 };
@@ -23,7 +26,7 @@ export const fillZero = (value: number, factor = 2): string => {
  * @param str source: http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
  */
 export const hashCode = (str: string, hash: number = 0) => {
-    if (str.length === 0)
+    if (!str || str.length === 0)
         return hash;
     for (let i = 0; i < str.length; i++) {
         const charCode = str.charCodeAt(i);

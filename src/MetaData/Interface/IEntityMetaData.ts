@@ -1,6 +1,6 @@
 import { IObjectType } from "../../Common/Type";
-import { ComputedColumnMetaData } from "../../MetaData";
-import { InheritanceMetaData } from "../Relation";
+import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
+import { InheritanceMetaData } from "../Relation/InheritanceMetaData";
 import { IOrderMetaData } from "./IOrderMetaData";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IColumnMetaData } from "./IColumnMetaData";

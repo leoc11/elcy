@@ -4,11 +4,8 @@ import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
 import { IQueryCacheManager } from "../QueryBuilder/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManager";
-import { QueryCache } from "../QueryBuilder/QueryCache";
 import { IQueryResult } from "../QueryBuilder/QueryResult";
-import { ParameterBuilder } from "../QueryBuilder/ParameterBuilder/ParameterBuilder";
 import { IDBEventListener } from "./Event/IDBEventListener";
-import { ISaveEventParam, IDeleteEventParam, IEntityMetaData } from "../MetaData/Interface";
 import { IDriver } from "../Driver/IDriver";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
@@ -17,7 +14,6 @@ import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { SchemaBuilder } from "./SchemaBuilder";
 import { RelationEntry } from "./RelationEntry";
-import { NumericColumnMetaData } from "../MetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 import { isValue } from "../Helper/Util";
@@ -25,6 +21,10 @@ import { ISaveChangesOption } from "../QueryBuilder/Interface/ISelectQueryOption
 import { IConnectionManager } from "../Connection/IConnectionManager";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { IDeleteEventParam } from "../MetaData/Interface/IDeleteEventParam";
+import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
@@ -36,9 +36,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public dbType: T;
     public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
     private _queryCacheManager: IQueryCacheManager;
-    protected get queryCacheManager() {
-        if (!this._queryCacheManager)
-            this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType() : new DefaultQueryCacheManager();
+    public get queryCacheManager() {
+        if (!this._queryCacheManager) {
+            this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType(this.constructor) : new DefaultQueryCacheManager(this.constructor as any);
+        }
 
         return this._queryCacheManager;
     }
@@ -75,12 +76,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             this.connection = null;
             await con.close();
         }
-    }
-    public getQueryChache<T>(key: number): Promise<QueryCache<T> | undefined> {
-        return this.queryCacheManager.get<T>(this.constructor as any, key);
-    }
-    public setQueryChache<T>(key: number, queryCommands: IQueryCommand[], queryParser: IQueryResultParser<T>, parameterBuilder: ParameterBuilder): Promise<void> {
-        return this.queryCacheManager.set<T>(this.constructor as any, key, queryCommands, queryParser, parameterBuilder);
     }
     protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
@@ -292,18 +287,17 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         await this.closeConnection(con);
         return result;
     }
-    public async executeCommands(queryCommands: IQueryCommand[], parameters?: Map<string, any>): Promise<IQueryResult[]> {
+    public async executeCommands(queryCommands: IQueryCommand[], parameters?: { [key: string]: any }): Promise<IQueryResult[]> {
         const mergedCommands = this.mergeQueries(queryCommands);
         let results: IQueryResult[] = [];
         const con = await this.getConnection();
         for (const query of mergedCommands) {
             if (parameters)
-                query.parameters = query.parameters ? new Map([...query.parameters, ...parameters]) : parameters;
-
+                query.parameters = query.parameters ? Object.assign(query.parameters, parameters) : parameters;
             const res = await con.executeQuery(query);
             results = results.concat(res);
         }
-
+        await this.closeConnection(con);
         return results;
     }
     public async transaction(transactionBody: () => Promise<void>): Promise<void>;
@@ -416,7 +410,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // execute all in transaction;
         await this.transaction(async () => {
-            const d = 1;
             // execute all insert
             for (const [meta, queries] of insertQueries) {
                 const mergedQueries = this.mergeQueries(queries);
@@ -438,7 +431,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                                 queries = queries.concat(targetRelInsertQueries);
                             if (queries) {
                                 for (const q of queries.where(o => !!o.parameters)) {
-                                    for (const [key] of q.parameters) {
+                                    for (const key in q.parameters) {
                                         if (key.startsWith(paramKey)) {
                                             const sp = key.lastIndexOf("_");
                                             const colName = key.substr(paramKey.length, sp);
@@ -448,7 +441,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                                                 if (!isNaN(index) && datas.length > index) {
                                                     const data = datas[index];
                                                     if (data && data[colName])
-                                                        q.parameters.set(key, data[colName]);
+                                                        q.parameters[key] = data[colName];
                                                 }
                                             }
                                         }
@@ -465,13 +458,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const res = await this.executeQuery(query);
                 results = results.concat(res);
             }
-            throw new Error("asd");
         });
 
         // reflect all changes to current model
 
-        let i = 0;
-        const datas = results.selectMany(o => o.rows);
+        const datas = results.where(o => Array.isArray(o.rows)).selectMany(o => o.rows);
         const dataIterator = datas[Symbol.iterator]();
         // apply insert changes
         orderedEntityAdd.each(([metaData, addEntries]) => {
@@ -519,18 +510,18 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         });
 
-        return results.sum(o => o.effectedRows) - i;
+        return results.sum(o => o.effectedRows);
     }
     public mergeQueries(queries: IQueryCommand[]): IQueryCommand[] {
         const results: IQueryCommand[] = [];
         const result: IQueryCommand = {
             query: "",
-            parameters: new Map()
+            parameters: {}
         };
         for (const query of queries) {
-            result.query += (result.query ? "\n\n" : "") + query.query + ";";
+            result.query += (result.query ? ";\n\n" : "") + query.query;
             if (query.parameters)
-                result.parameters = new Map([...result.parameters, ...query.parameters]);
+                Object.assign(result.parameters, query.parameters);
         }
         results.push(result);
         return results;
@@ -552,13 +543,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async defferedFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
         const queryCommand: IQueryCommand = {
             query: rawQuery,
-            parameters: new Map()
+            parameters: {}
         };
         if (parameters) {
-            for (const prop in parameters) {
-                const value = parameters[prop];
-                queryCommand.parameters.set(prop, value);
-            }
+            Object.assign(queryCommand.parameters, parameters);
         }
         const query = new DeferredQuery(this, [queryCommand], null, (result) => result.selectMany(o => o.rows).select(o => {
             let item = new (type as any)();

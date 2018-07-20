@@ -1,5 +1,5 @@
 import { GenericType } from "../../Common/Type";
-import { IExpression } from "../../ExpressionBuilder/Expression/index";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -12,7 +12,7 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
     public columnType: ColumnType;
     public columnName: string;
     public isPrimary = false;
-    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: string) {
+    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: keyof TE) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
         }

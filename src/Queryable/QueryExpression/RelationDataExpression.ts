@@ -6,7 +6,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
-import { IOrderExpression } from ".";
+import { IOrderExpression } from "./IOrderExpression";
 
 export class RelationDataExpression<T = any> implements IEntityExpression<T> {
     public name: string;

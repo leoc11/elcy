@@ -1,31 +1,15 @@
-import {
-    AdditionExpression, AndExpression, ArrayValueExpression, BitwiseAndExpression,
-    BitwiseNotExpression, BitwiseOrExpression, BitwiseSignedRightShiftExpression,
-    BitwiseXorExpression, BitwiseZeroLeftShiftExpression, BitwiseZeroRightShiftExpression,
-    DivisionExpression, EqualExpression, FunctionCallExpression, FunctionExpression,
-    GreaterEqualExpression, GreaterThanExpression,
-    IExpression, InstanceofExpression,
-    LeftDecrementExpression, LeftIncrementExpression, LessEqualExpression, LessThanExpression,
-    MemberAccessExpression, MethodCallExpression, NotEqualExpression, NegationExpression, ObjectValueExpression,
-    OrExpression, ParameterExpression, RightDecrementExpression,
-    RightIncrementExpression, StrictEqualExpression, StrictNotEqualExpression, SubtractionExpression,
-    TernaryExpression, MultiplicationExpression, TypeofExpression, ValueExpression, IBinaryOperatorExpression, IUnaryOperatorExpression
-} from "../ExpressionBuilder/Expression";
-import { ModulusExpression } from "../ExpressionBuilder/Expression/ModulusExpression";
+import "reflect-metadata";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
-import { ColumnExpression, ComputedColumnExpression, ExceptExpression, IEntityExpression, IntersectExpression, ProjectionEntityExpression, SqlExpression } from "../Queryable/QueryExpression/index";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
-import { SqlFunctionCallExpression } from "../Queryable/QueryExpression/SqlFunctionCallExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
-import { fillZero } from "../Helper/Util";
+import { fillZero, isNotNull } from "../Helper/Util";
 import { JoinType, ValueType, GenericType } from "../Common/Type";
-import { StringColumnMetaData, BooleanColumnMetaData, NumericColumnMetaData, DecimalColumnMetaData, DateColumnMetaData, EnumColumnMetaData, ColumnMetaData } from "../MetaData";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
 import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
 import { TimestampColumnMetaData } from "../MetaData/TimestampColumnMetaData";
@@ -34,10 +18,8 @@ import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 import { columnMetaKey, entityMetaKey } from "../Decorator/DecoratorKey";
-import { IEntityMetaData } from "../MetaData/Interface";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQueryCommand } from "./Interface/IQueryCommand";
 import { EntityEntry } from "../Data/EntityEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
@@ -48,22 +30,55 @@ import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
 import { EntityState } from "../Data/EntityState";
 import { RelationEntry } from "../Data/RelationEntry";
 import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
+import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
+import { ProjectionEntityExpression } from "../Queryable/QueryExpression/ProjectionEntityExpression";
+import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
+import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
+import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
+import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
+import { DateColumnMetaData } from "../MetaData/DateColumnMetaData";
+import { DecimalColumnMetaData } from "../MetaData/DecimalColumnMetaData";
+import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
+import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
+import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpression";
+import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
+import { ColumnMetaData } from "../MetaData/ColumnMetaData";
+import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
+import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator";
+import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
+import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
+import { IQueryOption } from "./Interface/ISelectQueryOption";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
-    protected get userParameters() {
-        return this.queryVisitor.userParameters;
+    public resolveTranslator(object: any, memberName?: string) {
+        return defaultQueryTranslator.resolve(object, memberName);
     }
-    public get sqlParameterBuilderItems(): ISqlParameterBuilderItem[] {
-        return this.queryVisitor.sqlParameterBuilderItems;
-    }
-    public addParameters(param: { [key: string]: any }) {
-        Object.assign(this.userParameters, param);
+    public options: IQueryOption;
+    public getParameterBuilder(): ParameterBuilder {
+        return new ParameterBuilder(this.queryVisitor.sqlParameterBuilderItems);
     }
     public get scopeParameters(): TransformerParameter {
         return this.queryVisitor.scopeParameters;
     }
+    public getLogicalOperandString(expression: IExpression<boolean>) {
+        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+            expression = new EqualExpression(expression, new ValueExpression(true));
+        }
+        return this.getExpressionString(expression);
+    }
     public namingStrategy: NamingStrategy = new NamingStrategy();
-    protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this.namingStrategy);
+    protected queryVisitor: QueryExpressionVisitor = new QueryExpressionVisitor(this);
     protected indent = 0;
     public newAlias(type?: "entity" | "column" | "param") {
         return this.queryVisitor.newAlias(type);
@@ -87,18 +102,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             return this.getEntityQueryString(expression);
         }
+        else if (expression instanceof TernaryExpression) {
+            return this.getOperatorString(expression as any);
+        }
         else if ((expression as IBinaryOperatorExpression).rightOperand) {
-            return this.getBinaryOperatorString(expression as any);
+            return `(${this.getOperatorString(expression as any)})`;
         }
         else if ((expression as IUnaryOperatorExpression).operand) {
-            return this.getUnaryOperatorString(expression as any);
+            return this.getOperatorString(expression as any);
         }
         else {
             let result = "";
             switch (expression.constructor) {
-                case SqlFunctionCallExpression:
-                    result = this.getSqlFunctionCallExpressionString(expression as any);
-                    break;
                 case MemberAccessExpression:
                     result = this.getMemberAccessExpressionString(expression as any);
                     break;
@@ -108,127 +123,24 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case FunctionCallExpression:
                     result = this.getFunctionCallExpressionString(expression as any);
                     break;
-                case TernaryExpression:
-                    result = this.getTernaryExpressionString(expression as any);
-                    break;
-                case ObjectValueExpression:
-                    result = this.getObjectValueExpressionString(expression as any);
-                    break;
-                case ArrayValueExpression:
-                    result = this.getArrayValueExpressionString(expression as any);
-                    break;
                 case ParameterExpression:
                     result = this.getParameterExpressionString(expression as any);
                     break;
                 case ValueExpression:
                     result = this.getValueExpressionString(expression as any);
                     break;
-                // Possibly not used
-                case FunctionExpression:
-                    result = this.getFunctionExpressionString(expression as any);
-                    break;
+                default:
+                    throw new Error(`Expression ${expression.toString()} not supported`);
             }
             return result;
         }
     }
-    protected getBinaryOperatorString(expression: IBinaryOperatorExpression) {
-        let result = "";
-        switch (expression.constructor) {
-            case AdditionExpression:
-                result = this.getAdditionExpressionString(expression as any);
-                break;
-            case AndExpression:
-                result = this.getAndExpressionString(expression as any);
-                break;
-            case BitwiseAndExpression:
-                result = this.getBitwiseAndExpressionString(expression as any);
-                break;
-            case BitwiseOrExpression:
-                result = this.getBitwiseOrExpressionString(expression as any);
-                break;
-            case BitwiseSignedRightShiftExpression:
-                result = this.getBitwiseSignedRightShiftExpressionString(expression as any);
-                break;
-            case BitwiseXorExpression:
-                result = this.getBitwiseXorExpressionString(expression as any);
-                break;
-            case BitwiseZeroLeftShiftExpression:
-                result = this.getBitwiseZeroLeftShiftExpressionString(expression as any);
-                break;
-            case BitwiseZeroRightShiftExpression:
-                result = this.getBitwiseZeroRightShiftExpressionString(expression as any);
-                break;
-            case DivisionExpression:
-                result = this.getDivisionExpressionString(expression as any);
-                break;
-            case EqualExpression:
-                result = this.getEqualExpressionString(expression as any);
-                break;
-            case GreaterEqualExpression:
-                result = this.getGreaterEqualExpressionString(expression as any);
-                break;
-            case GreaterThanExpression:
-                result = this.getGreaterThanExpressionString(expression as any);
-                break;
-            case InstanceofExpression:
-                result = this.getInstanceofExpressionString(expression as any);
-                break;
-            case LessEqualExpression:
-                result = this.getLessEqualExpressionString(expression as any);
-                break;
-            case LessThanExpression:
-                result = this.getLessThanExpressionString(expression as any);
-                break;
-            case NotEqualExpression:
-                result = this.getNotEqualExpressionString(expression as any);
-                break;
-            case OrExpression:
-                result = this.getOrExpressionString(expression as any);
-                break;
-            case StrictEqualExpression:
-                result = this.getStrictEqualExpressionString(expression as any);
-                break;
-            case StrictNotEqualExpression:
-                result = this.getStrictNotEqualExpressionString(expression as any);
-                break;
-            case SubtractionExpression:
-                result = this.getSubtractionExpressionString(expression as any);
-                break;
-            case MultiplicationExpression:
-                result = this.getTimesExpressionString(expression as any);
-                break;
-            case TernaryExpression:
-                result = this.getTernaryExpressionString(expression as any);
-                break;
+    protected getOperatorString(expression: IBinaryOperatorExpression) {
+        const translator = this.resolveTranslator(expression.constructor);
+        if (!translator) {
+            throw new Error(`operator "${expression.constructor.name}" not supported`);
         }
-        return "(" + result + ")";
-    }
-    protected getUnaryOperatorString(expression: IUnaryOperatorExpression) {
-        let result = "";
-        switch (expression.constructor) {
-            case BitwiseNotExpression:
-                result = this.getBitwiseNotExpressionString(expression as any);
-                break;
-            case LeftDecrementExpression:
-                result = this.getLeftDecrementExpressionString(expression as any);
-                break;
-            case LeftIncrementExpression:
-                result = this.getLeftIncrementExpressionString(expression as any);
-                break;
-            case NegationExpression:
-                result = this.getNegationExpressionString(expression as any);
-                break;
-            case RightDecrementExpression:
-                result = this.getRightDecrementExpressionString(expression as any);
-                break;
-            case RightIncrementExpression:
-                result = this.getRightIncrementExpressionString(expression as any);
-                break;
-            case TypeofExpression:
-                result = this.getTypeofExpressionString(expression as any);
-                break;
-        }
-        return result;
+        return translator.translate(expression, this);
     }
     protected getColumnString(column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
@@ -275,14 +187,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "CREATE TABLE " + name;
         result += this.newLine() + "{";
-        result += this.newLine(this.indent + 1) + columns.select(o => this.columnDeclaration(o)).toArray().join(this.newLine(this.indent + 1));
+        result += this.newLine(1, false) + columns.select(o => this.columnDeclaration(o)).toArray().join(this.newLine(1, false));
         result += this.newLine() + "}";
         return result;
     }
     protected getDeclareTableVariableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
         let result = "DECLARE " + name + "  TABLE";
         result += this.newLine() + "(";
-        result += this.newLine(this.indent + 1) + columns.select(o => this.columnDeclaration(o)).toArray().join("," + this.newLine(this.indent + 1));
+        result += this.newLine(1, false) + columns.select(o => this.columnDeclaration(o)).toArray().join("," + this.newLine(1, false));
         result += this.newLine() + ")";
         return result;
     }
@@ -375,9 +287,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o.child.isSimple())
                     childEntString = this.getEntityQueryString(o.child.entity);
                 else
-                    childEntString = "(" + this.newLine(++this.indent) + this.getSelectQueryString(o.child) + this.newLine(--this.indent) + ") AS " + o.child.entity.alias;
+                    childEntString = "(" + this.newLine(1) + this.getSelectQueryString(o.child) + this.newLine(-1) + ") AS " + o.child.entity.alias;
                 let join = o.type + " JOIN " + childEntString +
-                    this.newLine(this.indent + 1) + "ON ";
+                    this.newLine(1, false) + "ON ";
 
                 const jstr: string[] = [];
                 for (const [key, val] of o.relations) {
@@ -388,27 +300,31 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    protected newLine(indent = this.indent) {
+    public newLine(indent = 0, isAdd = true) {
+        indent += this.indent;
+        if (isAdd) {
+            this.indent = indent;
+        }
         return "\n" + (Array(indent + 1).join("\t"));
     }
     protected getEntityQueryString(entity: IEntityExpression): string {
         if (entity instanceof IntersectExpression) {
-            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+            return "(" + this.newLine(1) + "(" + this.newLine(1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
                 this.newLine() + "INTERSECT" +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + "(" + this.newLine(1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof UnionExpression) {
-            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+            return "(" + this.newLine(1) + "(" + this.newLine(1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
                 this.newLine() + "UNION" + (entity.isUnionAll ? " ALL" : "") +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + "(" + this.newLine(1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ExceptExpression) {
-            return "(" + this.newLine(++this.indent) + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select) + this.newLine(--this.indent) + ")" +
+            return "(" + this.newLine(+1) + "(" + this.newLine(+1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
                 this.newLine() + "EXCEPT" +
-                this.newLine() + "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.select2) + this.newLine(--this.indent) + ")" + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + "(" + this.newLine(+1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            return "(" + this.newLine(++this.indent) + this.getSelectQueryString(entity.subSelect) + this.newLine(--this.indent) + ") AS " + this.enclose(entity.alias);
+            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
@@ -416,389 +332,54 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return `${entityMeta.schema ? this.enclose(entityMeta.schema) + "." : ""}${this.enclose(entityMeta.name)}`;
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
-        switch (expression.functionFn) {
-            case parseInt:
-                return "CAST(" + this.getExpressionString(expression.params[0]) + " AS INT)";
-            case parseFloat:
-                return "CAST(" + this.getExpressionString(expression.params[0]) + " AS FLOAT)";
-            case isNaN:
-                return "ISNUMERIC(" + this.getExpressionString(expression.params[0]) + ") = 0";
-            case isFinite:
-            case decodeURI:
-            case decodeURIComponent:
-            case encodeURI:
-            case encodeURIComponent:
-                throw new Error(`${expression.functionName} not supported in linq to sql.`);
+        const fn = expression.fnExpression.execute();
+        let transformer = this.resolveTranslator(fn);
+        if (transformer) {
+            return transformer.translate(expression, this);
         }
-        // TODO: ToExpression must support this parameter
-        const fnExpression = ExpressionBuilder.parse(expression.functionFn, [expression.params[0].type]);
-        for (let i = 0; i < fnExpression.params.length; i++) {
-            const param = fnExpression.params[i];
-            this.scopeParameters.add(param.name, expression.params[i]);
-        }
-        const result = this.getExpressionString(fnExpression.body);
-        return result;
-    }
-    protected getSqlFunctionCallExpressionString(expression: SqlFunctionCallExpression<any>): string {
-        return expression.functionName + "(" + expression.params.select((o) => this.getExpressionString(o)).toArray().join(", ") + ")";
+
+        throw new Error(`function "${expression.functionName}" not suported`);
     }
     protected getMemberAccessExpressionString(expression: MemberAccessExpression<any, any>): string {
-        switch (expression.objectOperand.type) {
-            case String:
-                switch (expression.memberName) {
-                    case "length":
-                        return "LEN(" + this.getExpressionString(expression.objectOperand) + ")";
-                }
-                break;
-            case Object:
-                if (expression instanceof ValueExpression) {
-                    switch (expression.value) {
-                        case Math:
-                            switch (expression.memberName) {
-                                case "E":
-                                    return "EXP(1)";
-                                case "LN10":
-                                    return "LOG(10)";
-                                case "LN2":
-                                    return "LOG(2)";
-                                case "LOG10E":
-                                    return "LOG10(EXP(1))";
-                                case "LOG2E":
-                                    return "LOG(EXP(1), 2)";
-                                case "PI":
-                                    return "PI()";
-                                case "SQRT1_2":
-                                    return "SQRT(0.5)";
-                                case "SQRT2":
-                                    return "SQRT(2)";
-                            }
-                            break;
-                    }
-                }
-                break;
+        let translater: IQueryTranslatorItem;
+        if (expression.objectOperand.type === Object && expression.objectOperand instanceof ValueExpression) {
+            translater = this.resolveTranslator(expression.objectOperand.value, expression.memberName);
+        }
+        if (!translater) {
+            translater = this.resolveTranslator(expression.objectOperand.type.prototype, expression.memberName);
+        }
+
+        if (translater) {
+            return translater.translate(expression, this);
         }
         throw new Error(`${expression.memberName} not supported.`);
     }
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
+        let translator: IQueryTranslatorItem;
         if (expression.objectOperand instanceof SelectExpression) {
-            switch (expression.methodName) {
-                case "all":
-                    return "NOT EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
-                case "any":
-                    return "EXIST(" + this.newLine(++this.indent) + this.getExpressionString(expression.objectOperand) + this.newLine(--this.indent) + ")";
-                case "count":
-                    return "COUNT(*)";
-                case "sum":
-                case "min":
-                case "max":
-                case "avg":
-                    return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0] as any) + ")";
-            }
+            translator = this.resolveTranslator(SelectExpression.prototype, expression.methodName);
         }
         else if (expression.objectOperand instanceof ValueExpression) {
-            switch (expression.objectOperand.value) {
-                case Date:
-                    switch (expression.methodName) {
-                        case "UTC":
-                        case "now":
-                        case "parse":
-                            throw new Error(`Date.${expression.methodName} not supported.`);
-                    }
-                    break;
-                case Math:
-                    switch (expression.methodName) {
-                        case "abs":
-                        case "acos":
-                        case "asin":
-                        case "atan":
-                        case "cos":
-                        case "exp":
-                        case "sin":
-                        case "sqrt":
-                        case "tan":
-                        case "floor":
-                        case "log":
-                        case "log10":
-                        case "sign":
-                            return expression.methodName.toUpperCase() + "(" + this.getExpressionString(expression.params[0]) + ")";
-                        case "ceil":
-                            return "CEILING(" + this.getExpressionString(expression.params[0]) + ")";
-                        case "atan2":
-                            return "ATN2(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                        case "pow":
-                            return "POWER(" + this.getExpressionString(expression.params[0]) + "," + this.getExpressionString(expression.params[1]) + ")";
-                        case "random":
-                            return "RAND()";
-                        case "round":
-                            return "ROUND(" + this.getExpressionString(expression.params[0]) + ", 0)";
-                        case "expm1":
-                            return "(EXP(" + this.getExpressionString(expression.params[0]) + ") - 1)";
-                        case "hypot":
-                            return "SQRT(" + expression.params.select((p) => "POWER(" + this.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")";
-                        case "log1p":
-                            return "LOG(1 + " + this.getExpressionString(expression.params[0]) + ")";
-                        case "log2":
-                            return "LOG(" + this.getExpressionString(expression.params[0]) + ", 2)";
-                        case "sinh":
-                            return "((EXP(" + this.getExpressionString(expression.params[0]) + ") - EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
-                        case "cosh":
-                            return "((EXP(" + this.getExpressionString(expression.params[0]) + ") + EXP(-" + this.getExpressionString(expression.params[0]) + ")) / 2)";
-                        case "tanh":
-                            return "((EXP(2 * " + this.getExpressionString(expression.params[0]) + ") - 1) / (EXP(2 * " + this.getExpressionString(expression.params[0]) + ") + 1))";
-                        case "trunc":
-                            return "(" + this.getExpressionString(expression.params[0]) + " | 0)";
-                        case "max":
-                        case "min":
-                        case "acosh":
-                        case "asinh":
-                        case "atanh":
-                        case "cbrt":
-                        case "clz32":
-                        case "fround":
-                        case "imul":
-                            throw new Error(`method "Math.${expression.methodName}" not supported in linq to sql.`);
-                    }
-                    break;
-                case Array:
-                    switch (expression.methodName) {
-                        case "isArray":
-                            break;
-                    }
-                    break;
-            }
+            translator = this.resolveTranslator(expression.objectOperand.value, expression.methodName);
         }
-        switch (expression.objectOperand.type as any) {
-            case String:
-                switch (expression.methodName) {
-                    case "charAt":
-                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", 1)";
-                    case "charCodeAt":
-                        return "UNICODE(SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", 1))";
-                    case "concat":
-                        return "CONCAT(" + this.getExpressionString(expression.objectOperand) + ", " + expression.params.select((p) => this.getExpressionString(p)).toArray().join(", ") + ")";
-                    case "endsWith":
-                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getString("%") + ", " + this.getExpressionString(expression.params[0]) + "))";
-                    case "includes":
-                        if (expression.params.length > 1)
-                            return "(" + this.getExpressionString(expression.params[0]) + " + RIGHT(" + this.getExpressionString(expression.objectOperand) + ", (LEN(" + this.getExpressionString(expression.objectOperand) + ") - " + this.getExpressionString(expression.params[0]) + "))))";
-                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getString("%") + ", " + this.getExpressionString(expression.params[0]) + ", " + this.getString("%") + ")";
-                    case "indexOf":
-                        return "(CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.objectOperand) +
-                            (expression.params.length > 1 ? ", " + this.getExpressionString(expression.params[1]) : "") +
-                            ") - 1)";
-                    case "lastIndexOf":
-                        return "(LEN(" + this.getExpressionString(expression.objectOperand) + ") - CHARINDEX(" + this.getExpressionString(expression.params[0]) + ", REVERSE(" + this.getExpressionString(expression.objectOperand) + ")" +
-                            (expression.params.length > 1 ? ", " + this.getExpressionString(expression.params[1]) : "") + "))";
-                    case "like":
-                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE " + this.getExpressionString(expression.params[0]) + ")";
-                    case "repeat":
-                        return "REPLICATE(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ")";
-                    case "replace":
-                        // TODO throw error on regex.
-                        return "REPLACE(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ", " + this.getExpressionString(expression.params[1]) + ")";
-                    case "split":
-                        // only single character split.
-                        return "STRING_SPLIT(" + this.getExpressionString(expression.objectOperand) + ", " + this.getExpressionString(expression.params[0]) + ")";
-                    case "startsWith":
-                        return "(" + this.getExpressionString(expression.objectOperand) + " LIKE CONCAT(" + this.getExpressionString(expression.params[0]) + ", " + this.getString("%") + "))";
-                    case "substr":
-                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " +
-                            "(" + this.getExpressionString(expression.params[0]) + " + 1), " +
-                            (expression.params.length > 1 ? this.getExpressionString(expression.params[1]) : "8000") + ")";
-                    case "substring":
-                        return "SUBSTRING(" + this.getExpressionString(expression.objectOperand) + ", " +
-                            "(" + this.getExpressionString(expression.params[0]) + " + 1), " +
-                            (expression.params.length > 1 ? "(" + this.getExpressionString(expression.params[1]) + " - " + this.getExpressionString(expression.params[0]) + ")" : "8000") + ")";
-                    case "toLowerCase":
-                    case "toLocaleLowerCase":
-                        return "LOWER(" + this.getExpressionString(expression.objectOperand) + ")";
-                    case "toUpperCase":
-                    case "toLocaleUpperCase":
-                        return "UPPER(" + this.getExpressionString(expression.objectOperand) + ")";
-                    case "toString":
-                    case "valueOf":
-                        return this.getExpressionString(expression.objectOperand);
-                    case "trim":
-                        return "RTRIM(LTRIM(" + this.getExpressionString(expression.objectOperand) + "))";
-                    case "localeCompare":
-                    case "match":
-                    case "normalize":
-                    case "padEnd":
-                    case "padStart":
-                    case "search":
-                    case "slice":
-                        throw new Error(`method "String.${expression.methodName}" not supported in linq to sql.`);
-                }
-                break;
-            case Number:
-                switch (expression.methodName) {
-                    case "isFinite":
-                    case "isInteger":
-                    case "isNaN":
-                    case "isSafeInteger":
-                    case "toExponential":
-                    case "toFixed":
-                    case "toPrecision":
-                        break;
-                    case "toString":
-                        return `CAST(${this.getExpressionString(expression.objectOperand)} AS nvarchar(255))`;
-                    case "valueOf":
-                        return this.getExpressionString(expression.objectOperand);
 
-                }
-                break;
-            case Symbol:
-                switch (expression.methodName) {
-                    case "toString":
-                        break;
-                }
-                break;
-            case Boolean:
-                switch (expression.methodName) {
-                    case "toString":
-                        return "(CASE WHEN (" + this.getExpressionString(expression.objectOperand) + ") THEN " + this.getString("true") + " ELSE " + this.getString("false") + " END)";
-                }
-                break;
-            case Date:
-                switch (expression.methodName) {
-                    case "getDate":
-                        return "DAY(" + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getDay":
-                        return "(DATEPART(weekday, " + this.getExpressionString(expression.objectOperand) + ") - 1)";
-                    case "getFullYear":
-                        return "YEAR(" + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getHours":
-                        return "DATEPART(hour, " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getMinutes":
-                        return "DATEPART(minute, " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getMonth":
-                        return "(MONTH(" + this.getExpressionString(expression.objectOperand) + ") - 1)";
-                    case "getSeconds":
-                        return "DATEPART(second, " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getMilliseconds":
-                        return "DATEPART(millisecond, " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "getTime":
-                    case "getTimezoneOffset":
-                    case "getUTCDate":
-                    case "getUTCDay":
-                    case "getUTCFullYear":
-                    case "getUTCHours":
-                    case "getUTCMilliseconds":
-                    case "getUTCMinutes":
-                    case "getUTCMonth":
-                    case "getUTCSeconds":
-                        throw new Error(`${expression.methodName} not supported.`);
-                    case "getYear":
-                        throw new Error(`${expression.methodName} deprecated.`);
-                    case "setDate":
-                        return "DATEADD(DAY, (" + this.getExpressionString(expression.params[0]) + " - DAY(" + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setFullYear":
-                        return "DATEADD(YYYY, (" + this.getExpressionString(expression.params[0]) + " - YEAR(" + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setHours":
-                        return "DATEADD(HH, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(hour, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setMilliseconds":
-                        return "DATEADD(MS, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(millisecond, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setMinutes":
-                        return "DATEADD(MI, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(minute, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setMonth":
-                        return "DATEADD(MM, (" + this.getExpressionString(expression.params[0]) + " - (MONTH(" + this.getExpressionString(expression.objectOperand) + ") - 1)), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setSeconds":
-                        return "DATEADD(SS, (" + this.getExpressionString(expression.params[0]) + " - DATEPART(second, " + this.getExpressionString(expression.objectOperand) + ")), " + this.getExpressionString(expression.objectOperand) + ")";
-                    case "setTime":
-                    case "setUTCDate":
-                    case "setUTCFullYear":
-                    case "setUTCHours":
-                    case "setUTCMilliseconds":
-                    case "setUTCMinutes":
-                    case "setUTCMonth":
-                    case "setUTCSeconds":
-                    case "toJSON":
-                    case "toISOString":
-                    case "toLocaleDateString":
-                    case "toLocaleTimeString":
-                    case "toLocaleString":
-                    case "toString":
-                    case "valueOf":
-                    case "toTimeString":
-                    case "toUTCString":
-                        throw new Error(`${expression.methodName} not supported.`);
-                    case "setYear":
-                        throw new Error(`${expression.methodName} deprecated.`);
-                    case "toDateString":
-                        return "CONCAT(LEFT(DATENAME(WEEKDAY, " + this.getExpressionString(expression.objectOperand) + "), 3), " + this.getString(" ") + ", " +
-                            "LEFT(DATENAME(MONTH, " + this.getExpressionString(expression.objectOperand) + "), 3), " + this.getString(" ") + ", " +
-                            "RIGHT(CONCAT(" + this.getString("0") + ", RTRIM(MONTH(" + this.getExpressionString(expression.objectOperand) + "))), 2)" + this.getString(" ") + ", " +
-                            "RIGHT(CONCAT(" + this.getString("0") + ", RTRIM(MONTH(" + this.getExpressionString(expression.objectOperand) + "))), 2))";
-                    case "toGMTString":
-                        throw new Error(`${expression.methodName} deprecated.`);
-                }
-                break;
-            case RegExp:
-                switch (expression.methodName) {
-                    case "test":
-                        return this.getExpressionString(expression.params[0]) + " REGEXP " + this.getExpressionString(expression.objectOperand);
-                    case "exec":
-                    case "toString":
-                        throw new Error(`${expression.methodName} not supported.`);
-                    default:
-                        throw new Error(`non-standard/deprecated ${expression.methodName} method not supported.`);
-                }
-            case Function:
-                switch (expression.methodName) {
-                    case "apply":
-                    case "bind":
-                    case "call":
-                    case "toSource":
-                    case "toString":
-                        break;
-                }
-                break;
-            case Array:
-                switch (expression.methodName) {
-                    case "contains":
-                    case "concat":
-                    case "copyWithin":
-                    case "every":
-                    case "fill":
-                    case "filter":
-                    case "find":
-                    case "findIndex":
-                    case "forEach":
-                    case "indexOf":
-                    case "join":
-                    case "lastIndexOf":
-                    case "map":
-                    case "pop":
-                    case "push":
-                    case "reduce":
-                    case "reduceRight":
-                    case "reverse":
-                    case "shift":
-                    case "slice":
-                    case "some":
-                    case "sort":
-                    case "splice":
-                    case "toString":
-                    case "unshift":
-                    case "valueOf":
-                        break;
-                }
-                break;
+        if (!translator) {
+            translator = this.resolveTranslator(expression.objectOperand.type.prototype, expression.methodName);
         }
-        const methodFn = expression.objectOperand.type.prototype[expression.methodName];
-        if (methodFn) {
-            const fnExpression = ExpressionBuilder.parse(methodFn, [expression.objectOperand.type]);
-            for (let i = 0; i < fnExpression.params.length; i++) {
-                const param = fnExpression.params[i];
-                this.scopeParameters.add(param.name, expression.params[i]);
-            }
-            this.scopeParameters.add("this", expression.objectOperand);
-            const result = this.getExpressionString(fnExpression.body);
-            return result;
+
+        if (translator) {
+            return translator.translate(expression, this);
         }
-        throw new Error(`type ${(expression.objectOperand.type as any).name} not supported in linq to sql.`);
+
+        throw new Error(`${(expression.objectOperand.type as any).name}.${expression.methodName} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
+        if (this.options.parameters) {
+            const value = this.options.parameters[expression.name];
+            if (!isNotNull(value)) {
+                return this.getNullString();
+            }
+        }
         return "@" + expression.name;
     }
     protected getValueExpressionString(expression: ValueExpression<any>): string {
@@ -842,82 +423,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getNumberString(value: number) {
         return value.toString();
     }
-    protected getFunctionExpressionString<T>(expression: FunctionExpression<T>): string {
-        throw new Error(`Function not supported`);
-    }
-    protected getTernaryExpressionString<T>(expression: TernaryExpression<T>): string {
-        return "(" + this.newLine(++this.indent) + "CASE WHEN (" + this.getExpressionString(expression.logicalOperand) + ") " + this.newLine() + "THEN " + this.getOperandString(expression.trueResultOperand, true) + this.newLine() + "ELSE " + this.getOperandString(expression.falseResultOperand, true) + this.newLine() + "END" + this.newLine(--this.indent) + ")";
-    }
-    protected getObjectValueExpressionString<T extends { [Key: string]: IExpression }>(_expression: ObjectValueExpression<T>): string {
-        throw new Error(`ObjectValue not supported`);
-    }
-    protected getArrayValueExpressionString<T>(expression: ArrayValueExpression<T>): string {
-        throw new Error(`ArrayValue not supported`);
-    }
-    protected getDivisionExpressionString(expression: DivisionExpression): string {
-        return this.getOperandString(expression.leftOperand) + " / " + this.getOperandString(expression.rightOperand);
-    }
-    protected getEqualityOperandExpressionString(expression: IExpression) {
-        return expression;
-    }
-    protected getEqualExpressionString(expression: EqualExpression): string {
-        const leftExpString = this.getOperandString(expression.leftOperand, true);
-        const rightExpString = this.getOperandString(expression.rightOperand, true);
-        if (leftExpString === "NULL")
-            return rightExpString + " IS " + leftExpString;
-        else if (rightExpString === "NULL")
-            return leftExpString + " IS " + rightExpString;
-        return leftExpString + " = " + rightExpString;
-    }
-    protected getGreaterEqualExpressionString<T>(expression: GreaterEqualExpression<T>): string {
-        return this.getOperandString(expression.leftOperand) + " >= " + this.getOperandString(expression.rightOperand);
-    }
-    protected getGreaterThanExpressionString<T>(expression: GreaterThanExpression<T>): string {
-        return this.getOperandString(expression.leftOperand) + " > " + this.getOperandString(expression.rightOperand);
-    }
-    protected getInstanceofExpressionString(expression: InstanceofExpression): string {
-        throw new Error(`InstanceofExpression not supported`);
-    }
-    protected getLessEqualExpressionString<T>(expression: LessEqualExpression<T>): string {
-        return this.getOperandString(expression.leftOperand) + " <= " + this.getOperandString(expression.rightOperand);
-    }
-    protected getLessThanExpressionString<T>(expression: LessThanExpression<T>): string {
-        return this.getOperandString(expression.leftOperand) + " < " + this.getOperandString(expression.rightOperand);
-    }
-    protected getModulusExpressionString(expression: ModulusExpression): string {
-        return this.getOperandString(expression.leftOperand) + " % " + this.getOperandString(expression.rightOperand);
-    }
-    protected getNotEqualExpressionString(expression: NotEqualExpression): string {
-        const leftExpString = this.getOperandString(expression.leftOperand, true);
-        const rightExpString = this.getOperandString(expression.rightOperand, true);
-        if (leftExpString === "NULL")
-            return rightExpString + " IS NOT " + leftExpString;
-        else if (rightExpString === "NULL")
-            return leftExpString + " IS NOT " + rightExpString;
-        return leftExpString + " <> " + rightExpString;
-    }
-    protected getOrExpressionString(expression: OrExpression): string {
-        return this.getLogicalOperandString(expression.leftOperand) + " OR " + this.getLogicalOperandString(expression.rightOperand);
-    }
-    protected getStrictEqualExpressionString<T>(expression: StrictEqualExpression<T>): string {
-        return this.getEqualExpressionString(expression);
-    }
-    protected getStrictNotEqualExpressionString(expression: StrictNotEqualExpression): string {
-        return this.getNotEqualExpressionString(expression);
-    }
-    protected getSubtractionExpressionString(expression: SubtractionExpression): string {
-        return this.getOperandString(expression.leftOperand) + " - " + this.getOperandString(expression.rightOperand);
-    }
-    protected getTimesExpressionString(expression: MultiplicationExpression): string {
-        return this.getOperandString(expression.leftOperand) + " * " + this.getOperandString(expression.rightOperand);
-    }
-    protected getAdditionExpressionString<T extends string | number>(expression: AdditionExpression<T>): string {
-        if (expression.type as any === String)
-            return "CONCAT(" + this.getOperandString(expression.leftOperand) + ", " + this.getOperandString(expression.rightOperand) + ")";
-
-        return this.getOperandString(expression.leftOperand) + " + " + this.getOperandString(expression.rightOperand);
-    }
-    protected getOperandString(expression: IExpression, convertBoolean = false): string {
+    public getOperandString(expression: IExpression, convertBoolean = false): string {
         if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnString(column);
@@ -928,64 +434,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return this.getExpressionString(expression);
     }
-    protected getLogicalOperandString(expression: IExpression<boolean>) {
-        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
-            expression = new EqualExpression(expression, new ValueExpression(true));
-        }
-        return this.getExpressionString(expression);
-    }
-    protected getAndExpressionString(expression: AndExpression): string {
-        return this.getLogicalOperandString(expression.leftOperand) + " AND " + this.getLogicalOperandString(expression.rightOperand);
-    }
-    protected getLeftDecrementExpressionString(_expression: LeftDecrementExpression): string {
-        throw new Error(`LeftDecrement not supported`);
-    }
-    protected getLeftIncrementExpressionString(_expression: LeftIncrementExpression): string {
-        throw new Error(`LeftIncrement not supported`);
-    }
-    protected getNegationExpressionString(expression: NegationExpression): string {
-        const operandString = this.getLogicalOperandString(expression.operand);
-        return "NOT(" + this.newLine(this.indent + 1) + operandString + this.newLine(this.indent) + ")";
-    }
-    protected getRightDecrementExpressionString(_expression: RightIncrementExpression): string {
-        throw new Error(`RightDecrement not supported`);
-    }
-    protected getRightIncrementExpressionString(_expression: RightIncrementExpression): string {
-        throw new Error(`RightIncrement not supported`);
-    }
-    protected getTypeofExpressionString(_expression: TypeofExpression): string {
-        throw new Error(`Typeof not supported`);
-    }
-    protected getBitwiseNotExpressionString(expression: BitwiseNotExpression): string {
-        const operandString = this.getOperandString(expression.operand);
-        return "~ " + operandString;
-    }
-    protected getBitwiseAndExpressionString(expression: BitwiseAndExpression): string {
-        return this.getOperandString(expression.leftOperand) + " & " + this.getOperandString(expression.rightOperand);
-    }
-    protected getBitwiseOrExpressionString(expression: BitwiseOrExpression): string {
-        return this.getOperandString(expression.leftOperand) + " | " + this.getOperandString(expression.rightOperand);
-    }
-    protected getBitwiseXorExpressionString(expression: BitwiseXorExpression): string {
-        return this.getOperandString(expression.leftOperand) + " ^ " + this.getOperandString(expression.rightOperand);
-    }
-    // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
-    protected getBitwiseSignedRightShiftExpressionString(_expression: BitwiseSignedRightShiftExpression): string {
-        throw new Error(`BitwiseSignedRightShift not supported`);
-    }
-    protected getBitwiseZeroRightShiftExpressionString(_expression: BitwiseZeroRightShiftExpression): string {
-        throw new Error(`BitwiseSignedRightShift not supported`);
-    }
-    protected getBitwiseZeroLeftShiftExpressionString(_expression: BitwiseZeroLeftShiftExpression): string {
-        throw new Error(`BitwiseSignedRightShift not supported`);
-    }
     public getSelectQuery<T>(select: SelectExpression<T>): IQueryCommand[] {
         let result: IQueryCommand[] = [];
         const skip = select.paging.skip || 0;
         const take = select.paging.take || 0;
         const tempTableName = "#temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
         let selectQuery = "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
-            " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(this.indent + 1)) +
+            " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) +
             (select.includes.length > 0 ? this.newLine() + "INTO " + tempTableName : "") +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
             this.getEntityJoinString(select.entity, select.joins);
@@ -1018,7 +473,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o instanceof ComputedColumnExpression)
                     return new ColumnExpression(o.entity, o.type, o.propertyName, o.columnName, o.isPrimary);
                 return o;
-            }).toArray(), select.itemType, this.newAlias()));
+            }).toArray(), select.itemType, tempTableName.substr(1)));
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
                 // add join to temp table
@@ -1038,7 +493,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    public updateQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
+    public updateQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
         let result: IQueryCommand[] = [];
         const setQuery = Object.keys(set).select(o => {
             const value = set[o];
@@ -1059,7 +514,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return result;
     }
-    public deleteQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, isHardDelete = false): IQueryCommand[] {
+    public deleteQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, isHardDelete = false): IQueryCommand[] {
         let result: IQueryCommand[] = [];
         if (!isHardDelete)
             isHardDelete = !select.entity.deleteColumn;
@@ -1145,10 +600,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     paramName = this.newAlias("param");
                 }
 
-                insertQuery.parameters.set(paramName, value);
+                insertQuery.parameters[paramName] = value;
                 if (o.column.isPrimaryColumn) {
                     wheres.push(`${this.enclose(o.column.columnName)} = @${paramName}`);
-                    selectQuery.parameters.set(paramName, value);
+                    selectQuery.parameters[paramName] = value;
                 }
                 return "@" + paramName;
             }).union(valueColumns.select(o => {
@@ -1160,11 +615,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 else {
                     const paramName = this.newAlias("param");
-                    insertQuery.parameters.set(paramName, value);
+                    insertQuery.parameters[paramName] = value;
 
                     if (o.isPrimaryColumn) {
                         wheres.push(`${this.enclose(o.columnName)} = @${paramName}`);
-                        selectQuery.parameters.set(paramName, value);
+                        selectQuery.parameters[paramName] = value;
                     }
 
                     return "@" + paramName;
@@ -1175,21 +630,21 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         };
 
         const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as NumericColumnMetaData).autoIncrement;
+            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement;
         }).select(o => this.enclose(o.columnName)).toArray().join(",");
 
         if (entityMetaData.hasIncrementPrimary) {
             // if primary key is auto increment, then need to split all query per entry.
-            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as NumericColumnMetaData).autoIncrement);
+            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as any as NumericColumnMetaData).autoIncrement);
 
             for (const entry of entries) {
                 const insertQuery: IQueryCommand = {
                     query: "",
-                    parameters: new Map()
+                    parameters: {}
                 };
                 const selectQuery: IQueryCommand = {
                     query: "",
-                    parameters: new Map()
+                    parameters: {}
                 };
                 const wheres: string[] = [];
                 insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
@@ -1206,11 +661,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else {
             const insertQuery: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             const selectQuery: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             let selectWheres: string[] = [];
 
@@ -1241,17 +696,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             const result: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             const set = modifiedColumns.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, entry.entity[o.propertyName as keyof T]);
+                result.parameters[paramName] = entry.entity[o.propertyName as keyof T];
                 return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
             }).toArray().join(",\n");
 
             const where = entityMetaData.primaryKeys.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, entry.entity[o.propertyName]);
+                result.parameters[paramName] = entry.entity[o.propertyName];
                 return this.enclose(o.columnName) + " = @" + paramName;
             }).toArray().join(" AND ");
 
@@ -1266,15 +721,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         const deleteExp = new SelectExpression(new EntityExpression(entityMetaData.type, this.newAlias()));
         if (entityMetaData.primaryKeys.length === 1) {
-            const parameters = new Map();
+            const parameters: { [key: string]: any } = {};
             const primaryCol = entityMetaData.primaryKeys.first();
             const primaryValues = entries.select(o => {
                 const paramName = this.newAlias("param");
-                parameters.set(paramName, o.entity[primaryCol.propertyName]);
+                parameters[paramName] = o.entity[primaryCol.propertyName];
                 return `@${paramName}`;
             }).toArray().join(",");
             const condition = `${primaryCol.propertyName} IN (${primaryValues})`;
-            deleteExp.addWhere(new SqlExpression<boolean>(Boolean, condition));
+            deleteExp.addWhere(new RawSqlExpression<boolean>(Boolean, condition));
 
             return this.deleteQueries(deleteExp, parameters, forceHardDelete);
         }
@@ -1299,10 +754,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             });
 
             // add value to temp table.
-            const parameters = new Map();
+            const parameters: { [key: string]: any } = {};
             const primaryValues = entries.select(o => "(" + entityMetaData.primaryKeys.select(c => {
                 const paramName = this.newAlias("param");
-                parameters.set(paramName, o.entity[c.propertyName]);
+                parameters[paramName] = o.entity[c.propertyName];
                 return `@${paramName}`;
             }).toArray().join(",") + ")").toArray().join(",");
             results.push({
@@ -1325,7 +780,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             const isMasterAdded = relationEntry.masterEntry.state === EntityState.Added;
             if (relationEntry.slaveRelation.relationType === "one") {
-                const parameters = new Map();
+                const parameters: { [key: string]: any } = {};
                 const set = relationEntry.slaveRelation.relationColumns.select(o => {
                     let paramName = "";
                     let value: any;
@@ -1339,13 +794,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         value = relationEntry.masterEntry.entity[reverseProperty as keyof T2];
                         paramName = this.newAlias("param");
                     }
-                    parameters.set(paramName, value);
+                    parameters[paramName] = value;
 
                     return `${this.enclose(o.columnName)} = @${paramName}`;
                 }).toArray().join(",\n");
                 const where = slaveEntityMetaData.primaryKeys.select(o => {
                     const paramName = this.newAlias("param");
-                    parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                    parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
                     return this.enclose(o.columnName) + " = @" + paramName;
                 }).toArray().join(" AND ");
 
@@ -1355,7 +810,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 });
             }
             else {
-                const parameters = new Map();
+                const parameters: { [key: string]: any } = {};
                 const relationDataMeta = relationEntry.slaveRelation.relationData;
                 const columnNames = relationDataMeta.sourceRelationColumns.union(relationDataMeta.targetRelationColumns)
                     .select(o => o.columnName).toArray().join(",");
@@ -1374,7 +829,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         paramName = this.newAlias("param");
                     }
 
-                    parameters.set(paramName, value);
+                    parameters[paramName] = value;
                     return "@" + paramName;
                 }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
                     let paramName = "";
@@ -1391,7 +846,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         paramName = this.newAlias("param");
                     }
 
-                    parameters.set(paramName, value);
+                    parameters.set[paramName] = value;
                     return "@" + paramName;
                 })).toArray().join(",");
 
@@ -1419,10 +874,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     const set = relationEntry.slaveRelation.relationColumns.select(o =>
                         `${this.enclose(o.columnName)} = NULL`
                     ).toArray().join(",\n");
-                    const parameters = new Map();
+                    const parameters: { [key: string]: any } = {};
                     const where = entityMetaData.primaryKeys.select(o => {
                         const paramName = this.newAlias("param");
-                        parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                        parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
                         return this.enclose(o.columnName) + " = @" + paramName;
                     }).toArray().join(" AND ");
                     return [{
@@ -1438,19 +893,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             else {
                 // remove relation table.
                 // after save remove all reference to this relation entry
-                const parameter = new Map();
+                const parameter: { [key: string]: any } = {};
                 const relationDataMeta = relationEntry.slaveRelation.relationData;
                 const condition = relationDataMeta.sourceRelationColumns.select(o => {
                     const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T2;
                     const value = relationEntry.masterEntry.entity[relProperty];
                     const paramName = this.newAlias("param");
-                    parameter.set(paramName, value);
+                    parameter.set[paramName] = value;
                     return this.enclose(o.columnName) + " = @" + paramName;
                 }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
                     const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T;
                     const value = relationEntry.slaveEntry.entity[relProperty];
                     const paramName = this.newAlias("param");
-                    parameter.set(paramName, value);
+                    parameter[paramName] = value;
                     return this.enclose(o.columnName) + " = @" + paramName;
                 })).toArray().join(" AND ");
 
@@ -1587,12 +1042,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let result: IQueryCommand[] = [];
         const entitySchema = oldColumnSchema.entity;
         // If auto increment, column must be not nullable.
-        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement);
+        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement);
         let isDefaultChange = (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
-        const isIdentityChange = !!(columnSchema as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as NumericColumnMetaData).autoIncrement;
+        const isIdentityChange = !!(columnSchema as any as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as NumericColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
             || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as NumericColumnMetaData).length !== undefined && (oldColumnSchema as NumericColumnMetaData).length !== undefined && (columnSchema as NumericColumnMetaData).length !== (oldColumnSchema as NumericColumnMetaData).length)
+            || ((columnSchema as any as NumericColumnMetaData).length !== undefined && (oldColumnSchema as any as NumericColumnMetaData).length !== undefined && (columnSchema as any as NumericColumnMetaData).length !== (oldColumnSchema as any as NumericColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
             || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
 
@@ -1600,7 +1055,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result = result.concat(this.dropDefaultContraintQuery(oldColumnSchema));
         }
         if (isNullableChange) {
-            if (!columnSchema.nullable && !(oldColumnSchema as NumericColumnMetaData).autoIncrement) {
+            if (!columnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement) {
                 // if change from nullable to not nullable, set all existing data to default value.
                 const fallbackValue = this.defaultValue(columnSchema);
                 result.push({
@@ -1609,7 +1064,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
         }
         if (isIdentityChange) {
-            const toAutoIncrement = (columnSchema as NumericColumnMetaData).autoIncrement;
+            const toAutoIncrement = (columnSchema as any as NumericColumnMetaData).autoIncrement;
             // add new column.
             const newName = "NEW_" + columnSchema.columnName;
             const cloneColumn = Object.assign({}, columnSchema);
@@ -1649,13 +1104,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     public createTableQuery<TE>(entityMetaData: IEntityMetaData<TE>): IQueryCommand[] {
-        const columnDefinitions = entityMetaData.columns.select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.newLine(this.indent + 1));
-        const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.newLine(this.indent + 1));
+        const columnDefinitions = entityMetaData.columns.select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.newLine(1, false));
+        const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.newLine(1, false));
         let query = `CREATE TABLE ${this.entityName(entityMetaData)}` +
             `${this.newLine()}(` +
-            `${this.newLine(this.indent + 1)}${columnDefinitions}` +
-            `,${this.newLine(this.indent + 1)}${this.primaryKeyDeclaration(entityMetaData)}` +
-            (constraints ? `,${this.newLine(this.indent + 1)}${constraints}` : "") +
+            `${this.newLine(1, false)}${columnDefinitions}` +
+            `,${this.newLine(1, false)}${this.primaryKeyDeclaration(entityMetaData)}` +
+            (constraints ? `,${this.newLine(1, false)}${constraints}` : "") +
             `${this.newLine()})`;
         return [{ query }];
     }

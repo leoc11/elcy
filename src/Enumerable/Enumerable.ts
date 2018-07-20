@@ -44,9 +44,10 @@ export class Enumerable<T = any> implements Iterable<T> {
     }
     protected *generator() {
         const result = [];
-        for (const value of this.parent) {
-            result.push(value);
-            yield value;
+        let iterateResult;
+        while (iterateResult = this.iterator.next(), !iterateResult.done) {
+            result.push(iterateResult.value);
+            yield iterateResult.value;
         }
         this.result = result;
         this.isResultComplete = true;

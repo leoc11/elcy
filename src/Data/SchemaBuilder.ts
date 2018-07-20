@@ -1,15 +1,16 @@
-import { IDriver } from "../Driver/IDriver";
-import { IEntityMetaData } from "../MetaData/Interface";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { IObjectType } from "../Common/Type";
-import { DecimalColumnMetaData, StringColumnMetaData, NumericColumnMetaData } from "../MetaData";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
-import { FunctionExpression } from "../ExpressionBuilder/Expression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IConnection } from "../Connection/IConnection";
+import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
+import { DecimalColumnMetaData } from "../MetaData/DecimalColumnMetaData";
+import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
 
 export abstract class SchemaBuilder {
     constructor(public connection: IConnection, public q: QueryBuilder) { }
@@ -17,7 +18,7 @@ export abstract class SchemaBuilder {
         let commitQueries: IQueryCommand[] = [];
         let rollbackQueries: IQueryCommand[] = [];
 
-        const defaultSchema = (await this.connection.executeQuery(`SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`)).first().rows.first()["SCHEMA"];
+        const defaultSchema = (await this.connection.executeQuery({ query: `SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}` })).first().rows.first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
@@ -102,7 +103,7 @@ export abstract class SchemaBuilder {
             ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
             ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`;
 
-        const schemaDatas = await this.connection.executeQuery(queries);
+        const schemaDatas = await this.connection.executeQuery({ query: queries });
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[2];

@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { IObjectType } from "../../Common/Type";
-import { IEntityMetaData } from "../../MetaData/Interface";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { entityMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity/AbstractEntity";
 /**

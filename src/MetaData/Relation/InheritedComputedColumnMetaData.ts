@@ -1,7 +1,7 @@
 import { GenericType } from "../../Common/Type";
-import { ComputedColumnMetaData } from "../../MetaData";
-import { IEntityMetaData } from "../Interface";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression";
+import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
+import { IEntityMetaData } from "../Interface/IEntityMetaData";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 
 export class InheritedComputedColumnMetaData<TE extends TP, TP, T = any> extends ComputedColumnMetaData<TE, T> {

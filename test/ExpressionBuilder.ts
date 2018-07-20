@@ -1,8 +1,14 @@
-import { FunctionExpression, MemberAccessExpression, ParameterExpression, MethodCallExpression, ObjectValueExpression, ArrayValueExpression, ValueExpression } from "../src/ExpressionBuilder/Expression";
 import { Order, OrderDetail } from "./Common/Model";
 import "mocha";
 import { expect } from "chai";
 import { ExpressionBuilder } from "../src/ExpressionBuilder/ExpressionBuilder";
+import { ParameterExpression } from "../src/ExpressionBuilder/Expression/ParameterExpression";
+import { MemberAccessExpression } from "../src/ExpressionBuilder/Expression/MemberAccessExpression";
+import { FunctionExpression } from "../src/ExpressionBuilder/Expression/FunctionExpression";
+import { ArrayValueExpression } from "../src/ExpressionBuilder/Expression/ArrayValueExpression";
+import { MethodCallExpression } from "../src/ExpressionBuilder/Expression/MethodCallExpression";
+import { ObjectValueExpression } from "../src/ExpressionBuilder/Expression/ObjectValueExpression";
+import { ValueExpression } from "../src/ExpressionBuilder/Expression/ValueExpression";
 
 const param = new ParameterExpression("o", Order);
 const odParam = new ParameterExpression("od", OrderDetail);
@@ -24,14 +30,14 @@ describe("EXPRESSION BUILDER", () => {
         }), [param]);
         const build = ExpressionBuilder.parse((o: Order) => ({
             ods: o.OrderDetails.orderBy([(od: OrderDetail) => od.quantity])
-        }), [Order]);
+        }));
         expect(ori.toString() === build.toString());
     });
     it("should identify regexp", async () => {
         const ori = new FunctionExpression(
             new MethodCallExpression(new ValueExpression(/test/ig), "test", [new ParameterExpression("a", String)])
-        , [new ParameterExpression("a", String)]);
-        const build = ExpressionBuilder.parse((a: string) => /test/ig.test(a), [String]);
+            , [new ParameterExpression("a", String)]);
+        const build = ExpressionBuilder.parse((a: string) => /test/ig.test(a));
         expect(ori.toString() === build.toString());
     });
 });

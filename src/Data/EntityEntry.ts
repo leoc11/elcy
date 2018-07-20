@@ -3,9 +3,9 @@ import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interf
 import { EntityState } from "./EntityState";
 import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
-import { EntityMetaData } from "../MetaData";
+import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
-import { EmbeddedColumnMetaData } from "../MetaData";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
@@ -19,7 +19,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public relationMap: { [relationName: string]: Map<string, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
-        
+
         let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = Reflect.getOwnMetadata(propertyChangeHandlerMetaKey, entity);
         if (!propertyChangeHandler) {
             let propertyChangeDispatcher: any;
@@ -27,7 +27,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             Reflect.defineMetadata(propertyChangeHandlerMetaKey, propertyChangeHandler, entity);
             Reflect.defineMetadata(propertyChangeDispatherMetaKey, propertyChangeDispatcher, entity);
         }
-        propertyChangeHandler.add(this.onPropertyChanged);
+        propertyChangeHandler.add((source: T, args: IChangeEventParam) => this.onPropertyChanged(source, args));
 
         let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeHandlerMetaKey, entity);
         if (!relationChangeHandler) {
@@ -36,7 +36,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             Reflect.defineMetadata(relationChangeHandlerMetaKey, relationChangeHandler, entity);
             Reflect.defineMetadata(relationChangeDispatherMetaKey, relationChangeDispatcher, entity);
         }
-        relationChangeHandler.add(this.onRelationChanged);
+        relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.columns.all(o => (this.entity as any)[o.propertyName] !== undefined);
@@ -241,13 +241,13 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                         switch (o.updateOption) {
                                             case "CASCADE": {
                                                 relEntry.slaveEntry.state = EntityState.Deleted;
-                                                relEntry.slaveEntry.acceptChanges();
+                                                (relEntry.slaveEntry as EntityEntry).acceptChanges();
                                                 break;
                                             }
                                             case "SET NULL": {
                                                 (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
                                                     (relEntry.slaveEntry as any)[rCol.propertyName] = null;
-                                                    relEntry.slaveEntry.acceptChanges(rCol.propertyName);
+                                                    (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                                 });
                                                 break;
                                             }
@@ -255,7 +255,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                                 (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
                                                     if (rCol.default) {
                                                         (relEntry.slaveEntry as any)[rCol.propertyName] = rCol.default.execute();
-                                                        relEntry.slaveEntry.acceptChanges(rCol.propertyName);
+                                                        (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                                     }
                                                 });
                                                 break;

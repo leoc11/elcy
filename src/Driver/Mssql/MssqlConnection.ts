@@ -39,14 +39,14 @@ export class MssqlConnection implements IConnection {
     public open(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const con = new tedious.Connection(this.connectionOption);
-            con.once("connect", (error) => {
+            con.once("connect", (error?: any) => {
                 if (error) {
                     reject(error);
                 }
                 this.connection = con;
                 resolve();
             });
-            con.once("error", () => {
+            con.once("error", (error: any) => {
                 this.close();
             });
         });
@@ -57,7 +57,7 @@ export class MssqlConnection implements IConnection {
                 const transactionName = "transaction_" + this.transactions.length;
                 const useSavePoint = this.inTransaction;
                 const curIsolationLevel = this.isolationLevel;
-                const cb = async (error) => {
+                const cb = async (error?: any) => {
                     if (error)
                         return reject(error);
 
@@ -96,7 +96,7 @@ export class MssqlConnection implements IConnection {
     public commitTransaction(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.isOpen && this.inTransaction) {
-                const cb = async (error?) => {
+                const cb = async (error?: Error) => {
                     if (error)
                         return reject(error);
 
@@ -119,7 +119,7 @@ export class MssqlConnection implements IConnection {
     public rollbackTransaction(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.isOpen && this.inTransaction) {
-                const cb = async (error?) => {
+                const cb = async (error?: Error) => {
                     if (error)
                         return reject(error);
 
@@ -137,12 +137,9 @@ export class MssqlConnection implements IConnection {
     public executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
-            let result: IQueryResult = {
-                rows: [],
-                effectedRows: 0
-            };
+            let result: IQueryResult;
 
-            const request = new tedious.Request(command.query, (error, rowCount, rows) => {
+            const request = new tedious.Request(command.query, (error: string, rowCount: number, rows: any[]) => {
                 if (error) {
                     reject(error);
                 }
@@ -150,35 +147,42 @@ export class MssqlConnection implements IConnection {
                     resolve(results);
                 }
             });
-
+            request.on("error", function (error: any) {
+                reject(new Error(error));
+            });
+            request.on("columnMetadata", function (columns: any) {
+                result = {
+                    rows: [],
+                    effectedRows: 0
+                };
+            });
             request.on("row", (columns: any) => {
-                if (!result) {
-                    result = {
-                        rows: [],
-                        effectedRows: 0
-                    };
-                }
-
                 const row: { [key: string]: any } = {};
                 for (const column of columns) {
                     row[column.metadata.colName] = column.value;
                 }
 
                 result.rows.push(row);
-                result.effectedRows++;
             });
 
-            const doneHandler = (rowCount: number, more: boolean) => {
-                results.push(result);
-                result = null;
+            const doneHandler = (rowCount: number, more: boolean, asd: any) => {
+                if (result) {
+                    result.effectedRows = rowCount;
+                    results.push(result);
+                    result = null;
+                }
+                else {
+                    results.push({ effectedRows: rowCount });
+                }
             };
             request.on("doneInProc", doneHandler);
             request.on("done", doneHandler);
 
             if (command.parameters) {
-                for (const [key, value] of command.parameters) {
-                    // todo: map parameter type.
-                    request.addParameter(key, tedious.TYPES.NVarChar, value);
+                for (const key in command.parameters) {
+                    // TODO: map parameter type.
+                    const value = command.parameters[key];
+                    request.addParameter(key, this.resolveDriverType(value), value);
                 }
             }
 
@@ -187,7 +191,7 @@ export class MssqlConnection implements IConnection {
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.execSqlBatch(new tedious.Request("SET TRANSACTION ISOLATION LEVEL " + isolationLevel, (error) => {
+            this.connection.execSqlBatch(new tedious.Request("SET TRANSACTION ISOLATION LEVEL " + isolationLevel, (error: string) => {
                 if (error)
                     reject(error);
 
@@ -198,4 +202,36 @@ export class MssqlConnection implements IConnection {
     }
     public closeEvent: IEventHandler<MssqlConnection>;
     protected onClosed: IEventDispacher<MssqlConnection>;
+    protected resolveDriverType(value: any) {
+        if (value !== null && value !== undefined) {
+            switch (value.constructor) {
+                case Number: {
+                    if (value % 1 === 0) {
+                        return tedious.TYPES.Int;
+                    }
+                    return tedious.TYPES.Float;
+                }
+                case Boolean: {
+                    return tedious.TYPES.Bit;
+                }
+                case Date: {
+                    return tedious.TYPES.DateTime;
+                }
+                case Array: {
+                    return tedious.TYPES.TVP;
+                }
+                case Int8Array:
+                case Int16Array:
+                case Int32Array:
+                case Uint8Array:
+                case Uint16Array:
+                case Uint32Array:
+                case Float32Array:
+                case Float64Array: {
+                    return tedious.TYPES.VarBinary;
+                }
+            }
+        }
+        return tedious.TYPES.NVarChar;
+    }
 }

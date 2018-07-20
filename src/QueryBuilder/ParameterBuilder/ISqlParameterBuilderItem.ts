@@ -1,4 +1,4 @@
-import { IExpression } from "../../ExpressionBuilder/Expression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export interface ISqlParameterBuilderItem {
     name: string;

@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { NumericColumnMetaData } from "../../MetaData";
-import { INumericColumnOption } from "../Option";
+import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
+import { INumericColumnOption } from "../Option/INumericColumnOption";
 import { Column } from "./Column";
 
 export function NumberColumn(option?: INumericColumnOption): PropertyDecorator;

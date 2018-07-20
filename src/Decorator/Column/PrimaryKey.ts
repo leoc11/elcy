@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface/index";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { entityMetaKey, columnMetaKey } from "../DecoratorKey";
-import { ColumnMetaData } from "../../MetaData";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IObjectType } from "../../Common/Type";
 

@@ -3,8 +3,8 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
-export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType> {
-    public static Create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
+export class MethodCallExpression<TType, KProp extends keyof TType, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
+    public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.create(result);
@@ -21,11 +21,10 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
         else {
             this.methodName = method;
         }
-        // if type not defined, check type in runtime.
-        this.assignType();
     }
-    public assignType() {
-        if (!this.type && this.objectOperand.type) {
+    private _type: GenericType<TResult>;
+    public get type() {
+        if (!this._type && this.objectOperand.type) {
             try {
                 try {
                     this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
@@ -34,9 +33,13 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
                 }
             }
             catch (e) {
-                this.type = Object;
+                this._type = Object;
             }
         }
+        return this._type;
+    }
+    public set type(value) {
+        this._type = value;
     }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)

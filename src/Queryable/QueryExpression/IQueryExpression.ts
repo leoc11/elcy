@@ -1,4 +1,4 @@
-import { IExpression } from "../../ExpressionBuilder/Expression/index";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 
 export interface IQueryExpression<T> extends IExpression<T> {

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { ColumnMetaData } from "../../MetaData";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { columnMetaKey } from "../DecoratorKey";
 
 export function ColumnDescription(description: string): PropertyDecorator {

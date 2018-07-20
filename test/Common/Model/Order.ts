@@ -1,7 +1,10 @@
-import { NumberColumn, PrimaryKey, StringColumn, DateColumn } from "../../../src/Decorator/Column/index";
-import { Entity } from "../../../src/Decorator/Entity/index";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { OrderDetail } from "./OrderDetail";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
+import { NumberColumn } from "../../../src/Decorator/Column/NumberColumn";
+import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 // import { TimestampColumn } from "../../../src/Decorator/Column/TimestampColumn";
 
 @Entity("Orders")

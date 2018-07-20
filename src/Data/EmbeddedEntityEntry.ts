@@ -1,7 +1,7 @@
 import { DbSet } from "./DbSet";
 import { EntityEntry } from "./EntityEntry";
 import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
-import { EmbeddedColumnMetaData } from "../MetaData";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EntityState } from "./EntityState";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";

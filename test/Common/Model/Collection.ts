@@ -1,7 +1,8 @@
-import { PrimaryKey, StringColumn } from "../../../src/Decorator/Column/index";
-import { Entity } from "../../../src/Decorator/Entity/index";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { Product } from ".";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 
 @Entity("Collections")
 export class Collection {

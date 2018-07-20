@@ -1,12 +1,13 @@
 import { ClassBase, GenericType, IObjectType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { IndexMetaData, ComputedColumnMetaData } from "../MetaData";
-import { InheritanceMetaData } from "../MetaData/Relation";
 import { EntityMetaData } from "./EntityMetaData";
-import { IEntityMetaData } from "./Interface";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
+import { IndexMetaData } from "./IndexMetaData";
+import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
+import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderMetaData[];
