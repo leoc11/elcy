@@ -8,7 +8,7 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
-import { fillZero, isNativeFunction } from "../Helper/Util";
+import { fillZero, isNotNull } from "../Helper/Util";
 import { JoinType, ValueType, GenericType } from "../Common/Type";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
 import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
@@ -18,8 +18,6 @@ import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { ISqlParameterBuilderItem } from "./ParameterBuilder/ISqlParameterBuilderItem";
 import { columnMetaKey, entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQueryCommand } from "./Interface/IQueryCommand";
@@ -376,6 +374,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         throw new Error(`${(expression.objectOperand.type as any).name}.${expression.methodName} not supported in linq to sql.`);
     }
     protected getParameterExpressionString(expression: ParameterExpression): string {
+        if (this.options.parameters) {
+            const value = this.options.parameters[expression.name];
+            if (!isNotNull(value)) {
+                return this.getNullString();
+            }
+        }
         return "@" + expression.name;
     }
     protected getValueExpressionString(expression: ValueExpression<any>): string {
@@ -489,7 +493,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    public updateQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
+    public updateQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
         let result: IQueryCommand[] = [];
         const setQuery = Object.keys(set).select(o => {
             const value = set[o];
@@ -510,7 +514,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return result;
     }
-    public deleteQueries<T>(select: SelectExpression<T>, parameters: Map<string, any>, isHardDelete = false): IQueryCommand[] {
+    public deleteQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, isHardDelete = false): IQueryCommand[] {
         let result: IQueryCommand[] = [];
         if (!isHardDelete)
             isHardDelete = !select.entity.deleteColumn;
@@ -596,10 +600,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     paramName = this.newAlias("param");
                 }
 
-                insertQuery.parameters.set(paramName, value);
+                insertQuery.parameters[paramName] = value;
                 if (o.column.isPrimaryColumn) {
                     wheres.push(`${this.enclose(o.column.columnName)} = @${paramName}`);
-                    selectQuery.parameters.set(paramName, value);
+                    selectQuery.parameters[paramName] = value;
                 }
                 return "@" + paramName;
             }).union(valueColumns.select(o => {
@@ -611,11 +615,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
                 else {
                     const paramName = this.newAlias("param");
-                    insertQuery.parameters.set(paramName, value);
+                    insertQuery.parameters[paramName] = value;
 
                     if (o.isPrimaryColumn) {
                         wheres.push(`${this.enclose(o.columnName)} = @${paramName}`);
-                        selectQuery.parameters.set(paramName, value);
+                        selectQuery.parameters[paramName] = value;
                     }
 
                     return "@" + paramName;
@@ -636,11 +640,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             for (const entry of entries) {
                 const insertQuery: IQueryCommand = {
                     query: "",
-                    parameters: new Map()
+                    parameters: {}
                 };
                 const selectQuery: IQueryCommand = {
                     query: "",
-                    parameters: new Map()
+                    parameters: {}
                 };
                 const wheres: string[] = [];
                 insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
@@ -657,11 +661,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else {
             const insertQuery: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             const selectQuery: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             let selectWheres: string[] = [];
 
@@ -692,17 +696,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             const result: IQueryCommand = {
                 query: "",
-                parameters: new Map()
+                parameters: {}
             };
             const set = modifiedColumns.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, entry.entity[o.propertyName as keyof T]);
+                result.parameters[paramName] = entry.entity[o.propertyName as keyof T];
                 return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
             }).toArray().join(",\n");
 
             const where = entityMetaData.primaryKeys.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters.set(paramName, entry.entity[o.propertyName]);
+                result.parameters[paramName] = entry.entity[o.propertyName];
                 return this.enclose(o.columnName) + " = @" + paramName;
             }).toArray().join(" AND ");
 
@@ -717,11 +721,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         const deleteExp = new SelectExpression(new EntityExpression(entityMetaData.type, this.newAlias()));
         if (entityMetaData.primaryKeys.length === 1) {
-            const parameters = new Map();
+            const parameters: { [key: string]: any } = {};
             const primaryCol = entityMetaData.primaryKeys.first();
             const primaryValues = entries.select(o => {
                 const paramName = this.newAlias("param");
-                parameters.set(paramName, o.entity[primaryCol.propertyName]);
+                parameters[paramName] = o.entity[primaryCol.propertyName];
                 return `@${paramName}`;
             }).toArray().join(",");
             const condition = `${primaryCol.propertyName} IN (${primaryValues})`;
@@ -750,10 +754,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             });
 
             // add value to temp table.
-            const parameters = new Map();
+            const parameters: { [key: string]: any } = {};
             const primaryValues = entries.select(o => "(" + entityMetaData.primaryKeys.select(c => {
                 const paramName = this.newAlias("param");
-                parameters.set(paramName, o.entity[c.propertyName]);
+                parameters[paramName] = o.entity[c.propertyName];
                 return `@${paramName}`;
             }).toArray().join(",") + ")").toArray().join(",");
             results.push({
@@ -776,7 +780,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             const isMasterAdded = relationEntry.masterEntry.state === EntityState.Added;
             if (relationEntry.slaveRelation.relationType === "one") {
-                const parameters = new Map();
+                const parameters: { [key: string]: any } = {};
                 const set = relationEntry.slaveRelation.relationColumns.select(o => {
                     let paramName = "";
                     let value: any;
@@ -790,13 +794,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         value = relationEntry.masterEntry.entity[reverseProperty as keyof T2];
                         paramName = this.newAlias("param");
                     }
-                    parameters.set(paramName, value);
+                    parameters[paramName] = value;
 
                     return `${this.enclose(o.columnName)} = @${paramName}`;
                 }).toArray().join(",\n");
                 const where = slaveEntityMetaData.primaryKeys.select(o => {
                     const paramName = this.newAlias("param");
-                    parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                    parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
                     return this.enclose(o.columnName) + " = @" + paramName;
                 }).toArray().join(" AND ");
 
@@ -806,7 +810,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 });
             }
             else {
-                const parameters = new Map();
+                const parameters: { [key: string]: any } = {};
                 const relationDataMeta = relationEntry.slaveRelation.relationData;
                 const columnNames = relationDataMeta.sourceRelationColumns.union(relationDataMeta.targetRelationColumns)
                     .select(o => o.columnName).toArray().join(",");
@@ -825,7 +829,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         paramName = this.newAlias("param");
                     }
 
-                    parameters.set(paramName, value);
+                    parameters[paramName] = value;
                     return "@" + paramName;
                 }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
                     let paramName = "";
@@ -842,7 +846,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         paramName = this.newAlias("param");
                     }
 
-                    parameters.set(paramName, value);
+                    parameters.set[paramName] = value;
                     return "@" + paramName;
                 })).toArray().join(",");
 
@@ -870,10 +874,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     const set = relationEntry.slaveRelation.relationColumns.select(o =>
                         `${this.enclose(o.columnName)} = NULL`
                     ).toArray().join(",\n");
-                    const parameters = new Map();
+                    const parameters: { [key: string]: any } = {};
                     const where = entityMetaData.primaryKeys.select(o => {
                         const paramName = this.newAlias("param");
-                        parameters.set(paramName, relationEntry.slaveEntry.entity[o.propertyName]);
+                        parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
                         return this.enclose(o.columnName) + " = @" + paramName;
                     }).toArray().join(" AND ");
                     return [{
@@ -889,19 +893,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             else {
                 // remove relation table.
                 // after save remove all reference to this relation entry
-                const parameter = new Map();
+                const parameter: { [key: string]: any } = {};
                 const relationDataMeta = relationEntry.slaveRelation.relationData;
                 const condition = relationDataMeta.sourceRelationColumns.select(o => {
                     const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T2;
                     const value = relationEntry.masterEntry.entity[relProperty];
                     const paramName = this.newAlias("param");
-                    parameter.set(paramName, value);
+                    parameter.set[paramName] = value;
                     return this.enclose(o.columnName) + " = @" + paramName;
                 }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
                     const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T;
                     const value = relationEntry.slaveEntry.entity[relProperty];
                     const paramName = this.newAlias("param");
-                    parameter.set(paramName, value);
+                    parameter[paramName] = value;
                     return this.enclose(o.columnName) + " = @" + paramName;
                 })).toArray().join(" AND ");
 

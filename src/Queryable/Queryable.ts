@@ -54,7 +54,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<T>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             const commandQuery = this.buildQuery(queryBuilder);
@@ -66,7 +66,7 @@ export abstract class Queryable<T = any> {
             };
             cacheManager.set(cacheKey, queryCache);
         }
-
+        queryBuilder.options.parameters = queryCache.parameterBuilder.build(this.options.parameters);
         return queryCache.commandQuery.toString(queryBuilder);
     }
     public async toArray(): Promise<T[]> {
@@ -119,7 +119,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<T>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             const commandQuery = this.buildQuery(queryBuilder);
@@ -133,7 +133,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -152,7 +153,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -172,7 +173,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -192,7 +194,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -216,7 +218,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -236,7 +239,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -260,7 +263,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -280,7 +284,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -304,7 +308,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -324,7 +329,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<number>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -348,7 +353,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -368,7 +374,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -391,7 +397,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -411,7 +418,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -434,7 +441,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -454,7 +462,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get<T>(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -477,7 +485,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -497,7 +506,7 @@ export abstract class Queryable<T = any> {
         let queryCache = cacheManager.get(cacheKey);
         console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         if (!queryCache) {
             n = Date.now();
             let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
@@ -516,7 +525,8 @@ export abstract class Queryable<T = any> {
         }
 
         n = Date.now();
-        const params = queryCache.parameterBuilder.getSqlParameters(this.options.parameters);
+        const params = queryCache.parameterBuilder.build(this.options.parameters);
+        queryBuilder.options.parameters = params;
         const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
         console.log(`build query time: ${Date.now() - n}`);
         // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
@@ -532,7 +542,7 @@ export abstract class Queryable<T = any> {
             throw new Error(`Only entity typed supported`);
         }
         const queryBuilder = new this.dbContext.queryBuilder();
-        queryBuilder.options = this.options;
+        queryBuilder.options = Object.assign({}, this.options);
         let expression = this.buildQuery(queryBuilder) as SelectExpression<T>;
         const query = expression.toString(queryBuilder);
         return query as any;

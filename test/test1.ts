@@ -1449,4 +1449,19 @@ describe("PARAMETERS", async () => {
             }
         }
     });
+    it("should support null value parameter.", async () => {
+        const db = new MyDb();
+
+        let dd = new Date();
+        let avg = db.orders.parameter({ dd }).where(o => o.OrderDate === dd);
+        let queryString = avg.toString();
+        
+        expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate] = @param_3200);");
+        
+        dd = null;
+        avg = db.orders.parameter({ dd }).where(o => o.OrderDate === dd);
+        queryString = avg.toString();
+        
+        expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate] IS NULL);");
+    });
 });

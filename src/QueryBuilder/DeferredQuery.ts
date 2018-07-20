@@ -5,7 +5,7 @@ import { IQueryResult } from "./QueryResult";
 export class DeferredQuery<T = any> {
     public value: T;
     public resolver: (value?: T | PromiseLike<T>) => void;
-    constructor(protected readonly context: DbContext, public readonly commands: IQueryCommand[], public readonly parameters: Map<string, any>, public readonly resultParser: (result: IQueryResult[]) => T) {
+    constructor(protected readonly context: DbContext, public readonly commands: IQueryCommand[], public readonly parameters: { [key: string]: any }, public readonly resultParser: (result: IQueryResult[]) => T) {
         this.context.deferredQueries.add(this);
     }
     public resolveValue(value: T) {
@@ -17,7 +17,7 @@ export class DeferredQuery<T = any> {
     }
     public async execute(): Promise<T> {
         let comands: IQueryCommand[] = [];
-        let params = new Map<string, any>();
+        let params: { [key: string]: any } = {};
 
         // if has been resolved, return
         if (this.value !== undefined) {
@@ -34,7 +34,7 @@ export class DeferredQuery<T = any> {
         for (const deferredQuery of deferredQueries) {
             comands = comands.concat(deferredQuery.commands);
             if (deferredQuery.parameters)
-                params = new Map([...params, ...deferredQuery.parameters]);
+                params = Object.assign(params, deferredQuery.parameters);
         }
         const queryResult = await this.context.executeCommands(comands, params);
         for (const deferredQuery of deferredQueries) {
