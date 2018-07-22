@@ -11,4 +11,9 @@ export class EnumColumnMetaData<TE = any, T extends string | number = any> exten
     constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
     }
+    public applyOption(columnMeta: EnumColumnMetaData<TE>) {
+        if (typeof columnMeta.options !== "undefined")
+            this.options = columnMeta.options;
+        super.applyOption(columnMeta);
+    }
 }

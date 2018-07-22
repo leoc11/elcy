@@ -65,8 +65,8 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                         entityMetadata.createDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.createDateColumn.propertyName);
                     if (parentMetaData.modifiedDateColumn)
                         entityMetadata.modifiedDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.modifiedDateColumn.propertyName);
-                    if (parentMetaData.deleteColumn)
-                        entityMetadata.deleteColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deleteColumn.propertyName);
+                    if (parentMetaData.deletedColumn)
+                        entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName);
                     if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                         entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 

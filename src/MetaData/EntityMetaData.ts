@@ -16,7 +16,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public name: string;
     public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deleteColumn: IColumnMetaData<TE>;
+    public deletedColumn: IColumnMetaData<TE>;
     public createDateColumn: IColumnMetaData<TE>;
     public modifiedDateColumn: IColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
@@ -66,8 +66,8 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.createDateColumn = entityMeta.createDateColumn;
         if (typeof entityMeta.defaultOrder !== "undefined")
             this.defaultOrder = entityMeta.defaultOrder;
-        if (typeof entityMeta.deleteColumn !== "undefined")
-            this.deleteColumn = entityMeta.deleteColumn;
+        if (typeof entityMeta.deletedColumn !== "undefined")
+            this.deletedColumn = entityMeta.deletedColumn;
         if (typeof entityMeta.indices !== "undefined")
             this.indices = entityMeta.indices;
         if (typeof entityMeta.modifiedDateColumn !== "undefined")

@@ -6,7 +6,14 @@ import { NumberColumn } from "../../../src/Decorator/Column/NumberColumn";
 import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { UUID } from "../../../src/Data/UUID";
+import { EnumColumn } from "../../../src/Decorator/Column/EnumColumn";
 // import { TimestampColumn } from "../../../src/Decorator/Column/TimestampColumn";
+
+export enum OrderStatus {
+    Void = "void",
+    Draft = "draft",
+    Completed = "completed"
+}
 
 @Entity("Orders")
 export class Order {
@@ -19,6 +26,10 @@ export class Order {
 
     @DateColumn()
     public OrderDate: Date;
+    @DateColumn()
+    public CreatedDate: Date;
+    @EnumColumn(OrderStatus)
+    public Status: OrderStatus;
 
     // @TimestampColumn()
     // public Timestamp: string;

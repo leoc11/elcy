@@ -89,6 +89,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             delete: new Map()
         };
     }
+
+    //#region Entity Tracker
     public set<T>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
         let result: DbSet<T> = isClearCache ? undefined as any : this.cachedDbSets.get(type);
         if (!result && this.entityTypes.contains(type)) {
@@ -281,6 +283,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             dbSet.clear();
         }
     }
+    //#endregion
+
     public async executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
         const con = await this.getConnection();
         const result = await con.executeQuery(command);
@@ -393,7 +397,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             // TODO: soft delete or hard delete.
             // TODO: for non RDMS, implement cascade delete manually
             const deleteParam: IDeleteEventParam = {
-                type: metaData.deleteColumn && !(options && options.forceHardDelete) ? "soft" : "hard"
+                type: metaData.deletedColumn && !(options && options.forceHardDelete) ? "soft" : "hard"
             };
             for (const entry of deleteEntries) {
                 eventEmitter.emitBeforeDeleteEvent(entry.entity, deleteParam);
@@ -526,7 +530,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         results.push(result);
         return results;
     }
-    public async buildSchema() {
+    public async updateSchema() {
         const queryBuilder = new this.queryBuilder();
         const con = await this.getConnection();
         const schemaBuilder = new this.schemaBuilder(con, queryBuilder);

@@ -18,7 +18,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData || !this.metaData.deleteColumn ? null : this.columns.first(o => o.propertyName === this.metaData.deleteColumn.propertyName);
+            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first(o => o.propertyName === this.metaData.deletedColumn.propertyName);
         }
         return this._deleteColumn;
     }
