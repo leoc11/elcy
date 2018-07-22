@@ -18,6 +18,7 @@ import { AdditionExpression } from "../src/ExpressionBuilder/Expression/Addition
 import { ValueExpression } from "../src/ExpressionBuilder/Expression/ValueExpression";
 import { LessEqualExpression } from "../src/ExpressionBuilder/Expression/LessEqualExpression";
 import { MultiplicationExpression } from "../src/ExpressionBuilder/Expression/MultiplicationExpression";
+import { UUID } from "../src/Data/UUID";
 
 const param = new ParameterExpression("o", Order);
 const odParam = new ParameterExpression("od", OrderDetail);
@@ -1189,7 +1190,7 @@ describe("GROUP BY", async () => {
 
         should();
         a.should.be.a("array");
-        a[0].should.has.property("productid").which.is.a("string");
+        a[0].should.has.property("productid").which.is.an.instanceof(UUID);
         a[0].should.has.property("Quantity").which.is.a("number");
     });
     it("groupBy.(o => ({col: o.column, col: o.column*2 })).select(o => o.count())", async () => {
