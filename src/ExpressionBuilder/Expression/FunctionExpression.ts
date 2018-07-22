@@ -5,7 +5,6 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ValueExpressionTransformer } from "../ValueExpressionTransformer";
-import { hashCode } from "../../Helper/Util";
 
 export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
     public static create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
