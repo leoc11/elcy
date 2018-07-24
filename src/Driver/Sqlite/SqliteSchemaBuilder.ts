@@ -1,7 +1,7 @@
 import { SchemaBuilder } from "../../Data/SchemaBuilder";
 import { IConnection } from "../../Connection/IConnection";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, QueryType } from "../../Common/Type";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -10,6 +10,7 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
+import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 
 export class SqliteSchemaBuilder extends SchemaBuilder {
     constructor(public connection: IConnection, public q: QueryBuilder) {
@@ -68,7 +69,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
 
         const schemaDatas = await this.connection.executeQuery({
             query: `SELECT * FROM "sqlite_master" WHERE type='table'`,
-            type: "DQL"
+            type: QueryType.DQL
         });
         const tableSchemas = schemaDatas[0];
 
@@ -91,7 +92,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
 
             const columnSchemas = await this.connection.executeQuery({
                 query: `PRAGMA TABLE_INFO("${entity.name}")`,
-                type: "DQL"
+                type: QueryType.DQL
             });
 
             for (const columnSchema of columnSchemas[0].rows) {
@@ -116,25 +117,22 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
 
             const indexSchemas = await this.connection.executeQuery({
                 query: `PRAGMA INDEX_LIST("${entity.name}")`,
-                type: "DQL"
+                type: QueryType.DQL
             });
 
             // index
             for (const indexSchema of indexSchemas[0].rows.where(o => o["origin"] === "c")) {
                 const indexName = indexSchema["name"];
-                let index = entity.indices.first(o => o.name === indexName);
-                if (!index) {
-                    index = {
-                        name: indexName,
-                        columns: [],
-                        entity: entity,
-                        unique: false
-                    };
-                    entity.indices.push(index);
-                }
+                const index: IIndexMetaData = {
+                    name: indexName,
+                    columns: [],
+                    entity: entity,
+                    unique: (indexSchema["unique"] || "").toString() === "1"
+                };
+                entity.indices.push(index);
                 const indexInfos = await this.connection.executeQuery({
                     query: `PRAGMA INDEX_INFO("${indexName}")`,
-                    type: "DQL"
+                    type: QueryType.DQL
                 });
 
                 index.columns = indexInfos[0].rows.orderBy([o => o["seqno"]])
@@ -154,7 +152,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 entity.constraints.push(constraintMeta);
                 const indexInfos = await this.connection.executeQuery({
                     query: `PRAGMA INDEX_INFO("${constaintName}")`,
-                    type: "DQL"
+                    type: QueryType.DQL
                 });
 
                 constraintMeta.columns = indexInfos[0].rows.orderBy([o => o["seqno"]])
@@ -191,7 +189,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         for (const entityName in result) {
             const foreignKeySchemas = await this.connection.executeQuery({
                 query: `PRAGMA FOREIGN_KEY_LIST("${entityName}")`,
-                type: "DQL"
+                type: QueryType.DQL
             });
             for (const relationSchema of foreignKeySchemas[0].rows.orderBy([o => o["table"]], [o => o["seq"]]).groupBy(o => o["table"])) {
                 const target = result[entityName];

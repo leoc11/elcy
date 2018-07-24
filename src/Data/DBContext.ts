@@ -1,4 +1,4 @@
-import { IObjectType, OrderDirection, GenericType, DbType, IsolationLevel } from "../Common/Type";
+import { IObjectType, OrderDirection, GenericType, DbType, IsolationLevel, QueryType } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -521,10 +521,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const result: IQueryCommand = {
             query: "",
             parameters: {},
-            type: "DQL"
+            type: 0 as any
         };
         for (const query of queries) {
             result.query += (result.query ? ";\n\n" : "") + query.query;
+            result.type |= query.type;
             if (query.parameters)
                 Object.assign(result.parameters, query.parameters);
         }
@@ -549,7 +550,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const queryCommand: IQueryCommand = {
             query: rawQuery,
             parameters: {},
-            type: "DDL"
+            type: QueryType.DDL
         };
         if (parameters) {
             Object.assign(queryCommand.parameters, parameters);

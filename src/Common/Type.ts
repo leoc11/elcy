@@ -55,3 +55,11 @@ export enum EventListenerType {
      */
     AFTER_DELETE = "after-delete"
 }
+
+export enum QueryType {
+    DQL = 1,
+    DML = 2,
+    DDL = 4,
+    DTL = 8,
+    DCL = 16
+}

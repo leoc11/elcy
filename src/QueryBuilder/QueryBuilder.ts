@@ -9,7 +9,7 @@ import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/Se
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero, isNotNull } from "../Helper/Util";
-import { JoinType, ValueType, GenericType } from "../Common/Type";
+import { JoinType, ValueType, GenericType, QueryType } from "../Common/Type";
 import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
 import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
 import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
@@ -478,13 +478,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         result.push({
             query: selectQuery,
-            type: hasIncludes ? "DML" : "DQL"
+            type: hasIncludes ? QueryType.DML : QueryType.DQL
         });
         // if has other includes, then convert to temp table
         if (hasIncludes) {
             result.push({
                 query: "SELECT * FROM " + tempTableName,
-                type: "DQL"
+                type: QueryType.DQL
             });
 
             const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
@@ -507,7 +507,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             result.push({
                 query: `DROP TABLE ${tempTableName}`,
-                type: "DDL"
+                type: QueryType.DDL
             });
         }
         return result;
@@ -529,7 +529,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         result.push({
             query: updateQuery,
             parameters: parameters,
-            type: "DML"
+            type: QueryType.DML
         });
 
         return result;
@@ -564,7 +564,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result.push({
                 query: selectQuery,
                 parameters: parameters,
-                type: "DML"
+                type: QueryType.DML
             });
         }
 
@@ -662,12 +662,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 const insertQuery: IQueryCommand = {
                     query: "",
                     parameters: {},
-                    type: "DML"
+                    type: QueryType.DML
                 };
                 const selectQuery: IQueryCommand = {
                     query: "",
                     parameters: {},
-                    type: "DQL"
+                    type: QueryType.DQL
                 };
                 const wheres: string[] = [];
                 insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
@@ -685,12 +685,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const insertQuery: IQueryCommand = {
                 query: "",
                 parameters: {},
-                type: "DML"
+                type: QueryType.DML
             };
             const selectQuery: IQueryCommand = {
                 query: "",
                 parameters: {},
-                type: "DQL"
+                type: QueryType.DQL
             };
             let selectWheres: string[] = [];
 
@@ -722,7 +722,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const result: IQueryCommand = {
                 query: "",
                 parameters: {},
-                type: "DML"
+                type: QueryType.DML
             };
             const set = modifiedColumns.select(o => {
                 const paramName = this.newAlias("param");
@@ -777,7 +777,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             // set temp table data.
             results.push({
                 query: this.getCreateTempTableString(tempTableName, tempEntity.columns),
-                type: "DDL"
+                type: QueryType.DDL
             });
 
             // add value to temp table.
@@ -790,14 +790,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             results.push({
                 query: `INSERT INTO ${tempTableName} VALUES ${primaryValues}`,
                 parameters: parameters,
-                type: "DML"
+                type: QueryType.DML
             });
             results = results.concat(this.deleteQueries(deleteExp, new Map()));
 
             // remove temp table
             results.push({
                 query: `DROP TABLE ${tempTableName}`,
-                type: "DDL"
+                type: QueryType.DDL
             });
 
             return results;
@@ -836,7 +836,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 results.push({
                     query: `UPDATE ${slaveEntityMetaData.name} SET ${set} WHERE ${where}`,
                     parameters: parameters,
-                    type: "DML"
+                    type: QueryType.DML
                 });
             }
             else {
@@ -883,7 +883,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 results.push({
                     query: `INSERT INTO ${this.enclose(relationDataMeta.name)}(${columnNames}) VALUES (${values})`,
                     parameters: parameters,
-                    type: "DML"
+                    type: QueryType.DML
                 });
             }
             return results;
@@ -943,7 +943,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 return [{
                     query: `DELETE FROM ${this.enclose(entityMetaData.name)} WHERE ${condition}`,
                     parameters: parameter,
-                    type: "DML"
+                    type: QueryType.DML
                 }] as IQueryCommand[];
             }
         }).toArray();
@@ -968,7 +968,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         // turn on identity insert coz rebuild schema most likely called because identity insert issue.
         result.push({
             query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} ON`,
-            type: "DCL"
+            type: QueryType.DCL
         });
 
         // copy value
@@ -976,13 +976,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const copyColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
         result.push({
             query: `INSERT INTO ${this.entityName(cloneSchema)} (${newColumns}) SELECT ${copyColumns} FROM ${this.entityName(oldSchema)} WITH (HOLDLOCK TABLOCKX)`,
-            type: "DML"
+            type: QueryType.DML
         });
 
         // turn of identity insert
         result.push({
             query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} OFF`,
-            type: "DCL"
+            type: QueryType.DCL
         });
 
         // remove all foreignkey reference to current table
@@ -1095,7 +1095,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 const fallbackValue = this.defaultValue(columnSchema);
                 result.push({
                     query: `UPDATE ${this.entityName(entitySchema)} SET ${this.enclose(columnSchema.columnName)} = ${fallbackValue} WHERE ${this.enclose(columnSchema.columnName)} IS NULL`,
-                    type: "DML"
+                    type: QueryType.DML
                 });
             }
         }
@@ -1113,18 +1113,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             if (toAutoIncrement) {
                 result.push({
                     query: `SET IDENTITY_INSERT ${this.entityName(entitySchema)} ON`,
-                    type: "DCL"
+                    type: QueryType.DCL
                 });
             }
             // compilation will failed without exec
             result.push({
                 query: `EXEC('UPDATE ${this.entityName(entitySchema)} WITH (HOLDLOCK TABLOCKX) SET ${this.enclose(cloneColumn.columnName)} = ${this.enclose(oldColumnSchema.columnName)}')`,
-                type: "DML"
+                type: QueryType.DML
             });
             if (toAutoIncrement) {
                 result.push({
                     query: `SET IDENTITY_INSERT ${this.entityName(entitySchema)} OFF`,
-                    type: "DCL"
+                    type: QueryType.DCL
                 });
             }
 
@@ -1153,14 +1153,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             `${this.newLine()})`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public renameTableQuery<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQueryCommand[] {
         let query = `EXEC sp_rename '${this.entityName(entityMetaData)}', '${this.enclose(newName)}', 'OBJECT'`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public columnDeclaration(column: IColumnMetaData | IColumnExpression, type: "alter" | "create" | "add" = "alter") {
@@ -1194,28 +1194,28 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public renameColumnQuery(columnMeta: IColumnMetaData, newName: string): IQueryCommand[] {
         let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public alterColumnQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
         let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.columnDeclaration(columnMeta, "alter")}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public dropColumnQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
         let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} DROP COLUMN ${this.enclose(columnMeta.columnName)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public addDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
@@ -1223,7 +1223,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             ` SET DEFAULT ${this.defaultValue(columnMeta)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public dropDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
@@ -1231,7 +1231,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             ` DROP DEFAULT`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public constraintDeclaration(constraintMeta: IConstraintMetaData) {
@@ -1265,7 +1265,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const query = `DROP TABLE ${this.entityName(entityMeta)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public defaultValue(columnMeta: IColumnMetaData) {
@@ -1296,14 +1296,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const query = `ALTER TABLE ${this.entityName(relationMeta.source)} DROP CONSTRAINT ${this.enclose(relationMeta.fullName)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public addForeignKeyQuery(relationMeta: IRelationMetaData): IQueryCommand[] {
         const query = `ALTER TABLE ${this.entityName(relationMeta.source)} ADD ${this.foreignKeyDeclaration(relationMeta)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public addConstraintQuery(constraintMeta: IConstraintMetaData): IQueryCommand[] {
@@ -1311,14 +1311,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             ` ADD CONSTRAINT ${this.constraintDeclaration(constraintMeta)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public dropConstraintQuery(constraintMeta: IConstraintMetaData): IQueryCommand[] {
         const query = `ALTER TABLE ${this.entityName(constraintMeta.entity)} DROP CONSTRAINT ${this.enclose(constraintMeta.name)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public dropAllMasterRelationsQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
@@ -1334,14 +1334,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const query = `ALTER TABLE ${this.entityName(entityMeta)} DROP CONSTRAINT ${this.enclose(pkName)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public addPrimaryKeyQuery(entityMeta: IEntityMetaData): IQueryCommand[] {
         const query = `ALTER TABLE ${this.entityName(entityMeta)} ADD ${this.primaryKeyDeclaration(entityMeta)}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public addIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
@@ -1349,14 +1349,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const query = `CREATE${indexMeta.unique ? " UNIQUE" : ""} INDEX ${indexMeta.name} ON ${this.entityName(indexMeta.entity)} (${columns})`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
     public dropIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
         const query = `DROP INDEX ${indexMeta.name}`;
         return [{
             query,
-            type: "DDL"
+            type: QueryType.DDL
         }];
     }
 }

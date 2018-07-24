@@ -2,7 +2,7 @@ import { IConnection } from "../../Connection/IConnection";
 import { IQueryResult } from "../../QueryBuilder/QueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
-import { IsolationLevel } from "../../Common/Type";
+import { IsolationLevel, QueryType } from "../../Common/Type";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import * as sqlite3 from "sqlite3";
 import { ISqliteConnectionOption } from "./ISqliteConnectionOption";
@@ -148,7 +148,7 @@ export class SqliteConnection implements IConnection {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
             const params = this.getParameter(command.parameters);
-            if (command.type === "DQL") {
+            if (command.type & QueryType.DQL) {
                 this.connection.all(command.query, params, function (this: sqlite3.Statement, error: Error, rows: any[]) {
                     if (error) {
                         reject(error);

@@ -1,7 +1,7 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
-import { GenericType, ReferenceOption, JoinType } from "../../Common/Type";
+import { GenericType, ReferenceOption, JoinType, QueryType } from "../../Common/Type";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
@@ -140,13 +140,13 @@ export class MssqlQueryBuilder extends QueryBuilder {
         }
         result.push({
             query: selectQuery,
-            type: hasIncludes ? "DML" : "DQL"
+            type: hasIncludes ? QueryType.DML : QueryType.DQL
         });
         // if has other includes, then convert to temp table
         if (hasIncludes) {
             result.push({
                 query: "SELECT * FROM " + tempTableName,
-                type: "DQL"
+                type: QueryType.DQL
             });
 
             const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
@@ -169,7 +169,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
 
             result.push({
                 query: "DROP TABLE " + tempTableName,
-                type: "DDL"
+                type: QueryType.DDL
             });
         }
         return result;
@@ -211,16 +211,16 @@ export class MssqlQueryBuilder extends QueryBuilder {
     }
     public renameColumnQuery(columnMeta: IColumnMetaData, newName: string): IQueryCommand[] {
         let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
-        return [{ query, type: "DDL" }];
+        return [{ query, type: QueryType.DDL }];
     }
     public addDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
         let query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.enclose(columnMeta.columnName)}`;
-        return [{ query, type: "DDL" }];
+        return [{ query, type: QueryType.DDL }];
     }
     public dropIndexQuery(indexMeta: IIndexMetaData): IQueryCommand[] {
         const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
-        return [{ query, type: "DDL" }];
+        return [{ query, type: QueryType.DDL }];
     }
     public dropDefaultContraintQuery(columnMeta: IColumnMetaData): IQueryCommand[] {
         const result: IQueryCommand[] = [];
@@ -232,11 +232,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 ` join sys.columns c on dc.parent_object_id = c.object_id and dc.parent_column_id = c.column_id` +
                 ` where SCHEMA_NAME(schema_id) = '${columnMeta.entity.schema}' and OBJECT_NAME(parent_object_id) = '${columnMeta.entity.name}' and c.name = '${columnMeta.columnName}'` +
                 ` )`,
-            type: "DDL"
+            type: QueryType.DDL
         });
         result.push({
             query: `EXEC('ALTER TABLE ${this.entityName(columnMeta.entity)} DROP CONSTRAINT [' + @${variableName} + ']')`,
-            type: "DDL"
+            type: QueryType.DDL
         });
         return result;
     }
@@ -248,11 +248,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 ` SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS` +
                 ` where CONSTRAINT_TYPE = 'PRIMARY KEY' and TABLE_SCHEMA = '${entityMeta.schema}' and TABLE_NAME = '${entityMeta.name}'` +
                 ` )`,
-            type: "DDL"
+            type: QueryType.DDL
         });
         result.push({
             query: `EXEC('ALTER TABLE ${this.entityName(entityMeta)} DROP CONSTRAINT [' + @${variableName} + ']')`,
-            type: "DDL"
+            type: QueryType.DDL
         });
         return result;
     }
@@ -277,7 +277,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         const result: IQueryCommand = {
             query: "",
             parameters: {},
-            type: "DML"
+            type: QueryType.DML
         };
         result.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames}) ${outputQuery ? "OUTPUT " + outputQuery : ""} VALUES `;
 

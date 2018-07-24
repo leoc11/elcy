@@ -1,7 +1,7 @@
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
-import { IObjectType } from "../Common/Type";
+import { IObjectType, QueryType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
@@ -20,7 +20,7 @@ export abstract class SchemaBuilder {
 
         const defaultSchema = (await this.connection.executeQuery({
             query: `SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`,
-            type: "DQL"
+            type: QueryType.DQL
         })).first().rows.first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
@@ -108,7 +108,7 @@ export abstract class SchemaBuilder {
 
         const schemaDatas = await this.connection.executeQuery({
             query: queries,
-            type: "DQL"
+            type: QueryType.DQL
         });
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
