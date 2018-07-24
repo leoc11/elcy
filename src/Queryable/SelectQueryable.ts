@@ -34,6 +34,6 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("SELECT") + hashCode((this.selectorFn || this.selector).toString());
+        return hashCode("SELECT", this.parent.hashCode() + hashCode((this.selectorFn || this.selector).toString()));
     }
 }

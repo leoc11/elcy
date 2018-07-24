@@ -38,8 +38,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
-        return this.parent.hashCode() + hashCode("INCLUDE") + ((this.selectorsFn || this.selectors) as any[])
+        return hashCode("INCLUDE", this.parent.hashCode() + ((this.selectorsFn || this.selectors) as any[])
             .select((o) => hashCode(o.toString()))
-            .sum();
+            .sum());
     }
 }

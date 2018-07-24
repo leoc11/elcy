@@ -32,6 +32,6 @@ export class WhereQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("WHERE") + hashCode((this.predicateFn || this.predicate).toString());
+        return hashCode("WHERE", this.parent.hashCode() + hashCode((this.predicateFn || this.predicate).toString()));
     }
 }

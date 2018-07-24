@@ -33,6 +33,6 @@ export class DistinctQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("DISTINCT") + hashCode((this.selectorFn || this.selector || "").toString());
+        return hashCode("DISTINCT", this.parent.hashCode() + hashCode((this.selectorFn || this.selector || "").toString()));
     }
 }

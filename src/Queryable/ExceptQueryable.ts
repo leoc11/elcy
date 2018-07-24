@@ -19,6 +19,6 @@ export class ExceptQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("EXCLUDE") + this.parent2.hashCode();
+        return hashCode("EXCLUDE", this.parent.hashCode() + this.parent2.hashCode());
     }
 }
