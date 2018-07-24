@@ -43,6 +43,8 @@ import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpressionTransformer";
 import { ExpressionTransformer } from "../ExpressionBuilder/ExpressionTransformer";
 import { QueryBuilder } from "./QueryBuilder";
+import { SubtractionExpression } from "../ExpressionBuilder/Expression/SubtractionExpression";
+import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
 
 const extract = (o: IExpression, qv: QueryExpressionVisitor): [IExpression, boolean] => {
     if (o instanceof ParameterExpression) {
@@ -744,7 +746,21 @@ export class QueryExpressionVisitor {
                 }
                 case "skip":
                 case "take": {
-                    throw new Error(`${param.scope} did not support ${expression.methodName}`);
+                    if (param.scope !== "queryable")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const exp = expression.params[0] as ParameterExpression<number>;
+                    if (expression.methodName === "skip") {
+                        if (objectOperand.paging.take) {
+                            objectOperand.paging.take = new SubtractionExpression(objectOperand.paging.take, exp);
+                        }
+                        objectOperand.paging.skip = objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp;
+                    }
+                    else {
+                        objectOperand.paging.take = objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp;
+                    }
+
+                    return objectOperand;
                 }
                 case "distinct": {
                     if (param.scope === "include")
@@ -866,7 +882,7 @@ export class QueryExpressionVisitor {
                         // call from queryable
                         const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                         objectOperand.selects = [column];
-                        objectOperand.paging.take = 1;
+                        objectOperand.paging.take = new ValueExpression(1);
                         objectOperand.isAggregate = true;
                         return objectOperand;
                     }
@@ -906,7 +922,7 @@ export class QueryExpressionVisitor {
                         objectOperand.addWhere(andExp);
                         const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
                         objectOperand.selects = [column];
-                        objectOperand.paging.take = 1;
+                        objectOperand.paging.take = new ValueExpression(1);
                         objectOperand.isAggregate = true;
                         return objectOperand;
                     }
@@ -922,7 +938,7 @@ export class QueryExpressionVisitor {
                         this.visit(new MethodCallExpression(selectOperand, "where" as any, [predicateFn]), visitParam);
                         param.commandExpression = visitParam.commandExpression;
                     }
-                    selectOperand.paging.take = 1;
+                    selectOperand.paging.take = new ValueExpression(1);
                     return selectOperand.entity;
                 }
                 case "innerJoin":
