@@ -23,7 +23,7 @@ export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T
             return transformer.getExpressionString(this);
         return "(" + this.logicalOperand.toString() + " ? " + this.trueResultOperand.toString() + " : " + this.falseResultOperand.toString() + ")";
     }
-    public execute(transformer: ExpressionTransformer) {
+    public execute(transformer?: ExpressionTransformer) {
         return this.logicalOperand.execute(transformer) ? this.trueResultOperand.execute(transformer) : this.falseResultOperand.execute(transformer);
     }
     public clone() {

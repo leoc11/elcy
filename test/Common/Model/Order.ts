@@ -8,6 +8,12 @@ import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn
 import { UUID } from "../../../src/Data/UUID";
 // import { TimestampColumn } from "../../../src/Decorator/Column/TimestampColumn";
 
+export enum OrderStatus {
+    Void = "void",
+    Draft = "draft",
+    Completed = "completed"
+}
+
 @Entity("Orders")
 export class Order {
     @PrimaryKey()

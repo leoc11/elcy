@@ -12,7 +12,7 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deleteColumn?: IColumnMetaData<TE>;
+    public deletedColumn?: IColumnMetaData<TE>;
     public relations: IRelationMetaData<TE, any>[] = [];
     public createDateColumn?: IColumnMetaData<TE>;
     public modifiedDateColumn?: IColumnMetaData<TE>;

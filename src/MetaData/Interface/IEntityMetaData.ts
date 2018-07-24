@@ -13,7 +13,7 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     schema?: string;
     defaultOrder?: IOrderMetaData[];
     primaryKeys: Array<IColumnMetaData<TE>>;
-    deleteColumn?: IColumnMetaData<TE, boolean>;
+    deletedColumn?: IColumnMetaData<TE, boolean>;
     createDateColumn?: IColumnMetaData<TE, Date>;
     modifiedDateColumn?: IColumnMetaData<TE, Date>;
     columns: IColumnMetaData<TE>[];

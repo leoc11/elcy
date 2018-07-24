@@ -3,11 +3,12 @@ import { Product } from ".";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
+import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 
 @Entity("Collections")
 export class Collection {
     @PrimaryKey()
-    @StringColumn({ columnType: "nvarchar", length: 100 })
+    @IdentifierColumn()
     public CollectionId: string;
     @StringColumn({ columnType: "nvarchar", length: 100 })
     public name: string;

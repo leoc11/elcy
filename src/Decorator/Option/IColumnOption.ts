@@ -13,5 +13,5 @@ export interface IColumnOption<T = any> {
     charset?: string;
     isCreatedDate?: boolean;
     isModifiedDate?: boolean;
-    isDeleteColumn?: boolean;
+    isDeletedColumn?: boolean;
 }

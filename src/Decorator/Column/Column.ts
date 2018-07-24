@@ -48,8 +48,8 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                 entityMetaData.modifiedDateColumn = metadata;
         }
         else if (metadata instanceof BooleanColumnMetaData) {
-            if (columnOption.isDeleteColumn)
-                entityMetaData.deleteColumn = metadata;
+            if (columnOption.isDeletedColumn)
+                entityMetaData.deletedColumn = metadata;
         }
 
         // add property to use setter getter.

@@ -150,7 +150,10 @@ export class DbSet<T> extends Queryable<T> {
     protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
         if (isValue(id))
             return id.toString();
-        return this.primaryKeys.select(o => (id as any)[o.propertyName]).toArray().join("|");
+        return this.primaryKeys.select(o => {
+            const val = (id as any)[o.propertyName];
+            return val ? val.toString() : "";
+        }).toArray().join("|");
     }
     public updateEntryKey(entry: EntityEntry<T>) {
         this.dictionary.delete(entry.key);

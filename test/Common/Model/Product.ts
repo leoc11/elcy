@@ -2,14 +2,15 @@ import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { OrderDetail, Collection } from ".";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
-import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 import { NumberColumn } from "../../../src/Decorator/Column/NumberColumn";
+import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
+import { UUID } from "../../../src/Data/UUID";
 
 @Entity("Products")
 export class Product {
     @PrimaryKey()
-    @StringColumn({ columnType: "nvarchar", length: 100 })
-    public ProductId: string;
+    @IdentifierColumn()
+    public ProductId: UUID;
 
     @NumberColumn({ columnType: "bigint" })
     public Price: number;
