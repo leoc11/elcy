@@ -13,6 +13,7 @@ import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IPagingExpression } from "./IPagingExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -36,7 +37,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public get type() {
         return Array;
     }
-    public paging: { skip?: number, take?: number } = {};
+    public paging: IPagingExpression = {};
     public where: IExpression<boolean>;
     public orders: IOrderExpression[] = [];
     public itemExpression: IExpression;
@@ -307,7 +308,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     }
     public isSimple() {
         return !this.where &&
-            (this.paging.skip || 0) <= 0 && (this.paging.take || 0) <= 0 &&
+            !this.paging.skip && !this.paging.take &&
             this.selects.length === this.entity.columns.length &&
             this.selects.all((c) => this.entity.columns.contains(c));
     }

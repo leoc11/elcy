@@ -34,6 +34,6 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("GROUPBY") + hashCode((this.keySelectorFn || this.keySelector || "").toString());
+        return hashCode("GROUPBY", this.parent.hashCode() + hashCode((this.keySelectorFn || this.keySelector || "").toString()));
     }
 }

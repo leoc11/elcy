@@ -175,8 +175,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
         return result;
     }
     protected getPagingQueryString(select: SelectExpression): string {
-        const skip = select.paging.skip || 0;
-        const take = select.paging.take || 0;
+        let take = 0, skip = 0;
+        if (select.paging.take)
+            take = select.paging.take.execute(this.queryVisitor.expressionTransformer);
+        if (select.paging.skip)
+            skip = select.paging.skip.execute(this.queryVisitor.expressionTransformer);
         let result = "";
         if (select.orders.length <= 0)
             result += "ORDER BY (SELECT NULL)" + this.newLine();

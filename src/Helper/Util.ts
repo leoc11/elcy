@@ -12,6 +12,16 @@ export const isNotNull = (value: any) => {
 export const isNativeFunction = (fn: Function) => {
     return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
 };
+export const clone = <T>(source: T, isDeep = false) => {
+    const res: T = {} as any;
+    for (const prop in source) {
+        let val = source[prop];
+        if (isDeep && val && val.constructor === Object)
+            val = clone(val, isDeep);
+        res[prop] = val;
+    }
+    return res;
+};
 // export const toTimezone = (date: Date, targetTimezoneOffset: number, sourceTimezoneOffset?: number) => {
 //     sourceTimezoneOffset = sourceTimezoneOffset !== undefined ? sourceTimezoneOffset : date.getTimezoneOffset();
 //     date = date.

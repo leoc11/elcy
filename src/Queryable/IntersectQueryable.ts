@@ -19,6 +19,6 @@ export class IntersectQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("INTERSECT") + this.parent2.hashCode();
+        return hashCode("INTERSECT", this.parent.hashCode() + this.parent2.hashCode());
     }
 }

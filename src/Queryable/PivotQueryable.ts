@@ -73,6 +73,6 @@ export class PivotQueryable<T,
     public hashCode() {
         let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());
         code += hashCode(this.metricFn ? JSON.stringify(this.metricFn) : this.metrics.toString());
-        return this.parent.hashCode() + hashCode("PIVOT") + code;
+        return hashCode("PIVOT", this.parent.hashCode() + code);
     }
 }

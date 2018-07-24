@@ -177,11 +177,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getSelectQuery(select).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
     }
     protected getPagingQueryString(select: SelectExpression): string {
-        const take = select.paging.take || 0;
+        let take = 0, skip = 0;
+        if (select.paging.take)
+            take = select.paging.take.execute(this.queryVisitor.expressionTransformer);
+        if (select.paging.skip)
+            skip = select.paging.skip.execute(this.queryVisitor.expressionTransformer);
         let result = "";
         if (take > 0)
             result += "LIMIT " + take + " ";
-        result += "OFFSET " + select.paging.skip;
+        result += "OFFSET " + skip;
         return result;
     }
     protected getCreateTempTableString(name: string, columns: IColumnExpression[] | Enumerable<IColumnExpression>) {
@@ -436,9 +440,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public getSelectQuery<T>(select: SelectExpression<T>): IQueryCommand[] {
         let result: IQueryCommand[] = [];
-        const skip = select.paging.skip || 0;
-        const take = select.paging.take || 0;
         const hasIncludes = select.includes.length > 0;
+        let take = 0, skip = 0;
+        if (select.paging.take)
+            take = select.paging.take.execute(this.queryVisitor.expressionTransformer);
+        if (select.paging.skip)
+            skip = select.paging.skip.execute(this.queryVisitor.expressionTransformer);
         const tempTableName = "#temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
         let selectQuery = "";
         if (hasIncludes) {

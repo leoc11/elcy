@@ -9,6 +9,6 @@ export class RightJoinQueryable<T = any, T2 = any, K extends ValueType = any, R 
         super(JoinType.RIGHT, parent, parent2, keySelector1, keySelector2, resultSelector, type);
     }
     public hashCode() {
-        return this.parent.hashCode() + hashCode("RIGHTJOIN") + this.parent2.hashCode();
+        return hashCode("RIGHTJOIN", this.parent.hashCode() + this.parent2.hashCode());
     }
 }

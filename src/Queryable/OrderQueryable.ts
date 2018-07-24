@@ -44,13 +44,13 @@ export class OrderQueryable<T> extends Queryable<T> {
         return queryBuilder.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        let code = this.parent.hashCode() + hashCode("ORDERBY");
+        let code = this.parent.hashCode();
         if (this.selectorsFn) {
             code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : OrderDirection.ASC));
         }
         else if (this.selectors) {
             code += this.selectors.sum(o => hashCode(o.toString()));
         }
-        return code;
+        return hashCode("ORDERBY", code);
     }
 }
