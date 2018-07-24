@@ -27,4 +27,5 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     relations?: IRelationMetaData<TE, any>[];
     priority?: number;
     hasIncrementPrimary?: boolean;
+    isReadOnly?: boolean;
 }

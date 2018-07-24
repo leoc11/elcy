@@ -520,7 +520,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const results: IQueryCommand[] = [];
         const result: IQueryCommand = {
             query: "",
-            parameters: {}
+            parameters: {},
+            type: "DQL"
         };
         for (const query of queries) {
             result.query += (result.query ? ";\n\n" : "") + query.query;
@@ -547,7 +548,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async defferedFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
         const queryCommand: IQueryCommand = {
             query: rawQuery,
-            parameters: {}
+            parameters: {},
+            type: "DDL"
         };
         if (parameters) {
             Object.assign(queryCommand.parameters, parameters);

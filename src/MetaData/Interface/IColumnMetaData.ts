@@ -16,6 +16,7 @@ export interface IColumnMetaData<TE = any, T = any> {
     columnType?: ColumnType;
     collation?: string;
     charset?: string;
+    isReadOnly?: boolean;
     isCreatedDate?: boolean;
     isModifiedDate?: boolean;
     isDeleteColumn?: boolean;

@@ -57,7 +57,7 @@ export type DateColumnType = "datetime" // mssql, mysql, sqlite
     | "interval" // postgres
     | "year"; // mysql
 
-export type TimestampColumnType = "timestamp" // mysql, postgres, mssql, oracle
+export type RowVersionColumnType = "timestamp" // mysql, postgres, mssql, oracle
     | "timestamp without time zone" // postgres
     | "timestamp with time zone" // postgres, oracle
     | "timestamp with local time zone"; // oracle
@@ -157,7 +157,7 @@ export type ColumnType = IntColumnType
     | ApproximateNumberColumnType
     | DateColumnType
     | TimeColumnType
-    | TimestampColumnType
+    | RowVersionColumnType
     | BinaryColumnType
     | StringColumnType
     | TextColumnType
@@ -169,8 +169,8 @@ export type ColumnType = IntColumnType
     | OtherColumnType;
 
 export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
-    | "defaultDecimal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
-    | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultTimestamp";
+    | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
+    | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Binary" | "DataString"
+export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Real" | "Binary" | "DataString"
     | "Date" | "Time" | "Enum" | "Identifier" | "Timestamp";

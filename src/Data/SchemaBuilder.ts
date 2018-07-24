@@ -18,7 +18,10 @@ export abstract class SchemaBuilder {
         let commitQueries: IQueryCommand[] = [];
         let rollbackQueries: IQueryCommand[] = [];
 
-        const defaultSchema = (await this.connection.executeQuery({ query: `SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}` })).first().rows.first()["SCHEMA"];
+        const defaultSchema = (await this.connection.executeQuery({
+            query: `SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`,
+            type: "DQL"
+        })).first().rows.first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
@@ -103,7 +106,10 @@ export abstract class SchemaBuilder {
             ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
             ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`;
 
-        const schemaDatas = await this.connection.executeQuery({ query: queries });
+        const schemaDatas = await this.connection.executeQuery({
+            query: queries,
+            type: "DQL"
+        });
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[2];
@@ -247,6 +253,7 @@ export abstract class SchemaBuilder {
                     unique: indexSchema["IS_UNIQUE"],
                     type: indexSchema["TYPE"]
                 };
+                entity.indices.push(index);
             }
             const column = entity.columns.first(o => o.columnName === indexSchema["COLUMN_NAME"]);
             index.columns.push(column);

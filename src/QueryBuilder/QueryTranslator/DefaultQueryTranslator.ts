@@ -178,7 +178,7 @@ defaultQueryTranslator.register(Number.prototype, "valueOf", (exp: MethodCallExp
   * Boolean
   * TODO: 
   */ 
-defaultQueryTranslator.register(Boolean.prototype, "toString", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CASE WHEN (" + qb.getExpressionString(exp.objectOperand) + ") THEN " + qb.getValueString("true") + " ELSE " + qb.getValueString("false") + " END)");
+defaultQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CASE WHEN (" + qb.getExpressionString(exp.objectOperand) + ") THEN " + qb.getValueString("true") + " ELSE " + qb.getValueString("false") + " END)");
 
 /**
  * Date
