@@ -916,6 +916,17 @@ describe("TAKE SKIP", async () => {
         a.should.be.a("array").and.have.lengthOf(1);
         a[0].should.be.an.instanceof(Order);
     });
+    it("should use same query cache for diff value", async () => {
+        const db = new MyDb();
+
+        // build string with it's query cache
+        db.orders.take(10).skip(4).toString();
+        const take = db.orders.take(1).skip(2);
+        const cache = db.queryCacheManager.get(take.hashCode());
+        
+        expect(cache).not.null;
+        expect(cache).not.undefined;
+    });
 });
 describe("FIRST", async () => {
     it("should work", async () => {
