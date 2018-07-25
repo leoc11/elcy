@@ -173,4 +173,4 @@ export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
     | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
 export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Real" | "Binary" | "DataString"
-    | "Date" | "Time" | "Enum" | "Identifier" | "Timestamp";
+    | "Date" | "Time" | "Enum" | "Identifier" | "RowVersion";

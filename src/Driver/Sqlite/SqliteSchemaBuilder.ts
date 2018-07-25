@@ -1,7 +1,6 @@
 import { SchemaBuilder } from "../../Data/SchemaBuilder";
 import { IConnection } from "../../Connection/IConnection";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IObjectType, QueryType } from "../../Common/Type";
+import { IObjectType, QueryType, ReferenceOption } from "../../Common/Type";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -11,9 +10,11 @@ import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionE
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
+import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
+import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
 
 export class SqliteSchemaBuilder extends SchemaBuilder {
-    constructor(public connection: IConnection, public q: QueryBuilder) {
+    constructor(public connection: IConnection, public q: SqliteQueryBuilder) {
         super(connection, q);
     }
     public async getSchemaQuery(entityTypes: IObjectType[]) {
@@ -39,22 +40,22 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
             const schema = schemaMap.schema;
             const oldSchema = schemaMap.oldSchema;
             if (schema && oldSchema) {
-                preCommitQueries = preCommitQueries.concat(this.q.dropAllOldRelationsQueries(schema, oldSchema));
-                preRollbackQueries = preRollbackQueries.concat(this.q.dropAllOldRelationsQueries(oldSchema, schema));
-
-                commitQueries = commitQueries.concat(this.q.updateEntitySchemaQuery(schema, oldSchema));
-                rollbackQueries = rollbackQueries.concat(this.q.updateEntitySchemaQuery(oldSchema, schema));
-
-                postCommitQueries = postCommitQueries.concat(this.q.addAllNewRelationsQueries(schema, oldSchema));
-                postRollbackQueries = postRollbackQueries.concat(this.q.addAllNewRelationsQueries(oldSchema, schema));
+                commitQueries = commitQueries.concat(this.updateEntitySchema(schema, oldSchema));
+                rollbackQueries = rollbackQueries.concat(this.updateEntitySchema(oldSchema, schema));
             }
             else if (!oldSchema) {
-                preRollbackQueries = preRollbackQueries.concat(schema.relations.selectMany(o => this.q.dropForeignKeyQuery(o)).toArray());
+                preRollbackQueries.push({
+                    query: "PRAGMA foreign_keys = OFF",
+                    type: QueryType.DCL
+                });
 
-                commitQueries = commitQueries.concat(this.q.createEntitySchemaQuery(schema));
-                rollbackQueries = rollbackQueries.concat(this.q.dropTableQuery(schema));
+                commitQueries = commitQueries.concat(this.createEntitySchema(schema));
+                rollbackQueries = rollbackQueries.concat(this.dropTable(schema));
 
-                postCommitQueries = postCommitQueries.concat(schema.relations.selectMany(o => this.q.addForeignKeyQuery(o)).toArray());
+                preRollbackQueries.push({
+                    query: "PRAGMA foreign_keys = ON",
+                    type: QueryType.DCL
+                });
             }
         }
 
@@ -67,8 +68,9 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         const nameReg = /CONSTRAINT "([^"]+)"/i;
         const checkDefReg = /CHECK\s*\((.*)\)/i;
 
+        const tableNames = entities.select(o => `'${o.name}'`).toArray().join(",");
         const schemaDatas = await this.connection.executeQuery({
-            query: `SELECT * FROM "sqlite_master" WHERE type='table'`,
+            query: `SELECT * FROM "sqlite_master" WHERE type='table' AND tbl_name IN (${tableNames})`,
             type: QueryType.DQL
         });
         const tableSchemas = schemaDatas[0];
@@ -113,6 +115,9 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 }
                 column.entity = entity;
                 entity.columns.push(column);
+
+                if (column.isPrimaryColumn)
+                    entity.primaryKeys.push(column);
             }
 
             const indexSchemas = await this.connection.executeQuery({
@@ -183,6 +188,22 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 };
                 entity.constraints.push(check);
             }
+
+            // check autoincrement
+            const autoIncrementCol = sqlLines.select(o => {
+                o = o.trim();
+                const index = o.indexOf(" ");
+                const columnName = o.substr(0, index).replace("\"", "");
+                return {
+                    columnName,
+                    sql: o.substr(index + 1)
+                };
+            }).first(o => o.sql.indexOf("AUTOINCREMENT") >= 0);
+
+            if (autoIncrementCol) {
+                const column = entity.columns.first(o => o.columnName === autoIncrementCol.columnName);
+                (column as NumericColumnMetaData).autoIncrement = true;
+            }
         }
 
         // foreign keys
@@ -192,13 +213,16 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 type: QueryType.DQL
             });
             for (const relationSchema of foreignKeySchemas[0].rows.orderBy([o => o["table"]], [o => o["seq"]]).groupBy(o => o["table"])) {
-                const target = result[entityName];
-                const source = result[relationSchema.key];
-                const relationName = `${relationSchema.key}_${entityName}`;
+                const source = result[entityName]; // orderdetail
+                const target = result[relationSchema.key]; // order
+                const relationName = `${entityName}_${relationSchema.key}`;
 
-                const sourceCols = relationSchema.select(o => source.columns.first(c => c.columnName === o["to"])).where(o => !!o).toArray();
-                const targetCols = relationSchema.select(o => target.columns.first(c => c.columnName === o["from"])).where(o => !!o).toArray();
+                const sourceCols = relationSchema.select(o => source.columns.first(c => c.columnName === o["from"])).where(o => !!o).toArray();
+                const targetCols = relationSchema.select(o => target.columns.first(c => c.columnName === o["to"])).where(o => !!o).toArray();
                 const relationType = targetCols.all(o => target.primaryKeys.contains(o)) ? "one" : "many";
+
+                const updateOption: ReferenceOption = relationSchema.first()["on_update"].toUpperCase();
+                const deleteOption: ReferenceOption = relationSchema.first()["on_delete"].toUpperCase();
                 const fkRelation: IRelationMetaData = {
                     source: source,
                     target: target,
@@ -206,7 +230,9 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                     relationColumns: sourceCols,
                     isMaster: false,
                     relationType: relationType,
-                    relationMaps: new Map()
+                    relationMaps: new Map(),
+                    updateOption: updateOption,
+                    deleteOption: deleteOption
                 };
                 const reverseFkRelation: IRelationMetaData = {
                     source: target,
@@ -234,5 +260,80 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         }
 
         return Object.keys(result).select(o => result[o]).toArray();
+    }
+    public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQueryCommand[] {
+        let query = `ALTER TABLE ${this.q.entityName(entityMetaData)} RENAME TO ${this.q.enclose(newName)}`;
+        return [{
+            query,
+            type: QueryType.DDL
+        }];
+    }
+    protected updateEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
+        let result: IQueryCommand[] = [];
+        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+        };
+        const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
+            return !!index1.unique === !!index2.unique && index1.type === index2.type && isColumnsEquals(index1.columns, index1.columns);
+        };
+        const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
+            const check1 = cons1 as ICheckConstraintMetaData;
+            const check2 = cons2 as ICheckConstraintMetaData;
+            const checkDef1 = !check1.definition ? undefined : check1.definition instanceof FunctionExpression ? this.q.getExpressionString(check1.definition) : check1.definition;
+            const checkDef2 = !check2.definition ? undefined : check2.definition instanceof FunctionExpression ? this.q.getExpressionString(check2.definition) : check2.definition;
+            return checkDef1 === checkDef2 && isColumnsEquals(cons1.columns, cons2.columns);
+        };
+        const isColumnEquals = (col1: IColumnMetaData, col2: IColumnMetaData) => {
+            return this.columnDeclaration(col1, "add") !== this.columnDeclaration(col2, "add");
+        };
+
+        // check primarykey changes
+        let requireRebuildTable = !isColumnsEquals(schema.primaryKeys, oldSchema.primaryKeys);
+
+        // check foreignkey changes
+        const relations = schema.relations.slice(0);
+        requireRebuildTable = requireRebuildTable || oldSchema.relations.any(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)));
+
+        // check index
+        const indices = schema.indices.slice(0);
+        requireRebuildTable = requireRebuildTable || oldSchema.indices.any(o => !indices.any(ix => isIndexEquals(ix, o)));
+
+        // check constraint
+        const constraints = schema.constraints.slice(0);
+        requireRebuildTable = requireRebuildTable || oldSchema.constraints.any(o => !constraints.any(c => isConstraintEquals(c, o)));
+
+        // check column
+        requireRebuildTable = requireRebuildTable || oldSchema.columns.length > schema.columns.length || oldSchema.columns.any(o => !schema.columns.any(c => isColumnEquals(c, o)));
+
+        if (requireRebuildTable) {
+            result.push({
+                query: "PRAGMA foreign_keys = OFF",
+                type: QueryType.DCL
+            });
+            const tempName = `temp_${schema.name}`;
+            result = result.concat(this.createTable(schema, tempName));
+
+            const columns = schema.columns.where(o => oldSchema.columns.any(c => c.columnName === o.columnName)).select(o => this.q.enclose(o.columnName)).toArray().join(",");
+            result.push({
+                query: `INSERT INTO ${this.q.enclose(tempName)} (${columns}) SELECT ${columns} FROM ${this.q.entityName(oldSchema)}`,
+                type: QueryType.DML
+            });
+
+            result = result.concat(this.dropTable(oldSchema));
+
+            result = result.concat(this.renameTable(schema, oldSchema.name));
+
+            result.push({
+                query: "PRAGMA foreign_keys = ON",
+                type: QueryType.DCL
+            });
+        }
+        else {
+            // check all new columns to be added
+            const newColumns = schema.columns.where(o => !oldSchema.columns.any(c => o.columnName === c.columnName));
+            result = result.concat(newColumns.selectMany(o => this.addColumn(o)).toArray());
+        }
+
+        return result;
     }
 }
