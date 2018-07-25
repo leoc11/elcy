@@ -74,8 +74,14 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.modifiedDateColumn = entityMeta.modifiedDateColumn;
         if (typeof entityMeta.primaryKeys !== "undefined")
             this.primaryKeys = entityMeta.primaryKeys;
-        if (typeof entityMeta.relations !== "undefined")
+        if (typeof entityMeta.relations !== "undefined") {
             this.relations = entityMeta.relations;
+            for (const rel of this.relations) {
+                rel.source = this;
+                if (rel.reverseRelation)
+                    rel.reverseRelation.target = this;
+            }
+        }
     }
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
