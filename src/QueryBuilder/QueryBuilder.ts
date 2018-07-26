@@ -45,6 +45,7 @@ import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
 import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
 import { IQueryOption } from "./Interface/ISelectQueryOption";
+import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public resolveTranslator(object: any, memberName?: string) {
@@ -483,7 +484,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             relationColumn: o.relationMaps.get(c)
         })));
         const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || (o instanceof NumericColumnMetaData && o.autoIncrement)));
+        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || (o instanceof NumericColumnMetaData && o.autoIncrement) || o instanceof RowVersionColumnMetaData));
         const columnNames = relationDatas.select(o => o.column).union(valueColumns).select(o => this.enclose(o.columnName)).toArray().join(", ");
 
         const getEntryValues = (entry: EntityEntry<T>, insertQuery: IQueryCommand, selectQuery: IQueryCommand, wheres: string[]) => {
@@ -548,7 +549,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         };
 
         const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement;
+            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement || o instanceof RowVersionColumnMetaData;
         }).select(o => this.enclose(o.columnName)).toArray().join(",");
 
         if (entityMetaData.hasIncrementPrimary) {

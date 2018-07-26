@@ -1,4 +1,4 @@
-import { SchemaBuilder } from "../../Data/SchemaBuilder";
+import { SchemaBuilder } from "../../QueryBuilder/SchemaBuilder";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ReferenceOption, QueryType } from "../../Common/Type";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";

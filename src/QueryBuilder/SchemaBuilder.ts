@@ -1,11 +1,11 @@
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
+import { QueryBuilder } from "./QueryBuilder";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { IObjectType, QueryType, ReferenceOption, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../MetaData/Interface/IConstraintMetaData";
-import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
+import { IQueryCommand } from "./Interface/IQueryCommand";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IConnection } from "../Connection/IConnection";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";

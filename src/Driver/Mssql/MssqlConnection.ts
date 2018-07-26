@@ -28,12 +28,17 @@ export class MssqlConnection implements IConnection {
     }
     public close(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.once("end", () => {
-                this.connection = null;
+            if (this.connection) {
+                this.connection.once("end", () => {
+                    this.connection = null;
+                    resolve();
+                    this.onClosed();
+                });
+                this.connection.close();
+            }
+            else {
                 resolve();
-                this.onClosed();
-            });
-            this.connection.close();
+            }
         });
     }
     public open(): Promise<void> {

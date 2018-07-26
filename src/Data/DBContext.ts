@@ -12,7 +12,7 @@ import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { EntityState } from "./EntityState";
 import { EntityEntry } from "./EntityEntry";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
-import { SchemaBuilder } from "./SchemaBuilder";
+import { SchemaBuilder } from "../QueryBuilder/SchemaBuilder";
 import { RelationEntry } from "./RelationEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";

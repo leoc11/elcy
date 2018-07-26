@@ -1,4 +1,4 @@
-import { SchemaBuilder } from "../../Data/SchemaBuilder";
+import { SchemaBuilder } from "../../QueryBuilder/SchemaBuilder";
 import { IConnection } from "../../Connection/IConnection";
 import { IObjectType, QueryType, ReferenceOption } from "../../Common/Type";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
@@ -198,7 +198,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                     columnName,
                     sql: o.substr(index + 1)
                 };
-            }).first(o => o.sql.indexOf("AUTOINCREMENT") >= 0);
+            }).first(o => o.sql.search(/AUTOINCREMENT/i) >= 0);
 
             if (autoIncrementCol) {
                 const column = entity.columns.first(o => o.columnName === autoIncrementCol.columnName);
