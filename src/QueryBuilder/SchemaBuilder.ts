@@ -150,7 +150,7 @@ export abstract class SchemaBuilder {
             result[entity.schema + "." + entity.name] = entity;
         }
         for (const columnSchema of columnSchemas.rows) {
-            const defaultExpression: string = columnSchema["COLUMN_DEFAULT"];
+            let defaultExpression: string = columnSchema["COLUMN_DEFAULT"];
             const column: IColumnMetaData = {
                 columnName: columnSchema["COLUMN_NAME"],
                 nullable: columnSchema["IS_NULLABLE"] === "YES",
@@ -159,9 +159,12 @@ export abstract class SchemaBuilder {
                 collation: columnSchema["COLLATION_NAME"]
             };
             if (defaultExpression) {
+                defaultExpression = defaultExpression.trim().replace(/getDate\(\)/g, "CURRENT_TIMESTAMP");
+                if (defaultExpression[0] === "(" && defaultExpression[defaultExpression.length - 1] === ")")
+                    defaultExpression = defaultExpression.substring(1, defaultExpression.length - 1);
+
                 const defaultExp = new FunctionExpression(null, []);
-                const defaultString = defaultExpression.substring(1, defaultExpression.length - 1);
-                defaultExp.toString = () => defaultString;
+                defaultExp.toString = () => defaultExpression;
                 column.default = defaultExp;
             }
             if (this.q.columnTypesWithOption.contains(column.columnType)) {
@@ -767,6 +770,7 @@ export abstract class SchemaBuilder {
     }
     protected createEntitySchema<T>(schema: IEntityMetaData<T>): IQueryCommand[] {
         return this.createTable(schema)
-            .union(schema.indices.selectMany(o => this.addIndex(o))).toArray();
+            .union(schema.indices.selectMany(o => this.addIndex(o)))
+            .toArray();
     }
 }

@@ -52,7 +52,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["hierarchyid", "Binary"],
         ["sql_variant", "Binary"],
         ["table", "Binary"],
-        ["timestamp", "RowVersion"],
+        ["rowversion", "RowVersion"],
         ["uniqueidentifier", "Identifier"],
         ["xml", "DataString"]
     ]);
