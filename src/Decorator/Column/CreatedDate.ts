@@ -17,5 +17,6 @@ export function CreatedDate(optionOrName?: IDateColumnOption | string, dbtype?: 
         option = optionOrName;
     }
     option.isCreatedDate = true;
+    option.default = () => Date.currentTimestamp();
     return Column<any, Date>(DateColumnMetaData, option);
 }

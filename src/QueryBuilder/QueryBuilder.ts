@@ -484,7 +484,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             relationColumn: o.relationMaps.get(c)
         })));
         const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || (o instanceof NumericColumnMetaData && o.autoIncrement) || o instanceof RowVersionColumnMetaData));
+        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || o.isCreatedDate || o.isDeleteColumn || o.isModifiedDate || (o instanceof NumericColumnMetaData && o.autoIncrement) || o instanceof RowVersionColumnMetaData));
         const columnNames = relationDatas.select(o => o.column).union(valueColumns).select(o => this.enclose(o.columnName)).toArray().join(", ");
 
         const getEntryValues = (entry: EntityEntry<T>, insertQuery: IQueryCommand, selectQuery: IQueryCommand, wheres: string[]) => {
@@ -548,9 +548,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return res;
         };
 
-        const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement || o instanceof RowVersionColumnMetaData;
-        }).select(o => this.enclose(o.columnName)).toArray().join(",");
+
+        let generatedColumns = entityMetaData.insertGeneratedColumns.asEnumerable();
+        // columns.where(o => {
+        //     return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement || o instanceof RowVersionColumnMetaData;
+        // });
+
+        if (generatedColumns.any()) {
+            generatedColumns = entityMetaData.primaryKeys.union(generatedColumns);
+        }
 
         if (entityMetaData.hasIncrementPrimary) {
             // if primary key is auto increment, then need to split all query per entry.
@@ -572,11 +578,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     ` VALUES (${getEntryValues(entry, insertQuery, selectQuery, wheres)})`;
                 results.push(insertQuery);
 
-                // get all inserted value to map all auto generated or default value to model.
-                wheres.push(`${this.enclose(incrementColumn.columnName)} = ${this.lastInsertedIdentity()}`);
-                selectQuery.query = `SELECT ${generatedColumns} FROM ${this.entityName(entityMetaData)} WHERE (${wheres.join(" AND ")})`;
-
-                results.push(selectQuery);
+                if (generatedColumns.any()) {
+                    // get all inserted value to map all auto generated or default value to model.
+                    wheres.push(`${this.enclose(incrementColumn.columnName)} = ${this.lastInsertedIdentity()}`);
+                    selectQuery.query = `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)} WHERE (${wheres.join(" AND ")})`;
+                    results.push(selectQuery);
+                }
             }
         }
         else {
@@ -602,41 +609,97 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             results.push(insertQuery);
 
-            // get all inserted value to map all auto generated or default value to model.
-            selectQuery.query = `SELECT ${generatedColumns} FROM ${this.entityName(entityMetaData)} WHERE (${selectWheres.join(") OR (")})`;
-
-            results.push(selectQuery);
+            if (generatedColumns.any()) {
+                // get all inserted value to map all auto generated or default value to model.
+                selectQuery.query = `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)} WHERE (${selectWheres.join(") OR (")})`;
+                results.push(selectQuery);
+            }
         }
 
         return results;
     }
     public getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
-        return entries.select(entry => {
+        let autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
+        if (autoUpdateColumns.any()) {
+            autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
+        }
+        // entityMetaData.columns.where(o => o.isModifiedDate && o instanceof RowVersionColumnMetaData).toArray();
+        const primaryKeyParams: { [key: string]: any } = {};
+        const wheres: string[] = [];
+        const result = entries.select(entry => {
             const modifiedColumns = entry.getModifiedProperties().select(o => ({
                 propertyName: o,
                 metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
             }));
 
-            const result: IQueryCommand = {
+            const updateQuery: IQueryCommand = {
                 query: "",
                 parameters: {},
                 type: QueryType.DML
             };
-            const set = modifiedColumns.select(o => {
+            let set = modifiedColumns.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters[paramName] = entry.entity[o.propertyName as keyof T];
+                updateQuery.parameters[paramName] = entry.entity[o.propertyName as keyof T];
                 return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
             }).toArray().join(",\n");
 
-            const where = entityMetaData.primaryKeys.select(o => {
+            // TODO: cannot use literal CURRENT_TIMESTAMP
+            if (entry.metaData.modifiedDateColumn) {
+                set += `,\n${entry.metaData.modifiedDateColumn.columnName} = CURRENT_TIMESTAMP`;
+            }
+
+            let where = entityMetaData.primaryKeys.select(o => {
                 const paramName = this.newAlias("param");
-                result.parameters[paramName] = entry.entity[o.propertyName];
+                updateQuery.parameters[paramName] = entry.entity[o.propertyName];
+                if (hasUpdateColumn)
+                    primaryKeyParams[paramName] = entry.entity[o.propertyName];
                 return this.enclose(o.columnName) + " = @" + paramName;
             }).toArray().join(" AND ");
 
-            result.query = `UPDATE ${this.entityName(entityMetaData)} SET ${set} WHERE ${where}`;
-            return result;
+            if (hasUpdateColumn)
+                wheres.push(where);
+
+            let concurencyFilter = "";
+            switch (entityMetaData.concurrencyMode) {
+                case "OPTIMISTIC VERSION": {
+                    let versionCol = entityMetaData.columns.first(o => o instanceof RowVersionColumnMetaData);
+                    if (!versionCol) {
+                        versionCol = entityMetaData.modifiedDateColumn;
+                    }
+
+                    const paramName = this.newAlias("param");
+                    updateQuery.parameters[paramName] = entry.entity[versionCol.propertyName];
+                    concurencyFilter = `${versionCol.columnName} = @${paramName}`;
+                    break;
+                }
+                case "OPTIMISTIC DIRTY": {
+                    concurencyFilter = modifiedColumns.select(o => {
+                        const paramName = this.newAlias("param");
+                        updateQuery.parameters[paramName] = entry.getOriginalValue(o.propertyName);
+                        return `${o.propertyName} = @${paramName}`;
+                    }).toArray().join(" AND ");
+                    break;
+                }
+            }
+            where += `${where ? " AND " : ""}(${concurencyFilter})`;
+
+            updateQuery.query = `UPDATE ${this.entityName(entityMetaData)} SET ${set} WHERE ${where}`;
+
+            // TODO
+            // select all columns that has it's value generated by db.
+            if (autoUpdateColumns.length > 0) {
+                const selectQuery: IQueryCommand = {
+                    query: "",
+                    parameters: {},
+                    type: QueryType.DQL
+                };
+                selectQuery.query = ``;
+            }
+
+            return updateQuery;
         }).toArray();
+
+        return result;
     }
     public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>, forceHardDelete?: boolean): IQueryCommand[] {
         if (entries.length <= 0)

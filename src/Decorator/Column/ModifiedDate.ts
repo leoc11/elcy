@@ -18,5 +18,6 @@ export function ModifiedDate(optionOrName: IDateColumnOption | string, dbtype?: 
         option = optionOrName;
     }
     option.isModifiedDate = true;
+    option.default = () => Date.currentTimestamp();
     return Column<any, Date>(DateColumnMetaData, option);
 }

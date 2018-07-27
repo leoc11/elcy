@@ -1,4 +1,4 @@
-import { IObjectType, ConcurrencyModel } from "../Common/Type";
+import { IObjectType, ConcurrencyModel, ColumnGeneration } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
@@ -10,6 +10,7 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { NumericColumnMetaData } from "./NumericColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
+import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
@@ -82,6 +83,17 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
                     rel.reverseRelation.target = this;
             }
         }
+    }
+
+    public get insertGeneratedColumns() {
+        return this.columns.where(o => {
+            return (o.generation & ColumnGeneration.Insert) as any;
+        }).toArray();
+    }
+    public get updateGeneratedColumns() {
+        return this.columns.where(o => {
+            return (o.generation & ColumnGeneration.Update) as any;
+        }).toArray();
     }
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;

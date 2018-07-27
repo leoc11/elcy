@@ -9,7 +9,9 @@ import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
+const isReadOnlyColumn = (col: IColumnMetaData) => col.isCreatedDate || col.isDeleteColumn || col.isModifiedDate || col.isReadOnly;
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public state: EntityState;
     public enableTrackChanges = true;
@@ -82,7 +84,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     this.changeState(EntityState.Unchanged);
                 }
             }
-            else if (oriValue === undefined && param.oldValue !== undefined) {
+            else if (oriValue === undefined && param.oldValue !== undefined && !isReadOnlyColumn(param.column)) {
                 this.originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
                     this.changeState(EntityState.Modified);

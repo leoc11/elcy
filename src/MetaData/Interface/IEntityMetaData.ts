@@ -1,4 +1,4 @@
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, ConcurrencyModel } from "../../Common/Type";
 import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { InheritanceMetaData } from "../Relation/InheritanceMetaData";
 import { IOrderMetaData } from "./IOrderMetaData";
@@ -28,4 +28,10 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     priority?: number;
     hasIncrementPrimary?: boolean;
     isReadOnly?: boolean;
+    concurrencyMode?: ConcurrencyModel;
+
+    // helper property
+    // TODO
+    insertGeneratedColumns: IColumnMetaData<TE>[];
+    updateGeneratedColumns: IColumnMetaData<TE>[];
 }

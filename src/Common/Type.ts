@@ -63,3 +63,9 @@ export enum QueryType {
     DTL = 8,
     DCL = 16
 }
+
+export enum ColumnGeneration {
+    None = 0,
+    Insert = 1,
+    Update = 2
+}
