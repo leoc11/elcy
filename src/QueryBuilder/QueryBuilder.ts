@@ -45,7 +45,7 @@ import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
 import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
 import { IQueryOption } from "./Interface/ISelectQueryOption";
-import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public resolveTranslator(object: any, memberName?: string) {
@@ -484,10 +484,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             relationColumn: o.relationMaps.get(c)
         })));
         const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || o.isCreatedDate || o.isDeleteColumn || o.isModifiedDate || (o instanceof NumericColumnMetaData && o.autoIncrement) || o instanceof RowVersionColumnMetaData));
+        const valueColumns = columns.except(relationColumns).except(entityMetaData.insertGeneratedColumns);
         const columnNames = relationDatas.select(o => o.column).union(valueColumns).select(o => this.enclose(o.columnName)).toArray().join(", ");
 
-        const getEntryValues = (entry: EntityEntry<T>, insertQuery: IQueryCommand, selectQuery: IQueryCommand, wheres: string[]) => {
+        const getEntryValues = (entry: EntityEntry<T>, insertQuery: IQueryCommand): [string, [string, string, any][]] => {
+            const primaryKeyPairs: [string, string, any][] = [];
             const res = relationDatas.select(o => {
                 // set relation as unchanged (coz already handled here)
                 const parentEntity = entry.entity[o.relationProperty] as any;
@@ -521,8 +522,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 insertQuery.parameters[paramName] = value;
                 if (o.column.isPrimaryColumn) {
-                    wheres.push(`${this.enclose(o.column.columnName)} = @${paramName}`);
-                    selectQuery.parameters[paramName] = value;
+                    primaryKeyPairs.push([o.column.columnName, paramName, value]);
                 }
                 return "@" + paramName;
             }).union(valueColumns.select(o => {
@@ -537,23 +537,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     insertQuery.parameters[paramName] = value;
 
                     if (o.isPrimaryColumn) {
-                        wheres.push(`${this.enclose(o.columnName)} = @${paramName}`);
-                        selectQuery.parameters[paramName] = value;
+                        primaryKeyPairs.push([o.columnName, paramName, value]);
                     }
-
                     return "@" + paramName;
                 }
             })).toArray().join(",");
 
-            return res;
+            return [res, primaryKeyPairs];
         };
 
-
         let generatedColumns = entityMetaData.insertGeneratedColumns.asEnumerable();
-        // columns.where(o => {
-        //     return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement || o instanceof RowVersionColumnMetaData;
-        // });
-
         if (generatedColumns.any()) {
             generatedColumns = entityMetaData.primaryKeys.union(generatedColumns);
         }
@@ -568,22 +561,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     parameters: {},
                     type: QueryType.DML
                 };
+                const [values] = getEntryValues(entry, insertQuery);
+                insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
+                    ` VALUES (${values})`;
+                results.push(insertQuery);
+
+                // get all inserted value to map all auto generated or default value to model.
                 const selectQuery: IQueryCommand = {
-                    query: "",
+                    query: `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)}` +
+                        ` WHERE ${this.enclose(incrementColumn.columnName)} = ${this.lastInsertedIdentity()}`,
                     parameters: {},
                     type: QueryType.DQL
                 };
-                const wheres: string[] = [];
-                insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames})` +
-                    ` VALUES (${getEntryValues(entry, insertQuery, selectQuery, wheres)})`;
-                results.push(insertQuery);
-
-                if (generatedColumns.any()) {
-                    // get all inserted value to map all auto generated or default value to model.
-                    wheres.push(`${this.enclose(incrementColumn.columnName)} = ${this.lastInsertedIdentity()}`);
-                    selectQuery.query = `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)} WHERE (${wheres.join(" AND ")})`;
-                    results.push(selectQuery);
-                }
+                results.push(selectQuery);
             }
         }
         else {
@@ -592,26 +582,33 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 parameters: {},
                 type: QueryType.DML
             };
-            const selectQuery: IQueryCommand = {
-                query: "",
-                parameters: {},
-                type: QueryType.DQL
-            };
-            let selectWheres: string[] = [];
 
+            const entriesKeys: Array<Array<[string, string, any]>> = [];
             insertQuery.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames}) VALUES `;
             insertQuery.query += entries.select(entry => {
-                const wheres: string[] = [];
-                const res = "(" + getEntryValues(entry, insertQuery, selectQuery, wheres) + ")";
-                selectWheres.push(wheres.join(" AND "));
-                return res;
+                const [values, primaryKeyPairs] = getEntryValues(entry, insertQuery);
+                entriesKeys.push(primaryKeyPairs);
+                return `(${values})`;
             }).toArray().join(",");
 
             results.push(insertQuery);
 
+            // get all inserted value to map all auto generated or default value to model.
             if (generatedColumns.any()) {
-                // get all inserted value to map all auto generated or default value to model.
-                selectQuery.query = `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)} WHERE (${selectWheres.join(") OR (")})`;
+                let where = "";
+                if (entityMetaData.primaryKeys.length === 1) {
+                    // use in for entity with only 1 primary key
+                    where = `${entityMetaData.primaryKeys[0].columnName} IN (${entriesKeys.select(o => `@${o[0][1]}`).toArray().join(",")})`;
+                }
+                else {
+                    where = entriesKeys.select(o => `(${o.select(c => `${c[0]} = @${c[1]}`).toArray().join(" AND ")})`).toArray().join(" OR ");
+                }
+                const selectQuery: IQueryCommand = {
+                    query: `SELECT ${generatedColumns.select(o => o.columnName).toArray().join(",")} FROM ${this.entityName(entityMetaData)} WHERE ${where}`,
+                    parameters: {},
+                    type: QueryType.DQL
+                };
+                entriesKeys.selectMany(o => o).each(o => selectQuery.parameters[o[1]] = o[2]);
                 results.push(selectQuery);
             }
         }
@@ -623,7 +620,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (autoUpdateColumns.any()) {
             autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
         }
-        // entityMetaData.columns.where(o => o.isModifiedDate && o instanceof RowVersionColumnMetaData).toArray();
         const primaryKeyParams: { [key: string]: any } = {};
         const wheres: string[] = [];
         const result = entries.select(entry => {
@@ -643,26 +639,25 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
             }).toArray().join(",\n");
 
-            // TODO: cannot use literal CURRENT_TIMESTAMP
             if (entry.metaData.modifiedDateColumn) {
-                set += `,\n${entry.metaData.modifiedDateColumn.columnName} = CURRENT_TIMESTAMP`;
+                set += `,\n${entry.metaData.modifiedDateColumn.columnName} = ${this.resolveTranslator(Date, "currentTimestamp")}`;
             }
 
             let where = entityMetaData.primaryKeys.select(o => {
                 const paramName = this.newAlias("param");
                 updateQuery.parameters[paramName] = entry.entity[o.propertyName];
-                if (hasUpdateColumn)
+                if (autoUpdateColumns.any())
                     primaryKeyParams[paramName] = entry.entity[o.propertyName];
                 return this.enclose(o.columnName) + " = @" + paramName;
             }).toArray().join(" AND ");
 
-            if (hasUpdateColumn)
-                wheres.push(where);
+            if (autoUpdateColumns.any())
+                wheres.push(`(${where})`);
 
             let concurencyFilter = "";
             switch (entityMetaData.concurrencyMode) {
                 case "OPTIMISTIC VERSION": {
-                    let versionCol = entityMetaData.columns.first(o => o instanceof RowVersionColumnMetaData);
+                    let versionCol: IColumnMetaData<T> = entityMetaData.versionColumn;
                     if (!versionCol) {
                         versionCol = entityMetaData.modifiedDateColumn;
                     }
@@ -681,23 +676,24 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     break;
                 }
             }
-            where += `${where ? " AND " : ""}(${concurencyFilter})`;
+            if (concurencyFilter) {
+                where = `${concurencyFilter} AND (${where})`;
+            }
 
             updateQuery.query = `UPDATE ${this.entityName(entityMetaData)} SET ${set} WHERE ${where}`;
 
-            // TODO
-            // select all columns that has it's value generated by db.
-            if (autoUpdateColumns.length > 0) {
-                const selectQuery: IQueryCommand = {
-                    query: "",
-                    parameters: {},
-                    type: QueryType.DQL
-                };
-                selectQuery.query = ``;
-            }
-
             return updateQuery;
         }).toArray();
+
+        // get changes done by server.
+        if (autoUpdateColumns.any()) {
+            const colNames = autoUpdateColumns.select(o => `${this.enclose(o.columnName)}`).toArray().join(",");
+            result.push({
+                query: `SELECT ${colNames} FROM ${this.entityName(entityMetaData)} WHERE ${wheres.join(" OR ")}`,
+                type: QueryType.DQL,
+                parameters: primaryKeyParams
+            });
+        }
 
         return result;
     }
@@ -875,8 +871,4 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
         }).toArray();
     }
-
-    /**
-     * SCHEMA BUILDER QUERY
-     */
 }

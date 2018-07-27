@@ -1,5 +1,5 @@
 import { ColumnType } from "../Common/ColumnType";
-import { GenericType } from "../Common/Type";
+import { GenericType, ColumnGeneration } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -16,6 +16,8 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public type: GenericType<T>;
     public collation: string;
     public charset: string;
+    public isReadOnly: boolean;
+    public generation?: ColumnGeneration;
     public get isPrimaryColumn(): boolean {
         return this.entity.primaryKeys.contains(this);
     }

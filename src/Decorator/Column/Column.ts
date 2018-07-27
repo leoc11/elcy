@@ -10,6 +10,9 @@ import { AbstractEntity } from "../Entity/AbstractEntity";
 import { IColumnOption } from "../Option/IColumnOption";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
+import { IDateColumnOption } from "../Option/IDateColumnOption";
+import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
+import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
     return (target: TE, propertyKey: any) => {
@@ -42,14 +45,17 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
 
         if (metadata instanceof DateColumnMetaData) {
-            if (columnOption.isCreatedDate)
+            if ((columnOption as IDateColumnOption).isCreatedDate)
                 entityMetaData.createDateColumn = metadata;
-            else if (columnOption.isModifiedDate)
+            else if ((columnOption as IDateColumnOption).isModifiedDate)
                 entityMetaData.modifiedDateColumn = metadata;
         }
         else if (metadata instanceof BooleanColumnMetaData) {
-            if (columnOption.isDeletedColumn)
+            if ((columnOption as IBooleanColumnOption).isDeletedColumn)
                 entityMetaData.deletedColumn = metadata;
+        }
+        else if (metadata instanceof RowVersionColumnMetaData) {
+            entityMetaData.versionColumn = metadata;
         }
 
         // add property to use setter getter.

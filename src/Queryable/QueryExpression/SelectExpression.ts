@@ -14,6 +14,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
+import { EntityExpression } from "./EntityExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -69,7 +70,12 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
             return this.selects.asEnumerable();
-        return this.entity.primaryColumns.union(this.relationColumns).union(this.selects);
+        const defColumns = this.entity.primaryColumns.union(this.relationColumns);
+        // Version column is a must when select an Entity
+        if (this.entity instanceof EntityExpression) {
+            defColumns.union([this.entity.versionColumn]);
+        }
+        return defColumns.union(this.selects);
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {

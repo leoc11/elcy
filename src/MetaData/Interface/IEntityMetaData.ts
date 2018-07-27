@@ -7,12 +7,14 @@ import { IColumnMetaData } from "./IColumnMetaData";
 import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
+import { RowVersionColumnMetaData } from "../RowVersionColumnMetaData";
 
 export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
     name: string;
     schema?: string;
     defaultOrder?: IOrderMetaData[];
     primaryKeys: Array<IColumnMetaData<TE>>;
+    versionColumn?: RowVersionColumnMetaData<TE>;
     deletedColumn?: IColumnMetaData<TE, boolean>;
     createDateColumn?: IColumnMetaData<TE, Date>;
     modifiedDateColumn?: IColumnMetaData<TE, Date>;
@@ -32,6 +34,6 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
 
     // helper property
     // TODO
-    insertGeneratedColumns: IColumnMetaData<TE>[];
-    updateGeneratedColumns: IColumnMetaData<TE>[];
+    insertGeneratedColumns?: IColumnMetaData<TE>[];
+    updateGeneratedColumns?: IColumnMetaData<TE>[];
 }

@@ -10,4 +10,6 @@ export interface IDateColumnOption extends IColumnOption<Date> {
     * UTC TimeZone offset in minute.
     */
     timezoneOffset?: number;
+    isCreatedDate?: boolean;
+    isModifiedDate?: boolean;
 }

@@ -13,5 +13,7 @@ export function DeletedColumn(optionOrName?: IBooleanColumnOption | string): Pro
     else if (optionOrName) option = optionOrName;
 
     option.isDeletedColumn = true;
-    return Column<any, boolean>(BooleanColumnMetaData, { isDeletedColumn: true });
+    option.isReadOnly = true;
+    option.default = () => false;
+    return Column<any, boolean>(BooleanColumnMetaData, option);
 }

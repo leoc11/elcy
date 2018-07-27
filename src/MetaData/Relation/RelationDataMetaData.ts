@@ -44,7 +44,8 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     public completeRelation(sourceRelation: IRelationMetaData<TSource, TTarget>, targetRelation: IRelationMetaData<TTarget, TSource>) {
         this.sourceRelationMeta = sourceRelation;
         this.targetRelationMeta = targetRelation;
-        sourceRelation.relationData = sourceRelation.relationData = this;
+        sourceRelation.relationData = this;
+        targetRelation.relationData = this;
 
         this.sourceRelationMeta.completeRelation(this.targetRelationMeta);
 

@@ -12,7 +12,7 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
     public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData> = new Map();
     public propertyName: keyof TSource;
     public reverseRelation: IRelationMetaData<TTarget, TSource>;
-    public relationData: RelationDataMetaData;
+    public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
     public source: IEntityMetaData<TSource>;
     public target: IEntityMetaData<TTarget>;
     public name: string;

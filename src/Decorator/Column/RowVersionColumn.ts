@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { Column } from "./Column";
 import { IRowVersionColumnOption } from "../Option/IRowVersionColumnOption";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { ColumnGeneration } from "../../Common/Type";
 
 export function RowVersionColumn(option?: IRowVersionColumnOption): PropertyDecorator;
 export function RowVersionColumn(optionOrName?: IRowVersionColumnOption | string, defaultValue?: () => string): PropertyDecorator {

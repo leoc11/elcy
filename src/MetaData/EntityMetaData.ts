@@ -10,6 +10,7 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { NumericColumnMetaData } from "./NumericColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
+import { isNotNull } from "../Helper/Util";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
@@ -20,6 +21,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public deletedColumn: IColumnMetaData<TE>;
     public createDateColumn: IColumnMetaData<TE>;
     public modifiedDateColumn: IColumnMetaData<TE>;
+    public versionColumn?: RowVersionColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IIndexMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
@@ -87,7 +89,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
 
     public get insertGeneratedColumns() {
         return this.columns.where(o => {
-            return (o.generation & ColumnGeneration.Insert) as any;
+            return !isNotNull(o.default) || (o.generation & ColumnGeneration.Insert) as any;
         }).toArray();
     }
     public get updateGeneratedColumns() {

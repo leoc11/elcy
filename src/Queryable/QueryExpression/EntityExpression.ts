@@ -11,7 +11,7 @@ import { SelectExpression } from "./SelectExpression";
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
     public select?: SelectExpression<T>;
-    protected get metaData() {
+    public get metaData() {
         if (!this._metaData)
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
         return this._metaData;
@@ -21,6 +21,12 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
             this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first(o => o.propertyName === this.metaData.deletedColumn.propertyName);
         }
         return this._deleteColumn;
+    }
+    public get versionColumn() {
+        if (typeof this._versionColumn === "undefined") {
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first(o => o.propertyName === this.metaData.versionColumn.propertyName);
+        }
+        return this._versionColumn;
     }
     public get columns(): IColumnExpression[] {
         if (!this._columns) {
@@ -62,6 +68,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     private _defaultOrders: IOrderExpression[];
+    private _versionColumn: IColumnExpression;
     private _deleteColumn: IColumnExpression;
     constructor(public readonly type: IObjectType<T>, public alias: string) {
         if (this.metaData)

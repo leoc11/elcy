@@ -245,17 +245,17 @@ defaultQueryTranslator.register(BitwiseZeroLeftShiftAssignmentExpression, (exp: 
 defaultQueryTranslator.register(BitwiseZeroRightShiftAssignmentExpression, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, ">>"));
 defaultQueryTranslator.register(BitwiseSignedRightShiftAssignmentExpression, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, ">>>"));
 
-const increementTranslator = (exp: IUnaryOperatorExpression, qb: QueryBuilder, operator: string) => {
+const incrementTranslator = (exp: IUnaryOperatorExpression, qb: QueryBuilder, operator: string) => {
     if (!(exp.operand instanceof ParameterExpression)) {
         throw new Error(`Operator ${exp.toString()} only support parameter operand`);
     }
     const varString = qb.getExpressionString(exp.operand);
     return `${varString} = ${varString} ${operator} 1`;
 };
-defaultQueryTranslator.register(LeftIncrementExpression, (exp: any, qb: QueryBuilder) => increementTranslator(exp, qb, "+"));
-defaultQueryTranslator.register(LeftDecrementExpression, (exp: any, qb: QueryBuilder) => increementTranslator(exp, qb, "-"));
-defaultQueryTranslator.register(RightIncrementExpression, (exp: any, qb: QueryBuilder) => `(${increementTranslator(exp, qb, "+")}) - 1`);
-defaultQueryTranslator.register(RightDecrementExpression, (exp: any, qb: QueryBuilder) => `(${increementTranslator(exp, qb, "-")}) + 1`);
+defaultQueryTranslator.register(LeftIncrementExpression, (exp: any, qb: QueryBuilder) => incrementTranslator(exp, qb, "+"));
+defaultQueryTranslator.register(LeftDecrementExpression, (exp: any, qb: QueryBuilder) => incrementTranslator(exp, qb, "-"));
+defaultQueryTranslator.register(RightIncrementExpression, (exp: any, qb: QueryBuilder) => `(${incrementTranslator(exp, qb, "+")}) - 1`);
+defaultQueryTranslator.register(RightDecrementExpression, (exp: any, qb: QueryBuilder) => `(${incrementTranslator(exp, qb, "-")}) + 1`);
 
 
 const binaryTranslator = (exp: IBinaryOperatorExpression, qb: QueryBuilder, operator: string) => `${qb.getOperandString(exp.leftOperand)} ${operator} ${qb.getOperandString(exp.rightOperand)}`;
