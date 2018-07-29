@@ -31,6 +31,8 @@ export class DeferredQuery<T = any> {
         }
 
         const deferredQueries = this.context.deferredQueries.splice(0);
+        this.context.newQueryBuilder();
+
         for (const deferredQuery of deferredQueries) {
             comands = comands.concat(deferredQuery.commands);
             if (deferredQuery.parameters)

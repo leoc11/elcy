@@ -1,13 +1,12 @@
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IBuildResult } from "./IBuildResult";
+import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     protected readonly keySelectorFn: (item: T) => K;
@@ -27,11 +26,13 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         else
             this.keySelectorFn = keySelector;
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<IGroupArray<T, K>> {
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult as any;
     }
     public hashCode() {
         return hashCode("GROUPBY", this.parent.hashCode() + hashCode((this.keySelectorFn || this.keySelector || "").toString()));

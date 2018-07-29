@@ -1,8 +1,7 @@
 import { OrderDirection } from "../Common/Type";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -11,11 +10,11 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IBuildResult } from "./IBuildResult";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
-    protected _selectors: ObjectValueExpression<{selector: FunctionExpression, direction: IExpression<OrderDirection>}>[];
+    protected _selectors: Array<ObjectValueExpression<{selector: FunctionExpression, direction: IExpression<OrderDirection>}>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select(o => {
@@ -25,7 +24,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                     selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector),
                     direction: new ValueExpression(direction ? direction : OrderDirection.ASC)
                 };
-                return new ObjectValueExpression(a);
+                return new ObjectValueExpression(a) as any;
             }).toArray();
         }
         return this._selectors;
@@ -37,11 +36,13 @@ export class OrderQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
         const methodExpression = new MethodCallExpression(objectOperand, "orderBy", this.selectors);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult;
     }
     public hashCode() {
         let code = this.parent.hashCode();

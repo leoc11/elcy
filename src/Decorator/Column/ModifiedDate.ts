@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { DateTimeKind, ColumnGeneration } from "../../Common/Type";
+import { DateTimeKind } from "../../Common/Type";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { Column } from "./Column";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
@@ -18,8 +18,6 @@ export function ModifiedDate(optionOrName: IDateColumnOption | string, dbtype?: 
         option = optionOrName;
     }
     option.isModifiedDate = true;
-    option.isReadOnly = true;
-    option.generation = ColumnGeneration.Insert | ColumnGeneration.Update;
     option.default = () => Date.currentTimestamp();
     return Column<any, Date>(DateColumnMetaData, option);
 }

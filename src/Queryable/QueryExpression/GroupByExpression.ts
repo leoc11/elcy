@@ -119,7 +119,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                     }
                 }
                 else if ((value as IColumnExpression).entity) {
-                    obj[prop] = groupBy.first(o => o.columnName === value.columnName);
+                    obj[prop] = groupBy.first(o => o.columnName === (value as IColumnExpression).columnName);
                 }
                 else {
                     obj[prop] = value.clone();

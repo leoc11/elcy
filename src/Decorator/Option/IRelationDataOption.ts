@@ -1,6 +1,7 @@
 import { IObjectType } from "../../Common/Type";
+import { IAdditionalRelationOption } from "./IRelationOption";
 
-export interface IRelationDataOption<TType, TSource, TTarget> {
+export interface IRelationDataOption<TType, TSource, TTarget> extends IAdditionalRelationOption {
     type?: IObjectType<TType>;
     sourceType?: IObjectType<TSource>;
     targetType?: IObjectType<TTarget>;

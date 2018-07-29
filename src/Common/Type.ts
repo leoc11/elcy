@@ -3,6 +3,7 @@ export interface IObjectType<T = any> { name?: string; new(...values: any[]): T;
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
+export type PropertySelector<T> = keyof T | ((source: T) => any);
 export type ValueType = number | string | Date | TimeSpan;
 export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
 export type RelationshipType = "one" | "many";
@@ -69,3 +70,4 @@ export enum ColumnGeneration {
     Insert = 1,
     Update = 2
 }
+export type DeleteStrategy = "Soft" | "Hard";

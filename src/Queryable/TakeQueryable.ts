@@ -3,7 +3,7 @@ import { Queryable } from "./Queryable";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { hashCode } from "../Helper/Util";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 
 export class TakeQueryable<T> extends Queryable<T> {
@@ -18,10 +18,12 @@ export class TakeQueryable<T> extends Queryable<T> {
         return "__take" + Math.abs(this.hashCode());
     }
     public buildQuery(queryBuilder: QueryBuilder) {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
         const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression(this.parameterName, Number)]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult;
     }
     public hashCode() {
         return hashCode("TAKE", this.parent.hashCode());

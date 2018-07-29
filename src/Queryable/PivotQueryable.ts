@@ -1,9 +1,8 @@
 import { Enumerable } from "../Enumerable/Enumerable";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IObjectType } from "../Common/Type";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -11,6 +10,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IBuildResult } from "./IBuildResult";
 
 function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression<T, any> | ((item: T) => any) }>(objectFn: KE, sourceType: IObjectType<T>, paramName: string): FunctionExpression<T, { [key in keyof KE]?: IExpression }> {
     const param = new ParameterExpression(paramName, sourceType);
@@ -25,7 +25,7 @@ function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionEx
         objectValue[prop] = fnExpression.body;
     }
     const objExpression = new ObjectValueExpression(objectValue);
-    return new FunctionExpression(objExpression, [param]);
+    return new FunctionExpression(objExpression, [param]) as any;
 }
 export class PivotQueryable<T,
     TD extends FunctionExpression<T, any>,
@@ -64,11 +64,13 @@ export class PivotQueryable<T,
         else
             this.metricFn = metrics;
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<TResult> {
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand as SelectExpression, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult as any;
     }
     public hashCode() {
         let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());

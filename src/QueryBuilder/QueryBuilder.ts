@@ -7,10 +7,9 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { IQueryVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
+import { IVisitParameter, QueryExpressionVisitor } from "./QueryExpressionVisitor";
 import { fillZero, isNotNull } from "../Helper/Util";
-import { JoinType, ValueType, GenericType, QueryType } from "../Common/Type";
-import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
+import { JoinType, ValueType, GenericType, QueryType, DeleteStrategy, ColumnGeneration } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { Enumerable } from "../Enumerable/Enumerable";
@@ -43,18 +42,17 @@ import { ColumnMetaData } from "../MetaData/ColumnMetaData";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { defaultQueryTranslator } from "./QueryTranslator/DefaultQueryTranslator";
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
-import { ParameterBuilder } from "./ParameterBuilder/ParameterBuilder";
 import { IQueryOption } from "./Interface/ISelectQueryOption";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { RelationDataExpression } from "../Queryable/QueryExpression/RelationDataExpression";
+import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public resolveTranslator(object: any, memberName?: string) {
         return defaultQueryTranslator.resolve(object, memberName);
     }
     public options: IQueryOption;
-    public getParameterBuilder(): ParameterBuilder {
-        return new ParameterBuilder(this.queryVisitor.sqlParameterBuilderItems);
-    }
     public get scopeParameters(): TransformerParameter {
         return this.queryVisitor.scopeParameters;
     }
@@ -76,7 +74,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else
             return identity;
     }
-    public visit(expression: IExpression, param: IQueryVisitParameter): IExpression {
+    public visit(expression: IExpression, param: IVisitParameter): IExpression {
         return this.queryVisitor.visit(expression, param);
     }
     public getExpressionString<T = any>(expression: IExpression<T>): string {
@@ -410,64 +408,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
-    public updateQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
-        const setQuery = Object.keys(set).select(o => {
-            const value = set[o];
-            const valueStr = (value as IExpression).type ? this.getExpressionString(value as IExpression) : this.getValueString(value);
-            return `${select.entity.alias}.${o} = ${valueStr}`;
-        }).toArray().join(", ");
-        let updateQuery = `UPDATE ${this.enclose(select.entity.alias)}` +
-            this.newLine() + `SET ${setQuery}` +
-            this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
-            this.getEntityJoinString(select.entity, select.joins);
-        if (select.where)
-            updateQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
-
-        result.push({
-            query: updateQuery,
-            parameters: parameters,
-            type: QueryType.DML
-        });
-
-        return result;
-    }
-    public deleteQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, isHardDelete = false): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
-        if (!isHardDelete)
-            isHardDelete = !select.entity.deleteColumn;
-
-        // remove all entity related to this one.
-        const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, select.entity.type);
-        const relations = entityMeta.relations.where(o => o.isMaster);
-        result = result.concat(relations.selectMany(o => {
-            let child = new SelectExpression(new EntityExpression(o.target.type, this.newAlias()));
-            child.addJoinRelation(select, o.reverseRelation);
-            return this.deleteQueries(select, parameters, isHardDelete);
-        }).toArray());
-
-        if (!isHardDelete) {
-            // if soft delete, set delete column to true
-            const set: { [key: string]: any } = {};
-            set[select.entity.deleteColumn.columnName] = true;
-
-            return this.updateQueries(select, parameters, set);
-        }
-        else {
-            let selectQuery = `DELETE ${this.enclose(select.entity.alias)}` +
-                this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
-                this.getEntityJoinString(select.entity, select.joins);
-            if (select.where)
-                selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
-            result.push({
-                query: selectQuery,
-                parameters: parameters,
-                type: QueryType.DML
-            });
-        }
-
-        return result;
-    }
     public lastInsertedIdentity() {
         return "LAST_INSERT_ID()";
     }
@@ -510,7 +450,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                 let paramName = "";
                 let value: any = undefined;
-                if (parentEntry.state === EntityState.Added) {
+                const parentHasGeneratedPrimary = parentEntry.metaData.primaryKeys.any(o => !!(o.generation & ColumnGeneration.Insert) || (o.default && parentEntity[o.propertyName] === undefined));
+                if (parentEntry.state === EntityState.Added && parentHasGeneratedPrimary) {
                     // if parent entry is added, to used inserted values in case column is auto increment or use default.
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
                     paramName = `__${parentEntry.dbSet.metaData.name}_${o.relationColumn.columnName}_${index}`;
@@ -615,89 +556,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return results;
     }
-    public getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
-        let autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
-        if (autoUpdateColumns.any()) {
-            autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
-        }
-        const primaryKeyParams: { [key: string]: any } = {};
-        const wheres: string[] = [];
-        const result = entries.select(entry => {
-            const modifiedColumns = entry.getModifiedProperties().select(o => ({
-                propertyName: o,
-                metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
-            }));
-
-            const updateQuery: IQueryCommand = {
-                query: "",
-                parameters: {},
-                type: QueryType.DML
-            };
-            let set = modifiedColumns.select(o => {
-                const paramName = this.newAlias("param");
-                updateQuery.parameters[paramName] = entry.entity[o.propertyName as keyof T];
-                return `${this.enclose(o.metaData.columnName)} = @${paramName}`;
-            }).toArray().join(",\n");
-
-            if (entry.metaData.modifiedDateColumn) {
-                set += `,\n${entry.metaData.modifiedDateColumn.columnName} = ${this.resolveTranslator(Date, "currentTimestamp")}`;
-            }
-
-            let where = entityMetaData.primaryKeys.select(o => {
-                const paramName = this.newAlias("param");
-                updateQuery.parameters[paramName] = entry.entity[o.propertyName];
-                if (autoUpdateColumns.any())
-                    primaryKeyParams[paramName] = entry.entity[o.propertyName];
-                return this.enclose(o.columnName) + " = @" + paramName;
-            }).toArray().join(" AND ");
-
-            if (autoUpdateColumns.any())
-                wheres.push(`(${where})`);
-
-            let concurencyFilter = "";
-            switch (entityMetaData.concurrencyMode) {
-                case "OPTIMISTIC VERSION": {
-                    let versionCol: IColumnMetaData<T> = entityMetaData.versionColumn;
-                    if (!versionCol) {
-                        versionCol = entityMetaData.modifiedDateColumn;
-                    }
-
-                    const paramName = this.newAlias("param");
-                    updateQuery.parameters[paramName] = entry.entity[versionCol.propertyName];
-                    concurencyFilter = `${versionCol.columnName} = @${paramName}`;
-                    break;
-                }
-                case "OPTIMISTIC DIRTY": {
-                    concurencyFilter = modifiedColumns.select(o => {
-                        const paramName = this.newAlias("param");
-                        updateQuery.parameters[paramName] = entry.getOriginalValue(o.propertyName);
-                        return `${o.propertyName} = @${paramName}`;
-                    }).toArray().join(" AND ");
-                    break;
-                }
-            }
-            if (concurencyFilter) {
-                where = `${concurencyFilter} AND (${where})`;
-            }
-
-            updateQuery.query = `UPDATE ${this.entityName(entityMetaData)} SET ${set} WHERE ${where}`;
-
-            return updateQuery;
-        }).toArray();
-
-        // get changes done by server.
-        if (autoUpdateColumns.any()) {
-            const colNames = autoUpdateColumns.select(o => `${this.enclose(o.columnName)}`).toArray().join(",");
-            result.push({
-                query: `SELECT ${colNames} FROM ${this.entityName(entityMetaData)} WHERE ${wheres.join(" OR ")}`,
-                type: QueryType.DQL,
-                parameters: primaryKeyParams
-            });
-        }
-
-        return result;
-    }
-    public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>, forceHardDelete?: boolean): IQueryCommand[] {
+    public getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>>, deleteMode?: DeleteStrategy): IQueryCommand[] {
         if (entries.length <= 0)
             return null;
 
@@ -724,9 +583,79 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }).toArray().join(" OR ");
         }
         deleteExp.addWhere(new RawSqlExpression<boolean>(Boolean, condition));
-        return this.deleteQueries(deleteExp, parameters, forceHardDelete);
+        return this.deleteQueries(deleteExp, parameters, deleteMode);
     }
-    public getRelationAddQueries<T, T2, TData>(slaveEntityMetaData: IEntityMetaData<T>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
+    public deleteQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, deleteMode?: DeleteStrategy): IQueryCommand[] {
+        let result: IQueryCommand[] = [];
+        if (!deleteMode)
+            deleteMode = !select.entity.deleteColumn ? "Hard" : "Soft";
+        else if (deleteMode === "Soft" && !select.entity.deleteColumn) {
+            // if entity did not support soft delete, then abort.
+            return result;
+        }
+
+        if (deleteMode === "Soft") {
+            // if soft delete, set delete column to true
+            const set: { [key: string]: any } = {};
+            set[select.entity.deleteColumn.columnName] = true;
+            result = this.updateQueries(select, parameters, set);
+
+            // apply delete option rule. coz soft delete delete option will not handled by db.
+            const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, select.entity.type);
+            const relations = entityMeta.relations.where(o => o.isMaster);
+            result = result.concat(relations.selectMany(o => {
+                const isManyToMany = o.completeRelationType === "many-many";
+                const target = !isManyToMany ? o.target : o.relationData;
+                const deleteOption = !isManyToMany ? o.reverseRelation.deleteOption : o.relationData.deleteOption;
+                const relationColumns = !isManyToMany ? o.reverseRelation.relationColumns : o.relationData.source === entityMeta ? o.relationData.sourceRelationColumns : o.relationData.targetRelationColumns;
+                let child = new SelectExpression(new EntityExpression(target.type, this.newAlias()));
+                child.addJoinRelation(select, o.reverseRelation);
+                switch (deleteOption) {
+                    case "CASCADE": {
+                        return this.deleteQueries(child, parameters, deleteMode);
+                    }
+                    case "SET NULL": {
+                        const setOption: { [key: string]: any } = {};
+                        for (const col of relationColumns) {
+                            setOption[col.columnName] = null;
+                        }
+                        return this.updateQueries(select, parameters, setOption);
+                    }
+                    case "SET DEFAULT": {
+                        const setOption: { [key: string]: any } = {};
+                        for (const col of o.reverseRelation.relationColumns) {
+                            if (col.default)
+                                setOption[col.columnName] = col.default.execute();
+                            else
+                                setOption[col.columnName] = null;
+                        }
+                        return this.updateQueries(select, parameters, setOption);
+                    }
+                    case "NO ACTION":
+                    case "RESTRICT":
+                    default:
+                        return [];
+                }
+            }).toArray());
+        }
+        else {
+            let selectQuery = `DELETE ${this.enclose(select.entity.alias)}` +
+                this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
+                this.getEntityJoinString(select.entity, select.joins);
+            if (select.where)
+                selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
+            result.push({
+                query: selectQuery,
+                parameters: parameters,
+                type: QueryType.DML
+            });
+        }
+
+        return result;
+    }
+
+    // Relation
+    public getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
         return relationEntries.selectMany(relationEntry => {
             const results: IQueryCommand[] = [];
 
@@ -750,14 +679,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
                     return `${this.enclose(o.columnName)} = @${paramName}`;
                 }).toArray().join(",\n");
-                const where = slaveEntityMetaData.primaryKeys.select(o => {
+                const where = slaveRelationMetaData.source.primaryKeys.select(o => {
                     const paramName = this.newAlias("param");
                     parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
                     return this.enclose(o.columnName) + " = @" + paramName;
                 }).toArray().join(" AND ");
 
                 results.push({
-                    query: `UPDATE ${slaveEntityMetaData.name} SET ${set} WHERE ${where}`,
+                    query: `UPDATE ${slaveRelationMetaData.source.name} SET ${set} WHERE ${where}`,
                     parameters: parameters,
                     type: QueryType.DML
                 });
@@ -812,63 +741,220 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return results;
         }).toArray();
     }
-    public getRelationDeleteQueries<T, T2, TData>(entityMetaData: IEntityMetaData<T>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
-        return relationEntries.selectMany((relationEntry) => {
-            const relations = relationEntry.slaveEntry.relationMap[relationEntry.slaveRelation.fullName];
-            if (relationEntry.slaveRelation.relationType === "one") {
-                // if there is existing same relation but not deleted, then no need delete.
-                // don't re delete FK for the same relation. only execute first.
-                const relationKeys = Object.keys(relations);
-                if (relations.get(relationKeys.first()) !== relationEntry || relationKeys.any(o => relations.get(o).state !== EntityState.Deleted)) {
-                    return [];
-                }
+    public getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Array<RelationEntry<T, T2, TData>> | Enumerable<RelationEntry<T, T2, TData>>): IQueryCommand[] {
+        const isManyToMany = slaveRelationMetaData.relationType === "many";
+        let result: IQueryCommand[] = [];
+        if (!isManyToMany) {
+            // only process relation that it's slave entity not deleted.
+            relationEntries = relationEntries.where(o => o.slaveEntry.state !== EntityState.Deleted);
 
-                if (relationEntry.slaveRelation.nullable) {
-                    // Set foreignkey to null query.
-                    const set = relationEntry.slaveRelation.relationColumns.select(o =>
-                        `${this.enclose(o.columnName)} = NULL`
-                    ).toArray().join(",\n");
-                    const parameters: { [key: string]: any } = {};
-                    const where = entityMetaData.primaryKeys.select(o => {
-                        const paramName = this.newAlias("param");
-                        parameters[paramName] = relationEntry.slaveEntry.entity[o.propertyName];
-                        return this.enclose(o.columnName) + " = @" + paramName;
-                    }).toArray().join(" AND ");
-                    return [{
-                        query: `UPDATE ${entityMetaData.name} SET ${set} WHERE ${where}`,
-                        parameters: parameters
-                    }] as IQueryCommand[];
-                }
-                else {
-                    // if not nullable, then delete slave entity.
-                    return this.getDeleteQueries(relationEntry.slaveRelation.source, [relationEntry.slaveEntry]);
-                }
+            const parameters: { [key: string]: any } = {};
+            let condition = "";
+            if (slaveRelationMetaData.source.primaryKeys.length === 1) {
+                const primaryCol = slaveRelationMetaData.source.primaryKeys.first();
+                const primaryValues = relationEntries.select(o => {
+                    const paramName = this.newAlias("param");
+                    parameters[paramName] = o.slaveEntry.entity[primaryCol.propertyName];
+                    return `@${paramName}`;
+                }).toArray().join(",");
+                condition = `${primaryCol.columnName} IN (${primaryValues})`;
             }
             else {
-                // remove relation table.
-                // after save remove all reference to this relation entry
-                const parameter: { [key: string]: any } = {};
-                const relationDataMeta = relationEntry.slaveRelation.relationData;
-                const condition = relationDataMeta.sourceRelationColumns.select(o => {
-                    const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T2;
-                    const value = relationEntry.masterEntry.entity[relProperty];
+                condition = relationEntries.select(o => {
+                    const keyCompare = slaveRelationMetaData.source.primaryKeys.select(pk => {
+                        const paramName = this.newAlias("param");
+                        parameters[paramName] = o.slaveEntry.entity[pk.propertyName];
+                        return `${pk.columnName} = @${paramName}`;
+                    }).toArray().join(" AND ");
+                    return `(${keyCompare})`;
+                }).toArray().join(" OR ");
+            }
+
+            const slaveEntity = new EntityExpression(slaveRelationMetaData.source.type, this.newAlias());
+            const slaveSelect = new SelectExpression(slaveEntity);
+            slaveSelect.addWhere(new RawSqlExpression<boolean>(Boolean, condition));
+
+            // delete relation data if exist.
+            if (slaveRelationMetaData.relationData) {
+                const relationData = new RelationDataExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name);
+                const dataSelect = new SelectExpression(relationData);
+
+                const relationMap = new Map<IColumnExpression<TData>, IColumnExpression<T>>();
+                for (const [relColMeta, childColMeta] of slaveRelationMetaData.relationData.targetRelationMaps) {
+                    const relationCol = dataSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
+                    const childCol = slaveSelect.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
+                    relationMap.set(relationCol, childCol);
+                }
+                dataSelect.addJoinRelation(slaveSelect, relationMap, JoinType.INNER);
+                result = result.concat(this.deleteQueries(dataSelect, parameters, "Hard"));
+            }
+
+            if (slaveRelationMetaData.nullable) {
+                // set foreignkey to null query.
+                const set: { [key: string]: any } = {};
+                slaveRelationMetaData.relationColumns.each(o => {
+                    set[o.columnName] = null;
+                });
+
+                result = result.concat(this.updateQueries(slaveSelect, parameters, set));
+            }
+            else {
+                // delete slave entity
+                result = result.concat(this.deleteQueries(slaveSelect, parameters, "Hard"));
+            }
+        }
+        else {
+            // remove relation table.
+            // after save remove all reference to this relation entry.
+            const parameters: { [key: string]: any } = {};
+            const condition = relationEntries.select(o => {
+                const keyCompare = slaveRelationMetaData.source.primaryKeys.select(pk => {
                     const paramName = this.newAlias("param");
-                    parameter.set[paramName] = value;
-                    return this.enclose(o.columnName) + " = @" + paramName;
-                }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
-                    const relProperty = relationDataMeta.sourceRelationMaps.get(o).propertyName as keyof T;
-                    const value = relationEntry.slaveEntry.entity[relProperty];
+                    parameters[paramName] = o.slaveEntry.entity[pk.propertyName];
+                    return `${pk.columnName} = @${paramName}`;
+                }).union(slaveRelationMetaData.target.primaryKeys.select(pk => {
                     const paramName = this.newAlias("param");
-                    parameter[paramName] = value;
-                    return this.enclose(o.columnName) + " = @" + paramName;
+                    parameters[paramName] = o.masterEntry.entity[pk.propertyName];
+                    return `${pk.columnName} = @${paramName}`;
                 })).toArray().join(" AND ");
 
-                return [{
-                    query: `DELETE FROM ${this.enclose(entityMetaData.name)} WHERE ${condition}`,
-                    parameters: parameter,
-                    type: QueryType.DML
-                }] as IQueryCommand[];
+                return `(${keyCompare})`;
+            }).toArray().join(" OR ");
+            const relationData = new RelationDataExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name);
+            const dataSelect = new SelectExpression(relationData);
+            dataSelect.addWhere(new RawSqlExpression<boolean>(Boolean, condition));
+
+            result = result.concat(this.deleteQueries(dataSelect, parameters, "Hard"));
+        }
+
+        return result;
+    }
+
+    // update
+    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQueryCommand[] {
+        let result: IQueryCommand[] = [];
+        const setQuery = Object.keys(update.setter).select((o: keyof T) => {
+            const value = update.setter[o];
+            const valueStr = this.getExpressionString(value);
+            return `${update.entity.alias}.${o} = ${valueStr}`;
+        }).toArray().join(", ");
+        let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
+            this.newLine() + `SET ${setQuery}` +
+            this.newLine() + `FROM ${this.enclose(update.entity.name)} ${this.enclose(update.entity.alias)} ` +
+            this.getEntityJoinString(update.entity, update.joins);
+        if (update.where)
+            updateQuery += this.newLine() + "WHERE " + this.getOperandString(update.where);
+
+        result.push({
+            query: updateQuery,
+            type: QueryType.DML
+        });
+
+        return result;
+    }
+    public getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
+        let autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
+        if (autoUpdateColumns.any()) {
+            autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
+        }
+        const primaryKeyParams: { [key: string]: any } = {};
+        const wheres: string[] = [];
+
+        const entityExp = new EntityExpression(entityMetaData.type, this.newAlias());
+        const selectExp = new SelectExpression(entityExp);
+
+        const result = entries.selectMany(entry => {
+            const modifiedColumns = entry.getModifiedProperties().select(o => ({
+                propertyName: o,
+                metaData: Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData
+            }));
+
+            const set: { [key: string]: any } = {};
+            const parameters: { [key: string]: any } = {};
+            modifiedColumns.each(o => {
+                const paramName = this.newAlias("param");
+                parameters[paramName] = entry.entity[o.propertyName as keyof T];
+                set[o.metaData.columnName] = new ParameterExpression(paramName);
+            });
+            if (entry.metaData.modifiedDateColumn) {
+                set[entry.metaData.modifiedDateColumn.columnName] = new MethodCallExpression(new ValueExpression(Date), "currentTimestamp", []);
             }
+
+
+            selectExp.where = null;
+            let where = entityMetaData.primaryKeys.select(o => {
+                const paramName = this.newAlias("param");
+                parameters[paramName] = entry.entity[o.propertyName];
+                if (autoUpdateColumns.any())
+                    primaryKeyParams[paramName] = entry.entity[o.propertyName];
+                return this.enclose(o.columnName) + " = @" + paramName;
+            }).toArray().join(" AND ");
+            selectExp.addWhere(new RawSqlExpression<boolean>(Boolean, where));
+
+            if (autoUpdateColumns.any())
+                wheres.push(`(${where})`);
+
+            let concurencyFilter = "";
+            switch (entityMetaData.concurrencyMode) {
+                case "OPTIMISTIC VERSION": {
+                    let versionCol: IColumnMetaData<T> = entityMetaData.versionColumn;
+                    if (!versionCol) {
+                        versionCol = entityMetaData.modifiedDateColumn;
+                    }
+
+                    const paramName = this.newAlias("param");
+                    parameters[paramName] = entry.entity[versionCol.propertyName];
+                    concurencyFilter = `${versionCol.columnName} = @${paramName}`;
+                    break;
+                }
+                case "OPTIMISTIC DIRTY": {
+                    concurencyFilter = modifiedColumns.select(o => {
+                        const paramName = this.newAlias("param");
+                        parameters[paramName] = entry.getOriginalValue(o.propertyName);
+                        return `${o.propertyName} = @${paramName}`;
+                    }).toArray().join(" AND ");
+                    break;
+                }
+            }
+            if (concurencyFilter) {
+                selectExp.addWhere(new RawSqlExpression<boolean>(Boolean, concurencyFilter));
+            }
+
+            return this.updateQueries(selectExp, parameters, set);
         }).toArray();
+
+        // get changes done by server.
+        if (autoUpdateColumns.any()) {
+            const colNames = autoUpdateColumns.select(o => `${this.enclose(o.columnName)}`).toArray().join(",");
+            result.push({
+                query: `SELECT ${colNames} FROM ${this.entityName(entityMetaData)} WHERE ${wheres.join(" OR ")}`,
+                type: QueryType.DQL,
+                parameters: primaryKeyParams
+            });
+        }
+
+        return result;
+    }
+    public updateQueries<T>(select: SelectExpression<T>, parameters: { [key: string]: any }, set: { [key: string]: ValueType | IExpression<any> }): IQueryCommand[] {
+        let result: IQueryCommand[] = [];
+        const setQuery = Object.keys(set).select(o => {
+            const value = set[o];
+            const valueStr = (value as IExpression).type ? this.getExpressionString(value as IExpression) : this.getValueString(value);
+            return `${select.entity.alias}.${o} = ${valueStr}`;
+        }).toArray().join(", ");
+        let updateQuery = `UPDATE ${this.enclose(select.entity.alias)}` +
+            this.newLine() + `SET ${setQuery}` +
+            this.newLine() + `FROM ${this.enclose(select.entity.name)} ${this.enclose(select.entity.alias)} ` +
+            this.getEntityJoinString(select.entity, select.joins);
+        if (select.where)
+            updateQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
+
+        result.push({
+            query: updateQuery,
+            parameters: parameters,
+            type: QueryType.DML
+        });
+
+        return result;
     }
 }

@@ -56,6 +56,8 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
         else if (metadata instanceof RowVersionColumnMetaData) {
             entityMetaData.versionColumn = metadata;
+            if (!entityMetaData.concurrencyMode)
+                entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
         }
 
         // add property to use setter getter.

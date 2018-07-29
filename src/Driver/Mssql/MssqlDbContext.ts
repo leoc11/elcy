@@ -7,8 +7,8 @@ import { IConnectionManager } from "../../Connection/IConnectionManager";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     public queryParser = PlainObjectQueryResultParser;
-    public queryBuilder = MssqlQueryBuilder;
-    public schemaBuilder = MssqlSchemaBuilder;
+    public queryBuilderType = MssqlQueryBuilder;
+    public schemaBuilderType = MssqlSchemaBuilder;
     constructor(driverFactory: () => IDriver<"mssql">);
     constructor(connectionManagerFactory: () => IConnectionManager);
     constructor(factory: () => IConnectionManager | IDriver<"mssql">) {

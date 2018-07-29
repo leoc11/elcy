@@ -1,4 +1,4 @@
-import { DateTimeKind, ColumnGeneration } from "../../Common/Type";
+import { DateTimeKind } from "../../Common/Type";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { Column } from "./Column";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
@@ -17,8 +17,6 @@ export function CreatedDate(optionOrName?: IDateColumnOption | string, dbtype?: 
         option = optionOrName;
     }
     option.isCreatedDate = true;
-    option.isReadOnly = true;
-    option.generation = ColumnGeneration.Update;
     option.default = () => Date.currentTimestamp();
     return Column<any, Date>(DateColumnMetaData, option);
 }

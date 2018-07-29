@@ -1,10 +1,10 @@
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { hashCode } from "../Helper/Util";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IBuildResult } from "./IBuildResult";
 
 export class SkipQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly quantity: number) {
@@ -17,11 +17,13 @@ export class SkipQueryable<T> extends Queryable<T> {
     public get parameterName() {
         return "__skip" + Math.abs(this.hashCode());
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
         const methodExpression = new MethodCallExpression(objectOperand, "skip", [new ParameterExpression(this.parameterName, Number)]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult;
     }
     public hashCode() {
         return hashCode("SKIP", this.parent.hashCode());

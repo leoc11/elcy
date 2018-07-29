@@ -29,12 +29,13 @@ export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TK
 const connectionManagerKey = Symbol("connectionManagerKey");
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
-    public abstract readonly queryBuilder: IObjectType<QueryBuilder>;
-    public abstract readonly schemaBuilder: IObjectType<SchemaBuilder>;
+    public abstract readonly queryBuilderType: IObjectType<QueryBuilder>;
+    public abstract readonly schemaBuilderType: IObjectType<SchemaBuilder>;
     public abstract readonly queryParser: IObjectType<IQueryResultParser>;
+    public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
+    public queryBuilder: QueryBuilder;
     public deferredQueries: DeferredQuery[] = [];
     public dbType: T;
-    public readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
     private _queryCacheManager: IQueryCacheManager;
     public get queryCacheManager() {
         if (!this._queryCacheManager) {
@@ -42,6 +43,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
 
         return this._queryCacheManager;
+    }
+    public newQueryBuilder() {
+        return this.queryBuilder = new this.queryBuilderType();
     }
     private _connectionManager: IConnectionManager;
     protected get connectionManager() {
@@ -88,6 +92,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             update: new Map(),
             delete: new Map()
         };
+        this.newQueryBuilder();
     }
 
     //#region Entity Tracker
@@ -327,7 +332,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public async saveChanges(options?: ISaveChangesOption): Promise<number> {
         let queries: IQueryCommand[] = [];
-        const queryBuilder = new this.queryBuilder();
+        const queryBuilder = new this.queryBuilderType();
 
         const insertQueries: Map<IEntityMetaData, IQueryCommand[]> = new Map();
         const relationAddQueries: Map<IEntityMetaData, IQueryCommand[]> = new Map();
@@ -376,7 +381,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         orderedRelationAdd.each(([relMetaData, addEntries]) => {
             const entries = addEntries.where(o => o.masterEntry.state !== EntityState.Detached &&
                 o.slaveEntry.state !== EntityState.Detached);
-            relationAddQueries.set(relMetaData.source, queryBuilder.getRelationAddQueries(relMetaData.source, entries));
+            relationAddQueries.set(relMetaData.source, queryBuilder.getRelationAddQueries(relMetaData, entries));
         });
 
         // generate remove relation here.
@@ -388,7 +393,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             // NOTE: possible remove relation from detached entry.
             const entries = deleteEntries.where(o => o.masterEntry.state !== EntityState.Detached &&
                 o.slaveEntry.state !== EntityState.Detached);
-            relationDeleteQueries = relationDeleteQueries.concat(queryBuilder.getRelationDeleteQueries(relMetaData.source, entries));
+            relationDeleteQueries = relationDeleteQueries.concat(queryBuilder.getRelationDeleteQueries(relMetaData, entries));
         });
 
         // Before delete even and generate query
@@ -397,12 +402,12 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             // TODO: soft delete or hard delete.
             // TODO: for non RDMS, implement cascade delete manually
             const deleteParam: IDeleteEventParam = {
-                type: metaData.deletedColumn && !(options && options.forceHardDelete) ? "soft" : "hard"
+                type: metaData.deletedColumn && !(options && options.forceHardDelete) ? "Soft" : "Hard"
             };
             for (const entry of deleteEntries) {
                 eventEmitter.emitBeforeDeleteEvent(entry.entity, deleteParam);
             }
-            deleteQueries = deleteQueries.concat(queryBuilder.getDeleteQueries(metaData, deleteEntries, deleteParam.type === "hard"));
+            deleteQueries = deleteQueries.concat(queryBuilder.getDeleteQueries(metaData, deleteEntries, deleteParam.type));
         });
 
         queries = queries.concat(updateQueries)
@@ -510,7 +515,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const eventEmitter = new DBEventEmitter(this, metaData);
             for (const entry of deleteEntries) {
                 entry.acceptChanges();
-                eventEmitter.emitAfterDeleteEvent(entry.entity, { type: "soft" });
+                eventEmitter.emitAfterDeleteEvent(entry.entity, { type: "Soft" });
             }
         });
 
@@ -533,9 +538,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return results;
     }
     public async updateSchema() {
-        const queryBuilder = new this.queryBuilder();
+        const queryBuilder = new this.queryBuilderType();
         const con = await this.getConnection();
-        const schemaBuilder = new this.schemaBuilder(con, queryBuilder);
+        const schemaBuilder = new this.schemaBuilderType(con, queryBuilder);
 
         await this.transaction(async () => {
             const schemaQuery = await schemaBuilder.getSchemaQuery(this.entityTypes);
@@ -546,7 +551,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     // -------------------------------------------------------------------------
     // Query Function
     // -------------------------------------------------------------------------
-    public async defferedFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
+    public async deferredFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
         const queryCommand: IQueryCommand = {
             query: rawQuery,
             parameters: {},
@@ -570,7 +575,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return query;
     }
     public async fromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }): Promise<T[]> {
-        const query = await this.defferedFromSql(type, rawQuery, parameters);
+        const query = await this.deferredFromSql(type, rawQuery, parameters);
         return await query.execute();
     }
 

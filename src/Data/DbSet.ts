@@ -4,7 +4,6 @@ import { DbContext } from "./DBContext";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable/Queryable";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
@@ -23,6 +22,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { IBuildResult } from "../Queryable/IBuildResult";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -43,8 +43,11 @@ export class DbSet<T> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        return new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias()));
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
+        return {
+            expression: new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias())),
+            sqlParameters: []
+        };
     }
     public hashCode() {
         return hashCode(this.type.name!);

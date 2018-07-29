@@ -1,23 +1,24 @@
 import "reflect-metadata";
-import { IObjectType, RelationshipType } from "../../Common/Type";
+import { IObjectType, RelationshipType, PropertySelector } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { entityMetaKey, relationMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
-import { IRelationOption } from "../Option/IRelationOption";
+import { IRelationOption, IAdditionalRelationOption } from "../Option/IRelationOption";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationChangeType, IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IEventDispacher } from "../../Event/IEventHandler";
 
-export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, direction: "by", type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<keyof S | ((source: S) => any)>): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "one?" | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType | "one?", relationKeysOrTargetType: Array<keyof S | ((source: S) => any)> | IObjectType<T> | string, relationKey?: Array<keyof S | ((source: S) => any)>): PropertyDecorator {
+export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
+export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
+export function Relationship<S, T = any>(name: string, direction: "by", type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator;
+export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "one?" | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType | "one?", relationKeysOrTargetType: Array<PropertySelector<S>> | IObjectType<T> | string, relationKey?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator {
     let relationOption: IRelationOption<S, T> = {
         name
     } as any;
     let targetName: string;
+    let isMaster = true;
     if (typeOrDirection === "by") {
         // slave relation.
-        relationOption.isMaster = false;
+        isMaster = false;
         relationOption.relationType = targetTypeOrType as any;
         if (typeof relationKeysOrTargetType === "string") {
             targetName = relationKeysOrTargetType;
@@ -27,10 +28,11 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             targetName = relationOption.targetType.name;
         }
         relationOption.relationKeys = relationKey as any;
+        if (options)
+            Object.assign(relationOption, options);
     }
     else {
         // master relation.
-        relationOption.isMaster = true;
         relationOption.relationType = typeOrDirection as any;
         if (typeof targetTypeOrType === "string") {
             targetName = targetTypeOrType;
@@ -43,17 +45,17 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
     }
     // TODO: FOR SQL TO-ONE relation target must be a unique or primarykeys
     // TODO: Foreignkey for SQL DB
-
     return (target: S, propertyKey: any) => {
         if (!relationOption.sourceType)
             relationOption.sourceType = target.constructor as any;
         relationOption.propertyName = propertyKey as any;
         const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType!);
 
-        const relationMeta = new RelationMetaData(relationOption);
+        const relationMeta = new RelationMetaData(relationOption, isMaster);
+        relationMeta.isMaster = isMaster;
         Reflect.defineMetadata(relationMetaKey, relationMeta, relationOption.sourceType!, propertyKey);
 
-        const relationName = relationOption.relationKeyName ? relationOption.relationKeyName : relationOption.name + "_" + (relationOption.isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
+        const relationName = relationOption.relationKeyName ? relationOption.relationKeyName : relationOption.name + "_" + (isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
         relationMeta.fullName = relationName;
         sourceMetaData.relations.push(relationMeta);
 

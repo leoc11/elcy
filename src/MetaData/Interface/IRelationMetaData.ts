@@ -1,4 +1,4 @@
-import { RelationshipType, ReferenceOption } from "../../Common/Type";
+import { RelationshipType, ReferenceOption, CompleteRelationshipType } from "../../Common/Type";
 import { IEntityMetaData } from "./IEntityMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
@@ -20,7 +20,7 @@ export interface IRelationMetaData<TSource = any, TTarget = any> {
     nullable?: boolean;
     completeRelation?(reverseRelation: IRelationMetaData<TTarget, TSource>): void;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
-    completeRelationType?: string;
+    completeRelationType?: CompleteRelationshipType;
 
     // Helper property to improve hydration performance issue
     /**

@@ -1,12 +1,11 @@
 import { IObjectType, JoinType, ValueType } from "../Common/Type";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IBuildResult } from "./IBuildResult";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
     protected readonly keySelector1Fn: (item: T) => K;
@@ -59,12 +58,16 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
                 this.resultSelectorFn = resultSelector;
         }
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
-        const childOperand = this.parent2.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<R> {
+        const buildResult = this.parent.buildQuery(queryBuilder);
+        const objectOperand = buildResult.expression;
+        const buildResult2 = this.parent2.buildQuery(queryBuilder);
+        const childOperand = buildResult2.expression;
+        buildResult.sqlParameters = buildResult.sqlParameters.concat(buildResult2.sqlParameters);
         const type = this.joinType.toLowerCase() + "Join";
         const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.keySelector1, this.keySelector2, this.resultSelector]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
+        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
+        return buildResult as any;
     }
 }

@@ -206,12 +206,12 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
                 };
                 this.joins.push(relationSelect.parentRelation);
 
+                relationMap.clear();
                 // include child to relationSelect
                 relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 for (const [relColMeta, childColMeta] of relMap) {
                     const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const childCol = this.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-                    if (!relationCol.isPrimary) this.relationColumns.add(relationCol);
+                    const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
                     if (!childCol.isPrimary) child.relationColumns.add(childCol);
                     relationMap.set(relationCol, childCol);
                 }
@@ -296,7 +296,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: { [key: string]: any }): IQueryCommand[] {
         return queryBuilder.getSelectQuery(this);
     }
     public execute(queryBuilder: QueryBuilder) {

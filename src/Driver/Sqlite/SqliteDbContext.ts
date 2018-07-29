@@ -7,8 +7,8 @@ import { IConnectionManager } from "../../Connection/IConnectionManager";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 export abstract class SqliteDbContext extends DbContext {
     public queryParser = PlainObjectQueryResultParser;
-    public queryBuilder = SqliteQueryBuilder;
-    public schemaBuilder = SqliteSchemaBuilder;
+    public queryBuilderType = SqliteQueryBuilder;
+    public schemaBuilderType = SqliteSchemaBuilder;
     constructor(driverFactory: () => IDriver<"sqlite">);
     constructor(connectionManagerFactory: () => IConnectionManager);
     constructor(factory: () => IConnectionManager | IDriver<"sqlite">) {

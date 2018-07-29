@@ -6,9 +6,10 @@ import { IRelationDataOption } from "../Option/IRelationDataOption";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { IAdditionalRelationOption } from "../Option/IRelationOption";
 export function RelationshipData<M, S = any, T = any>(options: IRelationDataOption<M, S, T>): ClassDecorator;
-export function RelationshipData<M, S = any, T = any>(sourceType: IObjectType<S> | string, relationName: string, targetType: IObjectType<T> | string, name: string, sourceRelationKeys?: Array<keyof M | ((source: M) => any)>, targetRelationKeys?: Array<keyof M | ((source: M) => any)>): ClassDecorator;
-export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRelationDataOption<M, S, T> | IObjectType<S> | string, relationName?: string, targetType?: IObjectType<T> | string, name?: string, sourceRelationKeys?: Array<keyof M | ((source: M) => any)>, targetRelationKeys?: Array<keyof M | ((source: M) => any)>): ClassDecorator {
+export function RelationshipData<M, S = any, T = any>(sourceType: IObjectType<S> | string, relationName: string, targetType: IObjectType<T> | string, name: string, sourceRelationKeys?: Array<keyof M | ((source: M) => any)>, targetRelationKeys?: Array<keyof M | ((source: M) => any)>, options?: IAdditionalRelationOption): ClassDecorator;
+export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRelationDataOption<M, S, T> | IObjectType<S> | string, relationName?: string, targetType?: IObjectType<T> | string, name?: string, sourceRelationKeys?: Array<keyof M | ((source: M) => any)>, targetRelationKeys?: Array<keyof M | ((source: M) => any)>, options?: IAdditionalRelationOption): ClassDecorator {
     let relationOption: IRelationDataOption<M, S, T>;
     let sourceName: string, targetName: string;
     if (typeof optionsOrSourceType === "object") {
@@ -36,6 +37,10 @@ export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRela
         }
         else {
             targetName = targetType;
+        }
+
+        if (options) {
+            Object.assign(relationOption, options);
         }
     }
     return (target: IObjectType<M>) => {

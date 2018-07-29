@@ -46,6 +46,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.targetRelationMeta = targetRelation;
         sourceRelation.relationData = this;
         targetRelation.relationData = this;
+        sourceRelation.isMaster = targetRelation.isMaster = true;
 
         this.sourceRelationMeta.completeRelation(this.targetRelationMeta);
 
