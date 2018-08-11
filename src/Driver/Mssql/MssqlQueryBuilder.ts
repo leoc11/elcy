@@ -1,26 +1,29 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
-import { GenericType, JoinType, QueryType } from "../../Common/Type";
+import { GenericType, JoinType, QueryType, ColumnGeneration } from "../../Common/Type";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
-import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { EntityState } from "../../Data/EntityState";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { CustomEntityExpression } from "../../Queryable/QueryExpression/CustomEntityExpression";
 import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
+import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
+import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
+import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
+import { isNotNull } from "../../Helper/Util";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
+mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.register(UUID, "new", () => "NEWID()");
 export class MssqlQueryBuilder extends QueryBuilder {
+    public queryLimit: IQueryLimit = {
+        maxParameters: 2100,
+        maxQueryLength: 67108864
+    };
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
         ["bigint", "Numeric"],
         ["bit", "Boolean"],
@@ -102,16 +105,21 @@ export class MssqlQueryBuilder extends QueryBuilder {
         [Number, "decimal"],
         [Boolean, "bit"]
     ]);
-    public resolveTranslator(object: any, memberName?: string) {
-        let result = mssqlQueryTranslator.resolve(object, memberName);
-        if (!result)
-            result = super.resolveTranslator(object, memberName);
-        return result;
-    }
+    public translator = mssqlQueryTranslator;
     public getSelectQuery<T>(select: SelectExpression<T>): IQueryCommand[] {
         let result: IQueryCommand[] = [];
-        const skip = select.paging.skip || 0;
-        const take = select.paging.take || 0;
+        let take = 0, skip = 0;
+        if (select.paging.take) {
+            const takeParam = this.parameters.first(o => o.parameter === select.paging.take);
+            if (takeParam) {
+                take = takeParam.value;
+            }
+        }
+        if (select.paging.skip) {
+            const skipParam = this.parameters.first(o => o.parameter === select.paging.skip);
+            if (skipParam)
+                skip = skipParam.value;
+        }
         const hasIncludes = select.includes.length > 0;
         const tempTableName = "#temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
         let selectQuery = "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
@@ -133,10 +141,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
             selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(select);
+            selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
         }
         result.push({
             query: selectQuery,
+            parameters: this.getParameter(select),
             type: hasIncludes ? QueryType.DML : QueryType.DQL
         });
         // if has other includes, then convert to temp table
@@ -171,12 +180,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression): string {
-        let take = 0, skip = 0;
-        if (select.paging.take)
-            take = select.paging.take.execute(this.queryVisitor.expressionTransformer);
-        if (select.paging.skip)
-            skip = select.paging.skip.execute(this.queryVisitor.expressionTransformer);
+    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
         let result = "";
         if (select.orders.length <= 0)
             result += "ORDER BY (SELECT NULL)" + this.newLine();
@@ -191,80 +195,54 @@ export class MssqlQueryBuilder extends QueryBuilder {
         else
             return identity;
     }
-    public getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Array<EntityEntry<T>> | Enumerable<EntityEntry<T>>): IQueryCommand[] {
-        const columns = entityMetaData.columns;
-        const generatedColumns = columns.where(o => {
-            return o.default !== undefined || (o as any as NumericColumnMetaData).autoIncrement;
-        });
-        const relations = entityMetaData.relations
-            .where(o => !o.nullable && !o.isMaster && o.relationType === "one");
-        const relationDatas = relations.selectMany(o => o.relationColumns.select(c => ({
-            column: c,
-            relationProperty: o.propertyName,
-            fullName: o.fullName,
-            relationColumn: o.relationMaps.get(c)
-        })));
-        const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).where(o => !(o instanceof IdentifierColumnMetaData || (o instanceof NumericColumnMetaData && o.autoIncrement)));
-        const columnNames = relationDatas.select(o => o.column).union(valueColumns).select(o => this.enclose(o.columnName)).toArray().join(", ");
-        const outputQuery = generatedColumns.select(o => "INSERTED." + this.enclose(o.columnName)).toArray().join(", ");
+    public getInsertQuery<T>(insertExp: InsertExpression<T>): IQueryCommand[] {
+        const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
+        let output = insertExp.entity.columns.where(o => isNotNull(o.columnMetaData))
+            .where(o => o.columnMetaData!.generation === ColumnGeneration.Insert || o.columnMetaData!.default !== undefined)
+            .select(o => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
+        if (output) {
+            output = " OUTPUT " + output;
+        }
 
-        const result: IQueryCommand = {
-            query: "",
+        const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString})${output} VALUES`;
+        let queryCommand: IQueryCommand = {
+            query: insertQuery,
             parameters: {},
             type: QueryType.DML
         };
-        result.query = `INSERT INTO ${this.entityName(entityMetaData)}(${columnNames}) ${outputQuery ? "OUTPUT " + outputQuery : ""} VALUES `;
+        const result: IQueryCommand[] = [queryCommand];
+        let parameterKeys: string[] = [];
+        let isLimitExceed = false;
+        insertExp.values.each(o => {
+            if (this.queryLimit.maxParameters) {
+                const curParamKeys = o.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name);
+                const keys = parameterKeys.union(curParamKeys).toArray();
+                isLimitExceed = keys.length > this.queryLimit.maxParameters;
+                if (!isLimitExceed) {
+                    parameterKeys = keys;
+                }
+            }
 
-        const getEntryValues = (entry: EntityEntry<T>) => {
-            return relationDatas.select(o => {
-                // set relation as unchanged (coz already handled here)
-                const parentEntity = entry.entity[o.relationProperty] as any;
-                if (!parentEntity) {
-                    throw new Error(`${o.relationProperty} cannot be null`);
-                }
+            if (isLimitExceed) {
+                queryCommand.query = queryCommand.query.slice(0, -1);
+                queryCommand.parameters = parameterKeys.select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
+                    acc[item.name] = item.value;
+                    return acc;
+                });
 
-                // TODO: need revisit. coz should not change any state before all data has been saved.
-                // Don't set relation entry to unchanged, but filter logic should be implemented on relation add.
-                const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                if (parentEntry) {
-                    const relationGroup = entry.relationMap[o.fullName];
-                    if (relationGroup) {
-                        const relationEntry = relationGroup.get(parentEntry.key);
-                        if (relationEntry)
-                            relationEntry.changeState(EntityState.Unchanged);
-                    }
-                }
+                isLimitExceed = false;
+                parameterKeys = [];
 
-                let paramName = "";
-                let value: any = undefined;
-                if (parentEntry.state === EntityState.Added) {
-                    // if parent entry is added, to used inserted values in case column is auto increment or use default.
-                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
-                    paramName = `__${parentEntry.dbSet.metaData.name}_${o.relationColumn.columnName}_${index}`;
-                }
-                else {
-                    value = parentEntity[o.relationColumn.propertyName];
-                    paramName = this.newAlias("param");
-                }
+                queryCommand = {
+                    query: insertQuery,
+                    parameters: {},
+                    type: QueryType.DML
+                };
+                result.push(queryCommand);
+            }
+            queryCommand.query += `${this.newLine(1, true)}(${o.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")}),`;
+        });
 
-                result.parameters[paramName] = value;
-                return "@" + paramName;
-            }).union(valueColumns.select(o => {
-                let value = entry.entity[o.propertyName as keyof T];
-                if (value === undefined) {
-                    if (o.default)
-                        return "DEFAULT";
-                    return "NULL";
-                }
-                else {
-                    const paramName = this.newAlias("param");
-                    result.parameters[paramName] = value;
-                    return "@" + paramName;
-                }
-            })).toArray().join(",");
-        };
-        result.query += entries.select(entry => "(" + getEntryValues(entry) + ")").toArray().join(",");
-        return [result];
+        return result;
     }
 }

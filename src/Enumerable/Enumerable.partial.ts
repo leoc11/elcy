@@ -20,7 +20,7 @@ declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
         select<TReturn>(selector: (item: T) => TReturn): Enumerable<TReturn>;
-        selectMany<TReturn>(selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
+        selectMany<TReturn>(selector: (item: T) => (Iterable<TReturn> | Enumerable<TReturn>)): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
         orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         skip(skip: number): Enumerable<T>;

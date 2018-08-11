@@ -70,4 +70,4 @@ export enum ColumnGeneration {
     Insert = 1,
     Update = 2
 }
-export type DeleteStrategy = "Soft" | "Hard";
+export type DeleteMode = "Soft" | "Hard";

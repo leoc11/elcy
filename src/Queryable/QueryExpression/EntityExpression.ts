@@ -80,7 +80,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
     }
-    public clone(): IEntityExpression<T> {
+    public clone(): EntityExpression<T> {
         const clone = new EntityExpression(this.type, this.alias);
         clone.columns = this.columns.select(o => {
             const colClone = o.clone();

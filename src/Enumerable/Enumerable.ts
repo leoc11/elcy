@@ -21,7 +21,7 @@ export class Enumerable<T = any> implements Iterable<T> {
     protected result: T[] = [];
     protected parent: Iterable<any>;
     protected iterator: Iterator<any>;
-    constructor(source?: Iterable<any> | Iterator<any>) {
+    constructor(source?: Iterable<T> | Iterator<T>) {
         if (source) {
             if (Array.isArray(source)) {
                 this.result = source;
@@ -145,5 +145,21 @@ export class Enumerable<T = any> implements Iterable<T> {
         for (const item of this) {
             executor(item, index++);
         }
+    }
+    public reduce<R>(func: (accumulated: R, item: T) => R): R;
+    public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;
+    public reduce<R>(seedOrFunc: R | ((accumulated: R, item: T) => R), func?: (accumulated: R, item: T) => R): R {
+        let accumulated: R;
+        if (func) {
+            accumulated = seedOrFunc as any;
+        }
+        else {
+            func = seedOrFunc as any;
+        }
+
+        for (const a of this) {
+            accumulated = func(accumulated, a);
+        }
+        return accumulated;
     }
 }

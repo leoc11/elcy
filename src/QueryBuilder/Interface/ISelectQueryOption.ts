@@ -2,9 +2,9 @@ import { IsolationLevel } from "../../Common/Type";
 
 export interface IQueryOption {
     buildKey?: string;
+    noQueryCache?: boolean;
     noTracking?: boolean;
     isolationLevel?: IsolationLevel;
-    parameters?: { [key: string]: any };
     batchSize?: number;
     batchDelay?: number;
 }

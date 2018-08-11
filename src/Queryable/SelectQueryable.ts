@@ -1,19 +1,19 @@
 import { GenericType } from "../Common/Type";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IBuildResult } from "./IBuildResult";
+import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
     protected _selector: FunctionExpression<S, T>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
-            this._selector = ExpressionBuilder.parse(this.selectorFn, this.options.parameters);
+            this._selector = ExpressionBuilder.parse(this.selectorFn, this.parameters);
         return this._selector;
     }
     protected set selector(value) {
@@ -26,13 +26,11 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         else
             this.selectorFn = selector;
     }
-    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
-        const buildResult = this.parent.buildQuery(queryBuilder);
-        const objectOperand = buildResult.expression;
+    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
-        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
-        return buildResult as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCode("SELECT", this.parent.hashCode() + hashCode((this.selectorFn || this.selector).toString()));

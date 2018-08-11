@@ -261,7 +261,7 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
     }
     if (param.userParameters.hasOwnProperty(token.data)) {
         const data = param.userParameters[token.data];
-        return new ParameterExpression(token.data as string, data ? data.constructor : NullConstructor);
+        return new ParameterExpression(token.data as string, getConstructor(data));
     }
     else if (globalObjectMaps.has(token.data as string)) {
         const data = globalObjectMaps.get(token.data as string);
@@ -269,6 +269,15 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
     }
 
     return new ParameterExpression(token.data as string);
+}
+function getConstructor(data: any) {
+    let constructor = data.constructor;
+    if (constructor === Object) {
+        constructor = function Object(){};
+        Object.setPrototypeOf(constructor, Object);
+        constructor.prototype = data;
+    }
+    return constructor ? constructor : NullConstructor;
 }
 function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
     throw new Error(`keyword ${token.data} not supported`);

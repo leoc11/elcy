@@ -15,4 +15,7 @@ export class DefaultQueryCacheManager implements IQueryCacheManager {
     public set<T>(key: number, cache: IQueryCache) {
         Reflect.defineMetadata(queryCacheKey, cache, this.type, key.toString());
     }
+    public clear() {
+        Reflect.deleteMetadata(queryCacheKey, this.type);
+    }
 }

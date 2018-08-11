@@ -1,19 +1,18 @@
-import { GenericType } from "../Common/Type";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { IVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IBuildResult } from "./IBuildResult";
+import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
     private _selectors: Array<FunctionExpression<T, any>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o)).toArray();
+            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, this.flatParameterStacks)).toArray();
         }
 
         return this._selectors;
@@ -21,8 +20,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression<T, any>>, public type: GenericType<T> = Object) {
-        super(type, parent);
+    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression<T, any>>) {
+        super(parent.type, parent);
         if (selectors.length > 0 && selectors[0] instanceof FunctionExpression) {
             this.selectors = selectors as any;
         }
@@ -30,13 +29,11 @@ export class IncludeQueryable<T> extends Queryable<T> {
             this.selectorsFn = selectors as any;
         }
     }
-    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
-        const buildResult = this.parent.buildQuery(queryBuilder);
-        const objectOperand = buildResult.expression;
+    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, sqlParameters: buildResult.sqlParameters, scope: "queryable" };
-        buildResult.expression = queryBuilder.visit(methodExpression, visitParam) as any;
-        return buildResult;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
         return hashCode("INCLUDE", this.parent.hashCode() + ((this.selectorsFn || this.selectors) as any[])

@@ -6,9 +6,17 @@ import { TimeSpan } from "../../Common/TimeSpan";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
+import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
+sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 export class SqliteQueryBuilder extends QueryBuilder {
+    public queryLimit: IQueryLimit = {
+        maxBatchQuery: 1,
+        maxParameters: 999,
+        maxQueryLength: 1000000
+    };
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
         ["integer", "Numeric"],
         ["numeric", "Decimal"],
@@ -40,12 +48,8 @@ export class SqliteQueryBuilder extends QueryBuilder {
         [Boolean, "numeric"],
         [UUID, "text"]
     ]);
-    public resolveTranslator(object: any, memberName?: string) {
-        let result = sqliteQueryTranslator.resolve(object, memberName);
-        if (!result)
-            result = super.resolveTranslator(object, memberName);
-        return result;
-    }
+
+    public translator = sqliteQueryTranslator;
     public entityName(entityMeta: IEntityMetaData<any>) {
         return `${this.enclose(entityMeta.name)}`;
     }

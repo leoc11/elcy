@@ -1,10 +1,8 @@
 import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
-import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable/Queryable";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
@@ -22,7 +20,8 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
-import { IBuildResult } from "../Queryable/IBuildResult";
+import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
+import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -36,18 +35,14 @@ export class DbSet<T> extends Queryable<T> {
     public get primaryKeys(): IColumnMetaData<T>[] {
         return this.metaData.primaryKeys;
     }
-    public readonly namingStrategy: NamingStrategy;
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<T>;
     constructor(public readonly type: IObjectType<T>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(queryBuilder: QueryBuilder): IBuildResult<T> {
-        return {
-            expression: new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias())),
-            sqlParameters: []
-        };
+    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+        return new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
     }
     public hashCode() {
         return hashCode(this.type.name!);

@@ -7,7 +7,7 @@ declare global {
         addHours(days: number): Date;
         addMinutes(days: number): Date;
         addSeconds(days: number): Date;
-        addMilliSeconds(days: number): Date;
+        addMilliseconds(days: number): Date;
         toDate(): Date;
         toTime(): TimeSpan;
     }
@@ -15,7 +15,6 @@ declare global {
         currentTimestamp(): Date;
     }
 }
-
 Date.currentTimestamp = function () {
     return new Date();
 };
@@ -56,7 +55,7 @@ Date.prototype.addSeconds = function (seconds: number): Date {
     return dat;
 };
 
-Date.prototype.addMilliSeconds = function (milliSeconds: number): Date {
+Date.prototype.addMilliseconds = function (milliSeconds: number): Date {
     const dat = new Date(this.valueOf());
     dat.setDate(dat.getDate() + milliSeconds);
     return dat;

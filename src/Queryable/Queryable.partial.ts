@@ -19,9 +19,11 @@ import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
+import { ParameterQueryable } from "./ParameterQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
+        parameter(params: { [key: string]: any }): Queryable<T>;
         select<TReturn>(selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
@@ -44,6 +46,9 @@ declare module "./Queryable" {
 
 Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn> {
     return new SelectQueryable<T, TReturn>(this, selector, type);
+};
+Queryable.prototype.parameter = function<T>(params: { [key: string]: any }): Queryable<T> {
+    return new ParameterQueryable(this, params);
 };
 Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn> {
     return new SelectManyQueryable<T, TReturn>(this, selector, type);

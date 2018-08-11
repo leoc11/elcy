@@ -21,18 +21,21 @@ export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase
         if (!this._type) {
             if (this.objectOperand.type) {
                 const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.objectOperand.type, this.memberName);
+                const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.objectOperand.type, this.memberName);
                 if (columnMeta)
                     this._type = columnMeta.type;
-                else {
-                    const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.objectOperand.type, this.memberName);
-                    if (relationMeta) {
-                        if (relationMeta.relationType === "one")
-                            this._type = relationMeta.target.type;
-                        else {
-                            this._type = Array as any;
-                            this.itemType = relationMeta.target.type;
-                        }
+                else if (relationMeta) {
+                    if (relationMeta.relationType === "one")
+                        this._type = relationMeta.target.type;
+                    else {
+                        this._type = Array as any;
+                        this.itemType = relationMeta.target.type;
                     }
+                }
+                else {
+                    const val = this.objectOperand.type.prototype[this.memberName];
+                    if (val)
+                        this._type = val.constructor;
                 }
             }
         }

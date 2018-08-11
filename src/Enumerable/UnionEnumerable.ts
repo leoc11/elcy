@@ -7,13 +7,13 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
     protected *generator() {
         const result: T[] = [];
         for (const value of this.parent) {
-            if (!result.any(o => keyComparer(o, value))) {
+            if (this.isUnionAll || !result.any(o => keyComparer(o, value))) {
                 result.push(value);
                 yield value;
             }
         }
         for (const value of this.parent2) {
-            if (!result.any(o => keyComparer(o, value))) {
+            if (this.isUnionAll || !result.any(o => keyComparer(o, value))) {
                 result.push(value);
                 yield value;
             }

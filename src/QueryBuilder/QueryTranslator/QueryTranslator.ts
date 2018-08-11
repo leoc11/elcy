@@ -47,6 +47,17 @@ export class QueryTranslator {
     }
     public resolve(object: any, memberName?: string) {
         let item: IQueryTranslatorItem = memberName ? Reflect.getOwnMetadata(this.key, object, memberName) : Reflect.getOwnMetadata(this.key, object);
+        if (!item) {
+            for (const fallback of this.fallbacks) {
+                item = fallback.resolve(object, memberName);
+                if (item)
+                    break;
+            }
+        }
         return item;
+    }
+    protected fallbacks: QueryTranslator[] = [];
+    public registerFallbacks(...fallbacks: QueryTranslator[]) {
+        this.fallbacks = this.fallbacks.concat(fallbacks);
     }
 }

@@ -6,7 +6,6 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
-import { NotExpression } from "../../ExpressionBuilder/Expression/NotExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
@@ -15,6 +14,11 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
 import { EntityExpression } from "./EntityExpression";
+import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -34,7 +38,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     private isSelectAll = true;
     public distinct: boolean;
     public isAggregate: boolean;
-    public entity: IEntityExpression;
+    public entity: IEntityExpression<T>;
     public get type() {
         return Array;
     }
@@ -51,6 +55,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public getVisitParam(): IExpression {
         return this.entity;
     }
+    public parameters: SqlParameterExpression[] = [];
     constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
         this.itemExpression = entity;
@@ -65,7 +70,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
         if (entity.deleteColumn)
-            this.addWhere(new NotExpression(entity.deleteColumn));
+            this.addWhere(new StrictEqualExpression(entity.deleteColumn, new ValueExpression(false)));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
@@ -296,14 +301,16 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: { [key: string]: any }): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQueryCommand[] {
+        if (parameters)
+            queryBuilder.setParameters(parameters);
         return queryBuilder.getSelectQuery(this);
     }
     public execute(queryBuilder: QueryBuilder) {
         return this as any;
     }
     public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
+        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";\n\n");
     }
     public clearDefaultColumns() {
         if (this.isSelectAll) {
@@ -317,5 +324,18 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             !this.paging.skip && !this.paging.take &&
             this.selects.length === this.entity.columns.length &&
             this.selects.all((c) => this.entity.columns.contains(c));
+    }
+    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
+        const result: ISqlParameter[] = [];
+        const valueTransformer = new ValueExpressionTransformer(params);
+        for (const sqlParameter of this.parameters) {
+            const value = sqlParameter.valueGetter.execute(valueTransformer);
+            result.push({
+                name: sqlParameter.name,
+                parameter: sqlParameter,
+                value: value
+            });
+        }
+        return result;
     }
 }
