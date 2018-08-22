@@ -2,14 +2,15 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import "../Enumerable/Enumerable.partial";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
+import { IObjectType } from "../Common/Type";
 
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
         cast<TReturn>(): TReturn[];
         asEnumerable(): Enumerable<T>;
-        selectMany<TReturn>(fn: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
-        select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
+        select<TReturn>(fn: (item: T) => TReturn, type?: IObjectType<TReturn>): Enumerable<TReturn>;
+        selectMany<TReturn>(fn: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
@@ -57,8 +58,8 @@ Array.prototype.asEnumerable = function <T>(this: T[]) {
 Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[] | Enumerable) {
     return this.asEnumerable().selectMany(selector);
 };
-Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
-    return this.asEnumerable().select(selector);
+Array.prototype.select = function <T, TReturn>(this: T[], selector: (item: T) => TReturn, type?: IObjectType<TReturn>) {
+    return this.asEnumerable().select(selector, type);
 };
 Array.prototype.contains = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;

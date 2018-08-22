@@ -1,10 +1,11 @@
 import { TimeSpan } from "./TimeSpan";
+import { UUID } from "../Data/UUID";
 export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type PropertySelector<T> = keyof T | ((source: T) => any);
-export type ValueType = number | string | Date | TimeSpan;
+export type ValueType = number | string | Date | TimeSpan | UUID;
 export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
 export type RelationshipType = "one" | "many";
 export type CompleteRelationshipType = "one-one" | "one-many" | "many-one" | "many-many";
@@ -20,10 +21,8 @@ export enum InheritanceType {
     TablePerConcreteClass,
     None
 }
-export enum OrderDirection {
-    ASC = "ASC",
-    DESC = "DESC"
-}
+export type OrderDirection  = "ASC" | "DESC";
+
 export enum JoinType {
     INNER = "INNER",
     FULL = "FULL",

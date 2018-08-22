@@ -16,6 +16,9 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
+    public static load<T>(source?: Iterable<T> | Iterator<T>){
+        return new Enumerable(source);
+    }
     protected pointer = 0;
     protected isResultComplete: boolean;
     protected result: T[] = [];
@@ -60,6 +63,10 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
     }
     public toArray(): T[] {
+        if (this.isResultComplete) {
+            return this.result;
+        }
+
         const arr = [];
         for (const i of this) {
             arr.push(i);
@@ -100,8 +107,9 @@ export class Enumerable<T = any> implements Iterable<T> {
     }
     public sum(selector?: (item: T) => number): number {
         let sum = 0;
-        for (const item of this)
+        for (const item of this) {
             sum += selector ? selector(item) : item as any;
+        }
         return sum;
     }
     public avg(selector?: (item: T) => number): number {

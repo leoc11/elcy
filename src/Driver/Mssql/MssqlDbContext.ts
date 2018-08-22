@@ -15,7 +15,7 @@ import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { ColumnGeneration } from "../../Common/Type";
+import { ColumnGeneration, QueryType } from "../../Common/Type";
 import { EntityState } from "../../Data/EntityState";
 import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
@@ -23,6 +23,8 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { IQueryResult } from "../../QueryBuilder/IQueryResult";
+import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     protected queryParser = PlainObjectQueryResultParser;
@@ -38,7 +40,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
     constructor(factory: () => IConnectionManager | IDriver<"mssql">) {
         super(factory);
     }
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery[] {
+    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = new Enumerable(entries);
         const visitor = this.queryVisitor;
         const results: DeferredQuery[] = [];
@@ -133,8 +135,22 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             getEntryValues(entry);
         });
 
-        results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
-            return results.selectMany(o => o.rows);
+        results.push(new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQueryCommand[]) => {
+            let rows: any[] = [];
+            let effectedRows = 0;
+            commands.each((command, index) => {
+                const result = results[index];
+                if (command.type & QueryType.DQL && result.rows) {
+                    rows = rows.concat(new Enumerable(result.rows).toArray());
+                }
+                if (command.type & QueryType.DML) {
+                    effectedRows += result.effectedRows;
+                }
+            });
+            return {
+                rows: rows,
+                effectedRows: effectedRows
+            };
         }));
 
         return results;

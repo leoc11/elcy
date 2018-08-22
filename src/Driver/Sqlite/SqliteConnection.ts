@@ -1,5 +1,5 @@
 import { IConnection } from "../../Connection/IConnection";
-import { IQueryResult } from "../../QueryBuilder/QueryResult";
+import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel, QueryType } from "../../Common/Type";

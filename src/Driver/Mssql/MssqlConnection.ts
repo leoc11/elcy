@@ -1,6 +1,6 @@
 import { IConnection } from "../../Connection/IConnection";
 import * as tedious from "tedious";
-import { IQueryResult } from "../../QueryBuilder/QueryResult";
+import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
@@ -167,7 +167,7 @@ export class MssqlConnection implements IConnection {
                     row[column.metadata.colName] = column.value;
                 }
 
-                result.rows.push(row);
+                (result.rows as any[]).push(row);
             });
 
             const doneHandler = (rowCount: number, more: boolean, asd: any) => {

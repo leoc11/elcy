@@ -2,7 +2,7 @@ import "../../Extensions/QueryableExtension";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
-import { IQueryResult } from "../QueryResult";
+import { IQueryResult } from "../IQueryResult";
 import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType, RelationshipType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
@@ -16,6 +16,7 @@ import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/Embedd
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { UUID } from "../../Data/UUID";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -36,7 +37,7 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
             queryResult = queryResults.shift();
         } while (!queryResult.rows);
 
-        if (queryResult.rows.length <= 0)
+        if (Enumerable.load(queryResult.rows).count() <= 0)
             return results;
 
         // parent relation

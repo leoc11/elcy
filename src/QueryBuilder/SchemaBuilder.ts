@@ -24,6 +24,7 @@ import { ColumnType } from "../Common/ColumnType";
 import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
 import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
 import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
+import { Enumerable } from "../Enumerable/Enumerable";
 
 export abstract class SchemaBuilder {
     constructor(public connection: IConnection, public q: QueryBuilder) { }
@@ -31,10 +32,11 @@ export abstract class SchemaBuilder {
         let commitQueries: IQueryCommand[] = [];
         let rollbackQueries: IQueryCommand[] = [];
 
-        const defaultSchema = (await this.connection.executeQuery({
+        const defSchemaResult = (await this.connection.executeQuery({
             query: `SELECT SCHEMA_NAME() AS ${this.q.enclose("SCHEMA")}`,
             type: QueryType.DQL
-        })).first().rows.first()["SCHEMA"];
+        })).first().rows;
+        const defaultSchema = Enumerable.load(defSchemaResult).first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 

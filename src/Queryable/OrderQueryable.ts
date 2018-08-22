@@ -22,7 +22,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                 const direction = o[1];
                 const a = {
                     selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks),
-                    direction: new ValueExpression(direction ? direction : OrderDirection.ASC)
+                    direction: new ValueExpression(direction ? direction : "ASC")
                 };
                 return new ObjectValueExpression(a) as any;
             }).toArray();
@@ -45,7 +45,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     public hashCode() {
         let code = this.parent.hashCode();
         if (this.selectorsFn) {
-            code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : OrderDirection.ASC));
+            code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : "ASC"));
         }
         else if (this.selectors) {
             code += this.selectors.sum(o => hashCode(o.toString()));

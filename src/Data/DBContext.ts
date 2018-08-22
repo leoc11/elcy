@@ -1,10 +1,10 @@
-import { IObjectType, OrderDirection, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, JoinType } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, JoinType } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
 import { IQueryCacheManager } from "../QueryBuilder/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManager";
-import { IQueryResult } from "../QueryBuilder/QueryResult";
+import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { IDriver } from "../Driver/IDriver";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
@@ -453,19 +453,19 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
     //#region Update
     public async saveChanges(options?: ISaveChangesOption): Promise<number> {
-        const insertQueries: Map<IEntityMetaData, DeferredQuery[]> = new Map();
-        const updateQueries: Map<IEntityMetaData, DeferredQuery[]> = new Map();
-        const deleteQueries: Map<IEntityMetaData, DeferredQuery[]> = new Map();
-        const relationDeleteQueries: Map<IRelationMetaData, DeferredQuery[]> = new Map();
-        const relationAddQueries: Map<IRelationMetaData, DeferredQuery[]> = new Map();
+        const insertQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
+        const updateQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
+        const deleteQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
+        const relationDeleteQueries: Map<IRelationMetaData, DeferredQuery<IQueryResult>[]> = new Map();
+        const relationAddQueries: Map<IRelationMetaData, DeferredQuery<IQueryResult>[]> = new Map();
 
         // order by priority
-        const orderedEntityAdd = this.entityEntries.add.asEnumerable().orderBy([o => o[0].priority, OrderDirection.ASC]);
-        const orderedEntityUpdate = this.entityEntries.update.asEnumerable().orderBy([o => o[0].priority, OrderDirection.ASC]);
-        const orderedEntityDelete = this.entityEntries.delete.asEnumerable().orderBy([o => o[0].priority, OrderDirection.DESC]);
+        const orderedEntityAdd = this.entityEntries.add.asEnumerable().orderBy([o => o[0].priority, "ASC"]);
+        const orderedEntityUpdate = this.entityEntries.update.asEnumerable().orderBy([o => o[0].priority, "ASC"]);
+        const orderedEntityDelete = this.entityEntries.delete.asEnumerable().orderBy([o => o[0].priority, "DESC"]);
 
-        const orderedRelationAdd = this.relationEntries.add.asEnumerable().orderBy([o => o[0].source.priority, OrderDirection.ASC]);
-        const orderedRelationDelete = this.relationEntries.delete.asEnumerable().orderBy([o => o[0].source.priority, OrderDirection.DESC]);
+        const orderedRelationAdd = this.relationEntries.add.asEnumerable().orderBy([o => o[0].source.priority, "ASC"]);
+        const orderedRelationDelete = this.relationEntries.delete.asEnumerable().orderBy([o => o[0].source.priority, "DESC"]);
 
         // apply embedded entity changes
         for (const [, embeddedEntries] of this.modifiedEmbeddedEntries) {
@@ -538,7 +538,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             identityInsertQueries.each(async ([entityMeta, queries]) => {
                 await this.executeDeferred(queries);
 
-                const values = queries.where(o => Array.isArray(o.value)).selectMany(o => o.value as any[]).toArray();
+                const values = queries.selectMany(o => o.value.rows).toArray();
                 asdQ.skip(i).selectMany(o => o[1]).each(dQ => {
                     dQ.command.parameters.where(p => p.name === entityMeta.name).each(p => {
                         const paramVal = p.valueGetter.execute(new ValueExpressionTransformer(values));
@@ -564,7 +564,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         // update all generated value from database. ex: identity, default, etc...
         insertQueries.asEnumerable().each(([entityMeta, queries]) => {
             const eventEmitter = new DBEventEmitter(this, entityMeta);
-            const insertedData = queries.where(o => Array.isArray(o)).selectMany(o => o.value)[Symbol.iterator]();
+            const insertedData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
             const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
             for (const entityEntry of entityEntries) {
                 const data = insertedData.next().value as T;
@@ -584,7 +584,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         // accept update changes.
         updateQueries.asEnumerable().each(([entityMeta, queries]) => {
             const eventEmitter = new DBEventEmitter(this, entityMeta);
-            const updateData = queries.where(o => Array.isArray(o)).selectMany(o => o.value)[Symbol.iterator]();
+            const updateData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
             const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
             for (const entityEntry of entityEntries) {
                 const data = updateData.next().value as any;
@@ -614,9 +614,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             .union(relationDeleteQueries.asEnumerable().selectMany(o => o[1]), true)
             .union(deleteQueries.asEnumerable().selectMany(o => o[1]), true);
 
-        return allQueries.where(o => typeof o.value === "number").sum();
+        return allQueries.sum(o => o.value.effectedRows);
     }
-    protected getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery[] {
+    protected getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = new Enumerable(entries);
         if (entryEnumerable.count() <= 0)
             return [];
@@ -632,7 +632,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const dataSelectExp = new SelectExpression(entityExp);
         dataSelectExp.selects = autoUpdateColumns.select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
 
-        let result: DeferredQuery[] = entryEnumerable.select(entry => {
+        let result: DeferredQuery<IQueryResult>[] = entryEnumerable.select(entry => {
             const modifiedColumns = entry.getModifiedProperties().select(o => Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData<T>);
 
             const set: { [key: string]: IExpression<any> } = {};
@@ -720,21 +720,26 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 if (entityMetaData.concurrencyMode !== "NONE" && effectedRows <= 0) {
                     throw new Error("Concurrency Error");
                 }
-                return effectedRows;
+                return {
+                    effectedRows: effectedRows,
+                    rows: []
+                };
             });
         }).toArray();
 
         // get changes done by server.
         if (autoUpdateColumns.any()) {
             result = result.concat(new DeferredQuery(this, dataSelectExp, updateSelectParameters, (results) => {
-                // TODO
-                return results.select(o => o.rows);
+                return {
+                    effectedRows: 0,
+                    rows: results.selectMany(o => o.rows)
+                };
             }));
         }
 
         return result;
     }
-    protected getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, deleteMode?: DeleteMode): DeferredQuery[] {
+    protected getDeleteQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, deleteMode?: DeleteMode): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = new Enumerable(entries);
         if (entryEnumerable.count() <= 0)
             return [];
@@ -777,14 +782,17 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             deleteExp.addWhere(condition);
         }
         return [new DeferredQuery(this, deleteExp, queryParameters, (results) => {
-            return results.sum(o => o.effectedRows);
+            return {
+                effectedRows: results.sum(o => o.effectedRows),
+                rows: []
+            };
         })];
     }
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery[] {
+    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = new Enumerable(entries);
         const visitor = this.queryVisitor;
         const queryBuilder = this.queryBuilder;
-        const results: DeferredQuery[] = [];
+        const results: DeferredQuery<IQueryResult>[] = [];
 
         const columns = entityMetaData.columns;
         const relations = entityMetaData.relations
@@ -875,13 +883,19 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             for (const entry of entryEnumerable) {
                 getEntryValues(entry);
                 results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
-                    return results.sum(o => o.effectedRows);
+                    return {
+                        effectedRows: results.sum(o => o.effectedRows),
+                        rows: []
+                    };
                 }));
                 const selectExp = new SelectExpression(entityExp);
                 selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
                 selectExp.addWhere(new StrictEqualExpression(entityExp.columns.first(c => c.propertyName === incrementColumn.columnName), new RawSqlExpression(incrementColumn.type, queryBuilder.lastInsertedIdentity())));
                 results.push(new DeferredQuery(this, selectExp, [], (results) => {
-                    return results.selectMany(o => o.rows);
+                    return {
+                        effectedRows: 0,
+                        rows: results.selectMany(o => o.rows)
+                    };
                 }));
 
                 // reset
@@ -908,29 +922,36 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 selectExp.addWhere(new MethodCallExpression(arrayValue, "contains", [entityExp.primaryColumns.first()]));
             }
             results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
-                return results.sum(o => o.effectedRows);
+                return {
+                    effectedRows: results.sum(o => o.effectedRows),
+                    rows: []
+                };
             }));
             if (generatedColumns.any()) {
                 results.push(new DeferredQuery(this, selectExp, [], (results) => {
-                    return results.selectMany(o => o.rows);
+                    return {
+                        effectedRows: 0,
+                        rows: results.selectMany(o => o.rows)
+                    };
                 }));
             }
         }
 
         return results;
     }
-    protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>): DeferredQuery[] {
+    protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>): DeferredQuery<IQueryResult>[] {
         const visitor = this.queryVisitor;
         const entityExp = new EntityExpression(slaveRelationMetaData.source.type, visitor.newAlias());
         return new Enumerable(relationEntries).selectMany(relationEntry => {
-            const results: DeferredQuery[] = [];
+            const results: DeferredQuery<IQueryResult>[] = [];
 
             const isMasterAdded = relationEntry.masterEntry.state === EntityState.Added;
             if (slaveRelationMetaData.relationType === "one") {
                 let queryParameters: ISqlParameter[] = [];
                 const updateExp = new UpdateExpression(entityExp, {});
                 slaveRelationMetaData.relationColumns.each(o => {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type));
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type));
                     if (isMasterAdded) {
                         // TODO: get value from parent.
                         const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
@@ -940,7 +961,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     else {
                         const reverseProperty = relationEntry.slaveRelation.relationMaps.get(o).propertyName as keyof T2;
                         const paramv: ISqlParameter = {
-                            name: "",
+                            name: alias,
                             parameter: param,
                             value: relationEntry.masterEntry.entity[reverseProperty]
                         };
@@ -950,9 +971,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 });
 
                 slaveRelationMetaData.source.primaryKeys.each(o => {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type));
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type));
                     const paramv: ISqlParameter = {
-                        name: "",
+                        name: alias,
                         parameter: param,
                         value: relationEntry.slaveEntry.entity[o.propertyName]
                     };
@@ -961,7 +983,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 });
 
                 results.push(new DeferredQuery(this, updateExp, queryParameters, (results) => {
-                    return results.sum(o => o.effectedRows);
+                    return {
+                        effectedRows: results.sum(o => o.effectedRows),
+                        rows: []
+                    };
                 }));
             }
             else {
@@ -971,7 +996,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
                 const values = relationDataMeta.sourceRelationColumns.select(o => {
                     const sourceCol = relationDataMeta.sourceRelationMaps.get(o);
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type));
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type));
                     if (isMasterAdded) {
                         // TODO: get value from parent.
                         const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
@@ -981,7 +1007,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     else {
                         const relProperty = sourceCol.propertyName as keyof T2;
                         const paramv: ISqlParameter = {
-                            name: "",
+                            name: alias,
                             parameter: param,
                             value: relationEntry.masterEntry.entity[relProperty]
                         };
@@ -990,7 +1016,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     return param;
                 }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
                     const targetCol = relationDataMeta.targetRelationMaps.get(o);
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type));
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type));
                     if (isMasterAdded) {
                         // TODO: get value from parent.
                         const index = relationEntry.slaveEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.slaveEntry.dbSet.metaData).indexOf(relationEntry.slaveEntry);
@@ -1000,7 +1027,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     else {
                         const relProperty = targetCol.propertyName as keyof T;
                         const paramv: ISqlParameter = {
-                            name: "",
+                            name: alias,
                             parameter: param,
                             value: relationEntry.slaveEntry.entity[relProperty]
                         };
@@ -1011,17 +1038,20 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 insertExp.values.push(values);
 
                 results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
-                    return results.selectMany(o => o.rows);
+                    return {
+                        effectedRows: 0,
+                        rows: results.selectMany(o => o.rows)
+                    };
                 }));
             }
             return results;
         }).toArray();
     }
-    protected getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>): DeferredQuery[] {
+    protected getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>): DeferredQuery<IQueryResult>[] {
         const visitor = this.queryVisitor;
         let relationEntryEnumerable = new Enumerable(relationEntries);
         const isManyToMany = slaveRelationMetaData.relationType === "many";
-        let result: DeferredQuery[] = [];
+        let result: DeferredQuery<IQueryResult>[] = [];
         if (!isManyToMany) {
             // only process relation that it's slave entity not deleted.
             relationEntryEnumerable = relationEntryEnumerable.where(o => o.slaveEntry.state !== EntityState.Deleted);
@@ -1073,7 +1103,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 dataDelete.addJoinRelation(slaveSelect, relationMap, JoinType.INNER);
 
                 result.push(new DeferredQuery(this, dataDelete, queryParameters, (results) => {
-                    return results.sum(o => o.effectedRows);
+                    return {
+                        effectedRows: results.sum(o => o.effectedRows),
+                        rows: []
+                    };
                 }));
             }
 
@@ -1087,14 +1120,20 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
                 const updateExp = new UpdateExpression(slaveSelect, set);
                 result.push(new DeferredQuery(this, updateExp, queryParameters, (results) => {
-                    return results.sum(o => o.effectedRows);
+                    return {
+                        effectedRows: results.sum(o => o.effectedRows),
+                        rows: []
+                    };
                 }));
             }
             else {
                 // delete slave entity
                 const deleteExp = new DeleteExpression(slaveSelect, new ValueExpression<DeleteMode>("Hard"));
                 result.push(new DeferredQuery(this, deleteExp, queryParameters, (results) => {
-                    return results.sum(o => o.effectedRows);
+                    return {
+                        effectedRows: results.sum(o => o.effectedRows),
+                        rows: []
+                    };
                 }));
             }
         }
@@ -1134,7 +1173,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             deleteExp.addWhere(condition);
 
             result.push(new DeferredQuery(this, deleteExp, queryParameters, (results) => {
-                return results.sum(o => o.effectedRows);
+                return {
+                    effectedRows: results.sum(o => o.effectedRows),
+                    rows: []
+                };
             }));
         }
 

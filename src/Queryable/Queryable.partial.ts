@@ -1,4 +1,4 @@
-import { GenericType, ValueType } from "../Common/Type";
+import { GenericType, ValueType, IObjectType } from "../Common/Type";
 import { Queryable } from "../Queryable/Queryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
@@ -24,27 +24,27 @@ import { ParameterQueryable } from "./ParameterQueryable";
 declare module "./Queryable" {
     interface Queryable<T> {
         parameter(params: { [key: string]: any }): Queryable<T>;
-        select<TReturn>(selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn>;
-        selectMany<TReturn>(selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn), type?: IObjectType<TReturn>): Queryable<TReturn>;
+        selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
         orderBy(...selectors: IQueryableOrderDefinition<T>[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
         distinct(): Queryable<T>;
+        include(...includes: Array<(item: T) => any>): Queryable<T>;
+        union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
+        intersect(array2: Queryable<T>): Queryable<T>;
+        except(array2: Queryable<T>): Queryable<T>;
         innerJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
-        intersect(array2: Queryable<T>): Queryable<T>;
-        except(array2: Queryable<T>): Queryable<T>;
         pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Queryable<TResult>;
-        include(...includes: Array<(item: T) => any>): Queryable<T>;
     }
 }
 
-Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, selector: ((item: T) => TReturn), type?: GenericType<TReturn>): Queryable<TReturn> {
+Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, selector: ((item: T) => TReturn), type?: IObjectType<TReturn>): Queryable<TReturn> {
     return new SelectQueryable<T, TReturn>(this, selector, type);
 };
 Queryable.prototype.parameter = function<T>(params: { [key: string]: any }): Queryable<T> {

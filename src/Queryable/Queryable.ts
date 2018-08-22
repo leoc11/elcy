@@ -16,6 +16,7 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { Enumerable } from "../Enumerable/Enumerable";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
@@ -418,7 +419,7 @@ export abstract class Queryable<T = any> {
         console.log(`build params time: ${Date.now() - n}`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => !result.first().rows.any());
+            (result) => Enumerable.load(result.first().rows).any());
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -460,7 +461,7 @@ export abstract class Queryable<T = any> {
         console.log(`build params time: ${Date.now() - n}`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => result.first().rows.any());
+            (result) => Enumerable.load(result.first().rows).any());
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -540,7 +541,7 @@ export abstract class Queryable<T = any> {
         console.log(`build params time: ${Date.now() - n}`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => result.first().rows.any());
+            (result) => Enumerable.load(result.first().rows).any());
         this.dbContext.deferredQueries.add(query);
         return query;
     }

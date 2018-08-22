@@ -236,7 +236,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 queryCommand = {
                     query: insertQuery,
                     parameters: {},
-                    type: QueryType.DML
+                    type: QueryType.DML | QueryType.DQL
                 };
                 result.push(queryCommand);
             }

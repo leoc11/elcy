@@ -1,5 +1,5 @@
 import "../Extensions/StringExtension";
-import { JoinType, OrderDirection, RelationshipType } from "../Common/Type";
+import { JoinType, OrderDirection, RelationshipType, GenericType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
 import { isValueType, isNativeFunction } from "../Helper/Util";
@@ -45,6 +45,7 @@ import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpr
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { NamingStrategy } from "./NamingStrategy";
+import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 
 interface IPRelation {
     name: string;
@@ -606,6 +607,8 @@ export class QueryVisitor {
                     // todo recheck
                     selectOperand = param.selectExpression = visitParam.selectExpression;
 
+                    const type = expression.params[1] as ValueExpression<GenericType>;
+
                     if (expression.methodName === "select") {
                         if (selectExp instanceof SelectExpression) {
                             if (selectOperand instanceof GroupByExpression)
@@ -614,10 +617,16 @@ export class QueryVisitor {
                         }
                         else if ((selectExp as EntityExpression).primaryColumns) {
                             selectOperand = visitParam.selectExpression;
+                            if (type) {
+                                selectOperand.itemExpression.type = type.value;
+                            }
                         }
                         else if (selectExp instanceof ObjectValueExpression) {
                             selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp);
                             selectOperand.itemExpression = selectExp;
+                            if (type) {
+                                selectOperand.itemExpression.type = type.value;
+                            }
                         }
                         else if ((selectExp as IColumnExpression).entity) {
                             const column = selectExp as IColumnExpression;
@@ -638,6 +647,9 @@ export class QueryVisitor {
                             throw new Error(`Queryable<${objectOperand.type}>.selectMany required selector with array or queryable or enumerable return value.`);
                         }
                         selectOperand = selectExp;
+                        if (type) {
+                            selectOperand.itemExpression.type = type.value;
+                        }
                     }
 
                     if (parentRelation) {
@@ -683,7 +695,7 @@ export class QueryVisitor {
                     const orders: IOrderExpression[] = [];
                     for (const selector of selectors) {
                         const selectorFn = selector.object.selector as FunctionExpression<TType, any>;
-                        const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression(OrderDirection.ASC);
+                        const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression<OrderDirection>("ASC");
                         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
                         this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam) as IColumnExpression;
@@ -927,6 +939,7 @@ export class QueryVisitor {
                     }
                 }
                 case "contains": {
+                    // TODO: dbset1.where(o => dbset2.select(c => c.column).contains(o.column)); use inner join for this
                     if (param.scope === "include")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
@@ -963,6 +976,40 @@ export class QueryVisitor {
                     }
                     selectOperand.paging.take = new ValueExpression(1);
                     return selectOperand.entity;
+                }
+                case "union":
+                case "intersect":
+                case "except": {
+                    if (param.scope === "include")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const parentRelation = objectOperand.parentRelation;
+                    const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
+                    const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
+                    param.selectExpression = visitParam.selectExpression;
+
+                    let entityExp: IEntityExpression;
+                    switch (expression.methodName) {
+                        case "union":
+                            const isUnionAll = expression.params[1];
+                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAll);
+                            break;
+                        case "intersect":
+                            entityExp = new IntersectExpression(selectOperand, childSelectOperand);
+                            break;
+                        case "except":
+                            entityExp = new ExceptExpression(selectOperand, childSelectOperand);
+                            break;
+                    }
+                    selectOperand = new SelectExpression(entityExp);
+                    if (parentRelation) {
+                        parentRelation.child = selectOperand;
+                        selectOperand.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.selectExpression = selectOperand;
+                    }
+                    return selectOperand;
                 }
                 case "innerJoin":
                 case "leftJoin":
@@ -1038,40 +1085,6 @@ export class QueryVisitor {
                         param.selectExpression = selectOperand;
                     }
 
-                    return selectOperand;
-                }
-                case "union":
-                case "intersect":
-                case "except": {
-                    if (param.scope === "include")
-                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                    const parentRelation = objectOperand.parentRelation;
-                    const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
-                    const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
-                    param.selectExpression = visitParam.selectExpression;
-
-                    let entityExp: IEntityExpression;
-                    switch (expression.methodName) {
-                        case "union":
-                            const isUnionAll = expression.params[1];
-                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAll);
-                            break;
-                        case "intersect":
-                            entityExp = new IntersectExpression(selectOperand, childSelectOperand);
-                            break;
-                        case "except":
-                            entityExp = new ExceptExpression(selectOperand, childSelectOperand);
-                            break;
-                    }
-                    selectOperand = new SelectExpression(entityExp);
-                    if (parentRelation) {
-                        parentRelation.child = selectOperand;
-                        selectOperand.parentRelation = parentRelation;
-                    }
-                    else {
-                        param.selectExpression = selectOperand;
-                    }
                     return selectOperand;
                 }
                 case "pivot": {

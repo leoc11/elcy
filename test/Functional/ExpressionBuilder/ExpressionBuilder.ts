@@ -1,14 +1,14 @@
-import { Order, OrderDetail } from "./Common/Model";
+import { Order, OrderDetail } from "../../Common/Model";
 import "mocha";
 import { expect } from "chai";
-import { ExpressionBuilder } from "../src/ExpressionBuilder/ExpressionBuilder";
-import { ParameterExpression } from "../src/ExpressionBuilder/Expression/ParameterExpression";
-import { MemberAccessExpression } from "../src/ExpressionBuilder/Expression/MemberAccessExpression";
-import { FunctionExpression } from "../src/ExpressionBuilder/Expression/FunctionExpression";
-import { ArrayValueExpression } from "../src/ExpressionBuilder/Expression/ArrayValueExpression";
-import { MethodCallExpression } from "../src/ExpressionBuilder/Expression/MethodCallExpression";
-import { ObjectValueExpression } from "../src/ExpressionBuilder/Expression/ObjectValueExpression";
-import { ValueExpression } from "../src/ExpressionBuilder/Expression/ValueExpression";
+import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
+import { ParameterExpression } from "../../../src/ExpressionBuilder/Expression/ParameterExpression";
+import { MemberAccessExpression } from "../../../src/ExpressionBuilder/Expression/MemberAccessExpression";
+import { FunctionExpression } from "../../../src/ExpressionBuilder/Expression/FunctionExpression";
+import { ArrayValueExpression } from "../../../src/ExpressionBuilder/Expression/ArrayValueExpression";
+import { MethodCallExpression } from "../../../src/ExpressionBuilder/Expression/MethodCallExpression";
+import { ObjectValueExpression } from "../../../src/ExpressionBuilder/Expression/ObjectValueExpression";
+import { ValueExpression } from "../../../src/ExpressionBuilder/Expression/ValueExpression";
 
 const param = new ParameterExpression("o", Order);
 const odParam = new ParameterExpression("od", OrderDetail);

@@ -1,4 +1,4 @@
-import { IQueryResult } from "../QueryBuilder/QueryResult";
+import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IEventHandler } from "../Event/IEventHandler";
 import { IsolationLevel } from "../Common/Type";
 import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";

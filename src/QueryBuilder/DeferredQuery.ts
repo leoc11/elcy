@@ -1,5 +1,5 @@
 import { DbContext } from "../Data/DBContext";
-import { IQueryResult } from "./QueryResult";
+import { IQueryResult } from "./IQueryResult";
 import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
 import { ISqlParameter } from "./ISqlParameter";
 import { QueryBuilder } from "./QueryBuilder";
@@ -9,11 +9,11 @@ export class DeferredQuery<T = any> {
     public value: T;
     public resolver: (value?: T | PromiseLike<T>) => void;
     protected queryCommands: IQueryCommand[] = [];
-    constructor(protected readonly dbContext: DbContext, public readonly command: ICommandQueryExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[]) => T) {
+    constructor(protected readonly dbContext: DbContext, public readonly command: ICommandQueryExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQueryCommand[]) => T) {
     }
     public resolve(bacthResult: IQueryResult[]) {
         const result = bacthResult.splice(0, this.queryCommands.length);
-        this.value = this.resultParser(result);
+        this.value = this.resultParser(result, this.queryCommands);
         if (this.resolver) {
             this.resolver(this.value);
             this.resolver = undefined;
