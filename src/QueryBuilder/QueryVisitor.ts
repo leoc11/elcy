@@ -209,12 +209,12 @@ export class QueryVisitor {
                 switch (param.scope) {
                     case "include":
                         if (parentEntity instanceof EmbeddedColumnExpression) {
-                            if (!(column instanceof ComputedColumnExpression) && !(column instanceof EmbeddedColumnExpression)) {
+                            if (column.columnMetaData && column.columnMetaData.isProjected) {
                                 parentEntity.clearDefaultColumns();
                             }
                         }
                         if (parentEntity.select) {
-                            if (!(column instanceof ComputedColumnExpression) && !(column instanceof EmbeddedColumnExpression)) {
+                            if (column.columnMetaData && column.columnMetaData.isProjected) {
                                 parentEntity.select.clearDefaultColumns();
                             }
                         }

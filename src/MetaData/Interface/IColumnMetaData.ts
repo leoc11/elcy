@@ -18,6 +18,7 @@ export interface IColumnMetaData<TE = any, T = any> {
     charset?: string;
     isReadOnly?: boolean;
     isPrimaryColumn?: boolean;
+    isProjected?: boolean;
     applyOption?(option: IColumnMetaData | IColumnOption): void;
     generation?: ColumnGeneration;
 }
