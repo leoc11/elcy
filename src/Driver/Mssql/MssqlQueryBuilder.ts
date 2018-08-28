@@ -2,7 +2,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType, JoinType, QueryType, ColumnGeneration } from "../../Common/Type";
-import { TimeSpan } from "../../Common/TimeSpan";
+import { TimeSpan } from "../../Data/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
@@ -64,11 +64,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
         "char",
         "datetime2",
         "datetimeoffset",
+        "time",
         "decimal",
         "nchar",
         "numeric",
         "nvarchar",
-        "time",
         "varbinary",
         "varchar",
     ];
@@ -77,11 +77,11 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["char", { length: 10 }],
         ["datetime2", { precision: 1 }],
         ["datetimeoffset", { precision: 7 }],
+        ["time", { precision: 7 }],
         ["decimal", { precision: 18, scale: 0 }],
         ["nchar", { length: 10 }],
         ["numeric", { precision: 18, scale: 0 }],
         ["nvarchar", { length: 255 }],
-        ["time", { precision: 7 }],
         ["varbinary", { length: 50 }],
         ["varchar", { length: 50 }]
     ]);
@@ -89,13 +89,14 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["defaultBoolean", "bit"],
         ["defaultBinary", "binary"],
         ["defaultDataString", "xml"],
-        ["defaultDate", "datetime"],
+        ["defaultDate", "date"],
+        ["defaultDateTime", "datetime"],
+        ["defaultTime", "time"],
         ["defaultDecimal", "decimal"],
         ["defaultEnum", "nvarchar"],
         ["defaultIdentifier", "uniqueidentifier"],
         ["defaultNumberic", "int"],
         ["defaultString", "nvarchar"],
-        ["defaultTime", "time"],
         ["defaultRowVersion", "timestamp"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([

@@ -1,5 +1,5 @@
 import { DbContext } from "../../Data/DBContext";
-import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
+import { POJOQueryResultParser } from "../../QueryBuilder/ResultParser/POJOQueryResultParser";
 import { IDriver } from "../IDriver";
 import { MssqlQueryBuilder, mssqlQueryTranslator } from "./MssqlQueryBuilder";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
@@ -27,11 +27,11 @@ import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
-    protected queryParser = PlainObjectQueryResultParser;
+    protected queryParser = POJOQueryResultParser;
     protected queryBuilderType = MssqlQueryBuilder;
     protected schemaBuilderType = MssqlSchemaBuilder;
     protected queryVisitorType = QueryVisitor;
-    protected queryResultParserType = PlainObjectQueryResultParser;
+    protected queryResultParserType = POJOQueryResultParser;
     protected namingStrategy = new NamingStrategy();
     public dbType: "mssql" = "mssql";
     protected translator = mssqlQueryTranslator;

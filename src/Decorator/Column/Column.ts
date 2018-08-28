@@ -13,6 +13,8 @@ import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
     return (target: TE, propertyKey: any) => {
@@ -44,10 +46,10 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             entityMetaData.primaryKeys.push(metadata);
         }
 
-        if (metadata instanceof DateColumnMetaData) {
-            if ((columnOption as IDateColumnOption).isCreatedDate)
+        if (metadata instanceof DateTimeColumnMetaData) {
+            if ((columnOption as IDateTimeColumnOption).isCreatedDate)
                 entityMetaData.createDateColumn = metadata;
-            else if ((columnOption as IDateColumnOption).isModifiedDate)
+            else if ((columnOption as IDateTimeColumnOption).isModifiedDate)
                 entityMetaData.modifiedDateColumn = metadata;
         }
         else if (metadata instanceof BooleanColumnMetaData) {

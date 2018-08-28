@@ -4,6 +4,7 @@ import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQu
 import { ISqlParameter } from "./ISqlParameter";
 import { QueryBuilder } from "./QueryBuilder";
 import { IQueryCommand } from "./Interface/IQueryCommand";
+import { Diagnostic } from "../Logger/Diagnostic";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -36,7 +37,12 @@ export class DeferredQuery<T = any> {
         return this.value;
     }
     public buildQuery(queryBuilder: QueryBuilder) {
+        const timer = Diagnostic.timer();
         this.queryCommands = this.command.toQueryCommands(queryBuilder, this.parameters);
+        if (Diagnostic.enabled) {
+            Diagnostic.debug(this, `Build Query.`, this.queryCommands);
+            Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);
+        }
         return this.queryCommands;
     }
     public toString() {

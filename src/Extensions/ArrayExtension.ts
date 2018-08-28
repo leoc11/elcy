@@ -5,6 +5,7 @@ declare global {
         add(...items: T[]): void;
         remove(...items: T[]): void;
         each(executor: (item: T, index: number) => void): void;
+        eachAsync(executor: (item: T, index: number) => Promise<void>): Promise<void>;
         selectAwait<TReturn>(selector: (item: T) => Promise<TReturn>): Promise<TReturn[]>;
         toMap<TKey>(keySelector: (item: T) => TKey): Map<TKey, T>;
     }
@@ -28,6 +29,12 @@ Array.prototype.each = function <T>(this: T[], executor: (item: T, index: number
     let index = 0;
     for (const item of this) {
         executor(item, index++);
+    }
+};
+Array.prototype.eachAsync = async function <T>(this: T[], executor: (item: T, index: number) => Promise<void>) {
+    let index = 0;
+    for (const item of this) {
+        await executor(item, index++);
     }
 };
 Array.prototype.toMap = function <T, TKey>(this: T[], keySelector: (item: T) => TKey) {

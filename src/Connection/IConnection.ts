@@ -10,6 +10,7 @@ export interface IConnection {
     isOpen: boolean;
     close(): Promise<void>;
     open(): Promise<void>;
+    reset(): Promise<void>;
     startTransaction(isolationLevel?: IsolationLevel): Promise<void>;
     commitTransaction(): Promise<void>;
     rollbackTransaction(): Promise<void>;

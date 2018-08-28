@@ -25,6 +25,7 @@ import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
 import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
 import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
+import { DateTimeColumnMetaData } from "../MetaData/DateTimeColumnMetaData";
 
 export abstract class SchemaBuilder {
     constructor(public connection: IConnection, public q: QueryBuilder) { }
@@ -637,6 +638,10 @@ export abstract class SchemaBuilder {
                         type = this.q.columnTypeMap.get("defaultDataString");
                     else if (this.q.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultDate");
+                    else if (this.q.columnTypeMap.has("defaultDateTime") && columnOption instanceof DateTimeColumnMetaData)
+                        type = this.q.columnTypeMap.get("defaultDateTime");
+                    else if (this.q.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
+                        type = this.q.columnTypeMap.get("defaultTime");
                     else if (this.q.columnTypeMap.has("defaultDecimal") && columnOption instanceof DecimalColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultDecimal");
                     else if (this.q.columnTypeMap.has("defaultEnum") && columnOption instanceof EnumColumnMetaData)
@@ -647,8 +652,6 @@ export abstract class SchemaBuilder {
                         type = this.q.columnTypeMap.get("defaultNumberic");
                     else if (this.q.columnTypeMap.has("defaultString") && columnOption instanceof StringColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultString");
-                    else if (this.q.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
-                        type = this.q.columnTypeMap.get("defaultTime");
                     else if (this.q.columnTypeMap.has("defaultRowVersion") && columnOption instanceof RowVersionColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultRowVersion");
                     else

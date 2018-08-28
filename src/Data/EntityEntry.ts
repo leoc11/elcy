@@ -9,6 +9,12 @@ import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+
+let embeddedEntityEntry: typeof EmbeddedEntityEntry;
+(async () => {
+    embeddedEntityEntry = (await import("./EmbeddedEntityEntry")).EmbeddedEntityEntry;
+})();
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public state: EntityState;
@@ -71,7 +77,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
-            new (require("./EmbeddedEntityEntry"))(embeddedDbSet, param.newValue, this);
+            new embeddedEntityEntry(embeddedDbSet, param.newValue, this);
         }
 
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {

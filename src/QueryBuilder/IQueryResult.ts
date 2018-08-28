@@ -1,4 +1,4 @@
-export interface IQueryResult {
+export interface IQueryResult<T = any> {
     effectedRows: number;
-    rows?: Iterable<any>;
+    rows?: Iterable<T>;
 }

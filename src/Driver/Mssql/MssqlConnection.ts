@@ -1,11 +1,11 @@
 import { IConnection } from "../../Connection/IConnection";
-import * as tedious from "tedious";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
 import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
 
+let tedious: any;
 interface ITransactionData {
     prevIsolationLevel: IsolationLevel;
     isolationLevel: IsolationLevel;
@@ -14,9 +14,14 @@ interface ITransactionData {
 export class MssqlConnection implements IConnection {
     constructor(public connectionOption: any) {
         [this.closeEvent, this.onClosed] = EventHandlerFactory(this);
+        if (tedious) {
+            (async () => {
+                tedious = await import("tedious" as any);
+            })();
+        }
     }
     public isolationLevel: IsolationLevel = "READ COMMITTED";
-    private connection: tedious.Connection;
+    private connection: any;
     private transactions: ITransactionData[] = [];
     public database: string;
     protected isChangeIsolationLevel: boolean;
@@ -40,6 +45,18 @@ export class MssqlConnection implements IConnection {
                 resolve();
             }
         });
+    }
+    public reset(): Promise<void> {
+        if (this.connection) {
+            return new Promise<void>((resolve, reject) => {
+                this.connection.reset((err: any) => {
+                    if (err)
+                        reject(err);
+                    resolve();
+                });
+            });
+        }
+        return Promise.resolve();
     }
     public open(): Promise<void> {
         return new Promise<void>((resolve, reject) => {

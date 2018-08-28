@@ -53,8 +53,11 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpressionTransformer";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
+import { Diagnostic } from "../Logger/Diagnostic";
+import { extname } from "path";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
+
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
     protected abstract readonly entityTypes: Array<IObjectType<any>>;
     protected abstract readonly queryBuilderType: IObjectType<QueryBuilder>;
@@ -89,7 +92,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
             if (!this._connectionManager) {
                 const val = this.factory();
-                if ((val as IConnectionManager).release) {
+                if ((val as IConnectionManager).getAllServerConnections) {
                     this._connectionManager = val as IConnectionManager;
                 }
                 else {
@@ -103,8 +106,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return this._connectionManager;
     }
     private connection?: IConnection;
-    protected async getConnection() {
-        const con = this.connection ? this.connection : await this.connectionManager.getConnection();
+    protected async getConnection(writable?: boolean) {
+        const con = this.connection ? this.connection : await this.connectionManager.getConnection(writable);
+        if (Diagnostic.enabled) Diagnostic.trace(this, `Get connection. used existing connection: ${!!this.connection}`);
         if (!con.isOpen)
             await con.open();
         return con;
@@ -113,6 +117,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         if (!con)
             con = this.connection;
         if (con && !con.inTransaction) {
+            if (Diagnostic.enabled) Diagnostic.trace(this, `Close connection.`);
             this.connection = null;
             await con.close();
         }
@@ -140,7 +145,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return result;
     }
     public attach<T>(entity: T) {
-        const set = this.set(entity.constructor as any);
+        const set = this.set<T>(entity.constructor as any);
         if (set) {
             return set.attach(entity);
         }
@@ -157,27 +162,24 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const entry = this.attach(entity);
         if (entry) {
             this.changeState(entry, EntityState.Added);
-            return true;
         }
-        return false;
+        return entry;
     }
     public delete<T>(entity: T) {
         const entry = this.attach(entity);
         if (entry) {
             this.changeState(entry, EntityState.Deleted);
-            return true;
         }
-        return false;
+        return entry;
     }
-    public update<T>(entity: T, originalValues: any) {
+    public update<T>(entity: T, originalValues?: { [key in keyof T]: any }) {
         const entry = this.attach(entity);
         if (entry) {
             if (originalValues instanceof Object)
                 entry.setOriginalValues(originalValues);
             this.changeState(entry, EntityState.Modified);
-            return true;
         }
-        return false;
+        return entry;
     }
     public changeState(entityEntry: EntityEntry, state: EntityState) {
         if (entityEntry.state === state)
@@ -326,14 +328,20 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     //#endregion
 
     public async executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
-        const con = await this.getConnection();
+        const con = this.connection ? this.connection : await this.getConnection(command.type !== QueryType.DQL);
+        const timer = Diagnostic.timer();
         const result = await con.executeQuery(command);
-        await this.closeConnection(con);
+        if (Diagnostic.enabled) {
+            Diagnostic.debug(con, `Execute Query.`, command, result);
+            Diagnostic.trace(con, `Execute Query time: ${timer.time()}`);
+        }
+        if (!this.connection)
+            await this.closeConnection(con);
         return result;
     }
     public async executeCommands(queryCommands: IQueryCommand[]): Promise<IQueryResult[]> {
         let results: IQueryResult[] = [];
-        const con = await this.getConnection();
+        const con = await this.getConnection(queryCommands.any(o => o.type !== QueryType.DQL));
         for (const query of queryCommands) {
             const res = await con.executeQuery(query);
             results = results.concat(res);
@@ -344,6 +352,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async transaction(transactionBody: () => Promise<void>): Promise<void>;
     public async transaction(isolationLevel: IsolationLevel, transactionBody: () => Promise<void>): Promise<void>;
     public async transaction(isolationOrBody: IsolationLevel | (() => Promise<void>), transactionBody?: () => Promise<void>): Promise<void> {
+        let isSavePoint;
         try {
             let isolationLevel: IsolationLevel;
             if (typeof isolationOrBody === "function")
@@ -351,13 +360,19 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             else
                 isolationLevel = isolationOrBody;
 
-            this.connection = await this.getConnection();
+            this.connection = await this.getConnection(true);
+            isSavePoint = this.connection.inTransaction;
             await this.connection.startTransaction(isolationLevel);
+            if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "Set transaction save point" : "Start transaction");
             await transactionBody();
             await this.connection.commitTransaction();
+            if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "commit transaction save point" : "Commit transaction");
+            await this.closeConnection();
         }
         catch (e) {
+            if (Diagnostic.enabled) Diagnostic.error(this.connection, e instanceof Error ? e.message : "Error", e);
             await this.connection.rollbackTransaction();
+            if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "rollback transaction save point" : "rollback transaction");
             await this.closeConnection();
             throw e;
         }
@@ -380,24 +395,33 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             return o.buildQuery(queryBuilder);
         }));
         let queryResult: IQueryResult[] = [];
+        this.connection = await this.getConnection(mergedQueries.any(o => o.type !== QueryType.DQL));
         for (const command of mergedQueries) {
             const result = await this.executeQuery(command);
             queryResult = queryResult.concat(result);
         }
+        this.closeConnection();
         for (const deferredQuery of deferredQueries) {
             deferredQuery.resolve(queryResult);
         }
     }
     public async updateSchema() {
-        const queryBuilder = this.queryBuilder;
-        const con = await this.getConnection();
-        const schemaBuilder = new this.schemaBuilderType(con, queryBuilder);
+        const schemaQuery = await this.getUpdateSchemaQueries(...this.entityTypes);
+        const commands = this.queryBuilder.mergeQueryCommands(schemaQuery.commit);
 
-        await this.transaction(async () => {
-            const schemaQuery = await schemaBuilder.getSchemaQuery(this.entityTypes);
-            const commands = queryBuilder.mergeQueryCommands(schemaQuery.commit);
-            this.executeCommands(commands);
-        });
+        // must be executed to all connection in case connection manager handle replication
+        const serverConnections = await this.connectionManager.getAllServerConnections();
+        for (const serverConnection of serverConnections) {
+            this.connection = serverConnection;
+            await this.transaction(async () => {
+                await this.executeCommands(commands);
+            });
+        }
+    }
+    public async getUpdateSchemaQueries(...entityTypes: IObjectType[]) {
+        const con = await this.getConnection();
+        const schemaBuilder = new this.schemaBuilderType(con, this.queryBuilder);
+        return await schemaBuilder.getSchemaQuery(entityTypes);
     }
 
     // -------------------------------------------------------------------------

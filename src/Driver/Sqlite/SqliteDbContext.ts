@@ -1,5 +1,5 @@
 import { DbContext } from "../../Data/DBContext";
-import { PlainObjectQueryResultParser } from "../../QueryBuilder/ResultParser/PlainObjectQueryResultParser";
+import { POJOQueryResultParser } from "../../QueryBuilder/ResultParser/POJOQueryResultParser";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
 import { IDriver } from "../IDriver";
@@ -10,11 +10,11 @@ import { NamingStrategy } from "../../QueryBuilder/NamingStrategy";
 import { mssqlQueryTranslator } from "../Mssql/MssqlQueryBuilder";
 const namingStrategy = new NamingStrategy();
 export abstract class SqliteDbContext extends DbContext {
-    public queryParser = PlainObjectQueryResultParser;
+    public queryParser = POJOQueryResultParser;
     public queryBuilderType = SqliteQueryBuilder;
     public schemaBuilderType = SqliteSchemaBuilder;
     protected queryVisitorType = QueryVisitor;
-    protected queryResultParserType = PlainObjectQueryResultParser;
+    protected queryResultParserType = POJOQueryResultParser;
     protected namingStrategy = namingStrategy;
     public dbType: any;
     protected translator = mssqlQueryTranslator;

@@ -2,7 +2,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType } from "../../Common/Type";
-import { TimeSpan } from "../../Common/TimeSpan";
+import { TimeSpan } from "../../Data/TimeSpan";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -31,13 +31,14 @@ export class SqliteQueryBuilder extends QueryBuilder {
         ["defaultBinary", "blob"],
         ["defaultDataString", "text"],
         ["defaultDate", "text"],
+        ["defaultDateTime", "text"],
+        ["defaultTime", "text"],
         ["defaultDecimal", "numeric"],
         ["defaultEnum", "text"],
         ["defaultIdentifier", "text"],
         ["defaultNumberic", "integer"],
         ["defaultReal", "real"],
         ["defaultString", "text"],
-        ["defaultTime", "text"],
         ["defaultRowVersion", "blob"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([

@@ -22,6 +22,11 @@ export class TimeSpan {
         if (seconds) this.epochMilliSeconds += seconds * 1000;
         if (milliSeconds) this.epochMilliSeconds += milliSeconds;
     }
+    [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
+        if (hint === "number")
+            return this.epochMilliSeconds;
+        return this.toString();
+    }
     public valueOf() {
         return this.epochMilliSeconds;
     }

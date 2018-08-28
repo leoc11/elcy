@@ -3,8 +3,8 @@ import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpres
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../IQueryResult";
-import { TimeSpan } from "../../Common/TimeSpan";
-import { GenericType, RelationshipType } from "../../Common/Type";
+import { TimeSpan } from "../../Data/TimeSpan";
+import { GenericType, RelationshipType, TimeZoneHandling } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
@@ -17,13 +17,15 @@ import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpress
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { UUID } from "../../Data/UUID";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 
 interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
     relationMeta?: RelationMetaData<T, TE>;
     type: RelationshipType;
 }
-export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
+export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     constructor(protected readonly queryExpression: SelectExpression<T>) {
 
     }
@@ -312,13 +314,22 @@ export class PlainObjectQueryResultParser<T> implements IQueryResultParser<T> {
                 }
             case String:
                 return input ? input.toString() : input;
-            case Date:
-                return new Date(input);
-            case TimeSpan:
-                return new TimeSpan(Number.parseFloat(input)) as any;
+            case Date: {
+                const result = new Date(input);
+                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
+                return timeZoneHandling === "none" ? result : new Date(result.getUTCFullYear(), result.getUTCMonth(), result.getUTCDate(), result.getUTCHours(), result.getUTCMinutes(), result.getUTCSeconds(), result.getUTCMilliseconds());
+            }
+            case TimeSpan: {
+                const result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
+                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
+                return timeZoneHandling === "none" ? result : result.addMinutes((new Date(result.totalMilliSeconds())).getTimezoneOffset());
+            }
             case UUID: {
                 if (input)
                     return new UUID(input.toString());
+
+                if (column.columnMetaData && column.columnMetaData.nullable)
+                    return null;
                 return UUID.empty;
             }
             default:

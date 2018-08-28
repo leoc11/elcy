@@ -17,6 +17,8 @@ import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParam
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { Enumerable } from "../Enumerable/Enumerable";
+import { Diagnostic } from "../Logger/Diagnostic";
+import { IQueryCache } from "../QueryBuilder/IQueryCache";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
@@ -55,22 +57,23 @@ export abstract class Queryable<T = any> {
 
     //#region Get Result
     public toString() {
-        let n = Date.now();
+        const timer = Diagnostic.timer();
         let cacheKey = hashCode(this.options.buildKey, this.hashCode());
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-        n = Date.now();
         const cacheManager = this.dbContext.queryCacheManager;
         let queryCache = cacheManager.get<T>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) {
+            Diagnostic.debug(this, `cache key: ${cacheKey}. cache exist: ${!!queryCache}`);
+            Diagnostic.trace(this, `find cache time: ${timer.lap()}ms`);
+        }
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             const commandQuery = this.buildQuery(visitor);
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
@@ -133,56 +136,62 @@ export abstract class Queryable<T = any> {
 
     //#region deferred
     public deferredToArray() {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, this.hashCode());
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, this.hashCode());
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             const commandQuery = this.buildQuery(visitor);
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
+
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
-        // const params = queryCache.parameterBuilder.build(this.options.parameters);
-        // Object.assign(queryBuilder.options.parameters, params);
-        // const queryCommands = queryCache.commandQuery.toQueryCommands(queryBuilder);
-        console.log(`build query time: ${Date.now() - n}`);
-        // console.log(`query: ${queryCommands.select(o => o.query).toArray().join(";\n")}`);
-        // console.log(`parameters: ${JSON.stringify(params)}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => queryCache.resultParser.parse(result, this.dbContext));
         this.dbContext.deferredQueries.add(query);
         return query;
     }
     public deferredCount() {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("COUNT", this.hashCode()));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<number>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("COUNT", this.hashCode()));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -191,18 +200,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -210,18 +218,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredSum(selector?: (item: T) => number) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("SUM", hashCode(selector ? selector.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<number>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("SUM", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -234,18 +248,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -253,18 +266,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredMax(selector?: (item: T) => number) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("MAX", hashCode(selector ? selector.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<number>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("MAX", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -277,18 +296,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -296,18 +314,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredMin(selector?: (item: T) => number) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("MIN", hashCode(selector ? selector.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<number>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("MIN", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -320,18 +344,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -339,18 +362,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredAvg(selector?: (item: T) => number) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("AVG", hashCode(selector ? selector.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<number>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("AVG", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -363,18 +392,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -382,18 +410,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredAll(predicate: (item: T) => boolean) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("ALL", hashCode(predicate.toString(), this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("ALL", hashCode(predicate.toString(), this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -406,17 +440,16 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => Enumerable.load(result.first().rows).any());
@@ -424,18 +457,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredAny(predicate?: (item: T) => boolean) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("ANY", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("ANY", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -448,7 +487,7 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery
@@ -456,9 +495,8 @@ export abstract class Queryable<T = any> {
             cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => Enumerable.load(result.first().rows).any());
@@ -466,18 +504,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredFirst(predicate?: (item: T) => boolean) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("FIRST", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("FIRST", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             const metParams = [];
@@ -489,18 +533,17 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
                 resultParser: this.dbContext.getQueryResultParser(commandQuery)
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first());
@@ -508,18 +551,24 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredContains(item: T) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("CONTAINS", hashCode(JSON.stringify(item), this.hashCode())));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("CONTAINS", hashCode(JSON.stringify(item), this.hashCode())));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -528,17 +577,16 @@ export abstract class Queryable<T = any> {
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => Enumerable.load(result.first().rows).any());
@@ -546,21 +594,27 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredUpdate(setter: (item: T) => { [key in keyof T]?: any }) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("UPDATE", this.hashCode()));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("UPDATE", this.hashCode()));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
             if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
                 throw new Error(`Only entity supported`);
 
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
@@ -573,38 +627,43 @@ export abstract class Queryable<T = any> {
 
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             const updateExp = new UpdateExpression(commandQuery, body.object);
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: updateExp,
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.shift().effectedRows);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode) {
-        let n = Date.now();
-        let cacheKey = hashCode(this.options.buildKey, hashCode("DELETE", this.hashCode()));
-        console.log(`cache key: ${cacheKey}; build cache key time: ${Date.now() - n}`);
-
-        n = Date.now();
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let queryCache = cacheManager.get<T>(cacheKey);
-        console.log(`is cache found: ${!!queryCache}; find cache time: ${Date.now() - n}`);
+
+        if (!this.options.noQueryCache) {
+            cacheKey = hashCode(this.options.buildKey, hashCode("DELETE", this.hashCode()));
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (!Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.options, true);
         if (!queryCache) {
             if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
                 throw new Error(`Only entity supported`);
 
-            n = Date.now();
             const visitor = this.dbContext.queryVisitor;
             let selectExp = this.buildQuery(visitor) as SelectExpression<T>;
 
@@ -618,15 +677,14 @@ export abstract class Queryable<T = any> {
             }
             selectExp.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             const commandQuery = new DeleteExpression(selectExp, new ParameterExpression("__deleteMode"));
-            console.log(`build query expression time: ${Date.now() - n}`);
+            if (!Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {
                 commandQuery: commandQuery,
             };
-            cacheManager.set(cacheKey, queryCache);
+            if (!this.options.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
 
-        n = Date.now();
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
         if (mode) {
             params.push({
@@ -634,7 +692,7 @@ export abstract class Queryable<T = any> {
                 value: mode
             });
         }
-        console.log(`build params time: ${Date.now() - n}`);
+        if (!Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows));
         this.dbContext.deferredQueries.add(query);

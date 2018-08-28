@@ -16,7 +16,7 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
-    public static load<T>(source?: Iterable<T> | Iterator<T>){
+    public static load<T>(source?: Iterable<T> | Iterator<T>) {
         return new Enumerable(source);
     }
     protected pointer = 0;

@@ -1,4 +1,4 @@
-import { TimeSpan } from "./TimeSpan";
+import { TimeSpan } from "../Data/TimeSpan";
 import { UUID } from "../Data/UUID";
 export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
@@ -22,6 +22,7 @@ export enum InheritanceType {
     None
 }
 export type OrderDirection  = "ASC" | "DESC";
+export type TimeZoneHandling = "none" | "utc";
 
 export enum JoinType {
     INNER = "INNER",
@@ -57,10 +58,25 @@ export enum EventListenerType {
 }
 
 export enum QueryType {
+    /**
+     * Data Query Language
+     */
     DQL = 1,
+    /**
+     * Data Manipulation Language
+     */
     DML = 2,
+    /**
+     * Data Definition Language
+     */
     DDL = 4,
+    /**
+     * Data Transaction Language
+     */
     DTL = 8,
+    /**
+     * Data Control Language
+     */
     DCL = 16
 }
 

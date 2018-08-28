@@ -12,16 +12,23 @@ export interface IConnectionOption {
 }
 export interface IConnectionPoolOption {
     /**
-     * The maximum number of connections to create at once. (Default: 10)
+     *  Maximum number of active connections created at any given time. (default: Infinity)
      */
-    readonly max?: number;
+    max?: number;
     /**
-     * The maximum number of connection requests the pool will queue before returning an error from getConnection.
+     * Minimum number of idle connections to keep in pool. (default: 0)
      */
-    readonly queueLimit?: number;
+    minQueue?: number;
     /**
-     * The milliseconds before a timeout occurs during the connection acquisition. This is slightly different from connectTimeout,
-     * because acquiring a pool connection does not always involve making a connection. (Default: 10 seconds)
+     * Maximum number of idle connections to keep in pool. (default: 10)
      */
-    readonly acquireTimeout?: number;
+    maxQueue?: number;
+    /**
+     * Milliseconds before an idle connection is released from pool. (default: 30000)
+     */
+    idleTimeout?: number;
+    /**
+     * The order of connection removed from pool. (default: fifo)
+     */
+    queueType?: "fifo" | "lifo";
 }
