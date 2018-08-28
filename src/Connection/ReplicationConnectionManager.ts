@@ -9,9 +9,9 @@ export class ReplicationConnectionManager implements IConnectionManager {
     constructor(masterDriver: IDriver<any>, replicaDrivers: IDriver<any>[], poolOption?: IConnectionPoolOption) {
         if (!poolOption) poolOption = {};
         if (typeof poolOption.idleTimeout !== "number") poolOption.idleTimeout = 30000;
-        if (typeof poolOption.max !== "number") poolOption.max = Infinity;
-        if (typeof poolOption.maxQueue !== "number") poolOption.maxQueue = 10;
-        if (typeof poolOption.minQueue !== "number") poolOption.minQueue = 0;
+        if (typeof poolOption.maxConnection !== "number") poolOption.maxConnection = Infinity;
+        if (typeof poolOption.max !== "number") poolOption.max = 10;
+        if (typeof poolOption.min !== "number") poolOption.min = 0;
         if (poolOption.queueType !== "lifo") poolOption.queueType = "fifo";
 
         this.masterConnectionManager = new PooledConnectionManager(masterDriver);

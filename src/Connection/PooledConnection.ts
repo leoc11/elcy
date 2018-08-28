@@ -6,7 +6,7 @@ import { PooledConnectionManager } from "./PooledConnectionManager";
 
 export class PooledConnection implements IConnection {
     constructor(public connection: IConnection, private manager: PooledConnectionManager) { }
-    public idleTimeOut: any;
+    public expiredTime: Date;
     public get isolationLevel() { return this.connection.isolationLevel; }
     public set isolationLevel(value) { this.connection.isolationLevel = value; }
     public get database() { return this.connection.database; }

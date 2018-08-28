@@ -12,21 +12,25 @@ export interface IConnectionOption {
 }
 export interface IConnectionPoolOption {
     /**
-     *  Maximum number of active connections created at any given time. (default: Infinity)
-     */
-    max?: number;
-    /**
      * Minimum number of idle connections to keep in pool. (default: 0)
      */
-    minQueue?: number;
+    min?: number;
     /**
      * Maximum number of idle connections to keep in pool. (default: 10)
      */
-    maxQueue?: number;
+    max?: number;
+    /**
+     *  Maximum number of active connections created at any given time. (default: Infinity)
+     */
+    maxConnection?: number;
     /**
      * Milliseconds before an idle connection is released from pool. (default: 30000)
      */
     idleTimeout?: number;
+    /**
+     * Milliseconds to wait for a connection before an error is thrown. (default: 60000)
+     */
+    acquireTimeout?: number;
     /**
      * The order of connection removed from pool. (default: fifo)
      */
