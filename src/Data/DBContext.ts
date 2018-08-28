@@ -2,8 +2,8 @@ import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
-import { IQueryCacheManager } from "../QueryBuilder/IQueryCacheManager";
-import { DefaultQueryCacheManager } from "../QueryBuilder/DefaultQueryCacheManager";
+import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
+import { DefaultQueryCacheManager } from "../Cache/DefaultQueryCacheManager";
 import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { IDriver } from "../Driver/IDriver";

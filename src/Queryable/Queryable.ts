@@ -18,7 +18,7 @@ import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { IQueryCache } from "../QueryBuilder/IQueryCache";
+import { IQueryCache } from "../Cache/IQueryCache";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
