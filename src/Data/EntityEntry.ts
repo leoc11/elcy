@@ -26,21 +26,21 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
 
-        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = Reflect.getOwnMetadata(propertyChangeHandlerMetaKey, entity);
+        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = (entity as any)[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
             let propertyChangeDispatcher: any;
             [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            Reflect.defineMetadata(propertyChangeHandlerMetaKey, propertyChangeHandler, entity);
-            Reflect.defineMetadata(propertyChangeDispatherMetaKey, propertyChangeDispatcher, entity);
+            (entity as any)[propertyChangeHandlerMetaKey] = propertyChangeHandler;
+            (entity as any)[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
         }
         propertyChangeHandler.add((source: T, args: IChangeEventParam) => this.onPropertyChanged(source, args));
 
-        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeHandlerMetaKey, entity);
+        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = (entity as any)[relationChangeHandlerMetaKey];
         if (!relationChangeHandler) {
             let relationChangeDispatcher: any;
             [relationChangeHandler, relationChangeDispatcher] = EventHandlerFactory<T, IRelationChangeEventParam>(entity);
-            Reflect.defineMetadata(relationChangeHandlerMetaKey, relationChangeHandler, entity);
-            Reflect.defineMetadata(relationChangeDispatherMetaKey, relationChangeDispatcher, entity);
+            (entity as any)[relationChangeHandlerMetaKey] = relationChangeHandler;
+            (entity as any)[relationChangeDispatherMetaKey] = relationChangeDispatcher;
         }
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }

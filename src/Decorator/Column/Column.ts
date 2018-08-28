@@ -92,7 +92,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                     else
                         this[privatePropertySymbol] = value;
 
-                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = Reflect.getOwnMetadata(propertyChangeDispatherMetaKey, this);
+                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = this[propertyChangeDispatherMetaKey];
                     if (propertyChangeDispatcher) {
                         propertyChangeDispatcher({
                             column: metadata,

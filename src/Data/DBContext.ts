@@ -54,7 +54,7 @@ import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpression
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { extname } from "path";
+
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
 

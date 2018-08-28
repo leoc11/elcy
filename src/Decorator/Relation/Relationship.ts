@@ -96,7 +96,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                     if (relationMeta.relationType === "many") {
                         const observed = new ObservableArray(value);
                         observed.register((type, items) => {
-                            const changeListener: IEventDispacher<IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeDispatherMetaKey, this);
+                            const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                             if (changeListener) {
                                 changeListener({ type, relation: relationMeta, entities: items });
                             }
@@ -107,7 +107,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                         oldSet.apply(this, value);
                     else
                         this[privatePropertySymbol] = value;
-                    const changeListener: IEventDispacher<IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeDispatherMetaKey, this.constructor);
+                    const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                     if (changeListener) {
                         if (relationMeta.relationType === "many") {
                             if (oldValue && Array.isArray(oldValue) && oldValue.length > 0)
