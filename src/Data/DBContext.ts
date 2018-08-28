@@ -367,13 +367,13 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             await transactionBody();
             await this.connection.commitTransaction();
             if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "commit transaction save point" : "Commit transaction");
-            await this.closeConnection();
+            if (!isSavePoint) await this.closeConnection();
         }
         catch (e) {
             if (Diagnostic.enabled) Diagnostic.error(this.connection, e instanceof Error ? e.message : "Error", e);
             await this.connection.rollbackTransaction();
             if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "rollback transaction save point" : "rollback transaction");
-            await this.closeConnection();
+            if (isSavePoint === false) await this.closeConnection();
             throw e;
         }
     }

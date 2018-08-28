@@ -10,7 +10,7 @@ export class MyDb extends MssqlDbContext {
             database: "iSeller_Data_Lotte",
             port: 1433,
             user: "sa",
-            password: "i1111991",
+            password: "password",
             // options: {
             //     trustedConnection: true
             // }
