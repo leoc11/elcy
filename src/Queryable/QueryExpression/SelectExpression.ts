@@ -65,7 +65,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
             this.relationColumns = entity.relationColumns.slice(0);
         }
         else
-            this.selects = entity.columns.slice(0);
+            this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
         this.isSelectAll = true;
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
@@ -315,7 +315,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
     public clearDefaultColumns() {
         if (this.isSelectAll) {
             this.isSelectAll = false;
-            for (const column of this.entity.columns)
+            for (const column of this.entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected))
                 this.selects.remove(column);
         }
     }

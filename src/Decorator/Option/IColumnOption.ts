@@ -1,6 +1,6 @@
 
 import { ColumnType } from "../../Common/ColumnType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, ColumnGeneration } from "../../Common/Type";
 export interface IColumnOption<T = any> {
     columnName?: string;
     indexed?: boolean;
@@ -11,4 +11,7 @@ export interface IColumnOption<T = any> {
     columnType?: ColumnType;
     collation?: string;
     charset?: string;
+    isReadOnly?: boolean;
+    isProjected?: boolean;
+    generation?: ColumnGeneration;
 }

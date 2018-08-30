@@ -25,6 +25,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
 
         const metadata = new columnMetaType();
+        metadata.isProjected = true;
         metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
             if (typeof (propertyKey) === "string")
