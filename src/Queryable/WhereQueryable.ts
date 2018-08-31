@@ -5,7 +5,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
@@ -25,7 +25,7 @@ export class WhereQueryable<T> extends Queryable<T> {
         else
             this.predicateFn = predicate;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

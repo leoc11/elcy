@@ -1,15 +1,19 @@
-import { IsolationLevel } from "../../Common/Type";
+import { ICacheOption } from "../../Cache/ICacheOption";
+
+export interface ISelectCacheOption extends ICacheOption {
+    disableEntityAsTag?: boolean;
+}
 
 export interface IQueryOption {
     buildKey?: string;
     noQueryCache?: boolean;
     noTracking?: boolean;
-    isolationLevel?: IsolationLevel;
     batchSize?: number;
     batchDelay?: number;
 }
 export interface ISelectQueryOption extends IQueryOption {
     includeSoftDeleted: boolean;
+    resultCache?: "none" | ISelectCacheOption;
 }
 export interface IUpdateQueryOption extends IQueryOption {
     includeSoftDeleted: boolean;
@@ -17,9 +21,4 @@ export interface IUpdateQueryOption extends IQueryOption {
 export interface IDeleteQueryOption extends IQueryOption {
     forceHardDelete: boolean;
 }
-export interface ISaveChangesOption {
-    forceHardDelete: boolean;
-    isolationLevel?: IsolationLevel;
-    batchSize?: number;
-    batchDelay?: number;
-}
+export type ISaveChangesOption = IUpdateQueryOption & IDeleteQueryOption;

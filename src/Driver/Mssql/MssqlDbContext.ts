@@ -24,7 +24,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     protected queryParser = POJOQueryResultParser;
@@ -135,7 +135,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             getEntryValues(entry);
         });
 
-        results.push(new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQueryCommand[]) => {
+        results.push(new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQuery[]) => {
             let rows: any[] = [];
             let effectedRows = 0;
             commands.each((command, index) => {

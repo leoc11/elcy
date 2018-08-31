@@ -1,7 +1,7 @@
 import { SchemaBuilder } from "../../QueryBuilder/SchemaBuilder";
 import { IConnection } from "../../Connection/IConnection";
 import { IObjectType, QueryType, ReferenceOption } from "../../Common/Type";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IConstraintMetaData } from "../../MetaData/Interface/IConstraintMetaData";
@@ -19,8 +19,8 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         super(connection, q);
     }
     public async getSchemaQuery(entityTypes: IObjectType[]) {
-        let commitQueries: IQueryCommand[] = [];
-        let rollbackQueries: IQueryCommand[] = [];
+        let commitQueries: IQuery[] = [];
+        let rollbackQueries: IQuery[] = [];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
@@ -31,11 +31,11 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
             oldSchema: oldSchemas.first(os => os.name.toLowerCase() === o.name.toLowerCase())
         }));
 
-        let preCommitQueries: IQueryCommand[] = [];
-        let preRollbackQueries: IQueryCommand[] = [];
+        let preCommitQueries: IQuery[] = [];
+        let preRollbackQueries: IQuery[] = [];
 
-        let postCommitQueries: IQueryCommand[] = [];
-        let postRollbackQueries: IQueryCommand[] = [];
+        let postCommitQueries: IQuery[] = [];
+        let postRollbackQueries: IQuery[] = [];
 
         for (const schemaMap of schemaMaps) {
             const schema = schemaMap.schema;
@@ -262,7 +262,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
 
         return Object.keys(result).select(o => result[o]).toArray();
     }
-    public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQueryCommand[] {
+    public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
         let query = `ALTER TABLE ${this.q.entityName(entityMetaData)} RENAME TO ${this.q.enclose(newName)}`;
         return [{
             query,
@@ -270,7 +270,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         }];
     }
     protected updateEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
-        let result: IQueryCommand[] = [];
+        let result: IQuery[] = [];
         const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
             return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
         };

@@ -1,6 +1,6 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { ICommandQueryExpression } from "./ICommandQueryExpression";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
@@ -31,7 +31,7 @@ export class InsertExpression<T = any> implements ICommandQueryExpression<void> 
         const clone = new InsertExpression(this.entity.clone(), this.values);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
         queryBuilder.setParameters(parameters ? parameters : []);
         return queryBuilder.getInsertQuery(this);
     }

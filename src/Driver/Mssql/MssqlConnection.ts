@@ -3,7 +3,7 @@ import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 
 let tedious: any;
 interface ITransactionData {
@@ -156,7 +156,7 @@ export class MssqlConnection implements IConnection {
             }
         });
     }
-    public executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
+    public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
             let result: IQueryResult;

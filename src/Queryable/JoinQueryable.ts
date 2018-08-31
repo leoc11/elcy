@@ -4,7 +4,7 @@ import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any, R = any> extends Queryable<R> {
@@ -40,7 +40,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     }
     constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, keySelector1: FunctionExpression<T, K> | ((item: T) => K), keySelector2: FunctionExpression<T2, K> | ((item: T2) => K), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
         super(type, parent);
-        this.option(this.parent2.options);
+        this.option(this.parent2.option);
         if (keySelector1 instanceof FunctionExpression)
             this.keySelector1 = keySelector1;
         else
@@ -58,7 +58,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
                 this.resultSelectorFn = resultSelector;
         }
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<R> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<R> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
         const type = this.joinType.toLowerCase() + "Join";

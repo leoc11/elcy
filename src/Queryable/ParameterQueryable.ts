@@ -1,6 +1,6 @@
 import { Queryable } from "./Queryable";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 
 export class ParameterQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, parameters: { [key: string]: any }) {
@@ -14,7 +14,7 @@ export class ParameterQueryable<T> extends Queryable<T> {
         }
         return this;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const command = this.parent.buildQuery(queryVisitor);
         queryVisitor.setParameter(this.flatParameterStacks, this.parameterStackIndex, this.parameters);
         return command;

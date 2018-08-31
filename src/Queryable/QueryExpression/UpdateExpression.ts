@@ -1,17 +1,18 @@
 import { OrderDirection, JoinType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { ICommandQueryExpression } from "./ICommandQueryExpression";
+import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-export class UpdateExpression<T = any> implements ICommandQueryExpression<void> {
+import { hashCode } from "../../Helper/Util";
+export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression } = {};
     public select: SelectExpression<T>;
     public get parameters() {
@@ -68,7 +69,7 @@ export class UpdateExpression<T = any> implements ICommandQueryExpression<void> 
         const clone = new UpdateExpression(this.select, this.setter);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
         queryBuilder.setParameters(parameters);
         return queryBuilder.getBulkUpdateQuery(this);
     }

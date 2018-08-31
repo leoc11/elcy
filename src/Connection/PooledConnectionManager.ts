@@ -78,7 +78,7 @@ export class PooledConnectionManager implements IConnectionManager {
         }
     }
 
-    private setIdleTimeout(expiredTime: Date) {
+    protected setIdleTimeout(expiredTime: Date) {
         if (!this._idleTimeout) {
             this._idleTimeout = setTimeout(() => {
                 const con = this.pools.shift();
@@ -90,7 +90,7 @@ export class PooledConnectionManager implements IConnectionManager {
             }, Date.now() - expiredTime.getTime());
         }
     }
-    private clearIdleTimeout() {
+    protected clearIdleTimeout() {
         if (this._idleTimeout) {
             clearTimeout(this._idleTimeout);
             this._idleTimeout = null;

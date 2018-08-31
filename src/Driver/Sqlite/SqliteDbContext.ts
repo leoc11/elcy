@@ -4,7 +4,7 @@ import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
 import { IDriver } from "../IDriver";
 import { IConnectionManager } from "../../Connection/IConnectionManager";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
 import { NamingStrategy } from "../../QueryBuilder/NamingStrategy";
 import { mssqlQueryTranslator } from "../Mssql/MssqlQueryBuilder";
@@ -23,7 +23,7 @@ export abstract class SqliteDbContext extends DbContext {
     constructor(factory: () => IConnectionManager | IDriver<"sqlite">) {
         super(factory);
     }
-    public mergeQueryCommands(queries: IQueryCommand[]): IQueryCommand[] {
+    public mergeQueryCommands(queries: IQuery[]): IQuery[] {
         return queries;
     }
 }

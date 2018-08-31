@@ -13,7 +13,7 @@ import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
-import { IQueryCommand } from "./Interface/IQueryCommand";
+import { IQuery } from "./Interface/IQuery";
 import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
@@ -32,11 +32,11 @@ import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpressio
 import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpression";
 import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
-import { IQueryOption } from "./Interface/ISelectQueryOption";
+import { IQueryOption } from "./Interface/IQueryOption";
 import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
 import { ISqlParameter } from "./ISqlParameter";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
@@ -94,13 +94,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#endregion
 
     //#region ICommandQueryExpression
-    public mergeQueryCommands(queries: Iterable<IQueryCommand>): IQueryCommand[] {
-        let queryCommand: IQueryCommand = {
+    public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
+        let queryCommand: IQuery = {
             query: "",
             parameters: {},
             type: 0 as any
         };
-        const result: IQueryCommand[] = [queryCommand];
+        const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let batchQueryCount = 0;
         new Enumerable(queries).each(o => {
@@ -138,8 +138,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     // Select
-    public getSelectQuery<T>(select: SelectExpression<T>): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
+    public getSelectQuery<T>(select: SelectExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
         const hasIncludes = select.includes.length > 0;
         let take = 0, skip = 0;
         if (select.paging.take) {
@@ -221,15 +221,15 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     // Insert
-    public getInsertQuery<T>(insertExp: InsertExpression<T>): IQueryCommand[] {
+    public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item );
         const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString}) VALUES`;
-        let queryCommand: IQueryCommand = {
+        let queryCommand: IQuery = {
             query: insertQuery,
             parameters: {},
             type: QueryType.DML
         };
-        const result: IQueryCommand[] = [queryCommand];
+        const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let isLimitExceed = false;
         insertExp.values.each(o => {
@@ -266,8 +266,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
 
     // Delete
-    public getBulkDeleteQuery<T>(deleteExp: DeleteExpression<T>): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
+    public getBulkDeleteQuery<T>(deleteExp: DeleteExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
         let deleteStrategy: DeleteMode;
         if (deleteExp.deleteMode) {
             if (deleteExp.deleteMode instanceof ParameterExpression) {
@@ -372,8 +372,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     // update
-    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
+    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
         const setQuery = Object.keys(update.setter).select((o: keyof T) => {
             const value = update.setter[o];
             const valueStr = this.getExpressionString(value);
@@ -396,7 +396,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
 
-    protected getParameter<T>(command: ICommandQueryExpression<T>) {
+    protected getParameter<T>(command: IQueryCommandExpression<T>) {
         const param: { [key: string]: any } = {};
         command.parameters.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).each(o => {
             param[o.name] = o.value;

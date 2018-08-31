@@ -2,15 +2,15 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class ExceptQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
         super(parent.type, parent);
-        this.option(this.parent2.options);
+        this.option(this.parent2.option);
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "except", [childOperand]);

@@ -1,14 +1,14 @@
 import { GenericType, OrderDirection, JoinType, RelationshipType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { ICommandQueryExpression } from "./ICommandQueryExpression";
+import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -32,7 +32,7 @@ export interface IJoinRelation<T = any, TChild = any> {
     relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
     type: JoinType;
 }
-export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
+export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     [prop: string]: any;
     public selects: IColumnExpression[] = [];
     private isSelectAll = true;
@@ -301,7 +301,7 @@ export class SelectExpression<T = any> implements ICommandQueryExpression<T> {
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
         if (parameters)
             queryBuilder.setParameters(parameters);
         return queryBuilder.getSelectQuery(this);

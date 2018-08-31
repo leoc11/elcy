@@ -9,7 +9,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression<T, any> | ((item: T) => any) }>(objectFn: KE, sourceType: IObjectType<T>, paramName: string): FunctionExpression<T, { [key in keyof KE]?: IExpression }> {
@@ -64,7 +64,7 @@ export class PivotQueryable<T,
         else
             this.metricFn = metrics;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<TResult> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<TResult> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

@@ -1,22 +1,22 @@
 import { OrderDirection, JoinType, DeleteMode } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { ICommandQueryExpression } from "./ICommandQueryExpression";
+import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { RelationDataExpression } from "./RelationDataExpression";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
-    parent: ICommandQueryExpression<T>;
+    parent: IQueryCommandExpression<T>;
     relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
 }
-export class DeleteExpression<T = any> implements ICommandQueryExpression<void> {
+export class DeleteExpression<T = any> implements IQueryCommandExpression<void> {
     public deleteMode?: IExpression<DeleteMode>;
     public includes: IDeleteIncludeRelation<T, any>[] = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
@@ -132,7 +132,7 @@ export class DeleteExpression<T = any> implements ICommandQueryExpression<void> 
         const clone = new DeleteExpression(this.select, this.deleteMode);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQueryCommand[] {
+    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
         queryBuilder.setParameters(parameters);
         return queryBuilder.getBulkDeleteQuery(this);
     }

@@ -7,7 +7,7 @@ import { DefaultQueryCacheManager } from "../Cache/DefaultQueryCacheManager";
 import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { IDriver } from "../Driver/IDriver";
-import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../QueryBuilder/Interface/IQuery";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { EntityState } from "./EntityState";
 import { EntityEntry } from "./EntityEntry";
@@ -27,7 +27,7 @@ import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
 import { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { ISqlParameter } from "../QueryBuilder/ISqlParameter";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
@@ -74,7 +74,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public get queryVisitor(): QueryVisitor {
         return new this.queryVisitorType(this.namingStrategy, this.translator);
     }
-    public getQueryResultParser(command: ICommandQueryExpression): IQueryResultParser {
+    public getQueryResultParser(command: IQueryCommandExpression): IQueryResultParser {
         return new this.queryResultParserType(command);
     }
     public deferredQueries: DeferredQuery[] = [];
@@ -327,7 +327,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     //#endregion
 
-    public async executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
+    public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
         const con = this.connection ? this.connection : await this.getConnection(command.type !== QueryType.DQL);
         const timer = Diagnostic.timer();
         const result = await con.executeQuery(command);
@@ -339,7 +339,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             await this.closeConnection(con);
         return result;
     }
-    public async executeCommands(queryCommands: IQueryCommand[]): Promise<IQueryResult[]> {
+    public async executeCommands(queryCommands: IQuery[]): Promise<IQueryResult[]> {
         let results: IQueryResult[] = [];
         const con = await this.getConnection(queryCommands.any(o => o.type !== QueryType.DQL));
         for (const query of queryCommands) {
@@ -428,12 +428,12 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     // Query Function
     // -------------------------------------------------------------------------
     public async deferredFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
-        const queryCommand: IQueryCommand = {
+        const queryCommand: IQuery = {
             query: rawQuery,
             parameters: {},
             type: QueryType.DDL
         };
-        const command: ICommandQueryExpression = {
+        const command: IQueryCommandExpression = {
             parameters: [],
             type: type as any,
             clone: () => command,

@@ -4,7 +4,7 @@ import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
@@ -29,7 +29,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
             this.selectorsFn = selectors as any;
         }
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

@@ -9,7 +9,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
@@ -36,7 +36,7 @@ export class OrderQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "orderBy", this.selectors);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

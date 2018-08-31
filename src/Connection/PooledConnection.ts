@@ -1,5 +1,5 @@
 import { IConnection } from "./IConnection";
-import { IQueryCommand } from "../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../QueryBuilder/Interface/IQuery";
 import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IsolationLevel } from "../Common/Type";
 import { PooledConnectionManager } from "./PooledConnectionManager";
@@ -33,7 +33,7 @@ export class PooledConnection implements IConnection {
     public rollbackTransaction(): Promise<void> {
         return this.connection.rollbackTransaction();
     }
-    public executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
+    public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return this.connection.executeQuery(command);
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {

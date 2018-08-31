@@ -4,7 +4,7 @@ import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType, JoinType, QueryType, ColumnGeneration } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -107,8 +107,8 @@ export class MssqlQueryBuilder extends QueryBuilder {
         [Boolean, "bit"]
     ]);
     public translator = mssqlQueryTranslator;
-    public getSelectQuery<T>(select: SelectExpression<T>): IQueryCommand[] {
-        let result: IQueryCommand[] = [];
+    public getSelectQuery<T>(select: SelectExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
         let take = 0, skip = 0;
         if (select.paging.take) {
             const takeParam = this.parameters.first(o => o.parameter === select.paging.take);
@@ -196,7 +196,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         else
             return identity;
     }
-    public getInsertQuery<T>(insertExp: InsertExpression<T>): IQueryCommand[] {
+    public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
         let output = insertExp.entity.columns.where(o => isNotNull(o.columnMetaData))
             .where(o => o.columnMetaData!.generation === ColumnGeneration.Insert || o.columnMetaData!.default !== undefined)
@@ -206,12 +206,12 @@ export class MssqlQueryBuilder extends QueryBuilder {
         }
 
         const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString})${output} VALUES`;
-        let queryCommand: IQueryCommand = {
+        let queryCommand: IQuery = {
             query: insertQuery,
             parameters: {},
             type: QueryType.DML
         };
-        const result: IQueryCommand[] = [queryCommand];
+        const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let isLimitExceed = false;
         insertExp.values.each(o => {

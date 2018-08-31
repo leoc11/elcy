@@ -5,7 +5,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
@@ -26,7 +26,7 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         else
             this.keySelectorFn = keySelector;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<IGroupArray<T, K>> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<IGroupArray<T, K>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

@@ -3,7 +3,7 @@ import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel, QueryType } from "../../Common/Type";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqliteConnectionOption } from "./ISqliteConnectionOption";
 
 let sqlite3: any;
@@ -152,7 +152,7 @@ export class SqliteConnection implements IConnection {
             }
         });
     }
-    public executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
+    public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
             const params = this.getParameter(command.parameters);

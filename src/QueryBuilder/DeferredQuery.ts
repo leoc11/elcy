@@ -1,16 +1,17 @@
 import { DbContext } from "../Data/DBContext";
 import { IQueryResult } from "./IQueryResult";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { ISqlParameter } from "./ISqlParameter";
 import { QueryBuilder } from "./QueryBuilder";
-import { IQueryCommand } from "./Interface/IQueryCommand";
+import { IQuery } from "./Interface/IQuery";
 import { Diagnostic } from "../Logger/Diagnostic";
 
 export class DeferredQuery<T = any> {
     public value: T;
     public resolver: (value?: T | PromiseLike<T>) => void;
-    protected queryCommands: IQueryCommand[] = [];
-    constructor(protected readonly dbContext: DbContext, public readonly command: ICommandQueryExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQueryCommand[]) => T) {
+    private _queryCommands: IQuery[] = [];
+    public get queryCommands() {
+        return this._queryCommands.slice();
     }
     public resolve(bacthResult: IQueryResult[]) {
         const result = bacthResult.splice(0, this.queryCommands.length);
@@ -38,12 +39,12 @@ export class DeferredQuery<T = any> {
     }
     public buildQuery(queryBuilder: QueryBuilder) {
         const timer = Diagnostic.timer();
-        this.queryCommands = this.command.toQueryCommands(queryBuilder, this.parameters);
+        this._queryCommands = this.command.toQueryCommands(queryBuilder, this.parameters);
         if (Diagnostic.enabled) {
-            Diagnostic.debug(this, `Build Query.`, this.queryCommands);
+            Diagnostic.debug(this, `Build Query.`, this._queryCommands);
             Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);
         }
-        return this.queryCommands;
+        return this._queryCommands;
     }
     public toString() {
         return this.buildQuery(this.dbContext.queryBuilder).select(o => o.query).toArray().join(";\n\n");

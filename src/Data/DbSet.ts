@@ -20,7 +20,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 
 export class DbSet<T> extends Queryable<T> {
@@ -41,7 +41,7 @@ export class DbSet<T> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(queryVisitor: QueryVisitor): ICommandQueryExpression<T> {
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         return new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
     }
     public hashCode() {
