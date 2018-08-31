@@ -476,7 +476,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 query: rawQuery,
                 parameters: parameters,
                 type: QueryType.DQL
-            }])
+            }]),
+            hashCode: () => 0,
+            getEffectedEntities: () => []
         };
         if (parameters) {
             Object.assign(queryCommand.parameters, parameters);
