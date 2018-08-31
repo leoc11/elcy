@@ -7,7 +7,7 @@ import { IOrderExpression } from "./IOrderExpression";
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     type: GenericType<T>;
     alias: string;
-    columns: IColumnExpression[];
+    columns: IColumnExpression<T>[];
     name: string;
     select?: SelectExpression<T>;
     primaryColumns: IColumnExpression[];

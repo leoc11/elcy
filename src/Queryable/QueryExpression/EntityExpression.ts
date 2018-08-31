@@ -68,8 +68,8 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     private _defaultOrders: IOrderExpression[];
-    private _versionColumn: IColumnExpression;
-    private _deleteColumn: IColumnExpression;
+    private _versionColumn: IColumnExpression<T>;
+    private _deleteColumn: IColumnExpression<T>;
     public readonly entityTypes: IObjectType[];
     constructor(public readonly type: IObjectType<T>, public alias: string) {
         if (this.metaData) {

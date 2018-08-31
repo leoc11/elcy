@@ -6,7 +6,7 @@ import { QueryBuilder } from "./QueryBuilder";
 import { IQuery } from "./Interface/IQuery";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { hashCode } from "../Helper/Util";
-import { IQueryOption, ISelectQueryOption } from "./Interface/IQueryOption";
+import { IQueryOption } from "./Interface/IQueryOption";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -16,8 +16,11 @@ export class DeferredQuery<T = any> {
         return this._queryCommands.slice();
     }
     public options: IQueryOption;
-    constructor(protected readonly dbContext: DbContext, public readonly command: IQueryCommandExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T, options: IQueryOption) {
-        this.options = options;
+    constructor(protected readonly dbContext: DbContext, public readonly command: IQueryCommandExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T, options?: IQueryOption) {
+        this.options = {};
+        if (options) {
+            Object.assign(this.options, options);
+        }
     }
     public resolve(result: IQueryResult[]) {
         this.value = this.resultParser(result, this._queryCommands);

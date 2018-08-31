@@ -1,4 +1,4 @@
-import { GenericType, } from "../../Common/Type";
+import { GenericType, IObjectType, } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -32,4 +32,5 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         const clone = new CustomEntityExpression(this.name, this.columns, this.type, this.alias);
         return clone;
     }
+    public entityTypes: IObjectType[] = [];
 }

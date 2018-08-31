@@ -9,7 +9,9 @@ declare global {
     interface Array<T> {
         cast<TReturn>(): TReturn[];
         asEnumerable(): Enumerable<T>;
-        select<TReturn>(fn: (item: T) => TReturn, type?: IObjectType<TReturn>): Enumerable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
         selectMany<TReturn>(fn: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
@@ -58,8 +60,8 @@ Array.prototype.asEnumerable = function <T>(this: T[]) {
 Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[] | Enumerable) {
     return this.asEnumerable().selectMany(selector);
 };
-Array.prototype.select = function <T, TReturn>(this: T[], selector: (item: T) => TReturn, type?: IObjectType<TReturn>) {
-    return this.asEnumerable().select(selector, type);
+Array.prototype.select = function <T, TReturn>(this: T[], typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)) {
+    return this.asEnumerable().select(typeOrSelector, selector);
 };
 Array.prototype.contains = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;

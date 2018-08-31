@@ -15,7 +15,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     public readonly key: IExpression;
     public itemExpression: IExpression;
     protected selectori: SelectExpression<T>;
-    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression[], key: IExpression, a?: boolean) {
+    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression<T>[], key: IExpression, hasItems?: boolean) {
         super(select.entity);
         // reset having added by parent constructor
         this.having = undefined;
@@ -57,7 +57,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         else {
             groupExp = new GroupedExpression(this);
         }
-        if (a) {
+        if (hasItems) {
             const itemRelMap = new Map();
             for (const col of groupBy) {
                 itemRelMap.set(col, col);
