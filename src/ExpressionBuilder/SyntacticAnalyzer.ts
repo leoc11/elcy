@@ -236,7 +236,9 @@ function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[
     const obj: any = {};
     while (param.index < tokens.length && (tokens[param.index].data !== "}")) {
         const propName = tokens[param.index].data;
-        param.index += 2;
+        if (tokens[param.index + 1].data === ":") {
+            param.index += 2;
+        }
         const value = createExpression(param, tokens);
         obj[propName] = value;
         if (tokens[param.index].data === ",")
@@ -249,6 +251,8 @@ function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[]
     const arrayVal = [];
     while (param.index < tokens.length && (tokens[param.index].data !== stopper)) {
         arrayVal.push(createExpression(param, tokens));
+        if (tokens[param.index].data === ",")
+            param.index++;
     }
     param.index++;
     return new ArrayValueExpression(...arrayVal);
@@ -273,7 +277,7 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
 function getConstructor(data: any) {
     let constructor = data.constructor;
     if (constructor === Object) {
-        constructor = function Object(){};
+        constructor = function Object() { };
         Object.setPrototypeOf(constructor, Object);
         constructor.prototype = data;
     }

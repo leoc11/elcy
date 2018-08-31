@@ -32,7 +32,7 @@ export abstract class JoinQueryable<T = any, T2 = any, K extends ValueType = any
     private _resultSelector: FunctionExpression<T | T2, R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn);
+            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn, this.flatParameterStacks);
         return this._resultSelector;
     }
     protected set resultSelector(value) {

@@ -1,5 +1,4 @@
 import { TimeSpan } from "../Data/TimeSpan";
-import { fillZero } from "../Helper/Util";
 declare global {
     interface Date {
         addDays(days: number): Date;

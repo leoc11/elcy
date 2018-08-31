@@ -45,7 +45,6 @@ import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpr
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { NamingStrategy } from "./NamingStrategy";
-import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 
 interface IPRelation {
     name: string;

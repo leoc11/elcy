@@ -39,14 +39,14 @@ export class QueryTranslator {
         }
 
         if (memberName) {
-            Reflect.defineMetadata(this.key, { translate: translate, preferApp: preferApp }, QueryTranslator, memberName);
+            Reflect.defineMetadata(this.key, { translate: translate, preferApp: preferApp }, object, memberName);
         }
         else {
-            Reflect.defineMetadata(this.key, { translate: translate, preferApp: preferApp }, QueryTranslator);
+            Reflect.defineMetadata(this.key, { translate: translate, preferApp: preferApp }, object);
         }
     }
     public resolve(object: any, memberName?: string) {
-        let item: IQueryTranslatorItem = memberName ? Reflect.getOwnMetadata(this.key, QueryTranslator, memberName) : Reflect.getOwnMetadata(this.key, QueryTranslator);
+        let item: IQueryTranslatorItem = memberName ? Reflect.getOwnMetadata(this.key, object, memberName) : Reflect.getOwnMetadata(this.key, object);
         if (!item) {
             for (const fallback of this.fallbacks) {
                 item = fallback.resolve(object, memberName);
