@@ -15,4 +15,5 @@ export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T
     isPrimary: boolean;
     isShadow?: boolean;
     clone(): IColumnExpression<TE, T>;
+    hashCode(): number;
 }

@@ -4,6 +4,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { hashCode } from "../../Helper/Util";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: GenericType<T>;
@@ -44,5 +45,8 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         const clone = new ColumnExpression(entity || this.entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.columnType);
         clone.columnMetaData = this.columnMetaData;
         return clone;
+    }
+    public hashCode() {
+        return hashCode(this.propertyName, hashCode(this.columnName));
     }
 }

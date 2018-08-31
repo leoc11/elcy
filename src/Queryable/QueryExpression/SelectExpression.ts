@@ -1,4 +1,4 @@
-import { GenericType, OrderDirection, JoinType, RelationshipType } from "../../Common/Type";
+import { GenericType, OrderDirection, JoinType, RelationshipType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
@@ -19,6 +19,7 @@ import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { hashCode } from "../../Helper/Util";
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
@@ -337,5 +338,19 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             });
         }
         return result;
+    }
+    public hashCode() {
+        let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
+        code = ((code << 5) - code + this.selects.select(o => o.hashCode()).sum()) | 0;
+        code = hashCode(this.where.toString(), code);
+        code = ((code << 5) - code + this.joins.sum(o => o.child.hashCode())) | 0;
+        code = ((code << 5) - code + this.includes.sum(o => o.child.hashCode())) | 0;
+        return code;
+    }
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes
+            .union(this.joins.selectMany(o => o.child.getEffectedEntities()))
+            .union(this.includes.selectMany(o => o.child.getEffectedEntities()))
+            .distinct().toArray();
     }
 }

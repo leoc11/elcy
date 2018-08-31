@@ -17,7 +17,7 @@ import { RelationEntry } from "./RelationEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 import { isValue } from "../Helper/Util";
-import { ISaveChangesOption } from "../QueryBuilder/Interface/ISelectQueryOption";
+import { ISaveChangesOption, ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 import { IConnectionManager } from "../Connection/IConnectionManager";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
@@ -54,6 +54,7 @@ import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpression
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
 import { Diagnostic } from "../Logger/Diagnostic";
+import { IResultCacheManager } from "../Cache/IResultCacheManager";
 
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
@@ -86,6 +87,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         return this._queryCacheManager;
     }
+    public resultCacheManager: IResultCacheManager;
     private _connectionManager: IConnectionManager;
     protected get connectionManager() {
         if (!this._connectionManager) {
@@ -379,7 +381,21 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public async executeDeferred(deferredQueries: Iterable<DeferredQuery>) {
         const queryBuilder = this.queryBuilder;
-        const deferredQueryEnumerable = new Enumerable(deferredQueries);
+        let deferredQueryEnumerable = new Enumerable(deferredQueries);
+
+        // check cached
+        if (this.resultCacheManager) {
+            const cacheQueries = deferredQueryEnumerable.where(o => o.command instanceof SelectExpression && (o.options as ISelectQueryOption).resultCache !== "none");
+            const cachedResults = await this.resultCacheManager.gets(...cacheQueries.select(o => o.hashCode().toString()).toArray());
+            let index = 0;
+            cacheQueries.each(cacheQuery => {
+                const res = cachedResults[index++];
+                if (res) {
+                    cacheQuery.resolve(res);
+                    deferredQueryEnumerable = deferredQueryEnumerable.where(o => o !== cacheQuery);
+                }
+            });
+        }
 
         // analyze parameters
         // db has parameter size limit and query size limit.
@@ -401,8 +417,25 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             queryResult = queryResult.concat(result);
         }
         this.closeConnection();
-        for (const deferredQuery of deferredQueries) {
-            deferredQuery.resolve(queryResult);
+        for (const deferredQuery of deferredQueryEnumerable) {
+            const results = queryResult.splice(0, deferredQuery.queryCommands.length);
+            deferredQuery.resolve(results);
+
+            // cache result
+            if (this.resultCacheManager) {
+                if (deferredQuery.command instanceof SelectExpression) {
+                    const option = deferredQuery.options as ISelectQueryOption;
+                    if (option.resultCache !== "none") {
+                        if (!option.resultCache.disableEntityAsTag)
+                            option.resultCache.tags = option.resultCache.tags.union(deferredQuery.command.getEffectedEntities().select(o => `entity:${o.name}`)).distinct().toArray();
+                        this.resultCacheManager.set(deferredQuery.hashCode().toString(), results, option.resultCache);
+                    }
+                }
+                else {
+                    const effecteds = deferredQuery.command.getEffectedEntities().select(o => `entity:${o.name}`).toArray();
+                    this.resultCacheManager.removeTag(...effecteds);
+                }
+            }
         }
     }
     public async updateSchema() {

@@ -46,9 +46,11 @@ export class RelationDataExpression<T = any> implements IEntityExpression<T> {
     private _columns: IColumnExpression[];
     private _primaryColumns: IColumnExpression[];
     public defaultOrders: IOrderExpression[] = [];
+    public entityTypes: IObjectType[];
     constructor(public readonly type: IObjectType<T>, public alias: string) {
         if (this.metaData)
             this.name = this.metaData.name;
+        this.entityTypes = [type];
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

@@ -1,4 +1,4 @@
-import { OrderDirection, JoinType, DeleteMode } from "../../Common/Type";
+import { OrderDirection, JoinType, DeleteMode, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
@@ -11,6 +11,8 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { hashCode } from "../../Helper/Util";
+import { EntityExpression } from "./EntityExpression";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryCommandExpression<T>;
@@ -31,7 +33,7 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         return undefined as any;
     }
     public get entity() {
-        return this.select.entity;
+        return this.select.entity as EntityExpression<T>;
     }
     public get paging() {
         return this.select.paging;
@@ -144,5 +146,17 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public buildParameter(paramStacks: Array<{ [key: string]: any }>): ISqlParameter[] {
         return this.select.buildParameter(paramStacks);
+    }
+    public hashCode() {
+        return hashCode("DELETE", hashCode(this.deleteMode ? "" : this.deleteMode.toString(), this.select.hashCode()));
+    }
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes
+            .union(
+                this.entity.metaData.relations
+                    .where(o => o.isMaster && (o.reverseRelation.deleteOption !== "NO ACTION" && o.reverseRelation.deleteOption !== "RESTRICT"))
+                    .select(o => o.target.type)
+            )
+            .union(this.includes.selectMany(o => o.child.getEffectedEntities())).distinct().toArray();
     }
 }

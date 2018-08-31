@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
@@ -14,4 +14,5 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     defaultOrders: IOrderExpression[];
     deleteColumn?: IColumnExpression<T>;
     clone(): IEntityExpression<T>;
+    entityTypes: IObjectType[];
 }

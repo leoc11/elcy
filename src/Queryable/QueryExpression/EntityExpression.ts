@@ -70,9 +70,15 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _defaultOrders: IOrderExpression[];
     private _versionColumn: IColumnExpression;
     private _deleteColumn: IColumnExpression;
+    public readonly entityTypes: IObjectType[];
     constructor(public readonly type: IObjectType<T>, public alias: string) {
-        if (this.metaData)
+        if (this.metaData) {
             this.name = this.metaData.name;
+            this.entityTypes = [this.metaData.type];
+        }
+        else {
+            this.entityTypes = [this.type];
+        }
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

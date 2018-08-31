@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -21,6 +21,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     private _selectedColumns: IColumnExpression[];
     private _relationColumns: IColumnExpression[];
     public alias: string;
+    public readonly entityTypes: IObjectType[];
     constructor(public subSelect: SelectExpression<T>, public readonly type: GenericType<T> = Object as any) {
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
@@ -30,6 +31,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
             return col;
         }).toArray();
         this.defaultOrders = subSelect.orders.slice(0);
+        this.entityTypes = this.subSelect.entity.entityTypes.slice();
     }
     public get selectedColumns() {
         if (!this._selectedColumns)

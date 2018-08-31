@@ -54,4 +54,7 @@ export class DeferredQuery<T = any> {
     public toString() {
         return this.buildQuery(this.dbContext.queryBuilder).select(o => o.query).toArray().join(";\n\n");
     }
+    public hashCode() {
+        return this.command.hashCode() + this.parameters.select(o => hashCode((o.value || "NULL").toString())).sum();
+    }
 }

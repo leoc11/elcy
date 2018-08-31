@@ -1,4 +1,4 @@
-import { OrderDirection, JoinType } from "../../Common/Type";
+import { OrderDirection, JoinType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
@@ -37,7 +37,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         return this.select.where;
     }
     constructor(entity: IEntityExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
-    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression }); 
+    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression }) {
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity.clone();
@@ -81,5 +81,15 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
         return this.select.buildParameter(params);
+    }
+    public hashCode() {
+        let code = 0;
+        for (const prop in this.setter) {
+            code += hashCode(prop, hashCode(this.setter[prop].toString()));
+        }
+        return hashCode("UPDATE", ((code << 5) - code + this.select.hashCode()) | 0);
+    }
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes;
     }
 }

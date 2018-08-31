@@ -56,4 +56,10 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
         }
         return result;
     }
+    public hashCode() {
+        return hashCode("INSERT", hashCode(this.entity.name, this.values.selectMany(o => o).select(o => hashCode(o.toString())).sum()));
+    }
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes;
+    }
 }
