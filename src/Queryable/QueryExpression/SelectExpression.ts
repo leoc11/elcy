@@ -36,7 +36,6 @@ export interface IJoinRelation<T = any, TChild = any> {
 export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     [prop: string]: any;
     public selects: IColumnExpression[] = [];
-    private isSelectAll = true;
     public distinct: boolean;
     public isAggregate: boolean;
     public entity: IEntityExpression<T>;
@@ -67,7 +66,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         }
         else
             this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
-        this.isSelectAll = true;
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
         if (entity.deleteColumn)
@@ -264,7 +262,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         if (this.itemExpression !== this.entity)
             clone.itemExpression = this.itemExpression;
         clone.orders = this.orders.slice(0);
-        clone.isSelectAll = this.isSelectAll;
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);
             if (!col) {
@@ -312,13 +309,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public toString(queryBuilder: QueryBuilder): string {
         return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";\n\n");
-    }
-    public clearDefaultColumns() {
-        if (this.isSelectAll) {
-            this.isSelectAll = false;
-            for (const column of this.entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected))
-                this.selects.remove(column);
-        }
     }
     public isSimple() {
         return !this.where &&

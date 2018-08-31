@@ -20,6 +20,7 @@ import { WhereQueryable } from "./WhereQueryable";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { ParameterQueryable } from "./ParameterQueryable";
+import { ProjectQueryable } from "./ProjectQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -34,6 +35,7 @@ declare module "./Queryable" {
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
         distinct(): Queryable<T>;
+        project(...includes: Array<(item: T) => any>): Queryable<T>;
         include(...includes: Array<(item: T) => any>): Queryable<T>;
         union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
         intersect(array2: Queryable<T>): Queryable<T>;
@@ -42,7 +44,7 @@ declare module "./Queryable" {
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Queryable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Queryable<TResult>;
     }
 }
 
@@ -101,9 +103,12 @@ Queryable.prototype.intersect = function <T>(this: Queryable<T>, array2: Queryab
 Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
     return new ExceptQueryable(this, array2);
 };
-Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends {[key in (keyof TD & keyof TM)]: any }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<TResult> {
+Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<TResult> {
     return new PivotQueryable(this, dimensions, metrics);
 };
 Queryable.prototype.include = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {
     return new IncludeQueryable(this, includes);
+};
+Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {
+    return new ProjectQueryable(this, includes);
 };

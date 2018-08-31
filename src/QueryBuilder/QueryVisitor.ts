@@ -205,20 +205,6 @@ export class QueryVisitor {
                 }
             }
             if (column) {
-                switch (param.scope) {
-                    case "include":
-                        if (parentEntity instanceof EmbeddedColumnExpression) {
-                            if (column.columnMetaData && column.columnMetaData.isProjected) {
-                                parentEntity.clearDefaultColumns();
-                            }
-                        }
-                        if (parentEntity.select) {
-                            if (column.columnMetaData && column.columnMetaData.isProjected) {
-                                parentEntity.select.clearDefaultColumns();
-                            }
-                        }
-                        break;
-                }
                 if (parentEntity instanceof EmbeddedColumnExpression) {
                     parentEntity.selects.add(column);
                 }
@@ -248,6 +234,7 @@ export class QueryVisitor {
                                 return relationMeta.relationType === "many" ? child : child.entity;
                             }
                         }
+                    case "project":
                     case "include":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
@@ -592,7 +579,7 @@ export class QueryVisitor {
             switch (expression.methodName) {
                 case "select":
                 case "selectMany": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     // clear includes coz select one return selected value without it's relations
@@ -717,7 +704,7 @@ export class QueryVisitor {
                 }
                 case "groupBy": {
                     // TODO: queryable end with group by. Orders.groupBy(o => o.OrderDate).toArray();
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     selectOperand.includes = [];
@@ -798,18 +785,22 @@ export class QueryVisitor {
                     return objectOperand;
                 }
                 case "distinct": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     objectOperand.distinct = true;
                     objectOperand.isAggregate = param.scope === "queryable";
                     return objectOperand;
                 }
+                case "project":
                 case "include": {
+                    if (expression.methodName === "project") {
+                        objectOperand.selects = [];
+                    }
                     for (const paramFn of expression.params) {
                         const selectorFn = paramFn as FunctionExpression<TType, TResult>;
                         this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
-                        let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "include" };
+                        let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
                         this.visit(selectorFn, visitParam);
                         this.scopeParameters.remove(selectorFn.params[0].name);
                     }
@@ -819,7 +810,7 @@ export class QueryVisitor {
                     return objectOperand;
                 }
                 case "count": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
@@ -853,7 +844,7 @@ export class QueryVisitor {
                 case "avg":
                 case "max":
                 case "min": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     if (expression.params.length > 0) {
@@ -901,7 +892,7 @@ export class QueryVisitor {
                 }
                 case "all":
                 case "any": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const isAny = expression.methodName === "any";
@@ -940,7 +931,7 @@ export class QueryVisitor {
                 }
                 case "contains": {
                     // TODO: dbset1.where(o => dbset2.select(c => c.column).contains(o.column)); use inner join for this
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const item = expression.params[0];
@@ -980,7 +971,7 @@ export class QueryVisitor {
                 case "union":
                 case "intersect":
                 case "except": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const parentRelation = objectOperand.parentRelation;
@@ -1015,7 +1006,7 @@ export class QueryVisitor {
                 case "leftJoin":
                 case "rightJoin":
                 case "fullJoin": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const parentRelation = objectOperand.parentRelation;
@@ -1088,7 +1079,7 @@ export class QueryVisitor {
                     return selectOperand;
                 }
                 case "pivot": {
-                    if (param.scope === "include")
+                    if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const parentRelation = objectOperand.parentRelation;
