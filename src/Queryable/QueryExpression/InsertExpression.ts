@@ -7,7 +7,9 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
-export class InsertExpression<T = any> implements ICommandQueryExpression<void> {
+import { IObjectType } from "../../Common/Type";
+import { hashCode } from "../../Helper/Util";
+export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
     public parameters: SqlParameterExpression[];
     private _columns: IColumnExpression<T>[];
     public get columns(): IColumnExpression<T>[] {

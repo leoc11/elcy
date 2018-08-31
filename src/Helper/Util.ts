@@ -38,7 +38,8 @@ export const fillZero = (value: number, factor = 2): string => {
 export const hashCode = (str: string, hash: number = 0) => {
     if (!str || str.length === 0)
         return hash;
-    for (let i = 0; i < str.length; i++) {
+    const l = str.length;
+    for (let i = 0; i < l; i++) {
         const charCode = str.charCodeAt(i);
         hash = ((hash << 5) - hash) + charCode;
         hash |= 0; // Convert to 32bit integer

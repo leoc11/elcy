@@ -443,7 +443,8 @@ export class QueryVisitor {
                     const cloneSelect = childEntity.select.clone();
                     cloneSelect.joins = [];
                     childEntity = cloneSelect.entity;
-                    for (let i = 0; i < selectOperand.entity.primaryColumns.length; i++) {
+                    const l = selectOperand.entity.primaryColumns.length;
+                    for (let i = 0; i < l; i++) {
                         const pCol = selectOperand.entity.primaryColumns[i];
                         const cCol = childEntity.primaryColumns[i];
                         relationMap.set(pCol, cCol);
@@ -1173,11 +1174,12 @@ export class QueryVisitor {
             if (methodFn && !isNativeFunction(methodFn)) {
                 // try convert user defined method to a FunctionExpression and built it as a query.
                 const methodExp = ExpressionBuilder.parse(methodFn);
-                for (let i = 0; i < expression.params.length; i++) {
+                const l = expression.params.length;
+                for (let i = 0; i < l; i++) {
                     this.scopeParameters.add(methodExp.params[i].name, expression.params[i]);
                 }
                 const result = this.visitFunction(methodExp, { selectExpression: param.selectExpression });
-                for (let i = 0; i < expression.params.length; i++) {
+                for (let i = 0; i < l; i++) {
                     this.scopeParameters.remove(methodExp.params[i].name);
                 }
                 return result;
@@ -1217,11 +1219,12 @@ export class QueryVisitor {
         // Try convert function as Expression
         if (!isNativeFunction(fn)) {
             const functionExp = ExpressionBuilder.parse(fn, this.parameters);
-            for (let i = 0; i < functionExp.params.length; i++) {
+            const l = functionExp.params.length;
+            for (let i = 0; i < l; i++) {
                 this.scopeParameters.add(functionExp.params[i].name, expression.params[i]);
             }
             const result = this.visit(functionExp, { selectExpression: param.selectExpression });
-            for (let i = 0; i < functionExp.params.length; i++) {
+            for (let i = 0; i < l; i++) {
                 this.scopeParameters.remove(functionExp.params[i].name);
             }
             return result;

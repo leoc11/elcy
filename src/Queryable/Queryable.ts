@@ -1,4 +1,4 @@
-import { GenericType, DeleteMode } from "../Common/Type";
+import { GenericType, DeleteMode, QueryType } from "../Common/Type";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
@@ -170,7 +170,12 @@ export abstract class Queryable<T = any> {
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => queryCache.resultParser.parse(result, this.dbContext));
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
+            (result) => {
+                let i = 0;
+                result = result.where(o => query.queryCommands[i++].type === QueryType.DQL).toArray();
+                return queryCache.resultParser.parse(result, this.dbContext);
+            }, this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -547,7 +552,11 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).first());
+            (result) => {
+                let i = 0;
+                result = result.where(o => query.queryCommands[i++].type === QueryType.DQL).toArray();
+                return queryCache.resultParser.parse(result, this.dbContext).first();
+            }, this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }

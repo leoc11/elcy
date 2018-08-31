@@ -34,11 +34,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     }
     private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext, select: SelectExpression<T>, loadTime: Date, customTypeMap = new Map<GenericType, Map<number, any>>()): T[] {
         const results: T[] = [];
-        let queryResult: IQueryResult;
-        do {
-            queryResult = queryResults.shift();
-        } while (!queryResult.rows);
-
+        let queryResult = queryResults.shift();
         if (Enumerable.load(queryResult.rows).count() <= 0)
             return results;
 
