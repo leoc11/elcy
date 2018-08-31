@@ -6,7 +6,7 @@ import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode, clone } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
-import { IQueryOption } from "../QueryBuilder/Interface/ISelectQueryOption";
+import { IQueryOption, ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";

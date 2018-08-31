@@ -171,6 +171,16 @@ export class QueryVisitor {
             result = this.createParamBuilderItem(a, param);
             return result;
         }
+        if (result instanceof SelectExpression) {
+            // assumpt all selectExpression parameter come from groupJoin
+            const rel = result.parentRelation as IJoinRelation;
+            result = result.clone();
+            const relMap = new Map<IColumnExpression, IColumnExpression>();
+            for (const [key, value] of rel.relations) {
+                relMap.set(key, (result as SelectExpression).entity.columns.find(o => o.columnName === value.columnName));
+            }
+            param.selectExpression.addJoinRelation(result, relMap, rel.type);
+        }
         return result;
     }
     protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: IVisitParameter) {
@@ -394,7 +404,7 @@ export class QueryVisitor {
             return result;
         }
         else {
-            // TODO: sql query representation for each default object type intantiation
+            // TODO: sql query representation for each default object type instantiation
         }
         throw new Error(`${expression.type.name} not supported.`);
     }
@@ -494,12 +504,14 @@ export class QueryVisitor {
                     }
                     const nextRel = parentRel.parent.parentRelation as IJoinRelation<any, any>;
                     parentRel.parent.joins.remove(parentRel);
+
                     parentRel.child.addJoinRelation(parentRel.parent, relationMap, JoinType.INNER);
                     if (!parentRel) break;
                     parentRel = nextRel;
                 }
 
                 selectOperand.joins.remove(parentRel);
+
                 const pr: IPRelation = {
                     name: prop,
                     child: valueExp,
@@ -1005,7 +1017,8 @@ export class QueryVisitor {
                 case "innerJoin":
                 case "leftJoin":
                 case "rightJoin":
-                case "fullJoin": {
+                case "fullJoin":
+                case "groupJoin": {
                     if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
@@ -1047,6 +1060,7 @@ export class QueryVisitor {
 
                     let jointType: JoinType;
                     switch (expression.methodName) {
+                        case "groupJoin":
                         case "leftJoin":
                             jointType = JoinType.LEFT;
                             break;
@@ -1061,11 +1075,21 @@ export class QueryVisitor {
                             break;
                     }
 
-                    selectOperand.addJoinRelation(childSelectOperand, joinRelationMap, jointType);
+                    if (expression.methodName === "groupJoin") {
+                        childSelectOperand.parentRelation = {
+                            child: childSelectOperand,
+                            parent: selectOperand,
+                            relations: joinRelationMap,
+                            type: jointType
+                        };
+                    }
+                    else {
+                        selectOperand.addJoinRelation(childSelectOperand, joinRelationMap, jointType);
+                    }
 
                     const resultVisitParam: IVisitParameter = { selectExpression: selectOperand, scope: "join" };
                     const resultSelector = expression.params[3] as FunctionExpression;
-                    this.scopeParameters.add(resultSelector.params[1].name, childSelectOperand.getVisitParam());
+                    this.scopeParameters.add(resultSelector.params[1].name, expression.methodName === "groupJoin" ? childSelectOperand : childSelectOperand.getVisitParam());
                     this.visit(new MethodCallExpression(selectOperand, "select", [resultSelector]), resultVisitParam);
                     this.scopeParameters.remove(resultSelector.params[1].name);
                     if (parentRelation) {

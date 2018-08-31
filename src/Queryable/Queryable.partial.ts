@@ -21,6 +21,7 @@ import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { ProjectQueryable } from "./ProjectQueryable";
+import { GroupJoinQueryable } from "./GroupJoinQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -40,6 +41,7 @@ declare module "./Queryable" {
         union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
         intersect(array2: Queryable<T>): Queryable<T>;
         except(array2: Queryable<T>): Queryable<T>;
+        groupJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2[]) => TResult): Queryable<TResult>;
         innerJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
@@ -81,6 +83,9 @@ Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {
     return new DistinctQueryable(this);
+};
+Queryable.prototype.groupJoin = function <T, T2, TKey extends ValueType, TResult>(this: Queryable<T>, array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2[]) => TResult): Queryable<TResult> {
+    return new GroupJoinQueryable(this, array2, keySelector1, keySelector2, resultSelector);
 };
 Queryable.prototype.innerJoin = function <T, T2, TKey extends ValueType, TResult>(this: Queryable<T>, array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult> {
     return new InnerJoinQueryable(this, array2, keySelector1, keySelector2, resultSelector);
