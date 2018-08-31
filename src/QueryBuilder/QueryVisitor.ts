@@ -599,15 +599,15 @@ export class QueryVisitor {
                     selectOperand.includes = [];
 
                     const parentRelation = objectOperand.parentRelation;
-                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                    const selectorFn = (expression.params.length > 1 ? expression.params[1] : expression.params[0]) as FunctionExpression<TType, TResult>;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: param.scope === "queryable" ? expression.methodName : "" };
                     this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                     const selectExp = this.visit(selectorFn, visitParam);
                     this.scopeParameters.remove(selectorFn.params[0].name);
-                    // todo recheck
+                    // TODO recheck
                     selectOperand = param.selectExpression = visitParam.selectExpression;
 
-                    const type = expression.params[1] as ValueExpression<GenericType>;
+                    const type = expression.params.length > 1 ? expression.params[0] as ValueExpression<GenericType> : null;
 
                     if (expression.methodName === "select") {
                         if (selectExp instanceof SelectExpression) {

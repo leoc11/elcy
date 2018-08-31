@@ -24,7 +24,9 @@ import { ParameterQueryable } from "./ParameterQueryable";
 declare module "./Queryable" {
     interface Queryable<T> {
         parameter(params: { [key: string]: any }): Queryable<T>;
-        select<TReturn>(selector: ((item: T) => TReturn), type?: IObjectType<TReturn>): Queryable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Queryable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
         orderBy(...selectors: IQueryableOrderDefinition<T>[]): Queryable<T>;
@@ -44,10 +46,17 @@ declare module "./Queryable" {
     }
 }
 
-Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, selector: ((item: T) => TReturn), type?: IObjectType<TReturn>): Queryable<TReturn> {
+Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn> {
+    let type: IObjectType<TReturn>;
+    if (!selector) {
+        selector = typeOrSelector as any;
+    }
+    else {
+        type = typeOrSelector as any;
+    }
     return new SelectQueryable<T, TReturn>(this, selector, type);
 };
-Queryable.prototype.parameter = function<T>(params: { [key: string]: any }): Queryable<T> {
+Queryable.prototype.parameter = function <T>(params: { [key: string]: any }): Queryable<T> {
     return new ParameterQueryable(this, params);
 };
 Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn> {

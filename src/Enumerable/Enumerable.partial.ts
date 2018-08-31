@@ -20,7 +20,9 @@ import { IObjectType } from "../Common/Type";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
-        select<TReturn>(selector: (item: T) => TReturn, type?: IObjectType<TReturn>): Enumerable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
         orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
@@ -41,7 +43,14 @@ declare module "./Enumerable" {
 Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
     return this as any;
 };
-Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, selector: (item: T) => TReturn, type?: IObjectType<TReturn>): Enumerable<TReturn> {
+Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn> {
+    let type: IObjectType<TReturn>;
+    if (!selector) {
+        selector = typeOrSelector as any;
+    }
+    else {
+        type = typeOrSelector as any;
+    }
     return new SelectEnumerable(this, selector, type);
 };
 Enumerable.prototype.selectMany = function <T, TReturn>(this: Enumerable<T>, selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn> {
