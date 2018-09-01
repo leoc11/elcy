@@ -46,7 +46,7 @@ declare module "./Queryable" {
         leftJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         fullJoin<T2, TKey, TResult>(array2: Queryable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Queryable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metrics: TM): Queryable<TResult>;
     }
 }
 
@@ -108,7 +108,7 @@ Queryable.prototype.intersect = function <T>(this: Queryable<T>, array2: Queryab
 Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
     return new ExceptQueryable(this, array2);
 };
-Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<TResult> {
+Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<TResult> {
     return new PivotQueryable(this, dimensions, metrics);
 };
 Queryable.prototype.include = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {

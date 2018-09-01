@@ -171,7 +171,7 @@ export class QueryVisitor {
             result = this.createParamBuilderItem(a, param);
             return result;
         }
-        if (result instanceof SelectExpression) {
+        if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
             const rel = result.parentRelation as IJoinRelation;
             result = result.clone();
@@ -1119,10 +1119,11 @@ export class QueryVisitor {
                     const dObject = (dimensions.body as ObjectValueExpression<any>).object;
                     const mObject = (metrics.body as ObjectValueExpression<any>).object;
                     const dmObject: { [key: string]: IExpression } = {};
-                    for (const prop in dObject)
-                        dmObject[prop] = dObject[prop];
+                    for (const prop in dObject) {
+                        dmObject[prop] = new FunctionExpression(new MemberAccessExpression(dimensions.params[0], prop), dimensions.params);
+                    }
                     for (const prop in mObject)
-                        dmObject[prop] = dObject[prop];
+                        dmObject[prop] = mObject[prop];
 
                     // select
                     const selectorFn = new FunctionExpression(new ObjectValueExpression(dmObject), metrics.params);

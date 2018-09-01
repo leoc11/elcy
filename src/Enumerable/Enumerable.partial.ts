@@ -16,7 +16,7 @@ import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
-import { IObjectType } from "../Common/Type";
+import { IObjectType, ValueType } from "../Common/Type";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
@@ -37,7 +37,7 @@ declare module "./Enumerable" {
         union(array2: Iterable<T>, isUnionAll?: boolean): Enumerable<T>;
         intersect(array2: Iterable<T>): Enumerable<T>;
         except(array2: Iterable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
     }
 }
 Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
@@ -95,7 +95,7 @@ Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: Itera
 Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: Iterable<T> | Enumerable<T>): Enumerable<T> {
     return new ExceptEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2));
 };
-Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
+Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
     return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
         const dimensionKey: TResult = {} as any;
         for (const key in dimensions) {

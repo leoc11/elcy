@@ -2,7 +2,7 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import "../Enumerable/Enumerable.partial";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
-import { IObjectType } from "../Common/Type";
+import { IObjectType, ValueType } from "../Common/Type";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -41,7 +41,7 @@ declare global {
          * Return array of item exist in both source array and array2.
          */
         except(array2: Iterable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
     }
     interface Map<K, V> {
         asEnumerable(): Enumerable<[K, V]>;
@@ -130,6 +130,6 @@ Array.prototype.intersect = function <T>(this: T[], array2: Iterable<T>) {
 Array.prototype.except = function <T>(this: T[], array2: Iterable<T>) {
     return this.asEnumerable().except(array2);
 };
-Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
+Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
     return this.asEnumerable().pivot(dimensions, metrics);
 };

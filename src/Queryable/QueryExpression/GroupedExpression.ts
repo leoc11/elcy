@@ -3,6 +3,9 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IColumnExpression } from "./IColumnExpression";
+import { JoinType } from "../../Common/Type";
 
 export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
     public get where() {
@@ -32,6 +35,10 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
         super(select.entity);
         this.joins = select.joins.slice(0);
         this.includes = [];
+    }
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
+        this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
+        return super.addJoinRelation(child, relationMetaOrRelations as any, type);
     }
     public clone(): GroupedExpression<T> {
         const clone = new GroupedExpression(this.select.clone());
