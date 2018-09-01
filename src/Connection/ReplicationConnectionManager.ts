@@ -1,3 +1,4 @@
+import "../Extensions/EnumerableExtension";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "../Driver/IDriver";

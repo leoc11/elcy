@@ -2,11 +2,14 @@ import { IResultCacheManager } from "./IResultCacheManager";
 import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { ICacheOption } from "./ICacheOption";
 import { ICacheItem } from "./ICacheItem";
+import { QueuedTimeout } from "../Common/QueuedTimeout";
 
 export class DefaultResultCacheManager implements IResultCacheManager {
     private _keyMap = new Map<string, ICacheItem>();
     private _tagMap = new Map<string, string[]>();
-    private _expiredSortedItems: ICacheItem[] = [];
+    private _expiredQueue = new QueuedTimeout((item: ICacheItem) => {
+        return this.remove(item.key);
+    });
     public async get(key: string): Promise<IQueryResult[]> {
         const res = await this.gets(key);
         return res.first();
@@ -18,12 +21,8 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;
-                    const index = this._expiredSortedItems.indexOf(item);
-                    this._expiredSortedItems.splice(index, 1);
-                    this.addSortedItem(item);
-                    if (index === 0) {
-                        this.clearExpiredTimeout();
-                    }
+                    this._expiredQueue.clearTimeout(item);
+                    this._expiredQueue.setTimeout(item, item.expiredTime);
                 }
             }
 
@@ -40,7 +39,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
         }
         if (item.expiredTime) {
-            this.addSortedItem(item);
+            this._expiredQueue.setTimeout(item, item.expiredTime);
         }
         if (item.tags) {
             item.tags.each((tag) => {
@@ -53,20 +52,22 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             });
         }
     }
-    public async remove(key: string): Promise<void> {
-        const item = this._keyMap.get(key);
-        this._keyMap.delete(key);
-        if (item) {
-            if (item.tags) {
-                item.tags.each((tag) => {
-                    const keyList = this._tagMap.get(tag);
-                    if (keyList) {
-                        keyList.remove(key);
-                    }
-                });
+    public async remove(...keys: string[]): Promise<void> {
+        keys.each(key => {
+            const item = this._keyMap.get(key);
+            this._keyMap.delete(key);
+            if (item) {
+                if (item.tags) {
+                    item.tags.each((tag) => {
+                        const keyList = this._tagMap.get(tag);
+                        if (keyList) {
+                            keyList.remove(key);
+                        }
+                    });
+                }
+                this._expiredQueue.clearTimeout(item);
             }
-            this._expiredSortedItems.remove(item);
-        }
+        });
     }
     public async removeTag(...tags: string[]): Promise<void> {
         tags.each(tag => {
@@ -82,44 +83,6 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     public async clear(): Promise<void> {
         this._keyMap.clear();
         this._tagMap.clear();
-        this._expiredSortedItems = [];
-        this.clearExpiredTimeout();
-    }
-    private _expiredTimeout: any;
-    protected setExpiredTimeout(expiredTime: Date) {
-        if (!this._expiredTimeout) {
-            this._expiredTimeout = setTimeout(() => {
-                const item = this._expiredSortedItems.shift();
-                this._expiredTimeout = null;
-                this.remove(item.key).then(() => {
-                    if (this._expiredSortedItems.length)
-                        this.setExpiredTimeout(this._expiredSortedItems[0].expiredTime);
-                });
-            }, Date.now() - expiredTime.getTime());
-        }
-    }
-    protected clearExpiredTimeout() {
-        if (this._expiredTimeout) {
-            clearTimeout(this._expiredTimeout);
-            this._expiredTimeout = null;
-            if (this._expiredSortedItems.length > 0)
-                this.setExpiredTimeout(this._expiredSortedItems[0].expiredTime);
-        }
-    }
-    protected addSortedItem(item: ICacheItem, start = 0, end = this._expiredSortedItems.length - 1) {
-        while (start < end) {
-            const half = Math.floor(start + end / 2);
-            const halfItem = this._expiredSortedItems[half];
-            if (item.expiredTime > halfItem.expiredTime) {
-                start = start === half ? half + 1 : half;
-            }
-            else if (item.expiredTime < halfItem.expiredTime) {
-                end = half;
-            }
-            else {
-                start = end = half;
-            }
-        }
-        this._expiredSortedItems.splice(start, 0, item);
+        this._expiredQueue.reset();
     }
 }

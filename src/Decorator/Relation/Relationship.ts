@@ -4,8 +4,9 @@ import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { entityMetaKey, relationMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
 import { IRelationOption, IAdditionalRelationOption } from "../Option/IRelationOption";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { RelationChangeType, IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
+import { IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IEventDispacher } from "../../Event/IEventHandler";
+import { ObservableArray } from "../../Common/ObservableArray";
 
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
@@ -135,61 +136,4 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
 
         Object.defineProperty(target, propertyKey, descriptor);
     };
-}
-
-export class ObservableArray<T> extends Array<T> {
-    protected observers: Array<(eventType: RelationChangeType, items: T[]) => void> = [];
-    public constructor(items: T[]) {
-        super(...items);
-        Object.setPrototypeOf(this, ObservableArray.prototype);
-    }
-    static create<T>(items: T[]): ObservableArray<T> {
-        return new ObservableArray(items);
-    }
-    public register(observer: (eventType: RelationChangeType, items: T[]) => void) {
-        this.observers.push(observer);
-    }
-    public unobserve() {
-        this.observers = [];
-    }
-    protected raiseEvents(eventType: RelationChangeType, items: T[]) {
-        for (const observer of this.observers) {
-            observer(eventType, items);
-        }
-    }
-    public push(...items: T[]) {
-        const result = super.push(...items);
-        if (items && items.length > 0)
-            this.raiseEvents("add", items);
-        return result;
-    }
-    public pop() {
-        const result = super.pop();
-        if (result)
-            this.raiseEvents("del", [result]);
-        return result;
-    }
-    public shift() {
-        const result = super.shift();
-        if (result)
-            this.raiseEvents("del", [result]);
-        return result;
-    }
-    public unshift(...items: T[]) {
-        const result = super.unshift();
-        if (items && items.length > 0)
-            this.raiseEvents("add", items);
-        return result;
-    }
-    public splice(start: number, deleteCount?: number, ...items: T[]) {
-        const result = super.splice(start, deleteCount, ...items);
-        if (result.length > 0)
-            this.raiseEvents("del", result);
-        if (items && items.length > 0)
-            this.raiseEvents("add", items);
-        return result;
-    }
-    public set length(value: number) {
-        this.splice(value);
-    }
 }

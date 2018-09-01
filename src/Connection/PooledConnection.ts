@@ -6,7 +6,6 @@ import { PooledConnectionManager } from "./PooledConnectionManager";
 
 export class PooledConnection implements IConnection {
     constructor(public connection: IConnection, private manager: PooledConnectionManager) { }
-    public expiredTime: Date;
     public get isolationLevel() { return this.connection.isolationLevel; }
     public set isolationLevel(value) { this.connection.isolationLevel = value; }
     public get database() { return this.connection.database; }
@@ -39,5 +38,5 @@ export class PooledConnection implements IConnection {
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return this.connection.setIsolationLevel(isolationLevel);
     }
-    public get closeEvent() { return this.connection.closeEvent; }
+    public get errorEvent() { return this.connection.errorEvent; }
 }

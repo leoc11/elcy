@@ -1,5 +1,5 @@
-import { Enumerable } from "../Enumerable/Enumerable";
 import "../Enumerable/Enumerable.partial";
+import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
 import { IObjectType, ValueType } from "../Common/Type";

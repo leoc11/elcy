@@ -16,5 +16,5 @@ export interface IConnection {
     rollbackTransaction(): Promise<void>;
     executeQuery(command: IQuery): Promise<IQueryResult[]>;
     setIsolationLevel(isolationLevel: IsolationLevel): Promise<void>;
-    closeEvent: IEventHandler<IConnection, void>;
+    errorEvent: IEventHandler<IConnection, Error>;
 }

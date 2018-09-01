@@ -1,10 +1,16 @@
+import "../Extensions/DateExtension";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "../Driver/IDriver";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { PooledConnection } from "./PooledConnection";
 import { ConnectionError } from "../Error/ConnectionError";
+import { QueuedTimeout } from "../Common/QueuedTimeout";
 
+interface IResolver<T> {
+    resolve: (item: T) => void;
+    reject: (reason: any) => void;
+}
 export class PooledConnectionManager implements IConnectionManager {
     constructor(protected driver: IDriver<any>, public readonly poolOption?: IConnectionPoolOption) {
         if (!this.poolOption) this.poolOption = {};
@@ -15,34 +21,32 @@ export class PooledConnectionManager implements IConnectionManager {
         if (typeof this.poolOption.acquireTimeout !== "number") this.poolOption.acquireTimeout = 60000;
         if (this.poolOption.queueType !== "lifo") this.poolOption.queueType = "fifo";
     }
-    public readonly pools: PooledConnection[] = [];
+    public get poolSize() {
+        return this.pools.queue.length;
+    }
     protected _waitQueues: Array<(value: PooledConnection) => void> = [];
     public connectionCount = 0;
-    private _idleTimeout: any;
+    public readonly waitingQueue = new QueuedTimeout<IResolver<PooledConnection>>((resolver) => {
+        resolver.reject(new ConnectionError(10, "Acquire Timeout"));
+    });
+    public readonly pools = new QueuedTimeout<PooledConnection>((con: PooledConnection) => {
+        this.connectionCount--;
+        con.connection.close();
+    });
+
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
         let con: PooledConnection;
-        if (this.driver.allowPooling && this.pools.length >= this.poolOption.min) {
-            const firstCon = this.pools[0];
+        if (this.driver.allowPooling && this.pools.queue.length > this.poolOption.min) {
             con = this.poolOption.queueType === "lifo" ? this.pools.pop() : this.pools.shift();
-            if (con === firstCon) {
-                this.clearIdleTimeout();
-            }
         }
         else {
-            if (this.connectionCount > this.poolOption.maxConnection) {
-                let resolve: (value: PooledConnection) => void;
-                let reject: (reason: any) => void;
-                const promise = new Promise<PooledConnection>((res, rej) => {
-                    resolve = res;
-                    reject = rej;
+            if (this.connectionCount >= this.poolOption.maxConnection) {
+                let resolver: IResolver<PooledConnection> = {} as any;
+                const promise = new Promise<PooledConnection>((ok, fail) => {
+                    resolver.resolve = ok;
+                    resolver.reject = fail;
                 });
-                if (this.poolOption.acquireTimeout !== Infinity) {
-                    setTimeout(() => {
-                        this._waitQueues.remove(resolve);
-                        reject(new ConnectionError(10, "Maximum connection has been reached"));
-                    }, this.poolOption.acquireTimeout);
-                }
-                this._waitQueues.push(resolve);
+                this.waitingQueue.setTimeout(resolver, this.poolOption.acquireTimeout !== Infinity ? new Date().addMilliseconds(this.poolOption.acquireTimeout) : undefined);
                 return promise;
             }
 
@@ -57,16 +61,17 @@ export class PooledConnectionManager implements IConnectionManager {
         return [await this.driver.getConnection()];
     }
     public release(connection: PooledConnection): Promise<void> {
-        if (this.driver.allowPooling && !connection.inTransaction && this.pools.length < this.poolOption.max) {
+        if (this.driver.allowPooling && !connection.inTransaction) {
             return connection.reset().then(() => {
-                const waiting = this._waitQueues.shift();
+                const waiting = this.waitingQueue.shift();
                 if (waiting) {
-                    waiting(connection);
+                    waiting.resolve(connection);
                 }
                 else {
-                    this.pools.push(connection);
-                    connection.expiredTime = (new Date()).addMilliseconds(this.poolOption.idleTimeout);
-                    this.setIdleTimeout(connection.expiredTime);
+                    this.pools.setTimeout(connection, (new Date()).addMilliseconds(this.poolOption.idleTimeout));
+                    if (this.pools.queue.length > this.poolOption.max) {
+                        this.pools.forceTimeoutFirst(this.pools.queue.length - this.poolOption.max);
+                    }
                 }
             }, () => {
                 this.connectionCount--;
@@ -77,25 +82,8 @@ export class PooledConnectionManager implements IConnectionManager {
             return connection.connection.close();
         }
     }
-
-    protected setIdleTimeout(expiredTime: Date) {
-        if (!this._idleTimeout) {
-            this._idleTimeout = setTimeout(() => {
-                const con = this.pools.shift();
-                this._idleTimeout = null;
-                this.connectionCount--;
-                con.connection.close();
-                if (this.pools.length)
-                    this.setIdleTimeout(this.pools[0].expiredTime);
-            }, Date.now() - expiredTime.getTime());
-        }
-    }
-    protected clearIdleTimeout() {
-        if (this._idleTimeout) {
-            clearTimeout(this._idleTimeout);
-            this._idleTimeout = null;
-            if (this.pools.length > 0)
-                this.setIdleTimeout(this.pools[0].expiredTime);
-        }
+    public reset(): void {
+        this.pools.reset();
+        this.waitingQueue.reset();
     }
 }

@@ -14,7 +14,7 @@ interface ITransactionData {
 }
 export class SqliteConnection implements IConnection {
     constructor(public connectionOption: ISqliteConnectionOption) {
-        [this.closeEvent, this.onClosed] = EventHandlerFactory(this);
+        [this.errorEvent, this.onError] = EventHandlerFactory(this);
         if (!sqlite3) {
             (async () => {
                 sqlite3 = await import("sqlite3");
@@ -51,14 +51,13 @@ export class SqliteConnection implements IConnection {
     }
     public close(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.once("close", () => {
+            this.connection.close((error: Error) => {
+                if (error) {
+                    reject(error);
+                    this.onError(error);
+                }
                 this.connection = null;
                 resolve();
-                this.onClosed();
-            });
-            this.connection.close((error: Error) => {
-                if (error)
-                    reject(error);
             });
         });
     }
@@ -160,6 +159,7 @@ export class SqliteConnection implements IConnection {
                 this.connection.all(command.query, params, function (this: any /*sqlite3.Statement*/, error: Error, rows: any[]) {
                     if (error) {
                         reject(error);
+                        this.onError(error);
                         return;
                     }
 
@@ -189,8 +189,10 @@ export class SqliteConnection implements IConnection {
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return new Promise((resolve, reject) => {
             const cb = (result: any /*sqlite3.RunResult*/, error: Error) => {
-                if (error)
+                if (error) {
                     reject(error);
+                    this.onError(error);
+                }
 
                 this.isolationLevel = isolationLevel;
                 resolve();
@@ -205,8 +207,8 @@ export class SqliteConnection implements IConnection {
             }
         });
     }
-    public closeEvent: IEventHandler<SqliteConnection>;
-    protected onClosed: IEventDispacher<SqliteConnection>;
+    public errorEvent: IEventHandler<SqliteConnection, Error>;
+    protected onError: IEventDispacher<Error>;
     protected getParameter(param: { [key: string]: string }) {
         const result: { [key: string]: string } = {};
         if (param) {

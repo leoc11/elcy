@@ -2,19 +2,18 @@ import { ReplicationConnectionManager } from "../../../src/Connection/Replicatio
 import { MssqlDriver } from "../../../src/Driver/Mssql/MssqlDriver";
 import "mocha";
 import { expect } from "chai";
-import "chai-as-promised";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MssqlDriver({
         host: "Master",
-        database: "Master_DB",
+        database: "Master",
         port: 1433,
         user: "sa",
         password: "password",
     });
     const driver2 = new MssqlDriver({
         host: "Replica",
-        database: "Replica_DB",
+        database: "Replica",
         port: 1433,
         user: "sa",
         password: "password",

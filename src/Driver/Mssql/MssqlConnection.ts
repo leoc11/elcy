@@ -4,26 +4,24 @@ import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
+import { ConnectionError } from "../../Error/ConnectionError";
 
-let tedious: any;
 interface ITransactionData {
     prevIsolationLevel: IsolationLevel;
     isolationLevel: IsolationLevel;
     name: string;
 }
+let tedious: any;
 export class MssqlConnection implements IConnection {
     constructor(public connectionOption: any) {
-        [this.closeEvent, this.onClosed] = EventHandlerFactory(this);
-        if (tedious) {
-            (async () => {
-                tedious = await import("tedious" as any);
-            })();
-        }
+        [this.errorEvent, this.onError] = EventHandlerFactory(this);
     }
     public isolationLevel: IsolationLevel = "READ COMMITTED";
     private connection: any;
     private transactions: ITransactionData[] = [];
-    public database: string;
+    public get database(): string {
+        return this.connectionOption.database;
+    }
     protected isChangeIsolationLevel: boolean;
     public get inTransaction(): boolean {
         return this.transactions.length > 0;
@@ -37,7 +35,6 @@ export class MssqlConnection implements IConnection {
                 this.connection.once("end", () => {
                     this.connection = null;
                     resolve();
-                    this.onClosed();
                 });
                 this.connection.close();
             }
@@ -59,7 +56,11 @@ export class MssqlConnection implements IConnection {
         return Promise.resolve();
     }
     public open(): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(async (resolve, reject) => {
+            if (!tedious) {
+                tedious = await import("tedious" as any);
+            }
+
             const con = new tedious.Connection(this.connectionOption);
             con.once("connect", (error?: any) => {
                 if (error) {
@@ -68,7 +69,8 @@ export class MssqlConnection implements IConnection {
                 this.connection = con;
                 resolve();
             });
-            con.once("error", (error: any) => {
+            con.once("error", (error: Error) => {
+                this.onError(new ConnectionError(10, error));
                 this.close();
             });
         });
@@ -222,8 +224,8 @@ export class MssqlConnection implements IConnection {
             }));
         });
     }
-    public closeEvent: IEventHandler<MssqlConnection>;
-    protected onClosed: IEventDispacher<MssqlConnection>;
+    public errorEvent: IEventHandler<MssqlConnection, Error>;
+    protected onError: IEventDispacher<Error>;
     protected resolveDriverType(value: any) {
         if (value !== null && value !== undefined) {
             switch (value.constructor) {
