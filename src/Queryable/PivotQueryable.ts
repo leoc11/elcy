@@ -1,6 +1,5 @@
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Queryable } from "./Queryable";
-import { IObjectType } from "../Common/Type";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";

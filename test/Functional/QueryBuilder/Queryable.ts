@@ -24,19 +24,6 @@ describe("QUERYABLE", async () => {
     const odParam = new ParameterExpression("od", OrderDetail);
 
     describe("INCLUDE", async () => {
-        it("should project specific property", async () => {
-            const db = new MyDb();
-            const projection = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param])]);
-            const queryString = projection.toString();
-
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount]\nFROM [Orders] AS [entity0]"
-                , "query not equals");
-
-            const a = await projection.toArray();
-            expect(a).length.greaterThan(0);
-            expect(a[0]).has.property("TotalAmount").not.equal(undefined);
-            expect(a[0].OrderDate).equal(undefined);
-        });
         it("should eager load list navigation property", async () => {
             const db = new MyDb();
             const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
@@ -112,6 +99,21 @@ describe("QUERYABLE", async () => {
             expect(a[0]).instanceof(Collection);
             a[0].should.has.property("Products").that.is.an("array");
             a[0].Products[0].should.be.an.instanceof(Product);
+        });
+    });
+    describe("PROJECT", async () => {
+        it("should project specific property", async () => {
+            const db = new MyDb();
+            const projection = db.orders.project(o => o.TotalAmount);
+            const queryString = projection.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount]\nFROM [Orders] AS [entity0]"
+                , "query not equals");
+
+            const a = await projection.toArray();
+            expect(a).length.greaterThan(0);
+            expect(a[0]).has.property("TotalAmount").not.equal(undefined);
+            expect(a[0].OrderDate).equal(undefined);
         });
     });
     describe("SELECT", async () => {
@@ -417,7 +419,7 @@ describe("QUERYABLE", async () => {
                 .select(o => o.key).where(o => o.getDate() > 15).orderBy([o => o]);
             const queryString = where.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY [entity0].[OrderDate]\nHAVING ((COUNT(*) >= 1) AND (DAY([entity0].[OrderDate]) > 15))\nORDER BY [entity0].[OrderDate] ASC"
+            expect(queryString).to.equal("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY [entity0].[OrderDate]\nHAVING ((COUNT([entity0].[OrderId]) >= 1) AND (DAY([entity0].[OrderDate]) > 15))\nORDER BY [entity0].[OrderDate] ASC"
                 , "query not equals");
 
             const a = await where.toArray();
@@ -875,7 +877,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = count.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity1].[column0]\nINTO #temp_entity0\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT(*) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity0].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity1].[column0]\nINTO #temp_entity0\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity0].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
                 , "query not equals");
 
             const a = await count.toArray();
@@ -891,7 +893,7 @@ describe("QUERYABLE", async () => {
             const count = db.orders.where(o => o.OrderDetails.count() > 3);
             const queryString = count.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT(*) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nWHERE ([column0] > 3)"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nWHERE ([column0] > 3)"
                 , "query not equals");
 
             const a = await count.toArray();
@@ -1015,7 +1017,7 @@ describe("QUERYABLE", async () => {
             const groupBy = db.orders.groupBy(o => o.OrderDate).select(o => o.count());
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderDate],\n\tCOUNT(*) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[OrderDate]"
+            expect(queryString).to.equal("SELECT [entity0].[OrderDate],\n\tCOUNT([entity0].[OrderId]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[OrderDate]"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1047,7 +1049,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate])) AS [key],\n\tCOUNT(*) AS [count],\n\tSUM([entity1].[TotalAmount]) AS [sum]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t[entity1].[TotalAmount]\n\tFROM [Orders] AS [entity1]\n\tWHERE ([entity1].[TotalAmount] < 10000)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nGROUP BY (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate]))"
+            expect(queryString).to.equal("SELECT (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate])) AS [key],\n\tCOUNT([entity0].[OrderId]) AS [count],\n\tSUM([entity1].[TotalAmount]) AS [sum]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t[entity1].[TotalAmount]\n\tFROM [Orders] AS [entity1]\n\tWHERE ([entity1].[TotalAmount] < 10000)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nGROUP BY (DAY([entity0].[OrderDate]) + YEAR([entity0].[OrderDate]))"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1109,7 +1111,7 @@ describe("QUERYABLE", async () => {
             const groupBy = db.orderDetails.groupBy(o => o.Order).select(o => o.count());
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT(*) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId]"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId]"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1141,7 +1143,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT(*) AS [count],\n\tSUM([entity2].[Quantity]) AS [sum]\nINTO #temp_entity0\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS entity2\n\tON [entity0].[OrderDetailId] = [entity2].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity1].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [count],\n\tSUM([entity2].[Quantity]) AS [sum]\nINTO #temp_entity0\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS entity2\n\tON [entity0].[OrderDetailId] = [entity2].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity1].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1161,7 +1163,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity1].[OrderId],\n\tCOUNT(*) AS [count],\n\tSUM([entity3].[Amount]) AS [sum]\nINTO #temp_entity0\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS entity3\n\tON [entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId]\nGROUP BY [entity1].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity2].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
+            expect(queryString).to.equal("SELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [count],\n\tSUM([entity3].[Amount]) AS [sum]\nINTO #temp_entity0\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS entity3\n\tON [entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId]\nGROUP BY [entity1].[OrderId];\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON [entity2].[OrderId] = [temp_entity0].[OrderId];\n\nDROP TABLE #temp_entity0"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1213,7 +1215,7 @@ describe("QUERYABLE", async () => {
             })).select(o => o.count());
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tCOUNT(*) AS [column1]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
+            expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tCOUNT([entity0].[OrderDetailId]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1255,7 +1257,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT(*) AS [count],\n\tSUM([entity1].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[Quantity] > 1)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
+            expect(queryString).to.equal("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity] * 2) AS [column0],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT([entity0].[OrderDetailId]) AS [count],\n\tSUM([entity1].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[Quantity] > 1)\n) AS entity1\n\tON [entity0].[OrderDetailId] = [entity1].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity] * 2)"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1282,7 +1284,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT DAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT(*) AS [count],\n\tSUM([entity3].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\t[entity3].[Quantity]\n\tFROM [OrderDetails] AS [entity3]\n\tWHERE ([entity3].[Quantity] > 1)\n) AS entity3\n\tON [entity0].[OrderDetailId] = [entity3].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]"
+            expect(queryString).to.equal("SELECT DAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price],\n\tAVG([entity0].[Quantity]) AS [avg],\n\tCOUNT([entity0].[OrderDetailId]) AS [count],\n\tSUM([entity3].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nINNER JOIN [Products] AS [entity2]\n\tON [entity0].[ProductId] = [entity2].[ProductId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\t[entity3].[Quantity]\n\tFROM [OrderDetails] AS [entity3]\n\tWHERE ([entity3].[Quantity] > 1)\n) AS entity3\n\tON [entity0].[OrderDetailId] = [entity3].[OrderDetailId]\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1316,7 +1318,7 @@ describe("QUERYABLE", async () => {
                 .where(o => o.count() >= 1);
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT DAY([entity0].[OrderDate]) AS [key]\nINTO #temp_entity0\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY DAY([entity0].[OrderDate])\nHAVING (COUNT(*) >= 1);\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity0].[OrderId],\n\tDAY([entity0].[OrderDate]) AS [key],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON DAY([entity0].[OrderDate]) = [temp_entity0].[key]\nWHERE ([entity0].[TotalAmount] > 20000);\n\nDROP TABLE #temp_entity0"
+            expect(queryString).to.equal("SELECT DAY([entity0].[OrderDate]) AS [key]\nINTO #temp_entity0\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] > 20000)\nGROUP BY DAY([entity0].[OrderDate])\nHAVING (COUNT([entity0].[OrderId]) >= 1);\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity0].[OrderId],\n\tDAY([entity0].[OrderDate]) AS [key],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON DAY([entity0].[OrderDate]) = [temp_entity0].[key]\nWHERE ([entity0].[TotalAmount] > 20000);\n\nDROP TABLE #temp_entity0"
                 , "query not equals");
 
             const a = await groupBy.toArray();
@@ -1433,7 +1435,7 @@ describe("QUERYABLE", async () => {
 
             const queryString = parameter.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount] / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT(*) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount] / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
                 , "query not equals");
 
             const a = await parameter.toArray();
@@ -1450,7 +1452,7 @@ describe("QUERYABLE", async () => {
 
             const queryString = parameter.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount] * @param1) / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT(*) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount] * @param1) / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
                 , "query not equals");
 
             const a = await parameter.toArray();

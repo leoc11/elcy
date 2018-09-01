@@ -825,7 +825,7 @@ export class QueryVisitor {
                     if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
-                    const countExp = new MethodCallExpression(objectOperand, expression.methodName, [], Number);
+                    const countExp = new MethodCallExpression(objectOperand, expression.methodName, objectOperand.entity.primaryColumns, Number);
                     if (param.scope === "queryable") {
                         // call from queryable
                         const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
