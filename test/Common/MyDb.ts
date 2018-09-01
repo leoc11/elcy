@@ -7,7 +7,7 @@ export class MyDb extends MssqlDbContext {
     constructor() {
         super(() => new MssqlDriver({
             host: "localhost\\SQLEXPRESS",
-            database: "iSeller_Data_Lotte",
+            database: "Database",
             port: 1433,
             user: "sa",
             password: "password",

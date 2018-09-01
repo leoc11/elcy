@@ -1,8 +1,7 @@
 import "mocha";
-import "../src/Extensions/EnumerableExtension";
-import "../src/Extensions/DateExtension";
+import "../../../src/Extensions/EnumerableExtension";
+import "../../../src/Extensions/DateExtension";
 import { should } from "chai";
-import { OrderDirection } from "../../../src/Common/Type";
 
 describe("ENUMERABLE", () => {
     const items = [1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7];
@@ -137,7 +136,7 @@ describe("ENUMERABLE", () => {
             array.should.deep.equals([0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9]);
         });
         it("should sort by desc", () => {
-            const distincts = items.orderBy([o => o, OrderDirection.DESC]);
+            const distincts = items.orderBy([o => o, "DESC"]);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -151,7 +150,7 @@ describe("ENUMERABLE", () => {
             array.should.deep.equals([9, 8, 8, 7, 6, 5, 5, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0]);
         });
         it("should sort by position asc, value desc", () => {
-            const distincts = objArray.orderBy([o => o.position], [o => o.value, OrderDirection.DESC]);
+            const distincts = objArray.orderBy([o => o.position], [o => o.value, "DESC"]);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;

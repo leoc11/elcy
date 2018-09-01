@@ -903,6 +903,18 @@ describe("QUERYABLE", async () => {
             a.should.has.length.greaterThan(0);
             a[0].should.be.an.instanceof(Order);
         });
+        it("could be used in select with different filter", async () => {
+            const db = new MyDb();
+            const count = db.orders.groupBy(o => ({ month: o.OrderDate.getMonth()})).select(o => ({
+                qty:  o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
+                bc: o.where(o => o.TotalAmount > 20000).count(),
+                cd: o.where(o => o.TotalAmount <= 20000).count()
+            }));
+            const queryString = count.toString();
+
+            expect(queryString).to.equal("SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],\n\tSUM([entity1].[Quantity]) AS [column1],\n\tCOUNT([entity2].[OrderId]) AS [bc],\n\tCOUNT([entity3].[OrderId]) AS [cd]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t[entity2].[TotalAmount],\n\t\t[entity2].[OrderDate]\n\tFROM [Orders] AS [entity2]\n\tWHERE ([entity2].[TotalAmount] > 20000)\n) AS entity2\n\tON [entity0].[OrderId] = [entity2].[OrderId]\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\t[entity3].[TotalAmount],\n\t\t[entity3].[OrderDate]\n\tFROM [Orders] AS [entity3]\n\tWHERE ([entity3].[TotalAmount] <= 20000)\n) AS entity3\n\tON [entity0].[OrderId] = [entity3].[OrderId]\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)"
+                , "query not equals");
+        });
     });
     describe("TAKE SKIP", async () => {
         it("should work", async () => {
@@ -1380,6 +1392,29 @@ describe("QUERYABLE", async () => {
             a[0][0].should.be.an.instanceof(OrderDetailProperty);
         });
     });
+    describe("PIVOT", async () => {
+        it("should work", async () => {
+            const db = new MyDb();
+            const pivot = db.orders.pivot({
+                month: o => o.OrderDate.getMonth()
+            }, {
+                total: o => o.sum(o => o.TotalAmount),
+                qty: o => o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
+            });
+            const queryString = pivot.toString();
+
+            expect(queryString).to.equal("SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],\n\tSUM([entity0].[TotalAmount]) AS [total],\n\tSUM([entity1].[Quantity]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)"
+                , "query not equals");
+
+            const a = await pivot.toArray();
+
+            should();
+            a.should.be.a("array");
+            a[0].should.has.property("month").which.is.gte(0).and.lessThan(12);
+            a[0].should.has.property("total").which.is.a("number");
+            a[0].should.has.property("qty").which.is.a("number");
+        });
+    });
     describe("PARAMETERS", async () => {
         it("should work", async () => {
             const db = new MyDb();
@@ -1452,7 +1487,7 @@ describe("QUERYABLE", async () => {
 
             const queryString = parameter.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount] * @param1) / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount] * @param0) / [column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n\tGROUP BY [entity1].[OrderId]\n) AS entity1\n\tON [entity0].[OrderId] = [entity1].[OrderId]"
                 , "query not equals");
 
             const a = await parameter.toArray();

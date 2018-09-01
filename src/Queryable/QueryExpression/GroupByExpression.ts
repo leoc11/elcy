@@ -78,6 +78,9 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     public addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
     }
+    public isSimple() {
+        return false;
+    }
     public clone(): GroupByExpression<T> {
         const selectClone = this.selectori.clone();
         const groupBy = this.groupBy.select(o => {

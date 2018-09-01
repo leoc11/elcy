@@ -45,6 +45,7 @@ import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpr
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { NamingStrategy } from "./NamingStrategy";
+import { Queryable } from "../Queryable/Queryable";
 
 interface IPRelation {
     name: string;
@@ -166,11 +167,20 @@ export class QueryVisitor {
     protected visitParameter<T>(expression: ParameterExpression<T>, param: IVisitParameter) {
         let result = this.scopeParameters.get(expression.name);
         if (!result) {
-            const a = new ParameterExpression(this.parameterStackIndex + ":" + expression.name, expression.type);
-            a.itemType = expression.itemType;
-            result = this.createParamBuilderItem(a, param);
+            const value = this.parameters[expression.name];
+            if (value instanceof Queryable) {
+                return value.buildQuery(this);
+            }
+            else if (value instanceof Function) {
+                return ValueExpression.create(value);
+            }
+
+            const paramExp = new ParameterExpression(this.parameterStackIndex + ":" + expression.name, expression.type);
+            paramExp.itemType = expression.itemType;
+            result = this.createParamBuilderItem(paramExp, param);
             return result;
         }
+
         if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
             const rel = result.parentRelation as IJoinRelation;
@@ -1207,7 +1217,7 @@ export class QueryVisitor {
         expression.fnExpression = this.visit(expression.fnExpression, param);
         expression.params = expression.params.select((o) => this.visit(o, param)).toArray();
 
-        const fnExp = expression.fnExpression = this.extractValue(expression.fnExpression) as ValueExpression<() => any>;
+        const fnExp = expression.fnExpression = expression.fnExpression as ValueExpression<() => any>;
         const fn = fnExp.value;
 
         const isExpressionSafe = expression.params.all(o => this.isSafe(o));

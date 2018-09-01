@@ -313,7 +313,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public isSimple() {
         return !this.where &&
             !this.paging.skip && !this.paging.take &&
-            this.selects.length === this.entity.columns.length &&
             this.selects.all((c) => this.entity.columns.contains(c));
     }
     public buildParameter(params: { [key: string]: any }): ISqlParameter[] {

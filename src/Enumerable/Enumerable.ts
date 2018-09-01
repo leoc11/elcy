@@ -64,7 +64,7 @@ export class Enumerable<T = any> implements Iterable<T> {
     }
     public toArray(): T[] {
         if (this.isResultComplete) {
-            return this.result;
+            return this.result.slice(0);
         }
 
         const arr = [];
