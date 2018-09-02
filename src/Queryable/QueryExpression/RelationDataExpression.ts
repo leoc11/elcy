@@ -7,6 +7,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { IOrderExpression } from "./IOrderExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class RelationDataExpression<T = any> implements IEntityExpression<T> {
     public name: string;
@@ -58,10 +59,11 @@ export class RelationDataExpression<T = any> implements IEntityExpression<T> {
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
     }
-    public clone(): IEntityExpression<T> {
+    public clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T> {
+        if (!replaceMap) replaceMap = new Map();
         const clone = new RelationDataExpression(this.type, this.alias);
         clone.columns = this.columns.select(o => {
-            const colClone = o.clone();
+            const colClone = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone(replaceMap);
             colClone.entity = clone;
             return colClone;
         }).toArray();

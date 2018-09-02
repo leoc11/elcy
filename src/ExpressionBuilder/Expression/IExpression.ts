@@ -5,7 +5,7 @@ export interface IExpression<T = any> {
     itemType?: GenericType<any>;
     toString(transformer?: ExpressionTransformer): string;
     execute(transformer?: ExpressionTransformer): T;
-    clone(): IExpression<T>;
+    clone(replaceMap?: Map<IExpression, IExpression>): IExpression<T>;
 }
 
 export abstract class ExpressionBase<T = any> implements IExpression<T> {

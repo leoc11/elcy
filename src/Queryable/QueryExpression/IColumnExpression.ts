@@ -3,6 +3,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { ColumnType } from "../../Common/ColumnType";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T> {
     type: GenericType<T>;
@@ -14,6 +15,6 @@ export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T
     propertyName: keyof TE;
     isPrimary: boolean;
     isShadow?: boolean;
-    clone(): IColumnExpression<TE, T>;
+    clone(replaceMap?: Map<IExpression, IExpression>): IColumnExpression<TE, T>;
     hashCode(): number;
 }

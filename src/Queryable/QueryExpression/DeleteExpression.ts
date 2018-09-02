@@ -1,6 +1,5 @@
 import { OrderDirection, JoinType, DeleteMode, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IColumnExpression } from "./IColumnExpression";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
@@ -13,10 +12,12 @@ import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { hashCode } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryCommandExpression<T>;
-    relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
+    relations: IExpression<boolean>;
 }
 export class DeleteExpression<T = any> implements IQueryCommandExpression<void> {
     public deleteMode?: IExpression<DeleteMode>;
@@ -68,66 +69,68 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         this.select.addOrder(expression as any, direction);
     }
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
-    public addInclude<TChild>(child: DeleteExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>): IDeleteIncludeRelation<T, TChild>;
-    public addInclude<TChild>(child: DeleteExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>): IDeleteIncludeRelation<T, TChild> {
-        let relationMap: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>;
+    public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;
+    public addInclude<TChild>(child: DeleteExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | IExpression<boolean>): IDeleteIncludeRelation<T, TChild> {
+        let relations: IExpression<boolean>;
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
-                relationMap = new Map();
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 let relationDelete = new DeleteExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name), this.deleteMode);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    relationMap.set(parentCol, relationCol);
+                    const logicalExp = new StrictEqualExpression(parentCol, relationCol);
+                    relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
                 relationDelete.parentRelation = {
                     child: relationDelete,
                     parent: this,
-                    relations: relationMap
+                    relations: relations
                 };
                 this.includes.push(relationDelete.parentRelation);
 
                 // include child to relationSelect
-                relationMap = new Map();
+                relations = null;
                 relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 for (const [relColMeta, childColMeta] of relMap) {
                     const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
                     const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-                    relationMap.set(relationCol, childCol);
+                    const logicalExp = new StrictEqualExpression(relationCol, childCol);
+                    relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
                 child.parentRelation = {
                     child,
                     parent: relationDelete,
-                    relations: relationMap
+                    relations: relations
                 };
                 relationDelete.includes.push(child.parentRelation);
                 return child.parentRelation;
             }
 
-            relationMap = new Map();
+            relations = null;
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
                 const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                 const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-                relationMap.set(parentCol, childCol);
+                const logicalExp = new StrictEqualExpression(parentCol, childCol);
+                relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
             }
         }
         else {
-            relationMap = relationMetaOrRelations as any;
+            relations = relationMetaOrRelations;
         }
         child.parentRelation = {
             child,
             parent: this,
-            relations: relationMap
+            relations: relations
         };
         this.includes.push(child.parentRelation);
         return child.parentRelation;
     }
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): IJoinRelation<T, any>;
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
         return this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
     }
     public clone(): DeleteExpression<T> {

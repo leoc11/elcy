@@ -6,7 +6,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { fillZero, isNotNull } from "../Helper/Util";
+import { fillZero, isNotNull, replaceExpression } from "../Helper/Util";
 import { JoinType, GenericType, QueryType, DeleteMode } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
@@ -203,12 +203,13 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
                 // add join to temp table
-                const reverseRelation = new Map();
-                for (const [key, value] of include.relations) {
+                const replaceMap = new Map();
+                for (const key of include.parent.projectedColumns) {
                     const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
-                    reverseRelation.set(value, tempKey);
+                    replaceMap.set(key, tempKey);
                 }
-                const tempJoin = include.child.addJoinRelation(tempSelect, reverseRelation, JoinType.INNER);
+                const relations = include.relations.clone(replaceMap);
+                const tempJoin = include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
                 result = result.concat(this.getSelectQuery(include.child));
                 include.child.joins.remove(tempJoin);
             }
@@ -222,7 +223,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     // Insert
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
-        const colString = insertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item );
+        const colString = insertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString}) VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
@@ -352,15 +353,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
 
         const clone = deleteExp.clone();
+
+        let replaceMap = new Map();
+        for (const col of deleteExp.entity.columns) {
+            const cloneCol = clone.entity.columns.first(c => c.columnName === col.columnName);
+            replaceMap.set(col, cloneCol);
+        }
         const includedDeletes = deleteExp.includes.selectMany(o => {
             const child = o.child.clone();
-            const relationMap = new Map();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                const cloneChildCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                relationMap.set(cloneCol, cloneChildCol);
+            for (const col of o.child.entity.columns) {
+                const cloneChildCol = child.entity.columns.first(c => c.columnName === col.columnName);
+                replaceMap.set(col, cloneChildCol);
             }
-            child.addJoinRelation(clone.select, relationMap, JoinType.INNER);
+            const relations = o.relations.clone(replaceMap);
+            child.addJoinRelation(clone.select, relations, JoinType.INNER);
             if (clone.select.where) {
                 child.addWhere(clone.select.where);
                 clone.select.where = null;
@@ -456,7 +462,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     public getExpressionString<T = any>(expression: IExpression<T>): string {
         if (expression instanceof SelectExpression) {
-            return this.getSelectQueryString(expression) + ";";
+            return this.getSelectQueryString(expression) + (expression.isSubSelect ? "" : ";");
         }
         else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
             return this.getColumnString(expression);
@@ -543,6 +549,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
     protected getSelectQueryString(select: SelectExpression): string {
+        if (select.isSubSelect) {
+            // TODO: SubSelect could have include.
+            return `(${this.newLine(1, true)}${this.getSelectQuery(select).select(o => o.query).toArray().join()}${this.newLine(-1, true)})`;
+        }
+
         return this.getSelectQuery(select).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
     }
     protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
@@ -565,11 +576,28 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 let join = o.type + " JOIN " + childEntString +
                     this.newLine(1, false) + "ON ";
 
-                const jstr: string[] = [];
-                for (const [key, val] of o.relations) {
-                    jstr.push(this.getJoinColumnString(key.entity, key) + " = " + this.getJoinColumnString(o.child.entity, val));
+                // this is a hack trick. need look for better way.
+                if (!o.isFinal) {
+                    replaceExpression(o.relations, (exp) => {
+                        const col = exp as IColumnExpression;
+                        if (o.parent.projectedColumns.contains(col)) {
+                            if (col instanceof ComputedColumnExpression) {
+                                return col.expression;
+                            }
+                            const colClone = col.clone();
+                            colClone.entity = o.parent.entity;
+                            return colClone;
+                        }
+                        else if (o.child.projectedColumns.contains(col)) {
+                            const colClone = col.clone();
+                            colClone.entity = o.child.entity;
+                            return colClone;
+                        }
+                        return exp;
+                    });
+                    o.isFinal = true;
                 }
-                return join + jstr.join(" AND ");
+                return join + this.getOperandString(o.relations).replace(/^[(]|[)]$/g, "");
             }).toArray().join(this.newLine());
         }
         return result;

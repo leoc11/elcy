@@ -44,6 +44,7 @@ import { ModulusExpression } from "../../ExpressionBuilder/Expression/ModulusExp
 import { IUnaryOperatorExpression } from "../../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
 
@@ -94,12 +95,27 @@ relationalQueryTranslator.register(String.prototype, "length", (exp: MemberAcces
  */
 relationalQueryTranslator.register(SelectExpression.prototype, "all", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `NOT EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
 relationalQueryTranslator.register(SelectExpression.prototype, "any", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
-relationalQueryTranslator.register(SelectExpression.prototype, "count", () => "COUNT(*)");
-const aggregateTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${exp.methodName.toUpperCase()}(${qb.getExpressionString(exp.params[0] as any)})`;
+relationalQueryTranslator.register(SelectExpression.prototype, "count", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `COUNT(${qb.getExpressionString(exp.params[0])})`);
+const aggregateTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${exp.methodName.toUpperCase()}(${qb.getExpressionString(exp.params[0])})`;
 relationalQueryTranslator.register(SelectExpression.prototype, "sum", aggregateTranslator);
 relationalQueryTranslator.register(SelectExpression.prototype, "min", aggregateTranslator);
 relationalQueryTranslator.register(SelectExpression.prototype, "max", aggregateTranslator);
 relationalQueryTranslator.register(SelectExpression.prototype, "avg", aggregateTranslator);
+relationalQueryTranslator.register(SelectExpression.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN ${qb.getExpressionString(exp.objectOperand)}`);
+
+
+/**
+ * Array
+ * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
+ */
+relationalQueryTranslator.register(Array.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.getExpressionString(exp.objectOperand)})`);
+
+/**
+ * Enumerable
+ * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
+ */
+relationalQueryTranslator.register(Enumerable.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.getExpressionString(exp.objectOperand)})`);
+
 
 /**
  * Math
@@ -174,10 +190,10 @@ relationalQueryTranslator.register(Number.prototype, "valueOf", (exp: MethodCall
  * TODO: toString
  */
 
- /**
-  * Boolean
-  * TODO: 
-  */ 
+/**
+ * Boolean
+ * TODO: 
+ */
 relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CASE WHEN (" + qb.getExpressionString(exp.objectOperand) + ") THEN " + qb.getValueString("true") + " ELSE " + qb.getValueString("false") + " END)");
 
 /**
@@ -218,11 +234,6 @@ relationalQueryTranslator.register(RegExp.prototype, "test", (exp: MethodCallExp
 /**
  * Function
  * TODO: apply,bind,call,toSource,toString
- */
-
-/**
- * Array
- * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
 
 //#endregion

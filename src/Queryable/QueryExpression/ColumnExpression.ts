@@ -5,6 +5,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { hashCode } from "../../Helper/Util";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: GenericType<T>;
@@ -41,8 +42,10 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     public execute(queryBuilder: QueryBuilder) {
         return this.toString(queryBuilder) as any;
     }
-    public clone(entity?: IEntityExpression<TE>) {
-        const clone = new ColumnExpression(entity || this.entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.columnType);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const entity = replaceMap.has(this.entity) ? replaceMap.get(this.entity) as IEntityExpression<TE> : this.entity;
+        const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.columnType);
         clone.columnMetaData = this.columnMetaData;
         return clone;
     }

@@ -49,7 +49,6 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { RelationDataExpression } from "../Queryable/QueryExpression/RelationDataExpression";
-import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpressionTransformer";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
@@ -1153,13 +1152,14 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const relationData = new RelationDataExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name);
                 const dataDelete = new DeleteExpression(relationData, new ValueExpression<DeleteMode>("Hard"));
 
-                const relationMap = new Map<IColumnExpression<TData>, IColumnExpression<T>>();
+                let relations: IExpression<boolean>;
                 for (const [relColMeta, childColMeta] of slaveRelationMetaData.relationData.targetRelationMaps) {
                     const relationCol = dataDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
                     const childCol = slaveSelect.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-                    relationMap.set(relationCol, childCol);
+                    const logicalExp = new StrictEqualExpression(relationCol, childCol);
+                    relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
-                dataDelete.addJoinRelation(slaveSelect, relationMap, JoinType.INNER);
+                dataDelete.addJoinRelation(slaveSelect, relations, JoinType.INNER);
 
                 result.push(new DeferredQuery(this, dataDelete, queryParameters, (results) => {
                     return {

@@ -3,6 +3,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     type: GenericType<T>;
@@ -13,6 +14,6 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     primaryColumns: IColumnExpression[];
     defaultOrders: IOrderExpression[];
     deleteColumn?: IColumnExpression<T>;
-    clone(): IEntityExpression<T>;
+    clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
     entityTypes: IObjectType[];
 }
