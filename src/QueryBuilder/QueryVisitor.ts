@@ -438,9 +438,12 @@ export class QueryVisitor {
                     const cloneSelect = childEntity.select.clone();
                     cloneSelect.joins = [];
                     const cloneChildEntity = cloneSelect.entity;
-                    for (const col of childEntity.columns) {
+                    for (const col of childEntity.select.projectedColumns) {
                         const cloneCol = cloneChildEntity.columns.first(o => o.columnName === col.columnName);
                         replaceMap.set(col, cloneCol);
+                    }
+                    for (const col of selectOperand.projectedColumns) {
+                        replaceMap.set(col, col);
                     }
                     const relation = (selectOperand.key as IEntityExpression).select.parentRelation.relations.clone(replaceMap);
                     const pr: IPRelation = {
@@ -488,11 +491,6 @@ export class QueryVisitor {
                     };
                     joinRelations.push(pr);
                 }
-            }
-            else if (valueExp instanceof SelectExpression && valueExp.isSubSelect) {
-                const column = new ComputedColumnExpression(selectOperand.entity, valueExp, prop);
-                column.propertyName = propPath;
-                newSelects.add(column);
             }
             // group only
             else if (valueExp instanceof GroupedExpression) {
@@ -569,7 +567,7 @@ export class QueryVisitor {
                 // remove relation
                 selectOperand.joins.remove(entityExp.select.parentRelation as any);
                 visitExpression(entityExp.select.parentRelation.relations, (exp: IExpression): boolean | void => {
-                    if ((exp as IColumnExpression).entity && entityExp.select.projectedColumns.contains(exp as any)) {
+                    if ((exp as IColumnExpression).entity && entityExp.select.parentRelation.parent.projectedColumns.contains(exp as any)) {
                         groupColumns.add(exp as any);
                         return false;
                     }
@@ -761,6 +759,7 @@ export class QueryVisitor {
                                 return false;
                             }
                         });
+
                         // remove relation
                         entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
                         // add include
@@ -848,8 +847,7 @@ export class QueryVisitor {
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const countExp = new MethodCallExpression(objectOperand, expression.methodName, objectOperand.entity.primaryColumns, Number);
-                    const isSubSelect = objectOperand.isSubSelect;
-                    if (param.scope === "queryable" || isSubSelect) {
+                    if (param.scope === "queryable") {
                         // call from queryable
                         const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                         objectOperand.selects = [column];
@@ -905,31 +903,6 @@ export class QueryVisitor {
                             return o.expression;
                         return o;
                     }).toArray(), Number);
-                    if (objectOperand.isSubSelect) {
-                        // group by
-                        const paramExp = new ParameterExpression("o");
-                        const objExp = new ObjectValueExpression<any>({});
-                        const groupByExp = new FunctionExpression(objExp, [paramExp]);
-                        visitExpression(objectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
-                            if (objectOperand.entity.columns.contains(exp as any)) {
-                                const colExp = exp as IColumnExpression;
-                                objExp.object[colExp.propertyName] = new MemberAccessExpression(paramExp, colExp.propertyName);
-                                return false;
-                            }
-                        });
-
-                        let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
-                        const groupExp: GroupByExpression = this.visit(new MethodCallExpression(objectOperand, "groupBy", [groupByExp]), visitParam) as any;
-                        param.selectExpression = visitParam.selectExpression;
-
-                        for (const prop in objExp.object) {
-                            objExp.object[prop] = new MemberAccessExpression(new MemberAccessExpression(paramExp, "key"), prop);
-                        }
-                        const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column"));
-                        objExp.object[column.propertyName] = column;
-                        this.visit(new MethodCallExpression(groupExp, "select", [groupByExp]), visitParam) as any;
-                        return column;
-                    }
                     if (param.scope === "queryable") {
                         // call from queryable
                         const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));

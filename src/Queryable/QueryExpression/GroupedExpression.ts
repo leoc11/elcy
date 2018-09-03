@@ -43,14 +43,6 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const clone = new GroupedExpression(this.select.clone(replaceMap));
-        clone.relationColumns = this.relationColumns.select(o => {
-            let col = clone.entity.columns.first(c => c.columnName === o.columnName);
-            if (!col) {
-                col = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone(replaceMap);
-                col.entity = clone.entity;
-            }
-            return col;
-        }).toArray();
         clone.itemExpression = this.itemExpression;
         clone.orders = this.orders.slice(0);
         clone.selects = this.selects.select(o => {

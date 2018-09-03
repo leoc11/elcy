@@ -87,12 +87,26 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
-        if (this.isSubSelect && (expression as IBinaryOperatorExpression).rightOperand) {
-            this.parentRelation.relations = this.parentRelation.relations ? new AndExpression(this.parentRelation.relations, expression) : expression;
+        if (this.isSubSelect) {
+            if (expression instanceof AndExpression) {
+                this.addWhere(expression.leftOperand);
+                this.addWhere(expression.rightOperand);
+                return;
+            }
+            let isParentWhere = false;
+            visitExpression(expression, (exp): boolean | void => {
+                if ((exp as IColumnExpression).entity && (exp as IColumnExpression).entity !== this.entity) {
+                    isParentWhere = true;
+                    return false;
+                }
+            });
+
+            if (isParentWhere) {
+                this.parentRelation.relations = this.parentRelation.relations ? new AndExpression(this.parentRelation.relations, expression) : expression;
+                return;
+            }
         }
-        else {
-            this.where = this.where ? new AndExpression(this.where, expression) : expression;
-        }
+        this.where = this.where ? new AndExpression(this.where, expression) : expression;
     }
     public addOrder(orders: IOrderExpression[]): void;
     public addOrder(expression: IExpression<any>, direction: OrderDirection): void;
@@ -178,10 +192,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             visitExpression(relationMap, (exp: IExpression): void | boolean => {
                 const colExp = exp as IColumnExpression;
                 if (colExp.entity && !colExp.isPrimary) {
-                    if (this.projectedColumns.contains(colExp)) {
+                    if (this.entity.columns.contains(colExp)) {
                         this.relationColumns.add(colExp);
                     }
-                    if (child.projectedColumns.contains(colExp)) {
+                    if (child.entity.columns.contains(colExp)) {
                         child.relationColumns.add(colExp);
                     }
                     return false;
@@ -268,7 +282,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
                 visitExpression(relationMap, (exp: IExpression): void | boolean => {
                     const colExp = exp as IColumnExpression;
                     if (colExp.entity && !colExp.isPrimary) {
-                        if (child.projectedColumns.contains(colExp)) {
+                        if (child.entity.columns.contains(colExp)) {
                             child.relationColumns.add(colExp);
                         }
                         return false;

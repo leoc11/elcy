@@ -161,18 +161,17 @@ export class MssqlQueryBuilder extends QueryBuilder {
                     return new ColumnExpression(o.entity, o.type, o.propertyName, o.columnName, o.isPrimary);
                 return o;
             }).toArray(), select.itemType, tempTableName.substr(1)));
+            tempSelect.relationColumns = tempSelect.entity.columns.slice(0);
+            const replaceMap = new Map();
+            for (const col of select.projectedColumns) {
+                const customCol = tempSelect.entity.columns.find(o => o.columnName === col.columnName);
+                replaceMap.set(col, customCol);
+            }
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
                 // add join to temp table
-                const replaceMap = new Map();
-                for (const key of include.parent.projectedColumns) {
-                    const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
-                    replaceMap.set(key, tempKey);
-                }
                 for (const key of include.child.projectedColumns) {
-                    if (key instanceof ComputedColumnExpression) {
-                        replaceMap.set(key, key.expression);
-                    }
+                    replaceMap.set(key, key);
                 }
                 const relations = include.relations.clone(replaceMap);
                 const tempJoin = include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);

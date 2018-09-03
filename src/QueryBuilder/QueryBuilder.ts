@@ -204,7 +204,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             for (const include of select.includes) {
                 // add join to temp table
                 const replaceMap = new Map();
-                for (const key of include.parent.projectedColumns) {
+                for (const key of include.child.projectedColumns) {
                     const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
                     replaceMap.set(key, tempKey);
                 }
@@ -523,12 +523,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
-    protected getJoinColumnString(entity: IEntityExpression, column: IColumnExpression) {
-        if (column instanceof ComputedColumnExpression) {
-            return this.getOperandString(column.expression, true);
-        }
-        return this.enclose(entity.alias) + "." + this.enclose(column.columnName);
-    }
     protected getColumnSelectString(column: IColumnExpression): string {
         if (column instanceof EmbeddedColumnExpression) {
             return column.selects.select(o => this.getColumnSelectString(o)).toArray().join(",");
@@ -584,9 +578,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                             if (col instanceof ComputedColumnExpression) {
                                 return col.expression;
                             }
-                            const colClone = col.clone();
-                            colClone.entity = o.parent.entity;
-                            return colClone;
+                            return col;
                         }
                         else if (o.child.projectedColumns.contains(col)) {
                             const colClone = col.clone();
@@ -597,7 +589,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     });
                     o.isFinal = true;
                 }
-                return join + this.getOperandString(o.relations).replace(/^[(]|[)]$/g, "");
+                return join + this.getOperandString(o.relations);
             }).toArray().join(this.newLine());
         }
         return result;

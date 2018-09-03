@@ -27,30 +27,14 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             this.where = select.where.clone();
         this.selectori = select;
         this.key = key;
-        
-        const replaceMap = new Map();
-        for (const parentCol of select.projectedColumns) {
-            const cloneCol = this.entity.columns.first(c => c.columnName === parentCol.columnName);
-            replaceMap.set(parentCol, cloneCol);
-        }
+
         for (const join of select.joins) {
-            const child = join.child.clone();
-            for (const childCol of join.child.projectedColumns) {
-                const childCloneCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                replaceMap.set(childCol, childCloneCol);
-            }
-            const relation = join.relations.clone(replaceMap);
-            this.addJoinRelation(child, relation, join.type);
+            const relation = join.relations;
+            this.addJoinRelation(join.child, relation, join.type);
         }
 
         for (const include of select.includes) {
-            const child = include.child.clone();
-            for (const childCol of include.child.projectedColumns) {
-                const childCloneCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                replaceMap.set(childCol, childCloneCol);
-            }
-            const relation = include.relations.clone(replaceMap);
-            this.addInclude(include.name, child, relation, include.type);
+            this.addInclude(include.name, include.child, include.relations, include.type);
         }
         let groupExp: GroupedExpression;
         if (select instanceof GroupedExpression) {
@@ -62,7 +46,9 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         if (hasItems) {
             let relation: IExpression<boolean>;
             for (const col of groupBy) {
-                const logicalExp = new StrictEqualExpression(col, col);
+                const clone = col.clone(new Map([[col.entity, col.entity]]));
+                groupExp.relationColumns.add(clone);
+                const logicalExp = new StrictEqualExpression(col, clone);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
             this.addInclude("", groupExp, relation, "many");
@@ -95,8 +81,8 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             }
             let cloneCol = selectClone.entity.columns.first(c => c.columnName === o.columnName);
             if (!cloneCol) {
-                const join = selectClone.joins.first(j => j.child.entity.type === o.entity.type);
-                cloneCol = join.child.entity.columns.first(c => c.columnName === o.columnName);
+                cloneCol = o.clone();
+                cloneCol.entity = selectClone.entity;
             }
             cloneCol.propertyName = o.propertyName;
             return cloneCol;

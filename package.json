@@ -4,7 +4,7 @@
   "version": "0.1.0-alpha",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./build/test/*.js"
+    "test": "node ./node_modules/mocha/bin/mocha ./build/test/functional/**/*.js"
   },
   "repository": {
     "type": "git",
