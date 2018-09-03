@@ -47,7 +47,10 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
     public execute(transformer: ExpressionTransformer) {
         return (this.leftOperand.execute(transformer) as any) + (this.rightOperand.execute(transformer) as any);
     }
-    public clone() {
-        return new AdditionExpression<any>(this.leftOperand, this.rightOperand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) as IExpression<T> : this.leftOperand.clone(replaceMap);
+        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) as IExpression<T> : this.rightOperand.clone(replaceMap);
+        return new AdditionExpression<T>(left, right);
     }
 }

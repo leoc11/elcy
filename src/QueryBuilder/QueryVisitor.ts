@@ -173,6 +173,9 @@ export class QueryVisitor {
             const value = this.parameters[expression.name];
             if (value instanceof Queryable) {
                 const selectExp = value.buildQuery(this) as SelectExpression;
+                if (selectExp.paging.take || selectExp.paging.skip) {
+                    throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Take or Skip on Subquery not supported`);
+                }
                 selectExp.isSubSelect = true;
                 param.selectExpression.addJoinRelation(selectExp, null, JoinType.LEFT);
                 return selectExp;
@@ -1025,7 +1028,7 @@ export class QueryVisitor {
 
                     const isAny = expression.methodName === "any";
                     if (!isAny && expression.params.length <= 0) {
-                        throw new QueryBuilderError(QueryBuilderErrorCode.QueryVisitor, "All required 1 parameter");
+                        throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "All required 1 parameter");
                     }
 
                     if (expression.params.length > 0) {

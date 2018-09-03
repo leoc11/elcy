@@ -56,7 +56,10 @@ export class MethodCallExpression<TType, KProp extends keyof TType, TResult = an
             params.push(param.execute(transformer));
         return (objectValue as any)[this.methodName].apply(objectValue, params);
     }
-    public clone() {
-        return new MethodCallExpression(this.objectOperand, this.methodName as any, this.params, this.type);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const objectOperand = replaceMap.has(this.objectOperand) ? replaceMap.get(this.objectOperand) : this.objectOperand.clone(replaceMap);
+        const params = this.params.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray();
+        return new MethodCallExpression(objectOperand, this.methodName as any, params, this.type);
     }
 }

@@ -30,7 +30,10 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
         transformer.scopeParameters.add(this.leftOperand.name, transformer.scopeParameters.get(this.leftOperand.name) + value);
         return value;
     }
-    public clone() {
-        return new AdditionAssignmentExpression<T>(this.leftOperand, this.rightOperand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) as ParameterExpression : this.leftOperand.clone(replaceMap);
+        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) : this.rightOperand.clone(replaceMap);
+        return new AdditionAssignmentExpression<T>(left, right);
     }
 }

@@ -1,6 +1,6 @@
 import { GenericType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 
 export class ParameterExpression<T = any> extends ExpressionBase<T> {
     public static create(name: string): ParameterExpression<any>;
@@ -24,7 +24,7 @@ export class ParameterExpression<T = any> extends ExpressionBase<T> {
     public execute(transformer: ExpressionTransformer): any {
         return transformer.executeExpression(this);
     }
-    public clone() {
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
         return new ParameterExpression(this.name, this.type);
     }
 }

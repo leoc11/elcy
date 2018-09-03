@@ -25,5 +25,5 @@ export abstract class ExpressionBase<T = any> implements IExpression<T> {
             return new (this.type as IObjectType<T>)();
         return (this.type as () => T)();
     }
-    public abstract clone(): ExpressionBase<T>;
+    public abstract clone(replaceMap?: Map<IExpression, IExpression>): ExpressionBase<T>;
 }

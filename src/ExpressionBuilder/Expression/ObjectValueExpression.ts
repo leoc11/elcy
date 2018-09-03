@@ -40,7 +40,13 @@ export class ObjectValueExpression<T> extends ExpressionBase<T> {
             objectValue[prop] = this.object[prop].execute(transformer);
         return objectValue;
     }
-    public clone() {
-        return new ObjectValueExpression(this.object, this.type);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const obj: { [key in keyof T]?: IExpression } = {};
+        for (const prop in this.object) {
+            const propEx = this.object[prop];
+            obj[prop] = replaceMap.has(propEx) ? replaceMap.get(propEx) : propEx.clone(replaceMap);
+        }
+        return new ObjectValueExpression(obj, this.type);
     }
 }
