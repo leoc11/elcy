@@ -18,7 +18,7 @@ declare global {
         where(fn: (item: T) => boolean): Enumerable<T>;
         orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
-        all(fn?: (item: T) => boolean): boolean;
+        all(fn: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
         take(n: number): Enumerable<T>;
         sum(fn?: (item: T) => number): number;
