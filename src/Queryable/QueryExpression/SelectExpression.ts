@@ -95,8 +95,14 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             }
             let isParentWhere = false;
             visitExpression(expression, (exp): boolean | void => {
-                if ((exp as IColumnExpression).entity && (exp as IColumnExpression).entity !== this.entity) {
-                    isParentWhere = true;
+                if ((exp as IColumnExpression).entity) {
+                    const colExp = exp as IColumnExpression;
+                    if (colExp.entity === this.entity) {
+                        if (!colExp.isPrimary) this.relationColumns.add(colExp);
+                    }
+                    else {
+                        isParentWhere = true;
+                    }
                     return false;
                 }
             });
