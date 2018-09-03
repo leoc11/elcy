@@ -44,7 +44,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
             if (this.metaData)
-                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.propertyName === o.propertyName)).toArray();
+                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
             else
                 this._primaryColumns = [];
         }
@@ -88,7 +88,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         return queryBuilder.getExpressionString(this);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
-        if (replaceMap) replaceMap = new Map();
+        if (!replaceMap) replaceMap = new Map();
         const clone = new EntityExpression(this.type, this.alias);
         clone.columns = this.columns.select(o => {
             const colClone = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone();

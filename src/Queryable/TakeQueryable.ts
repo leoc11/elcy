@@ -12,9 +12,6 @@ export class TakeQueryable<T> extends Queryable<T> {
     constructor(parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type, new ParameterQueryable(parent, { take: quantity }));
     }
-    public get parameterName() {
-        return "__take" + Math.abs(this.hashCode());
-    }
     public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);
