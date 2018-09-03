@@ -12,10 +12,10 @@ export class ORMError extends Error {
             message = messageOrError;
         }
         super(message);
-        this.name = code.toString();
+        this.name = this.constructor.name;
         this.code = code;
         this.message = super.message;
-        this.stack = super.stack;
+        this.stack = (new Error()).stack;
         this.innerError = error;
     }
     public readonly code: number;
