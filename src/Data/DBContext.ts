@@ -59,7 +59,7 @@ export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TK
 const connectionManagerKey = Symbol("connectionManagerKey");
 
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
-    protected abstract readonly entityTypes: Array<IObjectType<any>>;
+    public abstract readonly entityTypes: Array<IObjectType<any>>;
     protected abstract readonly queryBuilderType: IObjectType<QueryBuilder>;
     protected abstract readonly queryVisitorType: IObjectType<QueryVisitor>;
     protected abstract readonly schemaBuilderType: IObjectType<SchemaBuilder>;

@@ -42,6 +42,7 @@ import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
 import { Enumerable } from "../Enumerable/Enumerable";
+import { SelectIntoExpression } from "../Queryable/QueryExpression/SelectIntoExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -161,7 +162,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         selectQuery += "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
             " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            this.getEntityJoinString(select.entity, select.joins);
+            this.getEntityJoinString(select.joins);
         if (select.where)
             selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
         if (select instanceof GroupByExpression) {
@@ -176,7 +177,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
         }
 
         if (hasIncludes) {
@@ -219,6 +220,53 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 type: QueryType.DDL
             });
         }
+        return result;
+    }
+    public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
+        let take = 0, skip = 0;
+        if (selectInto.paging.take) {
+            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.take);
+            if (takeParam) {
+                take = takeParam.value;
+            }
+        }
+        if (selectInto.paging.skip) {
+            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.skip);
+            if (skipParam)
+                skip = skipParam.value;
+        }
+
+        let selectQuery =
+            `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
+            `SELECT ${selectInto.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
+            selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
+            `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.joins)}`;
+
+        if (selectInto.where)
+            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.where)}`;
+        if (selectInto instanceof GroupByExpression) {
+            if (selectInto.groupBy.length > 0) {
+                selectQuery += this.newLine() + "GROUP BY " + selectInto.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+            }
+            if (selectInto.having) {
+                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.having);
+            }
+        }
+
+        if (selectInto.orders.length > 0)
+            selectQuery += this.newLine() + "ORDER BY " + selectInto.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+
+        if (skip > 0) {
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
+        }
+
+        result.push({
+            query: selectQuery,
+            parameters: this.getParameter(selectInto),
+            type: QueryType.DML
+        });
+
         return result;
     }
     // Insert
@@ -342,7 +390,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else {
             let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias)}` +
                 this.newLine() + `FROM ${this.enclose(deleteExp.entity.name)} AS ${this.enclose(deleteExp.entity.alias)} ` +
-                this.getEntityJoinString(deleteExp.entity, deleteExp.joins);
+                this.getEntityJoinString(deleteExp.joins);
             if (deleteExp.where)
                 selectQuery += this.newLine() + "WHERE " + this.getOperandString(deleteExp.where);
             result.push({
@@ -389,7 +437,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
             this.newLine() + `SET ${setQuery}` +
             this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
-            this.getEntityJoinString(update.entity, update.joins);
+            this.getEntityJoinString(update.joins);
         if (update.where)
             updateQuery += this.newLine() + "WHERE " + this.getOperandString(update.where);
 
@@ -550,14 +598,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return this.getSelectQuery(select).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+    protected getPagingQueryString(take: number, skip: number): string {
         let result = "";
         if (take > 0)
             result += "LIMIT " + take + " ";
         result += "OFFSET " + skip;
         return result;
     }
-    protected getEntityJoinString<T>(entity: IEntityExpression<T>, joins: IJoinRelation<T, any>[]): string {
+    protected getEntityJoinString<T>(joins: IJoinRelation<T, any>[]): string {
         let result = "";
         if (joins.length > 0) {
             result += this.newLine();

@@ -19,6 +19,8 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryCache } from "../Cache/IQueryCache";
+import { SelectIntoExpression } from "./QueryExpression/SelectIntoExpression";
+import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
@@ -133,6 +135,10 @@ export abstract class Queryable<T = any> {
         const query = this.deferredDelete(predicate, mode);
         return await query.execute();
     }
+    public async insert() {
+        const query = this.deferredInsert();
+        return await query.execute();
+    }
     //#endregion
 
     //#region deferred
@@ -180,7 +186,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredCount() {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<number>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -224,7 +230,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredSum(selector?: (item: T) => number) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<number>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -272,7 +278,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredMax(selector?: (item: T) => number) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<number>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -320,7 +326,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredMin(selector?: (item: T) => number) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<number>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -368,7 +374,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredAvg(selector?: (item: T) => number) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<number>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -416,7 +422,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredAll(predicate: (item: T) => boolean) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<boolean>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -458,12 +464,12 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => Enumerable.load(result.first().rows).any(), this.queryOption);
+            (result) => !Enumerable.load(result.first().rows).any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
     public deferredAny(predicate?: (item: T) => boolean) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<boolean>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -561,7 +567,7 @@ export abstract class Queryable<T = any> {
         return query;
     }
     public deferredContains(item: T) {
-        let queryCache: IQueryCache<T>, cacheKey: number;
+        let queryCache: IQueryCache<boolean>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -648,7 +654,7 @@ export abstract class Queryable<T = any> {
         const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.shift().effectedRows, this.queryOption);
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -702,6 +708,50 @@ export abstract class Queryable<T = any> {
                 value: mode
             });
         }
+        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
+        this.dbContext.deferredQueries.add(query);
+        return query;
+    }
+    public deferredInsert() {
+        let queryCache: IQueryCache<T>, cacheKey: number;
+        const timer = Diagnostic.timer();
+        const cacheManager = this.dbContext.queryCacheManager;
+
+        if (!this.queryOption.noQueryCache) {
+            cacheKey = hashCode(this.queryOption.buildKey, hashCode("INSERT", this.hashCode()));
+            if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+
+            let queryCache = cacheManager.get<T>(cacheKey);
+            if (Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
+        const queryBuilder = this.dbContext.queryBuilder;
+        queryBuilder.options = clone(this.queryOption, true);
+        if (!queryCache) {
+            if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
+                throw new Error(`Only entity supported`);
+
+            const visitor = this.dbContext.queryVisitor;
+            let selectExp = this.buildQuery(visitor) as SelectExpression<T>;
+            if (!this.dbContext.entityTypes.contains(selectExp.itemExpression.type as any))
+                throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
+
+            selectExp.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
+            const commandQuery = new SelectIntoExpression(selectExp);
+            if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
+
+            queryCache = {
+                commandQuery: commandQuery,
+            };
+            if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
+        }
+
+        const params = queryCache.commandQuery.buildParameter(this.flatParameterStacks);
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);

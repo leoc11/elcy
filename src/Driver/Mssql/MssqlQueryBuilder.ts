@@ -15,6 +15,7 @@ import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/Re
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { isNotNull } from "../../Helper/Util";
+import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -127,7 +128,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
             " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) +
             (hasIncludes ? this.newLine() + "INTO " + tempTableName : "") +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            this.getEntityJoinString(select.entity, select.joins);
+            this.getEntityJoinString(select.joins);
         if (select.where)
             selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
         if (select instanceof GroupByExpression) {
@@ -142,7 +143,9 @@ export class MssqlQueryBuilder extends QueryBuilder {
             selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
+            if (select.orders.length <= 0)
+                selectQuery += this.newLine() + "ORDER BY (SELECT NULL)";
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
         }
         result.push({
             query: selectQuery,
@@ -186,11 +189,8 @@ export class MssqlQueryBuilder extends QueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
-        let result = "";
-        if (select.orders.length <= 0)
-            result += "ORDER BY (SELECT NULL)" + this.newLine();
-        result += "OFFSET " + skip + " ROWS";
+    protected getPagingQueryString(take: number, skip: number): string {
+        let result = "OFFSET " + skip + " ROWS";
         if (take > 0)
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         return result;
@@ -200,6 +200,55 @@ export class MssqlQueryBuilder extends QueryBuilder {
             return "[" + identity + "]";
         else
             return identity;
+    }
+    public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
+        let take = 0, skip = 0;
+        if (selectInto.paging.take) {
+            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.take);
+            if (takeParam) {
+                take = takeParam.value;
+            }
+        }
+        if (selectInto.paging.skip) {
+            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.skip);
+            if (skipParam)
+                skip = skipParam.value;
+        }
+
+        let selectQuery =
+            `SELECT ${selectInto.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
+            selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
+            `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
+            `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.joins)}`;
+
+        if (selectInto.where)
+            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.where)}`;
+        if (selectInto instanceof GroupByExpression) {
+            if (selectInto.groupBy.length > 0) {
+                selectQuery += this.newLine() + "GROUP BY " + selectInto.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+            }
+            if (selectInto.having) {
+                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.having);
+            }
+        }
+
+        if (selectInto.orders.length > 0)
+            selectQuery += this.newLine() + "ORDER BY " + selectInto.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+
+        if (skip > 0) {
+            if (selectInto.orders.length <= 0)
+                selectQuery += this.newLine() + "ORDER BY (SELECT NULL)";
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
+        }
+
+        result.push({
+            query: selectQuery,
+            parameters: this.getParameter(selectInto),
+            type: QueryType.DML
+        });
+
+        return result;
     }
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
