@@ -173,9 +173,6 @@ export class QueryVisitor {
             const value = this.parameters[expression.name];
             if (value instanceof Queryable) {
                 const selectExp = value.buildQuery(this) as SelectExpression;
-                if (selectExp.paging.take || selectExp.paging.skip) {
-                    throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Take or Skip on Subquery not supported`);
-                }
                 selectExp.isSubSelect = true;
                 param.selectExpression.addJoinRelation(selectExp, null, JoinType.LEFT);
                 return selectExp;
@@ -189,8 +186,7 @@ export class QueryVisitor {
             result = this.createParamBuilderItem(paramExp, param);
             return result;
         }
-
-        if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
+        else if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
             const rel = result.parentRelation as IJoinRelation;
             const clone = result.clone();
@@ -1217,40 +1213,13 @@ export class QueryVisitor {
                     const parentRelation = objectOperand.parentRelation;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: "join" };
                     const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
-                    const childVisitParam: IVisitParameter = { selectExpression: childSelectOperand, scope: "join" };
 
-                    const parentKeySelector = expression.params[1] as FunctionExpression;
-                    this.scopeParameters.add(parentKeySelector.params[0].name, selectOperand.getVisitParam());
-                    let parentKey = this.visit(parentKeySelector, visitParam);
-                    this.scopeParameters.remove(parentKeySelector.params[0].name);
-
-                    const childKeySelector = expression.params[2] as FunctionExpression;
-                    this.scopeParameters.add(childKeySelector.params[0].name, childSelectOperand.getVisitParam());
-                    let childKey = this.visit(childKeySelector, childVisitParam);
-                    this.scopeParameters.remove(childKeySelector.params[0].name);
-
-                    let relation: IExpression<boolean>;
-
-                    if (parentKey.type !== childKey.type) {
-                        throw new Error(`Key type not match`);
-                    }
-                    else if ((parentKey as IEntityExpression).primaryColumns) {
-                        const parentEntity = parentKey as IEntityExpression;
-                        const childEntity = childKey as IEntityExpression;
-                        for (const parentCol of parentEntity.primaryColumns) {
-                            const childCol = childEntity.primaryColumns.first((c) => c.propertyName === parentCol.propertyName);
-                            const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                            relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-                        }
-                    }
-                    else {
-                        if (!(childKey as IColumnExpression).entity)
-                            childKey = new ComputedColumnExpression(childSelectOperand.entity, childKey, this.newAlias());
-                        if (!(parentKey as IColumnExpression).entity)
-                            parentKey = new ComputedColumnExpression(selectOperand.entity, parentKey, this.newAlias());
-                        const logicalExp = new StrictEqualExpression(parentKey, childKey);
-                        relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-                    }
+                    const relationSelector = expression.params[1] as FunctionExpression;
+                    this.scopeParameters.add(relationSelector.params[0].name, selectOperand.getVisitParam());
+                    this.scopeParameters.add(relationSelector.params[1].name, childSelectOperand.getVisitParam());
+                    let relation: IExpression<boolean> = this.visit(relationSelector, visitParam);
+                    this.scopeParameters.remove(relationSelector.params[0].name);
+                    this.scopeParameters.remove(relationSelector.params[1].name);
 
                     let jointType: JoinType;
                     switch (expression.methodName) {

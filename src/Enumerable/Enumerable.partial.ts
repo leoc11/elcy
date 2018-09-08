@@ -30,10 +30,10 @@ declare module "./Enumerable" {
         take(take: number): Enumerable<T>;
         groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
         distinct(selector?: (item: T) => any): Enumerable<T>;
-        innerJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        leftJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
-        rightJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
-        fullJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        rightJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        fullJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
         union(array2: Iterable<T>, isUnionAll?: boolean): Enumerable<T>;
         intersect(array2: Iterable<T>): Enumerable<T>;
         except(array2: Iterable<T>): Enumerable<T>;
@@ -74,17 +74,17 @@ Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector:
 Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {
     return new DistinctEnumerable(this, selector);
 };
-Enumerable.prototype.innerJoin = function <T, T2, TKey, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new InnerJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), keySelector1, keySelector2, resultSelector);
+Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new InnerJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.leftJoin = function <T, T2, TKey, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new LeftJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), keySelector1, keySelector2, resultSelector);
+Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new LeftJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.rightJoin = function <T, T2, TKey, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new RightJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), keySelector1, keySelector2, resultSelector);
+Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new RightJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.fullJoin = function <T, T2, TKey, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new FullJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), keySelector1, keySelector2, resultSelector);
+Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new FullJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
 Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: Iterable<T> | Enumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
     return new UnionEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), isUnionAll);
