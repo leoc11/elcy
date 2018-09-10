@@ -23,7 +23,7 @@ import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager
 import { IConnection } from "../Connection/IConnection";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IDeleteEventParam } from "../MetaData/Interface/IDeleteEventParam";
-import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { Enumerable } from "../Enumerable/Enumerable";
@@ -937,7 +937,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         if (entityMetaData.hasIncrementPrimary) {
             // if primary key is auto increment, then need to split all query per entry.
-            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as any as NumericColumnMetaData).autoIncrement);
+            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as any as IntegerColumnMetaData).autoIncrement);
             for (const entry of entryEnumerable) {
                 getEntryValues(entry);
                 results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {

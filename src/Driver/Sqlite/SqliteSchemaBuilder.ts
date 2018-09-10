@@ -11,7 +11,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
-import { NumericColumnMetaData } from "../../MetaData/NumericColumnMetaData";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class SqliteSchemaBuilder extends SchemaBuilder {
@@ -203,7 +203,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
 
             if (autoIncrementCol) {
                 const column = entity.columns.first(o => o.columnName === autoIncrementCol.columnName);
-                (column as NumericColumnMetaData).autoIncrement = true;
+                (column as IntegerColumnMetaData).autoIncrement = true;
             }
         }
 

@@ -26,15 +26,15 @@ export class MssqlQueryBuilder extends QueryBuilder {
         maxQueryLength: 67108864
     };
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
-        ["bigint", "Numeric"],
+        ["bigint", "Integer"],
         ["bit", "Boolean"],
         ["decimal", "Decimal"],
-        ["int", "Numeric"],
+        ["int", "Integer"],
         ["money", "Decimal"],
         ["numeric", "Decimal"],
-        ["smallint", "Numeric"],
+        ["smallint", "Integer"],
         ["smallmoney", "Decimal"],
-        ["tinyint", "Numeric"],
+        ["tinyint", "Integer"],
         ["float", "Decimal"],
         ["real", "Decimal"],
         ["date", "Date"],
@@ -96,11 +96,12 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["defaultDecimal", "decimal"],
         ["defaultEnum", "nvarchar"],
         ["defaultIdentifier", "uniqueidentifier"],
-        ["defaultNumberic", "int"],
+        ["defaultInteger", "int"],
         ["defaultString", "nvarchar"],
         ["defaultRowVersion", "timestamp"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([
+        [UUID, "uniqueidentifier"],
         [TimeSpan, "time"],
         [Date, "datetime"],
         [String, "nvarchar"],

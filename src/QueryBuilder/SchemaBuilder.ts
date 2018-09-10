@@ -10,7 +10,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { IConnection } from "../Connection/IConnection";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
 import { DecimalColumnMetaData } from "../MetaData/DecimalColumnMetaData";
-import { NumericColumnMetaData } from "../MetaData/NumericColumnMetaData";
+import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { IIndexMetaData } from "../MetaData/Interface/IIndexMetaData";
 import { ICheckConstraintMetaData } from "../MetaData/Interface/ICheckConstraintMetaData";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -173,8 +173,8 @@ export abstract class SchemaBuilder {
                 (column as DecimalColumnMetaData).precision = columnSchema["NUMERIC_PRECISION"] || columnSchema["DATETIME_PRECISION"];
             }
             const groupType = this.q.supportedColumnTypes.get(column.columnType);
-            if (groupType === "Numeric") {
-                (column as NumericColumnMetaData).autoIncrement = columnSchema["IS_IDENTITY"];
+            if (groupType === "Integer") {
+                (column as IntegerColumnMetaData).autoIncrement = columnSchema["IS_IDENTITY"];
             }
             const entity = result[columnSchema["TABLE_SCHEMA"] + "." + columnSchema["TABLE_NAME"]];
             column.entity = entity;
@@ -500,12 +500,12 @@ export abstract class SchemaBuilder {
         let result: IQuery[] = [];
         const entitySchema = oldColumnSchema.entity;
         // If auto increment, column must be not nullable.
-        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as NumericColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement);
+        const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as IntegerColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement);
         let isDefaultChange = (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
-        const isIdentityChange = !!(columnSchema as any as NumericColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as NumericColumnMetaData).autoIncrement;
+        const isIdentityChange = !!(columnSchema as any as IntegerColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
             || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as any as NumericColumnMetaData).length !== undefined && (oldColumnSchema as any as NumericColumnMetaData).length !== undefined && (columnSchema as any as NumericColumnMetaData).length !== (oldColumnSchema as any as NumericColumnMetaData).length)
+            || ((columnSchema as any as IntegerColumnMetaData).length !== undefined && (oldColumnSchema as any as IntegerColumnMetaData).length !== undefined && (columnSchema as any as IntegerColumnMetaData).length !== (oldColumnSchema as any as IntegerColumnMetaData).length)
             || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
             || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
 
@@ -513,7 +513,7 @@ export abstract class SchemaBuilder {
             result = result.concat(this.dropDefaultContraint(oldColumnSchema));
         }
         if (isNullableChange) {
-            if (!columnSchema.nullable && !(oldColumnSchema as any as NumericColumnMetaData).autoIncrement) {
+            if (!columnSchema.nullable && !(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement) {
                 // if change from nullable to not nullable, set all existing data to default value.
                 const fallbackValue = this.defaultValue(columnSchema);
                 result.push({
@@ -523,7 +523,7 @@ export abstract class SchemaBuilder {
             }
         }
         if (isIdentityChange) {
-            const toAutoIncrement = (columnSchema as any as NumericColumnMetaData).autoIncrement;
+            const toAutoIncrement = (columnSchema as any as IntegerColumnMetaData).autoIncrement;
             // add new column.
             const newName = "NEW_" + columnSchema.columnName;
             const cloneColumn = Object.assign({}, columnSchema);
@@ -582,7 +582,7 @@ export abstract class SchemaBuilder {
             if (columnMetaData.nullable === false)
                 result += " NOT NULL";
             if (type !== "alter") {
-                if ((columnMetaData as NumericColumnMetaData).autoIncrement)
+                if ((columnMetaData as IntegerColumnMetaData).autoIncrement)
                     result += " IDENTITY(1,1)";
             }
             if (type === "create") {
@@ -649,8 +649,8 @@ export abstract class SchemaBuilder {
                         type = this.q.columnTypeMap.get("defaultEnum");
                     else if (this.q.columnTypeMap.has("defaultIdentifier") && columnOption instanceof IdentifierColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultIdentifier");
-                    else if (this.q.columnTypeMap.has("defaultNumberic") && columnOption instanceof NumericColumnMetaData)
-                        type = this.q.columnTypeMap.get("defaultNumberic");
+                    else if (this.q.columnTypeMap.has("defaultInteger") && columnOption instanceof IntegerColumnMetaData)
+                        type = this.q.columnTypeMap.get("defaultInteger");
                     else if (this.q.columnTypeMap.has("defaultString") && columnOption instanceof StringColumnMetaData)
                         type = this.q.columnTypeMap.get("defaultString");
                     else if (this.q.columnTypeMap.has("defaultRowVersion") && columnOption instanceof RowVersionColumnMetaData)
@@ -701,7 +701,7 @@ export abstract class SchemaBuilder {
             return this.q.getExpressionString(columnMeta.default.body);
         }
         const groupType = this.q.supportedColumnTypes.get(columnMeta.columnType);
-        if (groupType === "Numeric" || groupType === "Decimal" || groupType === "Real" || columnMeta instanceof NumericColumnMetaData || columnMeta instanceof DecimalColumnMetaData)
+        if (groupType === "Integer" || groupType === "Decimal" || groupType === "Real" || columnMeta instanceof IntegerColumnMetaData || columnMeta instanceof DecimalColumnMetaData)
             return this.q.getValueString(0);
         if (groupType === "Identifier" || columnMeta instanceof IdentifierColumnMetaData)
             return "NEWID()";

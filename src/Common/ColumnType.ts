@@ -172,9 +172,9 @@ export type ColumnType = IntColumnType
     | EnumColumnType
     | OtherColumnType;
 
-export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
+export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultInteger"
     | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
     | "defaultDate" | "defaultDateTime" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Real" | "Binary" | "DataString"
+export type ColumnGroupType = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataString"
     | "Date" | "Time" | "Enum" | "Identifier" | "RowVersion";

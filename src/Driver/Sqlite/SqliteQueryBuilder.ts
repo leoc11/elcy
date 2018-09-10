@@ -18,7 +18,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
         maxQueryLength: 1000000
     };
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
-        ["integer", "Numeric"],
+        ["integer", "Integer"],
         ["numeric", "Decimal"],
         ["text", "String"],
         ["blob", "Binary"],
@@ -36,7 +36,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
         ["defaultDecimal", "numeric"],
         ["defaultEnum", "text"],
         ["defaultIdentifier", "text"],
-        ["defaultNumberic", "integer"],
+        ["defaultInteger", "integer"],
         ["defaultReal", "real"],
         ["defaultString", "text"],
         ["defaultRowVersion", "blob"]
