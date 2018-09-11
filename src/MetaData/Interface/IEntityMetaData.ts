@@ -36,4 +36,6 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     // TODO
     insertGeneratedColumns?: IColumnMetaData<TE>[];
     updateGeneratedColumns?: IColumnMetaData<TE>[];
+
+    isUpsertSave?: boolean;
 }
