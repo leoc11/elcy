@@ -54,4 +54,39 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public entityName(entityMeta: IEntityMetaData<any>) {
         return `${this.enclose(entityMeta.name)}`;
     }
+    public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine() +
+            `VALUES (${upsertExp.values.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")})`;
+
+        let queryCommand: IQuery = {
+            query: insertQuery,
+            parameters: upsertExp.values.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name).select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
+                acc[item.name] = item.value;
+                return acc;
+            }),
+            type: QueryType.DML
+        };
+
+        const result: IQuery[] = [queryCommand];
+
+        const updateString = upsertExp.updateColumns.select(o => {
+            if (o.isPrimary)
+                return undefined;
+            const index = upsertExp.columns.indexOf(o);
+            const value = upsertExp.values[index];
+            if (!value) {
+                return undefined;
+            }
+            return `${this.enclose(o.columnName)} = ${this.getOperandString(value)}`;
+        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+
+        const updateCommand: IQuery = {
+            query: `UPDATE ${this.getEntityQueryString(upsertExp.entity)} SET ${updateString} WHERE ${this.getOperandString(upsertExp.where)}`,
+            parameters: queryCommand.parameters,
+            type: QueryType.DML
+        };
+        result.push(updateCommand);
+        return result;
+    }
 }

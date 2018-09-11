@@ -43,6 +43,7 @@ import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression"
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { SelectIntoExpression } from "../Queryable/QueryExpression/SelectIntoExpression";
+import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -311,7 +312,58 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             queryCommand.query += `${this.newLine(1, true)}(${o.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")}),`;
         });
 
+        queryCommand.parameters = parameterKeys.select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
+            acc[item.name] = item.value;
+            return acc;
+        });
         return result;
+    }
+    // Upsert
+    public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
+        let pkValues: string[] = [];
+        let joinString: string[] = [];
+        upsertExp.entity.primaryColumns.each(o => {
+            const index = upsertExp.columns.indexOf(o);
+            const valueExp = upsertExp.values[index];
+            pkValues.push(`${this.getExpressionString(valueExp)} AS ${this.enclose(o.columnName)}`);
+            joinString.push(`_VAL.${this.enclose(o.columnName)} = ${this.getColumnString(o)}`);
+        });
+
+        let upsertQuery = `MERGE INTO ${this.getEntityQueryString(upsertExp.entity)}` + this.newLine() +
+            `USING (SELECT ${pkValues.join(", ")}) AS _VAL ON ${joinString.join(" AND ")}` + this.newLine() +
+            `WHEN MATCHED THEN` + this.newLine(1, true);
+
+
+        const updateString = upsertExp.updateColumns.select(o => {
+            if (o.isPrimary)
+                return undefined;
+            const index = upsertExp.columns.indexOf(o);
+            const value = upsertExp.values[index];
+            if (!value) {
+                return undefined;
+            }
+            return `${this.enclose(o.columnName)} = ${this.getOperandString(value)}`;
+        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+
+        upsertQuery += `UPDATE SET ${updateString}` + this.newLine(-1, true) +
+            `WHEN NOT MATCHED THEN` + this.newLine(1, true);
+
+
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const insertQuery = `INSERT (${colString})` + this.newLine() +
+            `VALUES (${upsertExp.values.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")})`;
+
+        upsertQuery += insertQuery;
+        this.indent--;
+
+        return [{
+            query: upsertQuery,
+            parameters: upsertExp.values.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name).select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
+                acc[item.name] = item.value;
+                return acc;
+            }),
+            type: QueryType.DML
+        }];
     }
 
     // Delete
