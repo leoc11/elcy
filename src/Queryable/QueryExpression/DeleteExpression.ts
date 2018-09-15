@@ -4,7 +4,6 @@ import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { RelationDataExpression } from "./RelationDataExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -77,7 +76,8 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationDelete = new DeleteExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name), this.deleteMode);
+                let relationDatExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                let relationDelete = new DeleteExpression(relationDatExp, this.deleteMode);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);

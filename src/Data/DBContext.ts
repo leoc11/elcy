@@ -48,7 +48,6 @@ import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression"
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
-import { RelationDataExpression } from "../Queryable/QueryExpression/RelationDataExpression";
 import { ValueExpressionTransformer } from "../ExpressionBuilder/ValueExpressionTransformer";
 import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
@@ -1302,7 +1301,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
             // delete relation data if exist.
             if (slaveRelationMetaData.relationData) {
-                const relationData = new RelationDataExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name);
+                const relationData = new EntityExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name, true);
                 const dataDelete = new DeleteExpression(relationData, new ValueExpression<DeleteMode>("Hard"));
 
                 let relations: IExpression<boolean>;
@@ -1380,7 +1379,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 return ac ? new OrExpression(ac, item) : ac;
             });
 
-            const relationData = new RelationDataExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name);
+            const relationData = new EntityExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name, true);
             const deleteExp = new DeleteExpression(relationData, new ValueExpression<DeleteMode>("Hard"));
             deleteExp.addWhere(condition);
 

@@ -11,7 +11,6 @@ import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
-import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -76,7 +75,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         const relColumns = select.relationColumns.except(select.selects);
 
         const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
-        const isRelationData = select.entity instanceof RelationDataExpression || select.entity.isRelationData || select.entity.isRelationData;
+        const isRelationData = select.entity.isRelationData;
 
         for (const row of queryResult.rows) {
             let entity = new (select.itemType as any)();

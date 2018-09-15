@@ -7,7 +7,6 @@ import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { RelationDataExpression } from "./RelationDataExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -150,7 +149,8 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name), this.showSoftDeleted);
+                const relDataExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                let relationSelect = new SelectExpression(relDataExp, this.showSoftDeleted);
                 relationSelect.distinct = true;
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
@@ -247,7 +247,8 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
+                const relDataExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                let relationSelect = new SelectExpression(relDataExp);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
