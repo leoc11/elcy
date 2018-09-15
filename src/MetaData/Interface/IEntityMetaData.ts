@@ -32,8 +32,6 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     isReadOnly?: boolean;
     concurrencyMode?: ConcurrencyModel;
 
-    // helper property
-    // TODO
     insertGeneratedColumns?: IColumnMetaData<TE>[];
     updateGeneratedColumns?: IColumnMetaData<TE>[];
 }

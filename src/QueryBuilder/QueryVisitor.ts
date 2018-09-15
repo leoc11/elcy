@@ -25,7 +25,6 @@ import { NotExpression } from "../ExpressionBuilder/Expression/NotExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
-import { NotEqualExpression } from "../ExpressionBuilder/Expression/NotEqualExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
@@ -47,6 +46,9 @@ import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { NamingStrategy } from "./NamingStrategy";
 import { Queryable } from "../Queryable/Queryable";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
+import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
+import { ISelectQueryOption } from "./Interface/IQueryOption";
 
 interface IPRelation {
     name: string;
@@ -60,6 +62,7 @@ export interface IVisitParameter {
     scope?: string;
 }
 export class QueryVisitor {
+    public options: ISelectQueryOption;
     public scopeParameters = new TransformerParameter();
     private aliasObj: { [key: string]: number } = {};
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
@@ -124,8 +127,10 @@ export class QueryVisitor {
     public visit(expression: IExpression, param: IVisitParameter): IExpression {
         if (!(expression instanceof SelectExpression ||
             expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression ||
-            expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression))
-            expression = expression.clone();
+            expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression)) {
+            const findMap = new Map([[param.selectExpression, param.selectExpression]]);
+            expression = expression.clone(findMap);
+        }
         switch (expression.constructor) {
             case MethodCallExpression:
             case MemberAccessExpression: {
@@ -185,8 +190,7 @@ export class QueryVisitor {
             result = this.createParamBuilderItem(paramExp, param);
             return result;
         }
-
-        if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
+        else if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
             const rel = result.parentRelation as IJoinRelation;
             const clone = result.clone();
@@ -247,6 +251,9 @@ export class QueryVisitor {
                     case "selectMany":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             if (relationMeta.relationType === "many" && param.scope === "select") {
                                 param.selectExpression.itemExpression = child;
                                 param.selectExpression.selects = [];
@@ -264,12 +271,18 @@ export class QueryVisitor {
                     case "include":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             parentEntity.select!.addInclude(expression.memberName as any, child, relationMeta);
                             return relationMeta.relationType === "many" ? child : child.entity;
                         }
                     default:
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             let joinType: JoinType;
                             if (param.scope === "orderBy")
                                 joinType = JoinType.LEFT;
@@ -296,6 +309,9 @@ export class QueryVisitor {
                         case "selectMany":
                             {
                                 let child = new SelectExpression(new EntityExpression(result.type as any, this.newAlias()));
+                                if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                    child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                                }
                                 let relation: IExpression<boolean>;
                                 for (const childCol of child.entity.primaryColumns) {
                                     const parentCol = param.selectExpression.projectedColumns.first(o => o.columnName === childCol.columnName);
@@ -860,10 +876,9 @@ export class QueryVisitor {
                     }
                     else {
                         // any is used on related entity. change query to groupby.
-                        const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
-                        visitExpression(selectOperand.parentRelation.relations, (exp): boolean | void => {
+                        visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
                                 groupBy.push(colExp);
@@ -872,9 +887,56 @@ export class QueryVisitor {
                             }
                         });
                         const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
-                        const flagColumn = column;
-                        groupExp.selects.push(flagColumn);
-                        return flagColumn;
+                        const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
+                        groupExp.selects.push(column);
+
+                        if (objectOperand.isSubSelect) {
+                            // create another join to bridge this and parent.
+                            const parentSelect = selectOperand.parentRelation.parent;
+                            const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
+                            bridge.entity.alias = this.newAlias();
+                            bridge.selects = [];
+                            bridge.joins = [];
+                            bridge.includes = [];
+
+                            // remove relation from this to parent
+                            parentSelect.joins.remove(selectOperand.parentRelation as any);
+
+                            // add relation from bridge to this
+                            const replaceMap = new Map();
+                            for (const col of parentSelect.entity.columns) {
+                                const cloneCol = bridge.entity.columns.first(o => o.columnName === col.columnName);
+                                replaceMap.set(col, cloneCol);
+                            }
+                            for (const col of groupExp.projectedColumns) {
+                                replaceMap.set(col, col);
+                            }
+                            const bridgeCurRelation = selectOperand.parentRelation.relations.clone(replaceMap);
+                            bridge.addJoinRelation(groupExp, bridgeCurRelation, selectOperand.parentRelation.type as any);
+
+                            // group the bridge so it could be easily join to parent
+                            const bridgeAggreateExp = new MethodCallExpression(bridge, "sum", [column], Number);
+                            const bridgeColumn = new ComputedColumnExpression(bridge.entity, bridgeAggreateExp, this.newAlias("column"));
+                            const groupBys = bridge.projectedColumns.toArray();
+                            const groupedBridge = new GroupByExpression(bridge, groupBys, groupExp.key);
+
+                            // add join from parent to bridge
+                            let bridgeParentRelation: IExpression<boolean>;
+                            for (const primaryCol of bridge.entity.primaryColumns) {
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
+                                const logicalExp = new StrictEqualExpression(primaryCol, pCol);
+                                bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
+                            }
+                            parentSelect.addJoinRelation(groupedBridge, bridgeParentRelation, JoinType.LEFT);
+                            groupedBridge.selects.add(bridgeColumn);
+
+                            return bridgeColumn;
+                        }
+
+                        return column;
                     }
                 }
                 case "sum":
@@ -917,7 +979,7 @@ export class QueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
-                        visitExpression(selectOperand.parentRelation.relations, (exp): boolean | void => {
+                        visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
                                 groupBy.add(colExp);
@@ -928,6 +990,52 @@ export class QueryVisitor {
                         const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
                         const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
                         groupExp.selects.push(column);
+
+                        if (objectOperand.isSubSelect) {
+                            // create another join to bridge this and parent.
+                            const parentSelect = selectOperand.parentRelation.parent;
+                            const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
+                            bridge.entity.alias = this.newAlias();
+                            bridge.selects = [];
+                            bridge.joins = [];
+                            bridge.includes = [];
+
+                            // remove relation from this to parent
+                            parentSelect.joins.remove(selectOperand.parentRelation as any);
+
+                            // add relation from bridge to this
+                            const replaceMap = new Map();
+                            for (const col of parentSelect.entity.columns) {
+                                const cloneCol = bridge.entity.columns.first(o => o.columnName === col.columnName);
+                                replaceMap.set(col, cloneCol);
+                            }
+                            for (const col of groupExp.projectedColumns) {
+                                replaceMap.set(col, col);
+                            }
+                            const bridgeCurRelation = selectOperand.parentRelation.relations.clone(replaceMap);
+                            bridge.addJoinRelation(groupExp, bridgeCurRelation, selectOperand.parentRelation.type as any);
+
+                            // group the bridge so it could be easily join to parent
+                            const bridgeAggreateExp = new MethodCallExpression(bridge, expression.methodName, [column], Number);
+                            const bridgeColumn = new ComputedColumnExpression(bridge.entity, bridgeAggreateExp, this.newAlias("column"));
+                            const groupBys = bridge.projectedColumns.toArray();
+                            const groupedBridge = new GroupByExpression(bridge, groupBys, groupExp.key);
+
+                            // add join from parent to bridge
+                            let bridgeParentRelation: IExpression<boolean>;
+                            for (const primaryCol of bridge.entity.primaryColumns) {
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
+                                const logicalExp = new StrictEqualExpression(primaryCol, pCol);
+                                bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
+                            }
+                            parentSelect.addJoinRelation(groupedBridge, bridgeParentRelation, JoinType.LEFT);
+                            groupedBridge.selects.add(bridgeColumn);
+
+                            return bridgeColumn;
+                        }
                         return column;
                     }
                 }
@@ -937,6 +1045,10 @@ export class QueryVisitor {
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
 
                     const isAny = expression.methodName === "any";
+                    if (!isAny && expression.params.length <= 0) {
+                        throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "All required 1 parameter");
+                    }
+
                     if (expression.params.length > 0) {
                         let predicateFn = expression.params[0] as FunctionExpression;
                         if (!isAny)
@@ -944,6 +1056,7 @@ export class QueryVisitor {
                         const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
                         this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
                     }
+
                     const anyExp = new ValueExpression(isAny);
                     if (param.scope === "queryable") {
                         // call from queryable
@@ -960,7 +1073,7 @@ export class QueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
-                        visitExpression(selectOperand.parentRelation.relations, (exp): boolean | void => {
+                        visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
                                 groupBy.add(colExp);
@@ -971,7 +1084,64 @@ export class QueryVisitor {
                         const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
                         const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                         groupExp.selects.push(column);
-                        return new (isAny ? NotEqualExpression : EqualExpression)(column, new ValueExpression(null));
+
+                        if (objectOperand.isSubSelect) {
+                            // create another join to bridge this and parent.
+                            const parentSelect = selectOperand.parentRelation.parent;
+                            const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
+                            bridge.entity.alias = this.newAlias();
+                            bridge.selects = [];
+                            bridge.joins = [];
+                            bridge.includes = [];
+
+                            // remove relation from current to parent
+                            parentSelect.joins.remove(selectOperand.parentRelation as any);
+
+                            // add relation from bridge to current
+                            const replaceMap = new Map();
+                            for (const col of parentSelect.entity.columns) {
+                                const cloneCol = bridge.entity.columns.first(o => o.columnName === col.columnName);
+                                replaceMap.set(col, cloneCol);
+                            }
+                            for (const col of groupExp.projectedColumns) {
+                                replaceMap.set(col, col);
+                            }
+                            let bridgeCurRelation = selectOperand.parentRelation.relations.clone(replaceMap);
+                            if (!isAny) {
+                                bridgeCurRelation = new NotExpression(bridgeCurRelation);
+                            }
+                            bridge.addJoinRelation(groupExp, bridgeCurRelation, selectOperand.parentRelation.type as any);
+
+                            // group the bridge so it could be easily join to parent
+                            let bridgeAggreateExp: IExpression<boolean>;
+                            if (isAny) {
+                                bridgeAggreateExp = new StrictNotEqualExpression(new MethodCallExpression(bridge, "sum", [column], Number), new ValueExpression(null));
+                            }
+                            else {
+                                bridgeAggreateExp = new StrictEqualExpression(new MethodCallExpression(bridge, "sum", [column], Number), new ValueExpression(null));
+                            }
+
+                            const bridgeColumn = new ComputedColumnExpression(bridge.entity, bridgeAggreateExp, this.newAlias("column"));
+                            const groupBys = bridge.projectedColumns.toArray();
+                            const groupedBridge = new GroupByExpression(bridge, groupBys, groupExp.key);
+
+                            // add join from parent to bridge
+                            let bridgeParentRelation: IExpression<boolean>;
+                            for (const primaryCol of bridge.entity.primaryColumns) {
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
+                                const logicalExp = new StrictEqualExpression(primaryCol, pCol);
+                                bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
+                            }
+                            parentSelect.addJoinRelation(groupedBridge, bridgeParentRelation, JoinType.LEFT);
+                            groupedBridge.selects.add(bridgeColumn);
+
+                            return new StrictEqualExpression(bridgeColumn, new ValueExpression(1));
+                        }
+
+                        return new (isAny ? StrictNotEqualExpression : StrictEqualExpression)(column, new ValueExpression(null));
                     }
                 }
                 case "contains": {
@@ -1048,6 +1218,9 @@ export class QueryVisitor {
                             break;
                     }
                     selectOperand = new SelectExpression(entityExp);
+                    if (selectOperand.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                        selectOperand.addWhere(new StrictEqualExpression(selectOperand.entity.deleteColumn, new ValueExpression(false)));
+                    }
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
@@ -1068,40 +1241,13 @@ export class QueryVisitor {
                     const parentRelation = objectOperand.parentRelation;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: "join" };
                     const childSelectOperand: SelectExpression = this.visit(expression.params[0], visitParam) as any;
-                    const childVisitParam: IVisitParameter = { selectExpression: childSelectOperand, scope: "join" };
 
-                    const parentKeySelector = expression.params[1] as FunctionExpression;
-                    this.scopeParameters.add(parentKeySelector.params[0].name, selectOperand.getVisitParam());
-                    let parentKey = this.visit(parentKeySelector, visitParam);
-                    this.scopeParameters.remove(parentKeySelector.params[0].name);
-
-                    const childKeySelector = expression.params[2] as FunctionExpression;
-                    this.scopeParameters.add(childKeySelector.params[0].name, childSelectOperand.getVisitParam());
-                    let childKey = this.visit(childKeySelector, childVisitParam);
-                    this.scopeParameters.remove(childKeySelector.params[0].name);
-
-                    let relation: IExpression<boolean>;
-
-                    if (parentKey.type !== childKey.type) {
-                        throw new Error(`Key type not match`);
-                    }
-                    else if ((parentKey as IEntityExpression).primaryColumns) {
-                        const parentEntity = parentKey as IEntityExpression;
-                        const childEntity = childKey as IEntityExpression;
-                        for (const parentCol of parentEntity.primaryColumns) {
-                            const childCol = childEntity.primaryColumns.first((c) => c.propertyName === parentCol.propertyName);
-                            const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                            relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-                        }
-                    }
-                    else {
-                        if (!(childKey as IColumnExpression).entity)
-                            childKey = new ComputedColumnExpression(childSelectOperand.entity, childKey, this.newAlias());
-                        if (!(parentKey as IColumnExpression).entity)
-                            parentKey = new ComputedColumnExpression(selectOperand.entity, parentKey, this.newAlias());
-                        const logicalExp = new StrictEqualExpression(parentKey, childKey);
-                        relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-                    }
+                    const relationSelector = expression.params[1] as FunctionExpression;
+                    this.scopeParameters.add(relationSelector.params[0].name, selectOperand.getVisitParam());
+                    this.scopeParameters.add(relationSelector.params[1].name, childSelectOperand.getVisitParam());
+                    let relation: IExpression<boolean> = this.visit(relationSelector, visitParam);
+                    this.scopeParameters.remove(relationSelector.params[0].name);
+                    this.scopeParameters.remove(relationSelector.params[1].name);
 
                     let jointType: JoinType;
                     switch (expression.methodName) {

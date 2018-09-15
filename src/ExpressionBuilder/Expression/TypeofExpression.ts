@@ -22,7 +22,9 @@ export class TypeofExpression extends ExpressionBase<string> implements IUnaryOp
     public execute(transformer: ExpressionTransformer) {
         return typeof this.operand.execute(transformer);
     }
-    public clone() {
-        return new TypeofExpression(this.operand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const operand = replaceMap.has(this.operand) ? replaceMap.get(this.operand) : this.operand.clone(replaceMap);
+        return new TypeofExpression(operand);
     }
 }

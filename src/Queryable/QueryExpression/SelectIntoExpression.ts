@@ -1,31 +1,23 @@
-import { OrderDirection, JoinType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IColumnExpression } from "./IColumnExpression";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
-import { IEntityExpression } from "./IEntityExpression";
-import { IOrderExpression } from "./IOrderExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { SelectExpression, IJoinRelation } from "./SelectExpression";
-import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { hashCode, hashCodeAdd } from "../../Helper/Util";
-export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
-    public setter: { [key in keyof T]?: IExpression } = {};
-    public select: SelectExpression<T>;
-    public get parameters() {
-        return this.select.parameters;
-    }
-    public get joins() {
-        return this.select.joins;
-    }
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { IObjectType, OrderDirection, JoinType } from "../../Common/Type";
+import { hashCode } from "../../Helper/Util";
+import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
+import { IOrderExpression } from "./IOrderExpression";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IColumnExpression } from "./IColumnExpression";
+export class SelectIntoExpression<T = any> implements IQueryCommandExpression<void> {
     public get type() {
         return undefined as any;
     }
     public get entity() {
         return this.select.entity;
+    }
+    public get parameters() {
+        return this.select.parameters;
     }
     public get paging() {
         return this.select.paging;
@@ -36,21 +28,20 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
-    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression }) {
-        if (selectOrEntity instanceof SelectExpression) {
-            selectOrEntity = selectOrEntity.clone();
-        } else {
-            selectOrEntity = new SelectExpression(selectOrEntity);
-        }
-        this.select = selectOrEntity;
+    public get joins() {
+        return this.select.joins;
+    }
+    public get includes() {
+        return [] as IIncludeRelation[];
+    }
+    public get distinct() {
+        return this.select.distinct;
+    }
+    public get projectedColumns() {
+        return this.select.projectedColumns;
+    }
+    constructor(public select: SelectExpression<T>) {
         this.select.includes = [];
-        if (setter instanceof Function) {
-            const setterFn = ExpressionBuilder.parse(setter);
-            setter = (setterFn.body as ObjectValueExpression<T>).object;
-        }
-        this.setter = setter;
     }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
@@ -65,14 +56,14 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         return this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
     }
-    public clone(findMap?: Map<IExpression, IExpression>): UpdateExpression<T> {
+    public clone(findMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
         const select = findMap.has(this.select) ? findMap.get(this.select) as SelectExpression : this.select.clone(findMap);
-        const clone = new UpdateExpression(select, this.setter);
+        const clone = new SelectIntoExpression(select);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters);
-        return queryBuilder.getBulkUpdateQuery(this);
+        queryBuilder.setParameters(parameters ? parameters : []);
+        return queryBuilder.getSelectInsertQuery(this);
     }
     public execute() {
         return this as any;
@@ -84,11 +75,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         return this.select.buildParameter(params);
     }
     public hashCode() {
-        let code = 0;
-        for (const prop in this.setter) {
-            code += hashCode(prop, hashCode(this.setter[prop].toString()));
-        }
-        return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
+        return hashCode("INSERT", this.select.hashCode());
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes;

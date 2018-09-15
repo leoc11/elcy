@@ -5,13 +5,12 @@ import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../IQueryResult";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { GenericType, RelationshipType, TimeZoneHandling } from "../../Common/Type";
-import { hashCode, isValue, visitExpression } from "../../Helper/Util";
+import { hashCode, isValue } from "../../Helper/Util";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
-import { RelationDataExpression } from "../../Queryable/QueryExpression/RelationDataExpression";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -19,17 +18,14 @@ import { UUID } from "../../Data/UUID";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
-import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 
-interface IRelationResolveData<T = any, TE = any> {
+export interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
     relationMeta?: RelationMetaData<T, TE>;
     type: RelationshipType;
 }
 export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     constructor(protected readonly queryExpression: SelectExpression<T>) {
-
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext, this.queryExpression, new Date());
@@ -79,14 +75,14 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         const relColumns = select.relationColumns.except(select.selects);
 
         const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
-        const isRelationData = select.entity instanceof RelationDataExpression;
+        const isRelationData = select.entity.isRelationData;
 
         for (const row of queryResult.rows) {
             let entity = new (select.itemType as any)();
             let entry: EntityEntry<T>;
             const keyData: { [key: string]: any } = {};
             for (const primaryCol of primaryColumns) {
-                const columnName = primaryCol.columnName;
+                const columnName = primaryCol.alias ? primaryCol.alias : primaryCol.columnName;
                 const prop = primaryCol.propertyName;
                 const value = this.convertTo(row[columnName], primaryCol);
                 this.setDeepProperty(keyData, prop, value);
@@ -124,9 +120,9 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             results.push(entity);
 
             if (isRelationData) {
-                const relationDataMeta = parentRelation.relationMeta.relationData;
+                const parentIncludeRel = select.parentRelation as IIncludeRelation;
                 let a: any = {};
-                for (const [sourceColMeta, relColMeta] of relationDataMeta.sourceRelationMaps) {
+                for (const [sourceColMeta, relColMeta] of parentIncludeRel.relationMap) {
                     let value = this.getDeepProperty(keyData, relColMeta.propertyName);
                     if (value === undefined)
                         value = this.getDeepProperty(entity, relColMeta.propertyName);
@@ -134,28 +130,35 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                     this.setDeepProperty(a, sourceColMeta.propertyName, value);
                 }
                 let key = hashCode(JSON.stringify(a));
-                const sourceEntity = customTypeMap.get(relationDataMeta.source.type).get(key);
+                const sourceEntity = customTypeMap.get(select.parentRelation.parent.itemType).get(key);
 
-                a = {};
-                for (const [relColMeta, targetColMeta] of relationDataMeta.targetRelationMaps) {
-                    let value = this.getDeepProperty(keyData, relColMeta.propertyName);
-                    if (value === undefined)
-                        value = this.getDeepProperty(entity, relColMeta.propertyName);
+                for (const include of select.includes.where(o => o.type === "one")) {
+                    a = {};
+                    for (const [relColMeta, targetColMeta] of include.relationMap) {
+                        let value = this.getDeepProperty(keyData, relColMeta.propertyName);
+                        if (value === undefined)
+                            value = this.getDeepProperty(entity, relColMeta.propertyName);
 
-                    this.setDeepProperty(a, targetColMeta.propertyName, value);
+                        this.setDeepProperty(a, targetColMeta.propertyName, value);
+                    }
+                    key = hashCode(JSON.stringify(a));
+                    const targetEntity = customTypeMap.get(include.child.itemType).get(key);
+
+                    if (!sourceEntity[include.name])
+                        sourceEntity[include.name] = [];
+                    sourceEntity[include.name].push(targetEntity);
+
+                    if (parentRelation.relationMeta) {
+                        Reflect.setRelationData(sourceEntity, include.name, targetEntity, entity);
+
+                        if (parentRelation.relationMeta.reverseRelation) {
+                            if (!targetEntity[parentRelation.relationMeta.reverseRelation.propertyName])
+                                targetEntity[parentRelation.relationMeta.reverseRelation.propertyName] = [];
+                            targetEntity[parentRelation.relationMeta.reverseRelation.propertyName].push(sourceEntity);
+                        }
+                    }
                 }
-                key = hashCode(JSON.stringify(a));
-                const targetEntity = customTypeMap.get(relationDataMeta.target.type).get(key);
-                Reflect.setRelationData(sourceEntity, relationDataMeta.sourceRelationMeta.propertyName, targetEntity, entity);
 
-                if (relationDataMeta.completeRelationType === "many-many") {
-                    if (!sourceEntity[relationDataMeta.sourceRelationMeta.propertyName])
-                        sourceEntity[relationDataMeta.sourceRelationMeta.propertyName] = [];
-                    sourceEntity[relationDataMeta.sourceRelationMeta.propertyName].push(targetEntity);
-                    if (!targetEntity[relationDataMeta.targetRelationMeta.propertyName])
-                        targetEntity[relationDataMeta.targetRelationMeta.propertyName] = [];
-                    targetEntity[relationDataMeta.targetRelationMeta.propertyName].push(sourceEntity);
-                }
                 continue;
             }
 
@@ -163,37 +166,16 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             if (parentRelation) {
                 const relation = select.parentRelation as IIncludeRelation<any, any>;
                 const a: any = {};
+                for (const [parentCol, childCol] of relation.relationMap) {
+                    let value = this.getDeepProperty(keyData, childCol.propertyName);
+                    if (value === undefined)
+                        value = this.getDeepProperty(entity, childCol.propertyName);
+                    this.setDeepProperty(a, parentCol.propertyName, value);
+                }
 
-                // TODO: coz include relation no longer only equal operator, this code no longer valid.
-                // TODO: need to support relation ex: o.qty > o2.qty.
-                visitExpression(relation.relations, (exp) => {
-                    if ((exp instanceof EqualExpression || exp instanceof StrictEqualExpression)
-                        && (exp.leftOperand as IColumnExpression).entity
-                        && (exp.rightOperand as IColumnExpression).entity) {
-                        let parentCol: IColumnExpression;
-                        let childCol: IColumnExpression;
-                        if (relation.parent.projectedColumns.contains(exp.leftOperand as any)) {
-                            parentCol = exp.leftOperand as any;
-                        }
-                        else if (relation.parent.projectedColumns.contains(exp.rightOperand as any)) {
-                            parentCol = exp.leftOperand as any;
-                        }
-                        if (relation.child.projectedColumns.contains(exp.leftOperand as any)) {
-                            childCol = exp.leftOperand as any;
-                        }
-                        else if (relation.child.projectedColumns.contains(exp.rightOperand as any)) {
-                            childCol = exp.leftOperand as any;
-                        }
-                        if (childCol && parentCol) {
-                            let value = this.getDeepProperty(keyData, childCol.propertyName);
-                            if (value === undefined)
-                                value = this.getDeepProperty(entity, childCol.propertyName);
-                            this.setDeepProperty(a, parentCol.propertyName, value);
-                        }
-                    }
-                });
                 const key = hashCode(JSON.stringify(a));
                 const parentEntity = parentRelation.resultMap.get(key);
+
                 if (parentRelation.relationMeta && parentRelation.relationMeta.reverseRelation) {
                     entity[parentRelation.relationMeta.reverseRelation.propertyName] = parentEntity;
                 }
@@ -214,34 +196,15 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             // resolve child relation
             for (const [include, data] of childRelations) {
                 const a: any = {};
-                // TODO: coz include relation no longer only equal operator, this code no longer valid.
-                // TODO: need to support relation ex: o.qty > o2.qty.
-                visitExpression(include.relations, (exp) => {
-                    if ((exp instanceof EqualExpression || exp instanceof StrictEqualExpression)
-                        && (exp.leftOperand as IColumnExpression).entity
-                        && (exp.rightOperand as IColumnExpression).entity) {
-                        let parentCol: IColumnExpression;
-                        let childCol: IColumnExpression;
-                        if (include.parent.projectedColumns.contains(exp.leftOperand as any)) {
-                            parentCol = exp.leftOperand as any;
-                        }
-                        else if (include.parent.projectedColumns.contains(exp.rightOperand as any)) {
-                            parentCol = exp.leftOperand as any;
-                        }
-                        if (include.child.projectedColumns.contains(exp.leftOperand as any)) {
-                            childCol = exp.leftOperand as any;
-                        }
-                        else if (include.child.projectedColumns.contains(exp.rightOperand as any)) {
-                            childCol = exp.leftOperand as any;
-                        }
-                        if (childCol && parentCol) {
-                            let value = this.getDeepProperty(keyData, parentCol.propertyName);
-                            if (value === undefined)
-                                value = this.getDeepProperty(entity, parentCol.propertyName);
-                            this.setDeepProperty(a, childCol.propertyName, value);
-                        }
+                for (const [parentCol, childCol] of include.relationMap) {
+                    if (childCol && parentCol) {
+                        let value = this.getDeepProperty(keyData, parentCol.propertyName);
+                        if (value === undefined)
+                            value = this.getDeepProperty(entity, parentCol.propertyName);
+                        this.setDeepProperty(a, childCol.propertyName, value);
                     }
-                });
+                }
+
                 const key = hashCode(JSON.stringify(a));
                 const childEntity = data.resultMap.get(key);
                 this.setDeepProperty(entity, include.name, childEntity);
@@ -309,7 +272,8 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             return;
         }
 
-        const value = this.convertTo(data[column.columnName], column);
+        const columnName = column.alias ? column.alias : column.columnName;
+        const value = this.convertTo(data[columnName], column);
         if (entryOrEntity instanceof EntityEntry)
             entryOrEntity.setOriginalValue(column.propertyName as any, value);
         else

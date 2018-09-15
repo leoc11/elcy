@@ -14,7 +14,14 @@ import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpressi
 import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
-import { isNotNull } from "../../Helper/Util";
+import { isNotNull, replaceExpression } from "../../Helper/Util";
+import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
+import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -25,15 +32,15 @@ export class MssqlQueryBuilder extends QueryBuilder {
         maxQueryLength: 67108864
     };
     public supportedColumnTypes: Map<ColumnType, ColumnGroupType> = new Map<ColumnType, ColumnGroupType>([
-        ["bigint", "Numeric"],
+        ["bigint", "Integer"],
         ["bit", "Boolean"],
         ["decimal", "Decimal"],
-        ["int", "Numeric"],
+        ["int", "Integer"],
         ["money", "Decimal"],
         ["numeric", "Decimal"],
-        ["smallint", "Numeric"],
+        ["smallint", "Integer"],
         ["smallmoney", "Decimal"],
-        ["tinyint", "Numeric"],
+        ["tinyint", "Integer"],
         ["float", "Decimal"],
         ["real", "Decimal"],
         ["date", "Date"],
@@ -95,11 +102,12 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["defaultDecimal", "decimal"],
         ["defaultEnum", "nvarchar"],
         ["defaultIdentifier", "uniqueidentifier"],
-        ["defaultNumberic", "int"],
+        ["defaultInteger", "int"],
         ["defaultString", "nvarchar"],
         ["defaultRowVersion", "timestamp"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([
+        [UUID, "uniqueidentifier"],
         [TimeSpan, "time"],
         [Date, "datetime"],
         [String, "nvarchar"],
@@ -127,7 +135,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
             " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) +
             (hasIncludes ? this.newLine() + "INTO " + tempTableName : "") +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            this.getEntityJoinString(select.entity, select.joins);
+            this.getEntityJoinString(select.joins);
         if (select.where)
             selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
         if (select instanceof GroupByExpression) {
@@ -142,7 +150,9 @@ export class MssqlQueryBuilder extends QueryBuilder {
             selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
+            if (select.orders.length <= 0)
+                selectQuery += this.newLine() + "ORDER BY (SELECT NULL)";
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
         }
         result.push({
             query: selectQuery,
@@ -156,27 +166,146 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 type: QueryType.DQL
             });
 
-            const tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
-                if (o instanceof ComputedColumnExpression)
-                    return new ColumnExpression(o.entity, o.type, o.propertyName, o.columnName, o.isPrimary);
-                return o;
-            }).toArray(), select.itemType, tempTableName.substr(1)));
-            tempSelect.relationColumns = tempSelect.entity.columns.slice(0);
-            const replaceMap = new Map();
-            for (const col of select.projectedColumns) {
-                const customCol = tempSelect.entity.columns.find(o => o.columnName === col.columnName);
-                replaceMap.set(col, customCol);
-            }
+            let tempSelect: SelectExpression;
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
-                // add join to temp table
-                for (const key of include.child.projectedColumns) {
-                    replaceMap.set(key, key);
+                if (include.isFinish) {
+                    result = result.concat(this.getSelectQuery(include.child));
                 }
-                const relations = include.relations.clone(replaceMap);
-                const tempJoin = include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
-                result = result.concat(this.getSelectQuery(include.child));
-                include.child.joins.remove(tempJoin);
+                else {
+                    if (!tempSelect) {
+                        tempSelect = new SelectExpression(new CustomEntityExpression(tempTableName, select.projectedColumns.select(o => {
+                            if (o instanceof ComputedColumnExpression)
+                                return new ColumnExpression(o.entity, o.type, o.propertyName, o.alias ? o.alias : o.columnName, o.isPrimary);
+                            return o;
+                        }).toArray(), select.itemType, tempTableName.substr(1)));
+                        tempSelect.relationColumns = tempSelect.entity.columns.slice(0);
+                    }
+
+                    // add join to temp table
+                    const replaceMap = new Map();
+                    for (const key of include.child.projectedColumns) {
+                        replaceMap.set(key, key);
+                    }
+                    for (const key of include.parent.projectedColumns) {
+                        const tempKey = tempSelect.entity.columns.first(o => o.columnName === key.columnName);
+                        replaceMap.set(key, tempKey);
+                    }
+                    const relations = include.relations.clone(replaceMap);
+
+                    let requireRelationData = false;
+                    const relMap = new Map<IColumnExpression, IColumnExpression>();
+                    const parent = include.child;
+
+                    replaceExpression(relations, (exp: IExpression) => {
+                        if (!requireRelationData) {
+                            if (exp instanceof EqualExpression || exp instanceof StrictEqualExpression) {
+                                const leftExp = exp.leftOperand as IColumnExpression;
+                                const rightExp = exp.rightOperand as IColumnExpression;
+                                let parentCol: IColumnExpression;
+                                let childCol: IColumnExpression;
+                                if (leftExp.entity) {
+                                    if (tempSelect.entity.columns.contains(leftExp)) {
+                                        childCol = leftExp;
+                                    }
+                                    else if (parent.projectedColumns.contains(leftExp)) {
+                                        parentCol = leftExp;
+                                    }
+                                }
+                                if (rightExp.entity) {
+                                    if (tempSelect.entity.columns.contains(rightExp)) {
+                                        childCol = rightExp;
+                                    }
+                                    else if (parent.projectedColumns.contains(rightExp)) {
+                                        parentCol = rightExp;
+                                    }
+                                }
+                                if (parentCol && childCol) {
+                                    // TODO: should check whether column is unique
+                                    // if both not primary, that means it's a many-many relation
+                                    if (!parentCol.isPrimary && !childCol.isPrimary) {
+                                        requireRelationData = true;
+                                        return exp;
+                                    }
+                                    relMap.set(parentCol, childCol);
+                                }
+                            }
+                            else if ((exp as IColumnExpression).entity) {
+                                const col = exp as IColumnExpression;
+                                if (parent.projectedColumns.contains(col)) {
+                                    if (col instanceof ComputedColumnExpression) {
+                                        return col.expression;
+                                    }
+                                    return col;
+                                }
+                                else if (tempSelect.projectedColumns.contains(col)) {
+                                    if (col.entity !== tempSelect.entity) {
+                                        const colClone = col.clone();
+                                        colClone.entity = tempSelect.entity;
+                                        return colClone;
+                                    }
+                                }
+                            }
+                            else if (!(exp instanceof AndExpression || (exp as IColumnExpression).entity)) {
+                                requireRelationData = true;
+                            }
+                        }
+                        return exp;
+                    });
+
+                    if (requireRelationData) {
+                        const replaceMap = new Map();
+                        const relDataSelect = include.child.clone(replaceMap);
+                        relDataSelect.entity.alias = "rel_" + relDataSelect.entity.alias;
+                        relDataSelect.entity.isRelationData = true;
+                        relDataSelect.itemExpression = new ObjectValueExpression({}, Object);
+                        relDataSelect.orders = [];
+                        relDataSelect.selects = relDataSelect.entity.primaryColumns
+                            .union(tempSelect.entity.primaryColumns.select(o => {
+                                const col = o.clone();
+                                col.entity = o.entity;
+                                col.alias = col.propertyName = "_" + col.propertyName;
+                                return col;
+                            })).toArray();
+
+                        // replace old include with new one
+                        select.includes.remove(include);
+                        let includeJoinRel: IExpression<boolean>;
+                        tempSelect.entity.primaryColumns.each(o => {
+                            const relCol = relDataSelect.entity.columns.first(c => c.columnName === o.columnName);
+                            const childCol = include.child.entity.columns.first(c => c.columnName === o.columnName);
+                            const logicalExp = new StrictEqualExpression(relCol, childCol);
+                            includeJoinRel = includeJoinRel ? new AndExpression(includeJoinRel, logicalExp) : logicalExp;
+                        });
+                        const includeRel = select.addInclude(include.name, relDataSelect, includeJoinRel, "many");
+                        includeRel.isFinish = true;
+                        includeRel.relationMap = new Map();
+                        select.entity.primaryColumns.each(o => {
+                            includeRel.relationMap.set(o, relDataSelect.selects.except(relDataSelect.entity.columns).first(c => c.columnName === o.columnName));
+                        });
+
+                        // add join to temp
+                        const joinRel = relDataSelect.addJoinRelation(tempSelect, relations.clone(replaceMap), JoinType.INNER);
+                        joinRel.isFinish = true;
+
+                        // add include to rel data select as bridge
+                        let childRel: IExpression<boolean>;
+                        include.child.entity.primaryColumns.each(o => {
+                            const relCol = relDataSelect.entity.columns.first(c => c.columnName === o.columnName);
+                            const logicalExp = new StrictEqualExpression(relCol, o);
+                            childRel = childRel ? new AndExpression(childRel, logicalExp) : logicalExp;
+                        });
+                        relDataSelect.addInclude(include.name, include.child, childRel, "one");
+                        result = result.concat(this.getSelectQuery(relDataSelect));
+                    }
+                    else {
+                        include.relationMap = relMap;
+                        include.isFinish = true;
+                        const tempJoin = include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
+                        tempJoin.isFinish = true;
+                        result = result.concat(this.getSelectQuery(include.child));
+                    }
+                }
             }
 
             result.push({
@@ -186,11 +315,8 @@ export class MssqlQueryBuilder extends QueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
-        let result = "";
-        if (select.orders.length <= 0)
-            result += "ORDER BY (SELECT NULL)" + this.newLine();
-        result += "OFFSET " + skip + " ROWS";
+    protected getPagingQueryString(take: number, skip: number): string {
+        let result = "OFFSET " + skip + " ROWS";
         if (take > 0)
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         return result;
@@ -200,6 +326,55 @@ export class MssqlQueryBuilder extends QueryBuilder {
             return "[" + identity + "]";
         else
             return identity;
+    }
+    public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
+        let take = 0, skip = 0;
+        if (selectInto.paging.take) {
+            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.take);
+            if (takeParam) {
+                take = takeParam.value;
+            }
+        }
+        if (selectInto.paging.skip) {
+            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.skip);
+            if (skipParam)
+                skip = skipParam.value;
+        }
+
+        let selectQuery =
+            `SELECT ${selectInto.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
+            selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
+            `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
+            `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.joins)}`;
+
+        if (selectInto.where)
+            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.where)}`;
+        if (selectInto instanceof GroupByExpression) {
+            if (selectInto.groupBy.length > 0) {
+                selectQuery += this.newLine() + "GROUP BY " + selectInto.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+            }
+            if (selectInto.having) {
+                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.having);
+            }
+        }
+
+        if (selectInto.orders.length > 0)
+            selectQuery += this.newLine() + "ORDER BY " + selectInto.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+
+        if (skip > 0) {
+            if (selectInto.orders.length <= 0)
+                selectQuery += this.newLine() + "ORDER BY (SELECT NULL)";
+            selectQuery += this.newLine() + this.getPagingQueryString(take, skip);
+        }
+
+        result.push({
+            query: selectQuery,
+            parameters: this.getParameter(selectInto),
+            type: QueryType.DML
+        });
+
+        return result;
     }
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");

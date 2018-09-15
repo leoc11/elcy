@@ -29,7 +29,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._versionColumn;
     }
-    public get columns(): IColumnExpression[] {
+    public get columns(): IColumnExpression<T>[] {
         if (!this._columns) {
             if (this.metaData)
                 this._columns = this.metaData.columns.select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
@@ -41,10 +41,10 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public set columns(value) {
         this._columns = value;
     }
-    public get primaryColumns(): IColumnExpression[] {
+    public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             if (this.metaData)
-                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.propertyName === o.propertyName)).toArray();
+                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
             else
                 this._primaryColumns = [];
         }
@@ -66,13 +66,13 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         return this._defaultOrders;
     }
     private _metaData: EntityMetaData<T>;
-    private _columns: IColumnExpression[];
+    private _columns: IColumnExpression<T>[];
     private _primaryColumns: IColumnExpression[];
     private _defaultOrders: IOrderExpression[];
     private _versionColumn: IColumnExpression<T>;
     private _deleteColumn: IColumnExpression<T>;
     public readonly entityTypes: IObjectType[];
-    constructor(public readonly type: IObjectType<T>, public alias: string) {
+    constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
         if (this.metaData) {
             this.name = this.metaData.name;
             this.entityTypes = [this.metaData.type];
@@ -88,7 +88,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         return queryBuilder.getExpressionString(this);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
-        if (replaceMap) replaceMap = new Map();
+        if (!replaceMap) replaceMap = new Map();
         const clone = new EntityExpression(this.type, this.alias);
         clone.columns = this.columns.select(o => {
             const colClone = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone();

@@ -7,7 +7,6 @@ import { IOrderExpression } from "./IOrderExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { RelationDataExpression } from "./RelationDataExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -18,9 +17,8 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { hashCode, visitExpression } from "../../Helper/Util";
-import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { hashCode, visitExpression, hashCodeAdd } from "../../Helper/Util";
+import { ComputedColumnExpression } from "./ComputedColumnExpression";
 
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
@@ -28,13 +26,15 @@ export interface IIncludeRelation<T = any, TChild = any> {
     relations: IExpression<boolean>;
     type: RelationshipType;
     name: string;
+    relationMap?: Map<IColumnExpression, IColumnExpression>;
+    isFinish?: boolean;
 }
 export interface IJoinRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
     relations: IExpression<boolean>;
     type: JoinType;
-    isFinal?: boolean;
+    isFinish?: boolean;
 }
 export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     [prop: string]: any;
@@ -60,7 +60,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public parameters: SqlParameterExpression[] = [];
     public isSubSelect: boolean;
-    constructor(entity: IEntityExpression<T>, protected readonly showSoftDeleted?: boolean) {
+    constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
         this.itemExpression = entity;
 
@@ -72,18 +72,28 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
-        if (entity.deleteColumn && !showSoftDeleted)
-            this.addWhere(new StrictEqualExpression(entity.deleteColumn, new ValueExpression(false)));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
             return this.selects.asEnumerable();
-        const defColumns = this.entity.primaryColumns.union(this.relationColumns);
+        let defColumns = this.entity.primaryColumns.union(this.relationColumns);
         // Version column is a must when select an Entity
-        if (this.entity instanceof EntityExpression) {
-            defColumns.union([this.entity.versionColumn]);
+        if (this.entity instanceof EntityExpression && this.entity.versionColumn) {
+            defColumns = defColumns.union([this.entity.versionColumn]);
         }
-        return defColumns.union(this.selects);
+        defColumns = defColumns.union(this.selects);
+        if (this.distinct) {
+            defColumns = defColumns.union(this.orders.select(o => {
+                if ((o.column as IColumnExpression<T>).entity) {
+                    return o.column as IColumnExpression<T>;
+                }
+                else {
+                    return new ComputedColumnExpression(this.entity, o.column, "OrderColumn" as any);
+                }
+            }));
+        }
+
+        return defColumns;
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
@@ -95,8 +105,14 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             }
             let isParentWhere = false;
             visitExpression(expression, (exp): boolean | void => {
-                if ((exp as IColumnExpression).entity && (exp as IColumnExpression).entity !== this.entity) {
-                    isParentWhere = true;
+                if ((exp as IColumnExpression).entity) {
+                    const colExp = exp as IColumnExpression;
+                    if (colExp.entity === this.entity) {
+                        if (!colExp.isPrimary) this.relationColumns.add(colExp);
+                    }
+                    else {
+                        isParentWhere = true;
+                    }
                     return false;
                 }
             });
@@ -130,7 +146,8 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name), this.showSoftDeleted);
+                const relDataExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                let relationSelect = new SelectExpression(relDataExp);
                 relationSelect.distinct = true;
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
@@ -227,7 +244,8 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationSelect = new SelectExpression(new RelationDataExpression(relationMeta.relationData.type, relationMeta.relationData.name));
+                const relDataExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                let relationSelect = new SelectExpression(relDataExp);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationSelect.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
@@ -302,13 +320,25 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public clone(findMap?: Map<IExpression, IExpression>): SelectExpression<T> {
         if (!findMap) findMap = new Map();
-
         const entity = findMap.has(this.entity) ? findMap.get(this.entity) as IEntityExpression : this.entity.clone(findMap);
+        findMap.set(this.entity, entity);
+        // columns
+        this.entity.columns.each(o => {
+            const cloneCol = entity.columns.first(c => c.columnName === o.columnName);
+            findMap.set(o, cloneCol);
+        });
+
         const clone = new SelectExpression(entity);
         if (this.itemExpression !== this.entity) {
             clone.itemExpression = this.itemExpression;
         }
-        clone.orders = this.orders.slice(0);
+        clone.orders = this.orders.select(o => {
+            const cloneCol = findMap.has(o.column) ? findMap.get(o.column) : o.column.clone(findMap);
+            return {
+                column: cloneCol,
+                direction: o.direction
+            } as IOrderExpression;
+        }).toArray();
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);
             if (!col) {
@@ -378,10 +408,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
-        code = ((code << 5) - code + this.selects.select(o => o.hashCode()).sum()) | 0;
+        code = hashCodeAdd(code, this.selects.select(o => o.hashCode()).sum());
         code = hashCode(this.where.toString(), code);
-        code = ((code << 5) - code + this.joins.sum(o => o.child.hashCode())) | 0;
-        code = ((code << 5) - code + this.includes.sum(o => o.child.hashCode())) | 0;
+        code = hashCodeAdd(code, this.joins.sum(o => o.child.hashCode()));
+        code = hashCodeAdd(code, this.includes.sum(o => o.child.hashCode()));
         return code;
     }
     public getEffectedEntities(): IObjectType[] {

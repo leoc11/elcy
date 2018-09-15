@@ -1,5 +1,8 @@
 import { ORMError } from "./ORMError";
 
+export enum QueryBuilderErrorCode {
+    UsageIssue = 0
+}
 /**
  * Error throwed by Driver goes here. (all query related error)
  */

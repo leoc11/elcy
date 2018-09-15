@@ -20,7 +20,10 @@ export class BitwiseOrAssignmentExpression extends ExpressionBase<number> implem
         transformer.scopeParameters.add(this.leftOperand.name, transformer.scopeParameters.get(this.leftOperand.name) | value);
         return value;
     }
-    public clone() {
-        return new BitwiseOrAssignmentExpression(this.leftOperand, this.rightOperand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) as ParameterExpression<number> : this.leftOperand.clone(replaceMap);
+        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) : this.rightOperand.clone(replaceMap);
+        return new BitwiseOrAssignmentExpression(left, right);
     }
 }

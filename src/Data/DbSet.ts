@@ -22,6 +22,8 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -42,7 +44,13 @@ export class DbSet<T> extends Queryable<T> {
         this._dbContext = dbContext;
     }
     public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
-        return new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
+        const result = new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
+        const option = queryVisitor.options;
+        if (result.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
+            result.addWhere(new StrictEqualExpression(result.entity.deleteColumn, new ValueExpression(false)));
+        }
+
+        return result;
     }
     public hashCode() {
         return hashCode(this.type.name!);

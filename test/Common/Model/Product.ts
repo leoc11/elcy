@@ -2,7 +2,7 @@ import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { OrderDetail, Collection } from ".";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
-import { NumberColumn } from "../../../src/Decorator/Column/NumberColumn";
+import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { UUID } from "../../../src/Data/UUID";
 
@@ -12,7 +12,7 @@ export class Product {
     @IdentifierColumn()
     public ProductId: UUID;
 
-    @NumberColumn({ columnType: "bigint" })
+    @IntegerColumn({ columnType: "bigint" })
     public Price: number;
     @Relationship<Product>("has", "many", OrderDetail || "OrderDetail", [(o) => o.ProductId])
     public OrderDetails: OrderDetail[];

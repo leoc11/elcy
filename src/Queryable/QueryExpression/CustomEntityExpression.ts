@@ -6,6 +6,7 @@ import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 
 export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
+    public isRelationData?: boolean;
     public select?: SelectExpression<T>;
     public columns: IColumnExpression[];
     public get primaryColumns(): IColumnExpression[] {
@@ -19,6 +20,10 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         this.columns = columns.select(o => {
             const clone = o.clone();
             clone.entity = this;
+            if (clone.alias) {
+                clone.columnName = clone.alias;
+                clone.alias = null;
+            }
             return clone;
         }).toArray();
     }

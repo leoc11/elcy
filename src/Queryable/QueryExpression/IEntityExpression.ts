@@ -16,4 +16,5 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     deleteColumn?: IColumnExpression<T>;
     clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
     entityTypes: IObjectType[];
+    isRelationData?: boolean;
 }

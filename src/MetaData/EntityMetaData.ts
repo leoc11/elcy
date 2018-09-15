@@ -7,7 +7,7 @@ import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
-import { NumericColumnMetaData } from "./NumericColumnMetaData";
+import { IntegerColumnMetaData } from "./IntegerColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
 import { isNotNull } from "../Helper/Util";
@@ -45,7 +45,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         return priority;
     }
     public get hasIncrementPrimary(): boolean {
-        return this.primaryKeys.any(o => (o as any as NumericColumnMetaData).autoIncrement);
+        return this.primaryKeys.any(o => (o as any as IntegerColumnMetaData).autoIncrement);
     }
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);

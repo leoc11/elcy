@@ -12,6 +12,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     public propertyName: keyof TE;
     public columnType: ColumnType;
     public columnName: string;
+    public alias?: string;
     public columnMetaData: IColumnMetaData<TE, T>;
     public entity: IEntityExpression<TE>;
     public isPrimary: boolean;
@@ -47,6 +48,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         const entity = replaceMap.has(this.entity) ? replaceMap.get(this.entity) as IEntityExpression<TE> : this.entity;
         const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.columnType);
         clone.columnMetaData = this.columnMetaData;
+        clone.alias = this.alias;
         return clone;
     }
     public hashCode() {

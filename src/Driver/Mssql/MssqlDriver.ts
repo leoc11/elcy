@@ -21,6 +21,9 @@ export class MssqlDriver implements IDriver<"mssql"> {
             config.options = { appName: "lc-framework" };
         else if (!config.options.appName)
             config.options.appName = "lc-framework";
+        if (typeof config.options.encrypt === "boolean")
+            config.options.encrypt = false;
+
         config.options.instanceName = host[1];
         config.options.useUTC = false;
         return config;

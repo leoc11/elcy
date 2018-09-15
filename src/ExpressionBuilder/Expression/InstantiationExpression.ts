@@ -41,7 +41,10 @@ export class InstantiationExpression<T> extends ExpressionBase<T> {
         const type = this.typeOperand.execute(transformer);
         return new type(...params) as any;
     }
-    public clone() {
-        return new InstantiationExpression(this.typeOperand, this.params);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const typeOperand = replaceMap.has(this.typeOperand) ? replaceMap.get(this.typeOperand) as IExpression<IObjectType<T>> : this.typeOperand.clone(replaceMap);
+        const params = this.params.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray();
+        return new InstantiationExpression(typeOperand, params);
     }
 }

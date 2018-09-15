@@ -51,7 +51,9 @@ export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase
     public execute(transformer?: ExpressionTransformer) {
         return (this.objectOperand.execute(transformer) as any)[this.memberName];
     }
-    public clone() {
-        return new MemberAccessExpression(this.objectOperand, this.memberName);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const objectOperand = replaceMap.has(this.objectOperand) ? replaceMap.get(this.objectOperand) : this.objectOperand.clone(replaceMap);
+        return new MemberAccessExpression(objectOperand, this.memberName);
     }
 }

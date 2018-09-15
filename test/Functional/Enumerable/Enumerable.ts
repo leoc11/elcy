@@ -41,7 +41,7 @@ describe("ENUMERABLE", () => {
     });
     describe("FULLJOIN", () => {
         it("should work", () => {
-            const distincts = items.fullJoin([1, 5], o => o % 2, o => o % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
+            const distincts = items.fullJoin([1, 5], (o, o2) => o % 2 === o2 % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -73,7 +73,7 @@ describe("ENUMERABLE", () => {
     });
     describe("INNERJOIN", () => {
         it("should work", () => {
-            const distincts = items.innerJoin([0, 1], o => o % 5, o => o % 2, (o1, o2) => o1 + o2);
+            const distincts = items.innerJoin([0, 1], (o, o2) => o % 5 === o2 % 2, (o1, o2) => o1 + o2);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -106,7 +106,7 @@ describe("ENUMERABLE", () => {
     });
     describe("LEFTJOIN", () => {
         it("should work", () => {
-            const distincts = items.leftJoin([0, 1], o => o % 2, o => o % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
+            const distincts = items.leftJoin([0, 1], (o, o2) => o % 2 === o2 % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -166,7 +166,7 @@ describe("ENUMERABLE", () => {
     });
     describe("RIGHTJOIN", () => {
         it("should work", () => {
-            const distincts = items.rightJoin([0, 12], o => o % 2, o => o, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
+            const distincts = items.rightJoin([0, 12], (o, o2) => o % 2 === o2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;

@@ -73,9 +73,9 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return arr;
     }
-    public all(predicate?: (item: T) => boolean): boolean {
+    public all(predicate: (item: T) => boolean): boolean {
         for (const item of this) {
-            if (predicate && !predicate(item)) {
+            if (!predicate(item)) {
                 return false;
             }
         }

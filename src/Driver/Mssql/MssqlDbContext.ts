@@ -40,9 +40,9 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
     constructor(factory: () => IConnectionManager | IDriver<"mssql">) {
         super(factory);
     }
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>): DeferredQuery<IQueryResult>[] {
+    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = new Enumerable(entries);
-        const visitor = this.queryVisitor;
+        if (!visitor) visitor = this.queryVisitor;
         const results: DeferredQuery[] = [];
 
         const columns = entityMetaData.columns;

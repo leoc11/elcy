@@ -22,7 +22,9 @@ export class LeftDecrementExpression extends ExpressionBase<number> implements I
     public execute(transformer: ExpressionTransformer) {
         return this.operand.execute(transformer) - 1;
     }
-    public clone() {
-        return new LeftDecrementExpression(this.operand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const operand = replaceMap.has(this.operand) ? replaceMap.get(this.operand) : this.operand.clone(replaceMap);
+        return new LeftDecrementExpression(operand);
     }
 }
