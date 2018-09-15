@@ -8,6 +8,7 @@ import { UUID } from "../../Data/UUID";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
+import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
