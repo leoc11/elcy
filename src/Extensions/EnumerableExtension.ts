@@ -7,6 +7,7 @@ import { IObjectType, ValueType } from "../Common/Type";
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
+        toArray(): T[];
         cast<TReturn>(): TReturn[];
         asEnumerable(): Enumerable<T>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
@@ -50,6 +51,9 @@ declare global {
 
 Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
     return new Enumerable(this);
+};
+Array.prototype.toArray = function <T>(this: T[]) {
+    return this as T[];
 };
 Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
     return this as TTarget[];
