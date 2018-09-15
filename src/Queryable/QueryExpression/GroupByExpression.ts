@@ -46,8 +46,12 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         if (hasItems) {
             let relation: IExpression<boolean>;
             for (const col of groupBy) {
-                const clone = col.clone(new Map([[col.entity, col.entity]]));
+                // groupby column is primary.
+                col.isPrimary = true;
+                let clone = col.clone(new Map([[col.entity, col.entity]]));
                 groupExp.relationColumns.add(clone);
+                // remove current col if it's exist to avoid select same column.
+                groupExp.selects.remove(col);
                 const logicalExp = new StrictEqualExpression(col, clone);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }

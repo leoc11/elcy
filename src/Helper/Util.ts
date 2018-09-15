@@ -25,60 +25,26 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
     }
 };
 export const replaceExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => IExpression) => {
+    const rsource = finder(source);
+    if (rsource !== source) {
+        return rsource;
+    }
+
     if ((source as IBinaryOperatorExpression).rightOperand) {
         const binaryOperatorExp = source as IBinaryOperatorExpression;
-        const leftOperand = finder(binaryOperatorExp.leftOperand);
-        if (leftOperand !== binaryOperatorExp.leftOperand) {
-            binaryOperatorExp.leftOperand = leftOperand;
-        }
-        else {
-            replaceExpression(binaryOperatorExp.leftOperand, finder);
-        }
-
-        const rightOperand = finder(binaryOperatorExp.rightOperand);
-        if (rightOperand !== binaryOperatorExp.rightOperand) {
-            binaryOperatorExp.rightOperand = rightOperand;
-        }
-        else {
-            replaceExpression(binaryOperatorExp.rightOperand, finder);
-        }
+        binaryOperatorExp.leftOperand = replaceExpression(binaryOperatorExp.leftOperand, finder);
+        binaryOperatorExp.rightOperand = replaceExpression(binaryOperatorExp.rightOperand, finder);
     }
     else if (source instanceof TernaryExpression) {
-        const logicalOperand = finder(source.logicalOperand);
-        if (logicalOperand !== source.logicalOperand) {
-            source.logicalOperand = logicalOperand;
-        }
-        else {
-            replaceExpression(source.logicalOperand, finder);
-        }
-
-        const trueResultOperand = finder(source.trueResultOperand);
-        if (trueResultOperand !== source.trueResultOperand) {
-            source.trueResultOperand = trueResultOperand;
-        }
-        else {
-            replaceExpression(source.trueResultOperand, finder);
-        }
-        
-        const falseResultOperand = finder(source.falseResultOperand);
-        if (falseResultOperand !== source.falseResultOperand) {
-            source.falseResultOperand = falseResultOperand;
-        }
-        else {
-            replaceExpression(source.falseResultOperand, finder);
-        }
+        source.logicalOperand = replaceExpression(source.logicalOperand, finder);
+        source.trueResultOperand = replaceExpression(source.trueResultOperand, finder);
+        source.falseResultOperand = replaceExpression(source.falseResultOperand, finder);
     }
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
-        
-        const operand = finder(unaryOperatorExp.operand);
-        if (operand !== unaryOperatorExp.operand) {
-            unaryOperatorExp.operand = operand;
-        }
-        else {
-            replaceExpression(unaryOperatorExp.operand, finder);
-        }
+        unaryOperatorExp.operand = replaceExpression(unaryOperatorExp.operand, finder);
     }
+    return source;
 };
 export const isValue = (data: any): data is ValueType => {
     return [Number, String, Date].contains(data.constructor);

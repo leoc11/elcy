@@ -125,8 +125,10 @@ export class QueryVisitor {
     public visit(expression: IExpression, param: IVisitParameter): IExpression {
         if (!(expression instanceof SelectExpression ||
             expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression ||
-            expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression))
-            expression = expression.clone();
+            expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression)) {
+            const findMap = new Map([[param.selectExpression, param.selectExpression]]);
+            expression = expression.clone(findMap);
+        }
         switch (expression.constructor) {
             case MethodCallExpression:
             case MemberAccessExpression: {

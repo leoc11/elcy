@@ -20,7 +20,7 @@ import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpress
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { hashCode, visitExpression } from "../../Helper/Util";
-import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { ComputedColumnExpression } from "./ComputedColumnExpression";
 
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
@@ -28,13 +28,15 @@ export interface IIncludeRelation<T = any, TChild = any> {
     relations: IExpression<boolean>;
     type: RelationshipType;
     name: string;
+    relationMap?: Map<IColumnExpression, IColumnExpression>;
+    isFinish?: boolean;
 }
 export interface IJoinRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
     relations: IExpression<boolean>;
     type: JoinType;
-    isFinal?: boolean;
+    isFinish?: boolean;
 }
 export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     [prop: string]: any;
@@ -78,12 +80,24 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
             return this.selects.asEnumerable();
-        const defColumns = this.entity.primaryColumns.union(this.relationColumns);
+        let defColumns = this.entity.primaryColumns.union(this.relationColumns);
         // Version column is a must when select an Entity
-        if (this.entity instanceof EntityExpression) {
-            defColumns.union([this.entity.versionColumn]);
+        if (this.entity instanceof EntityExpression && this.entity.versionColumn) {
+            defColumns = defColumns.union([this.entity.versionColumn]);
         }
-        return defColumns.union(this.selects);
+        defColumns = defColumns.union(this.selects);
+        if (this.distinct) {
+            defColumns = defColumns.union(this.orders.select(o => {
+                if ((o.column as IColumnExpression<T>).entity) {
+                    return o.column as IColumnExpression<T>;
+                }
+                else {
+                    return new ComputedColumnExpression(this.entity, o.column, "OrderColumn" as any);
+                }
+            }));
+        }
+
+        return defColumns;
     }
     public relationColumns: IColumnExpression[] = [];
     public addWhere(expression: IExpression<boolean>) {
@@ -308,13 +322,25 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public clone(findMap?: Map<IExpression, IExpression>): SelectExpression<T> {
         if (!findMap) findMap = new Map();
-
         const entity = findMap.has(this.entity) ? findMap.get(this.entity) as IEntityExpression : this.entity.clone(findMap);
+        findMap.set(this.entity, entity);
+        // columns
+        this.entity.columns.each(o => {
+            const cloneCol = entity.columns.first(c => c.columnName === o.columnName);
+            findMap.set(o, cloneCol);
+        });
+
         const clone = new SelectExpression(entity);
         if (this.itemExpression !== this.entity) {
             clone.itemExpression = this.itemExpression;
         }
-        clone.orders = this.orders.slice(0);
+        clone.orders = this.orders.select(o => {
+            const cloneCol = findMap.has(o.column) ? findMap.get(o.column) : o.column.clone(findMap);
+            return {
+                column: cloneCol,
+                direction: o.direction
+            } as IOrderExpression;
+        }).toArray();
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);
             if (!col) {

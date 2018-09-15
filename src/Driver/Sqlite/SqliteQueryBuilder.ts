@@ -1,13 +1,14 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
-import { GenericType } from "../../Common/Type";
+import { GenericType, QueryType } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
