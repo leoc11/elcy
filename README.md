@@ -168,7 +168,7 @@ Update
         const order = db.orders.first();
         order.Amount += 1;
         
-        db.saveChanges();
+        await db.saveChanges();
     }
 )();
 ```
@@ -181,7 +181,7 @@ Delete
 
         const order = db.orders.first();
         db.delete(order);
-        db.saveChanges();
+        await db.saveChanges();
     }
 )();
 ```
