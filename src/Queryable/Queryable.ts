@@ -3,10 +3,10 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode, clone } from "../Helper/Util";
+import { hashCode, clone, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
-import { IQueryOption, ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
+import { ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
@@ -26,11 +26,11 @@ export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
-    public queryOption: IQueryOption = {};
+    public queryOption: ISelectQueryOption = {};
     protected parameterStackIndex = 0;
     public flatParameterStacks: { [key: string]: any } = {};
     public parameters: { [key: string]: any } = {};
-    public option(option: IQueryOption) {
+    public option(option: ISelectQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {
@@ -62,6 +62,8 @@ export abstract class Queryable<T = any> {
         const timer = Diagnostic.timer();
 
         let cacheKey = hashCode(this.queryOption.buildKey, this.hashCode());
+        if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+            cacheKey = hashCodeAdd(cacheKey, 1);
         if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
         const cacheManager = this.dbContext.queryCacheManager;
@@ -74,6 +76,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
@@ -149,6 +152,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, this.hashCode());
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -162,6 +167,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
@@ -192,6 +198,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("COUNT", this.hashCode()));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -205,6 +213,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "count", []);
@@ -236,6 +245,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("SUM", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -249,6 +260,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -284,6 +296,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("MAX", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -297,6 +311,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -332,6 +347,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("MIN", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -345,6 +362,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -380,6 +398,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("AVG", hashCode(selector ? selector.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -393,6 +413,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -428,6 +449,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("ALL", hashCode(predicate.toString(), this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -441,6 +464,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -475,6 +499,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("ANY", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -488,6 +514,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const metParams = [];
@@ -522,6 +549,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("FIRST", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -535,6 +564,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             const metParams = [];
             if (predicate) {
@@ -573,6 +603,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("CONTAINS", hashCode(JSON.stringify(item), this.hashCode())));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -586,6 +618,7 @@ export abstract class Queryable<T = any> {
         queryBuilder.options = clone(this.queryOption, true);
         if (!queryCache) {
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "contains", [new ValueExpression(item)]);
@@ -616,6 +649,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("UPDATE", this.hashCode()));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -632,6 +667,7 @@ export abstract class Queryable<T = any> {
                 throw new Error(`Only entity supported`);
 
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
 
@@ -665,6 +701,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("DELETE", this.hashCode()));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -681,6 +719,7 @@ export abstract class Queryable<T = any> {
                 throw new Error(`Only entity supported`);
 
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let selectExp = this.buildQuery(visitor) as SelectExpression<T>;
 
             if (predicate) {
@@ -721,6 +760,8 @@ export abstract class Queryable<T = any> {
 
         if (!this.queryOption.noQueryCache) {
             cacheKey = hashCode(this.queryOption.buildKey, hashCode("INSERT", this.hashCode()));
+            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+                cacheKey = hashCodeAdd(cacheKey, 1);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -737,6 +778,7 @@ export abstract class Queryable<T = any> {
                 throw new Error(`Only entity supported`);
 
             const visitor = this.dbContext.queryVisitor;
+            visitor.options = queryBuilder.options;
             let selectExp = this.buildQuery(visitor) as SelectExpression<T>;
             if (!this.dbContext.entityTypes.contains(selectExp.itemExpression.type as any))
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);

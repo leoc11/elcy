@@ -17,8 +17,7 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { hashCode, visitExpression } from "../../Helper/Util";
+import { hashCode, visitExpression, hashCodeAdd } from "../../Helper/Util";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
 
 export interface IIncludeRelation<T = any, TChild = any> {
@@ -61,7 +60,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public parameters: SqlParameterExpression[] = [];
     public isSubSelect: boolean;
-    constructor(entity: IEntityExpression<T>, protected readonly showSoftDeleted?: boolean) {
+    constructor(entity: IEntityExpression<T>) {
         this.entity = entity;
         this.itemExpression = entity;
 
@@ -73,8 +72,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
         entity.select = this;
         this.orders = entity.defaultOrders.slice(0);
-        if (entity.deleteColumn && !showSoftDeleted)
-            this.addWhere(new StrictEqualExpression(entity.deleteColumn, new ValueExpression(false)));
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
@@ -150,7 +147,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 const relDataExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                let relationSelect = new SelectExpression(relDataExp, this.showSoftDeleted);
+                let relationSelect = new SelectExpression(relDataExp);
                 relationSelect.distinct = true;
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
@@ -411,10 +408,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
-        code = ((code << 5) - code + this.selects.select(o => o.hashCode()).sum()) | 0;
+        code = hashCodeAdd(code, this.selects.select(o => o.hashCode()).sum());
         code = hashCode(this.where.toString(), code);
-        code = ((code << 5) - code + this.joins.sum(o => o.child.hashCode())) | 0;
-        code = ((code << 5) - code + this.includes.sum(o => o.child.hashCode())) | 0;
+        code = hashCodeAdd(code, this.joins.sum(o => o.child.hashCode()));
+        code = hashCodeAdd(code, this.includes.sum(o => o.child.hashCode()));
         return code;
     }
     public getEffectedEntities(): IObjectType[] {

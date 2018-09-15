@@ -905,7 +905,7 @@ describe("QUERYABLE", async () => {
         });
         it("could be used in select with different filter", async () => {
             const db = new MyDb();
-            const count = db.orders.groupBy(o => ({ month: o.OrderDate.getMonth()})).select(o => ({
+            const count = db.orders.groupBy(o => ({ month: o.OrderDate.getMonth() })).select(o => ({
                 qty: o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
                 bc: o.where(o => o.TotalAmount > 20000).count(),
                 cd: o.where(o => o.TotalAmount <= 20000).count()
@@ -1398,9 +1398,9 @@ describe("QUERYABLE", async () => {
             const pivot = db.orders.pivot({
                 month: o => o.OrderDate.getMonth()
             }, {
-                total: o => o.sum(o => o.TotalAmount),
-                qty: o => o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
-            });
+                    total: o => o.sum(o => o.TotalAmount),
+                    qty: o => o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
+                });
             const queryString = pivot.toString();
 
             expect(queryString).to.equal("SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],\n\tSUM([entity0].[TotalAmount]) AS [total],\n\tSUM([entity1].[Quantity]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS entity1\n\tON ([entity0].[OrderId] = [entity1].[OrderId])\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)"
@@ -1532,12 +1532,6 @@ describe("QUERYABLE", async () => {
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate] IS NULL)");
         });
     });
-    describe("QUERY OPTION", () => {
-
-    });
-    describe("TERNARY OPERATOR", () => {
-
-    });
     describe("SUBQUERY (SELECT, WHERE)", () => {
         // possible used CTE
         it("should work in where (CONTAINS)", async () => {
@@ -1641,5 +1635,24 @@ describe("QUERYABLE", async () => {
 
             expect(queryString).to.equal("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t(\n\tCASE WHEN (([column1] = 1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [IsHighest]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([column0]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column0]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS entity1\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount] >= [entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC");
         });
+    });
+    describe("QUERY OPTION", () => {
+        it("should show soft deleted", async () => {
+            const db = new MyDb();
+            const softDeleteQuery = db.orderDetails.option({ includeSoftDeleted: true });
+            const queryString = softDeleteQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]");
+        });
+        it("should cache query with different key", async () => {
+            const db = new MyDb();
+            const queryExcludeSoftDeleted = db.orderDetails.toString();
+            const queryIncludeSoftDeleted = db.orderDetails.option({ includeSoftDeleted: true }).toString();
+
+            expect(queryExcludeSoftDeleted).to.not.equal(queryIncludeSoftDeleted);
+        });
+    });
+    describe("TERNARY OPERATOR", () => {
+
     });
 });

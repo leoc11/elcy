@@ -12,13 +12,17 @@ export interface IQueryOption {
     batchDelay?: number;
 }
 export interface ISelectQueryOption extends IQueryOption {
-    includeSoftDeleted: boolean;
+    includeSoftDeleted?: boolean;
     resultCache?: "none" | ISelectCacheOption;
 }
+export interface IInsertQueryIOption extends IQueryOption {
+    
+}
 export interface IUpdateQueryOption extends IQueryOption {
-    includeSoftDeleted: boolean;
+    includeSoftDeleted?: boolean;
+    useUpsert?: boolean;
 }
 export interface IDeleteQueryOption extends IQueryOption {
-    forceHardDelete: boolean;
+    forceHardDelete?: boolean;
 }
-export type ISaveChangesOption = IUpdateQueryOption & IDeleteQueryOption;
+export type ISaveChangesOption = ISelectQueryOption & IUpdateQueryOption & IDeleteQueryOption;

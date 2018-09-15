@@ -68,10 +68,6 @@ export const clone = <T>(source: T, isDeep = false) => {
     }
     return res;
 };
-// export const toTimezone = (date: Date, targetTimezoneOffset: number, sourceTimezoneOffset?: number) => {
-//     sourceTimezoneOffset = sourceTimezoneOffset !== undefined ? sourceTimezoneOffset : date.getTimezoneOffset();
-//     date = date.
-// }
 export const fillZero = (value: number, factor = 2): string => {
     const isNegative = value < 0;
     if (isNegative) value = Math.abs(value);
@@ -86,9 +82,12 @@ export const hashCode = (str: string, hash: number = 0) => {
         return hash;
     const l = str.length;
     for (let i = 0; i < l; i++) {
-        const charCode = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + charCode;
-        hash |= 0; // Convert to 32bit integer
+        hash = hashCodeAdd(hash, str.charCodeAt(i));
     }
+    return hash;
+};
+export const hashCodeAdd = (hash: number, add: number) => {
+    hash = ((hash << 5) - hash) + add;
+    hash |= 0;
     return hash;
 };

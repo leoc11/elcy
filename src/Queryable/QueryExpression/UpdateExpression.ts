@@ -11,7 +11,7 @@ import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { hashCode } from "../../Helper/Util";
+import { hashCode, hashCodeAdd } from "../../Helper/Util";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression } = {};
     public select: SelectExpression<T>;
@@ -88,7 +88,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         for (const prop in this.setter) {
             code += hashCode(prop, hashCode(this.setter[prop].toString()));
         }
-        return hashCode("UPDATE", ((code << 5) - code + this.select.hashCode()) | 0);
+        return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes;

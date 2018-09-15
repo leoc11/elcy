@@ -32,7 +32,7 @@ import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpressio
 import { IntersectExpression } from "../Queryable/QueryExpression/IntersectExpression";
 import { ExceptExpression } from "../Queryable/QueryExpression/ExceptExpression";
 import { IQueryTranslatorItem } from "./QueryTranslator/IQueryTranslatorItem";
-import { IQueryOption } from "./Interface/IQueryOption";
+import { ISaveChangesOption } from "./Interface/IQueryOption";
 import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
 import { ISqlParameter } from "./ISqlParameter";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
@@ -55,7 +55,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract valueTypeMap: Map<GenericType, ColumnType>;
     public abstract queryLimit: IQueryLimit;
     protected indent = 0;
-    public options: IQueryOption;
+    public options: ISaveChangesOption;
     public parameters: ISqlParameter[] = [];
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
@@ -197,7 +197,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 query: `SELECT * FROM ${tempTableName}`,
                 type: QueryType.DQL
             });
-            
+
             let tempSelect: SelectExpression;
             // select each include as separated query as it more beneficial for performance
             for (const include of select.includes) {
@@ -312,7 +312,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         const joinRel = relDataSelect.addJoinRelation(tempSelect, joinTempRel, JoinType.INNER);
                         relDataSelect.selects = relDataSelect.entity.primaryColumns
                             .union(tempSelect.entity.primaryColumns.select(o => {
-                                const col = o.clone(); 
+                                const col = o.clone();
                                 col.entity = o.entity;
                                 col.alias = "_" + col.propertyName;
                                 return col;
@@ -534,6 +534,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 switch (deleteOption) {
                     case "CASCADE": {
                         const childDelete = new DeleteExpression(child, deleteExp.deleteMode);
+                        if (childDelete.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                            childDelete.addWhere(new StrictEqualExpression(childDelete.entity.deleteColumn, new ValueExpression(false)));
+                        }
                         return this.getBulkDeleteQuery(childDelete);
                     }
                     case "SET NULL": {

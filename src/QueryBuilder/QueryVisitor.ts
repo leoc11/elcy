@@ -48,6 +48,7 @@ import { Queryable } from "../Queryable/Queryable";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
+import { ISelectQueryOption } from "./Interface/IQueryOption";
 
 interface IPRelation {
     name: string;
@@ -61,6 +62,7 @@ export interface IVisitParameter {
     scope?: string;
 }
 export class QueryVisitor {
+    public options: ISelectQueryOption;
     public scopeParameters = new TransformerParameter();
     private aliasObj: { [key: string]: number } = {};
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
@@ -249,6 +251,9 @@ export class QueryVisitor {
                     case "selectMany":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             if (relationMeta.relationType === "many" && param.scope === "select") {
                                 param.selectExpression.itemExpression = child;
                                 param.selectExpression.selects = [];
@@ -266,12 +271,18 @@ export class QueryVisitor {
                     case "include":
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             parentEntity.select!.addInclude(expression.memberName as any, child, relationMeta);
                             return relationMeta.relationType === "many" ? child : child.entity;
                         }
                     default:
                         {
                             let child = new SelectExpression(new EntityExpression(targetType, this.newAlias()));
+                            if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             let joinType: JoinType;
                             if (param.scope === "orderBy")
                                 joinType = JoinType.LEFT;
@@ -298,6 +309,9 @@ export class QueryVisitor {
                         case "selectMany":
                             {
                                 let child = new SelectExpression(new EntityExpression(result.type as any, this.newAlias()));
+                                if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                    child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
+                                }
                                 let relation: IExpression<boolean>;
                                 for (const childCol of child.entity.primaryColumns) {
                                     const parentCol = param.selectExpression.projectedColumns.first(o => o.columnName === childCol.columnName);
@@ -880,6 +894,9 @@ export class QueryVisitor {
                             // create another join to bridge this and parent.
                             const parentSelect = selectOperand.parentRelation.parent;
                             const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             bridge.entity.alias = this.newAlias();
                             bridge.selects = [];
                             bridge.joins = [];
@@ -978,6 +995,9 @@ export class QueryVisitor {
                             // create another join to bridge this and parent.
                             const parentSelect = selectOperand.parentRelation.parent;
                             const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             bridge.entity.alias = this.newAlias();
                             bridge.selects = [];
                             bridge.joins = [];
@@ -1069,6 +1089,9 @@ export class QueryVisitor {
                             // create another join to bridge this and parent.
                             const parentSelect = selectOperand.parentRelation.parent;
                             const bridge = new SelectExpression(parentSelect.entity.clone());
+                            if (bridge.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                                bridge.addWhere(new StrictEqualExpression(bridge.entity.deleteColumn, new ValueExpression(false)));
+                            }
                             bridge.entity.alias = this.newAlias();
                             bridge.selects = [];
                             bridge.joins = [];
@@ -1195,6 +1218,9 @@ export class QueryVisitor {
                             break;
                     }
                     selectOperand = new SelectExpression(entityExp);
+                    if (selectOperand.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
+                        selectOperand.addWhere(new StrictEqualExpression(selectOperand.entity.deleteColumn, new ValueExpression(false)));
+                    }
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
