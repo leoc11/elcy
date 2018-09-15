@@ -9,6 +9,12 @@ import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+
+let embeddedEntityEntry: typeof EmbeddedEntityEntry;
+(async () => {
+    embeddedEntityEntry = (await import("./EmbeddedEntityEntry")).EmbeddedEntityEntry;
+})();
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public state: EntityState;
@@ -20,21 +26,21 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
 
-        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = Reflect.getOwnMetadata(propertyChangeHandlerMetaKey, entity);
+        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = (entity as any)[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
             let propertyChangeDispatcher: any;
             [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            Reflect.defineMetadata(propertyChangeHandlerMetaKey, propertyChangeHandler, entity);
-            Reflect.defineMetadata(propertyChangeDispatherMetaKey, propertyChangeDispatcher, entity);
+            (entity as any)[propertyChangeHandlerMetaKey] = propertyChangeHandler;
+            (entity as any)[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
         }
         propertyChangeHandler.add((source: T, args: IChangeEventParam) => this.onPropertyChanged(source, args));
 
-        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = Reflect.getOwnMetadata(relationChangeHandlerMetaKey, entity);
+        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = (entity as any)[relationChangeHandlerMetaKey];
         if (!relationChangeHandler) {
             let relationChangeDispatcher: any;
             [relationChangeHandler, relationChangeDispatcher] = EventHandlerFactory<T, IRelationChangeEventParam>(entity);
-            Reflect.defineMetadata(relationChangeHandlerMetaKey, relationChangeHandler, entity);
-            Reflect.defineMetadata(relationChangeDispatherMetaKey, relationChangeDispatcher, entity);
+            (entity as any)[relationChangeHandlerMetaKey] = relationChangeHandler;
+            (entity as any)[relationChangeDispatherMetaKey] = relationChangeDispatcher;
         }
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }
@@ -71,7 +77,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
-            new (require("./EmbeddedEntityEntry"))(embeddedDbSet, param.newValue, this);
+            new embeddedEntityEntry(embeddedDbSet, param.newValue, this);
         }
 
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
@@ -82,7 +88,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     this.changeState(EntityState.Unchanged);
                 }
             }
-            else if (oriValue === undefined && param.oldValue !== undefined) {
+            else if (oriValue === undefined && param.oldValue !== undefined && !param.column.isReadOnly) {
                 this.originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
                     this.changeState(EntityState.Modified);

@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
-export class ObjectValueExpression<T extends { [Key: string]: IExpression }> extends ExpressionBase<T> {
+export class ObjectValueExpression<T> extends ExpressionBase<T> {
     public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
         let isAllValue = true;
@@ -18,9 +18,9 @@ export class ObjectValueExpression<T extends { [Key: string]: IExpression }> ext
 
         return result;
     }
-    public object: T;
+    public object: { [key in keyof T]?: IExpression };
     public type: IObjectType<T>;
-    constructor(objectValue: T, type?: IObjectType<T>) {
+    constructor(objectValue: { [key in keyof T]?: IExpression }, type?: IObjectType<T>) {
         super();
         this.object = objectValue;
         this.type = type ? type : objectValue.constructor as IObjectType<T>;
@@ -35,12 +35,18 @@ export class ObjectValueExpression<T extends { [Key: string]: IExpression }> ext
         return "{" + itemString.join(", ") + "}";
     }
     public execute(transformer: ExpressionTransformer): T {
-        const objectValue: { [Key: string]: IExpression } = {};
+        const objectValue: T = {} as any;
         for (const prop in this.object)
             objectValue[prop] = this.object[prop].execute(transformer);
-        return objectValue as T;
+        return objectValue;
     }
-    public clone() {
-        return new ObjectValueExpression(this.object, this.type);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const obj: { [key in keyof T]?: IExpression } = {};
+        for (const prop in this.object) {
+            const propEx = this.object[prop];
+            obj[prop] = replaceMap.has(propEx) ? replaceMap.get(propEx) : propEx.clone(replaceMap);
+        }
+        return new ObjectValueExpression(obj, this.type);
     }
 }

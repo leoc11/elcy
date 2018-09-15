@@ -1,5 +1,5 @@
 import { ColumnType } from "../Common/ColumnType";
-import { GenericType } from "../Common/Type";
+import { GenericType, ColumnGeneration } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -16,6 +16,9 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public type: GenericType<T>;
     public collation: string;
     public charset: string;
+    public isReadOnly: boolean;
+    public isProjected: boolean;
+    public generation?: ColumnGeneration;
     public get isPrimaryColumn(): boolean {
         return this.entity.primaryKeys.contains(this);
     }
@@ -42,6 +45,10 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
             this.collation = columnMeta.collation;
         if (typeof columnMeta.charset !== "undefined")
             this.charset = columnMeta.charset;
+        if (typeof columnMeta.isProjected !== "undefined")
+            this.isProjected = columnMeta.isProjected;
+        if (typeof columnMeta.isReadOnly !== "undefined")
+            this.isReadOnly = columnMeta.isReadOnly;
         if (typeof columnMeta.default !== "undefined") {
             if (columnMeta.default instanceof FunctionExpression) {
                 if (columnMeta.default.type === this.type)

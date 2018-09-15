@@ -1,9 +1,6 @@
 import { Enumerable } from "../Enumerable/Enumerable";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IObjectType } from "../Common/Type";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -11,22 +8,9 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
-function toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression<T, any> | ((item: T) => any) }>(objectFn: KE, sourceType: IObjectType<T>, paramName: string): FunctionExpression<T, { [key in keyof KE]?: IExpression }> {
-    const param = new ParameterExpression(paramName, sourceType);
-    const objectValue: { [key in keyof KE]?: IExpression } = {};
-    for (const prop in objectFn) {
-        const value = objectFn[prop];
-        let fnExpression: FunctionExpression<T, any>;
-        if (value instanceof FunctionExpression)
-            fnExpression = value;
-        else
-            fnExpression = ExpressionBuilder.parse(value as (item: T) => any);
-        objectValue[prop] = fnExpression.body;
-    }
-    const objExpression = new ObjectValueExpression(objectValue);
-    return new FunctionExpression(objExpression, [param]);
-}
 export class PivotQueryable<T,
     TD extends FunctionExpression<T, any>,
     TM extends FunctionExpression<T[] | Enumerable<T>, any>,
@@ -36,9 +20,27 @@ export class PivotQueryable<T,
     protected readonly dimensionFn: TD1;
     protected readonly metricFn: TM1;
     private _dimensions: TD;
+    protected toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression<T, any> | ((item: T) => any) }>(objectFn: KE, paramName: string): FunctionExpression<T, { [key in keyof KE]?: IExpression }> {
+        const param = new ParameterExpression(paramName, this.parent.type);
+        const objectValue: { [key in keyof KE]?: IExpression } = {};
+        for (const prop in objectFn) {
+            const value = objectFn[prop];
+            let fnExpression: FunctionExpression<T, any>;
+            if (value instanceof FunctionExpression)
+                fnExpression = value;
+            else
+                fnExpression = ExpressionBuilder.parse(value as (item: T) => any, this.flatParameterStacks);
+            if (fnExpression.params.length > 0) {
+                (fnExpression.params[0] as any).name = paramName;
+            }
+            objectValue[prop] = fnExpression.body;
+        }
+        const objExpression = new ObjectValueExpression(objectValue);
+        return new FunctionExpression(objExpression, [param]) as any;
+    }
     protected get dimensions() {
         if (!this._dimensions && this.dimensionFn)
-            this._dimensions = toObjectValueExpression(this.dimensionFn, this.parent.type as IObjectType<T>, "d") as any;
+            this._dimensions = this.toObjectValueExpression(this.dimensionFn, "d") as any;
         return this._dimensions;
     }
     protected set dimensions(value) {
@@ -47,7 +49,7 @@ export class PivotQueryable<T,
     private _metrics: TM;
     protected get metrics() {
         if (!this._metrics && this.metricFn)
-            this._metrics = toObjectValueExpression(this.metricFn, this.parent.type as IObjectType<T>, "m") as any;
+            this._metrics = this.toObjectValueExpression(this.metricFn, "m") as any;
         return this._metrics;
     }
     protected set metrics(value) {
@@ -64,11 +66,11 @@ export class PivotQueryable<T,
         else
             this.metricFn = metrics;
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<TResult> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<TResult> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand as SelectExpression, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         let code = hashCode(this.dimensionFn ? JSON.stringify(this.dimensionFn) : this.dimensions.toString());

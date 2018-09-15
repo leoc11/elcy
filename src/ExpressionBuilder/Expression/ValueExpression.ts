@@ -1,6 +1,6 @@
 import { GenericType, NullConstructor } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 
 export class ValueExpression<T> extends ExpressionBase<T> {
     public static create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
@@ -28,7 +28,7 @@ export class ValueExpression<T> extends ExpressionBase<T> {
     public execute() {
         return this.value;
     }
-    public clone() {
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
         return new ValueExpression(this.value, this.expressionString);
     }
 }

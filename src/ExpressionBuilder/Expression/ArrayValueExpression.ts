@@ -30,7 +30,8 @@ export class ArrayValueExpression<TType> extends ExpressionBase<TType[]> {
             arrayValues.push(item.execute(transformer));
         return arrayValues;
     }
-    public clone() {
-        return new ArrayValueExpression(...this.items.slice(0));
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        return new ArrayValueExpression(...this.items.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray());
     }
 }

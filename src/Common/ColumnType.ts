@@ -34,25 +34,26 @@ export type DecimalColumnType = "dec" // oracle, mssql
     | "money"; // postgres, mssql
 
 /**
- * Time column types
- */
-export type TimeColumnType = "time" // mysql, postgres, mssql
-    | "time with time zone" // postgres
-    | "time without time zone" // postgres
-    | "datetimeoffset" // mssql
-    | "interval year" // oracle
-    | "interval day" // oracle
-    | "interval"; // postgres
-
-/**
  * Date column types
  */
-export type DateColumnType = "datetime" // mssql, mysql, sqlite
+export type DateColumnType = "date"; // mysql, postgres, mssql, oracle, sqlite
+
+/**
+ * Date Time column types
+ */
+export type DateTimeColumnType = "datetime" // mssql, mysql, sqlite
     | "datetime2" // mssql
     | "smalldatetime" // mssql
-    | "date" // mysql, postgres, mssql, oracle, sqlite
-    | "datetimeoffset" // mssql
-    | "interval year" // oracle
+    | "datetimeoffset"; // mssql
+
+/**
+ * Time column types
+ */
+export type TimeColumnType = "time"; // mysql, postgres, mssql
+    // | "time with time zone" // postgres
+    // | "time without time zone"; // postgres
+
+export type IntervalColumnType = "interval year" // oracle
     | "interval day" // oracle
     | "interval" // postgres
     | "year"; // mysql
@@ -157,7 +158,9 @@ export type ColumnType = IntColumnType
     | DecimalColumnType
     | ApproximateNumberColumnType
     | DateColumnType
+    | DateTimeColumnType
     | TimeColumnType
+    | IntervalColumnType
     | RowVersionColumnType
     | BinaryColumnType
     | StringColumnType
@@ -169,9 +172,9 @@ export type ColumnType = IntColumnType
     | EnumColumnType
     | OtherColumnType;
 
-export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultNumberic"
+export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultInteger"
     | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
-    | "defaultDate" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
+    | "defaultDate" | "defaultDateTime" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnGroupType = "String" | "Boolean" | "Numeric" | "Decimal" | "Real" | "Binary" | "DataString"
-    | "Date" | "Time" | "Enum" | "Identifier" | "RowVersion";
+export type ColumnGroupType = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataString"
+    | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";

@@ -11,6 +11,7 @@ import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
 import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { UUID } from "../../../src/Data/UUID";
+import { NullableColumn } from "../../../src/Decorator/Column/NullableColumn";
 
 @Entity("OrderDetails")
 export class OrderDetail {
@@ -18,6 +19,7 @@ export class OrderDetail {
     @IdentifierColumn()
     public OrderDetailId: UUID;
     @IdentifierColumn()
+    @NullableColumn()
     public OrderId: UUID;
     @IdentifierColumn()
     public ProductId: UUID;

@@ -15,5 +15,5 @@ export function RowVersionColumn(optionOrName?: IRowVersionColumnOption | string
         if (typeof defaultValue !== "undefined")
             option.default = defaultValue;
     }
-    return Column(RowVersionColumnMetaData, option);
+    return Column<any, Uint8Array>(RowVersionColumnMetaData, option);
 }

@@ -36,7 +36,10 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
             transformer = new ValueExpressionTransformer();
         return transformer.executeExpression(this);
     }
-    public clone() {
-        return new FunctionExpression(this.body, this.params);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const body = replaceMap.has(this.body) ? replaceMap.get(this.body) : this.body.clone(replaceMap);
+        const params = this.params.select(o => replaceMap.has(o) ? replaceMap.get(o) as ParameterExpression<TType> : o.clone(replaceMap)).toArray();
+        return new FunctionExpression(body, params);
     }
 }

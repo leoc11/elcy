@@ -1,21 +1,22 @@
-import { DateTimeKind } from "../../Common/Type";
+import { TimeZoneHandling } from "../../Common/Type";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { Column } from "./Column";
-import { IDateColumnOption } from "../Option/IDateColumnOption";
-import { DateColumnType } from "../../Common/ColumnType";
+import { DateTimeColumnType } from "../../Common/ColumnType";
+import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 
-export function CreatedDate(option?: IDateColumnOption): PropertyDecorator;
-export function CreatedDate(name: string, dbtype: DateColumnType, dateTimeKind: DateTimeKind): PropertyDecorator;
-export function CreatedDate(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, dateTimeKind?: DateTimeKind): PropertyDecorator {
-    let option: IDateColumnOption;
+export function CreatedDate(option?: IDateTimeColumnOption): PropertyDecorator;
+export function CreatedDate(name: string, dbtype: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator;
+export function CreatedDate(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator {
+    let option: IDateTimeColumnOption;
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
-        if (dateTimeKind !== undefined) option.dateTimeKind = dateTimeKind;
+        if (timeZoneHandling !== undefined) option.timeZoneHandling = timeZoneHandling;
         if (dbtype !== undefined) option.columnType = dbtype;
     }
     else {
         option = optionOrName;
     }
     option.isCreatedDate = true;
+    option.default = () => Date.currentTimestamp();
     return Column<any, Date>(DateColumnMetaData, option);
 }

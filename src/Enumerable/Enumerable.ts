@@ -16,12 +16,15 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
+    public static load<T>(source?: Iterable<T> | Iterator<T>) {
+        return new Enumerable(source);
+    }
     protected pointer = 0;
     protected isResultComplete: boolean;
     protected result: T[] = [];
     protected parent: Iterable<any>;
     protected iterator: Iterator<any>;
-    constructor(source?: Iterable<any> | Iterator<any>) {
+    constructor(source?: Iterable<T> | Iterator<T>) {
         if (source) {
             if (Array.isArray(source)) {
                 this.result = source;
@@ -60,15 +63,19 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
     }
     public toArray(): T[] {
+        if (this.isResultComplete) {
+            return this.result.slice(0);
+        }
+
         const arr = [];
         for (const i of this) {
             arr.push(i);
         }
         return arr;
     }
-    public all(predicate?: (item: T) => boolean): boolean {
+    public all(predicate: (item: T) => boolean): boolean {
         for (const item of this) {
-            if (predicate && !predicate(item)) {
+            if (!predicate(item)) {
                 return false;
             }
         }
@@ -100,8 +107,9 @@ export class Enumerable<T = any> implements Iterable<T> {
     }
     public sum(selector?: (item: T) => number): number {
         let sum = 0;
-        for (const item of this)
+        for (const item of this) {
             sum += selector ? selector(item) : item as any;
+        }
         return sum;
     }
     public avg(selector?: (item: T) => number): number {
@@ -145,5 +153,21 @@ export class Enumerable<T = any> implements Iterable<T> {
         for (const item of this) {
             executor(item, index++);
         }
+    }
+    public reduce<R>(func: (accumulated: R, item: T) => R): R;
+    public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;
+    public reduce<R>(seedOrFunc: R | ((accumulated: R, item: T) => R), func?: (accumulated: R, item: T) => R): R {
+        let accumulated: R;
+        if (func) {
+            accumulated = seedOrFunc as any;
+        }
+        else {
+            func = seedOrFunc as any;
+        }
+
+        for (const a of this) {
+            accumulated = func(accumulated, a);
+        }
+        return accumulated;
     }
 }

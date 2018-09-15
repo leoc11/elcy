@@ -1,45 +1,63 @@
-import { IQueryCommand } from "./Interface/IQueryCommand";
 import { DbContext } from "../Data/DBContext";
-import { IQueryResult } from "./QueryResult";
+import { IQueryResult } from "./IQueryResult";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
+import { ISqlParameter } from "./ISqlParameter";
+import { QueryBuilder } from "./QueryBuilder";
+import { IQuery } from "./Interface/IQuery";
+import { Diagnostic } from "../Logger/Diagnostic";
+import { hashCode } from "../Helper/Util";
+import { ISaveChangesOption } from "./Interface/IQueryOption";
 
 export class DeferredQuery<T = any> {
     public value: T;
     public resolver: (value?: T | PromiseLike<T>) => void;
-    constructor(protected readonly context: DbContext, public readonly commands: IQueryCommand[], public readonly parameters: { [key: string]: any }, public readonly resultParser: (result: IQueryResult[]) => T) {
-        this.context.deferredQueries.add(this);
+    private _queryCommands: IQuery[] = [];
+    public get queryCommands() {
+        return this._queryCommands.slice();
     }
-    public resolveValue(value: T) {
-        this.value = value;
+    public options: ISaveChangesOption;
+    constructor(protected readonly dbContext: DbContext, public readonly command: IQueryCommandExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T, options?: ISaveChangesOption) {
+        this.options = {};
+        if (options) {
+            Object.assign(this.options, options);
+        }
+    }
+    public resolve(result: IQueryResult[]) {
+        this.value = this.resultParser(result, this._queryCommands);
         if (this.resolver) {
-            this.resolver(value);
+            this.resolver(this.value);
             this.resolver = undefined;
         }
     }
     public async execute(): Promise<T> {
-        let comands: IQueryCommand[] = [];
-        let params: { [key: string]: any } = {};
-
         // if has been resolved, return
         if (this.value !== undefined) {
             return this.value;
         }
         // if being resolved.
-        if (!this.context.deferredQueries.contains(this)) {
-            return new Promise<T>((resolve, reject) => {
+        if (!this.dbContext.deferredQueries.contains(this)) {
+            return new Promise<T>((resolve) => {
                 this.resolver = resolve;
             });
         }
 
-        const deferredQueries = this.context.deferredQueries.splice(0);
-        for (const deferredQuery of deferredQueries) {
-            comands = comands.concat(deferredQuery.commands);
-            if (deferredQuery.parameters)
-                params = Object.assign(params, deferredQuery.parameters);
-        }
-        const queryResult = await this.context.executeCommands(comands, params);
-        for (const deferredQuery of deferredQueries) {
-            deferredQuery.resolveValue(deferredQuery.resultParser(queryResult));
-        }
+        const deferredQueries = this.dbContext.deferredQueries.splice(0);
+        await this.dbContext.executeDeferred(deferredQueries);
         return this.value;
+    }
+    public buildQuery(queryBuilder: QueryBuilder) {
+        const timer = Diagnostic.timer();
+        this._queryCommands = this.command.toQueryCommands(queryBuilder, this.parameters);
+        if (Diagnostic.enabled) {
+            Diagnostic.debug(this, `Build Query.`, this._queryCommands);
+            Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);
+        }
+        return this._queryCommands;
+    }
+    public toString() {
+        return this.buildQuery(this.dbContext.queryBuilder).select(o => o.query).toArray().join(";\n\n");
+    }
+    public hashCode() {
+        return this.command.hashCode() + this.parameters.select(o => hashCode((o.value || "NULL").toString())).sum();
     }
 }

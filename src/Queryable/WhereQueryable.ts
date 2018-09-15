@@ -1,18 +1,18 @@
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
     protected _predicate: FunctionExpression<T, boolean>;
     protected get predicate() {
         if (!this._predicate && this.predicateFn)
-            this._predicate = ExpressionBuilder.parse(this.predicateFn);
+            this._predicate = ExpressionBuilder.parse(this.predicateFn, this.flatParameterStacks);
         return this._predicate;
     }
     protected set predicate(value) {
@@ -25,11 +25,11 @@ export class WhereQueryable<T> extends Queryable<T> {
         else
             this.predicateFn = predicate;
     }
-    public buildQuery(queryBuilder: QueryBuilder) {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCode("WHERE", this.parent.hashCode() + hashCode((this.predicateFn || this.predicate).toString()));

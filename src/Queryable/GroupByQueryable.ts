@@ -1,20 +1,19 @@
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression<T, any>;
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn)
-            this._keySelector = ExpressionBuilder.parse(this.keySelectorFn);
+            this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, this.flatParameterStacks);
         return this._keySelector;
     }
     protected set keySelector(value) {
@@ -27,11 +26,11 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         else
             this.keySelectorFn = keySelector;
     }
-    public buildQuery(queryBuilder: QueryBuilder): SelectExpression<GroupedEnumerable<T, K>> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<IGroupArray<T, K>> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCode("GROUPBY", this.parent.hashCode() + hashCode((this.keySelectorFn || this.keySelector || "").toString()));

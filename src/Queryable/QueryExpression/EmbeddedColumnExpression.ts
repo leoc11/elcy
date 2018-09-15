@@ -4,6 +4,8 @@ import { IEntityExpression } from "./IEntityExpression";
 import { EmbeddedColumnMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { ColumnExpression } from "./ColumnExpression";
+import { hashCode } from "../../Helper/Util";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: IObjectType<T>;
@@ -35,8 +37,9 @@ export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpre
     public execute(queryBuilder: QueryBuilder) {
         return this.toString(queryBuilder) as any;
     }
-    public clone(entity?: IEntityExpression<TE>) {
-        const clone = new EmbeddedColumnExpression(entity || this.entity, this.columnMetaData);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        const entity = replaceMap.has(this.entity) ? replaceMap.get(this.entity) as IEntityExpression<TE> : this.entity;
+        const clone = new EmbeddedColumnExpression(entity, this.columnMetaData);
         clone.columns = this.columns.slice(0);
         return clone;
     }
@@ -46,5 +49,8 @@ export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpre
             for (const column of this.entity.columns)
                 this.selects.remove(column);
         }
+    }
+    public hashCode() {
+        return hashCode(this.propertyName, this.entity.columns.select(o => o.hashCode()).sum());
     }
 }

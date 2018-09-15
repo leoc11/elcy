@@ -33,7 +33,7 @@
     },
     "include": [
         "app.ts",
-        "test/*.ts",
+        "test/**/*.ts",
         "src/**/*.ts"
     ],
     "exclude": [

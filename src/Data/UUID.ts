@@ -16,7 +16,8 @@ export class UUID extends Uint8Array {
         return this.toString();
     }
     protected parse(uuid: string) {
-        for (let i = 0, j = 0; j < 16 && i < uuid.length; i += 2) {
+        const l = uuid.length;
+        for (let i = 0, j = 0; j < 16 && i < l; i += 2) {
             if (uuid[i] === "-")
                 i++;
             this[j++] = parseInt(uuid.slice(i, i + 2), 16);
@@ -44,7 +45,8 @@ export class UUID extends Uint8Array {
     }
     public static new() {
         const res = new UUID();
-        for (let i = 0; i < res.length; i++) {
+        const l = res.length;
+        for (let i = 0; i < l; i++) {
             res[i] = Math.floor(Math.random() * 256);
         }
         res[6] &= 0x0F;

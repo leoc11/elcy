@@ -1,4 +1,3 @@
-import { OrderDirection } from "../Common/Type";
 import { Enumerable } from "./Enumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
 
@@ -24,7 +23,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
                 // tslint:disable-next-line:triple-equals
                 if (aVal == bVal)
                     continue;
-                return (aVal > bVal ? 1 : -1) * (selector[1] === OrderDirection.DESC ? -1 : 1);
+                return (aVal > bVal ? 1 : -1) * (selector[1] === "DESC" ? -1 : 1);
             }
             return 0;
         };

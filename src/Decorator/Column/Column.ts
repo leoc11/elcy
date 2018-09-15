@@ -8,8 +8,11 @@ import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { AbstractEntity } from "../Entity/AbstractEntity";
 import { IColumnOption } from "../Option/IColumnOption";
-import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
+import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
+import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
     return (target: TE, propertyKey: any) => {
@@ -20,6 +23,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
 
         const metadata = new columnMetaType();
+        metadata.isProjected = true;
         metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
             if (typeof (propertyKey) === "string")
@@ -41,15 +45,20 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             entityMetaData.primaryKeys.push(metadata);
         }
 
-        if (metadata instanceof DateColumnMetaData) {
-            if (columnOption.isCreatedDate)
+        if (metadata instanceof DateTimeColumnMetaData) {
+            if ((columnOption as IDateTimeColumnOption).isCreatedDate)
                 entityMetaData.createDateColumn = metadata;
-            else if (columnOption.isModifiedDate)
+            else if ((columnOption as IDateTimeColumnOption).isModifiedDate)
                 entityMetaData.modifiedDateColumn = metadata;
         }
         else if (metadata instanceof BooleanColumnMetaData) {
-            if (columnOption.isDeletedColumn)
+            if ((columnOption as IBooleanColumnOption).isDeletedColumn)
                 entityMetaData.deletedColumn = metadata;
+        }
+        else if (metadata instanceof RowVersionColumnMetaData) {
+            entityMetaData.versionColumn = metadata;
+            if (!entityMetaData.concurrencyMode)
+                entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
         }
 
         // add property to use setter getter.
@@ -82,7 +91,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                     else
                         this[privatePropertySymbol] = value;
 
-                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = Reflect.getOwnMetadata(propertyChangeDispatherMetaKey, this);
+                    const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = this[propertyChangeDispatherMetaKey];
                     if (propertyChangeDispatcher) {
                         propertyChangeDispatcher({
                             column: metadata,

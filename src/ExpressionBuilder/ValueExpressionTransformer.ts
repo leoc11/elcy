@@ -13,7 +13,7 @@ export class ValueExpressionTransformer extends ExpressionTransformer {
     public scopeParameters = new TransformerParameter();
     public setParameters(params: { [key: string]: any }) {
         for (const key in params) {
-            this.scopeParameters.add(key, params[key]);
+            this.scopeParameters.add(key.toString(), params[key]);
         }
     }
     public executeExpression(expression: IExpression): any {

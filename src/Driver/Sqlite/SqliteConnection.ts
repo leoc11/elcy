@@ -1,12 +1,12 @@
 import { IConnection } from "../../Connection/IConnection";
-import { IQueryResult } from "../../QueryBuilder/QueryResult";
+import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel, QueryType } from "../../Common/Type";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
-import * as sqlite3 from "sqlite3";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqliteConnectionOption } from "./ISqliteConnectionOption";
 
+let sqlite3: any;
 interface ITransactionData {
     prevIsolationLevel: IsolationLevel;
     isolationLevel: IsolationLevel;
@@ -14,13 +14,24 @@ interface ITransactionData {
 }
 export class SqliteConnection implements IConnection {
     constructor(public connectionOption: ISqliteConnectionOption) {
-        [this.closeEvent, this.onClosed] = EventHandlerFactory(this);
+        [this.errorEvent, this.onError] = EventHandlerFactory(this);
+        if (!sqlite3) {
+            (async () => {
+                sqlite3 = await import("sqlite3");
+            })();
+        }
     }
     public isolationLevel: IsolationLevel = "READ COMMITTED";
-    private connection: sqlite3.Database;
+    private connection: any; // sqlite3.Database
     private transactions: ITransactionData[] = [];
     public database: string;
     protected isChangeIsolationLevel: boolean;
+    protected get connectionMode() {
+        if (this.connectionOption.mode)
+            return sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+
+        return sqlite3[this.connectionOption.mode];
+    }
     public get inTransaction(): boolean {
         return this.transactions.length > 0;
     }
@@ -38,24 +49,20 @@ export class SqliteConnection implements IConnection {
             });
         });
     }
-    protected get connectionMode() {
-        if (this.connectionOption.mode)
-            return sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
-
-        return sqlite3[this.connectionOption.mode];
-    }
     public close(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.once("close", () => {
+            this.connection.close((error: Error) => {
+                if (error) {
+                    reject(error);
+                    this.onError(error);
+                }
                 this.connection = null;
                 resolve();
-                this.onClosed();
-            });
-            this.connection.close((error: Error) => {
-                if (error)
-                    reject(error);
             });
         });
+    }
+    public reset(): Promise<void> {
+        return Promise.resolve();
     }
     public startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         return new Promise(async (resolve, reject) => {
@@ -144,14 +151,15 @@ export class SqliteConnection implements IConnection {
             }
         });
     }
-    public executeQuery(command: IQueryCommand): Promise<IQueryResult[]> {
+    public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
             const params = this.getParameter(command.parameters);
             if (command.type & QueryType.DQL) {
-                this.connection.all(command.query, params, function (this: sqlite3.Statement, error: Error, rows: any[]) {
+                this.connection.all(command.query, params, function (this: any /*sqlite3.Statement*/, error: Error, rows: any[]) {
                     if (error) {
                         reject(error);
+                        this.onError(error);
                         return;
                     }
 
@@ -163,7 +171,7 @@ export class SqliteConnection implements IConnection {
                 });
             }
             else {
-                this.connection.run(command.query, params, function (this: sqlite3.RunResult, error: Error) {
+                this.connection.run(command.query, params, function (this: any /*sqlite3.RunResult*/, error: Error) {
                     if (error) {
                         reject(error);
                         return;
@@ -180,9 +188,11 @@ export class SqliteConnection implements IConnection {
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return new Promise((resolve, reject) => {
-            const cb = (result: sqlite3.RunResult, error: Error) => {
-                if (error)
+            const cb = (result: any /*sqlite3.RunResult*/, error: Error) => {
+                if (error) {
                     reject(error);
+                    this.onError(error);
+                }
 
                 this.isolationLevel = isolationLevel;
                 resolve();
@@ -197,8 +207,8 @@ export class SqliteConnection implements IConnection {
             }
         });
     }
-    public closeEvent: IEventHandler<SqliteConnection>;
-    protected onClosed: IEventDispacher<SqliteConnection>;
+    public errorEvent: IEventHandler<SqliteConnection, Error>;
+    protected onError: IEventDispacher<Error>;
     protected getParameter(param: { [key: string]: string }) {
         const result: { [key: string]: string } = {};
         if (param) {

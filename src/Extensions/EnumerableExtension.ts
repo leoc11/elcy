@@ -1,21 +1,25 @@
-import { Enumerable } from "../Enumerable/Enumerable";
 import "../Enumerable/Enumerable.partial";
+import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
+import { IObjectType, ValueType } from "../Common/Type";
 
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
+        toArray(): T[];
         cast<TReturn>(): TReturn[];
         asEnumerable(): Enumerable<T>;
-        selectMany<TReturn>(fn: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn>;
-        select<TReturn>(fn: (item: T) => TReturn): Enumerable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
+        selectMany<TReturn>(fn: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
         orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
-        all(fn?: (item: T) => boolean): boolean;
+        all(fn: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
         take(n: number): Enumerable<T>;
         sum(fn?: (item: T) => number): number;
@@ -25,10 +29,10 @@ declare global {
         min(fn?: (item: T) => number): number;
         groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
         distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
-        innerJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        leftJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
-        rightJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
-        fullJoin<T2, TKey, TResult>(array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        rightJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        fullJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
         union(array2: Iterable<T>, all?: boolean): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
@@ -38,7 +42,7 @@ declare global {
          * Return array of item exist in both source array and array2.
          */
         except(array2: Iterable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
     }
     interface Map<K, V> {
         asEnumerable(): Enumerable<[K, V]>;
@@ -47,6 +51,9 @@ declare global {
 
 Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
     return new Enumerable(this);
+};
+Array.prototype.toArray = function <T>(this: T[]) {
+    return this as T[];
 };
 Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
     return this as TTarget[];
@@ -57,8 +64,8 @@ Array.prototype.asEnumerable = function <T>(this: T[]) {
 Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[] | Enumerable) {
     return this.asEnumerable().selectMany(selector);
 };
-Array.prototype.select = function <T>(this: T[], selector: (item: T) => any) {
-    return this.asEnumerable().select(selector);
+Array.prototype.select = function <T, TReturn>(this: T[], typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)) {
+    return this.asEnumerable().select(typeOrSelector, selector);
 };
 Array.prototype.contains = function <T>(this: T[], item: T) {
     return this.indexOf(item) >= 0;
@@ -106,17 +113,17 @@ Array.prototype.groupBy = function <T, TKey>(this: T[], keySelector: (item: T) =
 Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
     return this.asEnumerable().distinct(fn);
 };
-Array.prototype.innerJoin = function <T, T2, TKey, TResult>(this: T[], array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2) => TResult) {
-    return this.asEnumerable().innerJoin(array2, keySelector1, keySelector2, resultSelector);
+Array.prototype.innerJoin = function <T, T2, TResult>(this: T[], array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult) {
+    return this.asEnumerable().innerJoin(array2, relation, resultSelector);
 };
-Array.prototype.leftJoin = function <T, T2, TKey, TResult>(this: T[], array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T, item2: T2 | null) => TResult) {
-    return this.asEnumerable().leftJoin(array2, keySelector1, keySelector2, resultSelector);
+Array.prototype.leftJoin = function <T, T2, TResult>(this: T[], array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult) {
+    return this.asEnumerable().leftJoin(array2, relation, resultSelector);
 };
-Array.prototype.rightJoin = function <T, T2, TKey, TResult>(this: T[], array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2) => TResult) {
-    return this.asEnumerable().rightJoin(array2, keySelector1, keySelector2, resultSelector);
+Array.prototype.rightJoin = function <T, T2, TResult>(this: T[], array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult) {
+    return this.asEnumerable().rightJoin(array2, relation, resultSelector);
 };
-Array.prototype.fullJoin = function <T, T2, TKey, TResult>(this: T[], array2: Iterable<T2>, keySelector1: (item: T) => TKey, keySelector2: (item: T2) => TKey, resultSelector: (item1: T | null, item2: T2 | null) => TResult) {
-    return this.asEnumerable().fullJoin(array2, keySelector1, keySelector2, resultSelector);
+Array.prototype.fullJoin = function <T, T2, TResult>(this: T[], array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult) {
+    return this.asEnumerable().fullJoin(array2, relation, resultSelector);
 };
 Array.prototype.union = function <T>(this: T[], array2: Iterable<T>, isUnionAll: boolean = false) {
     return this.asEnumerable().union(array2, isUnionAll);
@@ -127,6 +134,6 @@ Array.prototype.intersect = function <T>(this: T[], array2: Iterable<T>) {
 Array.prototype.except = function <T>(this: T[], array2: Iterable<T>) {
     return this.asEnumerable().except(array2);
 };
-Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => any }, TM extends { [key: string]: (item: T[]) => any }, TResult extends { [key in (keyof TD & keyof TM)]: any }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
+Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
     return this.asEnumerable().pivot(dimensions, metrics);
 };

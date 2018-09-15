@@ -1,8 +1,6 @@
 import { OrderDirection } from "../Common/Type";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -11,21 +9,22 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
-    protected _selectors: ObjectValueExpression<{selector: FunctionExpression, direction: IExpression<OrderDirection>}>[];
+    protected _selectors: Array<ObjectValueExpression<{ selector: FunctionExpression, direction: IExpression<OrderDirection> }>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select(o => {
                 const selector = o[0];
                 const direction = o[1];
                 const a = {
-                    selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector),
-                    direction: new ValueExpression(direction ? direction : OrderDirection.ASC)
+                    selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks),
+                    direction: new ValueExpression(direction ? direction : "ASC")
                 };
-                return new ObjectValueExpression(a);
+                return new ObjectValueExpression(a) as any;
             }).toArray();
         }
         return this._selectors;
@@ -37,16 +36,16 @@ export class OrderQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression<T>;
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "orderBy", this.selectors);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         let code = this.parent.hashCode();
         if (this.selectorsFn) {
-            code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : OrderDirection.ASC));
+            code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : "ASC"));
         }
         else if (this.selectors) {
             code += this.selectors.sum(o => hashCode(o.toString()));

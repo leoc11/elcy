@@ -7,10 +7,10 @@ export class MyDb extends MssqlDbContext {
     constructor() {
         super(() => new MssqlDriver({
             host: "localhost\\SQLEXPRESS",
-            database: "iSeller_Data_Lotte",
+            database: "Database",
             port: 1433,
-            user: "xxx",
-            password: "xxx",
+            user: "sa",
+            password: "password",
             // options: {
             //     trustedConnection: true
             // }

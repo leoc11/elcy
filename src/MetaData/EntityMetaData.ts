@@ -1,4 +1,4 @@
-import { IObjectType, ConcurrencyModel } from "../Common/Type";
+import { IObjectType, ConcurrencyModel, ColumnGeneration } from "../Common/Type";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
@@ -7,9 +7,11 @@ import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
-import { NumericColumnMetaData } from "./NumericColumnMetaData";
+import { IntegerColumnMetaData } from "./IntegerColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
+import { isNotNull } from "../Helper/Util";
+import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
@@ -19,6 +21,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public deletedColumn: IColumnMetaData<TE>;
     public createDateColumn: IColumnMetaData<TE>;
     public modifiedDateColumn: IColumnMetaData<TE>;
+    public versionColumn?: RowVersionColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IIndexMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
@@ -42,7 +45,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         return priority;
     }
     public get hasIncrementPrimary(): boolean {
-        return this.primaryKeys.any(o => (o as any as NumericColumnMetaData).autoIncrement);
+        return this.primaryKeys.any(o => (o as any as IntegerColumnMetaData).autoIncrement);
     }
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
@@ -82,6 +85,17 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
                     rel.reverseRelation.target = this;
             }
         }
+    }
+
+    public get insertGeneratedColumns() {
+        return this.columns.where(o => {
+            return !isNotNull(o.default) || (o.generation & ColumnGeneration.Insert) as any;
+        }).toArray();
+    }
+    public get updateGeneratedColumns() {
+        return this.columns.where(o => {
+            return (o.generation & ColumnGeneration.Update) as any;
+        }).toArray();
     }
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;

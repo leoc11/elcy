@@ -2,7 +2,7 @@ import { SchemaBuilder } from "../../QueryBuilder/SchemaBuilder";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ReferenceOption, QueryType } from "../../Common/Type";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IQueryCommand } from "../../QueryBuilder/Interface/IQueryCommand";
+import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 
@@ -20,21 +20,21 @@ export class MssqlSchemaBuilder extends SchemaBuilder {
             return "NO ACTION";
         return option;
     }
-    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQueryCommand[] {
+    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
         let query = `EXEC sp_rename '${this.q.entityName(columnMeta.entity)}.${this.q.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{ query, type: QueryType.DDL }];
     }
-    public addDefaultContraint(columnMeta: IColumnMetaData): IQueryCommand[] {
+    public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
         let query = `ALTER TABLE ${this.q.entityName(columnMeta.entity)}` +
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.q.enclose(columnMeta.columnName)}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropIndex(indexMeta: IIndexMetaData): IQueryCommand[] {
+    public dropIndex(indexMeta: IIndexMetaData): IQuery[] {
         const query = `DROP INDEX ${this.q.entityName(indexMeta.entity)}.${indexMeta.name}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropDefaultContraint(columnMeta: IColumnMetaData): IQueryCommand[] {
-        const result: IQueryCommand[] = [];
+    public dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
+        const result: IQuery[] = [];
         const variableName = this.q.newAlias("param");
         result.push({
             query: `DECLARE @${variableName} nvarchar(255) = (` +
@@ -51,8 +51,8 @@ export class MssqlSchemaBuilder extends SchemaBuilder {
         });
         return result;
     }
-    public dropPrimaryKey(entityMeta: IEntityMetaData): IQueryCommand[] {
-        const result: IQueryCommand[] = [];
+    public dropPrimaryKey(entityMeta: IEntityMetaData): IQuery[] {
+        const result: IQuery[] = [];
         const variableName = this.q.newAlias("param");
         result.push({
             query: `DECLARE @${variableName} nvarchar(255) = (` +

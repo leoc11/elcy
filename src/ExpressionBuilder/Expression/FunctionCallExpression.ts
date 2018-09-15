@@ -77,7 +77,10 @@ export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
         const fn = this.fnExpression.execute(transformer);
         return fn.apply(null, params);
     }
-    public clone() {
-        return new FunctionCallExpression(this.fnExpression, this.params);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const fnExpression = replaceMap.has(this.fnExpression) ? replaceMap.get(this.fnExpression) : this.fnExpression.clone(replaceMap);
+        const params = this.params.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray();
+        return new FunctionCallExpression(fnExpression, params);
     }
 }

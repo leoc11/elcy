@@ -1,11 +1,8 @@
 import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
-import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { Queryable } from "../Queryable/Queryable";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { ICommandQueryExpression } from "../Queryable/QueryExpression/ICommandQueryExpression";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
@@ -23,6 +20,10 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
+import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -36,15 +37,20 @@ export class DbSet<T> extends Queryable<T> {
     public get primaryKeys(): IColumnMetaData<T>[] {
         return this.metaData.primaryKeys;
     }
-    public readonly namingStrategy: NamingStrategy;
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<T>;
     constructor(public readonly type: IObjectType<T>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        return new SelectExpression<T>(new EntityExpression(this.type, queryBuilder.newAlias()));
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+        const result = new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
+        const option = queryVisitor.options;
+        if (result.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
+            result.addWhere(new StrictEqualExpression(result.entity.deleteColumn, new ValueExpression(false)));
+        }
+
+        return result;
     }
     public hashCode() {
         return hashCode(this.type.name!);

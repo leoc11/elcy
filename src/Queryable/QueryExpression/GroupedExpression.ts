@@ -3,6 +3,9 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IColumnExpression } from "./IColumnExpression";
+import { JoinType } from "../../Common/Type";
 
 export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
     public get where() {
@@ -33,30 +36,40 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
         this.joins = select.joins.slice(0);
         this.includes = [];
     }
-    public clone(): GroupedExpression<T> {
-        const clone = new GroupedExpression(this.select.clone());
+    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
+        this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
+        return super.addJoinRelation(child, relationMetaOrRelations as any, type);
+    }
+    public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
+        if (!replaceMap) replaceMap = new Map();
+        const clone = new GroupedExpression(this.select.clone(replaceMap));
         clone.itemExpression = this.itemExpression;
         clone.orders = this.orders.slice(0);
         clone.selects = this.selects.select(o => {
             let col = clone.entity.columns.first(c => c.columnName === o.columnName);
             if (!col) {
-                col = o.clone();
+                col = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone(replaceMap);
                 col.entity = clone.entity;
             }
             return col;
         }).toArray();
 
+        for (const parentCol of this.projectedColumns) {
+            const cloneCol = clone.projectedColumns.first(c => c.columnName === parentCol.columnName);
+            replaceMap.set(parentCol, cloneCol);
+        }
+
         clone.joins = this.joins.select(o => {
-            const relationMap = new Map();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                relationMap.set(cloneCol, childCol);
+            const child = replaceMap.has(o.child) ? replaceMap.get(o.child) as SelectExpression : o.child.clone(replaceMap);
+            for (const parentCol of o.child.projectedColumns) {
+                const cloneCol = child.projectedColumns.first(c => c.columnName === parentCol.columnName);
+                replaceMap.set(parentCol, cloneCol);
             }
-            const child = o.child.clone();
+            const relation = o.relations.clone(replaceMap);
             const rel: IJoinRelation = {
                 child: child,
                 parent: clone,
-                relations: relationMap,
+                relations: relation,
                 type: o.type
             };
             child.parentRelation = rel;
@@ -64,26 +77,25 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
         }).toArray();
 
         clone.includes = this.includes.select(o => {
-            const relationMap = new Map();
-            const child = o.child.clone();
-            for (const [parentCol, childCol] of o.relations) {
-                const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-                const cloneChildCol = child.entity.columns.first(c => c.columnName === childCol.columnName);
-                relationMap.set(cloneCol, cloneChildCol);
+            const cloneChild = replaceMap.has(o.child) ? replaceMap.get(o.child) as SelectExpression : o.child.clone(replaceMap);
+            for (const oriChildCol of o.child.projectedColumns) {
+                const cloneChildCol = cloneChild.entity.columns.first(c => c.columnName === oriChildCol.columnName);
+                replaceMap.set(oriChildCol, cloneChildCol);
             }
+            const relation = o.relations.clone(replaceMap);
             const rel: IIncludeRelation = {
-                child: child,
+                child: cloneChild,
                 parent: clone,
                 name: o.name,
-                relations: relationMap,
+                relations: relation,
                 type: o.type
             };
-            child.parentRelation = rel;
+            cloneChild.parentRelation = rel;
             return rel;
         }).toArray();
 
         if (this.where)
-            clone.where = this.where.clone();
+            clone.where = this.where.clone(replaceMap);
         Object.assign(clone.paging, this.paging);
         return clone;
     }

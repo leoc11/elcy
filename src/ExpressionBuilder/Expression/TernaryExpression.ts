@@ -26,7 +26,11 @@ export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T
     public execute(transformer?: ExpressionTransformer) {
         return this.logicalOperand.execute(transformer) ? this.trueResultOperand.execute(transformer) : this.falseResultOperand.execute(transformer);
     }
-    public clone() {
-        return new TernaryExpression(this.logicalOperand, this.trueResultOperand, this.falseResultOperand);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const logicalOperand = replaceMap.has(this.logicalOperand) ? replaceMap.get(this.logicalOperand) : this.logicalOperand.clone(replaceMap);
+        const trueResultOperand = replaceMap.has(this.trueResultOperand) ? replaceMap.get(this.trueResultOperand) : this.trueResultOperand.clone(replaceMap);
+        const falseResultOperand = replaceMap.has(this.falseResultOperand) ? replaceMap.get(this.falseResultOperand) : this.falseResultOperand.clone(replaceMap);
+        return new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
     }
 }

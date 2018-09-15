@@ -1,13 +1,12 @@
 import { GenericType } from "../Common/Type";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { Queryable } from "./Queryable";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitParameter } from "../QueryBuilder/QueryExpressionVisitor";
+import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ICommandQueryExpression } from "./QueryExpression/ICommandQueryExpression";
+import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: ((item: S) => T[] | Queryable<T>);
@@ -27,11 +26,11 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
         else
             this.selectorFn = selector;
     }
-    public buildQuery(queryBuilder: QueryBuilder): ICommandQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryBuilder) as SelectExpression;
+    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector]);
-        const visitParam: IQueryVisitParameter = { commandExpression: objectOperand, scope: "queryable" };
-        return queryBuilder.visit(methodExpression, visitParam) as any;
+        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCode("SELECTMANY", this.parent.hashCode() + hashCode((this.selectorFn || this.selector).toString()));

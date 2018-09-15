@@ -3,7 +3,7 @@ import { GroupedEnumerable } from "./GroupedEnumerable";
 
 export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>> {
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
-        super(parent);
+        super(parent as any);
     }
     public isResultComplete: boolean;
     protected *generator() {

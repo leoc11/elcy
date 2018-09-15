@@ -1,4 +1,4 @@
-import { ClassBase, GenericType, IObjectType } from "../Common/Type";
+import { ClassBase, GenericType, IObjectType, ColumnGeneration } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
@@ -8,6 +8,7 @@ import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IndexMetaData } from "./IndexMetaData";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
+import { isNotNull } from "../Helper/Util";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderMetaData[];
@@ -25,13 +26,23 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public allowInheritance = false;
     public inheritance: InheritanceMetaData<TParent>;
     public name: string;
+    public get insertGeneratedColumns() {
+        return this.columns.where(o => {
+            return !isNotNull(o.default) || (o.generation & ColumnGeneration.Insert) as any;
+        }).toArray();
+    }
+    public get updateGeneratedColumns() {
+        return this.columns.where(o => {
+            return (o.generation & ColumnGeneration.Update) as any;
+        }).toArray();
+    }
 
-    constructor(public type: IObjectType<TE>, name?: string, defaultOrder?: IOrderMetaData[]) {
+    constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined")
             this.name = name;
-        if (typeof defaultOrder !== "undefined")
-            this.defaultOrder = defaultOrder;
+        if (!name)
+            this.name = type.name;
 
         const parentType = Reflect.getPrototypeOf(this.type) as GenericType<TParent>;
         if (parentType !== ClassBase) {
@@ -39,7 +50,5 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance)
                 this.parentType = parentType;
         }
-        if (!name)
-            this.name = type.name!;
     }
 }
