@@ -73,7 +73,7 @@ relationalQueryTranslator.register(Math, "SQRT2", () => "SQRT(2)", false);
 /**
  * String
  */
-relationalQueryTranslator.register(String.prototype, "length", (exp: MemberAccessExpression<any, any>, qb: QueryBuilder) => "LEN(" + qb.getExpressionString(exp.objectOperand) + ")");
+relationalQueryTranslator.register(String.prototype, "length", (exp: MemberAccessExpression<any, any>, qb: QueryBuilder) => `LEN(${qb.getExpressionString(exp.objectOperand)})`);
 
 /**
  * Array
@@ -85,8 +85,8 @@ relationalQueryTranslator.register(String.prototype, "length", (exp: MemberAcces
  * TODO: UTC,now,parse
  */
 
-
 //#endregion
+
 
 //#region Method Call
 
@@ -121,7 +121,7 @@ relationalQueryTranslator.register(Enumerable.prototype, "contains", (exp: Metho
  * Math
  * TODO: max,min,acosh,asinh,atanh,cbrt,clz32,fround,imul
  */
-const trigonoTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => exp.methodName.toUpperCase() + "(" + qb.getExpressionString(exp.params[0]) + ")";
+const trigonoTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${exp.methodName.toUpperCase()}(${qb.getExpressionString(exp.params[0])})`;
 relationalQueryTranslator.register(Math, "abs", trigonoTranslator);
 relationalQueryTranslator.register(Math, "acos", trigonoTranslator);
 relationalQueryTranslator.register(Math, "asin", trigonoTranslator);
@@ -135,48 +135,51 @@ relationalQueryTranslator.register(Math, "floor", trigonoTranslator);
 relationalQueryTranslator.register(Math, "log", trigonoTranslator);
 relationalQueryTranslator.register(Math, "log10", trigonoTranslator);
 relationalQueryTranslator.register(Math, "sign", trigonoTranslator);
-relationalQueryTranslator.register(Math, "ceil", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CEILING(" + qb.getExpressionString(exp.params[0]) + ")");
-relationalQueryTranslator.register(Math, "atan2", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "ATN2(" + qb.getExpressionString(exp.params[0]) + "," + qb.getExpressionString(exp.params[1]) + ")");
-relationalQueryTranslator.register(Math, "pow", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "POWER(" + qb.getExpressionString(exp.params[0]) + "," + qb.getExpressionString(exp.params[1]) + ")");
+relationalQueryTranslator.register(Math, "ceil", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CEILING(${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(Math, "atan2", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `ATN2(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
+relationalQueryTranslator.register(Math, "pow", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `POWER(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
 relationalQueryTranslator.register(Math, "random", () => "RAND()", false);
-relationalQueryTranslator.register(Math, "round", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "ROUND(" + qb.getExpressionString(exp.params[0]) + ", 0)");
-relationalQueryTranslator.register(Math, "expm1", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(EXP(" + qb.getExpressionString(exp.params[0]) + ") - 1)");
-relationalQueryTranslator.register(Math, "hypot", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SQRT(" + exp.params.select((p) => "POWER(" + qb.getExpressionString(p) + ", 2)").toArray().join(" + ") + ")");
-relationalQueryTranslator.register(Math, "log1p", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOG(1 + " + qb.getExpressionString(exp.params[0]) + ")");
-relationalQueryTranslator.register(Math, "log2", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOG(" + qb.getExpressionString(exp.params[0]) + ", 2)");
-relationalQueryTranslator.register(Math, "sinh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(" + qb.getExpressionString(exp.params[0]) + ") - EXP(-" + qb.getExpressionString(exp.params[0]) + ")) / 2)");
-relationalQueryTranslator.register(Math, "cosh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(" + qb.getExpressionString(exp.params[0]) + ") + EXP(-" + qb.getExpressionString(exp.params[0]) + ")) / 2)");
-relationalQueryTranslator.register(Math, "tanh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "((EXP(2 * " + qb.getExpressionString(exp.params[0]) + ") - 1) / (EXP(2 * " + qb.getExpressionString(exp.params[0]) + ") + 1))");
-relationalQueryTranslator.register(Math, "trunc", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.params[0]) + " | 0)");
+relationalQueryTranslator.register(Math, "round", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `ROUND(${qb.getExpressionString(exp.params[0])}, 0)`);
+relationalQueryTranslator.register(Math, "expm1", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(EXP(${qb.getExpressionString(exp.params[0])}) - 1)`);
+relationalQueryTranslator.register(Math, "hypot", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SQRT(${exp.params.select((p) => `POWER(${qb.getExpressionString(p)}, 2)`).toArray().join(" + ")})`);
+relationalQueryTranslator.register(Math, "log1p", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `LOG(1 + ${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(Math, "log2", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `LOG(${qb.getExpressionString(exp.params[0])}, 2)`);
+relationalQueryTranslator.register(Math, "sinh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `((EXP(${qb.getExpressionString(exp.params[0])}) - EXP(-${qb.getExpressionString(exp.params[0])})) / 2)`);
+relationalQueryTranslator.register(Math, "cosh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `((EXP(${qb.getExpressionString(exp.params[0])}) + EXP(-${qb.getExpressionString(exp.params[0])})) / 2)`);
+relationalQueryTranslator.register(Math, "tanh", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `((EXP(2 * ${qb.getExpressionString(exp.params[0])}) - 1) / (EXP(2 * ${qb.getExpressionString(exp.params[0])}) + 1))`);
+relationalQueryTranslator.register(Math, "trunc", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.params[0])} | 0)`);
 
 /**
  * String
  * TODO: localeCompare,match,normalize,padEnd,padStart,search,slice
  */
-relationalQueryTranslator.register(String.prototype, "charAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", 1)");
-relationalQueryTranslator.register(String.prototype, "charCodeAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "UNICODE(SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", 1))");
-relationalQueryTranslator.register(String.prototype, "concat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CONCAT(" + qb.getExpressionString(exp.objectOperand) + ", " + exp.params.select((p) => qb.getExpressionString(p)).toArray().join(", ") + ")");
-relationalQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getValueString("%") + ", " + qb.getExpressionString(exp.params[0]) + "))");
-relationalQueryTranslator.register(String.prototype, "includes", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => exp.params.length > 1 ? "(" + qb.getExpressionString(exp.params[0]) + " + RIGHT(" + qb.getExpressionString(exp.objectOperand) + ", (LEN(" + qb.getExpressionString(exp.objectOperand) + ") - " + qb.getExpressionString(exp.params[0]) + "))))" : "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getValueString("%") + ", " + qb.getExpressionString(exp.params[0]) + ", " + qb.getValueString("%") + ")");
-relationalQueryTranslator.register(String.prototype, "indexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CHARINDEX(" + qb.getExpressionString(exp.params[0]) + ", " + qb.getExpressionString(exp.objectOperand) + (exp.params.length > 1 ? ", " + qb.getExpressionString(exp.params[1]) : "") + ") - 1)");
-relationalQueryTranslator.register(String.prototype, "lastIndexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(LEN(" + qb.getExpressionString(exp.objectOperand) + ") - CHARINDEX(" + qb.getExpressionString(exp.params[0]) + ", REVERSE(" + qb.getExpressionString(exp.objectOperand) + ")" + (exp.params.length > 1 ? ", " + qb.getExpressionString(exp.params[1]) : "") + "))");
-relationalQueryTranslator.register(String.prototype, "like", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE " + qb.getExpressionString(exp.params[0]) + ")");
-relationalQueryTranslator.register(String.prototype, "repeat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "REPLICATE(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ")");
-relationalQueryTranslator.register(String.prototype, "replace", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "REPLACE(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ", " + qb.getExpressionString(exp.params[1]) + ")");
-relationalQueryTranslator.register(String.prototype, "split", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "STRING_SPLIT(" + qb.getExpressionString(exp.objectOperand) + ", " + qb.getExpressionString(exp.params[0]) + ")");
-relationalQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(" + qb.getExpressionString(exp.objectOperand) + " LIKE CONCAT(" + qb.getExpressionString(exp.params[0]) + ", " + qb.getValueString("%") + "))");
-relationalQueryTranslator.register(String.prototype, "substr", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + "(" + qb.getExpressionString(exp.params[0]) + " + 1), " + (exp.params.length > 1 ? qb.getExpressionString(exp.params[1]) : "8000") + ")");
-relationalQueryTranslator.register(String.prototype, "substring", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "SUBSTRING(" + qb.getExpressionString(exp.objectOperand) + ", " + "(" + qb.getExpressionString(exp.params[0]) + " + 1), " + (exp.params.length > 1 ? "(" + qb.getExpressionString(exp.params[1]) + " - " + qb.getExpressionString(exp.params[0]) + ")" : "8000") + ")");
-const tolowerTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "LOWER(" + qb.getExpressionString(exp.objectOperand) + ")";
+relationalQueryTranslator.register(String.prototype, "charAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1)`);
+relationalQueryTranslator.register(String.prototype, "charCodeAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `UNICODE(SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1))`);
+relationalQueryTranslator.register(String.prototype, "concat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CONCAT(${qb.getExpressionString(exp.objectOperand)}, ${exp.params.select((p) => qb.getExpressionString(p)).toArray().join(", ")})`);
+relationalQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getValueString("%")}, ${qb.getExpressionString(exp.params[0])}))`);
+relationalQueryTranslator.register(String.prototype, "includes", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) =>
+    exp.params.length > 1
+    ? `(${qb.getExpressionString(exp.params[0])} + RIGHT(${qb.getExpressionString(exp.objectOperand)}, (LEN(${qb.getExpressionString(exp.objectOperand)}) - ${qb.getExpressionString(exp.params[0])}))))`
+    : `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getValueString("%")}, ${qb.getExpressionString(exp.params[0])}, ${qb.getValueString("%")})`);
+relationalQueryTranslator.register(String.prototype, "indexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(CHARINDEX(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.objectOperand) + (exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")}) - 1)`);
+relationalQueryTranslator.register(String.prototype, "lastIndexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(LEN(${qb.getExpressionString(exp.objectOperand)}) - CHARINDEX(${qb.getExpressionString(exp.params[0])}, REVERSE(${qb.getExpressionString(exp.objectOperand)})${(exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")}))`);
+relationalQueryTranslator.register(String.prototype, "like", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE ${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(String.prototype, "repeat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `REPLICATE(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(String.prototype, "replace", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `REPLACE(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
+relationalQueryTranslator.register(String.prototype, "split", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRING_SPLIT(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getExpressionString(exp.params[0])}, ${qb.getValueString("%")}))`);
+relationalQueryTranslator.register(String.prototype, "substr", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1), ${(exp.params.length > 1 ? qb.getExpressionString(exp.params[1]) : "8000")})`);
+relationalQueryTranslator.register(String.prototype, "substring", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1), ${(exp.params.length > 1 ? `(${qb.getExpressionString(exp.params[1])} - ${qb.getExpressionString(exp.params[0])})` : "8000")})`);
+const tolowerTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `LOWER(${qb.getExpressionString(exp.objectOperand)})`;
 relationalQueryTranslator.register(String.prototype, "toLowerCase", tolowerTranslator);
 relationalQueryTranslator.register(String.prototype, "toLocaleLowerCase", tolowerTranslator);
-const toupperTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "UPPER(" + qb.getExpressionString(exp.objectOperand) + ")";
+const toupperTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `UPPER(${qb.getExpressionString(exp.objectOperand)})`;
 relationalQueryTranslator.register(String.prototype, "toUpperCase", toupperTranslator);
 relationalQueryTranslator.register(String.prototype, "toLocaleUpperCase", toupperTranslator);
 const stringValueOf = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => qb.getExpressionString(exp.objectOperand);
 relationalQueryTranslator.register(String.prototype, "toString", stringValueOf);
 relationalQueryTranslator.register(String.prototype, "valueOf", stringValueOf);
-relationalQueryTranslator.register(String.prototype, "trim", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "RTRIM(LTRIM(" + qb.getExpressionString(exp.objectOperand) + "))");
+relationalQueryTranslator.register(String.prototype, "trim", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `RTRIM(LTRIM(${qb.getExpressionString(exp.objectOperand)}))`);
 
 /**
  * Number
@@ -194,13 +197,13 @@ relationalQueryTranslator.register(Number.prototype, "valueOf", (exp: MethodCall
  * Boolean
  * TODO: 
  */
-relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "(CASE WHEN (" + qb.getExpressionString(exp.objectOperand) + ") THEN " + qb.getValueString("true") + " ELSE " + qb.getValueString("false") + " END)");
+relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(CASE WHEN (${qb.getExpressionString(exp.objectOperand)}) THEN ${qb.getValueString("true")} ELSE ${qb.getValueString("false")} END)`);
 
 /**
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
  */
-relationalQueryTranslator.register(Date, "currentTimestamp", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => "CURRENT_TIMESTAMP");
+relationalQueryTranslator.register(Date, "currentTimestamp", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CURRENT_TIMESTAMP`);
 relationalQueryTranslator.register(Date.prototype, "getDate", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DAY(${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "getDay", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(DATEPART(weekday, ${qb.getExpressionString(exp.objectOperand)}) - 1)`);
 relationalQueryTranslator.register(Date.prototype, "getFullYear", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `YEAR(${qb.getExpressionString(exp.objectOperand)})`);
@@ -300,10 +303,10 @@ const notEqualTranslator = (exp: NotEqualExpression | StrictNotEqualExpression, 
     const leftExpString = qb.getOperandString(exp.leftOperand, true);
     const rightExpString = qb.getOperandString(exp.rightOperand, true);
     if (leftExpString === "NULL")
-        return rightExpString + " IS NOT " + leftExpString;
+        return `${rightExpString} IS NOT ${leftExpString}`;
     else if (rightExpString === "NULL")
-        return leftExpString + " IS NOT " + rightExpString;
-    return leftExpString + " <> " + rightExpString;
+        return `${leftExpString} IS NOT ${rightExpString}`;
+    return `${leftExpString} <> ${rightExpString}`;
 };
 relationalQueryTranslator.register(NotEqualExpression, notEqualTranslator);
 relationalQueryTranslator.register(StrictNotEqualExpression, notEqualTranslator);
@@ -312,10 +315,10 @@ const equalTransalator = (exp: IBinaryOperatorExpression, qb: QueryBuilder) => {
     const leftExpString = qb.getOperandString(exp.leftOperand, true);
     const rightExpString = qb.getOperandString(exp.rightOperand, true);
     if (leftExpString === "NULL")
-        return rightExpString + " IS " + leftExpString;
+        return `${rightExpString} IS ${leftExpString}`;
     else if (rightExpString === "NULL")
-        return leftExpString + " IS " + rightExpString;
-    return leftExpString + " = " + rightExpString;
+        return `${leftExpString} IS ${rightExpString}`;
+    return `${leftExpString} = ${rightExpString}`;
 };
 relationalQueryTranslator.register(EqualExpression, equalTransalator);
 relationalQueryTranslator.register(StrictEqualExpression, equalTransalator);

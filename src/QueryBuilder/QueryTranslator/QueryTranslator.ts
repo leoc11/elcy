@@ -16,12 +16,9 @@ export class QueryTranslator {
     public register(fn: Function, translate: (exp: FunctionCallExpression, qb: QueryBuilder) => string, preferApp?: boolean): void;
     // Register Member and Method Implementation
     public register<T>(object: T, memberName: keyof T, translate: (exp: IMemberOperatorExpression, qb: QueryBuilder) => string, preferApp?: boolean): void;
-    public register(object: any, translateOrMember: ((exp: IExpression, qb: QueryBuilder) => string) | string, translateOrpreferApp?: ((exp: IExpression, qb: QueryBuilder) => string) | boolean, preferApp?: boolean) {
+    public register(object: any, translateOrMember: ((exp: IExpression, qb: QueryBuilder) => string) | string, translateOrpreferApp?: ((exp: IExpression, qb: QueryBuilder) => string) | boolean, preferApp = true) {
         let translate: any;
         let memberName: string;
-        if (typeof preferApp === "undefined") {
-            preferApp = true;
-        }
 
         if (typeof translateOrMember === "string") {
             memberName = translateOrMember;
@@ -47,6 +44,7 @@ export class QueryTranslator {
     }
     public resolve(object: any, memberName?: string) {
         let item: IQueryTranslatorItem = memberName ? Reflect.getOwnMetadata(this.key, object, memberName) : Reflect.getOwnMetadata(this.key, object);
+        if (item && !item.translate) item = null;
         if (!item) {
             for (const fallback of this.fallbacks) {
                 item = fallback.resolve(object, memberName);

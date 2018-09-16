@@ -22,10 +22,15 @@ import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpress
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
+import { DbFunction } from "../../QueryBuilder/DbFunction";
+import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.register(UUID, "new", () => "NEWID()");
+mssqlQueryTranslator.register(DbFunction, "lastInsertedId", () => `SCOPE_IDENTITY()`);
+mssqlQueryTranslator.register(DbFunction, "coalesce", (exp: MethodCallExpression, qb: QueryBuilder) => `COALESCE(${exp.params.select(o => qb.getExpressionString(o)).toArray().join(", ")})`);
+
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
         maxParameters: 2100,

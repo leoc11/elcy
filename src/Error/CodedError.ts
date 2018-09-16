@@ -1,4 +1,4 @@
-export class ORMError extends Error {
+export class CodedError extends Error {
     constructor(code: number, message: string);
     constructor(code: number, error: Error);
     constructor(code: number, messageOrError: string | Error) {

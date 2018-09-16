@@ -3,16 +3,13 @@ import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/Colu
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
 import { GenericType, QueryType } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
-import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
+import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 
-export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
-sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 export class SqliteQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,

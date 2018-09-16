@@ -54,6 +54,7 @@ import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { DbFunction } from "../QueryBuilder/DbFunction";
 
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
@@ -969,7 +970,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 }));
                 const selectExp = new SelectExpression(entityExp);
                 selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
-                selectExp.addWhere(new StrictEqualExpression(entityExp.columns.first(c => c.propertyName === incrementColumn.columnName), new RawSqlExpression(incrementColumn.type, queryBuilder.lastInsertedIdentity())));
+
+                const translator = queryBuilder.resolveTranslator(DbFunction, "lastInsertedId");
+                const lastId = translator ? translator.translate(null, queryBuilder) : "LAST_INSERT_ID()";
+                selectExp.addWhere(new StrictEqualExpression(entityExp.columns.first(c => c.propertyName === incrementColumn.columnName), new RawSqlExpression(incrementColumn.type, lastId)));
                 results.push(new DeferredQuery(this, selectExp, [], (results) => {
                     return {
                         effectedRows: 0,
