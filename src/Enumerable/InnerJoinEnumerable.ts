@@ -15,17 +15,20 @@ export class InnerJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<
         super();
     }
     protected *generator() {
-        const result: R[] = [];
+        let result: R[];
+        if (this.enableCache) result = [];
         for (const value1 of this.parent) {
             for (const value2 of this.parent2) {
                 if (this.relation(value1, value2)) {
                     const value = this.resultSelector(value1, value2);
-                    result.push(value);
+                    if (this.enableCache) result.push(value);
                     yield value;
                 }
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

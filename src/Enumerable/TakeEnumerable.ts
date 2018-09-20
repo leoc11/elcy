@@ -5,15 +5,18 @@ export class TakeEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        const result: T[] = [];
+        let result: T[];
+        if (this.enableCache) result = [];
         let index = 0;
         for (const value of this.parent) {
-            result.push(value);
+            if (this.enableCache) result.push(value);
             yield value;
             if (++index >= this.takeCount)
                 break;
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

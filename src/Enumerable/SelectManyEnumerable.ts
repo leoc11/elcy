@@ -5,17 +5,20 @@ export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
         super();
     }
     protected *generator() {
-        const result: K[] = [];
+        let result: K[];
+        if (this.enableCache) result = [];
         for (const value1 of this.parent) {
             const values = this.selector(value1);
             if (values) {
                 for (const value of values) {
-                    result.push(value);
+                    if (this.enableCache) result.push(value);
                     yield value;
                 }
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

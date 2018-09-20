@@ -6,16 +6,19 @@ export class IntersectEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        const result: T[] = [];
+        let result: T[];
+        if (this.enableCache) result = [];
         for (const value of this.parent) {
             for (const value2 of this.parent2) {
                 if (keyComparer(value, value2)) {
-                    result.push(value);
+                    if (this.enableCache) result.push(value);
                     yield value;
                 }
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

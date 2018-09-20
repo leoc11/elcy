@@ -5,14 +5,17 @@ export class WhereEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        const result: T[] = [];
+        let result: T[];
+        if (this.enableCache) result = [];
         for (const value of this.parent) {
             if (this.predicate(value)) {
-                result.push(value);
+                if (this.enableCache) result.push(value);
                 yield value;
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

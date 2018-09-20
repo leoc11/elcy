@@ -13,7 +13,9 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
                 yield value;
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

@@ -5,14 +5,17 @@ export class ExceptEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        const result = [];
+        let result: T[];
+        if (this.enableCache) result = [];
         for (const value of this.parent) {
             if (!this.parent2.any(o => keyComparer(o, value))) {
-                result.push(value);
+                if (this.enableCache) result.push(value);
                 yield value;
             }
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
 }

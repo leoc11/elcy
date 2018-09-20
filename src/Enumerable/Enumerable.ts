@@ -16,10 +16,10 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
-    public static load<T>(source?: Iterable<T> | Iterator<T>) {
-        return new Enumerable(source);
+    public static load<T>(source?: Iterable<T> | Iterator<T>): Enumerable<T> {
+        return source instanceof Enumerable ? source : new Enumerable(source);
     }
-    protected pointer = 0;
+    public enableCache: boolean;
     protected isResultComplete: boolean;
     protected result: T[] = [];
     protected parent: Iterable<any>;
@@ -27,8 +27,7 @@ export class Enumerable<T = any> implements Iterable<T> {
     constructor(source?: Iterable<T> | Iterator<T>) {
         if (source) {
             if (Array.isArray(source)) {
-                this.result = source;
-                this.parent = source;
+                this.parent = this.result = source;
                 this.isResultComplete = true;
             }
             else if ((source as Iterator<T>).next) {
@@ -46,14 +45,17 @@ export class Enumerable<T = any> implements Iterable<T> {
         return this.generator();
     }
     protected *generator() {
-        const result = [];
+        let result: T[];
+        if (this.enableCache) result = [];
         let iterateResult;
         while (iterateResult = this.iterator.next(), !iterateResult.done) {
-            result.push(iterateResult.value);
+            if (this.enableCache) result.push(iterateResult.value);
             yield iterateResult.value;
         }
-        this.result = result;
-        this.isResultComplete = true;
+        if (this.enableCache) {
+            this.result = result;
+            this.isResultComplete = true;
+        }
     }
     public reset() {
         if (this.parent) {
