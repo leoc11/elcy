@@ -3,6 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
+import { Queryable } from "../../Queryable/Queryable";
 export class MethodCallExpression<TType = any, KProp extends keyof TType = any, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
     public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
@@ -26,10 +27,37 @@ export class MethodCallExpression<TType = any, KProp extends keyof TType = any, 
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
-                try {
-                    this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
-                } catch (e) {
-                    this.type = (new (this.objectOperand.type as any)())[this.methodName]().constructor;
+                if (Queryable.isPrototypeOf(this.objectOperand.type)) {
+                    switch (this.methodName) {
+                        case "min":
+                        case "max":
+                        case "count":
+                        case "sum": {
+                            this._type = Number as any;
+                            break;
+                        }
+                        case "contains":
+                        case "any":
+                        case "all": {
+                            this._type = Boolean as any;
+                            break;
+                        }
+                        case "first": {
+                            this._type = Object;
+                            break;
+                        }
+                        default: {
+                            this._type = Array as any;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    try {
+                        this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
+                    } catch (e) {
+                        this.type = (new (this.objectOperand.type as any)())[this.methodName]().constructor;
+                    }
                 }
             }
             catch (e) {

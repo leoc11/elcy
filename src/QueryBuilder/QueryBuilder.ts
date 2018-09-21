@@ -7,7 +7,7 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { fillZero, isNotNull, replaceExpression } from "../Helper/Util";
-import { JoinType, GenericType, QueryType, DeleteMode } from "../Common/Type";
+import { JoinType, GenericType, QueryType, DeleteMode, TimeZoneHandling } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
@@ -46,6 +46,11 @@ import { SelectIntoExpression } from "../Queryable/QueryExpression/SelectIntoExp
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { DateTimeColumnMetaData } from "../MetaData/DateTimeColumnMetaData";
+import { TimeSpan } from "../Data/TimeSpan";
+import { UUID } from "../Data/UUID";
+import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -60,13 +65,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
     }
-    protected resolveTranslator(object: any, memberName?: string) {
+    public resolveTranslator<T = any>(object: T, memberName?: keyof T) {
         return this.translator.resolve(object, memberName);
     }
     private aliasObj: { [key: string]: number } = {};
-    public lastInsertedIdentity() {
-        return "LAST_INSERT_ID()";
-    }
     public setParameters(parameters: ISqlParameter[]) {
         this.parameters = parameters;
     }
@@ -76,6 +78,43 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (!this.aliasObj[type])
             this.aliasObj[type] = 0;
         return this.namingStrategy.getAlias(type) + this.aliasObj[type]++;
+    }
+    public createTable<TE>(entity: IEntityExpression<TE>): IQuery[] {
+        const columnDefinitions = entity.columns.select(column => {
+            let columnType = this.valueTypeMap.get(column.type);
+            if (!columnType) columnType = this.columnTypeMap.get("defaultString");
+            return `${this.enclose(column.columnName)} ${this.getColumnType(columnType)}`;
+        }).toArray().join("," + this.newLine(1, false));
+        let query = `CREATE TABLE ${entity.name}` +
+            `${this.newLine()}(` +
+            `${this.newLine(1, false)}${columnDefinitions}` +
+            `${this.newLine()})`;
+        return [{
+            query,
+            type: QueryType.DDL
+        }];
+    }
+    public getColumnType(type: ColumnType, option?: any) {
+        const typeDefault = this.columnTypeDefaults.get(type);
+        const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
+        const length: number = option && typeof option.length !== "undefined" ? option.length : typeDefault ? typeDefault.length : undefined;
+        const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
+        const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
+        if (this.columnTypesWithOption.contains(type)) {
+            if (typeof length !== "undefined") {
+                type += `(${length})`;
+            }
+            else if (typeof size !== "undefined") {
+                type += `(${size})`;
+            }
+            else if (typeof scale !== "undefined" && typeof precision !== "undefined") {
+                type += `(${precision}, ${scale})`;
+            }
+            else if (typeof precision !== "undefined") {
+                type += `(${precision})`;
+            }
+        }
+        return type;
     }
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
@@ -395,8 +434,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     // Insert
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
+        if (insertExp.values.length <= 0)
+            return [];
+
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString}) VALUES`;
+        const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString}) VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
             parameters: {},
@@ -434,6 +476,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
             queryCommand.query += `${this.newLine(1, true)}(${o.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")}),`;
         });
+        queryCommand.query = queryCommand.query.slice(0, -1);
 
         queryCommand.parameters = parameterKeys.select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
             acc[item.name] = item.value;
@@ -644,27 +687,35 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getValueString(expression.value);
     }
     public getValueString(value: any): string {
-        switch (typeof value) {
-            case "number":
-                return this.getNumberString(value);
-            case "boolean":
-                return this.getBooleanString(value);
-            case "undefined":
-                return this.getNullString();
-            case "string":
-                return this.getString(value);
-            default:
-                if (value === null)
-                    return this.getNullString();
-                else if (value instanceof Date)
+        if (isNotNull(value)) {
+            switch (value.constructor) {
+                case Number:
+                    return this.getNumberString(value);
+                case Boolean:
+                    return this.getBooleanString(value);
+                case String:
+                    return this.getString(value);
+                case Date:
                     return this.getDateTimeString(value);
-
-                throw new Error("type not supported");
+                case TimeSpan:
+                    return this.getTimeString(value);
+                case UUID:
+                    return this.getIdentifierString(value);
+                default:
+                    throw new Error("type not supported");
+            }
         }
+        return this.getNullString();
     }
     protected getDateTimeString(value: Date): string {
         return this.getString(value.getFullYear() + "-" + fillZero(value.getMonth() + 1) + "-" + fillZero(value.getDate()) + " " +
-            fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()));
+            fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()) + "." + fillZero(value.getMilliseconds(), 3));
+    }
+    protected getTimeString(value: TimeSpan): string {
+        return this.getString(fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()) + "." + fillZero(value.getMilliseconds(), 3));
+    }
+    protected getIdentifierString(value: UUID): string {
+        return this.getString(value.toString());
     }
     protected getNullString() {
         return "NULL";
@@ -819,6 +870,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         }
                         return exp;
                     });
+
                     o.isFinish = true;
                 }
                 return join + this.getOperandString(o.relations);

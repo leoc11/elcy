@@ -39,7 +39,7 @@ export class TimeSpan {
     public getSeconds() {
         return Math.floor(this.totalSeconds()) % 60;
     }
-    public getMilliSeconds() {
+    public getMilliseconds() {
         return this.totalMilliSeconds() % 1000;
     }
     public setHours(hours: number) {
@@ -82,7 +82,7 @@ export class TimeSpan {
         return this.epochMilliSeconds;
     }
     public toString() {
-        const mili = this.getMilliSeconds();
+        const mili = this.getMilliseconds();
         return fillZero(this.getHours()) + ":" + fillZero(this.getMinutes()) + ":" + fillZero(this.getSeconds()) + (mili > 0 ? "." + fillZero(mili, 3) : "");
     }
     public toJSON() {

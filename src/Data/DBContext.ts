@@ -82,7 +82,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     private _queryCacheManager: IQueryCacheManager;
     public get queryCacheManager() {
         if (!this._queryCacheManager) {
+            this._queryCacheManager = Reflect.getOwnMetadata(queryCacheManagerKey, this.constructor);
+            if (!this._queryCacheManager) {
             this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType(this.constructor) : new DefaultQueryCacheManager(this.constructor as any);
+                Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
+        }
         }
 
         return this._queryCacheManager;
@@ -401,7 +405,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         // db has parameter size limit and query size limit.
         const paramPrefix = queryBuilder.namingStrategy.getAlias("param");
         let i = 0;
-        deferredQueryEnumerable.selectMany(o => o.parameters).groupBy(o => o.value)
+        deferredQueryEnumerable.selectMany(o => o.parameters).where(o => !o.parameter.select).groupBy(o => o.value)
             .each(o => {
                 const alias = paramPrefix + i++;
                 o.each(p => p.name = alias);

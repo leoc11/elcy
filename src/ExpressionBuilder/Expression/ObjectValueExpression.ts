@@ -6,13 +6,7 @@ import { ValueExpression } from "./ValueExpression";
 export class ObjectValueExpression<T> extends ExpressionBase<T> {
     public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
-        let isAllValue = true;
-        for (const prop in objectValue) {
-            if (!(objectValue[prop] instanceof ValueExpression)) {
-                isAllValue = false;
-                break;
-            }
-        }
+        let isAllValue = Object.keys(objectValue).all(o => objectValue[o] instanceof ValueExpression);
         if (isAllValue)
             return ValueExpression.create<TType>(objectValue);
 

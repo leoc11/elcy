@@ -2,7 +2,7 @@ import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction, visitExpression } from "../Helper/Util";
+import { isValueType, isNativeFunction, visitExpression, isValue } from "../Helper/Util";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -49,6 +49,7 @@ import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqu
 import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/StrictNotEqualExpression";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { ISelectQueryOption } from "./Interface/IQueryOption";
+import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
 
 interface IPRelation {
     name: string;
@@ -83,11 +84,11 @@ export class QueryVisitor {
         this.parameterStackIndex = parameterStackIndex;
         this.valueTransformer = new ValueExpressionTransformer(this.flatParameterStacks);
     }
-    protected createParamBuilderItem(expression: IExpression, param: IVisitParameter) {
-        const key = this.getParameterExpressionKey(expression);
+    protected createParamBuilderItem(expression: IExpression, param: IVisitParameter, paramName?: string) {
+        let key = this.getParameterExpressionKey(expression);
         let sqlParam = this.sqlParameters.get(key);
         if (!sqlParam) {
-            const paramName = this.newAlias("param");
+            if (!paramName) paramName = this.newAlias("param");
             sqlParam = new SqlParameterExpression(paramName, expression);
             this.sqlParameters.set(key, sqlParam);
         }
@@ -184,11 +185,52 @@ export class QueryVisitor {
             else if (value instanceof Function) {
                 return ValueExpression.create(value);
             }
+            else if (value instanceof Array) {
+                const paramExp = new ParameterExpression(this.parameterStackIndex + ":" + expression.name, expression.type);
+                paramExp.itemType = expression.itemType;
+                const sqlParameterExp = this.createParamBuilderItem(paramExp, param, expression.name);
+                const arrayValue = value as any[];
+
+                let arrayItemType = arrayValue[Symbol.arrayItemType];
+                const isTypeSpecified = !!arrayItemType;
+                if (!arrayItemType) {
+                    arrayItemType = arrayValue.where(o => !!o).first();
+                }
+                const itemType = arrayItemType ? arrayItemType.constructor : Object;
+
+                const entityExp = new CustomEntityExpression("#" + expression.name + this.parameterStackIndex, [], itemType, this.newAlias());
+                entityExp.columns.push(new ColumnExpression(entityExp, Number, "__index", "__index", true));
+
+                if (arrayItemType && !isValueType(itemType)) {
+                    if (isTypeSpecified) {
+                        for (const prop in arrayItemType) {
+                            const propValue = arrayItemType[prop];
+                            if (isValueType(propValue)) entityExp.columns.push(new ColumnExpression(entityExp, propValue, prop, prop, false));
+                        }
+                    }
+                    else {
+                        for (const prop in arrayItemType) {
+                            const propValue = arrayItemType[prop];
+                            if (propValue === null || (propValue !== undefined && isValue(propValue)))
+                                entityExp.columns.push(new ColumnExpression(entityExp, propValue ? propValue.constructor : String, prop, prop, false));
+                        }
+                    }
+                }
+
+                if (entityExp.columns.length === 1)
+                    entityExp.columns.push(new ColumnExpression(entityExp, itemType, "__value", "__value", false));
+
+                const selectExp = new SelectExpression(entityExp);
+                selectExp.selects = entityExp.columns.where(o => !o.isPrimary).toArray();
+                selectExp.isSubSelect = true;
+                param.selectExpression.addJoinRelation(selectExp, null, JoinType.LEFT);
+                sqlParameterExp.select = selectExp;
+                return selectExp;
+            }
 
             const paramExp = new ParameterExpression(this.parameterStackIndex + ":" + expression.name, expression.type);
             paramExp.itemType = expression.itemType;
-            result = this.createParamBuilderItem(paramExp, param);
-            return result;
+            return this.createParamBuilderItem(paramExp, param);
         }
         else if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
@@ -211,7 +253,7 @@ export class QueryVisitor {
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
 
-        if (objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression || objectOperand instanceof EmbeddedColumnExpression) {
+        if (objectOperand instanceof CustomEntityExpression || objectOperand instanceof EntityExpression || objectOperand instanceof ProjectionEntityExpression || objectOperand instanceof EmbeddedColumnExpression) {
             const parentEntity = objectOperand as IEntityExpression;
             let column = parentEntity.columns.first((c) => c.propertyName === expression.memberName);
             if (!column && objectOperand instanceof EntityExpression) {
@@ -398,7 +440,7 @@ export class QueryVisitor {
                 }
             }
 
-            if (!translator && !(translator.preferApp && isExpressionSafe) && objectOperand.type) {
+            if ((!translator || !(translator.preferApp && isExpressionSafe)) && objectOperand.type) {
                 translator = this.translator.resolve(objectOperand.type.prototype, expression.memberName as any);
                 if (translator)
                     return expression;
@@ -878,6 +920,9 @@ export class QueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
+                        if (!selectOperand.parentRelation.relations) {
+                            selectOperand.parentRelation.relations = new StrictEqualExpression(new ValueExpression(true), new ValueExpression(true));
+                        }
                         visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
@@ -886,6 +931,7 @@ export class QueryVisitor {
                                 return false;
                             }
                         });
+
                         const groupExp = new GroupByExpression(selectOperand, groupBy, new ObjectValueExpression(keyObject));
                         const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                         groupExp.selects.push(column);
@@ -979,6 +1025,10 @@ export class QueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
+                        if (!selectOperand.parentRelation.relations) {
+                            selectOperand.parentRelation.relations = new StrictEqualExpression(new ValueExpression(true), new ValueExpression(true));
+                        }
+
                         visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
@@ -1073,6 +1123,10 @@ export class QueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const groupBy: IColumnExpression[] = [];
                         const keyObject: any = {};
+                        if (!selectOperand.parentRelation.relations) {
+                            selectOperand.parentRelation.relations = new StrictEqualExpression(new ValueExpression(true), new ValueExpression(true));
+                        }
+
                         visitExpression(selectOperand.parentRelation.relations, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && selectOperand.projectedColumns.contains(exp as any)) {
                                 const colExp = exp as IColumnExpression;
@@ -1155,17 +1209,17 @@ export class QueryVisitor {
                         item = this.visit(item, param);
 
                     let andExp: IExpression<boolean>;
-                    if (objectOperand.itemType === objectOperand.entity.type) {
-                        for (const primaryCol of objectOperand.entity.primaryColumns) {
-                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
-                            andExp = andExp ? new AndExpression(andExp, d) : d;
-                        }
-                    }
-                    else if (isSubSelect) {
+                    if (isSubSelect) {
                         objectOperand.isAggregate = true;
                         objectOperand.parentRelation.parent.joins.remove(objectOperand.parentRelation as any);
                         objectOperand.parentRelation = null;
                         return new MethodCallExpression(objectOperand, "contains", [item]);
+                    }
+                    else if (objectOperand.itemType === objectOperand.entity.type) {
+                        for (const primaryCol of objectOperand.entity.primaryColumns) {
+                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
+                            andExp = andExp ? new AndExpression(andExp, d) : d;
+                        }
                     }
                     else {
                         andExp = new EqualExpression(objectOperand.selects.first(), item);

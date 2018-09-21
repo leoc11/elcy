@@ -5,7 +5,7 @@ import { Timer } from "./Timer";
 const logger = container.resolve<ILogger>("logger");
 export abstract class Diagnostic {
     public static get enabled() {
-        return logger;
+        return !!logger;
     }
     public static timer(): Timer | undefined {
         if (!Diagnostic.enabled) return undefined;

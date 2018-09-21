@@ -3,6 +3,8 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { TimeSpan } from "../Data/TimeSpan";
+import { UUID } from "../Data/UUID";
 
 export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {
     if (finder(source) === false) {
@@ -47,10 +49,10 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     return source;
 };
 export const isValue = (data: any): data is ValueType => {
-    return [Number, String, Date].contains(data.constructor);
+    return isValueType(data.constructor);
 };
 export const isValueType = <T>(type: GenericType<T>) => {
-    return [Number, String, Date].contains(type as any);
+    return [Number, String, Date, TimeSpan, UUID].contains(type as any);
 };
 export const isNotNull = (value: any) => {
     return value !== null && value !== undefined;

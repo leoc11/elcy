@@ -19,6 +19,7 @@ import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpress
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, visitExpression, hashCodeAdd } from "../../Helper/Util";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
 export interface IIncludeRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
@@ -206,6 +207,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         }
         else {
             relationMap = relationMetaOrRelations as any;
+            if (!relationMap) {
+                relationMap = new StrictEqualExpression(new ValueExpression(true), new ValueExpression(true));
+            }
+
             visitExpression(relationMap, (exp: IExpression): void | boolean => {
                 const colExp = exp as IColumnExpression;
                 if (colExp.entity && !colExp.isPrimary) {

@@ -5,8 +5,11 @@ import { ISqlParameter } from "./ISqlParameter";
 import { QueryBuilder } from "./QueryBuilder";
 import { IQuery } from "./Interface/IQuery";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { hashCode } from "../Helper/Util";
+import { hashCode, isNotNull } from "../Helper/Util";
 import { ISaveChangesOption } from "./Interface/IQueryOption";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
+import { QueryType } from "../Common/Type";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -47,7 +50,36 @@ export class DeferredQuery<T = any> {
     }
     public buildQuery(queryBuilder: QueryBuilder) {
         const timer = Diagnostic.timer();
-        this._queryCommands = this.command.toQueryCommands(queryBuilder, this.parameters);
+
+        // convert all array value parameter to temp table
+        const arrayParameters = this.parameters.where(o => !!o.parameter.select);
+        const arrayParameterTempTableQueries = arrayParameters.selectMany(o => {
+            const selectExp = o.parameter.select;
+            let i = 0;
+            const tempValues = o.value.select((o: any) => selectExp.entity.columns.select(col => {
+                switch (col.propertyName) {
+                    case "__index": {
+                        return i++;
+                    }
+                    case "__value": {
+                        return o;
+                    }
+                    default: {
+                        return o[col.propertyName];
+                    }
+                }
+            }).select(o => new ValueExpression(isNotNull(o) ? o : null)).toArray()).toArray();
+            let insertQuery = new InsertExpression(selectExp.entity, tempValues, selectExp.entity.columns);
+            return queryBuilder.createTable(selectExp.entity).concat(queryBuilder.getInsertQuery(insertQuery));
+        });
+        const dropArrayTempTableQueries = arrayParameters.select(o => {
+            return {
+                query: `DROP TABLE ${o.parameter.select.entity.name}`,
+                type: QueryType.DDL
+            } as IQuery;
+        });
+
+        this._queryCommands = arrayParameterTempTableQueries.union(this.command.toQueryCommands(queryBuilder, this.parameters.where(o => !o.parameter.select).toArray()), true).union(dropArrayTempTableQueries, true).toArray();
         if (Diagnostic.enabled) {
             Diagnostic.debug(this, `Build Query.`, this._queryCommands);
             Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);

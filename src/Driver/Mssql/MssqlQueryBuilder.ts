@@ -382,6 +382,9 @@ export class MssqlQueryBuilder extends QueryBuilder {
         return result;
     }
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
+        if (insertExp.values.length <= 0)
+            return [];
+
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
         let output = insertExp.entity.columns.where(o => isNotNull(o.columnMetaData))
             .where(o => o.columnMetaData!.generation === ColumnGeneration.Insert || o.columnMetaData!.default !== undefined)
@@ -390,7 +393,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
             output = " OUTPUT " + output;
         }
 
-        const insertQuery = `INSERT INTO ${this.getEntityQueryString(insertExp.entity)}(${colString})${output} VALUES`;
+        const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString})${output} VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
             parameters: {},
@@ -428,6 +431,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
             }
             queryCommand.query += `${this.newLine(1, true)}(${o.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")}),`;
         });
+        queryCommand.query = queryCommand.query.slice(0, -1);
 
         return result;
     }
