@@ -9,11 +9,12 @@ import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IObjectType } from "../../Common/Type";
 import { hashCode } from "../../Helper/Util";
+import { IEntityExpression } from "./IEntityExpression";
 export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
     public parameters: SqlParameterExpression[];
     private _columns: IColumnExpression<T>[];
     public get columns(): IColumnExpression<T>[] {
-        if (!this._columns) {
+        if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = this.entity.metaData.relations
                 .where(o => !o.nullable && !o.isMaster && o.relationType === "one")
                 .selectMany(o => o.relationColumns)
@@ -27,10 +28,13 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
     public get type() {
         return undefined as any;
     }
-    constructor(public readonly entity: EntityExpression<T>, public readonly values: Array<Array<IExpression<any> | undefined>>) {
+    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<Array<IExpression<any> | undefined>>, columns?: IColumnExpression<T>[]) {
+        if (columns) this._columns = columns;
     }
     public clone(): InsertExpression<T> {
-        const clone = new InsertExpression(this.entity.clone(), this.values);
+        const entity = this.entity.clone();
+        const columns = this.columns.select(o => entity.columns.first(c => c.columnName === o.columnName)).toArray();
+        const clone = new InsertExpression(entity, this.values, columns);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {

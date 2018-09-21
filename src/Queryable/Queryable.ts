@@ -27,8 +27,18 @@ export abstract class Queryable<T = any> {
         return this.parent.dbContext;
     }
     public queryOption: ISelectQueryOption = {};
+    /**
+     * equal to number of times queryable.parameter() was called.
+     * represent the stack index of parameter used by current queryable
+     */
     protected parameterStackIndex = 0;
+    /**
+     * all parameter used by current queryable and it's parent.
+     */
     public flatParameterStacks: { [key: string]: any } = {};
+    /**
+     * parameter that is actually used by current queryable
+     */
     public parameters: { [key: string]: any } = {};
     public option(option: ISelectQueryOption) {
         for (const prop in option) {
@@ -60,10 +70,7 @@ export abstract class Queryable<T = any> {
     //#region Get Result
     public toString() {
         const timer = Diagnostic.timer();
-
-        let cacheKey = hashCode(this.queryOption.buildKey, this.hashCode());
-        if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-            cacheKey = hashCodeAdd(cacheKey, 1);
+        let cacheKey = this.cacheKey();
         if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
         const cacheManager = this.dbContext.queryCacheManager;
@@ -82,7 +89,7 @@ export abstract class Queryable<T = any> {
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             cacheManager.set(cacheKey, queryCache);
         }
@@ -151,9 +158,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, this.hashCode());
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey();
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -174,7 +179,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -197,9 +202,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("COUNT", this.hashCode()));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("COUNT");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -225,7 +228,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -244,9 +247,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("SUM", hashCode(selector ? selector.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("SUM");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -276,7 +277,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -295,9 +296,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("MAX", hashCode(selector ? selector.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("MAX");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -327,7 +326,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -346,9 +345,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("MIN", hashCode(selector ? selector.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("MIN");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -378,7 +375,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -397,9 +394,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("AVG", hashCode(selector ? selector.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("AVG");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -429,7 +424,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -448,9 +443,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("ALL", hashCode(predicate.toString(), this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("ALL");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -498,9 +491,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("ANY", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("ANY");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -548,9 +539,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("FIRST", hashCode(predicate ? predicate.toString() : "", this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("FIRST");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -579,7 +568,7 @@ export abstract class Queryable<T = any> {
 
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery)
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache) cacheManager.set(cacheKey, queryCache);
         }
@@ -602,9 +591,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("CONTAINS", hashCode(JSON.stringify(item), this.hashCode())));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("CONTAINS");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -648,9 +635,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("UPDATE", this.hashCode()));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("UPDATE");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -700,9 +685,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("DELETE", this.hashCode()));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("DELETE");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -759,9 +742,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = hashCode(this.queryOption.buildKey, hashCode("INSERT", this.hashCode()));
-            if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
-                cacheKey = hashCodeAdd(cacheKey, 1);
+            cacheKey = this.cacheKey("INSERT");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             let queryCache = cacheManager.get<T>(cacheKey);
@@ -799,6 +780,19 @@ export abstract class Queryable<T = any> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
+    }
+
+    private cacheKey(type?: string) {
+        let cacheKey = hashCode(this.queryOption.buildKey, hashCode(type, this.hashCode()));
+        const subQueryCacheKey = Object.keys(this.flatParameterStacks)
+            .select(o => {
+                const val = this.flatParameterStacks[o];
+                return val instanceof Queryable ? val.hashCode() : val instanceof Function ? hashCode(val.toString()) : 0;
+            }).sum();
+        cacheKey = hashCodeAdd(subQueryCacheKey, cacheKey);
+        if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+            cacheKey = hashCodeAdd(cacheKey, 1);
+        return cacheKey;
     }
     //#endregion
 }
