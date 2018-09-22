@@ -338,10 +338,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
         const con = this.connection ? this.connection : await this.getConnection(command.type !== QueryType.DQL);
         const timer = Diagnostic.timer();
+        if (Diagnostic.enabled) Diagnostic.debug(con, `Execute Query.`, command);
         const result = await con.executeQuery(command);
         if (Diagnostic.enabled) {
-            Diagnostic.debug(con, `Execute Query.`, command, result);
-            Diagnostic.trace(con, `Execute Query time: ${timer.time()}`);
+            Diagnostic.debug(con, `Query Result.`, result);
+            Diagnostic.trace(con, `Execute Query time: ${timer.time()}ms`);
         }
         if (!this.connection)
             await this.closeConnection(con);

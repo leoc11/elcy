@@ -2,10 +2,12 @@ import { container } from "../IOC/Container";
 import { ILogger } from "./ILogger";
 import { Timer } from "./Timer";
 
-const logger = container.resolve<ILogger>("logger");
 export abstract class Diagnostic {
+    private static get logger() {
+        return container.resolve<ILogger>("logger");
+    }
     public static get enabled() {
-        return !!logger;
+        return !!Diagnostic.logger;
     }
     public static timer(): Timer | undefined {
         if (!Diagnostic.enabled) return undefined;
@@ -23,7 +25,7 @@ export abstract class Diagnostic {
             args.unshift(error);
             error = null;
         }
-        logger.log(source, "trace", message, error, args);
+        Diagnostic.logger.log(source, "trace", message, error, args);
     }
 
     public static debug(source: any, message: string, ...args: any[]): void;
@@ -34,7 +36,7 @@ export abstract class Diagnostic {
             args.unshift(error);
             error = null;
         }
-        logger.log(source, "debug", message, error, args);
+        Diagnostic.logger.log(source, "debug", message, error, args);
     }
 
     public static info(source: any, message: string, ...args: any[]): void;
@@ -45,7 +47,7 @@ export abstract class Diagnostic {
             args.unshift(error);
             error = null;
         }
-        logger.log(source, "info", message, error, args);
+        Diagnostic.logger.log(source, "info", message, error, args);
     }
 
     public static warn(source: any, message: string, ...args: any[]): void;
@@ -56,7 +58,7 @@ export abstract class Diagnostic {
             args.unshift(error);
             error = null;
         }
-        logger.log(source, "warn", message, error, args);
+        Diagnostic.logger.log(source, "warn", message, error, args);
     }
 
     public static error(source: any, message: string, error?: Error, ...args: any[]): void;
@@ -68,6 +70,6 @@ export abstract class Diagnostic {
             args.unshift(error);
             error = null;
         }
-        logger.log(source, "error", message, error, args);
+        Diagnostic.logger.log(source, "error", message, error, args);
     }
 }
