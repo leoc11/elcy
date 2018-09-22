@@ -160,7 +160,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return undefined;
     }
     public entry<T>(entity: T) {
-        const set = this.set(entity.constructor as any);
+        const set = this.set<T>(entity.constructor as any);
         if (set) {
             return set.entry(entity);
         }

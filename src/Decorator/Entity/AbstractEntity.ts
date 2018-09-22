@@ -7,6 +7,7 @@ import { IOrderOption } from "../Option/IOrderOption";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
+import { toJSON } from "../../Helper/Util";
 
 export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderOption<T>[]) {
     return (type: IObjectType<T>) => {
@@ -81,5 +82,9 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
             }
         }
         Reflect.defineMetadata(entityMetaKey, entityMetadata, type);
+
+        if (!type.prototype.toJSON) {
+            type.prototype.toJSON = toJSON;
+        }
     };
 }

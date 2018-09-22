@@ -93,3 +93,12 @@ export const hashCodeAdd = (hash: number, add: number) => {
     hash |= 0;
     return hash;
 };
+
+export const toJSON = function <T>(this: T) {
+    const proto = this.constructor.prototype;
+    const jsonObj: any = {};
+    Object.keys(this).union(Object.keys(proto)).each((o: keyof T) => {
+        jsonObj[o] = this[o];
+    });
+    return jsonObj;
+};

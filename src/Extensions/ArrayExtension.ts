@@ -25,12 +25,7 @@ Array.prototype.remove = function <T>(this: T[], ...items: T[]) {
         }
     }
 };
-Array.prototype.each = function <T>(this: T[], executor: (item: T, index: number) => void) {
-    let index = 0;
-    for (const item of this) {
-        executor(item, index++);
-    }
-};
+Array.prototype.each = Array.prototype.forEach;
 Array.prototype.eachAsync = async function <T>(this: T[], executor: (item: T, index: number) => Promise<void>) {
     let index = 0;
     for (const item of this) {

@@ -1,6 +1,6 @@
 export type ArrayChangeType = "add" | "del";
 export class ObservableArray<T> extends Array<T> {
-    protected observers: Array<(eventType: ArrayChangeType, items: T[]) => void> = [];
+    private _observers: Array<(eventType: ArrayChangeType, items: T[]) => void> = [];
     public constructor(items: T[]) {
         super(...items);
         Object.setPrototypeOf(this, ObservableArray.prototype);
@@ -9,13 +9,13 @@ export class ObservableArray<T> extends Array<T> {
         return new ObservableArray(items);
     }
     public register(observer: (eventType: ArrayChangeType, items: T[]) => void) {
-        this.observers.push(observer);
+        this._observers.push(observer);
     }
     public unobserve() {
-        this.observers = [];
+        this._observers = [];
     }
     protected raiseEvents(eventType: ArrayChangeType, items: T[]) {
-        for (const observer of this.observers) {
+        for (const observer of this._observers) {
             observer(eventType, items);
         }
     }

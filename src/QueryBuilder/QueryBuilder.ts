@@ -185,15 +185,24 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const hasIncludes = select.includes.length > 0;
         let take = 0, skip = 0;
         if (select.paging.take) {
-            const takeParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.take);
-            if (takeParam) {
-                take = takeParam.value;
+            if (select.paging.take instanceof ValueExpression) {
+                take = select.paging.take.execute();
+            }
+            else {
+                const takeParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.take);
+                if (takeParam)
+                    take = takeParam.value;
             }
         }
         if (select.paging.skip) {
-            const skipParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.skip);
-            if (skipParam)
-                skip = skipParam.value;
+            if (select.paging.skip instanceof ValueExpression) {
+                skip = select.paging.skip.execute();
+            }
+            else {
+                const skipParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.skip);
+                if (skipParam)
+                    skip = skipParam.value;
+            }
         }
         const tempTableName = "#temp_" + (select.entity.alias ? select.entity.alias : select.entity.name);
         let selectQuery = "";
