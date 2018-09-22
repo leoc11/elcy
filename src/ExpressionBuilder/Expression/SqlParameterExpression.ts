@@ -15,7 +15,7 @@ export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
         return this.name;
     }
     public execute(transformer: ExpressionTransformer): any {
-        return transformer.executeExpression(this);
+        return this.valueGetter.execute(transformer);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
