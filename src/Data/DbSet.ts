@@ -2,7 +2,6 @@ import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";
-import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { hashCode, isValue } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
@@ -13,12 +12,6 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { RelationEntry } from "./RelationEntry";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
-import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
-import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
-import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
@@ -60,25 +53,10 @@ export class DbSet<T> extends Queryable<T> {
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
     protected relationDictionary: Map<string, RelationEntry<T>> = new Map();
-    public async find(id: ValueType | { [key in keyof T]: ValueType }): Promise<T> {
-        let entity = this.findLocal(id);
+    public async find(id: ValueType | { [key in keyof T]: ValueType }, forceReload?: boolean) {
+        let entity = forceReload ? null : this.findLocal(id);
         if (!entity) {
-            const isValueType = isValue(id);
-            const param = new ParameterExpression("o", this.type);
-            const paramId = new ParameterExpression("id", id.constructor as any);
-            let andExp: IExpression<boolean>;
-            if (isValueType) {
-                andExp = new EqualExpression(new MemberAccessExpression(param, this.primaryKeys.first().propertyName), paramId);
-            }
-            else {
-                for (const pk of this.primaryKeys) {
-                    const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName));
-                    andExp = andExp ? new AndExpression(andExp, d) : d;
-                }
-            }
-            const a = new FunctionExpression(andExp, [param]);
-            const v = new WhereQueryable(this, a);
-            entity = await v.parameter({ id }).first();
+            entity = await super.find(id);
         }
         return entity;
     }
@@ -94,7 +72,7 @@ export class DbSet<T> extends Queryable<T> {
         const key = this.getMapKey(entity as any);
         let entry = this.entry(key) as EntityEntry<T>;
         if (entry) {
-            Object.keys(entity).each((prop: keyof T) => {
+            Object.keys(entity).union(Object.keys(entry.dbSet.type.prototype)).each((prop: keyof T) => {
                 let value = entity[prop];
                 if (value === undefined)
                     return;

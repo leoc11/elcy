@@ -36,7 +36,7 @@ declare module "./Queryable" {
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
         distinct(): Queryable<T>;
-        project(...includes: Array<(item: T) => any>): Queryable<T>;
+        project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
         include(...includes: Array<(item: T) => any>): Queryable<T>;
         union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
         intersect(array2: Queryable<T>): Queryable<T>;
@@ -114,6 +114,6 @@ Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) =
 Queryable.prototype.include = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {
     return new IncludeQueryable(this, includes);
 };
-Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {
+Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => ValueType>): Queryable<T> {
     return new ProjectQueryable(this, includes);
 };

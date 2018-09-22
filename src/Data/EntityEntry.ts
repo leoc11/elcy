@@ -10,6 +10,9 @@ import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 
 let embeddedEntityEntry: typeof EmbeddedEntityEntry;
 (async () => {
@@ -54,7 +57,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public getOriginalValue(prop: keyof T) {
         return this.originalValues.get(prop);
     }
-    public onPropertyChanged(entity: T, param: IChangeEventParam<T>) {
+    protected onPropertyChanged(entity: T, param: IChangeEventParam<T>) {
         if (this.dbSet.primaryKeys.contains(param.column)) {
             // primary key changed, update dbset entry dictionary.
             const oldKey = this.key;
@@ -96,7 +99,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             }
         }
     }
-    public onRelationChanged(entity: T, param: IRelationChangeEventParam) {
+    protected onRelationChanged(entity: T, param: IRelationChangeEventParam) {
         if (!this.enableTrackChanges)
             return;
         for (const item of param.entities) {
@@ -140,7 +143,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             relGroup.delete(key);
         }
     }
-    public updateRelationKey(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>, oldEntityKey: string) {
+    protected updateRelationKey(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>, oldEntityKey: string) {
         const oldKey = relationEntry.slaveRelation.fullName + ":" + oldEntityKey;
         this.relationMap[oldKey] = undefined;
         this.registerRelation(relationEntry);
@@ -302,4 +305,33 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public getModifiedProperties() {
         return Array.from(this.originalValues.keys());
     }
+
+    public getPrimaryValues() {
+        const res: any = {};
+        this.dbSet.primaryKeys.each(o => {
+            res[o.propertyName] = this.entity[o.propertyName];
+        });
+        return res;
+    }
+
+    //#region asd
+
+    /**
+     * Reloads the entity from the database overwriting any property values with values from the database.
+     * For modified properties, then the original value will be overwrite with vallue from the database.
+     * Note: To clean entity from database, call resetChanges after reload.
+     */
+    public async reload() {
+        await this.dbSet.find(this.getPrimaryValues(), true);
+    }
+    /**
+     * Load relation to this entity.
+     */
+    public async loadRelation(...relations: ((entity: T) => any)[]) {
+        const paramExp = new ParameterExpression("o", this.dbSet.type);
+        const projected = this.dbSet.primaryKeys.select(o => new FunctionExpression(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
+        await this.dbSet.project(...(projected as any[])).include(...relations).find(this.getPrimaryValues());
+    }
+
+    //#endregion
 }

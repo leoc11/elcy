@@ -90,7 +90,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
             // load existing entity
             if (dbSet) {
-                entry = dbSet.entry(row);
+                entry = dbSet.entry(entity);
                 if (entry)
                     entity = entry.entity;
                 else

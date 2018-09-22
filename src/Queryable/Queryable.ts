@@ -1,9 +1,9 @@
-import { GenericType, DeleteMode, QueryType } from "../Common/Type";
+import { GenericType, DeleteMode, QueryType, ValueType } from "../Common/Type";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode, clone, hashCodeAdd } from "../Helper/Util";
+import { hashCode, clone, hashCodeAdd, isValue } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
 import { ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
@@ -21,6 +21,10 @@ import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { SelectIntoExpression } from "./QueryExpression/SelectIntoExpression";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
@@ -131,6 +135,10 @@ export abstract class Queryable<T = any> {
     }
     public async any(predicate?: (item: T) => boolean) {
         const query = this.deferredAny(predicate);
+        return await query.execute();
+    }
+    public async find(id: ValueType | { [key in keyof T]: ValueType }) {
+        const query = this.deferredFind(id);
         return await query.execute();
     }
     public async first(predicate?: (item: T) => boolean) {
@@ -532,6 +540,28 @@ export abstract class Queryable<T = any> {
             (result) => Enumerable.load(result.first().rows).any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
+    }
+    public deferredFind(id: ValueType | { [key in keyof T]: ValueType }) {
+        const isValueType = isValue(id);
+        const dbSet = this.dbContext.set(this.type as any);
+        if (!dbSet) {
+            throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "Find only support entity queryable");
+        }
+
+        const param = new ParameterExpression("o", this.type);
+        const paramId = new ParameterExpression("id", id.constructor as any);
+        let andExp: IExpression<boolean>;
+        if (isValueType) {
+            andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys.first().propertyName), paramId);
+        }
+        else {
+            for (const pk of dbSet.primaryKeys) {
+                const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName));
+                andExp = andExp ? new AndExpression(andExp, d) : d;
+            }
+        }
+        const a = new FunctionExpression(andExp, [param]);
+        return this.parameter({ id }).where(a as any).deferredFirst();
     }
     public deferredFirst(predicate?: (item: T) => boolean) {
         let queryCache: IQueryCache<T>, cacheKey: number;
