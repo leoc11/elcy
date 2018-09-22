@@ -129,7 +129,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 take = select.paging.take.execute();
             }
             else {
-                const takeParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.take);
+                const takeParam = this.parameters.first(o => o.parameter === select.paging.take);
                 if (takeParam)
                     take = takeParam.value;
             }
@@ -139,7 +139,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 skip = select.paging.skip.execute();
             }
             else {
-                const skipParam = this.parameters.first(o => o.parameter.valueGetter === select.paging.skip);
+                const skipParam = this.parameters.first(o => o.parameter === select.paging.skip);
                 if (skipParam)
                     skip = skipParam.value;
             }

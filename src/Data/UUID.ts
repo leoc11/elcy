@@ -5,9 +5,11 @@ const toHex = (u: number) => {
 export class UUID extends Uint8Array {
     constructor(uuid?: string) {
         super(16);
-        if (uuid) {
-            this.parse(uuid);
+        if (!uuid) {
+            return UUID.empty;
         }
+
+        this.parse(uuid);
     }
     [Symbol.toPrimitive]() {
         return this.toString();
