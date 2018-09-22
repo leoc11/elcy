@@ -94,7 +94,7 @@ export class DbSet<T> extends Queryable<T> {
         const key = this.getMapKey(entity as any);
         let entry = this.entry(key) as EntityEntry<T>;
         if (entry) {
-            Object.keys(entity).map((prop: keyof T) => {
+            Object.keys(entity).each((prop: keyof T) => {
                 let value = entity[prop];
                 if (value === undefined)
                     return;

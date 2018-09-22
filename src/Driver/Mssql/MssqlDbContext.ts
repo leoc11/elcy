@@ -70,12 +70,12 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
                 }
 
                 const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.relationColumn.type));
+                let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.relationColumn.type), o.relationColumn);
                 const parentHasGeneratedPrimary = parentEntry.metaData.primaryKeys.any(o => !!(o.generation & ColumnGeneration.Insert) || (o.default && parentEntity[o.propertyName] === undefined));
                 if (parentEntry.state === EntityState.Added && parentHasGeneratedPrimary) {
                     // TODO: get value from parent.
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
-                    param = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), o.relationColumn.columnName));
+                    param = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), o.relationColumn.columnName), o.relationColumn);
                     insertExp.parameters.push(param);
                 }
                 else {
@@ -103,7 +103,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
                         values.push(new ValueExpression(null));
                 }
                 else {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type));
+                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type), o);
                     const paramv: ISqlParameter = {
                         name: "",
                         parameter: param,

@@ -5,11 +5,18 @@ import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ConnectionError } from "../../Error/ConnectionError";
+import { UUID } from "../../Data/UUID";
+import { TimeSpan } from "../../Data/TimeSpan";
+import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 
 interface ITransactionData {
     prevIsolationLevel: IsolationLevel;
     isolationLevel: IsolationLevel;
     name: string;
+}
+interface IDriverParameter {
+    type: string;
+    value: any;
 }
 let tedious: any;
 export class MssqlConnection implements IConnection {
@@ -189,7 +196,7 @@ export class MssqlConnection implements IConnection {
                 (result.rows as any[]).push(row);
             });
 
-            const doneHandler = (rowCount: number, more: boolean, asd: any) => {
+            const doneHandler = (rowCount: number, more: boolean) => {
                 if (result) {
                     result.effectedRows = rowCount;
                     results.push(result);
@@ -205,8 +212,8 @@ export class MssqlConnection implements IConnection {
             if (command.parameters) {
                 for (const key in command.parameters) {
                     // TODO: map parameter type.
-                    const value = command.parameters[key];
-                    request.addParameter(key, this.resolveDriverType(value), value);
+                    const param = this.resolveParameter(command.parameters[key]);
+                    request.addParameter(key, param.type, param.value);
                 }
             }
 
@@ -226,23 +233,31 @@ export class MssqlConnection implements IConnection {
     }
     public errorEvent: IEventHandler<MssqlConnection, Error>;
     protected onError: IEventDispacher<Error>;
-    protected resolveDriverType(value: any) {
-        if (value !== null && value !== undefined) {
-            switch (value.constructor) {
+    protected resolveParameter(input: any): IDriverParameter {
+        let value = input;
+        let driverType: any;
+        if (input !== null && input !== undefined) {
+            switch (input.constructor) {
                 case Number: {
-                    if (value % 1 === 0) {
-                        return tedious.TYPES.Int;
-                    }
-                    return tedious.TYPES.Float;
+                    driverType = input % 1 === 0 ? tedious.TYPES.Int : tedious.TYPES.Float;
+                    break;
                 }
                 case Boolean: {
-                    return tedious.TYPES.Bit;
+                    driverType = tedious.TYPES.Bit;
+                    break;
                 }
                 case Date: {
-                    return tedious.TYPES.DateTime;
+                    driverType = tedious.TYPES.DateTime;
+                    break;
                 }
-                case Array: {
-                    return tedious.TYPES.TVP;
+                case UUID: {
+                    value = (input as UUID).toString();
+                    // driverType = tedious.TYPES.UniqueIdentifier;
+                    break;
+                }
+                case TimeSpan: {
+                    driverType = tedious.TYPES.Time;
+                    break;
                 }
                 case Int8Array:
                 case Int16Array:
@@ -252,10 +267,18 @@ export class MssqlConnection implements IConnection {
                 case Uint32Array:
                 case Float32Array:
                 case Float64Array: {
-                    return tedious.TYPES.VarBinary;
+                    driverType = tedious.TYPES.VarBinary;
+                    break;
+                }
+                case Array: {
+                    throw new QueryBuilderError(QueryBuilderErrorCode.NotSupported, "TVP not supported by driver");
                 }
             }
         }
-        return tedious.TYPES.NVarChar;
+        if (!driverType) driverType = tedious.TYPES.NVarChar;
+        return {
+            value: value,
+            type: driverType
+        };
     }
 }

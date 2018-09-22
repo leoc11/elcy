@@ -111,7 +111,7 @@ export class QueryVisitor {
             const key = this.getParameterExpressionKey(expression);
             const existing = this.sqlParameters.get(key);
             this.sqlParameters.delete(key);
-            const value = existing.valueGetter.execute(this.valueTransformer);
+            const value = existing.execute(this.valueTransformer);
             return new ValueExpression(value);
         }
         return expression;

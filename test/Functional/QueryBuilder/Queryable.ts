@@ -1496,12 +1496,12 @@ describe("QUERYABLE", async () => {
             a.should.has.length.greaterThan(0);
             a[0].should.be.an("number");
         });
-        it("should re-build query based on buildKey", async () => {
+        it("should re-build query based on Function type parameter", async () => {
             const db = new MyDb();
             let fn = (o: number) => o + 1;
             for (let i = 0; i < 2; i++) {
                 fn = i % 2 === 0 ? (o: number) => o + 1 : (o: number) => o - 1;
-                const where = await db.orders.option({ buildKey: i.toString() }).parameter({ fn })
+                const where = await db.orders.parameter({ fn })
                     .select(o => fn(o.TotalAmount));
 
                 const queryString = where.toString();
@@ -1634,6 +1634,114 @@ describe("QUERYABLE", async () => {
             const queryString = subQuery.toString();
 
             expect(queryString).to.equal("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t(\n\tCASE WHEN (([column1] = 1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [IsHighest]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([column0]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column0]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS entity1\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount] >= [entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC");
+        });
+    });
+    describe("ARRAY TYPE PARAMETER (SELECT, WHERE)", () => {
+        it("should work in where (CONTAINS)", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.where(o => o.name.length >= 100).toArray();
+            // specify item type in case array did not have any item.
+            ad[Symbol.arrayItemType] = {
+                constructor: OrderDetail,
+                OrderId: UUID
+            };
+            const subQuery = db.orders.parameter({ ad }).where(o => ad.select(od => od.OrderId).contains(o.OrderId));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE [entity0].[OrderId] IN (\n\tSELECT [entity1].[OrderId]\n\tFROM #ad1 AS [entity1]\n)");
+        });
+        it("should work in where (Aggregate comparation)", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.where(o => o.quantity > 5).toArray();
+            const subQuery = db.orders.parameter({ ad }).where(o => ad.where(od => od.OrderId === o.OrderId).max(o => o.quantity) > 10);
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMAX([column0]) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tMAX([entity1].[quantity]) AS [column0]\n\t\tFROM #ad1 AS [entity1]\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS entity1\n\t\tON ([entity1].[OrderId] = [entity2].[OrderId])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nWHERE ([column1] > 10)");
+        });
+        it("should work in where (ANY)", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.where(o => o.quantity > 5).toArray();
+            const subQuery = db.orders.parameter({ ad }).where(o => ad.any(od => od.OrderId === o.OrderId));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([column0]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\t1 AS [column0]\n\t\tFROM #ad1 AS [entity1]\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS entity1\n\t\tON ([entity1].[OrderId] = [entity2].[OrderId])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nWHERE ([column1] = 1)");
+        });
+        it("should determine whether where filter goes to join expression or not", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.toArray();
+            const subQuery = db.orders.parameter({ ad }).where(o => ad.where(od => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([column0]) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tCOUNT([entity1].[__index]) AS [column0]\n\t\tFROM #ad1 AS [entity1]\n\t\tWHERE ([entity1].[quantity] > 1)\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS entity1\n\t\tON ([entity1].[OrderId] = [entity2].[OrderId])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nWHERE ([column1] > 1)");
+        });
+        it("should work in select (Relation/Array)", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.toArray();
+            const subQuery = db.orders.parameter({ ad }).where(o => o.TotalAmount <= 20000).select(o => ({
+                orderDetails: ad.where(od => od.OrderId === o.OrderId).toArray()
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId]\nINTO #temp_entity0\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] <= 20000);\n\nSELECT * FROM #temp_entity0;\n\nSELECT DISTINCT [entity1].[__index],\n\t[entity1].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[name],\n\t[entity1].[quantity],\n\t[entity1].[CreatedDate]\nFROM #ad1 AS [entity1]\nINNER JOIN #temp_entity0 AS [temp_entity0]\n\tON ([entity1].[OrderId] = [temp_entity0].[OrderId]);\n\nDROP TABLE #temp_entity0");
+        });
+        it("should work in select (Aggregate)", async () => {
+            const db = new MyDb();
+            const ad = await db.orderDetails.toArray();
+            const subQuery = db.orders.parameter({ ad }).where(o => o.TotalAmount <= 20000).select(o => ({
+                orderDetails: ad.where(od => od.OrderId === o.OrderId).count()
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity2].[column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([column0]) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tCOUNT([entity1].[__index]) AS [column0]\n\t\tFROM #ad1 AS [entity1]\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS entity1\n\t\tON ([entity1].[OrderId] = [entity2].[OrderId])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nWHERE ([entity0].[TotalAmount] <= 20000)");
+        });
+        it("should work in select (Count SubQuery)", async () => {
+            const db = new MyDb();
+            const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
+            const ads = await ad.toArray();
+            const subQuery = ad.parameter({ ads }).select(o => ({
+                TotalAmount: o.TotalAmount,
+                Count: ads.where(od => o.TotalAmount >= od.TotalAmount).count()
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity2].[column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([column0]) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\tCOUNT([entity1].[__index]) AS [column0]\n\t\tFROM #ads1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS entity1\n\t\tON ([entity2].[TotalAmount] >= [entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC");
+        });
+        it("should work in select (Sum SubQuery)", async () => {
+            const db = new MyDb();
+            const ad = db.orders.orderBy([o => o.OrderDate, "DESC"]);
+            const ads = await ad.toArray();
+            const subQuery = ad.take(10).parameter({ ads }).select(o => ({
+                OrderId: o.OrderId,
+                TotalAmount: o.TotalAmount,
+                Accumulated: ads.where(od => od.OrderDate >= o.OrderDate).sum(o => o.TotalAmount)
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity2].[column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([column0]) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column0]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS entity1\n\t\tON ([entity1].[OrderDate] >= [entity2].[OrderDate])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC");
+        });
+        it("should work in select (Any SubQuery)", async () => {
+            const db = new MyDb();
+            const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
+            const ads = await ad.toArray();
+            const subQuery = ad.take(10).parameter({ ads }).select(o => ({
+                TotalAmount: o.TotalAmount,
+                IsNotLowest: ads.where(od => o.TotalAmount > od.TotalAmount).any()
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t(\n\tCASE WHEN (([column1] = 1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [IsNotLowest]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([column0]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column0]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS entity1\n\t\tON ([entity2].[TotalAmount] > [entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC");
+        });
+        it("should work in select (All SubQuery)", async () => {
+            const db = new MyDb();
+            const ad = db.orders.orderBy([o => o.TotalAmount, "DESC"]);
+            const ads = await ad.toArray();
+            const subQuery = ad.take(10).parameter({ ads }).select(o => ({
+                TotalAmount: o.TotalAmount,
+                IsHighest: ads.all(od => o.TotalAmount >= od.TotalAmount)
+            }));
+            const queryString = subQuery.toString();
+
+            expect(queryString).to.equal("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t(\n\tCASE WHEN (([column1] = 1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [IsHighest]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([column0]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column0]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS entity1\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount] >= [entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS entity2\n\tON ([entity2].[OrderId] = [entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC");
         });
     });
     describe("QUERY OPTION", () => {

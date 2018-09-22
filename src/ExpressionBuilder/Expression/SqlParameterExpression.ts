@@ -6,7 +6,7 @@ import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpressi
 
 export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
     public select?: SelectExpression<T>;
-    constructor(name: string, public readonly valueGetter: IExpression<T>) {
+    constructor(name: string, public readonly valueGetter: IExpression<T>, public readonly column?: IColumnMetaData) {
         super(name, valueGetter.type);
     }
     public toString(transformer?: ExpressionTransformer): string {
@@ -20,7 +20,7 @@ export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
         const valueGetter = replaceMap.has(this.valueGetter) ? replaceMap.get(this.valueGetter) : this.valueGetter.clone(replaceMap);
-        const clone = new SqlParameterExpression(this.name, valueGetter);
+        const clone = new SqlParameterExpression(this.name, valueGetter, this.column);
         clone.select = this.select;
         return clone;
     }

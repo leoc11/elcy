@@ -51,7 +51,7 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
         const result: ISqlParameter[] = [];
         const valueTransformer = new ValueExpressionTransformer(params);
         for (const sqlParameter of this.parameters) {
-            const value = sqlParameter.valueGetter.execute(valueTransformer);
+            const value = sqlParameter.execute(valueTransformer);
             result.push({
                 name: sqlParameter.name,
                 parameter: sqlParameter,

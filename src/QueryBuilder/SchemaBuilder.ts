@@ -663,27 +663,7 @@ export abstract class SchemaBuilder {
                 }
             }
         }
-        const typeDefault = this.q.columnTypeDefaults.get(columnOption.columnType);
-        const option = columnOption as any;
-        const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
-        const length: number = option && typeof option.length !== "undefined" ? option.length : typeDefault ? typeDefault.length : undefined;
-        const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
-        const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
-        if (this.q.columnTypesWithOption.contains(type)) {
-            if (typeof length !== "undefined") {
-                type += `(${length})`;
-            }
-            else if (typeof size !== "undefined") {
-                type += `(${size})`;
-            }
-            else if (typeof scale !== "undefined" && typeof precision !== "undefined") {
-                type += `(${precision}, ${scale})`;
-            }
-            else if (typeof precision !== "undefined") {
-                type += `(${precision})`;
-            }
-        }
-        return type;
+        return this.q.getColumnType(type, columnOption);
     }
     protected primaryKeyDeclaration(entityMeta: IEntityMetaData) {
         const pkName = "PK_" + entityMeta.name;

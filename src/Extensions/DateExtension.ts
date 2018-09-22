@@ -1,4 +1,5 @@
 import { TimeSpan } from "../Data/TimeSpan";
+import { fillZero } from "../Helper/Util";
 declare global {
     interface Date {
         addDays(days: number): Date;
@@ -10,15 +11,23 @@ declare global {
         addMilliseconds(days: number): Date;
         toDate(): Date;
         toTime(): TimeSpan;
+        toUTCDate(): Date;
+        fromUTCDate(): Date;
     }
     interface DateConstructor {
         currentTimestamp(): Date;
     }
 }
+
 Date.currentTimestamp = function () {
     return new Date();
 };
-
+Date.prototype.toUTCDate = function (this: Date) {
+    return new Date(this.getUTCFullYear(), this.getUTCMonth(), this.getUTCDate(), this.getUTCHours(), this.getUTCMinutes(), this.getUTCSeconds(), this.getUTCMilliseconds());
+};
+Date.prototype.fromUTCDate = function (this: Date) {
+    return new Date(`${this.getFullYear()}-${fillZero(this.getMonth() + 1)}-${fillZero(this.getDate())}T${fillZero(this.getHours())}:${fillZero(this.getMinutes())}:${fillZero(this.getSeconds())}.${fillZero(this.getMilliseconds(), 3)}Z`);
+};
 Date.prototype.addDays = function (days: number): Date {
     const dat = new Date(this.valueOf());
     dat.setDate(dat.getDate() + days);

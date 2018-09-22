@@ -3,8 +3,7 @@ import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpres
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../IQueryResult";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { GenericType, RelationshipType, TimeZoneHandling } from "../../Common/Type";
+import { GenericType, RelationshipType } from "../../Common/Type";
 import { hashCode, isValue } from "../../Helper/Util";
 import { relationMetaKey } from "../../Decorator/DecoratorKey";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
@@ -14,10 +13,8 @@ import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
-import { UUID } from "../../Data/UUID";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
-import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
+import { QueryBuilder } from "../QueryBuilder";
 
 export interface IRelationResolveData<T = any, TE = any> {
     resultMap: Map<number, TE>;
@@ -25,7 +22,7 @@ export interface IRelationResolveData<T = any, TE = any> {
     type: RelationshipType;
 }
 export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
-    constructor(protected readonly queryExpression: SelectExpression<T>) {
+    constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: QueryBuilder) {
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext, this.queryExpression, new Date());
@@ -84,9 +81,9 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             for (const primaryCol of primaryColumns) {
                 const columnName = primaryCol.alias ? primaryCol.alias : primaryCol.columnName;
                 const prop = primaryCol.propertyName;
-                const value = this.convertTo(row[columnName], primaryCol);
+                const value = this.queryBuilder.toPropertyValue(row[columnName], primaryCol);
                 this.setDeepProperty(keyData, prop, value);
-                if (select.entity === select.itemExpression || select.selects.contains(primaryCol))
+                if (select.selects.contains(primaryCol))
                     this.setDeepProperty(entity, prop, value);
             }
             const key = hashCode(JSON.stringify(keyData));
@@ -99,22 +96,23 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 else
                     entry = dbSet.attach(entity);
             }
-            resultMap.set(key, entity);
 
             // set all entity value
             let isValueEntity = Array.isArray(entity);
             if (isValue(entity)) {
                 isValueEntity = true;
                 const column = select.selects.first();
-                entity = this.convertTo(row[column.columnName], column);
+                entity = this.queryBuilder.toPropertyValue(row[column.columnName], column);
             }
             else {
                 for (const column of columns) {
                     this.setPropertyValue(entry || entity, column, row, dbContext);
                 }
             }
+            resultMap.set(key, entity);
+
             for (const column of relColumns) {
-                const value = this.convertTo(row[column.columnName], column);
+                const value = this.queryBuilder.toPropertyValue(row[column.columnName], column);
                 this.setDeepProperty(keyData, column.propertyName, value);
             }
             results.push(entity);
@@ -273,7 +271,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
 
         const columnName = column.alias ? column.alias : column.columnName;
-        const value = this.convertTo(data[columnName], column);
+        const value = this.queryBuilder.toPropertyValue(data[columnName], column);
         if (entryOrEntity instanceof EntityEntry)
             entryOrEntity.setOriginalValue(column.propertyName as any, value);
         else
@@ -300,45 +298,5 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             obj = obj[path];
         }
         return obj[property];
-    }
-    private convertTo<T>(input: any, column: IColumnExpression<T>): any {
-        if (Array.isArray(input))
-            input = input.pop();
-
-        switch (column.type) {
-            case Boolean:
-                return Boolean(input);
-            case Number:
-                let result = Number.parseFloat(input);
-                if (isFinite(result))
-                    return result;
-                else {
-                    if (column.columnMetaData && column.columnMetaData.nullable)
-                        return null;
-                    return 0;
-                }
-            case String:
-                return input ? input.toString() : input;
-            case Date: {
-                const result = new Date(input);
-                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
-                return timeZoneHandling === "none" ? result : new Date(result.getUTCFullYear(), result.getUTCMonth(), result.getUTCDate(), result.getUTCHours(), result.getUTCMinutes(), result.getUTCSeconds(), result.getUTCMilliseconds());
-            }
-            case TimeSpan: {
-                const result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
-                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
-                return timeZoneHandling === "none" ? result : result.addMinutes((new Date(result.totalMilliSeconds())).getTimezoneOffset());
-            }
-            case UUID: {
-                if (input)
-                    return new UUID(input.toString());
-
-                if (column.columnMetaData && column.columnMetaData.nullable)
-                    return null;
-                return UUID.empty;
-            }
-            default:
-                throw new Error(`${column.type.name} not supported`);
-        }
     }
 }

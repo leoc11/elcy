@@ -971,4 +971,64 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
 
     //#endregion
+
+    public toPropertyValue<T>(input: any, column: IColumnExpression<T>): T {
+        let result: any;
+        switch (column.type) {
+            case Boolean:
+                result = Boolean(input);
+                break;
+            case Number:
+                result = Number.parseFloat(input);
+                if (!isFinite(result)) {
+                    result = column.columnMetaData && column.columnMetaData.nullable ? null : 0;
+                }
+                break;
+            case String:
+                result = input ? input.toString() : input;
+                break;
+            case Date: {
+                result = new Date(input);
+                const colMeta = column.columnMetaData;
+                const timeZoneHandling: TimeZoneHandling = colMeta instanceof DateTimeColumnMetaData ? colMeta.timeZoneHandling : "none";
+                if (timeZoneHandling !== "none")
+                    result = (result as Date).fromUTCDate();
+                break;
+            }
+            case TimeSpan: {
+                result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
+                const colMeta = column.columnMetaData;
+                const timeZoneHandling: TimeZoneHandling = colMeta instanceof TimeColumnMetaData ? colMeta.timeZoneHandling : "none";
+                if (timeZoneHandling !== "none")
+                    result = result.addMinutes(-(new Date(result.totalMilliSeconds())).getTimezoneOffset());
+                break;
+            }
+            case UUID: {
+                result = input ? new UUID(input.toString()) : column.columnMetaData && column.columnMetaData.nullable ? null : UUID.empty;
+                break;
+            }
+            default:
+                throw new Error(`${column.type.name} not supported`);
+        }
+        return result;
+    }
+    public toParameterValue(input: any, column: IColumnMetaData): any {
+        let result = input;
+        switch (column.type) {
+            case Date: {
+                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
+                if (timeZoneHandling !== "none")
+                    result = (result as Date).toUTCDate();
+                break;
+            }
+            case TimeSpan: {
+                result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
+                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
+                if (timeZoneHandling !== "none")
+                    result = (result as TimeSpan).addMinutes((new Date(result.totalMilliSeconds())).getTimezoneOffset());
+                break;
+            }
+        }
+        return result;
+    }
 }
