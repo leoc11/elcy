@@ -3,7 +3,9 @@ import { LexicalAnalyzer } from "./LexicalAnalyzer";
 import { SyntacticAnalyzer } from "./SyntacticAnalyzer";
 
 export class ExpressionBuilder {
-    public static parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, userParameters?: { [key: string]: any }) {
+    public static parse<TParam = any, TResult = any>(fn: (...items: TParam[]) => TResult, userParameters?: { [key: string]: any }): FunctionExpression<TParam, TResult>;
+    public static parse<TParam = any, TResult = any>(fn: string, userParameters?: { [key: string]: any }): FunctionExpression<TParam, TResult>;
+    public static parse<TParam = any, TResult = any>(fn: ((...items: TParam[]) => TResult) | string, userParameters?: { [key: string]: any }) {
         const tokens = LexicalAnalyzer.parse(fn.toString());
         return SyntacticAnalyzer.parse(tokens, userParameters) as FunctionExpression<TParam, TResult>;
     }

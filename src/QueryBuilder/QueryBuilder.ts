@@ -6,7 +6,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { fillZero, isNotNull, replaceExpression } from "../Helper/Util";
+import { isNotNull, replaceExpression, toDateTimeString, toTimeString } from "../Helper/Util";
 import { JoinType, GenericType, QueryType, DeleteMode, TimeZoneHandling } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
@@ -717,11 +717,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return this.getNullString();
     }
     protected getDateTimeString(value: Date): string {
-        return this.getString(value.getFullYear() + "-" + fillZero(value.getMonth() + 1) + "-" + fillZero(value.getDate()) + " " +
-            fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()) + "." + fillZero(value.getMilliseconds(), 3));
+        return this.getString(toDateTimeString(value));
     }
     protected getTimeString(value: TimeSpan): string {
-        return this.getString(fillZero(value.getHours()) + ":" + fillZero(value.getMinutes()) + ":" + fillZero(value.getSeconds()) + "." + fillZero(value.getMilliseconds(), 3));
+        return this.getString(toTimeString(value));
     }
     protected getIdentifierString(value: UUID): string {
         return this.getString(value.toString());

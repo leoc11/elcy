@@ -48,6 +48,7 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     }
     return source;
 };
+
 export const isValue = (data: any): data is ValueType => {
     return isValueType(data.constructor);
 };
@@ -101,4 +102,15 @@ export const toJSON = function <T>(this: T) {
         jsonObj[o] = this[o];
     });
     return jsonObj;
+};
+
+export const toDateTimeString = function (date: Date) {
+    return date.getFullYear() + "-" + fillZero(date.getMonth() + 1) + "-" + fillZero(date.getDate()) + " " +
+        fillZero(date.getHours()) + ":" + fillZero(date.getMinutes()) + ":" + fillZero(date.getSeconds()) + "." + fillZero(date.getMilliseconds(), 3);
+};
+export const toTimeString = function (time: TimeSpan) {
+    return fillZero(time.getHours()) + ":" + fillZero(time.getMinutes()) + ":" + fillZero(time.getSeconds()) + "." + fillZero(time.getMilliseconds(), 3);
+};
+export const toDateString = function (date: Date) {
+    return date.getFullYear() + "-" + fillZero(date.getMonth() + 1) + "-" + fillZero(date.getDate());
 };

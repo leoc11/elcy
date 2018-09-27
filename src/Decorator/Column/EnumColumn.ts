@@ -7,7 +7,6 @@ import { Column } from "./Column";
 export function EnumColumn<T extends string | number>(options: IEnumType<any> | T[], defaultValue?: () => T): PropertyDecorator;
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): PropertyDecorator;
 export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<any> | T[], defaultValue?: () => T): PropertyDecorator {
-    debugger;
     let option: IEnumColumnOption<T> = { type: String as any };
     if (!Array.isArray(options) && (options as IEnumColumnOption<T>).options) {
         option = options;
