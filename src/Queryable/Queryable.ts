@@ -169,7 +169,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey();
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -213,7 +213,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("COUNT");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<number>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -258,7 +258,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("SUM");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<number>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -307,7 +307,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("MAX");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<number>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -356,7 +356,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("MIN");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<number>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -405,7 +405,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("AVG");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<number>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -454,7 +454,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("ALL");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<boolean>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -502,7 +502,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("ANY");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<boolean>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -572,7 +572,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("FIRST");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -624,7 +624,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("CONTAINS");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<boolean>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -668,7 +668,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("UPDATE");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -718,7 +718,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("DELETE");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -775,7 +775,7 @@ export abstract class Queryable<T = any> {
             cacheKey = this.cacheKey("INSERT");
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
-            let queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
