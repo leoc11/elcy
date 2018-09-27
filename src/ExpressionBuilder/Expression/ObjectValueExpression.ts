@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 
-export class ObjectValueExpression<T> extends ExpressionBase<T> {
+export class ObjectValueExpression<T = any> extends ExpressionBase<T> {
     public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
         let isAllValue = Object.keys(objectValue).all(o => objectValue[o] instanceof ValueExpression);
