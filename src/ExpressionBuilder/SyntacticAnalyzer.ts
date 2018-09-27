@@ -228,6 +228,8 @@ function createArrayExpression(param: SyntaticParameter, tokens: ILexicalToken[]
     const arrayVal: any[] = [];
     while (param.index < tokens.length && (tokens[param.index].data !== "]")) {
         arrayVal.push(createExpression(param, tokens));
+        if (tokens[param.index].data === ",")
+            param.index++;
     }
     param.index++;
     return ArrayValueExpression.create(...arrayVal);
