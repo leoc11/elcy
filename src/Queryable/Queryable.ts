@@ -25,6 +25,8 @@ import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { GroupByExpression } from "./QueryExpression/GroupByExpression";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 
 export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
@@ -89,6 +91,7 @@ export abstract class Queryable<T = any> {
             const visitor = this.dbContext.queryVisitor;
             visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
+            if (commandQuery instanceof GroupByExpression) commandQuery.select.asIncludeResult = true;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             queryCache = {
@@ -182,6 +185,7 @@ export abstract class Queryable<T = any> {
             const visitor = this.dbContext.queryVisitor;
             visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
+            if (commandQuery instanceof GroupByExpression) commandQuery.select.asIncludeResult = true;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
 
@@ -255,7 +259,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("SUM");
+            cacheKey = this.cacheKey("SUM", selector ? hashCode(selector.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<number>(cacheKey);
@@ -304,7 +308,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("MAX");
+            cacheKey = this.cacheKey("MAX", selector ? hashCode(selector.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<number>(cacheKey);
@@ -353,7 +357,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("MIN");
+            cacheKey = this.cacheKey("MIN", selector ? hashCode(selector.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<number>(cacheKey);
@@ -402,7 +406,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("AVG");
+            cacheKey = this.cacheKey("AVG", selector ? hashCode(selector.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<number>(cacheKey);
@@ -451,7 +455,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("ALL");
+            cacheKey = this.cacheKey("ALL", hashCode(predicate.toString()));
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<boolean>(cacheKey);
@@ -499,7 +503,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("ANY");
+            cacheKey = this.cacheKey("ANY", predicate ? hashCode(predicate.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<boolean>(cacheKey);
@@ -569,7 +573,7 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("FIRST");
+            cacheKey = this.cacheKey("FIRST", predicate ? hashCode(predicate.toString()) : undefined);
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<T>(cacheKey);
@@ -621,7 +625,20 @@ export abstract class Queryable<T = any> {
         const cacheManager = this.dbContext.queryCacheManager;
 
         if (!this.queryOption.noQueryCache) {
-            cacheKey = this.cacheKey("CONTAINS");
+            let paramStr: string;
+            if (isValue(item)) {
+                paramStr = item.toString();
+            }
+            else {
+                const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type) as IEntityMetaData<T>;
+                if (entityMeta) {
+                    const primaryItem = {} as T;
+                    entityMeta.primaryKeys.each(o => primaryItem[o.propertyName] = item[o.propertyName]);
+                    item = primaryItem;
+                }
+                paramStr = JSON.stringify(item);
+            }
+            cacheKey = this.cacheKey("CONTAINS", hashCode(paramStr));
             if (Diagnostic.enabled) Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
 
             queryCache = cacheManager.get<boolean>(cacheKey);
@@ -812,8 +829,10 @@ export abstract class Queryable<T = any> {
         return query;
     }
 
-    private cacheKey(type?: string) {
-        let cacheKey = hashCode(this.queryOption.buildKey, hashCode(type, this.hashCode()));
+    private cacheKey(type?: string, addCode?: number) {
+        let cacheKey = hashCode(type, this.hashCode());
+        if (addCode) hashCodeAdd(cacheKey, addCode);
+        cacheKey = hashCode(this.queryOption.buildKey, cacheKey);
         const subQueryCacheKey = Object.keys(this.flatParameterStacks)
             .select(o => {
                 const val = this.flatParameterStacks[o];

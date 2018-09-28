@@ -31,13 +31,14 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
             return this.select.key;
         return undefined;
     }
+    public asIncludeResult: boolean;
     constructor(public readonly select: GroupByExpression<T>) {
         super(select.entity);
         this.joins = select.joins.slice(0);
         this.includes = [];
     }
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
-        this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
+        if (!this.asIncludeResult) this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
         return super.addJoinRelation(child, relationMetaOrRelations as any, type);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
