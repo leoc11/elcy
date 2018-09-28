@@ -2,6 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 export class LeftDecrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
     public static create(operand: IExpression<number>) {
         const result = new LeftDecrementExpression(operand);
@@ -24,7 +25,9 @@ export class LeftDecrementExpression extends ExpressionBase<number> implements I
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const operand = replaceMap.has(this.operand) ? replaceMap.get(this.operand) : this.operand.clone(replaceMap);
-        return new LeftDecrementExpression(operand);
+        const operand = getClone(this.operand, replaceMap);
+        const clone = new LeftDecrementExpression(operand);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

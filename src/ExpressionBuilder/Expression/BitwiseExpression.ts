@@ -14,5 +14,5 @@ export abstract class BitwiseExpression extends ExpressionBase<number> {
         }
         return operand as any;
     }
-    public abstract clone(): BitwiseExpression;
+    public abstract clone(replaceMap?: Map<IExpression, IExpression>): BitwiseExpression;
 }

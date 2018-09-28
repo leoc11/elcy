@@ -24,7 +24,7 @@ export class ParameterExpression<T = any> extends ExpressionBase<T> {
     public execute(transformer: ExpressionTransformer): any {
         return transformer.executeExpression(this);
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>) {
-        return new ParameterExpression(this.name, this.type);
+    public clone(replaceMap?: Map<IExpression, IExpression>): ParameterExpression<T> {
+        return this;
     }
 }

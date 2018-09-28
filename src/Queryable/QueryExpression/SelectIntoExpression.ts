@@ -4,7 +4,7 @@ import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IObjectType, OrderDirection, JoinType } from "../../Common/Type";
-import { hashCode } from "../../Helper/Util";
+import { hashCode, getClone } from "../../Helper/Util";
 import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
@@ -56,9 +56,11 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
     public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         return this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
     }
-    public clone(findMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
-        const select = findMap.has(this.select) ? findMap.get(this.select) as SelectExpression : this.select.clone(findMap);
+    public clone(replaceMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
+        if (!replaceMap) replaceMap = new Map();
+        const select = getClone(this.select, replaceMap);
         const clone = new SelectIntoExpression(select);
+        replaceMap.set(this, clone);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {

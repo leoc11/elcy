@@ -3,6 +3,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { getClone } from "../../Helper/Util";
 
 export class UnionExpression<T> extends ProjectionEntityExpression {
     public readonly entityTypes: IObjectType[];
@@ -15,5 +16,13 @@ export class UnionExpression<T> extends ProjectionEntityExpression {
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");
+    }
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const select = getClone(this.select, replaceMap);
+        const select2 = getClone(this.select2, replaceMap);
+        const clone = new UnionExpression(select, select2, this.isUnionAll, this.type);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

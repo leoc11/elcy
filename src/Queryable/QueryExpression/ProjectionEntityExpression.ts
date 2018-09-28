@@ -5,6 +5,8 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ColumnExpression } from "./ColumnExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { getClone } from "../../Helper/Util";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
@@ -49,12 +51,18 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     public execute(queryBuilder: QueryBuilder): any {
         return queryBuilder.getExpressionString(this);
     }
-    public clone() {
-        const clone = new ProjectionEntityExpression(this.select, this.type);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const select = getClone(this.select, replaceMap);
+        const clone = new ProjectionEntityExpression(select, this.type);
         clone.alias = this.alias;
-        clone.defaultOrders = this.defaultOrders.slice(0);
+        clone.defaultOrders = this.defaultOrders.select(o => ({
+            column: getClone(o.column, replaceMap),
+            direction: o.direction
+        })).toArray();
         clone.name = this.name;
-        clone.columns = this.columns.slice(0);
+        clone.columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
+        replaceMap.set(this, clone);
         return clone;
     }
 }

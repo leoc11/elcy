@@ -29,6 +29,6 @@ export class ValueExpression<T> extends ExpressionBase<T> {
         return this.value;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        return new ValueExpression(this.value, this.expressionString);
+        return this;
     }
 }

@@ -2,6 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 export class LessEqualExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new LessEqualExpression(leftOperand, rightOperand);
@@ -23,8 +24,10 @@ export class LessEqualExpression<TType = any> extends ExpressionBase<boolean> im
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) : this.leftOperand.clone(replaceMap);
-        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) : this.rightOperand.clone(replaceMap);
-        return new LessEqualExpression(left, right);
+        const left = getClone(this.leftOperand, replaceMap);
+        const right = getClone(this.rightOperand, replaceMap);
+        const clone = new LessEqualExpression(left, right);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

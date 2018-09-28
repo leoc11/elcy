@@ -41,6 +41,8 @@ export class ObjectValueExpression<T = any> extends ExpressionBase<T> {
             const propEx = this.object[prop];
             obj[prop] = replaceMap.has(propEx) ? replaceMap.get(propEx) : propEx.clone(replaceMap);
         }
-        return new ObjectValueExpression(obj, this.type);
+        const clone = new ObjectValueExpression(obj, this.type);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

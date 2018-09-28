@@ -1,6 +1,7 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 
 export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
     public static create<TType>(...values: Array<IExpression<TType>>) {
@@ -32,6 +33,9 @@ export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        return new ArrayValueExpression(...this.items.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray());
+        const items = this.items.select(o => getClone(o, replaceMap)).toArray();
+        const clone = new ArrayValueExpression(...items);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

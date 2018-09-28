@@ -2,6 +2,8 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IObjectType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { getClone } from "../../Helper/Util";
 
 export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
     public readonly entityTypes: IObjectType[];
@@ -14,5 +16,13 @@ export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
     }
     public execute(queryBuilder: QueryBuilder): any {
         throw new Error("Method not implemented.");
+    }
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const select = getClone(this.select, replaceMap);
+        const select2 = getClone(this.select2, replaceMap);
+        const clone = new ExceptExpression(select, select2, this.type);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

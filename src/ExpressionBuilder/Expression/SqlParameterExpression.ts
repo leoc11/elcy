@@ -3,6 +3,7 @@ import { ParameterExpression } from "./ParameterExpression";
 import { IExpression } from "./IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
+import { getClone } from "../../Helper/Util";
 
 export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
     public select?: SelectExpression<T>;
@@ -17,11 +18,12 @@ export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
     public execute(transformer: ExpressionTransformer): any {
         return this.valueGetter.execute(transformer);
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>) {
+    public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const valueGetter = replaceMap.has(this.valueGetter) ? replaceMap.get(this.valueGetter) : this.valueGetter.clone(replaceMap);
+        const valueGetter = getClone(this.valueGetter, replaceMap);
         const clone = new SqlParameterExpression(this.name, valueGetter, this.column);
-        clone.select = this.select;
+        clone.select = getClone(this.select, replaceMap);
+        replaceMap.set(this, clone);
         return clone;
     }
 }

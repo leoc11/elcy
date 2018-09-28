@@ -4,6 +4,7 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { Queryable } from "../../Queryable/Queryable";
+import { getClone } from "../../Helper/Util";
 export class MethodCallExpression<TType = any, KProp extends keyof TType = any, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
     public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
@@ -86,8 +87,10 @@ export class MethodCallExpression<TType = any, KProp extends keyof TType = any, 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const objectOperand = replaceMap.has(this.objectOperand) ? replaceMap.get(this.objectOperand) : this.objectOperand.clone(replaceMap);
-        const params = this.params.select(o => replaceMap.has(o) ? replaceMap.get(o) : o.clone(replaceMap)).toArray();
-        return new MethodCallExpression(objectOperand, this.methodName as any, params, this.type);
+        const objectOperand = getClone(this.objectOperand, replaceMap);
+        const params = this.params.select(o => getClone(o, replaceMap)).toArray();
+        const clone = new MethodCallExpression(objectOperand, this.methodName as KProp, params, this.type);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

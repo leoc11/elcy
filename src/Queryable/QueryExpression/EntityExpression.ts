@@ -8,6 +8,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { getClone } from "../../Helper/Util";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
@@ -90,11 +91,8 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const clone = new EntityExpression(this.type, this.alias);
-        clone.columns = this.columns.select(o => {
-            const colClone = replaceMap.has(o) ? replaceMap.get(o) as IColumnExpression : o.clone();
-            colClone.entity = clone;
-            return colClone;
-        }).toArray();
+        replaceMap.set(this, clone);
+        clone.columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
         clone.name = this.name;
         return clone;
     }

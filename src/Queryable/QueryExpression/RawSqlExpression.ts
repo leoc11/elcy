@@ -1,5 +1,5 @@
 import { GenericType } from "../../Common/Type";
-import { ExpressionBase } from "../../ExpressionBuilder/Expression/IExpression";
+import { ExpressionBase, IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 
 export class RawSqlExpression<T> extends ExpressionBase<T> {
@@ -9,7 +9,10 @@ export class RawSqlExpression<T> extends ExpressionBase<T> {
     public execute(transformer: QueryBuilder): any {
         throw new Error("method not implemented");
     }
-    public clone() {
-        return new RawSqlExpression(this.type, this.sqlStatement);
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) replaceMap = new Map();
+        const clone = new RawSqlExpression(this.type, this.sqlStatement);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

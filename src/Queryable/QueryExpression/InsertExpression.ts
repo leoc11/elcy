@@ -8,7 +8,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IObjectType } from "../../Common/Type";
-import { hashCode } from "../../Helper/Util";
+import { hashCode, getClone } from "../../Helper/Util";
 import { IEntityExpression } from "./IEntityExpression";
 export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
     public parameters: SqlParameterExpression[];
@@ -31,10 +31,13 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
     constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<Array<IExpression<any> | undefined>>, columns?: IColumnExpression<T>[]) {
         if (columns) this._columns = columns;
     }
-    public clone(): InsertExpression<T> {
-        const entity = this.entity.clone();
-        const columns = this.columns.select(o => entity.columns.first(c => c.columnName === o.columnName)).toArray();
-        const clone = new InsertExpression(entity, this.values, columns);
+    public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
+        if (!replaceMap) replaceMap = new Map();
+        const entity = getClone(this.entity, replaceMap);
+        const columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
+        const values = this.values.select(o => o.select(o => getClone(o, replaceMap)).toArray()).toArray();
+        const clone = new InsertExpression(entity, values, columns);
+        replaceMap.set(this, clone);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {

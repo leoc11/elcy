@@ -2,6 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 export class MultiplicationExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new MultiplicationExpression(leftOperand, rightOperand);
@@ -24,8 +25,10 @@ export class MultiplicationExpression extends ExpressionBase<number> implements 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) as IExpression<number> : this.leftOperand.clone(replaceMap);
-        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) as IExpression<number> : this.rightOperand.clone(replaceMap);
-        return new MultiplicationExpression(left, right);
+        const left = getClone(this.leftOperand, replaceMap);
+        const right = getClone(this.rightOperand, replaceMap);
+        const clone = new MultiplicationExpression(left, right);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

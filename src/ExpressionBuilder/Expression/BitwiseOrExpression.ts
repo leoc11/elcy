@@ -3,6 +3,7 @@ import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 export class BitwiseOrExpression extends BitwiseExpression implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseOrExpression(leftOperand, rightOperand);
@@ -29,8 +30,10 @@ export class BitwiseOrExpression extends BitwiseExpression implements IBinaryOpe
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) : this.leftOperand.clone(replaceMap);
-        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) : this.rightOperand.clone(replaceMap);
-        return new BitwiseOrExpression(left, right);
+        const left = getClone(this.leftOperand, replaceMap);
+        const right = getClone(this.rightOperand, replaceMap);
+        const clone = new BitwiseOrExpression(left, right);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

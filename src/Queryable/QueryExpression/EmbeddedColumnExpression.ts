@@ -4,7 +4,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { EmbeddedColumnMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { ColumnExpression } from "./ColumnExpression";
-import { hashCode } from "../../Helper/Util";
+import { hashCode, getClone } from "../../Helper/Util";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
@@ -38,9 +38,11 @@ export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpre
         return this.toString(queryBuilder) as any;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        const entity = replaceMap.has(this.entity) ? replaceMap.get(this.entity) as IEntityExpression<TE> : this.entity;
+        if (!replaceMap) replaceMap = new Map();
+        const entity = getClone(this.entity, replaceMap);
         const clone = new EmbeddedColumnExpression(entity, this.columnMetaData);
-        clone.columns = this.columns.slice(0);
+        clone.columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
+        replaceMap.set(this, clone);
         return clone;
     }
     public clearDefaultColumns() {

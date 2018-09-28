@@ -3,6 +3,7 @@ import { BitwiseExpression } from "./BitwiseExpression";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
+import { getClone } from "../../Helper/Util";
 export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression {
     public static create(operand: IExpression) {
         const result = new BitwiseNotExpression(operand);
@@ -27,7 +28,9 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const operand = replaceMap.has(this.operand) ? replaceMap.get(this.operand) : this.operand.clone(replaceMap);
-        return new BitwiseNotExpression(operand);
+        const operand = getClone(this.operand, replaceMap);
+        const clone = new BitwiseNotExpression(operand);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

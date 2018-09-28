@@ -2,6 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
+import { getClone } from "../../Helper/Util";
 export class ExponentiationAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new ExponentiationAssignmentExpression(leftOperand, rightOperand);
@@ -22,8 +23,10 @@ export class ExponentiationAssignmentExpression extends ExpressionBase<number> i
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = replaceMap.has(this.leftOperand) ? replaceMap.get(this.leftOperand) as ParameterExpression<number> : this.leftOperand.clone(replaceMap);
-        const right = replaceMap.has(this.rightOperand) ? replaceMap.get(this.rightOperand) : this.rightOperand.clone(replaceMap);
-        return new ExponentiationAssignmentExpression(left, right);
+        const left = getClone(this.leftOperand, replaceMap);
+        const right = getClone(this.rightOperand, replaceMap);
+        const clone = new ExponentiationAssignmentExpression(left, right);
+        replaceMap.set(this, clone);
+        return clone;
     }
 }

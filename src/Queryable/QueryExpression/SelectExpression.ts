@@ -17,7 +17,7 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, visitExpression, hashCodeAdd } from "../../Helper/Util";
+import { hashCode, visitExpression, hashCodeAdd, getClone } from "../../Helper/Util";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
@@ -34,6 +34,7 @@ export interface IJoinRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
     relations: IExpression<boolean>;
+    name?: string;
     type: JoinType;
     isFinish?: boolean;
 }
@@ -323,63 +324,27 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         this.joins.push(child.parentRelation);
         return child.parentRelation;
     }
-    public clone(findMap?: Map<IExpression, IExpression>): SelectExpression<T> {
-        if (!findMap) findMap = new Map();
-        const entity = findMap.has(this.entity) ? findMap.get(this.entity) as IEntityExpression : this.entity.clone(findMap);
-        findMap.set(this.entity, entity);
-        // columns
-        this.entity.columns.each(o => {
-            const cloneCol = entity.columns.first(c => c.columnName === o.columnName);
-            findMap.set(o, cloneCol);
-        });
-
+    public clone(replaceMap?: Map<IExpression, IExpression>): SelectExpression<T> {
+        if (!replaceMap) replaceMap = new Map();
+        const entity = getClone(this.entity, replaceMap);
         const clone = new SelectExpression(entity);
-        if (this.itemExpression !== this.entity) {
-            clone.itemExpression = this.itemExpression;
-        }
-        clone.orders = this.orders.select(o => {
-            const cloneCol = findMap.has(o.column) ? findMap.get(o.column) : o.column.clone(findMap);
-            return {
-                column: cloneCol,
-                direction: o.direction
-            } as IOrderExpression;
-        }).toArray();
-        clone.selects = this.selects.select(o => {
-            let col = clone.entity.columns.first(c => c.columnName === o.columnName);
-            if (!col) {
-                col = findMap.has(o) ? findMap.get(o) as IColumnExpression : o.clone(findMap);
-                col.entity = clone.entity;
-            }
-            return col;
-        }).toArray();
-
-        for (const parentCol of this.entity.columns) {
-            const cloneCol = clone.entity.columns.first(c => c.columnName === parentCol.columnName);
-            findMap.set(parentCol, cloneCol);
-        }
-
+        clone.itemExpression = getClone(this.itemExpression, replaceMap);
+        clone.selects = this.selects.select(o => getClone(o, replaceMap)).toArray();
+        clone.orders = this.orders.select(o => ({
+            column: getClone(o.column, replaceMap),
+            direction: o.direction
+        })).toArray();
         for (const join of this.joins) {
-            const child = findMap.has(join.child) ? findMap.get(join.child) as SelectExpression : join.child.clone(findMap);
-            for (const parentCol of join.child.entity.columns) {
-                const cloneCol = child.entity.columns.first(c => c.columnName === parentCol.columnName);
-                findMap.set(parentCol, cloneCol);
-            }
-            clone.addJoinRelation(child, join.relations.clone(findMap), join.type);
+            const child = getClone(join.child, replaceMap);
+            clone.addJoinRelation(child, join.relations.clone(replaceMap), join.type);
         }
-
         for (const include of this.includes) {
-            const child = findMap.has(include.child) ? findMap.get(include.child) as SelectExpression : include.child.clone(findMap);
-            for (const parentCol of include.child.entity.columns) {
-                const cloneCol = child.entity.columns.first(c => c.columnName === parentCol.columnName);
-                findMap.set(parentCol, cloneCol);
-            }
-
-            clone.addInclude(include.name, child, include.relations.clone(findMap), include.type);
+            const child = getClone(include.child, replaceMap);
+            clone.addInclude(include.name, child, include.relations.clone(replaceMap), include.type);
         }
-        if (this.where)
-            clone.where = this.where.clone(findMap);
-
+        clone.where = getClone(this.where, replaceMap);
         Object.assign(clone.paging, this.paging);
+        replaceMap.set(this, clone);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
