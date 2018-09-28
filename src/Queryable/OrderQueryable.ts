@@ -11,6 +11,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
@@ -20,11 +21,10 @@ export class OrderQueryable<T> extends Queryable<T> {
             this._selectors = this.selectorsFn.select(o => {
                 const selector = o[0];
                 const direction = o[1];
-                const a = {
-                    selector: selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks),
-                    direction: new ValueExpression(direction ? direction : "ASC")
-                };
-                return new ObjectValueExpression(a) as any;
+                const itemArray: IExpression[] = [];
+                itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks));
+                itemArray.push(new ValueExpression(direction ? direction : "ASC"));
+                return new ArrayValueExpression(...itemArray) as any;
             }).toArray();
         }
         return this._selectors;

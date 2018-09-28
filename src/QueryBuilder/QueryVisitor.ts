@@ -2,7 +2,7 @@ import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction, visitExpression, isValue } from "../Helper/Util";
+import { isValueType, isNativeFunction, visitExpression, isValue, replaceExpression } from "../Helper/Util";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -50,6 +50,11 @@ import { StrictNotEqualExpression } from "../ExpressionBuilder/Expression/Strict
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { ISelectQueryOption } from "./Interface/IQueryOption";
 import { CustomEntityExpression } from "../Queryable/QueryExpression/CustomEntityExpression";
+import { GreaterThanExpression } from "../ExpressionBuilder/Expression/GreaterThanExpression";
+import { LessThanExpression } from "../ExpressionBuilder/Expression/LessThanExpression";
+import { OrExpression } from "../ExpressionBuilder/Expression/OrExpression";
+import { LessEqualExpression } from "../ExpressionBuilder/Expression/LessEqualExpression";
+import { GreaterEqualExpression } from "../ExpressionBuilder/Expression/GreaterEqualExpression";
 
 interface IPRelation {
     name: string;
@@ -764,11 +769,11 @@ export class QueryVisitor {
                     return selectOperand;
                 }
                 case "orderBy": {
-                    const selectors = expression.params as ObjectValueExpression<any>[];
+                    const selectors = expression.params as ArrayValueExpression[];
                     const orders: IOrderExpression[] = [];
                     for (const selector of selectors) {
-                        const selectorFn = selector.object.selector as FunctionExpression<TType, any>;
-                        const direction = selector.object.direction ? selector.object.direction as ValueExpression<OrderDirection> : new ValueExpression<OrderDirection>("ASC");
+                        const selectorFn = selector.items[0] as FunctionExpression<TType, any>;
+                        const direction = selector.items[1] ? selector.items[1] as ValueExpression<OrderDirection> : new ValueExpression<OrderDirection>("ASC");
                         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
                         this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
                         const selectExp = this.visit(selectorFn, visitParam) as IColumnExpression;
@@ -785,6 +790,50 @@ export class QueryVisitor {
                     if (orders.length > 0) {
                         objectOperand.orders = [];
                         objectOperand.addOrder(orders);
+                    }
+
+                    if (param.scope !== "queryable") {
+                        // has take/skip
+                        let takeJoinRel = objectOperand.joins.first(o => o.name === "TAKE");
+                        if (takeJoinRel) {
+                            const orderJoinRel = takeJoinRel.child.joins[takeJoinRel.child.joins.length - 1];
+
+                            let orderExp: IExpression<boolean>;
+                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
+                                const sortCol = orderJoinRel.child.entity.primaryColumns[i];
+                                const filterCol = takeJoinRel.child.entity.primaryColumns[i];
+                                const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
+                                if (orderExp) {
+                                    orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                                }
+                                else {
+                                    orderExp = orderCompExp;
+                                }
+                            }
+
+                            // clone to support complex orderBy
+                            const sortMap = new Map();
+                            const filterMap = new Map();
+                            objectOperand.entity.columns.each(o => {
+                                sortMap.set(o, orderJoinRel.child.entity.columns.first(c => c.propertyName === o.propertyName));
+                                filterMap.set(o, takeJoinRel.child.entity.columns.first(c => c.propertyName === o.propertyName));
+                            });
+                            for (let i = 0; i < objectOperand.orders.length; i++) {
+                                const order = objectOperand.orders[i];
+                                const sortCol = sortMap.has(order.column) ? sortMap.get(order.column) : order.column.clone(sortMap);
+                                const filterCol = filterMap.has(order.column) ? filterMap.get(order.column) : order.column.clone(filterMap);
+                                const orderCompExp = new (order.direction === "DESC" ? LessThanExpression : GreaterThanExpression)(sortCol, filterCol);
+                                orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                            }
+
+                            // replace to new order
+                            const oriOrderExp = (takeJoinRel as any).order;
+                            replaceExpression(orderJoinRel.relations, (exp) => {
+                                if (exp === oriOrderExp)
+                                    return orderExp;
+                                return exp;
+                            });
+                        }
                     }
                     return objectOperand;
                 }
@@ -853,24 +902,122 @@ export class QueryVisitor {
                 }
                 case "skip":
                 case "take": {
-                    if (param.scope !== "queryable")
-                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
                     const [exp] = this.extract(this.visit(expression.params[0] as ParameterExpression<number>, param));
-                    if (objectOperand.paging.take) {
-                        [objectOperand.paging.take] = this.extract(objectOperand.paging.take);
-                    }
-                    if (expression.methodName === "skip") {
-                        if (objectOperand.paging.skip) {
-                            [objectOperand.paging.skip] = this.extract(objectOperand.paging.skip);
-                        }
+                    if (param.scope === "queryable") {
                         if (objectOperand.paging.take) {
-                            objectOperand.paging.take = this.createParamBuilderItem(new SubtractionExpression(objectOperand.paging.take, exp), param);
+                            [objectOperand.paging.take] = this.extract(objectOperand.paging.take);
                         }
-                        objectOperand.paging.skip = this.createParamBuilderItem(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
+                        if (expression.methodName === "skip") {
+                            if (objectOperand.paging.skip) {
+                                [objectOperand.paging.skip] = this.extract(objectOperand.paging.skip);
+                            }
+                            if (objectOperand.paging.take) {
+                                objectOperand.paging.take = this.createParamBuilderItem(new SubtractionExpression(objectOperand.paging.take, exp), param);
+                            }
+                            objectOperand.paging.skip = this.createParamBuilderItem(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
+                        }
+                        else {
+                            objectOperand.paging.take = this.createParamBuilderItem(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
+                        }
                     }
                     else {
-                        objectOperand.paging.take = this.createParamBuilderItem(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
+                        let takeJoinRel = objectOperand.joins.first(o => o.name === "TAKE");
+                        if (!takeJoinRel) {
+                            const filterer = (objectOperand as SelectExpression).clone();
+                            filterer.entity.alias = this.newAlias();
+                            filterer.includes = [];
+                            const sorter = (objectOperand as SelectExpression).clone();
+                            sorter.entity.alias = this.newAlias();
+                            sorter.includes = [];
+
+                            // column used for parent relations.
+                            const relationColumns: IColumnExpression[] = [];
+                            visitExpression(objectOperand.parentRelation.relations, (exp: IColumnExpression): boolean | void => {
+                                if (exp.entity && objectOperand.entity.columns.contains(exp)) {
+                                    relationColumns.push(exp);
+                                    return false;
+                                }
+                            });
+
+                            let joinExp: IExpression<boolean>;
+                            relationColumns.each(o => {
+                                const sortCol = sorter.entity.columns.first(col => col.propertyName === o.propertyName);
+                                const filterCol = filterer.entity.columns.first(col => col.propertyName === o.propertyName);
+                                const logicalExp = new StrictEqualExpression(sortCol, filterCol);
+                                joinExp = joinExp ? new AndExpression(joinExp, logicalExp) : logicalExp;
+                            });
+                            let orderExp: IExpression<boolean>;
+                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
+                                const sortCol = sorter.entity.primaryColumns[i];
+                                const filterCol = filterer.entity.primaryColumns[i];
+                                const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
+                                if (orderExp) {
+                                    orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                                }
+                                else {
+                                    orderExp = orderCompExp;
+                                }
+                            }
+                            for (let i = 0; i < objectOperand.orders.length; i++) {
+                                const order = objectOperand.orders[i];
+                                const sortCol = sorter.orders[i].column;
+                                const filterCol = filterer.orders[i].column;
+                                const orderCompExp = new (order.direction === "DESC" ? LessThanExpression : GreaterThanExpression)(sortCol, filterCol);
+                                orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                            }
+                            sorter.orders = filterer.orders = [];
+                            filterer.addJoinRelation(sorter, new AndExpression(joinExp, orderExp), JoinType.INNER);
+                            
+                            const countExp = new MethodCallExpression(filterer, "count", filterer.entity.primaryColumns, Number);
+                            const colCountExp = new ComputedColumnExpression(filterer.entity, countExp, this.newAlias("column"));
+
+                            let keyExp: IExpression;
+                            if (filterer.entity.primaryColumns.length > 1) {
+                                keyExp = new ObjectValueExpression({});
+                                filterer.entity.primaryColumns.each(o => (keyExp as ObjectValueExpression).object[o.propertyName] = o);
+                            }
+                            else {
+                                keyExp = filterer.entity.primaryColumns.first();
+                            }
+                            const groupExp = new GroupByExpression(filterer, filterer.entity.primaryColumns, keyExp);
+                            groupExp.selects = [colCountExp];
+
+                            // add join relation to current object operand
+                            let joinRelation: IExpression<boolean>;
+                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
+                                const objCol = objectOperand.entity.primaryColumns[i];
+                                const groupCol = groupExp.entity.primaryColumns[i];
+                                const logicalExp = new StrictEqualExpression(objCol, groupCol);
+                                joinRelation = joinRelation ? new AndExpression(joinRelation, logicalExp) : logicalExp;
+                            }
+
+                            takeJoinRel = objectOperand.addJoinRelation(groupExp, joinRelation, JoinType.INNER);
+                            takeJoinRel.name = "TAKE";
+                            (takeJoinRel as any).order = orderExp;
+                        }
+
+                        const groupExp = takeJoinRel.child as GroupByExpression;
+                        const anyTakeJoinRel = takeJoinRel as any;
+                        const countExp = (groupExp.selects.first() as ComputedColumnExpression).expression;
+
+                        if (expression.methodName === "skip") {
+                            if (anyTakeJoinRel.take) {
+                                anyTakeJoinRel.take = this.visit(new SubtractionExpression(anyTakeJoinRel.take, exp), param);
+                            }
+                            anyTakeJoinRel.skip = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
+                        }
+                        else {
+                            anyTakeJoinRel.take = this.visit(anyTakeJoinRel.take ? new MethodCallExpression(new ValueExpression(Math), "min", [anyTakeJoinRel.take, exp]) : exp, param);
+                        }
+
+                        groupExp.having = null;
+                        if (anyTakeJoinRel.skip) {
+                            groupExp.having = new GreaterThanExpression(countExp, anyTakeJoinRel.skip);
+                        }
+                        if (anyTakeJoinRel.take) {
+                            const takeLogicalExp = new LessEqualExpression(countExp, anyTakeJoinRel.take);
+                            groupExp.having = groupExp.having ? new AndExpression(groupExp.having, takeLogicalExp) : takeLogicalExp;
+                        }
                     }
 
                     return objectOperand;
