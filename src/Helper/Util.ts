@@ -5,7 +5,23 @@ import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpres
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { TimeSpan } from "../Data/TimeSpan";
 import { UUID } from "../Data/UUID";
+import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
+import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 
+export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>, existAction?: (exp: T) => void): T {
+    if (!exp) return exp;
+    return (replaceMap.has(exp) ? replaceMap.get(exp) : exp.clone(replaceMap)) as T;
+};
+export const excludeCloneMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+    replaceMap.set(exp, exp);
+    if ((exp as SelectExpression).projectedColumns) {
+        excludeCloneMap(replaceMap, (exp as SelectExpression).entity);
+        (exp as SelectExpression).projectedColumns.each(o => excludeCloneMap(replaceMap, o));
+    }
+    else if ((exp as IEntityExpression).primaryColumns) {
+        (exp as IEntityExpression).columns.each(o => excludeCloneMap(replaceMap, o));
+    }
+};
 export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {
     if (finder(source) === false) {
         return;

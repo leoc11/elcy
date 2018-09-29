@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class RightDecrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
     public static create(operand: IExpression<number>) {
         const result = new RightDecrementExpression(operand);
@@ -25,7 +25,7 @@ export class RightDecrementExpression extends ExpressionBase<number> implements 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const operand = getClone(this.operand, replaceMap);
+        const operand = resolveClone(this.operand, replaceMap);
         const clone = new RightDecrementExpression(operand);
         replaceMap.set(this, clone);
         return clone;

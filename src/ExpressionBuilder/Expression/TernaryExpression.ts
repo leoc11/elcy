@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T2> {
     public static create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
         const result = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
@@ -29,9 +29,9 @@ export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const logicalOperand = getClone(this.logicalOperand, replaceMap);
-        const trueResultOperand = getClone(this.trueResultOperand, replaceMap);
-        const falseResultOperand = getClone(this.falseResultOperand, replaceMap);
+        const logicalOperand = resolveClone(this.logicalOperand, replaceMap);
+        const trueResultOperand = resolveClone(this.trueResultOperand, replaceMap);
+        const falseResultOperand = resolveClone(this.falseResultOperand, replaceMap);
         const clone = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
         replaceMap.set(this, clone);
         return clone;

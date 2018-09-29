@@ -8,7 +8,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IObjectType } from "../../Common/Type";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 export class UpsertExpression<T = any> implements IQueryCommandExpression<void> {
@@ -51,8 +51,8 @@ export class UpsertExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const entity = getClone(this.entity, replaceMap);
-        const values = this.values.select(o => getClone(o, replaceMap)).toArray();
+        const entity = resolveClone(this.entity, replaceMap);
+        const values = this.values.select(o => resolveClone(o, replaceMap)).toArray();
         const clone = new UpsertExpression(entity, values);
         replaceMap.set(this, clone);
         return clone;

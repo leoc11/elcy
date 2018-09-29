@@ -8,7 +8,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IObjectType } from "../../Common/Type";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IEntityExpression } from "./IEntityExpression";
 export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
     public parameters: SqlParameterExpression[];
@@ -33,9 +33,9 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const entity = getClone(this.entity, replaceMap);
-        const columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
-        const values = this.values.select(o => o.select(o => getClone(o, replaceMap)).toArray()).toArray();
+        const entity = resolveClone(this.entity, replaceMap);
+        const columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
+        const values = this.values.select(o => o.select(o => resolveClone(o, replaceMap)).toArray()).toArray();
         const clone = new InsertExpression(entity, values, columns);
         replaceMap.set(this, clone);
         return clone;

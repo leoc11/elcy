@@ -3,7 +3,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 
 export class AdditionExpression<T extends number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
     public static create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
@@ -50,8 +50,8 @@ export class AdditionExpression<T extends number | string> extends ExpressionBas
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = getClone(this.leftOperand, replaceMap);
-        const right = getClone(this.rightOperand, replaceMap);
+        const left = resolveClone(this.leftOperand, replaceMap);
+        const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new AdditionExpression<T>(left, right);
         replaceMap.set(this, clone);
         return clone;

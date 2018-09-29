@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
     public static create<T>(functionFn: ((...params: any[]) => T) | IExpression<(...params: any[]) => T>, params: IExpression[], functionName?: string) {
         let fnExp: IExpression<(...params: any[]) => T>;
@@ -80,8 +80,8 @@ export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const fnExpression = getClone(this.fnExpression, replaceMap);
-        const params = this.params.select(o => getClone(o, replaceMap)).toArray();
+        const fnExpression = resolveClone(this.fnExpression, replaceMap);
+        const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
         const clone = new FunctionCallExpression(fnExpression, params);
         replaceMap.set(this, clone);
         return clone;

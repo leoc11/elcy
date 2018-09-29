@@ -17,7 +17,7 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, visitExpression, hashCodeAdd, getClone } from "../../Helper/Util";
+import { hashCode, visitExpression, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
@@ -326,25 +326,59 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SelectExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const entity = getClone(this.entity, replaceMap);
+        const entity = resolveClone(this.entity, replaceMap);
         const clone = new SelectExpression(entity);
-        clone.itemExpression = getClone(this.itemExpression, replaceMap);
-        clone.selects = this.selects.select(o => getClone(o, replaceMap)).toArray();
+        replaceMap.set(this, clone);
+        clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
         clone.orders = this.orders.select(o => ({
-            column: getClone(o.column, replaceMap),
+            column: resolveClone(o.column, replaceMap),
             direction: o.direction
         })).toArray();
-        for (const join of this.joins) {
-            const child = getClone(join.child, replaceMap);
-            clone.addJoinRelation(child, join.relations.clone(replaceMap), join.type);
-        }
-        for (const include of this.includes) {
-            const child = getClone(include.child, replaceMap);
-            clone.addInclude(include.name, child, include.relations.clone(replaceMap), include.type);
-        }
-        clone.where = getClone(this.where, replaceMap);
+
+        clone.joins = this.joins.select(o => {
+            const child = resolveClone(o.child, replaceMap);
+            const relation = resolveClone(o.relations, replaceMap);
+            const rel: IJoinRelation = {
+                child: child,
+                parent: clone,
+                relations: relation,
+                type: o.type,
+                isFinish: o.isFinish,
+                name: o.name
+            };
+            child.parentRelation = rel;
+            return rel;
+        }).toArray();
+
+        clone.includes = this.includes.select(o => {
+            let map: Map<IColumnExpression, IColumnExpression>;
+            if (o.relationMap) {
+                map = new Map();
+                for (const item of o.relationMap) {
+                    const key = replaceMap.has(item[0]) ? replaceMap.get(item[0]) as any : item[0];
+                    const value = replaceMap.has(item[1]) ? replaceMap.get(item[1]) as any : item[1];
+                    map.set(key, value);
+                }
+            }
+            const cloneChild = resolveClone(o.child, replaceMap);
+            const relation = resolveClone(o.relations, replaceMap);
+            const rel: IIncludeRelation = {
+                child: cloneChild,
+                isFinish: o.isFinish,
+                name: o.name,
+                parent: clone,
+                relations: relation,
+                relationMap: map,
+                type: o.type
+            };
+            cloneChild.parentRelation = rel;
+            return rel;
+        }).toArray();
+
+        clone.relationColumns = this.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.where = resolveClone(this.where, replaceMap);
         Object.assign(clone.paging, this.paging);
-        replaceMap.set(this, clone);
         return clone;
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {

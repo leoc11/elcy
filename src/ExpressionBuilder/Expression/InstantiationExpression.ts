@@ -2,7 +2,7 @@ import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class InstantiationExpression<T> extends ExpressionBase<T> {
     public static create<T>(type: IObjectType<T> | IExpression<IObjectType<T>>, params: IExpression[]) {
         let typeExp: IExpression<IObjectType<T>>;
@@ -44,8 +44,8 @@ export class InstantiationExpression<T> extends ExpressionBase<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const typeOperand = getClone(this.typeOperand, replaceMap);
-        const params = this.params.select(o => getClone(o, replaceMap)).toArray();
+        const typeOperand = resolveClone(this.typeOperand, replaceMap);
+        const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
         const clone = new InstantiationExpression(typeOperand, params);
         replaceMap.set(this, clone);
         return clone;

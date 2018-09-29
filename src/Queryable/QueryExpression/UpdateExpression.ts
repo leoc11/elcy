@@ -11,7 +11,7 @@ import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { hashCode, hashCodeAdd, getClone } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression } = {};
     public select: SelectExpression<T>;
@@ -67,10 +67,10 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpdateExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const select = getClone(this.select, replaceMap);
+        const select = resolveClone(this.select, replaceMap);
         const setter: { [key in keyof T]?: IExpression } = {};
         for (const prop in this.setter) {
-            setter[prop] = getClone(this.setter[prop], replaceMap);
+            setter[prop] = resolveClone(this.setter[prop], replaceMap);
         }
         const clone = new UpdateExpression(select, setter);
         replaceMap.set(this, clone);

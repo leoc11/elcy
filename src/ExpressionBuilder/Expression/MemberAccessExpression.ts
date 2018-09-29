@@ -5,7 +5,7 @@ import { ValueExpression } from "./ValueExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase<T[K]> implements IMemberOperatorExpression<T> {
     public static create<T, K extends keyof T>(objectOperand: IExpression<T>, member: K) {
         const result = new MemberAccessExpression(objectOperand, member);
@@ -54,7 +54,7 @@ export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const objectOperand = getClone(this.objectOperand, replaceMap);
+        const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const clone = new MemberAccessExpression(objectOperand, this.memberName);
         replaceMap.set(this, clone);
         return clone;

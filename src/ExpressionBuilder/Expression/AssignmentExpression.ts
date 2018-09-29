@@ -3,7 +3,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class AssignmentExpression extends ExpressionBase implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression, rightOperand: IExpression) {
         return new AssignmentExpression(leftOperand, rightOperand);
@@ -33,8 +33,8 @@ export class AssignmentExpression extends ExpressionBase implements IBinaryOpera
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = getClone(this.leftOperand, replaceMap);
-        const right = getClone(this.rightOperand, replaceMap);
+        const left = resolveClone(this.leftOperand, replaceMap);
+        const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new AssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;

@@ -9,7 +9,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -135,7 +135,7 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const select = getClone(this.select, replaceMap);
+        const select = resolveClone(this.select, replaceMap);
         const clone = new DeleteExpression(select, this.deleteMode);
         replaceMap.set(this, clone);
         return clone;

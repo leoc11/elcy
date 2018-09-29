@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 export class BitwiseOrAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new BitwiseOrAssignmentExpression(leftOperand, rightOperand);
@@ -23,8 +23,8 @@ export class BitwiseOrAssignmentExpression extends ExpressionBase<number> implem
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const left = getClone(this.leftOperand, replaceMap);
-        const right = getClone(this.rightOperand, replaceMap);
+        const left = resolveClone(this.leftOperand, replaceMap);
+        const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new BitwiseOrAssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;

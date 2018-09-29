@@ -5,7 +5,7 @@ import { Enumerable } from "../../Enumerable/Enumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -21,8 +21,9 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         this.selects = [];
         if (select.parentRelation)
             select.parentRelation.child = this;
-        if (select.where)
+        if (select.where) {
             this.where = select.where.clone();
+        }
         this.selectori = select;
         this.key = key;
 
@@ -74,17 +75,20 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const selectClone = getClone(this.selectori, replaceMap);
-        const groupBy = this.groupBy.select(o => getClone(o, replaceMap)).toArray();
-        const key = getClone(this.key, replaceMap);
+        const selectClone = resolveClone(this.selectori, replaceMap);
+        const groupBy = this.groupBy.select(o => resolveClone(o, replaceMap)).toArray();
+        const key = resolveClone(this.key, replaceMap);
         const hasItems = this.includes.any(o => o.name === "");
         const clone = new GroupByExpression(selectClone, groupBy, key, hasItems);
-        replaceMap.set(this.select, clone.select);
-        clone.itemExpression = getClone(this.itemExpression, replaceMap);
-        clone.selects = this.selects.select(o => getClone(o, replaceMap)).toArray();
-        if (this.having) clone.having = getClone(this.having, replaceMap);
-        Object.assign(clone.paging, this.paging);
         replaceMap.set(this, clone);
+        replaceMap.set(this.select, clone.select);
+        clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
+        if (this.where) clone.where = selectClone.where;
+        if (this.having) clone.having = resolveClone(this.having, replaceMap);
+        clone.relationColumns = this.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.select.relationColumns = this.select.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
+        Object.assign(clone.paging, this.paging);
         return clone;
     }
 }

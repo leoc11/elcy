@@ -4,7 +4,7 @@ import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IObjectType, OrderDirection, JoinType } from "../../Common/Type";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
@@ -58,7 +58,7 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const select = getClone(this.select, replaceMap);
+        const select = resolveClone(this.select, replaceMap);
         const clone = new SelectIntoExpression(select);
         replaceMap.set(this, clone);
         return clone;

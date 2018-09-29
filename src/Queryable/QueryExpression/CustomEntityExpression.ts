@@ -5,7 +5,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 
 export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
     public isRelationData?: boolean;
@@ -39,7 +39,7 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const clone = new CustomEntityExpression(this.name, [], this.type, this.alias);
         replaceMap.set(this, clone);
-        clone.columns = this.columns.select(o => getClone(o, replaceMap)).toArray();
+        clone.columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
         return clone;
     }
     public entityTypes: IObjectType[] = [];

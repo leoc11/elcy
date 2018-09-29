@@ -5,7 +5,7 @@ import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ValueExpressionTransformer } from "../ValueExpressionTransformer";
-import { getClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 
 export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
     public static create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
@@ -39,8 +39,8 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const body = getClone(this.body, replaceMap);
-        const params = this.params.select(o => getClone(o, replaceMap)).toArray();
+        const body = resolveClone(this.body, replaceMap);
+        const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
         const clone = new FunctionExpression(body, params);
         replaceMap.set(this, clone);
         return clone;

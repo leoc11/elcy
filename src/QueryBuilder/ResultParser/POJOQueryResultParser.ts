@@ -163,30 +163,32 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             // resolve parent relation
             if (parentRelation) {
                 const relation = select.parentRelation as IIncludeRelation<any, any>;
-                const a: any = {};
-                for (const [parentCol, childCol] of relation.relationMap) {
-                    let value = this.getDeepProperty(keyData, childCol.propertyName);
-                    if (value === undefined)
-                        value = this.getDeepProperty(entity, childCol.propertyName);
-                    this.setDeepProperty(a, parentCol.propertyName, value);
-                }
-
-                const key = hashCode(JSON.stringify(a));
-                const parentEntity = parentRelation.resultMap.get(key);
-
-                if (parentRelation.relationMeta && parentRelation.relationMeta.reverseRelation) {
-                    entity[parentRelation.relationMeta.reverseRelation.propertyName] = parentEntity;
-                }
-                if (parentEntity) {
-                    if (parentRelation.type === "many") {
-                        if (Array.isArray(parentEntity))
-                            parentEntity.add(entity);
-                        else {
-                            this.getDeepProperty<any[]>(parentEntity, relation.name).add(entity);
-                        }
+                if (relation.relationMap) {
+                    const a: any = {};
+                    for (const [parentCol, childCol] of relation.relationMap) {
+                        let value = this.getDeepProperty(keyData, childCol.propertyName);
+                        if (value === undefined)
+                            value = this.getDeepProperty(entity, childCol.propertyName);
+                        this.setDeepProperty(a, parentCol.propertyName, value);
                     }
-                    else {
-                        this.setDeepProperty(parentEntity, relation.name, entity);
+
+                    const key = hashCode(JSON.stringify(a));
+                    const parentEntity = parentRelation.resultMap.get(key);
+
+                    if (parentRelation.relationMeta && parentRelation.relationMeta.reverseRelation) {
+                        entity[parentRelation.relationMeta.reverseRelation.propertyName] = parentEntity;
+                    }
+                    if (parentEntity) {
+                        if (parentRelation.type === "many") {
+                            if (Array.isArray(parentEntity))
+                                parentEntity.add(entity);
+                            else {
+                                this.getDeepProperty<any[]>(parentEntity, relation.name).add(entity);
+                            }
+                        }
+                        else {
+                            this.setDeepProperty(parentEntity, relation.name, entity);
+                        }
                     }
                 }
             }
@@ -272,8 +274,12 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         const columnName = column.alias ? column.alias : column.columnName;
         const value = this.queryBuilder.toPropertyValue(data[columnName], column);
-        if (entryOrEntity instanceof EntityEntry)
-            entryOrEntity.setOriginalValue(column.propertyName as any, value);
+        if (entryOrEntity instanceof EntityEntry) {
+            if (column.propertyName.indexOf(".") >= 0)
+                this.setDeepProperty(entryOrEntity.entity, column.propertyName, value);
+            else
+                entryOrEntity.setOriginalValue(column.propertyName as any, value);
+        }
         else
             this.setDeepProperty(entryOrEntity, column.propertyName, value);
     }

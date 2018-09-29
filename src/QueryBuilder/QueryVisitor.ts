@@ -2,7 +2,7 @@ import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction, visitExpression, isValue, replaceExpression } from "../Helper/Util";
+import { isValueType, isNativeFunction, visitExpression, isValue, replaceExpression, resolveClone } from "../Helper/Util";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -562,7 +562,6 @@ export class QueryVisitor {
                 const childSelect = valueExp.clone();
                 let relation: IExpression<boolean>;
                 for (const col of selectOperand.groupBy) {
-                    childSelect.relationColumns.add(col.clone());
                     const childCol = childSelect.projectedColumns.first(o => o.columnName === col.columnName);
                     const logicalExp = new StrictEqualExpression(col, childCol);
                     relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
@@ -739,6 +738,83 @@ export class QueryVisitor {
 
                     return selectOperand;
                 }
+                case "groupBy": {
+                    // TODO: queryable end with group by. Orders.groupBy(o => o.OrderDate).toArray();
+                    if (param.scope === "include" || param.scope === "project")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    selectOperand.includes = [];
+                    const parentRelation = objectOperand.parentRelation;
+                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                    const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
+                    this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
+                    const selectExp = this.visit(selectorFn, visitParam);
+                    this.scopeParameters.remove(selectorFn.params[0].name);
+                    param.selectExpression = visitParam.selectExpression;
+
+                    if (selectExp instanceof SelectExpression) {
+                        throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
+                    }
+
+                    let groupColumns: IColumnExpression[] = [];
+                    let key = selectExp;
+                    let selectColumns: IColumnExpression[] = [];
+                    if ((selectExp as IEntityExpression).primaryColumns) {
+                        const entityExp = selectExp as IEntityExpression;
+                        visitExpression(entityExp.select.parentRelation.relations, (exp: IExpression): boolean | void => {
+                            if ((exp as IColumnExpression).entity && entityExp.select.parentRelation.parent.projectedColumns.contains(exp as any)) {
+                                groupColumns.add(exp as any);
+                                return false;
+                            }
+                        });
+
+                        // remove relation
+                        entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
+                        // add include
+                        selectOperand.addInclude("key", entityExp.select, entityExp.select.parentRelation.relations, "one");
+                    }
+                    else if (selectExp instanceof ObjectValueExpression) {
+                        this.visitObjectGroup(selectOperand, selectExp, groupColumns, selectColumns, "key");
+                    }
+                    else if ((selectExp as IColumnExpression).entity) {
+                        const column = (selectExp as IColumnExpression).clone();
+                        column.propertyName = "key";
+                        groupColumns.push(column);
+                        selectColumns.push(column);
+                        key = column;
+                    }
+                    else {
+                        const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
+                        groupColumns.push(column);
+                        selectColumns.push(column);
+                        key = column;
+                    }
+
+                    const groupByExp = new GroupByExpression(selectOperand, groupColumns, key, true);
+                    groupByExp.selects = selectColumns.slice(0);
+                    if (parentRelation) {
+                        parentRelation.child = groupByExp;
+                        groupByExp.parentRelation = parentRelation;
+                    }
+                    else {
+                        param.selectExpression = groupByExp;
+                    }
+                    return groupByExp;
+                }
+                case "project":
+                case "include": {
+                    if (expression.methodName === "project") {
+                        objectOperand.selects = [];
+                    }
+                    for (const paramFn of expression.params) {
+                        const selectorFn = paramFn as FunctionExpression<TType, TResult>;
+                        this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
+                        let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
+                        this.visit(selectorFn, visitParam);
+                        this.scopeParameters.remove(selectorFn.params[0].name);
+                    }
+                    return objectOperand;
+                }
                 case "where": {
                     if (selectOperand instanceof GroupedExpression) {
                         const clone = selectOperand.clone();
@@ -767,6 +843,50 @@ export class QueryVisitor {
 
                     selectOperand.addWhere(whereExp);
                     return selectOperand;
+                }
+                case "contains": {
+                    // TODO: dbset1.where(o => dbset2.select(c => c.column).contains(o.column)); use inner join for this
+                    if (param.scope === "include" || param.scope === "project")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    const isSubSelect = objectOperand.isSubSelect;
+                    let item = expression.params[0];
+                    if (isSubSelect)
+                        item = this.visit(item, param);
+
+                    let andExp: IExpression<boolean>;
+                    if (isSubSelect) {
+                        objectOperand.isAggregate = true;
+                        objectOperand.parentRelation.parent.joins.remove(objectOperand.parentRelation as any);
+                        objectOperand.parentRelation = null;
+                        return new MethodCallExpression(objectOperand, "contains", [item]);
+                    }
+                    else if (objectOperand.itemType === objectOperand.entity.type) {
+                        for (const primaryCol of objectOperand.entity.primaryColumns) {
+                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
+                            andExp = andExp ? new AndExpression(andExp, d) : d;
+                        }
+                    }
+                    else {
+                        andExp = new EqualExpression(objectOperand.selects.first(), item);
+                    }
+                    if (param.scope === "queryable" || isSubSelect) {
+                        objectOperand.addWhere(andExp);
+                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.paging.take = new ValueExpression(1);
+                        objectOperand.isAggregate = true;
+                        return isSubSelect ? new EqualExpression(objectOperand, new ValueExpression(1)) : objectOperand;
+                    }
+                    return andExp;
+                }
+                case "distinct": {
+                    if (param.scope === "include" || param.scope === "project")
+                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
+
+                    objectOperand.distinct = true;
+                    objectOperand.isAggregate = param.scope === "queryable" || objectOperand.isSubSelect;
+                    return objectOperand;
                 }
                 case "orderBy": {
                     const selectors = expression.params as ArrayValueExpression[];
@@ -837,216 +957,6 @@ export class QueryVisitor {
                     }
                     return objectOperand;
                 }
-                case "groupBy": {
-                    // TODO: queryable end with group by. Orders.groupBy(o => o.OrderDate).toArray();
-                    if (param.scope === "include" || param.scope === "project")
-                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                    selectOperand.includes = [];
-                    const parentRelation = objectOperand.parentRelation;
-                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
-                    const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
-                    this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
-                    const selectExp = this.visit(selectorFn, visitParam);
-                    this.scopeParameters.remove(selectorFn.params[0].name);
-                    param.selectExpression = visitParam.selectExpression;
-
-                    if (selectExp instanceof SelectExpression) {
-                        throw new Error(`Queryable<${objectOperand.type}>.groupBy did not support selector with array or queryable or enumerable return value.`);
-                    }
-
-                    let groupColumns: IColumnExpression[] = [];
-                    let key = selectExp;
-                    let selectColumns: IColumnExpression[] = [];
-                    if ((selectExp as IEntityExpression).primaryColumns) {
-                        const entityExp = selectExp as IEntityExpression;
-                        visitExpression(entityExp.select.parentRelation.relations, (exp: IExpression): boolean | void => {
-                            if ((exp as IColumnExpression).entity && entityExp.select.parentRelation.parent.projectedColumns.contains(exp as any)) {
-                                groupColumns.add(exp as any);
-                                return false;
-                            }
-                        });
-
-                        // remove relation
-                        entityExp.select.parentRelation.parent.joins.remove(entityExp.select.parentRelation as any);
-                        // add include
-                        selectOperand.addInclude("key", entityExp.select, entityExp.select.parentRelation.relations, "one");
-                    }
-                    else if (selectExp instanceof ObjectValueExpression) {
-                        this.visitObjectGroup(selectOperand, selectExp, groupColumns, selectColumns, "key");
-                    }
-                    else if ((selectExp as IColumnExpression).entity) {
-                        const column = (selectExp as IColumnExpression).clone();
-                        column.propertyName = "key";
-                        groupColumns.push(column);
-                        selectColumns.push(column);
-                        key = column;
-                    }
-                    else {
-                        const column = new ComputedColumnExpression(selectOperand.entity, selectExp, "key");
-                        groupColumns.push(column);
-                        selectColumns.push(column);
-                        key = column;
-                    }
-
-                    const groupByExp = new GroupByExpression(selectOperand, groupColumns, key, true);
-                    groupByExp.selects = selectColumns.slice(0);
-                    if (parentRelation) {
-                        parentRelation.child = groupByExp;
-                        groupByExp.parentRelation = parentRelation;
-                    }
-                    else {
-                        param.selectExpression = groupByExp;
-                    }
-                    return groupByExp;
-                }
-                case "skip":
-                case "take": {
-                    const [exp] = this.extract(this.visit(expression.params[0] as ParameterExpression<number>, param));
-                    if (param.scope === "queryable") {
-                        if (objectOperand.paging.take) {
-                            [objectOperand.paging.take] = this.extract(objectOperand.paging.take);
-                        }
-                        if (expression.methodName === "skip") {
-                            if (objectOperand.paging.skip) {
-                                [objectOperand.paging.skip] = this.extract(objectOperand.paging.skip);
-                            }
-                            if (objectOperand.paging.take) {
-                                objectOperand.paging.take = this.createParamBuilderItem(new SubtractionExpression(objectOperand.paging.take, exp), param);
-                            }
-                            objectOperand.paging.skip = this.createParamBuilderItem(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
-                        }
-                        else {
-                            objectOperand.paging.take = this.createParamBuilderItem(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
-                        }
-                    }
-                    else {
-                        let takeJoinRel = objectOperand.joins.first(o => o.name === "TAKE");
-                        if (!takeJoinRel) {
-                            const filterer = (objectOperand as SelectExpression).clone();
-                            filterer.entity.alias = this.newAlias();
-                            filterer.includes = [];
-                            const sorter = (objectOperand as SelectExpression).clone();
-                            sorter.entity.alias = this.newAlias();
-                            sorter.includes = [];
-
-                            // column used for parent relations.
-                            const relationColumns: IColumnExpression[] = [];
-                            visitExpression(objectOperand.parentRelation.relations, (exp: IColumnExpression): boolean | void => {
-                                if (exp.entity && objectOperand.entity.columns.contains(exp)) {
-                                    relationColumns.push(exp);
-                                    return false;
-                                }
-                            });
-
-                            let joinExp: IExpression<boolean>;
-                            relationColumns.each(o => {
-                                const sortCol = sorter.entity.columns.first(col => col.propertyName === o.propertyName);
-                                const filterCol = filterer.entity.columns.first(col => col.propertyName === o.propertyName);
-                                const logicalExp = new StrictEqualExpression(sortCol, filterCol);
-                                joinExp = joinExp ? new AndExpression(joinExp, logicalExp) : logicalExp;
-                            });
-                            let orderExp: IExpression<boolean>;
-                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
-                                const sortCol = sorter.entity.primaryColumns[i];
-                                const filterCol = filterer.entity.primaryColumns[i];
-                                const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
-                                if (orderExp) {
-                                    orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
-                                }
-                                else {
-                                    orderExp = orderCompExp;
-                                }
-                            }
-                            for (let i = 0; i < objectOperand.orders.length; i++) {
-                                const order = objectOperand.orders[i];
-                                const sortCol = sorter.orders[i].column;
-                                const filterCol = filterer.orders[i].column;
-                                const orderCompExp = new (order.direction === "DESC" ? LessThanExpression : GreaterThanExpression)(sortCol, filterCol);
-                                orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
-                            }
-                            sorter.orders = filterer.orders = [];
-                            filterer.addJoinRelation(sorter, new AndExpression(joinExp, orderExp), JoinType.INNER);
-                            
-                            const countExp = new MethodCallExpression(filterer, "count", filterer.entity.primaryColumns, Number);
-                            const colCountExp = new ComputedColumnExpression(filterer.entity, countExp, this.newAlias("column"));
-
-                            let keyExp: IExpression;
-                            if (filterer.entity.primaryColumns.length > 1) {
-                                keyExp = new ObjectValueExpression({});
-                                filterer.entity.primaryColumns.each(o => (keyExp as ObjectValueExpression).object[o.propertyName] = o);
-                            }
-                            else {
-                                keyExp = filterer.entity.primaryColumns.first();
-                            }
-                            const groupExp = new GroupByExpression(filterer, filterer.entity.primaryColumns, keyExp);
-                            groupExp.selects = [colCountExp];
-
-                            // add join relation to current object operand
-                            let joinRelation: IExpression<boolean>;
-                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
-                                const objCol = objectOperand.entity.primaryColumns[i];
-                                const groupCol = groupExp.entity.primaryColumns[i];
-                                const logicalExp = new StrictEqualExpression(objCol, groupCol);
-                                joinRelation = joinRelation ? new AndExpression(joinRelation, logicalExp) : logicalExp;
-                            }
-
-                            takeJoinRel = objectOperand.addJoinRelation(groupExp, joinRelation, JoinType.INNER);
-                            takeJoinRel.name = "TAKE";
-                            (takeJoinRel as any).order = orderExp;
-                        }
-
-                        const groupExp = takeJoinRel.child as GroupByExpression;
-                        const anyTakeJoinRel = takeJoinRel as any;
-                        const countExp = (groupExp.selects.first() as ComputedColumnExpression).expression;
-
-                        if (expression.methodName === "skip") {
-                            if (anyTakeJoinRel.take) {
-                                anyTakeJoinRel.take = this.visit(new SubtractionExpression(anyTakeJoinRel.take, exp), param);
-                            }
-                            anyTakeJoinRel.skip = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
-                        }
-                        else {
-                            anyTakeJoinRel.take = this.visit(anyTakeJoinRel.take ? new MethodCallExpression(new ValueExpression(Math), "min", [anyTakeJoinRel.take, exp]) : exp, param);
-                        }
-
-                        groupExp.having = null;
-                        if (anyTakeJoinRel.skip) {
-                            groupExp.having = new GreaterThanExpression(countExp, anyTakeJoinRel.skip);
-                        }
-                        if (anyTakeJoinRel.take) {
-                            const takeLogicalExp = new LessEqualExpression(countExp, anyTakeJoinRel.take);
-                            groupExp.having = groupExp.having ? new AndExpression(groupExp.having, takeLogicalExp) : takeLogicalExp;
-                        }
-                    }
-
-                    return objectOperand;
-                }
-                case "distinct": {
-                    if (param.scope === "include" || param.scope === "project")
-                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                    objectOperand.distinct = true;
-                    objectOperand.isAggregate = param.scope === "queryable" || objectOperand.isSubSelect;
-                    return objectOperand;
-                }
-                case "project":
-                case "include": {
-                    if (expression.methodName === "project") {
-                        objectOperand.selects = [];
-                    }
-                    for (const paramFn of expression.params) {
-                        const selectorFn = paramFn as FunctionExpression<TType, TResult>;
-                        this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
-                        let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
-                        this.visit(selectorFn, visitParam);
-                        this.scopeParameters.remove(selectorFn.params[0].name);
-                    }
-                    return objectOperand;
-                }
-                case "toArray": {
-                    return objectOperand;
-                }
                 case "count": {
                     if (param.scope === "include" || param.scope === "project")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
@@ -1061,6 +971,11 @@ export class QueryVisitor {
                         return objectOperand;
                     }
                     else if (selectOperand instanceof GroupedExpression) {
+                        // don't select unnecessary column
+                        if (param.scope && param.scope.indexOf("select") === 0) {
+                            selectOperand.selects = [];
+                            selectOperand.relationColumns = selectOperand.relationColumns.skip(selectOperand.select.groupBy.length).toArray();
+                        }
                         return countExp;
                     }
                     else {
@@ -1264,6 +1179,11 @@ export class QueryVisitor {
                         return objectOperand;
                     }
                     else if (selectOperand instanceof GroupedExpression) {
+                        // don't select unnecessary column
+                        if (param.scope && param.scope.indexOf("select") === 0) {
+                            selectOperand.selects = [];
+                            selectOperand.relationColumns = selectOperand.relationColumns.skip(selectOperand.select.groupBy.length).toArray();
+                        }
                         return anyExp;
                     }
                     else {
@@ -1345,42 +1265,6 @@ export class QueryVisitor {
                         return new (isAny ? StrictNotEqualExpression : StrictEqualExpression)(column, new ValueExpression(null));
                     }
                 }
-                case "contains": {
-                    // TODO: dbset1.where(o => dbset2.select(c => c.column).contains(o.column)); use inner join for this
-                    if (param.scope === "include" || param.scope === "project")
-                        throw new Error(`${param.scope} did not support ${expression.methodName}`);
-
-                    const isSubSelect = objectOperand.isSubSelect;
-                    let item = expression.params[0];
-                    if (isSubSelect)
-                        item = this.visit(item, param);
-
-                    let andExp: IExpression<boolean>;
-                    if (isSubSelect) {
-                        objectOperand.isAggregate = true;
-                        objectOperand.parentRelation.parent.joins.remove(objectOperand.parentRelation as any);
-                        objectOperand.parentRelation = null;
-                        return new MethodCallExpression(objectOperand, "contains", [item]);
-                    }
-                    else if (objectOperand.itemType === objectOperand.entity.type) {
-                        for (const primaryCol of objectOperand.entity.primaryColumns) {
-                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
-                            andExp = andExp ? new AndExpression(andExp, d) : d;
-                        }
-                    }
-                    else {
-                        andExp = new EqualExpression(objectOperand.selects.first(), item);
-                    }
-                    if (param.scope === "queryable" || isSubSelect) {
-                        objectOperand.addWhere(andExp);
-                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
-                        objectOperand.selects = [column];
-                        objectOperand.paging.take = new ValueExpression(1);
-                        objectOperand.isAggregate = true;
-                        return isSubSelect ? new EqualExpression(objectOperand, new ValueExpression(1)) : objectOperand;
-                    }
-                    return andExp;
-                }
                 case "first": {
                     if (param.scope !== "queryable")
                         throw new Error(`${param.scope} did not support ${expression.methodName}`);
@@ -1393,6 +1277,125 @@ export class QueryVisitor {
                     }
                     selectOperand.paging.take = new ValueExpression(1);
                     return selectOperand.entity;
+                }
+                case "skip":
+                case "take": {
+                    const [exp] = this.extract(this.visit(expression.params[0] as ParameterExpression<number>, param));
+                    if (param.scope === "queryable") {
+                        if (objectOperand.paging.take) {
+                            [objectOperand.paging.take] = this.extract(objectOperand.paging.take);
+                        }
+                        if (expression.methodName === "skip") {
+                            if (objectOperand.paging.skip) {
+                                [objectOperand.paging.skip] = this.extract(objectOperand.paging.skip);
+                            }
+                            if (objectOperand.paging.take) {
+                                objectOperand.paging.take = this.createParamBuilderItem(new SubtractionExpression(objectOperand.paging.take, exp), param);
+                            }
+                            objectOperand.paging.skip = this.createParamBuilderItem(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
+                        }
+                        else {
+                            objectOperand.paging.take = this.createParamBuilderItem(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
+                        }
+                    }
+                    else {
+                        let takeJoinRel = objectOperand.joins.first(o => o.name === "TAKE");
+                        if (!takeJoinRel) {
+                            const filterer = (objectOperand as SelectExpression).clone();
+                            filterer.entity.alias = this.newAlias();
+                            filterer.includes = [];
+                            const sorter = (objectOperand as SelectExpression).clone();
+                            sorter.entity.alias = this.newAlias();
+                            sorter.includes = [];
+
+                            // column used for parent relations.
+                            const relationColumns: IColumnExpression[] = [];
+                            visitExpression(objectOperand.parentRelation.relations, (exp: IColumnExpression): boolean | void => {
+                                if (exp.entity && objectOperand.entity.columns.contains(exp)) {
+                                    relationColumns.push(exp);
+                                    return false;
+                                }
+                            });
+
+                            let joinExp: IExpression<boolean>;
+                            relationColumns.each(o => {
+                                const sortCol = sorter.entity.columns.first(col => col.propertyName === o.propertyName);
+                                const filterCol = filterer.entity.columns.first(col => col.propertyName === o.propertyName);
+                                const logicalExp = new StrictEqualExpression(sortCol, filterCol);
+                                joinExp = joinExp ? new AndExpression(joinExp, logicalExp) : logicalExp;
+                            });
+                            let orderExp: IExpression<boolean>;
+                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
+                                const sortCol = sorter.entity.primaryColumns[i];
+                                const filterCol = filterer.entity.primaryColumns[i];
+                                const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
+                                if (orderExp) {
+                                    orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                                }
+                                else {
+                                    orderExp = orderCompExp;
+                                }
+                            }
+                            for (let i = 0; i < objectOperand.orders.length; i++) {
+                                const order = objectOperand.orders[i];
+                                const sortCol = sorter.orders[i].column;
+                                const filterCol = filterer.orders[i].column;
+                                const orderCompExp = new (order.direction === "DESC" ? LessThanExpression : GreaterThanExpression)(sortCol, filterCol);
+                                orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
+                            }
+                            sorter.orders = filterer.orders = [];
+                            filterer.addJoinRelation(sorter, new AndExpression(joinExp, orderExp), JoinType.INNER);
+
+                            const countExp = new MethodCallExpression(filterer, "count", filterer.entity.primaryColumns, Number);
+                            const colCountExp = new ComputedColumnExpression(filterer.entity, countExp, this.newAlias("column"));
+
+                            let keyExp: IExpression;
+                            if (filterer.entity.primaryColumns.length > 1) {
+                                keyExp = new ObjectValueExpression({});
+                                filterer.entity.primaryColumns.each(o => (keyExp as ObjectValueExpression).object[o.propertyName] = o);
+                            }
+                            else {
+                                keyExp = filterer.entity.primaryColumns.first();
+                            }
+                            const groupExp = new GroupByExpression(filterer, filterer.entity.primaryColumns, keyExp);
+                            groupExp.selects = [colCountExp];
+
+                            // add join relation to current object operand
+                            let joinRelation: IExpression<boolean>;
+                            for (let i = 0; i < objectOperand.entity.primaryColumns.length; i++) {
+                                const objCol = objectOperand.entity.primaryColumns[i];
+                                const groupCol = groupExp.entity.primaryColumns[i];
+                                const logicalExp = new StrictEqualExpression(objCol, groupCol);
+                                joinRelation = joinRelation ? new AndExpression(joinRelation, logicalExp) : logicalExp;
+                            }
+
+                            takeJoinRel = objectOperand.addJoinRelation(groupExp, joinRelation, JoinType.INNER);
+                            takeJoinRel.name = "TAKE";
+                            (takeJoinRel as any).order = orderExp;
+                        }
+
+                        const groupExp = takeJoinRel.child as GroupByExpression;
+                        const anyTakeJoinRel = takeJoinRel as any;
+                        const countExp = (groupExp.selects.first() as ComputedColumnExpression).expression;
+
+                        if (expression.methodName === "skip") {
+                            anyTakeJoinRel.skip = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
+                        }
+                        else {
+                            anyTakeJoinRel.take = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
+                        }
+
+                        groupExp.having = null;
+                        if (anyTakeJoinRel.skip) {
+                            groupExp.having = new GreaterThanExpression(countExp, anyTakeJoinRel.skip);
+                        }
+                        if (anyTakeJoinRel.take) {
+                            const takeLogicalExp = new LessEqualExpression(countExp, anyTakeJoinRel.take);
+                            groupExp.having = groupExp.having ? new AndExpression(groupExp.having, takeLogicalExp) : takeLogicalExp;
+                        }
+                    }
+
+                    return objectOperand;
                 }
                 case "union":
                 case "intersect":
@@ -1536,6 +1539,9 @@ export class QueryVisitor {
                         param.selectExpression = selectOperand;
                     }
                     return selectOperand;
+                }
+                case "toArray": {
+                    return objectOperand;
                 }
             }
             throw new Error(`${expression.methodName} not supported on expression`);
@@ -1723,7 +1729,7 @@ export class QueryVisitor {
     protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: IVisitParameter) {
         const objectValue: any = {};
         for (const prop in expression.object) {
-            objectValue[prop] = this.visit(expression.object[prop], { selectExpression: param.selectExpression });
+            objectValue[prop] = this.visit(expression.object[prop], { selectExpression: param.selectExpression, scope: param.scope + "-object" });
         }
         expression.object = objectValue;
         return expression;

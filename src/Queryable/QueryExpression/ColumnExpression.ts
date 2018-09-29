@@ -4,7 +4,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
@@ -45,7 +45,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const entity = getClone(this.entity, replaceMap);
+        const entity = resolveClone(this.entity, replaceMap);
         const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.columnType);
         clone.columnMetaData = this.columnMetaData;
         clone.alias = this.alias;

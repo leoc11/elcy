@@ -4,7 +4,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
-import { hashCode, getClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
@@ -21,9 +21,9 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const entityExp = getClone(this.entity, replaceMap);
-        const exp = getClone(this.expression, replaceMap);
-        const clone = new ComputedColumnExpression(entityExp, exp, this.propertyName);
+        const entity = resolveClone(this.entity, replaceMap);
+        const exp = resolveClone(this.expression, replaceMap);
+        const clone = new ComputedColumnExpression(entity, exp, this.propertyName);
         clone.isPrimary = this.isPrimary;
         clone.columnType = this.columnType;
         clone.columnName = this.columnName;
