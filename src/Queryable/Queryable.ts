@@ -831,7 +831,7 @@ export abstract class Queryable<T = any> {
 
     private cacheKey(type?: string, addCode?: number) {
         let cacheKey = hashCode(type, this.hashCode());
-        if (addCode) hashCodeAdd(cacheKey, addCode);
+        if (addCode) cacheKey = hashCodeAdd(cacheKey, addCode);
         cacheKey = hashCode(this.queryOption.buildKey, cacheKey);
         const subQueryCacheKey = Object.keys(this.flatParameterStacks)
             .select(o => {
