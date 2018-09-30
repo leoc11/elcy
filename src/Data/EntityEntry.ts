@@ -136,6 +136,10 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         }
         relGroup.set(key, relationEntry);
     }
+    public getRelation(relationName: string, relatedEntry: EntityEntry) {
+        const relGroup = this.relationMap[relationName];
+        return relGroup ? relGroup.get(relatedEntry.key) : null;
+    }
     public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
         const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry).key;
         let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];

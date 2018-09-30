@@ -30,7 +30,9 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        result.parentRelation = null;
+        return result;
     }
     public hashCode() {
         return hashCode("SELECT", this.parent.hashCode() + hashCode((this.selectorFn || this.selector).toString()));

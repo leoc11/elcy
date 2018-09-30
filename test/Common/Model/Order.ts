@@ -2,10 +2,10 @@ import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { OrderDetail } from "./OrderDetail";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
-import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { UUID } from "../../../src/Data/UUID";
+import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 // import { TimestampColumn } from "../../../src/Decorator/Column/TimestampColumn";
 
 export enum OrderStatus {
@@ -20,7 +20,7 @@ export class Order {
     @IdentifierColumn()
     public OrderId: UUID;
 
-    @IntegerColumn({ columnType: "bigint" })
+    @DecimalColumn({ columnType: "decimal" })
     public TotalAmount: number;
 
     @DateColumn()

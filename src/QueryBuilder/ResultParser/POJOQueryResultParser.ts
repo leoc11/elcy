@@ -3,247 +3,217 @@ import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpres
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { IQueryResult } from "../IQueryResult";
-import { GenericType, RelationshipType } from "../../Common/Type";
-import { hashCode, isValue } from "../../Helper/Util";
-import { relationMetaKey } from "../../Decorator/DecoratorKey";
-import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { IObjectType } from "../../Common/Type";
+import { hashCode, isValueType } from "../../Helper/Util";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { EmbeddedColumnExpression } from "../../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { SelectExpression, IIncludeRelation } from "../../Queryable/QueryExpression/SelectExpression";
-import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { QueryBuilder } from "../QueryBuilder";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 
-export interface IRelationResolveData<T = any, TE = any> {
-    resultMap: Map<number, TE>;
-    relationMeta?: RelationMetaData<T, TE>;
-    type: RelationshipType;
+interface IResolvedRelationData<T = any, TData = any> {
+    data?: IResolvedRelationData<TData>;
+    entity: T;
+    entry?: EntityEntry<T>;
 }
+
 export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
+    private _orderedSelects: SelectExpression[];
+    public get orderedSelects() {
+        if (!this._orderedSelects) {
+            this._orderedSelects = [this.queryExpression];
+            for (let i = 0; i < this._orderedSelects.length; i++) {
+                const select = this._orderedSelects[i];
+                this._orderedSelects.splice(i + 1, 0, ...select.includes.select(o => o.child).toArray());
+            }
+        }
+        return this._orderedSelects;
+    }
     constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: QueryBuilder) {
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
-        return this.parseData(queryResults, dbContext, this.queryExpression, new Date());
+        return this.parseData(queryResults, dbContext, new Date());
     }
-    private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext, select: SelectExpression<T>, loadTime: Date, customTypeMap = new Map<GenericType, Map<number, any>>()): T[] {
+    private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext, loadTime: Date): T[] {
         const results: T[] = [];
-        let queryResult = queryResults.shift();
-        if (Enumerable.load(queryResult.rows).count() <= 0)
-            return results;
+        const resolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
+        const loops = this.orderedSelects;
 
-        // parent relation
-        let parentRelation: IRelationResolveData<T, any>;
-        if (select.parentRelation) {
-            const relation = select.parentRelation as IIncludeRelation<any, T>;
-            if (relation.type === "many") {
-                parentRelation = {
-                    resultMap: customTypeMap.get(relation.parent.itemType),
-                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, relation.parent.itemType, relation.name),
-                    type: relation.type
-                };
-            }
-        }
+        for (let i = loops.length - 1; i >= 0; i--) {
+            const queryResult = queryResults[i];
+            const select = loops[i];
+            resolveMap.set(select, new Map());
+            const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
+            resolveMap.set(select, itemMap);
 
-        // child relation
-        const childRelations = new Map<IIncludeRelation<T, any>, IRelationResolveData>();
-        for (const include of select.includes) {
-            if (include.type === "one") {
-                this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
-                const childRelation: IRelationResolveData = {
-                    resultMap: customTypeMap.get(include.child.itemType),
-                    relationMeta: Reflect.getOwnMetadata(relationMetaKey, select.itemType, include.name),
-                    type: include.type
-                };
-                childRelations.set(include, childRelation);
-            }
-        }
-
-        let resultMap = customTypeMap.get(select.itemType);
-        if (!resultMap) {
-            resultMap = new Map<any, any>();
-            customTypeMap.set(select.itemType, resultMap);
-        }
-
-        const dbSet = dbContext.set<T>(select.itemType as any);
-        const primaryColumns = select instanceof GroupByExpression ? select.groupBy : select.projectedColumns.where(o => o.isPrimary);
-        const columns = select.selects.where(o => !o.isPrimary);
-        const relColumns = select.relationColumns.except(select.selects);
-
-        const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
-        const isRelationData = select.entity.isRelationData;
-
-        for (const row of queryResult.rows) {
-            let entity = new (select.itemType as any)();
-            let entry: EntityEntry<T>;
-            const keyData: { [key: string]: any } = {};
-            for (const primaryCol of primaryColumns) {
-                const columnName = primaryCol.alias ? primaryCol.alias : primaryCol.columnName;
-                const prop = primaryCol.propertyName;
-                const value = this.queryBuilder.toPropertyValue(row[columnName], primaryCol);
-                this.setDeepProperty(keyData, prop, value);
-                if (select.selects.contains(primaryCol))
-                    this.setDeepProperty(entity, prop, value);
-            }
-            const key = hashCode(JSON.stringify(keyData));
-
-            // load existing entity
-            if (dbSet) {
-                entry = dbSet.entry(entity);
-                if (entry)
-                    entity = entry.entity;
-                else
-                    entry = dbSet.attach(entity);
-            }
-
-            // set all entity value
-            let isValueEntity = Array.isArray(entity);
-            if (isValue(entity)) {
-                isValueEntity = true;
-                const column = select.selects.first();
-                entity = this.queryBuilder.toPropertyValue(row[column.columnName], column);
-            }
-            else {
-                for (const column of columns) {
-                    this.setPropertyValue(entry || entity, column, row, dbContext);
-                }
-            }
-            resultMap.set(key, entity);
-
-            for (const column of relColumns) {
-                const value = this.queryBuilder.toPropertyValue(row[column.columnName], column);
-                this.setDeepProperty(keyData, column.propertyName, value);
-            }
-            results.push(entity);
-
-            if (isRelationData) {
-                const parentIncludeRel = select.parentRelation as IIncludeRelation;
-                let a: any = {};
-                for (const [sourceColMeta, relColMeta] of parentIncludeRel.relationMap) {
-                    let value = this.getDeepProperty(keyData, relColMeta.propertyName);
-                    if (value === undefined)
-                        value = this.getDeepProperty(entity, relColMeta.propertyName);
-
-                    this.setDeepProperty(a, sourceColMeta.propertyName, value);
-                }
-                let key = hashCode(JSON.stringify(a));
-                const sourceEntity = customTypeMap.get(select.parentRelation.parent.itemType).get(key);
-
-                for (const include of select.includes.where(o => o.type === "one")) {
-                    a = {};
-                    for (const [relColMeta, targetColMeta] of include.relationMap) {
-                        let value = this.getDeepProperty(keyData, relColMeta.propertyName);
-                        if (value === undefined)
-                            value = this.getDeepProperty(entity, relColMeta.propertyName);
-
-                        this.setDeepProperty(a, targetColMeta.propertyName, value);
-                    }
-                    key = hashCode(JSON.stringify(a));
-                    const targetEntity = customTypeMap.get(include.child.itemType).get(key);
-
-                    if (!sourceEntity[include.name])
-                        sourceEntity[include.name] = [];
-                    sourceEntity[include.name].push(targetEntity);
-
-                    if (parentRelation.relationMeta) {
-                        Reflect.setRelationData(sourceEntity, include.name, targetEntity, entity);
-
-                        if (parentRelation.relationMeta.reverseRelation) {
-                            if (!targetEntity[parentRelation.relationMeta.reverseRelation.propertyName])
-                                targetEntity[parentRelation.relationMeta.reverseRelation.propertyName] = [];
-                            targetEntity[parentRelation.relationMeta.reverseRelation.propertyName].push(sourceEntity);
-                        }
-                    }
-                }
-
+            if (Enumerable.load(queryResult.rows).count() <= 0)
                 continue;
-            }
 
-            // resolve parent relation
-            if (parentRelation) {
-                const relation = select.parentRelation as IIncludeRelation<any, any>;
-                if (relation.relationMap) {
-                    const a: any = {};
-                    for (const [parentCol, childCol] of relation.relationMap) {
-                        let value = this.getDeepProperty(keyData, childCol.propertyName);
-                        if (value === undefined)
-                            value = this.getDeepProperty(entity, childCol.propertyName);
-                        this.setDeepProperty(a, parentCol.propertyName, value);
-                    }
+            const dbSet = dbContext.set<T>(select.itemType as IObjectType);
+            const dbEventEmitter = dbSet ? new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext) : undefined;
 
-                    const key = hashCode(JSON.stringify(a));
-                    const parentEntity = parentRelation.resultMap.get(key);
+            let primaryColumns = (dbSet ? select.projectedColumns : select.selects).where(o => o.isPrimary);
+            const columns = select.selects.except(primaryColumns);
+            const parentRelation = select.parentRelation as IIncludeRelation;
 
-                    if (parentRelation.relationMeta && parentRelation.relationMeta.reverseRelation) {
-                        entity[parentRelation.relationMeta.reverseRelation.propertyName] = parentEntity;
-                    }
-                    if (parentEntity) {
-                        if (parentRelation.type === "many") {
-                            if (Array.isArray(parentEntity))
-                                parentEntity.add(entity);
-                            else {
-                                this.getDeepProperty<any[]>(parentEntity, relation.name).add(entity);
-                            }
-                        }
-                        else {
-                            this.setDeepProperty(parentEntity, relation.name, entity);
-                        }
-                    }
+            let reverseRelationMap = new Map<IIncludeRelation, IRelationMetaData>();
+            for (const row of queryResult.rows) {
+                let entity: any;
+                let entry: EntityEntry<T>;
+
+                if (isValueType(select.itemType)) {
+                    const column = select.selects.first();
+                    const columnName = column.alias ? column.alias : column.columnName;
+                    entity = this.queryBuilder.toPropertyValue(row[columnName], column);
                 }
-            }
-
-            // resolve child relation
-            for (const [include, data] of childRelations) {
-                const a: any = {};
-                for (const [parentCol, childCol] of include.relationMap) {
-                    if (childCol && parentCol) {
-                        let value = this.getDeepProperty(keyData, parentCol.propertyName);
-                        if (value === undefined)
-                            value = this.getDeepProperty(entity, parentCol.propertyName);
-                        this.setDeepProperty(a, childCol.propertyName, value);
-                    }
-                }
-
-                const key = hashCode(JSON.stringify(a));
-                const childEntity = data.resultMap.get(key);
-                this.setDeepProperty(entity, include.name, childEntity);
-                if (childEntity && data.relationMeta && data.relationMeta.reverseRelation) {
-                    if (data.relationMeta.reverseRelation.relationType === "many") {
-                        if (!childEntity[data.relationMeta.reverseRelation.propertyName]) {
-                            childEntity[data.relationMeta.reverseRelation.propertyName] = [];
-                        }
-                        childEntity[data.relationMeta.reverseRelation.propertyName].add(entity);
+                else {
+                    if (select.itemType === Array) {
+                        entity = [];
                     }
                     else {
-                        childEntity[data.relationMeta.reverseRelation.propertyName] = entity;
+                        entity = new (select.itemType as IObjectType)();
+                    }
+                    for (const primaryCol of primaryColumns) {
+                        this.setPropertyValue(entity, primaryCol, row, dbContext);
+                    }
+
+                    // load existing entity
+                    if (dbSet) {
+                        entry = dbSet.entry(entity);
+                        if (entry)
+                            entity = entry.entity;
+                        else
+                            entry = dbSet.attach(entity);
+                    }
+
+                    for (const column of columns) {
+                        this.setPropertyValue(entry || entity, column, row, dbContext);
                     }
                 }
-            }
 
-            // set relation to Array
-            if (!isValueEntity) {
+                let relationData: IResolvedRelationData = {
+                    entity: entity,
+                    entry: entry
+                };
                 for (const include of select.includes) {
-                    if (include.type === "many") {
-                        if (!this.getDeepProperty(entity, include.name)) {
+                    const childMap = resolveMap.get(include.child);
+                    const relKey: any = {};
+                    for (const key of include.relationMap.keys()) {
+                        relKey[key.propertyName] = row[key.columnName];
+                    }
+                    const key = hashCode(JSON.stringify(relKey));
+                    let relationValue = childMap.get(key);
+
+                    // Default many relation value is an empty Array.
+                    if (include.type === "many" && !relationValue) {
+                        relationValue = [];
+                    }
+
+                    if (select.entity.isRelationData && include.name === parentRelation.name) {
+                        const childRelationData = relationValue as IResolvedRelationData;
+                        childRelationData.data = relationData;
+                        relationData = childRelationData;
+                    }
+                    else if (include.child.entity.isRelationData) {
+                        let values = this.getDeepProperty<any[]>(entity, include.name);
+                        if (!values) {
                             this.setDeepProperty(entity, include.name, []);
+                            values = this.getDeepProperty<any[]>(entity, include.name);
+                        }
+
+                        const relDatas = relationValue as IResolvedRelationData[];
+                        const relationMeta = dbSet ? dbSet.metaData.relations.first(o => o.propertyName === include.name) : null;
+                        relDatas.each(o => {
+                            values.push(o.entity);
+                            if (relationMeta) {
+                                const relationEntry = entry.getRelation(relationMeta.fullName, o.entry);
+                                relationEntry.relationData = o.data.entity;
+                            }
+                        });
+                    }
+                    else if (include.type === "many") {
+                        const relatedValues = relationValue as IResolvedRelationData[];
+                        const relatedEntities = relatedValues.select(o => o.entity).toArray();
+                        let valueArray: any[];
+                        if (Array.isArray(entity) && include.name === "") {
+                            valueArray = entity;
+                        }
+                        else {
+                            valueArray = this.getDeepProperty(entity, include.name);
+                            if (!valueArray) {
+                                this.setDeepProperty(entity, include.name, []);
+                                valueArray = this.getDeepProperty(entity, include.name);
+                            }
+                        }
+                        valueArray.push(...relatedEntities);
+                    }
+                    else {
+                        const related = relationValue as IResolvedRelationData;
+                        this.setDeepProperty(entity, include.name, related.entity);
+                    }
+
+                    if (dbSet) {
+                        if (!reverseRelationMap.has(include)) {
+                            const relationMeta = dbSet.metaData.relations.first(o => o.propertyName === include.name);
+                            let reverseRelation: IRelationMetaData;
+                            if (relationMeta) {
+                                reverseRelation = relationMeta.reverseRelation;
+                            }
+                            reverseRelationMap.set(include, reverseRelation);
+                        }
+                        const reverseRelation = reverseRelationMap.get(include);
+                        if (reverseRelation) {
+                            let childEntities = Array.isArray(relationValue) ? relationValue : [relationValue];
+                            for (const child of childEntities) {
+                                if (reverseRelation.relationType === "many") {
+                                    let entityPropValues: any[] = child.entity[reverseRelation.propertyName];
+                                    if (!entityPropValues) {
+                                        child.entity[reverseRelation.propertyName] = [];
+                                        // needed coz array is converted to ObservableArray and get new reference.
+                                        entityPropValues = child.entity[reverseRelation.propertyName];
+                                    }
+                                    entityPropValues.push(entity);
+                                }
+                                else {
+                                    child.entity[reverseRelation.propertyName] = entity;
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            // emit after load event
-            if (dbEventEmitter) {
-                dbEventEmitter.emitAfterLoadEvent(entity);
+                if (parentRelation) {
+                    const relKey: any = {};
+                    for (const [parentCol, childCol] of parentRelation.relationMap) {
+                        relKey[parentCol.propertyName] = row[childCol.columnName];
+                    }
+                    const key = hashCode(JSON.stringify(relKey));
+                    if (parentRelation.type === "many") {
+                        let values = itemMap.get(key) as IResolvedRelationData[];
+                        if (!values) {
+                            values = [];
+                            itemMap.set(key, values);
+                        }
+                        values.push(relationData);
+                    }
+                    else {
+                        itemMap.set(key, relationData);
+                    }
+                }
+                else {
+                    results.push(entity);
+                }
+
+                // emit after load event
+                if (dbEventEmitter) {
+                    dbEventEmitter.emitAfterLoadEvent(entity);
+                }
             }
         }
 
-        if (!isRelationData) {
-            for (const include of select.includes) {
-                if (include.type === "many")
-                    this.parseData(queryResults, dbContext, include.child, loadTime, customTypeMap);
-            }
-        }
         return results;
     }
     private setPropertyValue<T>(entryOrEntity: EntityEntry<T> | T, column: IColumnExpression<T>, data: any, dbContext: DbContext) {

@@ -347,7 +347,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
                 isFinish: o.isFinish,
                 name: o.name
             };
-            child.parentRelation = rel;
+            if (child !== o.child) child.parentRelation = rel;
             return rel;
         }).toArray();
 
@@ -372,7 +372,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
                 relationMap: map,
                 type: o.type
             };
-            cloneChild.parentRelation = rel;
+            if (cloneChild !== o.child) cloneChild.parentRelation = rel;
             return rel;
         }).toArray();
 

@@ -30,7 +30,9 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        result.parentRelation = null;
+        return result;
     }
     public hashCode() {
         return hashCode("GROUPBY", this.parent.hashCode() + hashCode((this.keySelectorFn || this.keySelector || "").toString()));

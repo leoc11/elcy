@@ -2,6 +2,7 @@ import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
+import { resolveClone } from "../../Helper/Util";
 
 export class ObjectValueExpression<T = any> extends ExpressionBase<T> {
     public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
@@ -39,7 +40,7 @@ export class ObjectValueExpression<T = any> extends ExpressionBase<T> {
         const obj: { [key in keyof T]?: IExpression } = {};
         for (const prop in this.object) {
             const propEx = this.object[prop];
-            obj[prop] = replaceMap.has(propEx) ? replaceMap.get(propEx) : propEx.clone(replaceMap);
+            obj[prop] = resolveClone(propEx, replaceMap);
         }
         const clone = new ObjectValueExpression(obj, this.type);
         replaceMap.set(this, clone);

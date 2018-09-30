@@ -1,32 +1,15 @@
-import { IncludeQueryable } from "../../../src/Queryable/IncludeQueryable";
 import { MyDb } from "../../Common/MyDb";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection } from "../../Common/Model";
 import "mocha";
 import "../../../src/Extensions/DateExtension";
 import { expect, should } from "chai";
-import { IQueryableOrderDefinition } from "../../../src/Queryable/Interface/IQueryableOrderDefinition";
-import { OrderQueryable } from "../../../src/Queryable/OrderQueryable";
-import { SelectQueryable } from "../../../src/Queryable/SelectQueryable";
-import { WhereQueryable } from "../../../src/Queryable/WhereQueryable";
-import { ParameterExpression } from "../../../src/ExpressionBuilder/Expression/ParameterExpression";
-import { FunctionExpression } from "../../../src/ExpressionBuilder/Expression/FunctionExpression";
-import { MemberAccessExpression } from "../../../src/ExpressionBuilder/Expression/MemberAccessExpression";
-import { MethodCallExpression } from "../../../src/ExpressionBuilder/Expression/MethodCallExpression";
-import { ObjectValueExpression } from "../../../src/ExpressionBuilder/Expression/ObjectValueExpression";
-import { AdditionExpression } from "../../../src/ExpressionBuilder/Expression/AdditionExpression";
-import { ValueExpression } from "../../../src/ExpressionBuilder/Expression/ValueExpression";
-import { LessEqualExpression } from "../../../src/ExpressionBuilder/Expression/LessEqualExpression";
-import { MultiplicationExpression } from "../../../src/ExpressionBuilder/Expression/MultiplicationExpression";
 import { UUID } from "../../../src/Data/UUID";
 
 describe("QUERYABLE", async () => {
-    const param = new ParameterExpression("o", Order);
-    const odParam = new ParameterExpression("od", OrderDetail);
-
     describe("INCLUDE", async () => {
         it("should eager load list navigation property", async () => {
             const db = new MyDb();
-            const include = new IncludeQueryable(db.orders, [new FunctionExpression(new MemberAccessExpression(param, "OrderDetails"), [param])]);
+            const include = db.orders.include(o => o.OrderDetails);
             const queryString = include.toString();
 
             expect(queryString).equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0];\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0)");
@@ -38,10 +21,7 @@ describe("QUERYABLE", async () => {
         });
         it("should support nested include", async () => {
             const db = new MyDb();
-            const pa = new MemberAccessExpression(param, "OrderDetails");
-            const pb = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
-            const pa1 = new FunctionExpression(new MethodCallExpression(pa, "include", [pb]), [param]);
-            const include = new IncludeQueryable(db.orders, [pa1]);
+            const include = db.orders.include(o => o.OrderDetails.include(od => od.Product));
             const queryString = include.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0];\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0);\n\nSELECT DISTINCT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [temp_entity1].[OrderDetailId],\n\t\t[temp_entity1].[OrderId],\n\t\t[temp_entity1].[ProductId]\n\tFROM [OrderDetails] AS [temp_entity1]\n\tINNER JOIN [Orders] AS [temp_entity0]\n\t\tON ([temp_entity0].[OrderId] = [temp_entity1].[OrderId])\n\tWHERE ([temp_entity1].[isDeleted] = 0)\n) AS [temp_entity1]\n\tON ([temp_entity1].[ProductId] = [entity2].[ProductId])");
@@ -57,7 +37,7 @@ describe("QUERYABLE", async () => {
         });
         it("should eager load scalar navigation property", async () => {
             const db = new MyDb();
-            const include = new IncludeQueryable(db.orderDetails, [new FunctionExpression(new MemberAccessExpression(odParam, "Order"), [odParam])]);
+            const include = db.orderDetails.include(o => o.Order);
 
             const queryString = include.toString();
             expect(queryString).equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0);\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderDetailId],\n\t\t[temp_entity0].[OrderId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])");
@@ -69,9 +49,7 @@ describe("QUERYABLE", async () => {
         });
         it("should eager load 2 navigation properties at once", async () => {
             const db = new MyDb();
-            const a1 = new FunctionExpression(new MemberAccessExpression(odParam, "Order"), [odParam]);
-            const b = new FunctionExpression(new MemberAccessExpression(odParam, "Product"), [odParam]);
-            const include = new IncludeQueryable(db.orderDetails, [a1, b]);
+            const include = db.orderDetails.include(o => o.Order, o => o.Product);
 
             const queryString = include.toString();
             expect(queryString).equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0);\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderDetailId],\n\t\t[temp_entity0].[OrderId],\n\t\t[temp_entity0].[ProductId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId]);\n\nSELECT DISTINCT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderDetailId],\n\t\t[temp_entity0].[OrderId],\n\t\t[temp_entity0].[ProductId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n) AS [temp_entity0]\n\tON ([temp_entity0].[ProductId] = [entity2].[ProductId])");
@@ -113,8 +91,7 @@ describe("QUERYABLE", async () => {
     describe("SELECT", async () => {
         it("should return specific property", async () => {
             const db = new MyDb();
-            const selectFn = new FunctionExpression(new MemberAccessExpression(param, "OrderDate"), [param]);
-            const select = new SelectQueryable(db.orders, selectFn);
+            const select = db.orders.select(o => o.OrderDate);
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
@@ -127,11 +104,10 @@ describe("QUERYABLE", async () => {
         });
         it("should return an object", async () => {
             const db = new MyDb();
-            const selectFn = new FunctionExpression(new ObjectValueExpression({
-                date: new MemberAccessExpression(param, "OrderDate"),
-                amount: new AdditionExpression(new MemberAccessExpression(param, "TotalAmount"), new ValueExpression(1.2))
-            }), [param]);
-            const select = new SelectQueryable(db.orders, selectFn);
+            const select = db.orders.select(o => ({
+                date: o.OrderDate,
+                amount: o.TotalAmount + 1.2
+            }));
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate],\n\t([entity0].[TotalAmount] + 1.2) AS [amount]\nFROM [Orders] AS [entity0]");
@@ -146,10 +122,9 @@ describe("QUERYABLE", async () => {
         });
         it("should return a value from scalar navigation property", async () => {
             const db = new MyDb();
-            const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-                date: new MemberAccessExpression(new MemberAccessExpression(odParam, "Order"), "OrderDate"),
-            }), [odParam]);
-            const select = new SelectQueryable(db.orderDetails, selectFn1);
+            const select = db.orderDetails.select(o => ({
+                date: o.Order.OrderDate
+            }));
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity1].[OrderDate]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity0].[isDeleted] = 0)");
@@ -178,10 +153,9 @@ describe("QUERYABLE", async () => {
         });
         it("should return an object with scalar navigation property", async () => {
             const db = new MyDb();
-            const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-                prod: new MemberAccessExpression(odParam, "Product"),
-            }), [odParam]);
-            const select = new SelectQueryable(db.orderDetails, selectFn1);
+            const select = db.orderDetails.select(o => ({
+                prod: o.Product
+            }));
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[ProductId]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted] = 0);\n\nSELECT DISTINCT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderDetailId],\n\t\t[temp_entity0].[ProductId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n) AS [temp_entity0]\n\tON ([temp_entity0].[ProductId] = [entity1].[ProductId])");
@@ -193,13 +167,11 @@ describe("QUERYABLE", async () => {
         });
         it("should return an value from list navigation property", async () => {
             const db = new MyDb();
-            const innerSelect = new FunctionExpression(new ObjectValueExpression({
-                name: new MemberAccessExpression(odParam, "name")
-            }), [odParam]);
-            const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-                simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
-            }), [param]);
-            const select = new SelectQueryable(db.orders, selectFn1);
+            const select = db.orders.select(o => ({
+                simpleOrderDetails: o.OrderDetails.select(od => ({
+                    name: od.name
+                }))
+            }));
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0];\n\nSELECT DISTINCT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0)");
@@ -230,14 +202,12 @@ describe("QUERYABLE", async () => {
         });
         it("should support self select", async () => {
             const db = new MyDb();
-            const innerSelect = new FunctionExpression(new ObjectValueExpression({
-                od: odParam,
-                Price: new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price")
-            }), [odParam]);
-            const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-                simpleOrderDetails: new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "select", [innerSelect]),
-            }), [param]);
-            const select = new SelectQueryable(db.orders, selectFn1);
+            const select = db.orders.select(o => ({
+                simpleOrderDetails: o.OrderDetails.select(od => ({
+                    od: od,
+                    Price: od.Product.Price
+                }))
+            }));
             const queryString = select.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0];\n\nSELECT DISTINCT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity2].[Price]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId] = [entity2].[ProductId])\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0);\n\nSELECT DISTINCT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity1].[OrderDetailId],\n\t\t[temp_entity1].[OrderId]\n\tFROM [OrderDetails] AS [temp_entity1]\n\tINNER JOIN (\n\t\tSELECT [entity2].[ProductId],\n\t\t\t[entity2].[Price]\n\t\tFROM [Products] AS [entity2]\n\t) AS [entity2]\n\t\tON ([temp_entity1].[ProductId] = [entity2].[ProductId])\n\tINNER JOIN [Orders] AS [temp_entity0]\n\t\tON ([temp_entity0].[OrderId] = [temp_entity1].[OrderId])\n\tWHERE ([temp_entity1].[isDeleted] = 0)\n) AS [temp_entity1]\n\tON ([temp_entity1].[OrderDetailId] = [entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted] = 0)");
@@ -283,12 +253,7 @@ describe("QUERYABLE", async () => {
     describe("WHERE", async () => {
         it("should add where clause", async () => {
             const db = new MyDb();
-            const predicate = new FunctionExpression(
-                new LessEqualExpression(
-                    new MemberAccessExpression(param, "TotalAmount"),
-                    new ValueExpression(10000)),
-                [param]);
-            const where = new WhereQueryable(db.orders, predicate);
+            const where = db.orders.where(o => o.TotalAmount <= 10000);
             const queryString = where.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount] <= 10000)");
@@ -301,13 +266,7 @@ describe("QUERYABLE", async () => {
         });
         it("should filter included list", async () => {
             const db = new MyDb();
-            const predicate = new FunctionExpression(
-                new LessEqualExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    new ValueExpression(15000)),
-                [odParam]);
-            const whereExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "where", [predicate]);
-            const where = new IncludeQueryable(db.orders, [new FunctionExpression(whereExp, [param])]);
+            const where = db.orders.include(o => o.OrderDetails.where(od => od.Product.Price <= 15000));
             const queryString = where.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0];\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId] = [entity2].[ProductId])\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE (([entity1].[isDeleted] = 0) AND ([entity2].[Price] <= 15000))");
@@ -321,16 +280,9 @@ describe("QUERYABLE", async () => {
         });
         it("should be supported in select statement", async () => {
             const db = new MyDb();
-            const predicate = new FunctionExpression(
-                new LessEqualExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    new ValueExpression(15000)),
-                [odParam]);
-            const whereExp = new MethodCallExpression(new MemberAccessExpression(param, "OrderDetails"), "where", [predicate]);
-            const selectFn1 = new FunctionExpression(new ObjectValueExpression({
-                ods: whereExp,
-            }), [param]);
-            const where = new SelectQueryable(db.orders, selectFn1);
+            const where = db.orders.select(o => ({
+                ods: o.OrderDetails.where(od => od.Product.Price <= 15000)
+            }));
             const queryString = where.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0];\n\nSELECT DISTINCT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId] = [entity2].[ProductId])\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE (([entity1].[isDeleted] = 0) AND ([entity2].[Price] <= 15000))");
@@ -342,43 +294,9 @@ describe("QUERYABLE", async () => {
             a[0].should.has.property("ods").which.is.an("array");
             (a[0].ods as any)[0].should.be.instanceof(OrderDetail);
         });
-        it("could be used multiple times", async () => {
-            const db = new MyDb();
-            let predicate = new FunctionExpression(
-                new LessEqualExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    new ValueExpression(15000)),
-                [odParam]);
-            let where = new WhereQueryable(db.orderDetails, predicate);
-            predicate = new FunctionExpression(
-                new MethodCallExpression(
-                    new MemberAccessExpression(odParam, "name"),
-                    "like", [new ValueExpression("%a%")]),
-                [odParam]);
-            where = new WhereQueryable(where, predicate);
-            const queryString = where.toString();
-
-            expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ((([entity0].[isDeleted] = 0) AND ([entity1].[Price] <= 15000)) AND ([entity0].[ProductName] LIKE '%a%'))");
-
-            const a = await where.toArray();
-            should();
-            a.should.be.an("array").and.has.length.greaterThan(0);
-            a[0].should.be.an.instanceof(OrderDetail);
-        });
         it("could be used more than once in chain", async () => {
             const db = new MyDb();
-            let predicate = new FunctionExpression(
-                new LessEqualExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    new ValueExpression(15000)),
-                [odParam]);
-            let where = new WhereQueryable(db.orderDetails, predicate);
-            predicate = new FunctionExpression(
-                new MethodCallExpression(
-                    new MemberAccessExpression(odParam, "name"),
-                    "like", [new ValueExpression("%a%")]),
-                [odParam]);
-            where = new WhereQueryable(where, predicate);
+            const where = db.orderDetails.where(o => o.Product.Price <= 15000).where(o => o.name.like("%a%"));
             const queryString = where.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ((([entity0].[isDeleted] = 0) AND ([entity1].[Price] <= 15000)) AND ([entity0].[ProductName] LIKE '%a%'))");
@@ -406,11 +324,7 @@ describe("QUERYABLE", async () => {
     describe("ORDER BY", async () => {
         it("should work", async () => {
             const db = new MyDb();
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(new MemberAccessExpression(param, "TotalAmount"), [param]),
-                "DESC"
-            ];
-            const order = new OrderQueryable(db.orders, selector);
+            const order = db.orders.orderBy([o => o.TotalAmount, "DESC"]);
             const queryString = order.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nORDER BY [entity0].[TotalAmount] DESC");
@@ -423,13 +337,7 @@ describe("QUERYABLE", async () => {
         });
         it("by related entity", async () => {
             const db = new MyDb();
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    [odParam]),
-                "DESC"
-            ];
-            const order = new OrderQueryable(db.orderDetails, selector);
+            const order = db.orderDetails.orderBy([o => o.Product.Price, "DESC"]);
             const queryString = order.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ([entity0].[isDeleted] = 0)\nORDER BY [entity1].[Price] DESC");
@@ -442,13 +350,7 @@ describe("QUERYABLE", async () => {
         });
         it("by computed column", async () => {
             const db = new MyDb();
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MultiplicationExpression(new MemberAccessExpression(odParam, "quantity"), new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price")),
-                    [odParam]),
-                "DESC"
-            ];
-            const order = new OrderQueryable(db.orderDetails, selector);
+            const order = db.orderDetails.orderBy([o => o.quantity * o.Product.Price, "DESC"]);
             const queryString = order.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ([entity0].[isDeleted] = 0)\nORDER BY ([entity0].[Quantity] * [entity1].[Price]) DESC");
@@ -461,18 +363,7 @@ describe("QUERYABLE", async () => {
         });
         it("by multiple column", async () => {
             const db = new MyDb();
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(odParam, "quantity"),
-                    [odParam])
-            ];
-            const selector2: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    [odParam]),
-                "DESC"
-            ];
-            const order = new OrderQueryable(db.orderDetails, ...[selector, selector2]);
+            const order = db.orderDetails.orderBy([o => o.quantity], [o => o.Product.Price, "DESC"]);
             const queryString = order.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ([entity0].[isDeleted] = 0)\nORDER BY [entity0].[Quantity] ASC, [entity1].[Price] DESC");
@@ -486,19 +377,7 @@ describe("QUERYABLE", async () => {
         it("should used last defined order", async () => {
             const db = new MyDb();
             // Note: thought Product no longer used, it still exist in join statement.
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(new MemberAccessExpression(odParam, "Product"), "Price"),
-                    [odParam]),
-                "DESC"
-            ];
-            let order = new OrderQueryable(db.orderDetails, selector);
-            const selector2: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(odParam, "quantity"),
-                    [odParam])
-            ];
-            order = new OrderQueryable(order, selector2);
+            const order = db.orderDetails.orderBy([o => o.Product.Price, "DESC"]).orderBy([o => o.quantity]);
             const queryString = order.toString();
 
             expect(queryString).to.equal("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId] = [entity1].[ProductId])\nWHERE ([entity0].[isDeleted] = 0)\nORDER BY [entity0].[Quantity] ASC");
@@ -543,22 +422,81 @@ describe("QUERYABLE", async () => {
     describe("SELECT MANY", async () => {
         it("should work", async () => {
             const db = new MyDb();
-            const selector: IQueryableOrderDefinition = [
-                new FunctionExpression(
-                    new MemberAccessExpression(param, "TotalAmount"),
-                    [param]),
-                "DESC"
-            ];
-            const order = new OrderQueryable(db.orders, selector);
+            const order = db.orders.selectMany(o => o.OrderDetails);
             const queryString = order.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nORDER BY [entity0].[TotalAmount] DESC");
+            expect(queryString).to.equal("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity1].[OrderId] = [entity0].[OrderId])\nWHERE ([entity1].[isDeleted] = 0)");
 
             const a = await order.toArray();
             should();
             a.should.be.a("array");
             a.should.has.length.greaterThan(0);
-            a[0].should.be.instanceof(Order);
+            a[0].should.be.instanceof(OrderDetail);
+        });
+        it("select many with nested select to entity", async () => {
+            const db = new MyDb();
+            const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.Product));
+            const queryString = order.toString();
+
+            expect(queryString).to.equal("SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([entity1].[OrderId] = [entity0].[OrderId])\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity2].[ProductId] = [entity1].[ProductId])");
+
+            const a = await order.toArray();
+            should();
+            a.should.be.a("array");
+            a.should.has.length.greaterThan(0);
+            a[0].should.be.instanceof(Product);
+        });
+        it("select many with nested select to related entity property", async () => {
+            const db = new MyDb();
+            const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.Product.Price));
+            const queryString = order.toString();
+
+            expect(queryString).to.equal("SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([entity1].[OrderId] = [entity0].[OrderId])\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity2].[ProductId] = [entity1].[ProductId])");
+
+            const a = await order.toArray();
+            should();
+            a.should.be.a("array");
+            a.should.has.length.greaterThan(0);
+            a[0].should.be.a("number");
+        });
+        it("select many with nested select to many relation", async () => {
+            const db = new MyDb();
+            const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.OrderDetailProperties));
+            const queryString = order.toString();
+
+            expect(queryString).to.equal("SELECT [entity1].[OrderDetailId]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity1].[OrderId] = [entity0].[OrderId])\nWHERE ([entity1].[isDeleted] = 0);\n\nSELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [temp_entity1].[OrderDetailId]\n\tFROM [OrderDetails] AS [temp_entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([temp_entity1].[OrderId] = [entity0].[OrderId])\n\tWHERE ([temp_entity1].[isDeleted] = 0)\n) AS [temp_entity1]\n\tON ([temp_entity1].[OrderDetailId] = [entity2].[OrderDetailId])");
+            const a = await order.toArray();
+            should();
+            a.should.be.a("array");
+            a.should.has.length.greaterThan(0);
+            a[0].should.be.a("array");
+            expect(a.any(o => o.any())).to.be.true;
+        });
+        it("should worked in chain", async () => {
+            const db = new MyDb();
+            const order = db.orders.selectMany(o => o.OrderDetails).selectMany(o => o.OrderDetailProperties);
+            const queryString = order.toString();
+
+            expect(queryString).to.equal("SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([entity1].[OrderId] = [entity0].[OrderId])\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity2].[OrderDetailId] = [entity1].[OrderDetailId])");
+
+            const a = await order.toArray();
+            should();
+            a.should.be.a("array");
+            a.should.has.length.greaterThan(0);
+            a[0].should.be.instanceof(OrderDetailProperty);
+        });
+        it("nested selectMany", async () => {
+            const db = new MyDb();
+            const order = db.orders.selectMany(o => o.OrderDetails.selectMany(o => o.OrderDetailProperties));
+            const queryString = order.toString();
+
+            expect(queryString).to.equal("SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([entity1].[OrderId] = [entity0].[OrderId])\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity2].[OrderDetailId] = [entity1].[OrderDetailId])");
+
+            const a = await order.toArray();
+            should();
+            a.should.be.a("array");
+            a.should.has.length.greaterThan(0);
+            a[0].should.be.instanceof(OrderDetailProperty);
         });
     });
     describe("ANY", async () => {
@@ -882,7 +820,7 @@ describe("QUERYABLE", async () => {
             const take = db.orders.include(o => o.OrderDetails.orderBy([o => o.quantity]).take(10).skip(1).take(2).skip(1));
             const queryString = take.toString();
             expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0];\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t[entity3].[OrderId],\n\t\t\t[entity3].[Quantity],\n\t\t\t[entity3].[ProductId],\n\t\t\t[entity3].[ProductName],\n\t\t\t[entity3].[CreatedDate],\n\t\t\t[entity3].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity3]\n\t\tWHERE ([entity3].[isDeleted] = 0)\n\t) AS [entity3]\n\t\tON (([entity3].[OrderId] = [entity2].[OrderId]) AND (([entity3].[Quantity] > [entity2].[Quantity]) OR (([entity3].[Quantity] = [entity2].[Quantity]) AND ([entity3].[OrderDetailId] >= [entity2].[OrderDetailId]))))\n\tWHERE ([entity2].[isDeleted] = 0)\n\tGROUP BY [entity2].[OrderDetailId]\n\tHAVING ((COUNT([entity2].[OrderDetailId]) > 2) AND (COUNT([entity2].[OrderDetailId]) <= 3))\n) AS [entity2]\n\tON ([entity1].[OrderDetailId] = [entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0)\nORDER BY [entity1].[Quantity] ASC");
-            
+
             const a = await take.toArray();
 
             should();
@@ -906,6 +844,22 @@ describe("QUERYABLE", async () => {
             should();
             a.should.be.an.instanceof(Order);
             expect(db.orders.local.count()).equal(1);
+        });
+        it("should work with select", async () => {
+            const db = new MyDb();
+            const query = db.orders.select(o => ({
+                order: o,
+                lastAddedItem: o.OrderDetails.orderBy([o => o.CreatedDate, "DESC"]).first()
+            }));
+
+            const queryString = query.toString();
+            expect(queryString).to.equal("SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0];\n\nSELECT DISTINCT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity0].[OrderId]);\n\nSELECT DISTINCT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t[entity3].[OrderId],\n\t\t\t[entity3].[CreatedDate],\n\t\t\t[entity3].[ProductId],\n\t\t\t[entity3].[ProductName],\n\t\t\t[entity3].[Quantity],\n\t\t\t[entity3].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity3]\n\t\tWHERE ([entity3].[isDeleted] = 0)\n\t) AS [entity3]\n\t\tON (([entity3].[OrderId] = [entity2].[OrderId]) AND (([entity3].[CreatedDate] < [entity2].[CreatedDate]) OR (([entity3].[CreatedDate] = [entity2].[CreatedDate]) AND ([entity3].[OrderDetailId] >= [entity2].[OrderDetailId]))))\n\tWHERE ([entity2].[isDeleted] = 0)\n\tGROUP BY [entity2].[OrderDetailId]\n\tHAVING (COUNT([entity2].[OrderDetailId]) <= 1)\n) AS [entity2]\n\tON ([entity1].[OrderDetailId] = [entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])\nWHERE ([entity1].[isDeleted] = 0)\nORDER BY [entity1].[CreatedDate] DESC");
+
+            const a = await query.toArray();
+            expect(a).to.be.an("Array");
+            expect(a[0]).to.have.all.keys(["order", "lastAddedItem"]);
+            expect(a[0]).to.have.property("order").that.is.an.instanceof(Order);
+            expect(a[0]).to.have.property("lastAddedItem").that.is.an.instanceof(OrderDetail);
         });
     });
     describe("DISTINCT", async () => {
@@ -1022,7 +976,7 @@ describe("QUERYABLE", async () => {
             const queryString = groupBy.toString();
 
             expect(queryString).to.equal("SELECT DAY([entity0].[OrderDate]) AS [key]\nFROM [Orders] AS [entity0]\nGROUP BY DAY([entity0].[OrderDate]);\n\nSELECT DISTINCT [entity0].[OrderId],\n\tDAY([entity0].[OrderDate]) AS [key],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT DAY([temp_entity0].[OrderDate]) AS [key]\n\tFROM [Orders] AS [temp_entity0]\n\tGROUP BY DAY([temp_entity0].[OrderDate])\n) AS [temp_entity0]\n\tON ([temp_entity0].[key] = DAY([entity0].[OrderDate]))");
-            
+
             const a = await groupBy.toArray();
 
             should();
@@ -1092,7 +1046,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [count],\n\tSUM([entity2].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId] = [entity2].[OrderDetailId])\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId];\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n\tGROUP BY [temp_entity0].[OrderId]\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])");
+            expect(queryString).to.equal("SELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [count],\n\tSUM([entity2].[Quantity]) AS [sum]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity] > 1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId] = [entity2].[OrderDetailId])\nWHERE ([entity0].[isDeleted] = 0)\nGROUP BY [entity0].[OrderId];\n\nSELECT DISTINCT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [temp_entity0].[OrderId]\n\tFROM [OrderDetails] AS [temp_entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[Quantity]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[Quantity] > 1)\n\t) AS [entity2]\n\t\tON ([temp_entity0].[OrderDetailId] = [entity2].[OrderDetailId])\n\tWHERE ([temp_entity0].[isDeleted] = 0)\n\tGROUP BY [temp_entity0].[OrderId]\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity1].[OrderId])");
 
             const a = await groupBy.toArray();
 
@@ -1111,7 +1065,7 @@ describe("QUERYABLE", async () => {
             }));
             const queryString = groupBy.toString();
 
-            expect(queryString).to.equal("SELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [count],\n\tSUM([entity3].[Amount]) AS [sum]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId] = [entity1].[OrderDetailId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS [entity3]\n\tON ([entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId])\nGROUP BY [entity1].[OrderId];\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [temp_entity0]\n\tINNER JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted] = 0)\n\t) AS [entity1]\n\t\tON ([temp_entity0].[OrderDetailId] = [entity1].[OrderDetailId])\n\tGROUP BY [entity1].[OrderId]\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity2].[OrderId])");
+            expect(queryString).to.equal("SELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [count],\n\tSUM([entity3].[Amount]) AS [sum]\nFROM [OrderDetailProperties] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted] = 0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId] = [entity1].[OrderDetailId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount] < 20000)\n) AS [entity3]\n\tON ([entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId])\nGROUP BY [entity1].[OrderId];\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [temp_entity0]\n\tINNER JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted] = 0)\n\t) AS [entity1]\n\t\tON ([temp_entity0].[OrderDetailId] = [entity1].[OrderDetailId])\n\tLEFT JOIN (\n\t\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t\t[entity3].[Amount]\n\t\tFROM [OrderDetailProperties] AS [entity3]\n\t\tWHERE ([entity3].[Amount] < 20000)\n\t) AS [entity3]\n\t\tON ([temp_entity0].[OrderDetailPropertyId] = [entity3].[OrderDetailPropertyId])\n\tGROUP BY [entity1].[OrderId]\n) AS [temp_entity0]\n\tON ([temp_entity0].[OrderId] = [entity2].[OrderId])");
 
             const a = await groupBy.toArray();
 

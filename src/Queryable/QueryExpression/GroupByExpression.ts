@@ -1,6 +1,6 @@
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { SelectExpression, } from "./SelectExpression";
+import { SelectExpression, IIncludeRelation, IJoinRelation, } from "./SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -79,11 +79,58 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         const groupBy = this.groupBy.select(o => resolveClone(o, replaceMap)).toArray();
         const key = resolveClone(this.key, replaceMap);
         const hasItems = this.includes.any(o => o.name === "");
+        const oriIncludes = selectClone.includes;
+        const oriJoins = selectClone.joins;
+        selectClone.joins = selectClone.includes = [];
         const clone = new GroupByExpression(selectClone, groupBy, key, hasItems);
+        selectClone.includes = oriIncludes;
+        selectClone.joins = oriJoins;
+
         replaceMap.set(this, clone);
         replaceMap.set(this.select, clone.select);
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
         clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
+        
+        clone.joins = this.joins.select(o => {
+            const child = resolveClone(o.child, replaceMap);
+            const relation = resolveClone(o.relations, replaceMap);
+            const rel: IJoinRelation = {
+                child: child,
+                parent: clone,
+                relations: relation,
+                type: o.type,
+                isFinish: o.isFinish,
+                name: o.name
+            };
+            if (child !== o.child) child.parentRelation = rel;
+            return rel;
+        }).toArray();
+
+        clone.includes = this.includes.select(o => {
+            let map: Map<IColumnExpression, IColumnExpression>;
+            if (o.relationMap) {
+                map = new Map();
+                for (const item of o.relationMap) {
+                    const key = replaceMap.has(item[0]) ? replaceMap.get(item[0]) as any : item[0];
+                    const value = replaceMap.has(item[1]) ? replaceMap.get(item[1]) as any : item[1];
+                    map.set(key, value);
+                }
+            }
+            const cloneChild = resolveClone(o.child, replaceMap);
+            const relation = resolveClone(o.relations, replaceMap);
+            const rel: IIncludeRelation = {
+                child: cloneChild,
+                isFinish: o.isFinish,
+                name: o.name,
+                parent: clone,
+                relations: relation,
+                relationMap: map,
+                type: o.type
+            };
+            if (cloneChild !== o.child) cloneChild.parentRelation = rel;
+            return rel;
+        }).toArray();
+        
         if (this.where) clone.where = selectClone.where;
         if (this.having) clone.having = resolveClone(this.having, replaceMap);
         clone.relationColumns = this.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
