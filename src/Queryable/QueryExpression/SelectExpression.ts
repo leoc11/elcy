@@ -413,7 +413,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
         code = hashCodeAdd(code, this.selects.select(o => o.hashCode()).sum());
-        code = hashCode(this.where.toString(), code);
+        if (this.where) code = hashCode(this.where.toString(), code);
         code = hashCodeAdd(code, this.joins.sum(o => o.child.hashCode()));
         code = hashCodeAdd(code, this.includes.sum(o => o.child.hashCode()));
         return code;

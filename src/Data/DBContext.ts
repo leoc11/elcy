@@ -398,6 +398,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             cacheQueries.each(cacheQuery => {
                 const res = cachedResults[index++];
                 if (res) {
+                    cacheQuery.buildQuery(queryBuilder);
                     cacheQuery.resolve(res);
                     deferredQueryEnumerable = deferredQueryEnumerable.where(o => o !== cacheQuery);
                 }
@@ -437,7 +438,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 if (deferredQuery.command instanceof SelectExpression) {
                     const option = deferredQuery.options;
                     if (option.resultCache !== "none") {
-                        if (!option.resultCache.disableEntityAsTag)
+                        if (option.resultCache && !option.resultCache.disableEntityAsTag)
                             option.resultCache.tags = option.resultCache.tags.union(deferredQuery.command.getEffectedEntities().select(o => `entity:${o.name}`)).distinct().toArray();
                         this.resultCacheManager.set(deferredQuery.hashCode().toString(), results, option.resultCache);
                     }
