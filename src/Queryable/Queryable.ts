@@ -32,7 +32,7 @@ export abstract class Queryable<T = any> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
-    public queryOption: ISelectQueryOption = {};
+    public queryOption: ISelectQueryOption;
     /**
      * equal to number of times queryable.parameter() was called.
      * represent the stack index of parameter used by current queryable
@@ -46,25 +46,11 @@ export abstract class Queryable<T = any> {
      * parameter that is actually used by current queryable
      */
     public parameters: { [key: string]: any } = {};
-    public option(option: ISelectQueryOption) {
-        for (const prop in option) {
-            const value = (option as any)[prop];
-            if (value instanceof Object) {
-                if (!(this.queryOption as any)[prop])
-                    (this.queryOption as any)[prop] = {};
-                Object.assign((this.queryOption as any)[prop], value);
-            }
-            else {
-                (this.queryOption as any)[prop] = value;
-            }
-        }
-        return this;
-    }
     protected parent: Queryable;
     constructor(public type: GenericType<T>, parent?: Queryable) {
         if (parent) {
             this.parent = parent;
-            this.option(this.parent.queryOption);
+            this.queryOption = this.parent.queryOption;
             this.parameterStackIndex = parent.parameterStackIndex;
             this.flatParameterStacks = parent.flatParameterStacks;
             this.parameters = clone(parent.parameters);
@@ -832,14 +818,14 @@ export abstract class Queryable<T = any> {
     private cacheKey(type?: string, addCode?: number) {
         let cacheKey = hashCode(type, this.hashCode());
         if (addCode) cacheKey = hashCodeAdd(cacheKey, addCode);
-        cacheKey = hashCode(this.queryOption.buildKey, cacheKey);
+        if (this.queryOption) cacheKey = hashCode(this.queryOption.buildKey, cacheKey);
         const subQueryCacheKey = Object.keys(this.flatParameterStacks)
             .select(o => {
                 const val = this.flatParameterStacks[o];
                 return val instanceof Queryable ? val.hashCode() : val instanceof Function ? hashCode(val.toString()) : 0;
             }).sum();
         cacheKey = hashCodeAdd(subQueryCacheKey, cacheKey);
-        if ((this.queryOption as ISelectQueryOption).includeSoftDeleted)
+        if (this.queryOption && this.queryOption.includeSoftDeleted)
             cacheKey = hashCodeAdd(cacheKey, 1);
         return cacheKey;
     }

@@ -22,10 +22,13 @@ import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { ProjectQueryable } from "./ProjectQueryable";
 import { GroupJoinQueryable } from "./GroupJoinQueryable";
+import { ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
+import { OptionQueryable } from "./OptionQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
         parameter(params: { [key: string]: any }): Queryable<T>;
+        option(option: ISelectQueryOption): Queryable<T>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Queryable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
@@ -62,6 +65,9 @@ Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, typeOrSel
 };
 Queryable.prototype.parameter = function <T>(params: { [key: string]: any }): Queryable<T> {
     return new ParameterQueryable(this, params);
+};
+Queryable.prototype.option = function <T>(option: ISelectQueryOption): Queryable<T> {
+    return new OptionQueryable(this, option);
 };
 Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn> {
     return new SelectManyQueryable<T, TReturn>(this, selector, type);

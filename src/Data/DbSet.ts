@@ -17,10 +17,14 @@ import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryComm
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
+import { IQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
         return this._dbContext;
+    }
+    public get queryOption(): IQueryOption {
+        return {};
     }
     public get metaData() {
         if (!this._metaData)
