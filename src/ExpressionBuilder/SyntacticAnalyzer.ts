@@ -169,6 +169,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                         }
                         case OperatorType.Ternary: {
                             const operand = createExpression(param, tokens);
+                            param.index++;
                             const operand2 = createExpression(param, tokens);
                             expression = operator.expressionFactory(expression, operand, operand2);
                             break;

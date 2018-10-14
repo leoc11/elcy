@@ -61,14 +61,14 @@ relationalQueryTranslator.register(isNaN, (exp: any, qb: QueryBuilder) => `ISNUM
 /**
  * Math
  */
-relationalQueryTranslator.register(Math, "E", () => "EXP(1)", false);
-relationalQueryTranslator.register(Math, "LN10", () => "LOG(10)", false);
-relationalQueryTranslator.register(Math, "LN2", () => "LOG(2)", false);
-relationalQueryTranslator.register(Math, "LOG10E", () => "LOG10(EXP(1))", false);
-relationalQueryTranslator.register(Math, "LOG2E", () => "LOG(EXP(1), 2)", false);
-relationalQueryTranslator.register(Math, "PI", () => "PI()", false);
-relationalQueryTranslator.register(Math, "SQRT1_2", () => "SQRT(0.5)", false);
-relationalQueryTranslator.register(Math, "SQRT2", () => "SQRT(2)", false);
+relationalQueryTranslator.register(Math, "E", () => "EXP(1)", true);
+relationalQueryTranslator.register(Math, "LN10", () => "LOG(10)", true);
+relationalQueryTranslator.register(Math, "LN2", () => "LOG(2)", true);
+relationalQueryTranslator.register(Math, "LOG10E", () => "LOG10(EXP(1))", true);
+relationalQueryTranslator.register(Math, "LOG2E", () => "LOG(EXP(1), 2)", true);
+relationalQueryTranslator.register(Math, "PI", () => "PI()", true);
+relationalQueryTranslator.register(Math, "SQRT1_2", () => "SQRT(0.5)", true);
+relationalQueryTranslator.register(Math, "SQRT2", () => "SQRT(2)", true);
 
 /**
  * String
@@ -138,7 +138,7 @@ relationalQueryTranslator.register(Math, "sign", trigonoTranslator);
 relationalQueryTranslator.register(Math, "ceil", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CEILING(${qb.getExpressionString(exp.params[0])})`);
 relationalQueryTranslator.register(Math, "atan2", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `ATN2(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
 relationalQueryTranslator.register(Math, "pow", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `POWER(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
-relationalQueryTranslator.register(Math, "random", () => "RAND()", false);
+relationalQueryTranslator.register(Math, "random", () => "RAND()", true);
 relationalQueryTranslator.register(Math, "round", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `ROUND(${qb.getExpressionString(exp.params[0])}, 0)`);
 relationalQueryTranslator.register(Math, "expm1", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(EXP(${qb.getExpressionString(exp.params[0])}) - 1)`);
 relationalQueryTranslator.register(Math, "hypot", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SQRT(${exp.params.select((p) => `POWER(${qb.getExpressionString(p)}, 2)`).toArray().join(" + ")})`);

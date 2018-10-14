@@ -5,6 +5,7 @@ import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { Queryable } from "../../Queryable/Queryable";
 import { resolveClone } from "../../Helper/Util";
+
 export class MethodCallExpression<TType = any, KProp extends keyof TType = any, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
     public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);

@@ -3,7 +3,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone } from "../../Helper/Util";
-export class InstantiationExpression<T> extends ExpressionBase<T> {
+export class InstantiationExpression<T = any> extends ExpressionBase<T> {
     public static create<T>(type: IObjectType<T> | IExpression<IObjectType<T>>, params: IExpression[]) {
         let typeExp: IExpression<IObjectType<T>>;
         if (type instanceof ExpressionBase)

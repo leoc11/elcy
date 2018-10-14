@@ -5,22 +5,13 @@ import { GenericType, QueryType, ColumnGeneration } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
-import { relationalQueryTranslator } from "../../QueryBuilder/QueryTranslator/RelationalQueryTranslator";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { isNotNull } from "../../Helper/Util";
 import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
-import { DbFunction } from "../../QueryBuilder/DbFunction";
-import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
-
-export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
-mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
-mssqlQueryTranslator.register(UUID, "new", () => "NEWID()");
-mssqlQueryTranslator.register(DbFunction, "lastInsertedId", () => `SCOPE_IDENTITY()`);
-mssqlQueryTranslator.register(DbFunction, "coalesce", (exp: MethodCallExpression, qb: QueryBuilder) => `COALESCE(${exp.params.select(o => qb.getExpressionString(o)).toArray().join(", ")})`);
+import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {

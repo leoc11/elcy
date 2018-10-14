@@ -15,6 +15,14 @@ import { NullableColumn } from "../../../src/Decorator/Column/NullableColumn";
 
 @Entity("OrderDetails")
 export class OrderDetail {
+    constructor(defValues?: { [key in keyof OrderDetail]?: any }) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = (defValues as any)[prop];
+                this[prop as keyof OrderDetail] = value;
+            }
+        }
+    }
     @PrimaryKey()
     @IdentifierColumn()
     public OrderDetailId: UUID;

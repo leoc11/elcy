@@ -66,10 +66,10 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
 };
 
 export const isValue = (data: any): data is ValueType => {
-    return isValueType(data.constructor);
+    return isNotNull(data) && isValueType(data.constructor);
 };
 export const isValueType = <T>(type: GenericType<T>) => {
-    return [Number, String, Date, TimeSpan, UUID].contains(type as any);
+    return [Number, String, Date, TimeSpan, UUID, Boolean].contains(type as any);
 };
 export const isNotNull = (value: any) => {
     return value !== null && value !== undefined;

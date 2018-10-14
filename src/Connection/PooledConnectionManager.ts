@@ -1,7 +1,7 @@
 import "../Extensions/DateExtension";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
-import { IDriver } from "../Driver/IDriver";
+import { IDriver } from "./IDriver";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { PooledConnection } from "./PooledConnection";
 import { ConnectionError } from "../Error/ConnectionError";

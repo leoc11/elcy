@@ -1,7 +1,7 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { GenericType } from "../../Common/Type";
+import { GenericType, NullConstructor } from "../../Common/Type";
 import { resolveClone } from "../../Helper/Util";
 export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T2> {
     public static create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
@@ -12,7 +12,17 @@ export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T
         return result;
     }
     public get type(): GenericType<T1 | T2> {
-        return (this.trueResultOperand.type as any === this.falseResultOperand.type) ? this.trueResultOperand.type : Object;
+        if (this.trueResultOperand.type as any === this.falseResultOperand.type) {
+            return this.trueResultOperand.type;
+        }
+        else if (this.trueResultOperand.type === NullConstructor) {
+            return this.falseResultOperand.type;
+        }
+        else if (this.falseResultOperand.type === NullConstructor) {
+            return this.trueResultOperand.type;
+        }
+
+        return Object;
     }
 
     constructor(public logicalOperand: IExpression<boolean>, public trueResultOperand: IExpression<T1>, public falseResultOperand: IExpression<T2>) {

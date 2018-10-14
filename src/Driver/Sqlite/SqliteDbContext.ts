@@ -2,12 +2,12 @@ import { DbContext } from "../../Data/DBContext";
 import { POJOQueryResultParser } from "../../QueryBuilder/ResultParser/POJOQueryResultParser";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
-import { IDriver } from "../IDriver";
+import { IDriver } from "../../Connection/IDriver";
 import { IConnectionManager } from "../../Connection/IConnectionManager";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
 import { NamingStrategy } from "../../QueryBuilder/NamingStrategy";
-import { mssqlQueryTranslator } from "../Mssql/MssqlQueryBuilder";
+import { mssqlQueryTranslator } from "../Mssql/MssqlQueryTranslator";
 const namingStrategy = new NamingStrategy();
 export abstract class SqliteDbContext extends DbContext {
     public queryParser = POJOQueryResultParser;

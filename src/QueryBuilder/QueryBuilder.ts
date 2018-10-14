@@ -51,6 +51,8 @@ import { UUID } from "../Data/UUID";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
+import { IBatchedQuery } from "./Interface/IBatchedQuery";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -137,18 +139,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#region ICommandQueryExpression
     public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
-        let queryCommand: IQuery = {
+        let queryCommand: IBatchedQuery = {
             query: "",
             parameters: {},
-            type: 0 as any
+            type: 0 as any,
+            queryCount: 0
         };
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
-        let batchQueryCount = 0;
         new Enumerable(queries).each(o => {
             let isLimitExceed = false;
             if (this.queryLimit.maxBatchQuery) {
-                isLimitExceed = batchQueryCount > this.queryLimit.maxBatchQuery;
+                isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
             }
             if (!isLimitExceed && this.queryLimit.maxQueryLength) {
                 isLimitExceed = queryCommand.query.length + o.query.length > this.queryLimit.maxQueryLength;
@@ -162,16 +164,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             }
 
             if (isLimitExceed) {
-                batchQueryCount = 0;
                 parameterKeys = [];
                 queryCommand = {
                     query: "",
                     parameters: {},
-                    type: o.type
+                    type: o.type,
+                    queryCount: 0
                 };
                 result.push(queryCommand);
             }
-            batchQueryCount++;
+            queryCommand.queryCount++;
             queryCommand.query += (queryCommand.query ? ";\n\n" : "") + o.query;
             queryCommand.type |= o.type;
             if (o.parameters)
@@ -231,7 +233,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         });
 
         let tempSelect: SelectExpression;
-        const tempReplaceMap = new Map<IExpression, IExpression>();
+        let tempReplaceMap = new Map<IExpression, IExpression>();
         // select each include as separated query as it more beneficial for performance
         for (const include of select.includes) {
             if (include.isFinish) {
@@ -311,6 +313,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     return exp;
                 });
 
+                let childExp: SelectExpression;
                 if (requireRelationData) {
                     const replaceMap = new Map();
                     const relDataSelect = include.child.clone(replaceMap);
@@ -354,14 +357,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         childRel = childRel ? new AndExpression(childRel, logicalExp) : logicalExp;
                     });
                     relDataSelect.addInclude(include.name, include.child, childRel, "one");
-                    result = result.concat(this.getSelectQuery(relDataSelect));
+                    childExp = relDataSelect;
                 }
                 else {
                     include.relationMap = relMap;
                     include.isFinish = true;
                     include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
-                    result = result.concat(this.getSelectQuery(include.child));
+                    childExp = include.child;
                 }
+                }
+
+                result = result.concat(this.getSelectQuery(childExp));
             }
         }
 
@@ -756,11 +762,21 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case ValueExpression:
                     result = this.getValueExpressionString(expression as any);
                     break;
+                case InstantiationExpression:
+                    result = this.getInstantiationString(expression as any);
+                    break;
                 default:
                     throw new Error(`Expression ${expression.toString()} not supported`);
             }
             return result;
         }
+    }
+    protected getInstantiationString(expression: InstantiationExpression) {
+        const translator = this.resolveTranslator(expression.type);
+        if (!translator) {
+            throw new Error(`operator "${expression.constructor.name}" not supported`);
+        }
+        return translator.translate(expression, this);
     }
     protected getOperatorString(expression: IBinaryOperatorExpression) {
         const translator = this.resolveTranslator(expression.constructor);
@@ -956,6 +972,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     public toPropertyValue<T>(input: any, column: IColumnExpression<T>): T {
         let result: any;
+        if (input === null && (!column.columnMetaData || column.columnMetaData.nullable)) {
+            return null;
+        }
         switch (column.type) {
             case Boolean:
                 result = Boolean(input);
@@ -986,7 +1005,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 break;
             }
             case UUID: {
-                result = input ? new UUID(input.toString()) : column.columnMetaData && column.columnMetaData.nullable ? null : UUID.empty;
+                result = input ? new UUID(input.toString()) : UUID.empty;
                 break;
             }
             default:

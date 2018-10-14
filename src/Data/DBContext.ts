@@ -7,7 +7,7 @@ import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../Cache/DefaultQueryCacheManager";
 import { IQueryResult } from "../QueryBuilder/IQueryResult";
 import { IDBEventListener } from "./Event/IDBEventListener";
-import { IDriver } from "../Driver/IDriver";
+import { IDriver } from "../Connection/IDriver";
 import { IQuery } from "../QueryBuilder/Interface/IQuery";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { EntityState } from "./EntityState";
@@ -113,8 +113,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         return this._connectionManager;
     }
-    private connection?: IConnection;
-    protected async getConnection(writable?: boolean) {
+    public connection?: IConnection;
+    public async getConnection(writable?: boolean) {
         const con = this.connection ? this.connection : await this.connectionManager.getConnection(writable);
         if (Diagnostic.enabled) Diagnostic.trace(this, `Get connection. used existing connection: ${!!this.connection}`);
         if (!con.isOpen)
@@ -348,7 +348,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             await this.closeConnection(con);
         return result;
     }
-    public async executeCommands(queryCommands: IQuery[]): Promise<IQueryResult[]> {
+    public async executeQueries(queryCommands: IQuery[]): Promise<IQueryResult[]> {
         let results: IQueryResult[] = [];
         const con = await this.getConnection(queryCommands.any(o => o.type !== QueryType.DQL));
         for (const query of queryCommands) {
@@ -430,7 +430,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         this.closeConnection();
         for (const deferredQuery of deferredQueryEnumerable) {
-            const results = queryResult.splice(0, deferredQuery.queryCommands.length);
+            const results = queryResult.splice(0, deferredQuery.queries.length);
             deferredQuery.resolve(results);
 
             // cache result
@@ -459,7 +459,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         for (const serverConnection of serverConnections) {
             this.connection = serverConnection;
             await this.transaction(async () => {
-                await this.executeCommands(commands);
+                await this.executeQueries(commands);
             });
         }
     }

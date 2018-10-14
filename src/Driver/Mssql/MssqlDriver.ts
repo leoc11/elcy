@@ -1,5 +1,5 @@
 import { IMssqlConnectionOption } from "./IMssqlConnectionOption";
-import { IDriver } from "../IDriver";
+import { IDriver } from "../../Connection/IDriver";
 import { MssqlConnection } from "./MssqlConnection";
 
 export class MssqlDriver implements IDriver<"mssql"> {

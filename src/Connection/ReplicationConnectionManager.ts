@@ -1,7 +1,7 @@
 import "../Extensions/EnumerableExtension";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
-import { IDriver } from "../Driver/IDriver";
+import { IDriver } from "./IDriver";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 import { PooledConnection } from "./PooledConnection";

@@ -1,7 +1,7 @@
 import { DbContext } from "../../Data/DBContext";
 import { POJOQueryResultParser } from "../../QueryBuilder/ResultParser/POJOQueryResultParser";
-import { IDriver } from "../IDriver";
-import { MssqlQueryBuilder, mssqlQueryTranslator } from "./MssqlQueryBuilder";
+import { IDriver } from "../../Connection/IDriver";
+import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 import { IConnectionManager } from "../../Connection/IConnectionManager";
 import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
@@ -25,6 +25,7 @@ import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpressi
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
+import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     protected queryParser = POJOQueryResultParser;

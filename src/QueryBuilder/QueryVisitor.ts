@@ -2,7 +2,7 @@ import "../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { TransformerParameter } from "../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction, visitExpression, isValue, replaceExpression, resolveClone } from "../Helper/Util";
+import { isValueType, isNativeFunction, visitExpression, isValue, replaceExpression } from "../Helper/Util";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -131,7 +131,8 @@ export class QueryVisitor {
 
     //#region visit parameter
     public visit(expression: IExpression, param: IVisitParameter): IExpression {
-        if (!(expression instanceof SelectExpression ||
+        if (!(expression instanceof SelectExpression || expression instanceof SqlParameterExpression ||
+            expression instanceof FunctionExpression ||
             expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression ||
             expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression)) {
             const findMap = new Map([[param.selectExpression, param.selectExpression]]);
@@ -440,14 +441,14 @@ export class QueryVisitor {
             let translator;
             if (objectOperand instanceof ValueExpression) {
                 translator = this.translator.resolve(objectOperand.value, expression.memberName as any);
-                if (translator && !(translator.preferApp && isExpressionSafe)) {
+                if (translator && translator.isPreferTranslate(expression, isExpressionSafe)) {
                     return expression;
                 }
             }
 
-            if ((!translator || !(translator.preferApp && isExpressionSafe)) && objectOperand.type) {
+            if (!translator && objectOperand.type) {
                 translator = this.translator.resolve(objectOperand.type.prototype, expression.memberName as any);
-                if (translator)
+                if (translator && translator.isPreferTranslate(expression, isExpressionSafe))
                     return expression;
             }
 
@@ -470,7 +471,15 @@ export class QueryVisitor {
         expression.typeOperand = this.visit(expression.typeOperand, param);
         expression.params = expression.params.select(o => this.visit(o, param)).toArray();
         const paramExps: ParameterExpression[] = [];
-        if (this.isSafe(expression.typeOperand) && expression.params.all(o => this.isSafe(o))) {
+        const isExpressionSafe = this.isSafe(expression.typeOperand) && expression.params.all(o => this.isSafe(o));
+
+        if (expression.typeOperand instanceof ValueExpression) {
+            let translator = this.translator.resolve(expression.typeOperand.value);
+            if (translator && translator.isPreferTranslate(expression, isExpressionSafe))
+                return expression;
+        }
+
+        if (isExpressionSafe) {
             paramExps.forEach(o => {
                 const key = this.getParameterExpressionKey(expression);
                 const existing = this.sqlParameters.get(key);
@@ -481,9 +490,7 @@ export class QueryVisitor {
             const result = this.createParamBuilderItem(clone, param);
             return result;
         }
-        else {
-            // TODO: sql query representation for each default object type instantiation
-        }
+
         throw new Error(`${expression.type.name} not supported.`);
     }
     protected visitObjectSelect(selectOperand: SelectExpression, selectExp: ObjectValueExpression<any>, prevPath?: string) {
@@ -1356,22 +1363,17 @@ export class QueryVisitor {
                 }
                 case "skip":
                 case "take": {
-                    const [exp] = this.extract(this.visit(expression.params[0] as ParameterExpression<number>, param));
+                    let exp = this.visit(expression.params[0] as ParameterExpression<number>, param);
                     if (param.scope === "queryable") {
-                        if (objectOperand.paging.take) {
-                            [objectOperand.paging.take] = this.extract(objectOperand.paging.take);
-                        }
                         if (expression.methodName === "skip") {
-                            if (objectOperand.paging.skip) {
-                                [objectOperand.paging.skip] = this.extract(objectOperand.paging.skip);
-                            }
                             if (objectOperand.paging.take) {
-                                objectOperand.paging.take = this.createParamBuilderItem(new SubtractionExpression(objectOperand.paging.take, exp), param);
+                                objectOperand.paging.take = this.visit(new SubtractionExpression(objectOperand.paging.take, exp), param);
+                                exp = this.visit(expression.params[0] as ParameterExpression<number>, param);
                             }
-                            objectOperand.paging.skip = this.createParamBuilderItem(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
+                            objectOperand.paging.skip = this.visit(objectOperand.paging.skip ? new AdditionExpression(objectOperand.paging.skip, exp) : exp, param);
                         }
                         else {
-                            objectOperand.paging.take = this.createParamBuilderItem(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
+                            objectOperand.paging.take = this.visit(objectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [objectOperand.paging.take, exp]) : exp, param);
                         }
                     }
                     else {
@@ -1455,18 +1457,18 @@ export class QueryVisitor {
                         const countExp = (groupExp.selects.first() as ComputedColumnExpression).expression;
 
                         if (expression.methodName === "skip") {
-                            anyTakeJoinRel.skip = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
+                            anyTakeJoinRel.start = this.visit(anyTakeJoinRel.start ? new AdditionExpression(anyTakeJoinRel.start, exp) : exp, param);
                         }
                         else {
-                            anyTakeJoinRel.take = this.visit(anyTakeJoinRel.skip ? new AdditionExpression(anyTakeJoinRel.skip, exp) : exp, param);
+                            anyTakeJoinRel.end = this.visit(anyTakeJoinRel.start ? new AdditionExpression(anyTakeJoinRel.start, exp) : exp, param);
                         }
 
                         groupExp.having = null;
-                        if (anyTakeJoinRel.skip) {
-                            groupExp.having = new GreaterThanExpression(countExp, anyTakeJoinRel.skip);
+                        if (anyTakeJoinRel.start) {
+                            groupExp.having = new GreaterThanExpression(countExp, anyTakeJoinRel.start);
                         }
-                        if (anyTakeJoinRel.take) {
-                            const takeLogicalExp = new LessEqualExpression(countExp, anyTakeJoinRel.take);
+                        if (anyTakeJoinRel.end) {
+                            const takeLogicalExp = new LessEqualExpression(countExp, anyTakeJoinRel.end);
                             groupExp.having = groupExp.having ? new AndExpression(groupExp.having, takeLogicalExp) : takeLogicalExp;
                         }
                     }
@@ -1631,13 +1633,12 @@ export class QueryVisitor {
             let translator;
             if (objectOperand instanceof ValueExpression) {
                 translator = this.translator.resolve(objectOperand.value, expression.methodName);
-
-                if (translator && !(translator.preferApp && isExpressionSafe))
+                if (translator && translator.isPreferTranslate(expression, isExpressionSafe))
                     return expression;
             }
             if (!translator && objectOperand.type) {
                 translator = this.translator.resolve(objectOperand.type.prototype, expression.methodName);
-                if (translator && !(translator.preferApp && isExpressionSafe)) {
+                if (translator && translator.isPreferTranslate(expression, isExpressionSafe)) {
                     return expression;
                 }
             }
@@ -1686,8 +1687,8 @@ export class QueryVisitor {
 
         const isExpressionSafe = expression.params.all(o => this.isSafe(o));
 
-        const translator = this.translator.resolve(fn);
-        if (translator && !(translator.preferApp && isExpressionSafe))
+        let translator = this.translator.resolve(fn);
+        if (translator && translator.isPreferTranslate(expression, isExpressionSafe))
             return expression;
 
         // Execute function in application if all it's parameters available in application.

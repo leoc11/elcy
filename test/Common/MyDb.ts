@@ -1,20 +1,12 @@
 import { MssqlDbContext } from "../../src/Driver/Mssql/MssqlDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Test, Collection, CollectionProductData } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
-import { MssqlDriver } from "../../src/Driver/Mssql/MssqlDriver";
+import { MockDriver } from "../../src/Connection/Mock/MockDriver";
+import { IDriver } from "../../src/Connection/IDriver";
 
 export class MyDb extends MssqlDbContext {
-    constructor() {
-        super(() => new MssqlDriver({
-            host: "localhost\\SQLEXPRESS",
-            database: "Database",
-            port: 1433,
-            user: "sa",
-            password: "password",
-            // options: {
-            //     trustedConnection: true
-            // }
-        }));
+    constructor(factory: () => IDriver<any> = () => new MockDriver()) {
+        super(factory);
     }
     public entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
         Test,

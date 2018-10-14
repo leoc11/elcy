@@ -152,7 +152,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                     }
                     else {
                         const related = relationValue as IResolvedRelationData;
-                        this.setDeepProperty(entity, include.name, related.entity);
+                        this.setDeepProperty(entity, include.name, related ? related.entity : null);
                     }
 
                     if (dbSet) {

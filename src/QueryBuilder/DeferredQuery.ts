@@ -14,9 +14,9 @@ import { QueryType } from "../Common/Type";
 export class DeferredQuery<T = any> {
     public value: T;
     public resolver: (value?: T | PromiseLike<T>) => void;
-    private _queryCommands: IQuery[] = [];
-    public get queryCommands() {
-        return this._queryCommands.slice();
+    private _queryies: IQuery[] = [];
+    public get queries() {
+        return this._queryies.slice();
     }
     public options: ISaveChangesOption;
     constructor(protected readonly dbContext: DbContext, public readonly command: IQueryCommandExpression, public readonly parameters: ISqlParameter[], public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T, options?: ISaveChangesOption) {
@@ -26,7 +26,7 @@ export class DeferredQuery<T = any> {
         }
     }
     public resolve(result: IQueryResult[]) {
-        this.value = this.resultParser(result, this._queryCommands);
+        this.value = this.resultParser(result, this._queryies);
         if (this.resolver) {
             this.resolver(this.value);
             this.resolver = undefined;
@@ -79,12 +79,12 @@ export class DeferredQuery<T = any> {
             } as IQuery;
         });
 
-        this._queryCommands = arrayParameterTempTableQueries.union(this.command.toQueryCommands(queryBuilder, this.parameters.where(o => !o.parameter.select).toArray()), true).union(dropArrayTempTableQueries, true).toArray();
+        this._queryies = arrayParameterTempTableQueries.union(this.command.toQueryCommands(queryBuilder, this.parameters.where(o => !o.parameter.select).toArray()), true).union(dropArrayTempTableQueries, true).toArray();
         if (Diagnostic.enabled) {
-            Diagnostic.debug(this, `Build Query.`, this._queryCommands);
+            Diagnostic.debug(this, `Build Query.`, this._queryies);
             Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);
         }
-        return this._queryCommands;
+        return this._queryies;
     }
     public toString() {
         return this.buildQuery(this.dbContext.queryBuilder).select(o => o.query).toArray().join(";\n\n");

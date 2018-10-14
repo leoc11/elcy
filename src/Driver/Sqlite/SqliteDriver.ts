@@ -1,5 +1,5 @@
 import { ISqliteConnectionOption } from "./ISqliteConnectionOption";
-import { IDriver } from "../IDriver";
+import { IDriver } from "../../Connection/IDriver";
 import { SqliteConnection } from "./SqliteConnection";
 
 export class SqliteDriver implements IDriver<"sqlite"> {

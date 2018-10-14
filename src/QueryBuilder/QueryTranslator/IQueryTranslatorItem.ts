@@ -3,5 +3,5 @@ import { QueryBuilder } from "../QueryBuilder";
 
 export interface IQueryTranslatorItem<T extends IExpression = IExpression> {
     translate: (exp: T, qb: QueryBuilder) => string;
-    preferApp: boolean;
+    isPreferTranslate: (exp: T, isValidInApp: boolean) => boolean;
 }

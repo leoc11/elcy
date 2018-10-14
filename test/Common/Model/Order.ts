@@ -16,6 +16,14 @@ export enum OrderStatus {
 
 @Entity("Orders")
 export class Order {
+    constructor(defValues?: { [key in keyof Order]?: any }) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = (defValues as any)[prop];
+                this[prop as keyof Order] = value;
+            }
+        }
+    }
     @PrimaryKey()
     @IdentifierColumn()
     public OrderId: UUID;

@@ -1,23 +1,11 @@
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
-import { MssqlDriver } from "../../../src/Driver/Mssql/MssqlDriver";
 import "mocha";
 import { expect } from "chai";
+import { MockDriver } from "../../../src/Connection/Mock/MockDriver";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
-    const driver = new MssqlDriver({
-        host: "Master",
-        database: "Master",
-        port: 1433,
-        user: "sa",
-        password: "password",
-    });
-    const driver2 = new MssqlDriver({
-        host: "Replica",
-        database: "Replica",
-        port: 1433,
-        user: "sa",
-        password: "password",
-    });
+    const driver = new MockDriver({ database: "Master" });
+    const driver2 = new MockDriver({ database: "Replica" });
     const connectionManager = new ReplicationConnectionManager(driver, [driver2]);
 
     it("should return master connection", async () => {
