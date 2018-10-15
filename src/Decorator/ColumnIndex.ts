@@ -8,7 +8,7 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { IndexMetaData } from "../MetaData/IndexMetaData";
 
-export function ColumnIndex(option: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
+export function ColumnIndex(option?: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex(name: string, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex<T>(name: string, columns: Array<string | ((item: T) => any)>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex<T>(columns: Array<string | ((item: T) => any)>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;

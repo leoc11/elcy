@@ -9,6 +9,7 @@ import { IndexMetaData } from "./IndexMetaData";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { isNotNull } from "../Helper/Util";
+import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public defaultOrder?: IOrderMetaData[];
@@ -20,6 +21,7 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IndexMetaData<TE>[] = [];
     public computedProperties: ComputedColumnMetaData<TE>[] = [];
+    public constraints: IConstraintMetaData<TE>[] = [];
 
     // inheritance
     public parentType?: GenericType<TParent>;

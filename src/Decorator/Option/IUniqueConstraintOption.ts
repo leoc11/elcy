@@ -1,5 +1,5 @@
 
-export interface IUniqueConstraintOption {
+export interface IUniqueConstraintOption<T = any> {
     name?: string;
-    properties?: string[];
+    properties?: Array<keyof T>;
 }

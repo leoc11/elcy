@@ -92,25 +92,27 @@ export abstract class SchemaBuilder {
         const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND ((${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.q.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")}))`;
         const queries =
             // table schema
-            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};` +
+            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};\n\n` +
 
             // column schema
-            `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters};` +
+            `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters};\n\n` +
 
-            // all table constrains
             `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
             ` LEFT JOIN  ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
             ` on a.CONSTRAINT_NAME = b.CONSTRAINT_NAME` +
-            ` WHERE ${tableFilters};` +
-            `SELECT * FROM #tempConstraint;` +
+            ` WHERE ${tableFilters};\n\n` +
+
+            // all table constrains
+            `SELECT * FROM #tempConstraint;\n\n` +
 
             // relation constraint for FK
             `SELECT a.* FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
-            ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters};` +
-            `DROP TABLE #tempConstraint;` +
+            ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters};\n\n` +
+
+            `DROP TABLE #tempConstraint;\n\n` +
 
             // map constrain to column
-            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters};` +
+            `SELECT * FROM ${this.q.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters};\n\n` +
 
             // all table index
             `SELECT s.name [TABLE_SCHEMA], t.name [TABLE_NAME], i.name [INDEX_NAME], i.is_unique [IS_UNIQUE], i.type_desc [TYPE], c.name [COLUMN_NAME]` +
@@ -128,10 +130,10 @@ export abstract class SchemaBuilder {
         });
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
-        const constriantSchemas = schemaDatas[2];
-        const constraintColumnSchemas = schemaDatas[4];
-        const foreignKeySchemas = schemaDatas[3];
-        const indexSchemas = schemaDatas[5];
+        const constriantSchemas = schemaDatas[3];
+        const constraintColumnSchemas = schemaDatas[6];
+        const foreignKeySchemas = schemaDatas[4];
+        const indexSchemas = schemaDatas[7];
 
         // convert all schema to entityMetaData for comparison
         const result: { [key: string]: IEntityMetaData<any> } = {};
@@ -599,7 +601,7 @@ export abstract class SchemaBuilder {
         let result = "";
         if ((constraintMeta as ICheckConstraintMetaData).definition) {
             const checkConstriant = constraintMeta as ICheckConstraintMetaData;
-            const definition = checkConstriant.definition instanceof FunctionExpression ? this.q.getExpressionString(checkConstriant.definition) : checkConstriant.definition;
+            const definition = checkConstriant.definition instanceof FunctionExpression ? this.q.getExpressionString(checkConstriant.definition.body) : checkConstriant.definition;
             result = `CONSTRAINT ${this.q.enclose(constraintMeta.name)} CHECK (${definition})`;
         }
         else {

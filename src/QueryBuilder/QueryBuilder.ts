@@ -365,7 +365,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
                     childExp = include.child;
                 }
-                }
 
                 result = result.concat(this.getSelectQuery(childExp));
             }
@@ -918,7 +917,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (expression.objectOperand.type === Object && expression.objectOperand instanceof ValueExpression) {
             translater = this.resolveTranslator(expression.objectOperand.value, expression.memberName);
         }
-        if (!translater) {
+        if (!translater && expression.objectOperand.type) {
             translater = this.resolveTranslator(expression.objectOperand.type.prototype, expression.memberName);
         }
 
