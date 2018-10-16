@@ -3,7 +3,7 @@ import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class BitwiseZeroLeftShiftExpression extends BitwiseExpression implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseZeroLeftShiftExpression(leftOperand, rightOperand);
@@ -35,5 +35,8 @@ export class BitwiseZeroLeftShiftExpression extends BitwiseExpression implements
         const clone = new BitwiseZeroLeftShiftExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("<<", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

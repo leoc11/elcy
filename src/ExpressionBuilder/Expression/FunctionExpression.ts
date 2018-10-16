@@ -45,4 +45,7 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         replaceMap.set(this, clone);
         return clone;
     }
+    public hashCode() {
+        return this.body.hashCode();
+    }
 }

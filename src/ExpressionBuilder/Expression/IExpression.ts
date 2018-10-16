@@ -6,6 +6,7 @@ export interface IExpression<T = any> {
     toString(transformer?: ExpressionTransformer): string;
     execute(transformer?: ExpressionTransformer): T;
     clone(replaceMap?: Map<IExpression, IExpression>): IExpression<T>;
+    hashCode(): number;
 }
 
 export abstract class ExpressionBase<T = any> implements IExpression<T> {
@@ -26,4 +27,7 @@ export abstract class ExpressionBase<T = any> implements IExpression<T> {
         return (this.type as () => T)();
     }
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): ExpressionBase<T>;
+    public hashCode() {
+        return 1;
+    }
 }

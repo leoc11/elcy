@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class ExponentiationAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new ExponentiationAssignmentExpression(leftOperand, rightOperand);
@@ -28,5 +28,8 @@ export class ExponentiationAssignmentExpression extends ExpressionBase<number> i
         const clone = new ExponentiationAssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("**=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class EqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new EqualExpression(leftOperand, rightOperand);
@@ -31,5 +31,8 @@ export class EqualExpression extends ExpressionBase<boolean> implements IBinaryO
         const clone = new EqualExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("==", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

@@ -1,7 +1,7 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
 export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
     public static create<TType>(...values: Array<IExpression<TType>>) {
@@ -37,5 +37,12 @@ export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
         const clone = new ArrayValueExpression(...items);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        let hash = 0;
+        this.items.each((o, index) => {
+            hash += hashCodeAdd(index, o.hashCode());
+        });
+        return hash;
     }
 }

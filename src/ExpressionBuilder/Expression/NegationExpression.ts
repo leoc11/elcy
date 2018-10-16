@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class NegationExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
     public static create(operand: IExpression<number>) {
         const result = new NegationExpression(operand);
@@ -28,5 +28,8 @@ export class NegationExpression extends ExpressionBase<number> implements IUnary
         const clone = new NegationExpression(operand);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("-"), this.operand.hashCode());
     }
 }

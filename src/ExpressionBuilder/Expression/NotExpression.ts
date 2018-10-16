@@ -4,7 +4,7 @@ import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";
 import { OrExpression } from "./OrExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class NotExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
     public static create(operand: IExpression<boolean>) {
         const result = new NotExpression(operand);
@@ -44,5 +44,8 @@ export class NotExpression extends ExpressionBase<boolean> implements IUnaryOper
         const clone = new NotExpression(operand);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("!"), this.operand.hashCode());
     }
 }

@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class LessThanExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new LessThanExpression(leftOperand, rightOperand);
@@ -30,5 +30,8 @@ export class LessThanExpression<TType = any> extends ExpressionBase<boolean> imp
         const clone = new LessThanExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("<", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

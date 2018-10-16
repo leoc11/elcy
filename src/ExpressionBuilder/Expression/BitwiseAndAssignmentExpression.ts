@@ -2,7 +2,7 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 export class BitwiseAndAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new BitwiseAndAssignmentExpression(leftOperand, rightOperand);
@@ -28,5 +28,8 @@ export class BitwiseAndAssignmentExpression extends ExpressionBase<number> imple
         const clone = new BitwiseAndAssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("&=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

@@ -3,7 +3,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class NotEqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new NotEqualExpression(leftOperand, rightOperand);
@@ -33,5 +33,8 @@ export class NotEqualExpression extends ExpressionBase<boolean> implements IBina
         const clone = new NotEqualExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("!=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }
