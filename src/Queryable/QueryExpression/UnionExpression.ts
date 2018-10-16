@@ -3,7 +3,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
 export class UnionExpression<T> extends ProjectionEntityExpression {
     public readonly entityTypes: IObjectType[];
@@ -24,5 +24,8 @@ export class UnionExpression<T> extends ProjectionEntityExpression {
         const clone = new UnionExpression(select, select2, this.isUnionAll, this.type);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("UNION", this.select.hashCode()), this.select2.hashCode());
     }
 }

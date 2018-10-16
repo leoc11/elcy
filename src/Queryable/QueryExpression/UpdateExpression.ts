@@ -92,7 +92,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public hashCode() {
         let code = 0;
         for (const prop in this.setter) {
-            code += hashCode(prop, hashCode(this.setter[prop].toString()));
+            code += hashCode(prop, this.setter[prop].hashCode());
         }
         return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
     }

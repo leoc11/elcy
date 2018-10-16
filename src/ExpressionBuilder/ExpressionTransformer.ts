@@ -5,12 +5,12 @@ import { FunctionExpression } from "./Expression/FunctionExpression";
 export abstract class ExpressionTransformer {
     public scopeParameters: TransformerParameter;
 
-    public executeExpression(expression: IExpression): any {
+    public executeExpression<T>(expression: IExpression<T>): any {
         if (expression instanceof FunctionExpression) {
             expression.body.execute(this);
         }
     }
-    public getExpressionString(expression: IExpression): string {
+    public getExpressionString<T>(expression: IExpression<T>): string {
         return "";
     }
 }

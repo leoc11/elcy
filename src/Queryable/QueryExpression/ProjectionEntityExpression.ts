@@ -6,7 +6,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ColumnExpression } from "./ColumnExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
@@ -64,5 +64,8 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         clone.columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.sum(o => o.hashCode()));
     }
 }

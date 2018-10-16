@@ -1,13 +1,13 @@
 import { GenericType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { Queryable } from "../../Queryable/Queryable";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
-export class MethodCallExpression<TType = any, KProp extends keyof TType = any, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
-    public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
+export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
+    public static create<TE, K extends keyof TE, T = any>(objectOperand: IExpression<TE>, params: IExpression[], methodName?: K, methodFn?: () => T) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.create(result);
@@ -16,8 +16,8 @@ export class MethodCallExpression<TType = any, KProp extends keyof TType = any, 
         return result;
     }
     public methodName: string;
-    constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[], type?: GenericType<TResult>) {
-        super(type);
+    constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
+        this.type = type;
         if (typeof method === "function") {
             this.methodName = method.name;
         }
@@ -25,7 +25,7 @@ export class MethodCallExpression<TType = any, KProp extends keyof TType = any, 
             this.methodName = method;
         }
     }
-    private _type: GenericType<TResult>;
+    private _type: GenericType<T>;
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
@@ -90,8 +90,13 @@ export class MethodCallExpression<TType = any, KProp extends keyof TType = any, 
         if (!replaceMap) replaceMap = new Map();
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
-        const clone = new MethodCallExpression(objectOperand, this.methodName as KProp, params, this.type);
+        const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        let hash = hashCode("." + this.methodName, this.objectOperand.hashCode());
+        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
+        return hash;
     }
 }

@@ -5,7 +5,7 @@ import { Enumerable } from "../../Enumerable/Enumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public having: IExpression<boolean>;
@@ -137,5 +137,11 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         clone.select.relationColumns = this.select.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
+    }
+    public hashCode() {
+        let code: number = super.hashCode();
+        code = hashCodeAdd(hashCode("GROUPBY", code), this.groupBy.select(o => o.hashCode()).sum());
+        if (this.having) code = hashCodeAdd(this.where.hashCode(), code);
+        return code;
     }
 }

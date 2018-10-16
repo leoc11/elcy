@@ -1,11 +1,11 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";
 import { OrExpression } from "./OrExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class NotExpression extends ExpressionBase<boolean> implements IUnaryOperatorExpression {
+export class NotExpression implements IUnaryOperatorExpression<boolean> {
     public static create(operand: IExpression<boolean>) {
         const result = new NotExpression(operand);
         if (operand instanceof ValueExpression)
@@ -14,8 +14,8 @@ export class NotExpression extends ExpressionBase<boolean> implements IUnaryOper
         return result;
     }
     public operand: IExpression<boolean>;
+    public type = Boolean;
     constructor(operand: IExpression) {
-        super(Boolean);
         this.operand = this.convertOperand(operand);
     }
     public convertOperand(operand: IExpression): IExpression<boolean> {

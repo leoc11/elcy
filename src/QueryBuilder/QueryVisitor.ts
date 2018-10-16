@@ -251,10 +251,10 @@ export class QueryVisitor {
         }
         return result;
     }
-    protected visitFunction<T, TR>(expression: FunctionExpression<T, TR>, param: IVisitParameter) {
+    protected visitFunction<T, TR>(expression: FunctionExpression<TR>, param: IVisitParameter) {
         return this.visit(expression.body, param);
     }
-    protected visitMember<TType, KProp extends keyof TType>(expression: MemberAccessExpression<TType, KProp>, param: IVisitParameter): IExpression {
+    protected visitMember<T, K extends keyof T>(expression: MemberAccessExpression<T, K>, param: IVisitParameter): IExpression {
         const objectOperand = expression.objectOperand;
         if (expression.memberName === "prototype" || expression.memberName === "__proto__")
             throw new Error(`property ${expression.memberName} not supported in linq to sql.`);
@@ -291,7 +291,7 @@ export class QueryVisitor {
                 }
                 return column;
             }
-            const relationMeta: RelationMetaData<TType, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
+            const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, expression.memberName as string);
             if (relationMeta) {
                 const targetType = relationMeta.target.type;
                 switch (param.scope) {
@@ -466,7 +466,7 @@ export class QueryVisitor {
 
         throw new Error(`${objectOperand.type.name}.${expression.memberName} is invalid or not supported in linq to sql.`);
     }
-    protected visitInstantiation<TType>(expression: InstantiationExpression<TType>, param: IVisitParameter): IExpression {
+    protected visitInstantiation<T>(expression: InstantiationExpression<T>, param: IVisitParameter): IExpression {
         const clone = expression.clone();
         expression.typeOperand = this.visit(expression.typeOperand, param);
         expression.params = expression.params.select(o => this.visit(o, param)).toArray();
@@ -493,12 +493,12 @@ export class QueryVisitor {
 
         throw new Error(`${expression.type.name} not supported.`);
     }
-    protected visitObjectSelect(selectOperand: SelectExpression, selectExp: ObjectValueExpression<any>, prevPath?: string) {
+    protected visitObjectSelect(selectOperand: SelectExpression, object: { [key: string]: IExpression }, prevPath?: string) {
         let newSelects: IColumnExpression[] = [];
         const joinRelations: Array<IPRelation> = [];
-        for (const prop in selectExp.object) {
+        for (const prop in object) {
             const propPath = prevPath ? prevPath + "." + prop : prop;
-            const valueExp = selectExp.object[prop];
+            const valueExp = object[prop];
             if (valueExp instanceof EntityExpression) {
                 let childEntity = valueExp as IEntityExpression;
                 let parentRel: IJoinRelation<any, any> = childEntity.select.parentRelation as any;
@@ -603,7 +603,7 @@ export class QueryVisitor {
                 joinRelations.push(pr);
             }
             else if (valueExp instanceof ObjectValueExpression) {
-                newSelects = newSelects.concat(this.visitObjectSelect(selectOperand, valueExp, propPath));
+                newSelects = newSelects.concat(this.visitObjectSelect(selectOperand, valueExp.object, propPath));
             }
             else if ((valueExp as IColumnExpression).entity) {
                 const columnExp = valueExp as IColumnExpression;
@@ -615,6 +615,33 @@ export class QueryVisitor {
                     columnExp.propertyName = propPath;
                     newSelects.add(columnExp);
                 }
+            }
+            else if (valueExp instanceof TernaryExpression && !isValueType(valueExp.type)) {
+                const obj: any = {};
+                obj[prop + "::l"] = valueExp.logicalOperand;
+                if (isValueType(valueExp.trueResultOperand.type)) {
+                    obj[prop + "::t"] = new TernaryExpression(valueExp.logicalOperand, valueExp.trueResultOperand, new ValueExpression(null));
+                }
+                else {
+                    obj[prop + "::t"] = valueExp.trueResultOperand;
+                }
+                if (isValueType(valueExp.falseResultOperand.type)) {
+                    obj[prop + "::f"] = new TernaryExpression(valueExp.logicalOperand, new ValueExpression(null), valueExp.falseResultOperand);
+                }
+                else {
+                    obj[prop + "::f"] = valueExp.falseResultOperand;
+                }
+                newSelects = newSelects.concat(this.visitObjectSelect(selectOperand, obj, prevPath));
+
+                const trueInclude = selectOperand.includes.first(o => o.name === prop + "::t");
+                if (trueInclude) trueInclude.ternaryFilter = valueExp.logicalOperand;
+
+                const falseInclude = selectOperand.includes.first(o => o.name === prop + "::f");
+                if (falseInclude) falseInclude.ternaryFilter = new NotExpression(valueExp.logicalOperand);
+                
+                const column = new ComputedColumnExpression(selectOperand.entity, valueExp, prop);
+                column.propertyName = propPath;
+                newSelects.add(column);
             }
             else {
                 const column = new ComputedColumnExpression(selectOperand.entity, valueExp, prop);
@@ -667,7 +694,7 @@ export class QueryVisitor {
             selectOperand.addInclude(rel.name, rel.child, rel.relations, rel.type);
         return selectColumns;
     }
-    protected visitMethod<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>, param: IVisitParameter): IExpression {
+    protected visitMethod<T, K extends keyof T, R = any>(expression: MethodCallExpression<T, K, R>, param: IVisitParameter): IExpression {
         const objectOperand = expression.objectOperand;
 
         if (objectOperand instanceof SelectExpression) {
@@ -682,7 +709,7 @@ export class QueryVisitor {
                     selectOperand.includes = [];
 
                     const parentRelation = objectOperand.parentRelation;
-                    const selectorFn = (expression.params.length > 1 ? expression.params[1] : expression.params[0]) as FunctionExpression<TType, TResult>;
+                    const selectorFn = (expression.params.length > 1 ? expression.params[1] : expression.params[0]) as FunctionExpression<R>;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: param.scope === "queryable" || param.scope === "select" || param.scope === "selectMany" || objectOperand.isSubSelect ? expression.methodName : "" };
                     this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                     const selectExp = this.visit(selectorFn, visitParam);
@@ -705,8 +732,9 @@ export class QueryVisitor {
                             }
                         }
                         else if (selectExp instanceof ObjectValueExpression) {
-                            selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp);
-                            selectOperand.itemExpression = selectExp;
+                            selectOperand.selects = this.visitObjectSelect(selectOperand, selectExp.object);
+                            selectOperand.entity = new CustomEntityExpression(selectOperand.entity.name, selectOperand.selects, selectExp.type, selectOperand.entity.alias);
+                            selectOperand.itemExpression = selectOperand.entity;
                             if (type) {
                                 selectOperand.itemExpression.type = type.value;
                             }
@@ -752,7 +780,7 @@ export class QueryVisitor {
 
                     selectOperand.includes = [];
                     const parentRelation = objectOperand.parentRelation;
-                    const selectorFn = expression.params[0] as FunctionExpression<TType, TResult>;
+                    const selectorFn = expression.params[0] as FunctionExpression<R>;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: expression.methodName };
                     this.scopeParameters.add(selectorFn.params[0].name, selectOperand.getVisitParam());
                     const selectExp = this.visit(selectorFn, visitParam);
@@ -806,7 +834,7 @@ export class QueryVisitor {
                     else {
                         param.selectExpression = groupByExp;
                     }
-                    
+
                     return groupByExp;
                 }
                 case "project":
@@ -815,7 +843,7 @@ export class QueryVisitor {
                         objectOperand.selects = [];
                     }
                     for (const paramFn of expression.params) {
-                        const selectorFn = paramFn as FunctionExpression<TType, TResult>;
+                        const selectorFn = paramFn as FunctionExpression<R>;
                         this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
                         let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
                         this.visit(selectorFn, visitParam);
@@ -839,7 +867,7 @@ export class QueryVisitor {
                         selectOperand = clone;
                     }
 
-                    const predicateFn = expression.params[0] as FunctionExpression<TType, boolean>;
+                    const predicateFn = expression.params[0] as FunctionExpression<boolean>;
                     const visitParam: IVisitParameter = { selectExpression: selectOperand, scope: "where" };
                     this.scopeParameters.add(predicateFn.params[0].name, selectOperand.getVisitParam());
                     const whereExp = this.visit(predicateFn, visitParam) as IExpression<boolean>;
@@ -900,7 +928,7 @@ export class QueryVisitor {
                     const selectors = expression.params as ArrayValueExpression[];
                     const orders: IOrderExpression[] = [];
                     for (const selector of selectors) {
-                        const selectorFn = selector.items[0] as FunctionExpression<TType, any>;
+                        const selectorFn = selector.items[0] as FunctionExpression;
                         const direction = selector.items[1] ? selector.items[1] as ValueExpression<OrderDirection> : new ValueExpression<OrderDirection>("ASC");
                         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };
                         this.scopeParameters.add(selectorFn.params[0].name, objectOperand.getVisitParam());
@@ -1581,8 +1609,8 @@ export class QueryVisitor {
 
                     const parentRelation = objectOperand.parentRelation;
 
-                    const dimensions = expression.params[0] as FunctionExpression<TType, any>;
-                    const metrics = expression.params[1] as FunctionExpression<TType, any>;
+                    const dimensions = expression.params[0] as FunctionExpression;
+                    const metrics = expression.params[1] as FunctionExpression;
 
                     // groupby
                     let visitParam: IVisitParameter = { selectExpression: objectOperand, scope: expression.methodName };

@@ -4,7 +4,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implements IBinaryOperatorExpression {
+export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new BitwiseSignedRightShiftExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)

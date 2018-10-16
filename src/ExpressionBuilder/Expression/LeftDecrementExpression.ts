@@ -1,20 +1,19 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class LeftDecrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
-    public static create(operand: IExpression<number>) {
+import { ParameterExpression } from "./ParameterExpression";
+export class LeftDecrementExpression implements IUnaryOperatorExpression<number> {
+    public static create(operand: ParameterExpression<number>) {
         const result = new LeftDecrementExpression(operand);
         if (operand instanceof ValueExpression)
             return ValueExpression.create<number>(result);
 
         return result;
     }
-    constructor(public operand: IExpression) {
-        super(Number);
-    }
-
+    public type = Number;
+    constructor(public operand: ParameterExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

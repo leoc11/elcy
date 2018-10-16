@@ -4,7 +4,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
@@ -37,6 +37,6 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         return this.toString(transformer) as any;
     }
     public hashCode() {
-        return hashCode(this.propertyName, hashCode(this.expression.toString()));
+        return hashCode(this.propertyName, hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
     }
 }

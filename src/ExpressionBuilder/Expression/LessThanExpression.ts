@@ -1,20 +1,18 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class LessThanExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
-    public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
+export class LessThanExpression implements IBinaryOperatorExpression<boolean> {
+    public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new LessThanExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.create<boolean>(result);
 
         return result;
     }
-    constructor(public leftOperand: IExpression<TType>, public rightOperand: IExpression<TType>) {
-        super(Boolean);
-    }
-
+    public type = Boolean;
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

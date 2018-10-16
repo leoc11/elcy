@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class DivisionExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+export class DivisionExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new DivisionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,9 +11,8 @@ export class DivisionExpression extends ExpressionBase<number> implements IBinar
 
         return result;
     }
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
-        super(Number);
-    }
+    public type = Number;
+    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
 
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)

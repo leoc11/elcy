@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class NegationExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
+export class NegationExpression implements IUnaryOperatorExpression<number> {
     public static create(operand: IExpression<number>) {
         const result = new NegationExpression(operand);
         if (operand instanceof ValueExpression)
@@ -11,9 +11,8 @@ export class NegationExpression extends ExpressionBase<number> implements IUnary
 
         return result;
     }
-    constructor(public operand: IExpression<number>) {
-        super(Number);
-    }
+    public type = Number;
+    constructor(public operand: IExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

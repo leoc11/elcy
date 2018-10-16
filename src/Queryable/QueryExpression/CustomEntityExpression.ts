@@ -5,7 +5,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode } from "../../Helper/Util";
 
 export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
     public isRelationData?: boolean;
@@ -43,4 +43,7 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         return clone;
     }
     public entityTypes: IObjectType[] = [];
+    public hashCode() {
+        return hashCode(this.name, hashCode(this.type.name, this.columns.length));
+    }
 }

@@ -3,7 +3,7 @@ import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
     public readonly entityTypes: IObjectType[];
@@ -24,5 +24,8 @@ export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
         const clone = new ExceptExpression(select, select2, this.type);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("EXCEPT", this.select.hashCode()), this.select2.hashCode());
     }
 }

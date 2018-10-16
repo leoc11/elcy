@@ -1,15 +1,14 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class BitwiseOrAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+export class BitwiseOrAssignmentExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new BitwiseOrAssignmentExpression(leftOperand, rightOperand);
     }
-    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) {
-        super(rightOperand.type);
-    }
+    public type = Number;
+    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

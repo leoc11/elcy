@@ -29,6 +29,7 @@ export interface IIncludeRelation<T = any, TChild = any> {
     name: string;
     relationMap?: Map<IColumnExpression, IColumnExpression>;
     isFinish?: boolean;
+    ternaryFilter?: IExpression<boolean>;
 }
 export interface IJoinRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
@@ -413,7 +414,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
         code = hashCodeAdd(code, this.selects.select(o => o.hashCode()).sum());
-        if (this.where) code = hashCode(this.where.toString(), code);
+        if (this.where) code = hashCodeAdd(this.where.hashCode(), code);
         code = hashCodeAdd(code, this.joins.sum(o => o.child.hashCode()));
         code = hashCodeAdd(code, this.includes.sum(o => o.child.hashCode()));
         return code;

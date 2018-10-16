@@ -53,6 +53,6 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         return clone;
     }
     public hashCode() {
-        return hashCode(this.propertyName, hashCode(this.columnName));
+        return hashCode(this.propertyName, hashCode(this.columnName, this.entity.hashCode()));
     }
 }

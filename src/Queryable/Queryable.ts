@@ -264,7 +264,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
-                metParams.push(ExpressionBuilder.parse<T, number>(selector));
+                metParams.push(ExpressionBuilder.parse(selector));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "sum", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -313,7 +313,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
-                metParams.push(ExpressionBuilder.parse<T, number>(selector));
+                metParams.push(ExpressionBuilder.parse(selector));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "max", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -362,7 +362,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
-                metParams.push(ExpressionBuilder.parse<T, number>(selector));
+                metParams.push(ExpressionBuilder.parse(selector));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "min", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -411,7 +411,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
-                metParams.push(ExpressionBuilder.parse<T, number>(selector));
+                metParams.push(ExpressionBuilder.parse(selector));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "avg", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -460,7 +460,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
-                metParams.push(ExpressionBuilder.parse<T, boolean>(predicate));
+                metParams.push(ExpressionBuilder.parse(predicate));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "all", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -508,7 +508,7 @@ export abstract class Queryable<T = any> {
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
-                metParams.push(ExpressionBuilder.parse<T, boolean>(predicate));
+                metParams.push(ExpressionBuilder.parse(predicate));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "any", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -577,7 +577,7 @@ export abstract class Queryable<T = any> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             const metParams = [];
             if (predicate) {
-                metParams.push(ExpressionBuilder.parse<T, boolean>(predicate));
+                metParams.push(ExpressionBuilder.parse(predicate));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "first", metParams);
             const param: IVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -740,7 +740,7 @@ export abstract class Queryable<T = any> {
 
             if (predicate) {
                 const metParams = [];
-                metParams.push(ExpressionBuilder.parse<T, boolean>(predicate));
+                metParams.push(ExpressionBuilder.parse(predicate));
                 const methodExpression = new MethodCallExpression(selectExp, "where", metParams);
                 const param: IVisitParameter = { selectExpression: selectExp, scope: "queryable" };
                 visitor.visit(methodExpression, param);

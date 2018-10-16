@@ -8,7 +8,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode } from "../../Helper/Util";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
@@ -100,5 +100,8 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }).toArray();
         clone.name = this.name;
         return clone;
+    }
+    public hashCode() {
+        return hashCode(this.type.name);
     }
 }

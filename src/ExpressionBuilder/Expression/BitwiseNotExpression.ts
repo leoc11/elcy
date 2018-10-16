@@ -4,7 +4,7 @@ import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode } from "../../Helper/Util";
-export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression {
+export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression<number> {
     public static create(operand: IExpression) {
         const result = new BitwiseNotExpression(operand);
         if (operand instanceof ValueExpression)

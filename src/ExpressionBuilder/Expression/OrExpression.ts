@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class OrExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
+export class OrExpression implements IBinaryOperatorExpression<boolean> {
     public static create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
         const result = new OrExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,10 +11,8 @@ export class OrExpression extends ExpressionBase<boolean> implements IBinaryOper
 
         return result;
     }
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
-        super(Boolean);
-    }
-
+    public type = Boolean;
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

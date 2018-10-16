@@ -53,6 +53,6 @@ export class EmbeddedColumnExpression<TE = any, T = any> implements IColumnExpre
         }
     }
     public hashCode() {
-        return hashCode(this.propertyName, this.entity.columns.select(o => o.hashCode()).sum());
+        return hashCode(this.propertyName, this.selects.select(o => o.hashCode()).sum());
     }
 }

@@ -81,7 +81,7 @@ function isGreatherThan(precedence1: IOperatorPrecedence, precedence2: IOperator
     }
     return precedence1.precedence >= precedence2.precedence;
 }
-function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], expression?: IExpression, prevOperator?: IOperator) {
+function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], expression?: IExpression, prevOperator?: IOperator): IExpression {
     while (param.index < tokens.length) {
         let token = tokens[param.index];
         switch (token.type) {

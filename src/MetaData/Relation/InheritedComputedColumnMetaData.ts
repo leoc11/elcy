@@ -18,7 +18,7 @@ export class InheritedComputedColumnMetaData<TE extends TP, TP, T = any> extends
         return this.parentColumnMetaData.description;
     }
     public get functionExpression() {
-        return this.parentColumnMetaData.functionExpression as FunctionExpression<TE, T>;
+        return this.parentColumnMetaData.functionExpression as FunctionExpression<T>;
     }
     public parentColumnMetaData: ComputedColumnMetaData<TP, T>;
     constructor(public entity: IEntityMetaData<TE, TP>, parentColumnMetaData: ComputedColumnMetaData<TP, T>) {

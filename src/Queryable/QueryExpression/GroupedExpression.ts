@@ -5,7 +5,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { JoinType } from "../../Common/Type";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 
 export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
@@ -101,5 +101,8 @@ export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> 
     }
     public addWhere(expression: IExpression<boolean>) {
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
+    }
+    public hashCode() {
+        return hashCode("GROUPED", super.hashCode());
     }
 }

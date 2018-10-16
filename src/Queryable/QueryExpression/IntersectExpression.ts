@@ -3,7 +3,7 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { SelectExpression } from "./SelectExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class IntersectExpression<T> extends ProjectionEntityExpression<T> {
     public readonly entityTypes: IObjectType[];
@@ -24,5 +24,8 @@ export class IntersectExpression<T> extends ProjectionEntityExpression<T> {
         const clone = new IntersectExpression(select, select2, this.type);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("INTERSECT", this.select.hashCode()), this.select2.hashCode());
     }
 }

@@ -242,6 +242,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             else {
                 if (!tempSelect) {
                     const oriIncludes = select.includes;
+                    tempReplaceMap = new Map();
                     select.includes.each(o => excludeCloneMap(tempReplaceMap, o.child));
                     select.includes = [];
                     tempReplaceMap.delete(select.entity);
@@ -364,6 +365,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     include.isFinish = true;
                     include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
                     childExp = include.child;
+                }
+
+                // For ternary
+                if (include.ternaryFilter) {
+                    tempSelect.addWhere(include.ternaryFilter.clone(tempReplaceMap));
+                    tempSelect = null;
                 }
 
                 result = result.concat(this.getSelectQuery(childExp));

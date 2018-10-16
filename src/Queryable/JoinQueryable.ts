@@ -10,25 +10,25 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected readonly relationFn: (item: T, item2: T2) => boolean;
     protected readonly resultSelectorFn: (item1: T | null, item2: T2 | null) => R;
-    private _relation: FunctionExpression<T | T2, boolean>;
+    private _relation: FunctionExpression<boolean>;
     protected get relation() {
         if (!this._relation && this.relationFn)
-            this._relation = ExpressionBuilder.parse<T | T2, boolean>(this.relationFn, this.flatParameterStacks);
+            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, this.flatParameterStacks);
         return this._relation;
     }
     protected set relation(value) {
         this._relation = value;
     }
-    private _resultSelector: FunctionExpression<T | T2, R>;
+    private _resultSelector: FunctionExpression<R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionBuilder.parse<T | T2, any>(this.resultSelectorFn, this.flatParameterStacks);
+            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, this.flatParameterStacks);
         return this._resultSelector;
     }
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<T | T2, boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<any, R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
+    constructor(protected joinType: JoinType, public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> = Object as any) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relation instanceof FunctionExpression)

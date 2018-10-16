@@ -1,6 +1,6 @@
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -9,7 +9,7 @@ import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpressi
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
-    protected _predicate: FunctionExpression<T, boolean>;
+    protected _predicate: FunctionExpression<boolean>;
     protected get predicate() {
         if (!this._predicate && this.predicateFn)
             this._predicate = ExpressionBuilder.parse(this.predicateFn, this.flatParameterStacks);
@@ -18,7 +18,7 @@ export class WhereQueryable<T> extends Queryable<T> {
     protected set predicate(value) {
         this._predicate = value;
     }
-    constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<T, boolean> | ((item: T) => boolean)) {
+    constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<boolean> | ((item: T) => boolean)) {
         super(parent.type, parent);
         if (predicate instanceof FunctionExpression)
             this.predicate = predicate;
@@ -32,6 +32,6 @@ export class WhereQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return hashCode("WHERE", this.parent.hashCode() + hashCode((this.predicateFn || this.predicate).toString()));
+        return hashCodeAdd(hashCode("WHERE", this.parent.hashCode()), this.predicate.hashCode());
     }
 }

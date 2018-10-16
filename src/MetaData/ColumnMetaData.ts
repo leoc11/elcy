@@ -10,7 +10,7 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public propertyName?: keyof TE;
     public columnName: string;
     public nullable: boolean;
-    public default?: FunctionExpression<any, T>;
+    public default?: FunctionExpression<T>;
     public description: string;
     public columnType: ColumnType;
     public type: GenericType<T>;

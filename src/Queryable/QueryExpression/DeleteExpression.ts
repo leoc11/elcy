@@ -9,7 +9,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -154,7 +154,7 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         return this.select.buildParameter(paramStacks);
     }
     public hashCode() {
-        return hashCode("DELETE", hashCode(this.deleteMode ? "" : this.deleteMode.toString(), this.select.hashCode()));
+        return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes

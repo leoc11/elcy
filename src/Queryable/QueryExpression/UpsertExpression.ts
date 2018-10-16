@@ -81,7 +81,7 @@ export class UpsertExpression<T = any> implements IQueryCommandExpression<void> 
         return result;
     }
     public hashCode() {
-        return hashCode("UPSERT", hashCode(this.entity.name, this.values.select(o => hashCode(o.toString())).sum()));
+        return hashCode("UPSERT", hashCode(this.entity.name, this.values.select(o => o.hashCode()).sum()));
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes;
