@@ -73,6 +73,8 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.deletedColumn = entityMeta.deletedColumn;
         if (typeof entityMeta.indices !== "undefined")
             this.indices = entityMeta.indices;
+        if (typeof entityMeta.constraints !== "undefined")
+            this.constraints = entityMeta.constraints;
         if (typeof entityMeta.modifiedDateColumn !== "undefined")
             this.modifiedDateColumn = entityMeta.modifiedDateColumn;
         if (typeof entityMeta.primaryKeys !== "undefined")

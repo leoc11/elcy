@@ -450,8 +450,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         }
     }
-    public async updateSchema() {
-        const schemaQuery = await this.getUpdateSchemaQueries(...this.entityTypes);
+    public async syncSchema() {
+        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
         const commands = this.queryBuilder.mergeQueryCommands(schemaQuery.commit);
 
         // must be executed to all connection in case connection manager handle replication
@@ -463,7 +463,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             });
         }
     }
-    public async getUpdateSchemaQueries(...entityTypes: IObjectType[]) {
+    public async getUpdateSchemaQueries(entityTypes: IObjectType[]) {
         const con = await this.getConnection();
         const schemaBuilder = new this.schemaBuilderType(con, this.queryBuilder);
         return await schemaBuilder.getSchemaQuery(entityTypes);

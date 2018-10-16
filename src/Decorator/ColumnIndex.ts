@@ -25,10 +25,10 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
     });
 
     return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        if (!option.name)
-            option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as GenericType<T>).name);
         if (propertyKey)
             option.properties = [propertyKey];
+        if (!option.name)
+            option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as GenericType<T>).name);
 
         const entConstructor = propertyKey ? target.constructor : target;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);

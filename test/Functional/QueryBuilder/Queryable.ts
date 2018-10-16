@@ -24,7 +24,6 @@ beforeEach(async () => {
 });
 afterEach(() => {
     db.clear();
-    db.queryCacheManager.clear();
     sinon.restore();
     db.closeConnection();
 });
@@ -53,7 +52,7 @@ describe("QUERYABLE", async () => {
                     od.should.be.an.instanceof(OrderDetail);
                     const odProps = orderDetailMeta.columns.select(o => o.propertyName).toArray();
                     odProps.each(prop => od.should.has.property(prop).that.is.not.null);
-        });
+                });
             });
         });
         it("should support nested include", async () => {
@@ -74,7 +73,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
                 o.should.have.property("OrderDetails").that.is.an("array").and.not.empty;
                 o.OrderDetails.each(od => od.should.be.an.instanceof(OrderDetail).and.has.property("Product").that.is.an.instanceof(Product));
-        });
+            });
         });
         it("should eager load scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -92,7 +91,7 @@ describe("QUERYABLE", async () => {
             results.should.be.an("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(OrderDetail).and.have.property("Order").that.is.an.instanceof(Order);
-        });
+            });
         });
         it("should eager load 2 navigation properties at once", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -112,7 +111,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
                 o.should.have.property("Order").that.is.an.instanceof(Order);
                 o.should.have.property("Product").that.is.an.instanceof(Product);
-        });
+            });
         });
         it("should load many-many relation", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -132,8 +131,8 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Collection);
                 o.should.have.property("Products").that.is.an("array");
                 o.Products.each(p => p.should.be.an.instanceof(Product));
+            });
         });
-    });
     });
     describe("PROJECT", async () => {
         it("should project specific property", async () => {
@@ -153,8 +152,8 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.has.property("TotalAmount").that.not.undefined;
                 o.should.has.property("OrderDate").that.is.undefined;
+            });
         });
-    });
     });
     describe("SELECT", async () => {
         it("should return specific property", async () => {
@@ -193,7 +192,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("date").that.is.a("date");
                 o.should.have.property("amount").that.is.a("number");
-        });
+            });
         });
         it("should return a value from scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -213,7 +212,7 @@ describe("QUERYABLE", async () => {
             results.should.be.an("array").and.not.empty;
             results.each(o => {
                 o.should.have.property("date").that.is.a("date");
-        });
+            });
         });
         it("should return an object with list navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -234,7 +233,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("ods").that.is.an("array");
                 o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-        });
+            });
         });
         it("should return an object with scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -275,7 +274,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
                 o.simpleOrderDetails.each(od => od.should.have.property("name").that.is.a("string"));
-        });
+            });
         });
         it("should return a scalar navigation property of list navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -298,7 +297,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
                 o.simpleOrderDetails.each(od => od.should.have.property("prod").that.is.an.instanceof(Product));
-        });
+            });
         });
         it("should support self select", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -324,7 +323,7 @@ describe("QUERYABLE", async () => {
                 o.simpleOrderDetails.each(od => {
                     od.should.have.property("od").that.is.an.instanceof(OrderDetail);
                     od.should.have.property("Price").that.is.a("number");
-        });
+                });
             });
         });
         it("should select array", async () => {
@@ -344,7 +343,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.be.an("array").and.not.empty;
                 o.each(o => o.should.be.an.instanceof(OrderDetail));
-        });
+            });
         });
         it("should select array with where for aggregate", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -367,8 +366,8 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("sum").that.is.a("number");
                 o.should.have.property("ods").that.is.an("array").and.not.empty;
                 o.ods.each(o => o.should.be.an.instanceof(OrderDetail));
+            });
         });
-    });
     });
     describe("WHERE", async () => {
         it("should add where clause", async () => {
@@ -405,7 +404,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array");
                 o.OrderDetails.each(od => {
                     od.should.be.an.instanceof(OrderDetail);
-        });
+                });
             });
         });
         it("should be supported in select statement", async () => {
@@ -427,7 +426,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.has.property("ods").that.is.an("array");
                 o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-        });
+            });
         });
         it("could be used more than once in chain", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -563,7 +562,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array").and.not.empty;
                 o.OrderDetails.each(od => od.should.be.an.instanceof(OrderDetail));
-        });
+            });
         });
         it("could be used in select", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -584,8 +583,8 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("ods").that.is.an("array").and.not.empty;
                 o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
+            });
         });
-    });
     });
     describe("SELECT MANY", async () => {
         it("should work", async () => {
@@ -652,7 +651,7 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.a("array").and.not.empty;
-        });
+            });
         });
         it("should worked in chain", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -670,7 +669,7 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(OrderDetailProperty);
-        });
+            });
         });
         it("nested selectMany", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -688,8 +687,8 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(OrderDetailProperty);
+            });
         });
-    });
     });
     describe("ANY", async () => {
         it("should work", async () => {
@@ -726,7 +725,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("hasDetail").that.is.a("boolean");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -780,7 +779,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("hasDetail").that.is.a("boolean");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -798,8 +797,8 @@ describe("QUERYABLE", async () => {
             results.should.be.an("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(Order);
+            });
         });
-    });
     });
     describe("MAX", async () => {
         it("should work", async () => {
@@ -835,7 +834,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("maxProductPrice").that.is.an("number");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -853,8 +852,8 @@ describe("QUERYABLE", async () => {
             results.should.be.an("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(Order);
+            });
         });
-    });
     });
     describe("MIN", async () => {
         it("should work", async () => {
@@ -891,7 +890,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("minProductPrice").that.is.a("number");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -945,7 +944,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("avgProductPrice").which.is.an("number");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -963,8 +962,8 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(Order);
+            });
         });
-    });
     });
     describe("SUM", async () => {
         it("should work", async () => {
@@ -1001,7 +1000,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("sumProductPrice").which.is.an("number");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1019,8 +1018,8 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(Order);
+            });
         });
-    });
     });
     describe("COUNT", async () => {
         it("should work", async () => {
@@ -1058,7 +1057,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("order").which.is.an.instanceof(Order);
                 o.should.have.property("countDetails").which.is.an("number");
-        });
+            });
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1076,7 +1075,7 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(Order);
-        });
+            });
         });
         it("could be used in select with different filter", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1100,8 +1099,8 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("qty").that.is.a("number");
                 o.should.have.property("bc").that.is.a("number");
                 o.should.have.property("cd").that.is.a("number");
+            });
         });
-    });
     });
     describe("TAKE SKIP", async () => {
         it("should work", async () => {
@@ -1718,7 +1717,7 @@ describe("QUERYABLE", async () => {
 
             const pivot = db.orders.pivot(
                 {
-                month: o => o.OrderDate.getMonth()
+                    month: o => o.OrderDate.getMonth()
                 },
                 {
                     total: o => o.sum(o => o.TotalAmount),
@@ -2370,6 +2369,58 @@ describe("QUERYABLE", async () => {
             const queryIncludeSoftDeleted = db.orderDetails.option({ includeSoftDeleted: true }).toString();
 
             chai.expect(queryExcludeSoftDeleted).to.not.equal(queryIncludeSoftDeleted);
+        });
     });
-    });
+    // describe("TERNARY OPERATOR", () => {
+    //     // TODO
+    //     it("test 1", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orders.select(o => ({
+    //             item: o.TotalAmount > 20000 ? 20000 : o.TotalAmount
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 2", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orderDetails.select(o => ({
+    //             item: o.quantity === 1 ? o.Order : null
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 3", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orderDetails.select(o => ({
+    //             item: o.quantity === 1 ? o.Order : { OrderId: o.OrderId }
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 4", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orders.select(o => ({
+    //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails : null
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 5", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orders.select(o => ({
+    //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails.first() : o.OrderDate
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 6", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orderDetails.select(o => ({
+    //             item: o.quantity === 1 ? o.OrderDetailProperties : o.Product
+    //         }));
+    //         const results = await ternary.toArray();
+    //     });
+    //     it("test 7", async () => {
+    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const ternary = db.orders.select(o => ({
+    //             item: o.OrderDetails
+    //         })).select(o => o.item.count());
+    //         const results = await ternary.toArray();
+    //     });
+    // });
 });

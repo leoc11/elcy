@@ -9,7 +9,7 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public entity: IEntityMetaData<TE>;
     public propertyName?: keyof TE;
     public columnName: string;
-    public nullable = true;
+    public nullable: boolean;
     public default?: FunctionExpression<any, T>;
     public description: string;
     public columnType: ColumnType;

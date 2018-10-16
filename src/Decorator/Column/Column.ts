@@ -15,7 +15,7 @@ import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
-    return (target: TE, propertyKey: any) => {
+    return (target: TE, propertyKey: keyof TE) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
@@ -26,8 +26,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         metadata.isProjected = true;
         metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
-            if (typeof (propertyKey) === "string")
-                metadata.columnName = propertyKey;
+            metadata.columnName = propertyKey;
         }
         metadata.propertyName = propertyKey;
 

@@ -40,7 +40,6 @@ export function CheckContraint<T>(optionOrCheckOrName: ICheckConstraintOption | 
             entityMetaData.constraints.remove(checkMetaData);
         }
         checkMetaData = new CheckConstraintMetaData(option.name, entityMetaData, option.check);
-        checkMetaData.columns = [];
         entityMetaData.constraints.push(checkMetaData);
         Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
     };

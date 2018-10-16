@@ -150,17 +150,17 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             if (operator.identifier === "(") {
                                 let params = createParamExpression(param, tokens, ")");
                                 if (expression instanceof MemberAccessExpression) {
-                                    expression = MethodCallExpression.create(expression.objectOperand, params.items, expression.memberName);
+                                    expression = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);
                                 }
                                 else {
-                                    expression = FunctionCallExpression.create(expression, params.items);
+                                    expression = new FunctionCallExpression(expression, params.items);
                                 }
                                 continue;
                             }
                             const operand = createExpression(param, tokens, undefined, operator);
                             if (operator.identifier === ".") {
                                 const memberName = operand.toString();
-                                expression = MemberAccessExpression.create(expression, memberName);
+                                expression = new MemberAccessExpression(expression, memberName);
                             }
                             else {
                                 expression = operator.expressionFactory(expression, operand);

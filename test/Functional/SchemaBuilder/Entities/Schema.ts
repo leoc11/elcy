@@ -20,6 +20,9 @@ import { NullableColumn } from "../../../../src/Decorator/Column/NullableColumn"
 import { CheckContraint } from "../../../../src/Decorator/CheckConstraint";
 import { ColumnIndex } from "../../../../src/Decorator/ColumnIndex";
 import { UniqueConstraint } from "../../../../src/Decorator/UniqueConstraint";
+import { Entity } from "../../../../src/Decorator/Entity/Entity";
+import { SubSchema } from "./SubSchema";
+import { Relationship } from "../../../../src/Decorator/Relation/Relationship";
 
 enum EnumList {
     first = 1,
@@ -28,6 +31,7 @@ enum EnumList {
 
 @CheckContraint({ name: "Schema_entity_check", check: (entity: Schema) => entity.decimal > entity.integer })
 @UniqueConstraint<Schema>({ name: "Schema_entity_unique", properties: ["decimal", "real"] })
+@Entity()
 export class Schema {
     @PrimaryKey()
     @IntegerColumn({ autoIncrement: true })
@@ -90,4 +94,7 @@ export class Schema {
     @ColumnIndex()
     @DeletedColumn()
     public deleted: boolean;
+
+    @Relationship("own", "one", SubSchema || "SubSchema", [(o: Schema) => o.identifier])
+    public subSchema: SubSchema;
 }

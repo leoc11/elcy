@@ -34,6 +34,9 @@ export class MockConnection implements IConnection {
 
         return this._results;
     }
+    public set results(value) {
+        this._results = value;
+    }
     public generateQueryResult() {
         return Enumerable.load(this.deferredQueries)
             .selectMany(o => {
