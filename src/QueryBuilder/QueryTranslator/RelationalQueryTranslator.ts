@@ -45,6 +45,7 @@ import { IUnaryOperatorExpression } from "../../ExpressionBuilder/Expression/IUn
 import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
 
@@ -203,7 +204,14 @@ relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: M
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
  */
-relationalQueryTranslator.register(Date, "currentTimestamp", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CURRENT_TIMESTAMP`);
+relationalQueryTranslator.register(Date, "timestamp", (exp: MethodCallExpression) => {
+    if (exp.params.length > 0 && exp.params[0].execute() === true) {
+        return "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'";
+    }
+    return "CURRENT_TIMESTAMP";
+}, (exp: MethodCallExpression) => {
+    return exp.params.length <= 0 || exp.params[0] instanceof ValueExpression;
+});
 relationalQueryTranslator.register(Date.prototype, "getDate", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DAY(${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "getDay", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(DATEPART(weekday, ${qb.getExpressionString(exp.objectOperand)}) - 1)`);
 relationalQueryTranslator.register(Date.prototype, "getFullYear", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `YEAR(${qb.getExpressionString(exp.objectOperand)})`);

@@ -31,6 +31,6 @@ export class ValueExpression<T> implements IExpression<T> {
         return this;
     }
     public hashCode() {
-        return hashCode(this.value ? this.value.toString() : "NULL");
+        return hashCode(this.expressionString ? this.expressionString : this.value ? this.value.toString() : "NULL");
     }
 }

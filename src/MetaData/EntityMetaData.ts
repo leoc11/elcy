@@ -12,15 +12,17 @@ import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
 import { isNotNull } from "../Helper/Util";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
+import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
+import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
     public name: string;
     public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deletedColumn: IColumnMetaData<TE>;
-    public createDateColumn: IColumnMetaData<TE>;
-    public modifiedDateColumn: IColumnMetaData<TE>;
+    public deletedColumn: BooleanColumnMetaData<TE>;
+    public createDateColumn: DateTimeColumnMetaData<TE>;
+    public modifiedDateColumn: DateTimeColumnMetaData<TE>;
     public versionColumn?: RowVersionColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IIndexMetaData<TE>[] = [];

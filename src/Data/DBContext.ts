@@ -730,7 +730,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             });
 
             if (entry.metaData.modifiedDateColumn) {
-                set[entry.metaData.modifiedDateColumn.columnName] = new MethodCallExpression(new ValueExpression(Date), "currentTimestamp", []);
+                set[entry.metaData.modifiedDateColumn.columnName] = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(entry.metaData.modifiedDateColumn.timeZoneHandling === "utc")]);
             }
 
             const updateExp = new UpdateExpression(entityExp as any, set);

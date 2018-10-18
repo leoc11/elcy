@@ -6,6 +6,7 @@ import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/Membe
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../QueryBuilder/DbFunction";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -117,7 +118,14 @@ sqliteQueryTranslator.register(String.prototype, "split", null);
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
  */
-sqliteQueryTranslator.register(Date, "currentTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')", true);
+sqliteQueryTranslator.register(Date, "timestamp", (exp: MethodCallExpression) => {
+    if (exp.params.length > 0 && exp.params[0].execute() === true) {
+        return "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')";
+    }
+    return "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')";
+}, (exp: MethodCallExpression) => {
+    return exp.params.length <= 0 || exp.params[0] instanceof ValueExpression;
+});
 sqliteQueryTranslator.register(Date.prototype, "getDate", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%d', ${qb.getExpressionString(exp.objectOperand)})`);
 sqliteQueryTranslator.register(Date.prototype, "getDay", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%w', ${qb.getExpressionString(exp.objectOperand)})`);
 sqliteQueryTranslator.register(Date.prototype, "getFullYear", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%Y', ${qb.getExpressionString(exp.objectOperand)})`);

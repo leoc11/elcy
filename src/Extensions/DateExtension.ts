@@ -15,12 +15,13 @@ declare global {
         fromUTCDate(): Date;
     }
     interface DateConstructor {
-        currentTimestamp(): Date;
+        timestamp(isUTC?: boolean): Date;
     }
 }
 
-Date.currentTimestamp = function () {
-    return new Date();
+Date.timestamp = function (isUTC = false) {
+    const ts = new Date();
+    return isUTC ? ts.toUTCDate() : ts;
 };
 Date.prototype.toUTCDate = function (this: Date) {
     return new Date(this.getUTCFullYear(), this.getUTCMonth(), this.getUTCDate(), this.getUTCHours(), this.getUTCMinutes(), this.getUTCSeconds(), this.getUTCMilliseconds());

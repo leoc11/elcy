@@ -8,6 +8,8 @@ import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
 import { RowVersionColumnMetaData } from "../RowVersionColumnMetaData";
+import { DateTimeColumnMetaData } from "../DateTimeColumnMetaData";
+import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
 
 export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
     name: string;
@@ -15,9 +17,9 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     defaultOrder?: IOrderMetaData[];
     primaryKeys: Array<IColumnMetaData<TE>>;
     versionColumn?: RowVersionColumnMetaData<TE>;
-    deletedColumn?: IColumnMetaData<TE, boolean>;
-    createDateColumn?: IColumnMetaData<TE, Date>;
-    modifiedDateColumn?: IColumnMetaData<TE, Date>;
+    deletedColumn?: BooleanColumnMetaData<TE>;
+    createDateColumn?: DateTimeColumnMetaData<TE>;
+    modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     columns: IColumnMetaData<TE>[];
     indices?: IIndexMetaData<TE>[];
     constraints?: IConstraintMetaData<TE>[];

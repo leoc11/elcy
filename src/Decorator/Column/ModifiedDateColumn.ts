@@ -20,6 +20,9 @@ export function ModifiedDateColumn(optionOrName?: IDateTimeColumnOption | string
         }
     }
     option.isModifiedDate = true;
-    option.default = () => Date.currentTimestamp();
+    if (option.timeZoneHandling === "none")
+        option.default = () => Date.timestamp();
+    else
+        option.default = () => Date.timestamp(true);
     return Column<any, Date>(DateColumnMetaData, option);
 }
