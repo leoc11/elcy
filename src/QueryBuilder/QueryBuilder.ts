@@ -365,7 +365,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
                     childExp = include.child;
                 }
-                }
 
                 result = result.concat(this.getSelectQuery(childExp));
             }
