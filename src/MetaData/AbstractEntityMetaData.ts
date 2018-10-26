@@ -6,7 +6,6 @@ import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IndexMetaData } from "./IndexMetaData";
-import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { isNotNull } from "../Helper/Util";
 
@@ -19,7 +18,6 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public modifiedDateColumn?: IColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IndexMetaData<TE>[] = [];
-    public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     // inheritance
     public parentType?: GenericType<TParent>;

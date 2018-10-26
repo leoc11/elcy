@@ -88,7 +88,6 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 relations: [],
                 type: Object,
                 allowInheritance: false,
-                computedProperties: [],
                 inheritance: null
             };
             result[entity.name] = entity;

@@ -54,17 +54,33 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
             if (isInheritance) {
                 parentMetaData.columns.forEach((parentColumnMeta) => {
                     let columnMeta: IColumnMetaData<T> = entityMetadata.columns.first(p => p.propertyName === parentColumnMeta.propertyName);
-                    if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
-                        if (!columnMeta) {
-                            columnMeta = new ColumnMetaData<T>(parentColumnMeta.type, entityMetadata);
-                            columnMeta.applyOption(parentColumnMeta);
+                    if (parentColumnMeta instanceof ComputedColumnMetaData) {
+                        if (columnMeta) {
+                            if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
+                                columnMeta = new ComputedColumnMetaData<T>();
+                                columnMeta.applyOption(parentColumnMeta as any);
+                            }
+                            else {
+                                columnMeta = new InheritedComputedColumnMetaData<T, TParent>(entityMetadata, parentColumnMeta);
+                            }
                         }
                     }
                     else {
-                        columnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
+                        if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
+                            if (!columnMeta) {
+                                columnMeta = new ColumnMetaData<T>(parentColumnMeta.type, entityMetadata);
+                                columnMeta.applyOption(parentColumnMeta);
+                            }
+                        }
+                        else {
+                            columnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
+                        }
                     }
-                    entityMetadata.columns.push(columnMeta);
-                    Reflect.defineMetadata(columnMetaKey, columnMeta, type, parentColumnMeta.propertyName);
+
+                    if (columnMeta) {
+                        entityMetadata.columns.push(columnMeta);
+                        Reflect.defineMetadata(columnMetaKey, columnMeta, type, parentColumnMeta.propertyName);
+                    }
                 });
 
                 if (parentMetaData.primaryKeys.length > 0)
@@ -78,21 +94,6 @@ export function Entity<T extends TParent = any, TParent = any>(name?: string, de
                     entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName);
                 if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                     entityMetadata.defaultOrder = parentMetaData.defaultOrder;
-
-                parentMetaData.computedProperties.forEach((parentColumnMeta) => {
-                    if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {
-                        let computedMeta: ComputedColumnMetaData<T>;
-                        if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
-                            computedMeta = new ComputedColumnMetaData<T>();
-                            computedMeta.applyOption(parentColumnMeta as any);
-                        }
-                        else {
-                            computedMeta = new InheritedComputedColumnMetaData<T, TParent>(entityMetadata, parentColumnMeta);
-                        }
-                        entityMetadata.computedProperties.push(computedMeta);
-                        Reflect.defineMetadata(columnMetaKey, computedMeta, type, parentColumnMeta.propertyName);
-                    }
-                });
             }
         }
         Reflect.defineMetadata(entityMetaKey, entityMetadata, type);

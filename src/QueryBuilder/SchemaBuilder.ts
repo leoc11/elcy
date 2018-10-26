@@ -147,7 +147,6 @@ export abstract class SchemaBuilder {
                 relations: [],
                 type: Object,
                 allowInheritance: false,
-                computedProperties: [],
                 inheritance: null
             };
             result[entity.schema + "." + entity.name] = entity;

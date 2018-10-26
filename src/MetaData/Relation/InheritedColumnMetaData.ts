@@ -6,7 +6,7 @@ import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 
-export class InheritedColumnMetaData<TE extends TP, TP, T> implements IColumnMetaData<TE, T> {
+export class InheritedColumnMetaData<TE extends TP = any, TP = any, T = any> implements IColumnMetaData<TE, T> {
     public get columnName(): string {
         return this.parentColumnMetaData.columnName;
     }

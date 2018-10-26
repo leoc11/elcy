@@ -5,7 +5,6 @@ import { IIndexMetaData } from "./Interface/IIndexMetaData";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { IntegerColumnMetaData } from "./IntegerColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
@@ -26,7 +25,6 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public indices: IIndexMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
     public relations: IRelationMetaData<TE, any>[] = [];
-    public computedProperties: ComputedColumnMetaData<TE>[] = [];
 
     public concurencyModel: ConcurrencyModel;
     // inheritance
@@ -60,11 +58,6 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.columns = entityMeta.columns;
             this.columns.forEach(o => o.entity = this);
         }
-        if (typeof entityMeta.computedProperties !== "undefined") {
-            this.computedProperties = entityMeta.computedProperties;
-            this.computedProperties.forEach(o => o.entity = this);
-        }
-
         if (typeof entityMeta.createDateColumn !== "undefined")
             this.createDateColumn = entityMeta.createDateColumn;
         if (typeof entityMeta.defaultOrder !== "undefined")

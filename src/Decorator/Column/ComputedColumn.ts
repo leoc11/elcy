@@ -13,8 +13,7 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
         const computedMetaData = new ComputedColumnMetaData(entityMetaData, fn, propertyKey);
-        if (entityMetaData.computedProperties.contains(computedMetaData))
-            entityMetaData.computedProperties.push(computedMetaData);
+        entityMetaData.columns.push(computedMetaData);
         Reflect.defineMetadata(columnMetaKey, computedMetaData, target.constructor, propertyKey);
 
         const privatePropertySymbol = Symbol(propertyKey);

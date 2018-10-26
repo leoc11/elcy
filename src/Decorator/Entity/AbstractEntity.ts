@@ -8,6 +8,8 @@ import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
 import { toJSON } from "../../Helper/Util";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderOption<T>[]) {
     return (type: IObjectType<T>) => {
@@ -43,13 +45,23 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                 if (isInheritance) {
                     parentMetaData.columns.forEach((parentColumnMeta) => {
                         const existing = entityMetadata.columns.first(o => o.propertyName === parentColumnMeta.propertyName);
-                        if (existing) {
-                            entityMetadata.columns.remove(existing);
+                        let inheritedColumnMeta: IColumnMetaData<T>;
+                        if (parentColumnMeta instanceof ComputedColumnMetaData) {
+                            if (!existing) {
+                                inheritedColumnMeta = new InheritedComputedColumnMetaData(entityMetadata, parentColumnMeta);
+                            }
+                        }
+                        else {
+                            if (existing) {
+                                entityMetadata.columns.remove(existing);
+                            }
+                            inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }
 
-                        const inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
-                        entityMetadata.columns.push(inheritedColumnMeta);
-                        Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
+                        if (inheritedColumnMeta) {
+                            entityMetadata.columns.push(inheritedColumnMeta);
+                            Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
+                        }
                     });
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
                         const additionProperties = entityMetadata.columns.where(o => parentMetaData.columns.all(p => p.propertyName !== o.propertyName)).toArray();
@@ -70,14 +82,6 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                         entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName);
                     if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                         entityMetadata.defaultOrder = parentMetaData.defaultOrder;
-
-                    parentMetaData.computedProperties.forEach((parentColumnMeta) => {
-                        if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {
-                            const inheritedColumnMeta = new InheritedComputedColumnMetaData(entityMetadata, parentColumnMeta);
-                            entityMetadata.computedProperties.push(inheritedColumnMeta);
-                            Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
-                        }
-                    });
                 }
             }
         }
