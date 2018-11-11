@@ -34,7 +34,6 @@ export type ReferenceOption = "NO ACTION" | "RESTRICT" | "CASCADE" | "SET NULL" 
 export type IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" | "SNAPSHOT";
 export type ConcurrencyModel = "NONE" | "PESSIMISTIC" | "OPTIMISTIC DIRTY" | "OPTIMISTIC VERSION";
 export type LockMode = "READ" | "WRITE" | "UPGRADE" | "NONE";
-export type IndexType = "CLUSTERED" | "NONCLUSTERED";
 export enum EventListenerType {
     /**
      * Run after entity completely loaded from database.
