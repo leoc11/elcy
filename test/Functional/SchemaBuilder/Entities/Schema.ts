@@ -41,7 +41,7 @@ export class Schema {
     public boolean: boolean;
 
     @CheckContraint((entity: Schema) => entity.decimal >= 0)
-    @DecimalColumn({ precision: 10, scale: 2, length: 13 })
+    @DecimalColumn({ precision: 10, scale: 2 })
     public decimal: number;
 
     @EnumColumn({ options: EnumList, type: Number })

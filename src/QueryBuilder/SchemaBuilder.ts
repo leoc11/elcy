@@ -28,9 +28,12 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { DateTimeColumnMetaData } from "../MetaData/DateTimeColumnMetaData";
 import { IBatchedQuery } from "./Interface/IBatchedQuery";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
 
 export abstract class SchemaBuilder {
-    constructor(public connection: IConnection, protected readonly queryBuilder: QueryBuilder) { }
+    constructor(public connection: IConnection, protected readonly queryBuilder: QueryBuilder) {
+        this.queryBuilder.isStrictSql = true;
+    }
 
     public async getSchemaQuery(entityTypes: IObjectType[]) {
         let commitQueries: IQuery[] = [];
@@ -169,11 +172,10 @@ export abstract class SchemaBuilder {
                 collation: columnSchema["COLLATION_NAME"]
             };
             if (defaultExpression) {
-                defaultExpression = defaultExpression.trim().replace(/getDate\(\)/ig, "CURRENT_TIMESTAMP");
-                if (defaultExpression[0] === "(" && defaultExpression[defaultExpression.length - 1] === ")")
+                while (defaultExpression[0] === "(" && defaultExpression[defaultExpression.length - 1] === ")")
                     defaultExpression = defaultExpression.substring(1, defaultExpression.length - 1);
 
-                const body = new ValueExpression(null, defaultExpression);
+                const body = new ValueExpression(undefined, defaultExpression);
                 const defaultExp = new FunctionExpression(body, []);
                 column.default = defaultExp;
             }
@@ -196,18 +198,15 @@ export abstract class SchemaBuilder {
             const type = constraint["CONSTRAINT_TYPE"];
             const columns: IColumnMetaData[] = [];
 
-            const constraintMeta: IConstraintMetaData = {
+            let constraintMeta: IConstraintMetaData = {
                 name: name,
                 entity: entity,
                 columns
             };
 
             if (type === "CHECK") {
-                const checkContraintMeta = constraintMeta as ICheckConstraintMetaData;
-                checkContraintMeta.definition = constraint["CHECK_CLAUSE"];
-                checkContraintMeta.getDefinitionString = function () {
-                    return this.definition as string;
-                };
+                constraintMeta = new CheckConstraintMetaData(name, entity, constraint["CHECK_CLAUSE"]);
+                constraintMeta.columns = columns;
             }
             constraints[name] = {
                 meta: constraintMeta,
@@ -287,7 +286,7 @@ export abstract class SchemaBuilder {
                     columns: [],
                     entity: entity,
                     unique: indexSchema["IS_UNIQUE"],
-                    type: indexSchema["TYPE"]
+                    // type: indexSchema["TYPE"]
                 };
                 entity.indices.push(index);
             }
@@ -443,7 +442,8 @@ export abstract class SchemaBuilder {
         };
 
         const relations = schema.relations.where(o => !o.isMaster).toArray();
-        return oldSchema.relations.where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
+        return oldSchema.relations.where(o => !o.isMaster)
+            .where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
             .selectMany(o => this.dropForeignKey(o)).toArray();
     }
     protected addAllNewRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
@@ -474,11 +474,15 @@ export abstract class SchemaBuilder {
         }
 
         const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
-            const check1 = cons1 as ICheckConstraintMetaData;
-            const check2 = cons2 as ICheckConstraintMetaData;
-            const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
-            const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
-            return checkDef1 === checkDef2 && isColumnsEquals(cons1.columns, cons2.columns);
+            if (cons1 instanceof CheckConstraintMetaData || cons2 instanceof CheckConstraintMetaData) {
+                const check1 = cons1 as ICheckConstraintMetaData;
+                const check2 = cons2 as ICheckConstraintMetaData;
+                const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
+                const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
+                return checkDef1 === checkDef2;
+            }
+
+            return isColumnsEquals(cons1.columns, cons2.columns);
         };
         // remove old constraint
         result = result.concat(oldSchema.constraints.where(o => !schema.constraints.any(or => isConstraintEquals(o, or)))
@@ -488,7 +492,7 @@ export abstract class SchemaBuilder {
             .selectMany(o => this.addConstraint(o)).toArray());
 
         const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
-            return !!index1.unique === !!index2.unique && index1.type === index2.type && isColumnsEquals(index1.columns, index1.columns);
+            return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
         };
 
         // index

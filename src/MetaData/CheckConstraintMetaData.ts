@@ -10,9 +10,20 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
 
 export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE> {
-    constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, private checkFn: (entity: TE) => boolean) { }
-    private _definition: IExpression<boolean>;
-    public get definition(): IExpression<boolean> {
+    constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: string | ((entity: TE) => boolean) | IExpression<boolean>) {
+        if (typeof definition === "string") {
+            this._definition = definition;
+        }
+        else if (definition instanceof Function) {
+            this.checkFn = definition;
+        }
+        else {
+            this._definition = definition;
+        }
+    }
+    private checkFn: (entity: TE) => boolean;
+    private _definition: IExpression<boolean> | string;
+    public get definition(): IExpression<boolean> | string {
         if (!this._definition) {
             const fnExp = ExpressionBuilder.parse(this.checkFn);
             this._definition = this.toDefinitionExpression(fnExp);

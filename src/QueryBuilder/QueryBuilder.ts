@@ -63,6 +63,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract queryLimit: IQueryLimit;
     protected indent = 0;
     public options: ISaveChangesOption;
+    /**
+     * Whether generate sql following how it will be showed in default and check definition.
+     */
+    public isStrictSql: boolean;
     public parameters: ISqlParameter[] = [];
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
@@ -100,8 +104,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const typeDefault = this.columnTypeDefaults.get(type);
         const size: number = option && typeof option.size !== "undefined" ? option.size : typeDefault ? typeDefault.size : undefined;
         const length: number = option && typeof option.length !== "undefined" ? option.length : typeDefault ? typeDefault.length : undefined;
-        const scale: number = option && typeof option.size !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
-        const precision: number = option && typeof option.size !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
+        const scale: number = option && typeof option.scale !== "undefined" ? option.scale : typeDefault ? typeDefault.scale : undefined;
+        const precision: number = option && typeof option.precision !== "undefined" ? option.precision : typeDefault ? typeDefault.precision : undefined;
         if (this.columnTypesWithOption.contains(type)) {
             if (typeof length !== "undefined") {
                 type += `(${length})`;
@@ -678,6 +682,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#region Value
 
     protected getValueExpressionString(expression: ValueExpression<any>): string {
+        if (expression.value === undefined && expression.expressionString)
+            return expression.expressionString;
+
         return this.getValueString(expression.value);
     }
     public getValueString(value: any): string {

@@ -15,7 +15,7 @@ export class ValueExpression<T> implements IExpression<T> {
             return NullConstructor as any;
         return this.value.constructor as any;
     }
-    constructor(public readonly value: T, private expressionString: string = "") { }
+    constructor(public readonly value: T, public expressionString: string = "") { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);

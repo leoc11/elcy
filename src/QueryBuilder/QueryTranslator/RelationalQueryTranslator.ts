@@ -259,7 +259,7 @@ const aritAssignmentTranlator = (exp: IBinaryOperatorExpression, qb: QueryBuilde
         throw new Error(`Operator ${exp.toString()} only support parameter for left operand`);
     }
     const varString = qb.getExpressionString(exp.leftOperand);
-    return `${varString} = ${varString} ${operator} ${qb.getOperandString(exp.rightOperand)}`;
+    return `${varString} = ${varString}${operator}${qb.getOperandString(exp.rightOperand)}`;
 };
 relationalQueryTranslator.register(AdditionAssignmentExpression, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "+"));
 relationalQueryTranslator.register(SubstractionAssignmentExpression, (exp: any, qb: QueryBuilder) => aritAssignmentTranlator(exp, qb, "-"));
@@ -279,7 +279,7 @@ const incrementTranslator = (exp: IUnaryOperatorExpression, qb: QueryBuilder, op
         throw new Error(`Operator ${exp.toString()} only support parameter operand`);
     }
     const varString = qb.getExpressionString(exp.operand);
-    return `${varString} = ${varString} ${operator} 1`;
+    return `${varString} = ${varString}${operator}${qb.getOperandString(new ValueExpression(1))}`;
 };
 relationalQueryTranslator.register(LeftIncrementExpression, (exp: any, qb: QueryBuilder) => incrementTranslator(exp, qb, "+"));
 relationalQueryTranslator.register(LeftDecrementExpression, (exp: any, qb: QueryBuilder) => incrementTranslator(exp, qb, "-"));
@@ -287,7 +287,7 @@ relationalQueryTranslator.register(RightIncrementExpression, (exp: any, qb: Quer
 relationalQueryTranslator.register(RightDecrementExpression, (exp: any, qb: QueryBuilder) => `(${incrementTranslator(exp, qb, "-")}) + 1`);
 
 
-const binaryTranslator = (exp: IBinaryOperatorExpression, qb: QueryBuilder, operator: string) => `${qb.getOperandString(exp.leftOperand)} ${operator} ${qb.getOperandString(exp.rightOperand)}`;
+const binaryTranslator = (exp: IBinaryOperatorExpression, qb: QueryBuilder, operator: string) => `${qb.getOperandString(exp.leftOperand)}${operator}${qb.getOperandString(exp.rightOperand)}`;
 relationalQueryTranslator.register(AssignmentExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "="));
 relationalQueryTranslator.register(GreaterEqualExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, ">="));
 relationalQueryTranslator.register(GreaterThanExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, ">"));
@@ -301,7 +301,7 @@ relationalQueryTranslator.register(AdditionExpression, (exp: any, qb: QueryBuild
     if (exp.type as any === String)
         return `CONCAT(${qb.getOperandString(exp.leftOperand)}, ${qb.getOperandString(exp.rightOperand)})`;
 
-    return `${qb.getOperandString(exp.leftOperand)} + ${qb.getOperandString(exp.rightOperand)}`;
+    return `${qb.getOperandString(exp.leftOperand)}+${qb.getOperandString(exp.rightOperand)}`;
 });
 relationalQueryTranslator.register(BitwiseAndExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "&"));
 relationalQueryTranslator.register(BitwiseOrExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "|"));
@@ -314,7 +314,7 @@ const notEqualTranslator = (exp: NotEqualExpression | StrictNotEqualExpression, 
         return `${rightExpString} IS NOT ${leftExpString}`;
     else if (rightExpString === "NULL")
         return `${leftExpString} IS NOT ${rightExpString}`;
-    return `${leftExpString} <> ${rightExpString}`;
+    return `${leftExpString}<>${rightExpString}`;
 };
 relationalQueryTranslator.register(NotEqualExpression, notEqualTranslator);
 relationalQueryTranslator.register(StrictNotEqualExpression, notEqualTranslator);
@@ -326,7 +326,7 @@ const equalTransalator = (exp: IBinaryOperatorExpression, qb: QueryBuilder) => {
         return `${rightExpString} IS ${leftExpString}`;
     else if (rightExpString === "NULL")
         return `${leftExpString} IS ${rightExpString}`;
-    return `${leftExpString} = ${rightExpString}`;
+    return `${leftExpString}=${rightExpString}`;
 };
 relationalQueryTranslator.register(EqualExpression, equalTransalator);
 relationalQueryTranslator.register(StrictEqualExpression, equalTransalator);

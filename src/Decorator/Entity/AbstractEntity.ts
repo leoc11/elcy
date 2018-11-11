@@ -63,11 +63,11 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                         entityMetadata.primaryKeys = parentMetaData.primaryKeys.select(o => entityMetadata.columns.first(p => p.propertyName === o.propertyName)).toArray();
 
                     if (parentMetaData.createDateColumn)
-                        entityMetadata.createDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.createDateColumn.propertyName);
+                        entityMetadata.createDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
                     if (parentMetaData.modifiedDateColumn)
-                        entityMetadata.modifiedDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.modifiedDateColumn.propertyName);
+                        entityMetadata.modifiedDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
                     if (parentMetaData.deletedColumn)
-                        entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName);
+                        entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
                     if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
                         entityMetadata.defaultOrder = parentMetaData.defaultOrder;
 

@@ -12,6 +12,10 @@ import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpressi
 import { isNotNull } from "../../Helper/Util";
 import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
+import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -110,6 +114,16 @@ export class MssqlQueryBuilder extends QueryBuilder {
         if (take > 0)
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         return result;
+    }
+    public getExpressionString<T = any>(expression: IExpression<T>): string {
+        let res = super.getExpressionString(expression);
+        if (this.isStrictSql) {
+            if (!(expression instanceof SelectExpression || expression instanceof ComputedColumnExpression || expression instanceof ColumnExpression || (expression as IBinaryOperatorExpression).rightOperand)) {
+                res = `(${res})`;
+            }
+
+        }
+        return res;
     }
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
