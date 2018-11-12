@@ -28,7 +28,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
         ["defaultBoolean", "numeric"],
         ["defaultBinary", "blob"],
-        ["defaultDataString", "text"],
+        ["defaultDataSerialization", "text"],
         ["defaultDate", "text"],
         ["defaultDateTime", "text"],
         ["defaultTime", "text"],

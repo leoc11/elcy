@@ -19,7 +19,7 @@ import { IdentifierColumnMetaData } from "../MetaData/IdentifierColumnMetaData";
 import { DateColumnMetaData } from "../MetaData/DateColumnMetaData";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { RowVersionColumn } from "../Decorator/Column/RowVersionColumn";
-import { StringDataColumnMetaData } from "../MetaData/DataStringColumnMetaData";
+import { DataSerializationColumnMetaData } from "../MetaData/DataSerializationColumnMetaData";
 import { ColumnType } from "../Common/ColumnType";
 import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
 import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
@@ -675,8 +675,8 @@ export abstract class SchemaBuilder {
                         type = this.queryBuilder.columnTypeMap.get("defaultBinary");
                     else if (this.queryBuilder.columnTypeMap.has("defaultBoolean") && columnOption instanceof BooleanColumnMetaData)
                         type = this.queryBuilder.columnTypeMap.get("defaultBoolean");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultDataString") && columnOption instanceof StringDataColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultDataString");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultDataSerialization") && columnOption instanceof DataSerializationColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultDataSerialization");
                     else if (this.queryBuilder.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
                         type = this.queryBuilder.columnTypeMap.get("defaultDate");
                     else if (this.queryBuilder.columnTypeMap.has("defaultDateTime") && columnOption instanceof DateTimeColumnMetaData)
@@ -730,8 +730,10 @@ export abstract class SchemaBuilder {
             return this.queryBuilder.getValueString(0);
         if (groupType === "Identifier" || columnMeta instanceof IdentifierColumnMetaData)
             return "NEWID()";
-        if (groupType === "String" || groupType === "DataString" || columnMeta instanceof StringColumnMetaData || columnMeta instanceof StringDataColumnMetaData)
+        if (groupType === "String" || columnMeta instanceof StringColumnMetaData)
             return this.queryBuilder.getValueString("");
+        if (groupType === "DataSerialization" || columnMeta instanceof DataSerializationColumnMetaData)
+            return this.queryBuilder.getValueString("{}");
         if (groupType === "Date" || columnMeta instanceof DateColumnMetaData)
             return "GETUTCDATE()";
         if (groupType === "Time" || columnMeta instanceof TimeColumnMetaData)

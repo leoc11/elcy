@@ -55,7 +55,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["table", "Binary"],
         ["rowversion", "RowVersion"],
         ["uniqueidentifier", "Identifier"],
-        ["xml", "DataString"]
+        ["xml", "DataSerialization"]
     ]);
     public columnTypesWithOption: ColumnType[] = [
         "binary",
@@ -86,7 +86,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
         ["defaultBoolean", "bit"],
         ["defaultBinary", "binary"],
-        ["defaultDataString", "xml"],
+        ["defaultDataSerialization", "xml"],
         ["defaultDate", "date"],
         ["defaultDateTime", "datetime"],
         ["defaultTime", "time"],
