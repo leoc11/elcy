@@ -40,9 +40,11 @@ export class DbSet<T> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
-        const result = new SelectExpression<T>(new EntityExpression(this.type, queryVisitor.newAlias()));
-        const option = queryVisitor.options;
+    public buildQuery(visitor: QueryVisitor): IQueryCommandExpression<T> {
+        const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
+        visitor.setDefaultOrder(result);
+
+        const option = visitor.options;
         if (result.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
             result.addWhere(new StrictEqualExpression(result.entity.deleteColumn, new ValueExpression(false)));
         }

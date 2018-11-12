@@ -3,19 +3,35 @@ import { ClassBase, InheritanceType, IObjectType } from "../../Common/Type";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
-import { IOrderOption } from "../Option/IOrderOption";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
 import { toJSON } from "../../Helper/Util";
+import { IEntityOption } from "../Option/IEntityOption";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
+import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
 
-export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrder?: IOrderOption<T>[]) {
+export function AbstractEntity<T extends TParent = any, TParent = any>(option: IEntityOption<T>): ClassDecorator;
+export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrders?: IOrderDefinition<T>[], allowInheritance?: boolean): ClassDecorator;
+export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrName?: IEntityOption<T> | string, defaultOrders?: IOrderDefinition<T>[], allowInheritance?: boolean) {
+    const option: IEntityOption<T> = {};
+    if (optionOrName) {
+        if (typeof optionOrName === "string") {
+            option.name = optionOrName;
+            option.defaultOrders = defaultOrders || [];
+            option.allowInheritance = allowInheritance;
+            if (option.allowInheritance === undefined) option.allowInheritance = true;
+        }
+    }
+
     return (type: IObjectType<T>) => {
-        const entityMetadata = new AbstractEntityMetaData(type, name);
-        if (defaultOrder) {
-            entityMetadata.defaultOrder = defaultOrder.select(o => ({
-                column: entityMetadata.columns.first(c => c.propertyName === o.property),
-                direction: o.direction
+        if (!option.name) option.name = type.name;
+        const entityMetadata = new AbstractEntityMetaData(type, option.name);
+
+        if (defaultOrders) {
+            entityMetadata.defaultOrders =  defaultOrders.select(o => ({
+                0: ExpressionBuilder.parse(o[0]),
+                1: o[1]
             })).toArray();
         }
 
@@ -68,8 +84,8 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(name?: st
                         entityMetadata.modifiedDateColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
                     if (parentMetaData.deletedColumn)
                         entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
-                    if (parentMetaData.defaultOrder && !entityMetadata.defaultOrder)
-                        entityMetadata.defaultOrder = parentMetaData.defaultOrder;
+                    if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders)
+                        entityMetadata.defaultOrders = parentMetaData.defaultOrders;
 
                     parentMetaData.computedProperties.forEach((parentColumnMeta) => {
                         if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {

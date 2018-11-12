@@ -129,6 +129,15 @@ export class QueryVisitor {
         return expression instanceof ValueExpression;
     }
 
+    public setDefaultOrder<T>(selectExp: SelectExpression<T>) {
+        if (selectExp.orders.length <= 0 && selectExp.entity.defaultOrders.length > 0) {
+            const orderParams = selectExp.entity.defaultOrders
+                .select(o => new ArrayValueExpression(o[0] as FunctionExpression, new ValueExpression(o[1] || "ASC")))
+                .toArray();
+            this.visit(new MethodCallExpression(selectExp, "orderBy", orderParams), { selectExpression: selectExp, scope: "orderBy" });
+        }
+    }
+
     //#region visit parameter
     public visit(expression: IExpression, param: IVisitParameter): IExpression {
         if (!(expression instanceof SelectExpression || expression instanceof SqlParameterExpression ||
@@ -302,6 +311,8 @@ export class QueryVisitor {
                             if (child.entity.deleteColumn && !(this.options && this.options.includeSoftDeleted)) {
                                 child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
                             }
+                            this.setDefaultOrder(child);
+                            
                             if (relationMeta.relationType === "many" && param.scope === "select") {
                                 param.selectExpression.itemExpression = child;
                                 param.selectExpression.selects = [];
@@ -323,6 +334,7 @@ export class QueryVisitor {
                                 child.addWhere(new StrictEqualExpression(child.entity.deleteColumn, new ValueExpression(false)));
                             }
                             parentEntity.select!.addInclude(expression.memberName as any, child, relationMeta);
+                            this.setDefaultOrder(child);
                             return relationMeta.relationType === "many" ? child : child.entity;
                         }
                     default:
@@ -638,7 +650,7 @@ export class QueryVisitor {
 
                 const falseInclude = selectOperand.includes.first(o => o.name === prop + "::f");
                 if (falseInclude) falseInclude.ternaryFilter = new NotExpression(valueExp.logicalOperand);
-                
+
                 const column = new ComputedColumnExpression(selectOperand.entity, valueExp, prop);
                 column.propertyName = propPath;
                 newSelects.add(column);

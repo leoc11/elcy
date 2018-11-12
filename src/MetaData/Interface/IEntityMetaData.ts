@@ -1,7 +1,6 @@
 import { IObjectType, ConcurrencyModel } from "../../Common/Type";
 import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { InheritanceMetaData } from "../Relation/InheritanceMetaData";
-import { IOrderMetaData } from "./IOrderMetaData";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IConstraintMetaData } from "./IConstraintMetaData";
@@ -10,11 +9,12 @@ import { IIndexMetaData } from "./IIndexMetaData";
 import { RowVersionColumnMetaData } from "../RowVersionColumnMetaData";
 import { DateTimeColumnMetaData } from "../DateTimeColumnMetaData";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
+import { IOrderQueryDefinition } from "../../Queryable/Interface/IOrderQueryDefinition";
 
 export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
     name: string;
     schema?: string;
-    defaultOrder?: IOrderMetaData[];
+    defaultOrders?: IOrderQueryDefinition<TE>[];
     primaryKeys: Array<IColumnMetaData<TE>>;
     versionColumn?: RowVersionColumnMetaData<TE>;
     deletedColumn?: BooleanColumnMetaData<TE>;

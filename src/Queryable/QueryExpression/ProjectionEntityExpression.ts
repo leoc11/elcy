@@ -2,11 +2,11 @@ import { GenericType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ColumnExpression } from "./ColumnExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
@@ -18,7 +18,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         }
         return this._primaryColumns;
     }
-    public defaultOrders: IOrderExpression[] = [];
+    public defaultOrders: IOrderQueryDefinition[] = [];
     private _primaryColumns: IColumnExpression[];
     private _selectedColumns: IColumnExpression[];
     private _relationColumns: IColumnExpression[];
@@ -32,7 +32,8 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
             col.columnMetaData = o.columnMetaData;
             return col;
         }).toArray();
-        this.defaultOrders = subSelect.orders.slice(0);
+        // TODO
+        // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
     }
     public get selectedColumns() {
@@ -56,10 +57,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         const select = resolveClone(this.select, replaceMap);
         const clone = new ProjectionEntityExpression(select, this.type);
         clone.alias = this.alias;
-        clone.defaultOrders = this.defaultOrders.select(o => ({
-            column: resolveClone(o.column, replaceMap),
-            direction: o.direction
-        })).toArray();
+        clone.defaultOrders = this.defaultOrders.slice();
         clone.name = this.name;
         clone.columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
         replaceMap.set(this, clone);

@@ -2,7 +2,6 @@ import { ClassBase, GenericType, IObjectType, ColumnGeneration } from "../Common
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IndexMetaData } from "./IndexMetaData";
@@ -12,9 +11,10 @@ import { isNotNull } from "../Helper/Util";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
+import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
-    public defaultOrder?: IOrderMetaData[];
+    public defaultOrders?: IOrderQueryDefinition<TE>[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
     public deletedColumn?: BooleanColumnMetaData<TE>;
     public relations: IRelationMetaData<TE, any>[] = [];

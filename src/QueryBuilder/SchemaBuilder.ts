@@ -26,7 +26,7 @@ import { EnumColumnMetaData } from "../MetaData/EnumColumnMetaData";
 import { BooleanColumnMetaData } from "../MetaData/BooleanColumnMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { DateTimeColumnMetaData } from "../MetaData/DateTimeColumnMetaData";
-import { IBatchedQuery } from "./Interface/IBatchedQuery";
+import { BatchedQuery } from "./Interface/BatchedQuery";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
 
@@ -96,46 +96,67 @@ export abstract class SchemaBuilder {
     public async loadSchemas(entities: IEntityMetaData<any>[]) {
         const schemaGroups = entities.groupBy(o => o.schema).toArray();
         const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.queryBuilder.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
-        const queries =
-            // table schema
-            `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};\n\n` +
 
-            // column schema
-            `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters};\n\n` +
+        const batchedQuery = new BatchedQuery();
+        // table schema
+        batchedQuery.add({
+            query: `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};`,
+            type: QueryType.DQL
+        });
 
-            `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
-            ` LEFT JOIN  ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
-            ` on a.CONSTRAINT_NAME = b.CONSTRAINT_NAME` +
-            ` WHERE ${tableFilters};\n\n` +
+        // column schema
+        batchedQuery.add({
+            query: `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters}`,
+            type: QueryType.DQL
+        });
 
-            // all table constrains
-            `SELECT * FROM #tempConstraint;\n\n` +
+        batchedQuery.add({
+            query: `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
+                ` LEFT JOIN  ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
+                ` on a.CONSTRAINT_NAME = b.CONSTRAINT_NAME` +
+                ` WHERE ${tableFilters}`,
+            type: QueryType.DDL | QueryType.DML
+        });
 
-            // relation constraint for FK
-            `SELECT a.* FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
-            ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters};\n\n` +
+        // all table constrains
+        batchedQuery.add({
+            query: `SELECT * FROM #tempConstraint`,
+            type: QueryType.DQL
+        });
 
-            `DROP TABLE #tempConstraint;\n\n` +
+        // relation constraint for FK
+        batchedQuery.add({
+            query: `SELECT a.* FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
+                ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters}`,
+            type: QueryType.DQL
+        });
 
-            // map constrain to column
-            `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters};\n\n` +
+        batchedQuery.add({
+            query: `DROP TABLE #tempConstraint`,
+            type: QueryType.DDL
+        });
 
-            // all table index
-            `SELECT s.name [TABLE_SCHEMA], t.name [TABLE_NAME], i.name [INDEX_NAME], i.is_unique [IS_UNIQUE], i.type_desc [TYPE], c.name [COLUMN_NAME]` +
-            ` from ${this.queryBuilder.enclose(this.connection.database)}.sys.index_columns ic` +
-            ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id` +
-            ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.indexes i on i.index_id = ic.index_id` +
-            ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
-            ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
-            ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
-            ` and (${schemaGroups.select(o => `s.name = '${o.key}' AND t.name IN (${o.select(p => this.queryBuilder.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
-            ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`;
+        // map constrain to column
+        batchedQuery.add({
+            query: `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters}`,
+            type: QueryType.DQL
+        });
 
-        const schemaDatas = await this.connection.executeQuery({
-            query: queries,
-            type: QueryType.DQL,
-            queryCount: 8
-        } as IBatchedQuery);
+        // all table index
+        batchedQuery.add({
+            query: `SELECT s.name [TABLE_SCHEMA], t.name [TABLE_NAME], i.name [INDEX_NAME], i.is_unique [IS_UNIQUE], i.type_desc [TYPE], c.name [COLUMN_NAME]` +
+                ` from ${this.queryBuilder.enclose(this.connection.database)}.sys.index_columns ic` +
+                ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id` +
+                ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.indexes i on i.index_id = ic.index_id` +
+                ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
+                ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
+                ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
+                ` and (${schemaGroups.select(o => `s.name = '${o.key}' AND t.name IN (${o.select(p => this.queryBuilder.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
+                ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`,
+            type: QueryType.DQL
+        });
+
+        const schemaDatas = await this.connection.executeQuery(batchedQuery);
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[3];

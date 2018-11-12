@@ -74,7 +74,6 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         else
             this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
         entity.select = this;
-        this.orders = entity.defaultOrders.slice(0);
     }
     public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)

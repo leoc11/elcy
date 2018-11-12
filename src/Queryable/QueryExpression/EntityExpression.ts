@@ -5,10 +5,10 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone, hashCode } from "../../Helper/Util";
+import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
@@ -33,7 +33,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public get columns(): IColumnExpression<T>[] {
         if (!this._columns) {
             if (this.metaData)
-                this._columns = this.metaData.columns.select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o))).toArray();
+                this._columns = this.metaData.columns.select((o) => new ColumnExpression<T>(this, o, this.metaData.primaryKeys.contains(o))).toArray();
             else
                 this._columns = [];
         }
@@ -54,22 +54,21 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public set primaryColumns(value) {
         this._primaryColumns = value;
     }
-    public get defaultOrders(): IOrderExpression[] {
+    public get defaultOrders(): IOrderQueryDefinition[] {
         if (!this._defaultOrders) {
-            if (this.metaData.defaultOrder)
-                this._defaultOrders = this.metaData.defaultOrder!.select((o) => ({
-                    column: this.columns.first((c) => c.propertyName === o.column.propertyName),
-                    direction: o.direction
-                })).toArray();
-            else
+            if (this.metaData && this.metaData.defaultOrders) {
+                this._defaultOrders = this.metaData.defaultOrders.slice();
+            }
+            else {
                 this._defaultOrders = [];
+            }
         }
         return this._defaultOrders;
     }
     private _metaData: EntityMetaData<T>;
     private _columns: IColumnExpression<T>[];
     private _primaryColumns: IColumnExpression[];
-    private _defaultOrders: IOrderExpression[];
+    private _defaultOrders: IOrderQueryDefinition[];
     private _versionColumn: IColumnExpression<T>;
     private _deleteColumn: IColumnExpression<T>;
     public readonly entityTypes: IObjectType[];

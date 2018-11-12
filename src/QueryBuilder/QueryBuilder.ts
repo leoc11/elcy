@@ -52,7 +52,7 @@ import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
-import { IBatchedQuery } from "./Interface/IBatchedQuery";
+import { BatchedQuery } from "./Interface/BatchedQuery";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -143,12 +143,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#region ICommandQueryExpression
     public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
-        let queryCommand: IBatchedQuery = {
-            query: "",
-            parameters: {},
-            type: 0 as any,
-            queryCount: 0
-        };
+        let queryCommand = new BatchedQuery();
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         new Enumerable(queries).each(o => {
@@ -169,19 +164,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
             if (isLimitExceed) {
                 parameterKeys = [];
-                queryCommand = {
-                    query: "",
-                    parameters: {},
-                    type: o.type,
-                    queryCount: 0
-                };
+                queryCommand = new BatchedQuery();
                 result.push(queryCommand);
             }
-            queryCommand.queryCount++;
-            queryCommand.query += (queryCommand.query ? ";\n\n" : "") + o.query;
-            queryCommand.type |= o.type;
-            if (o.parameters)
-                Object.assign(queryCommand.parameters, o.parameters);
+            queryCommand.add(o);
         });
         return result;
     }

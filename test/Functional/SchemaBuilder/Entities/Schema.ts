@@ -31,7 +31,7 @@ enum EnumList {
 
 @CheckContraint({ name: "Schema_entity_check", check: (entity: Schema) => entity.decimal > entity.integer })
 @UniqueConstraint<Schema>({ name: "Schema_entity_unique", properties: ["decimal", "real"] })
-@Entity()
+@Entity<Schema>("Schema", [[o => o.createdDate, "DESC"]])
 export class Schema {
     @PrimaryKey()
     @IntegerColumn({ autoIncrement: true })

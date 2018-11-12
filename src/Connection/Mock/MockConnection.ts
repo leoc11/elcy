@@ -12,7 +12,7 @@ import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpressi
 import { UUID } from "../../Data/UUID";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { IBatchedQuery } from "../../QueryBuilder/Interface/IBatchedQuery";
+import { BatchedQuery } from "../../QueryBuilder/Interface/BatchedQuery";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
@@ -248,7 +248,7 @@ export class MockConnection implements IConnection {
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        const batchedQuery = command as IBatchedQuery;
+        const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 0;
         return this.results.splice(0, count);
     }

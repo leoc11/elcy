@@ -3,7 +3,6 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
-import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
@@ -14,11 +13,12 @@ import { isNotNull } from "../Helper/Util";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
+import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
     public name: string;
-    public defaultOrder?: IOrderMetaData[];
+    public defaultOrders?: IOrderQueryDefinition<TE>[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
     public deletedColumn: BooleanColumnMetaData<TE>;
     public createDateColumn: DateTimeColumnMetaData<TE>;
@@ -69,8 +69,8 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
 
         if (typeof entityMeta.createDateColumn !== "undefined")
             this.createDateColumn = entityMeta.createDateColumn;
-        if (typeof entityMeta.defaultOrder !== "undefined")
-            this.defaultOrder = entityMeta.defaultOrder;
+        if (typeof entityMeta.defaultOrders !== "undefined")
+            this.defaultOrders = entityMeta.defaultOrders;
         if (typeof entityMeta.deletedColumn !== "undefined")
             this.deletedColumn = entityMeta.deletedColumn;
         if (typeof entityMeta.indices !== "undefined")

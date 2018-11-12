@@ -2,7 +2,7 @@ import { OrderDirection } from "../Common/Type";
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
+import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
@@ -13,7 +13,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
-    protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
+    protected readonly selectorsFn: IOrderQueryDefinition<T>[];
     protected _selectors: Array<ArrayValueExpression<FunctionExpression | IExpression<OrderDirection>>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
@@ -31,7 +31,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]) {
+    constructor(public readonly parent: Queryable<T>, ...selectors: IOrderQueryDefinition<T>[]) {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }

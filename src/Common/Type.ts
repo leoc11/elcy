@@ -58,6 +58,7 @@ export enum EventListenerType {
 }
 
 export enum QueryType {
+    Unknown = 0,
     /**
      * Data Query Language
      */
