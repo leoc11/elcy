@@ -53,31 +53,35 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public entityName(entityMeta: IEntityMetaData<any>) {
         return `${this.enclose(entityMeta.name)}`;
     }
-    public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
+    public getUpsertQuery<T>(upsertExp: UpsertExpression<T>): IQuery[] {
         const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.values.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")})`;
+            `VALUES (${upsertExp.columns.select(o => {
+                const valueExp = upsertExp.setter[o.propertyName];
+                return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+            }).toArray().join(",")})`;
 
+        const param: { [key: string]: any } = {};
+        for (const prop in upsertExp.setter) {
+            const val = upsertExp.setter[prop];
+            const paramExp = this.parameters.first(p => p.parameter === val);
+            if (paramExp) {
+                param[paramExp.name] = paramExp.value;
+            }
+        }
         let queryCommand: IQuery = {
             query: insertQuery,
-            parameters: upsertExp.values.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name).select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
-                acc[item.name] = item.value;
-                return acc;
-            }),
+            parameters: param,
             type: QueryType.DML
         };
 
         const result: IQuery[] = [queryCommand];
 
-        const updateString = upsertExp.updateColumns.select(o => {
-            if (o.isPrimary)
-                return undefined;
-            const index = upsertExp.columns.indexOf(o);
-            const value = upsertExp.values[index];
-            if (!value) {
-                return undefined;
-            }
-            return `${this.enclose(o.columnName)} = ${this.getOperandString(value)}`;
+        const updateString = upsertExp.updateColumns.select(column => {
+            const valueExp = upsertExp.setter[column.propertyName];
+            if (!valueExp) return undefined;
+
+            return `${this.enclose(column.columnName)} = ${this.getOperandString(valueExp)}`;
         }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const updateCommand: IQuery = {

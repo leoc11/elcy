@@ -12,6 +12,15 @@ import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { EntityEntry } from "../../Data/EntityEntry";
+import { columnMetaKey } from "../../Decorator/DecoratorKey";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
+import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
+import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression } = {};
     public select: SelectExpression<T>;
@@ -100,3 +109,76 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         return this.entity.entityTypes;
     }
 }
+
+export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
+    const entityMeta = entry.metaData;
+    const entity = entry.entity;
+    const modifiedColumns = entry.getModifiedProperties().select(o => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where(o => !!o);
+
+    for (const o of modifiedColumns) {
+        const paramName = visitor.newAlias("param");
+        const paramExp = new SqlParameterExpression(paramName, new ParameterExpression(paramName, o.type), o);
+        queryParameters.push({
+            name: paramName,
+            parameter: paramExp,
+            value: entity[o.propertyName]
+        });
+        updateExp.setter[o.propertyName] = paramExp;
+    }
+
+    const modifiedColumn = entityMeta.modifiedDateColumn;
+    if (modifiedColumn) {
+        updateExp.setter[modifiedColumn.propertyName] = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(modifiedColumn.timeZoneHandling === "utc")]);
+    }
+
+    for (const colExp of updateExp.entity.primaryColumns) {
+        const paramName = visitor.newAlias("param");
+        const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, colExp.type), colExp.columnMetaData);
+        const sqlParam = {
+            name: paramName,
+            parameter: parameter,
+            value: entity[colExp.propertyName]
+        };
+        queryParameters.push(sqlParam);
+
+        const compExp = new StrictEqualExpression(colExp, parameter);
+        updateExp.addWhere(compExp);
+    }
+
+    switch (entityMeta.concurencyModel) {
+        case "OPTIMISTIC VERSION": {
+            let versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
+            if (!versionCol) throw new Error("Entity did not have version column");
+
+            const paramName = visitor.newAlias("param");
+            const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, versionCol.type), versionCol);
+            const sqlParam = {
+                name: paramName,
+                parameter: parameter,
+                value: entity[versionCol.propertyName]
+            };
+            queryParameters.push(sqlParam);
+
+            const colExp = updateExp.entity.columns.first(c => c.propertyName === versionCol.propertyName);
+            const compExp = new StrictEqualExpression(colExp, parameter);
+            updateExp.addWhere(compExp);
+            break;
+        }
+        case "OPTIMISTIC DIRTY": {
+            for (const col of modifiedColumns) {
+                const paramName = visitor.newAlias("param");
+                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, col.type), col);
+                const sqlParam = {
+                    name: paramName,
+                    parameter: parameter,
+                    value: entry.getOriginalValue(col.propertyName)
+                };
+                queryParameters.push(sqlParam);
+                const colExp = updateExp.entity.columns.first(c => c.propertyName === col.propertyName);
+                const compExp = new StrictEqualExpression(colExp, parameter);
+                updateExp.addWhere(compExp);
+            }
+            break;
+        }
+    }
+};

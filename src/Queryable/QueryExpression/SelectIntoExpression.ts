@@ -5,44 +5,22 @@ import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IObjectType, OrderDirection, JoinType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
+import { SelectExpression, IJoinRelation } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IColumnExpression } from "./IColumnExpression";
+import { EntityExpression } from "./EntityExpression";
 export class SelectIntoExpression<T = any> implements IQueryCommandExpression<void> {
     public get type() {
         return undefined as any;
     }
-    public get entity() {
-        return this.select.entity;
-    }
     public get parameters() {
         return this.select.parameters;
     }
-    public get paging() {
-        return this.select.paging;
-    }
-    public get orders() {
-        return this.select.orders;
-    }
-    public get where() {
-        return this.select.where;
-    }
-    public get joins() {
-        return this.select.joins;
-    }
-    public get includes() {
-        return [] as IIncludeRelation[];
-    }
-    public get distinct() {
-        return this.select.distinct;
-    }
     public get projectedColumns() {
-        return this.select.projectedColumns;
+        return this.select.projectedColumns.where(o => this.entity.metaData.columns.any(c => c.propertyName === o.propertyName));
     }
-    constructor(public select: SelectExpression<T>) {
-        this.select.includes = [];
-    }
+    constructor(public entity: EntityExpression<T>, public select: SelectExpression) { }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
     }
@@ -58,8 +36,9 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
         if (!replaceMap) replaceMap = new Map();
+        const entity = resolveClone(this.entity, replaceMap);
         const select = resolveClone(this.select, replaceMap);
-        const clone = new SelectIntoExpression(select);
+        const clone = new SelectIntoExpression(entity, select);
         replaceMap.set(this, clone);
         return clone;
     }

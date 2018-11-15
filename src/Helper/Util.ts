@@ -65,11 +65,12 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     return source;
 };
 
+const valueTypeList = [Number, String, Date, TimeSpan, UUID, Boolean, DataView, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array, Uint8ClampedArray, DataView, Float32Array, Float64Array];
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);
 };
 export const isValueType = <T>(type: GenericType<T>) => {
-    return [Number, String, Date, TimeSpan, UUID, Boolean].contains(type as any);
+    return valueTypeList.contains(type as any);
 };
 export const isNotNull = (value: any) => {
     return value !== null && value !== undefined;

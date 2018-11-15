@@ -11,7 +11,7 @@ export interface IEntityExpression<T = any> extends IQueryExpression<T> {
     columns: IColumnExpression<T>[];
     name: string;
     select?: SelectExpression<T>;
-    primaryColumns: IColumnExpression[];
+    primaryColumns: IColumnExpression<T>[];
     defaultOrders: IOrderQueryDefinition<T>[];
     deleteColumn?: IColumnExpression<T>;
     clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
