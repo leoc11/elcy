@@ -146,7 +146,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let queryCommand = new BatchedQuery();
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
-        new Enumerable(queries).each(o => {
+        Enumerable.load(queries).each(o => {
             let isLimitExceed = false;
             if (this.queryLimit.maxBatchQuery) {
                 isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
@@ -216,14 +216,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
         }
 
-        result.push({
-            query: selectQuery,
-            parameters: this.getParameter(select),
-            type: QueryType.DQL
-        });
-
         let tempSelect: SelectExpression;
         let tempReplaceMap = new Map<IExpression, IExpression>();
+
         // select each include as separated query as it more beneficial for performance
         for (const include of select.includes) {
             if (include.isFinish) {
@@ -366,6 +361,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 result = result.concat(this.getSelectQuery(childExp));
             }
         }
+
+        // select include before parent, coz result parser will parse include first before parent.
+        // this way it will be much more easier to implement async iterator.
+        result.push({
+            query: selectQuery,
+            parameters: this.getParameter(select),
+            type: QueryType.DQL
+        });
 
         return result;
     }

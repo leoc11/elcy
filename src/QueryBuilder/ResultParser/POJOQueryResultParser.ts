@@ -42,7 +42,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         const resolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
         const loops = this.orderedSelects;
 
-        for (let i = loops.length - 1; i >= 0; i--) {
+        for (let i = 0, len = loops.length; i < len; i++) {
             const queryResult = queryResults[i];
             const select = loops[i];
             resolveMap.set(select, new Map());
