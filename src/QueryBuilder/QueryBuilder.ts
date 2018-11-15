@@ -372,37 +372,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
         let take = 0, skip = 0;
-        if (selectInto.paging.take) {
-            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.take);
+        if (selectInto.select.paging.take) {
+            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.take);
             if (takeParam) {
                 take = takeParam.value;
             }
         }
-        if (selectInto.paging.skip) {
-            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.paging.skip);
+        if (selectInto.select.paging.skip) {
+            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.skip);
             if (skipParam)
                 skip = skipParam.value;
         }
 
         let selectQuery =
             `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
-            `SELECT ${selectInto.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
+            `SELECT ${selectInto.select.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
             selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
-            `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.joins)}`;
+            `FROM ${this.getEntityQueryString(selectInto.select.entity)}${this.getEntityJoinString(selectInto.select.joins)}`;
 
-        if (selectInto.where)
-            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.where)}`;
-        if (selectInto instanceof GroupByExpression) {
-            if (selectInto.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + selectInto.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+        if (selectInto.select.where)
+            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.select.where)}`;
+        if (selectInto.select instanceof GroupByExpression) {
+            if (selectInto.select.groupBy.length > 0) {
+                selectQuery += this.newLine() + "GROUP BY " + selectInto.select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
             }
-            if (selectInto.having) {
-                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.having);
+            if (selectInto.select.having) {
+                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.select.having);
             }
         }
 
-        if (selectInto.orders.length > 0)
-            selectQuery += this.newLine() + "ORDER BY " + selectInto.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+        if (selectInto.select.orders.length > 0)
+            selectQuery += this.newLine() + "ORDER BY " + selectInto.select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
             selectQuery += this.newLine() + this.getPagingQueryString(selectInto.select, take, skip);
@@ -431,9 +431,16 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let isLimitExceed = false;
-        insertExp.values.each(o => {
+        insertExp.values.each(itemExp => {
             if (this.queryLimit.maxParameters) {
-                const curParamKeys = o.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name);
+                const curParamKeys: string[] = [];
+                for (const prop in itemExp) {
+                    const value = itemExp[prop];
+                    const param = this.parameters.first(o => o.parameter === value);
+                    if (param) {
+                        curParamKeys.push(param.name);
+                    }
+                }
                 const keys = parameterKeys.union(curParamKeys).toArray();
                 isLimitExceed = keys.length > this.queryLimit.maxParameters;
                 if (!isLimitExceed) {
@@ -458,7 +465,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 };
                 result.push(queryCommand);
             }
-            queryCommand.query += `${this.newLine(1, true)}(${o.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")}),`;
+            queryCommand.query += `${this.newLine(1, true)}(${insertExp.columns.select(o => {
+                const valueExp = itemExp[o.propertyName];
+                return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+            }).toArray().join(",")}),`;
         });
         queryCommand.query = queryCommand.query.slice(0, -1);
 
@@ -474,7 +484,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let joinString: string[] = [];
         upsertExp.entity.primaryColumns.each(o => {
             const index = upsertExp.columns.indexOf(o);
-            const valueExp = upsertExp.values[index];
+            const valueExp = upsertExp.setter[index];
             pkValues.push(`${this.getExpressionString(valueExp)} AS ${this.enclose(o.columnName)}`);
             joinString.push(`_VAL.${this.enclose(o.columnName)} = ${this.getColumnString(o)}`);
         });
@@ -483,35 +493,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             `USING (SELECT ${pkValues.join(", ")}) AS _VAL ON ${joinString.join(" AND ")}` + this.newLine() +
             `WHEN MATCHED THEN` + this.newLine(1, true);
 
+        const updateString = upsertExp.updateColumns.select(column => {
+            const value = upsertExp.setter[column.propertyName];
+            if (!value) return undefined;
 
-        const updateString = upsertExp.updateColumns.select(o => {
-            if (o.isPrimary)
-                return undefined;
-            const index = upsertExp.columns.indexOf(o);
-            const value = upsertExp.values[index];
-            if (!value) {
-                return undefined;
-            }
-            return `${this.enclose(o.columnName)} = ${this.getOperandString(value)}`;
+            return `${this.enclose(column.columnName)} = ${this.getOperandString(value)}`;
         }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
 
         upsertQuery += `UPDATE SET ${updateString}` + this.newLine(-1, true) +
             `WHEN NOT MATCHED THEN` + this.newLine(1, true);
 
-
-        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(",");
         const insertQuery = `INSERT (${colString})` + this.newLine() +
-            `VALUES (${upsertExp.values.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")})`;
+            `VALUES (${upsertExp.columns.select(o => {
+                const valueExp = upsertExp.setter[o.propertyName];
+                return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+            }).toArray().join(",")})`;
 
         upsertQuery += insertQuery;
         this.indent--;
 
+        const param: { [key: string]: any } = {};
+        for (const prop in upsertExp.setter) {
+            const val = upsertExp.setter[prop];
+            const paramExp = this.parameters.first(p => p.parameter === val);
+            if (paramExp) {
+                param[paramExp.name] = paramExp.value;
+            }
+        }
         return [{
             query: upsertQuery,
-            parameters: upsertExp.values.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name).select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
-                acc[item.name] = item.value;
-                return acc;
-            }),
+            parameters: param,
             type: QueryType.DML
         }];
     }
