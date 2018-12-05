@@ -1,5 +1,5 @@
 import "../Extensions/ArrayItemTypeExtension";
-import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, JoinType, ColumnGeneration } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -94,7 +94,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public resultCacheManager: IResultCacheManager;
     private _connectionManager: IConnectionManager;
-    protected get connectionManager() {
+    public get connectionManager() {
         if (!this._connectionManager) {
             this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
             if (!this._connectionManager) {
@@ -129,7 +129,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             await con.close();
         }
     }
-    protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
+    private _cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
         this.relationEntries = {
             add: new Map(),
@@ -144,10 +144,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
     //#region Entity Tracker
     public set<T>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
-        let result: DbSet<T> = isClearCache ? undefined as any : this.cachedDbSets.get(type);
+        let result: DbSet<T> = isClearCache ? undefined as any : this._cachedDbSets.get(type);
         if (!result && this.entityTypes.contains(type)) {
             result = new DbSet(type, this);
-            this.cachedDbSets.set(type, result);
+            this._cachedDbSets.set(type, result);
         }
         return result;
     }
@@ -328,7 +328,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         this.entityEntries.delete.clear();
         this.entityEntries.add.clear();
         this.entityEntries.update.clear();
-        for (const [, dbSet] of this.cachedDbSets) {
+        for (const [, dbSet] of this._cachedDbSets) {
             dbSet.clear();
         }
     }
@@ -1191,7 +1191,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     const logicalExp = new StrictEqualExpression(relationCol, childCol);
                     relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
-                dataDeleteExp.addJoinRelation(slaveSelect, relations, JoinType.INNER);
+                dataDeleteExp.addJoin(slaveSelect, relations, "INNER");
 
                 const dataDeleteQuery = new DeferredQuery(this, dataDeleteExp, queryParameters, (results) => {
                     return {

@@ -7,19 +7,44 @@ import { TimeSpan } from "../Data/TimeSpan";
 import { UUID } from "../Data/UUID";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
+import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 
 export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>, existAction?: (exp: T) => void): T {
     if (!exp) return exp;
     return (replaceMap.has(exp) ? replaceMap.get(exp) : exp.clone(replaceMap)) as T;
 };
-export const excludeCloneMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+export const addKeepInMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
     replaceMap.set(exp, exp);
     if ((exp as SelectExpression).projectedColumns) {
-        excludeCloneMap(replaceMap, (exp as SelectExpression).entity);
-        (exp as SelectExpression).projectedColumns.each(o => excludeCloneMap(replaceMap, o));
+        const selectExp = exp as SelectExpression;
+        addKeepInMap(replaceMap, selectExp.entity);
+        if (selectExp instanceof GroupByExpression) {
+            addKeepInMap(replaceMap, selectExp.key);
+            addKeepInMap(replaceMap, selectExp.itemSelect);
+        }
+        for (const o of selectExp.projectedColumns)
+            addKeepInMap(replaceMap, o);
     }
     else if ((exp as IEntityExpression).primaryColumns) {
-        (exp as IEntityExpression).columns.each(o => excludeCloneMap(replaceMap, o));
+        const entityExp = exp as IEntityExpression;
+        entityExp.columns.each(o => addKeepInMap(replaceMap, o));
+    }
+};
+export const removeFromMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+    replaceMap.delete(exp);
+    if ((exp as SelectExpression).projectedColumns) {
+        const selectExp = exp as SelectExpression;
+        removeFromMap(replaceMap, selectExp.entity);
+        if (selectExp instanceof GroupByExpression) {
+            removeFromMap(replaceMap, selectExp.key);
+            removeFromMap(replaceMap, selectExp.itemSelect);
+        }
+        for (const o of selectExp.projectedColumns)
+            removeFromMap(replaceMap, o);
+    }
+    else if ((exp as IEntityExpression).primaryColumns) {
+        const entityExp = exp as IEntityExpression;
+        entityExp.columns.each(o => removeFromMap(replaceMap, o));
     }
 };
 export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {
@@ -100,8 +125,7 @@ export const fillZero = (value: number, factor = 2): string => {
 export const hashCode = (str: string, hash: number = 0) => {
     if (!str || str.length === 0)
         return hash;
-    const l = str.length;
-    for (let i = 0; i < l; i++) {
+    for (let i = 0, len = str.length; i < len; i++) {
         hash = hashCodeAdd(hash, str.charCodeAt(i));
     }
     return hash;

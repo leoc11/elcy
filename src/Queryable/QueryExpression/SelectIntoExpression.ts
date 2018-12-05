@@ -5,11 +5,13 @@ import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IObjectType, OrderDirection, JoinType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { SelectExpression, IJoinRelation } from "./SelectExpression";
+import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { EntityExpression } from "./EntityExpression";
+import { IJoinRelation } from "../Interface/IJoinRelation";
+import { Enumerable } from "../../Enumerable/Enumerable";
 export class SelectIntoExpression<T = any> implements IQueryCommandExpression<void> {
     public get type() {
         return undefined as any;
@@ -18,7 +20,7 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
         return this.select.parameters;
     }
     public get projectedColumns() {
-        return this.select.projectedColumns.where(o => this.entity.metaData.columns.any(c => c.propertyName === o.propertyName));
+        return Enumerable.load(this.select.projectedColumns).where(o => this.entity.metaData.columns.any(c => c.propertyName === o.propertyName));
     }
     constructor(public entity: EntityExpression<T>, public select: SelectExpression) { }
     public addWhere(expression: IExpression<boolean>) {
@@ -29,10 +31,10 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
     public addOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
         this.select.addOrder(expression as any, direction);
     }
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
-        return this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
+        return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SelectIntoExpression<T> {
         if (!replaceMap) replaceMap = new Map();

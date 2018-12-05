@@ -92,17 +92,18 @@ relationalQueryTranslator.register(String.prototype, "length", (exp: MemberAcces
 //#region Method Call
 
 /**
+ * TODO: CHANGE TO QUERYABLE/ENUMERABLE
  * SelectExpression
  */
-relationalQueryTranslator.register(SelectExpression.prototype, "all", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `NOT EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
-relationalQueryTranslator.register(SelectExpression.prototype, "any", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
-relationalQueryTranslator.register(SelectExpression.prototype, "count", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `COUNT(${qb.getExpressionString(exp.params[0])})`);
+relationalQueryTranslator.register(SelectExpression.prototype, "all" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `NOT EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
+relationalQueryTranslator.register(SelectExpression.prototype, "any" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `EXIST(${qb.newLine(1) + qb.getExpressionString(exp.objectOperand) + qb.newLine(-1)})`);
+relationalQueryTranslator.register(SelectExpression.prototype, "count" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `COUNT(${qb.getExpressionString(exp.params[0])})`);
 const aggregateTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${exp.methodName.toUpperCase()}(${qb.getExpressionString(exp.params[0])})`;
-relationalQueryTranslator.register(SelectExpression.prototype, "sum", aggregateTranslator);
-relationalQueryTranslator.register(SelectExpression.prototype, "min", aggregateTranslator);
-relationalQueryTranslator.register(SelectExpression.prototype, "max", aggregateTranslator);
-relationalQueryTranslator.register(SelectExpression.prototype, "avg", aggregateTranslator);
-relationalQueryTranslator.register(SelectExpression.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN ${qb.getExpressionString(exp.objectOperand)}`);
+relationalQueryTranslator.register(SelectExpression.prototype, "sum" as any, aggregateTranslator);
+relationalQueryTranslator.register(SelectExpression.prototype, "min" as any, aggregateTranslator);
+relationalQueryTranslator.register(SelectExpression.prototype, "max" as any, aggregateTranslator);
+relationalQueryTranslator.register(SelectExpression.prototype, "avg" as any, aggregateTranslator);
+relationalQueryTranslator.register(SelectExpression.prototype, "contains" as any, (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN ${qb.getExpressionString(exp.objectOperand)}`);
 
 
 /**

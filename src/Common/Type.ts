@@ -23,13 +23,7 @@ export enum InheritanceType {
 }
 export type OrderDirection  = "ASC" | "DESC";
 export type TimeZoneHandling = "none" | "utc";
-
-export enum JoinType {
-    INNER = "INNER",
-    FULL = "FULL",
-    RIGHT = "RIGHT",
-    LEFT = "LEFT"
-}
+export type JoinType = "INNER" | "FULL" | "RIGHT" | "LEFT";
 export type ReferenceOption = "NO ACTION" | "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";
 export type IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" | "SNAPSHOT";
 export type ConcurrencyModel = "NONE" | "PESSIMISTIC" | "OPTIMISTIC DIRTY" | "OPTIMISTIC VERSION";

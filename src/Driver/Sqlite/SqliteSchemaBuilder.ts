@@ -249,8 +249,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 fkRelation.reverseRelation = reverseFkRelation;
 
                 // set relationmaps
-                const l = fkRelation.relationColumns.length;
-                for (let i = 0; i < l; i++) {
+                for (let i = 0, len = fkRelation.relationColumns.length; i < len; i++) {
                     const fkColumn = fkRelation.relationColumns[i];
                     const masterColumn = reverseFkRelation.relationColumns[i];
                     fkRelation.relationMaps.set(fkColumn, masterColumn);

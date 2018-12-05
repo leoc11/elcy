@@ -12,7 +12,7 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { RelationEntry } from "./RelationEntry";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
@@ -52,13 +52,7 @@ export class DbSet<T> extends Queryable<T> {
     }
     public buildQuery(visitor: QueryVisitor): IQueryCommandExpression<T> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
-        visitor.setDefaultOrder(result);
-
-        const option = visitor.options;
-        if (result.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
-            result.addWhere(new StrictEqualExpression(result.entity.deleteColumn, new ValueExpression(false)));
-        }
-
+        visitor.setDefaultBehaviour(result);
         return result;
     }
     public hashCode() {
@@ -108,8 +102,8 @@ export class DbSet<T> extends Queryable<T> {
                 }
                 else {
                     const columnMeta: IColumnMetaData<T, any> = Reflect.getOwnMetadata(columnMetaKey, this.type, prop);
-                    if (columnMeta instanceof EmbeddedColumnMetaData) {
-                        const childSet = this.dbContext.set(columnMeta.type);
+                    if (columnMeta instanceof EmbeddedRelationMetaData) {
+                        const childSet = this.dbContext.set(columnMeta.target.type);
                         if (childSet) {
                             // TODO
                             const childEntry = childSet.attach(value);

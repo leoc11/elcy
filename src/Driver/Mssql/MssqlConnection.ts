@@ -177,7 +177,6 @@ export class MssqlConnection implements IConnection {
                     reject(error);
                 }
                 else {
-                    console.log(JSON.stringify(results));
                     resolve(results);
                 }
             });

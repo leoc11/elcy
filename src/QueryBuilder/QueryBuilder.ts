@@ -4,16 +4,15 @@ import { NamingStrategy } from "./NamingStrategy";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
-import { SelectExpression, IJoinRelation } from "../Queryable/QueryExpression/SelectExpression";
+import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { isNotNull, replaceExpression, toDateTimeString, toTimeString, excludeCloneMap, resolveClone } from "../Helper/Util";
-import { JoinType, GenericType, QueryType, DeleteMode, TimeZoneHandling } from "../Common/Type";
+import { isNotNull, toDateTimeString, toTimeString } from "../Helper/Util";
+import { GenericType, QueryType, DeleteMode, TimeZoneHandling } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQuery } from "./Interface/IQuery";
-import { EmbeddedColumnExpression } from "../Queryable/QueryExpression/EmbeddedColumnExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
@@ -50,9 +49,11 @@ import { TimeSpan } from "../Data/TimeSpan";
 import { UUID } from "../Data/UUID";
 import { TimeColumnMetaData } from "../MetaData/TimeColumnMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
 import { BatchedQuery } from "./Interface/BatchedQuery";
+import { JoinRelation } from "../Queryable/Interface/JoinRelation";
+import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
+import { ISelectRelation } from "../Queryable/Interface/ISelectRelation";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -171,37 +172,35 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         });
         return result;
     }
+    protected extractValue<T>(exp: IExpression<T>): T {
+        if (exp instanceof ValueExpression) {
+            return exp.execute();
+        }
+        else {
+            const takeParam = this.parameters.first(o => o.parameter === exp);
+            if (takeParam)
+                return takeParam.value as T;
+        }
+        return null;
+    }
     // Select
-    public getSelectQuery<T>(select: SelectExpression<T>): IQuery[] {
+    public getSelectQuery<T>(select: SelectExpression<T>, skipInclude = false): IQuery[] {
         let result: IQuery[] = [];
-        let take = 0, skip = 0;
-        if (select.paging.take) {
-            if (select.paging.take instanceof ValueExpression) {
-                take = select.paging.take.execute();
-            }
-            else {
-                const takeParam = this.parameters.first(o => o.parameter === select.paging.take);
-                if (takeParam)
-                    take = takeParam.value;
-            }
-        }
-        if (select.paging.skip) {
-            if (select.paging.skip instanceof ValueExpression) {
-                skip = select.paging.skip.execute();
-            }
-            else {
-                const skipParam = this.parameters.first(o => o.parameter === select.paging.skip);
-                if (skipParam)
-                    skip = skipParam.value;
-            }
-        }
+        const take = this.extractValue(select.paging.take) || 0;
+        const skip = this.extractValue(select.paging.skip) || 0;
+
         let selectQuery = "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
-            " " + select.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) +
+            " " + Enumerable.load(select.projectedColumns).select((o) => {
+                return this.getColumnSelectString(o);
+            }).toArray().join("," + this.newLine(1, false)) +
             this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            this.getEntityJoinString(select.joins);
+            this.getEntityJoinString(select.resolvedJoins) +
+            this.getParentJoinString(select.parentRelation);
+
         if (select.where)
             selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
-        if (select instanceof GroupByExpression) {
+
+        if (select instanceof GroupByExpression && select.isAggregate) {
             if (select.groupBy.length > 0) {
                 selectQuery += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
             }
@@ -216,149 +215,50 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
         }
 
-        let tempSelect: SelectExpression;
-        let tempReplaceMap = new Map<IExpression, IExpression>();
-
-        // select each include as separated query as it more beneficial for performance
-        for (const include of select.includes) {
-            if (include.isFinish) {
-                result = result.concat(this.getSelectQuery(include.child));
-            }
-            else {
-                if (!tempSelect) {
-                    const oriIncludes = select.includes;
-                    tempReplaceMap = new Map();
-                    select.includes.each(o => excludeCloneMap(tempReplaceMap, o.child));
-                    select.includes = [];
-                    tempReplaceMap.delete(select.entity);
-                    tempSelect = select.clone(tempReplaceMap);
-                    tempSelect.entity.alias = "temp_" + tempSelect.entity.alias;
-                    tempSelect.includes = tempSelect.selects = [];
-                    select.includes = oriIncludes;
-                }
-
-                const relations = resolveClone(include.relations, tempReplaceMap);
-
-                let requireRelationData = false;
-                const relMap = new Map<IColumnExpression, IColumnExpression>();
-                const parent = include.child;
-
-                replaceExpression(relations, (exp: IExpression) => {
-                    if (!requireRelationData) {
-                        if (exp instanceof EqualExpression || exp instanceof StrictEqualExpression) {
-                            const leftExp = exp.leftOperand as IColumnExpression;
-                            const rightExp = exp.rightOperand as IColumnExpression;
-                            let parentCol: IColumnExpression;
-                            let childCol: IColumnExpression;
-                            if (leftExp.entity) {
-                                if (tempSelect.projectedColumns.contains(leftExp)) {
-                                    childCol = leftExp;
-                                }
-                                else if (parent.projectedColumns.contains(leftExp)) {
-                                    parentCol = leftExp;
-                                }
-                            }
-                            if (rightExp.entity) {
-                                if (tempSelect.projectedColumns.contains(rightExp)) {
-                                    childCol = rightExp;
-                                }
-                                else if (parent.projectedColumns.contains(rightExp)) {
-                                    parentCol = rightExp;
-                                }
-                            }
-                            if (parentCol && childCol) {
-                                // TODO: should check whether column is unique
-                                // if both not primary, that means it's a many-many relation
-                                if (!parentCol.isPrimary && !childCol.isPrimary) {
-                                    requireRelationData = true;
-                                    return exp;
-                                }
-                                relMap.set(parentCol, childCol);
-                            }
-                        }
-                        else if ((exp as IColumnExpression).entity) {
-                            const col = exp as IColumnExpression;
-                            if (parent.projectedColumns.contains(col)) {
-                                if (col instanceof ComputedColumnExpression) {
-                                    return col.expression;
-                                }
-                                return col;
-                            }
-                            else if (tempSelect.projectedColumns.contains(col)) {
-                                if (col.entity !== tempSelect.entity) {
-                                    const colClone = col.clone();
-                                    colClone.entity = tempSelect.entity;
-                                    return colClone;
-                                }
-                            }
-                        }
-                        else if (!(exp instanceof AndExpression || (exp as IColumnExpression).entity)) {
-                            requireRelationData = true;
-                        }
-                    }
-                    return exp;
-                });
-
-                let childExp: SelectExpression;
-                if (requireRelationData) {
-                    const replaceMap = new Map();
-                    const relDataSelect = include.child.clone(replaceMap);
-                    relDataSelect.entity.alias = "rel_" + relDataSelect.entity.alias;
-                    relDataSelect.entity.isRelationData = true;
-                    relDataSelect.itemExpression = new ObjectValueExpression({}, Object);
-                    relDataSelect.orders = [];
-                    relDataSelect.selects = relDataSelect.entity.primaryColumns
-                        .union(tempSelect.entity.primaryColumns.select(o => {
-                            const col = o.clone();
-                            col.entity = o.entity;
-                            col.alias = col.propertyName = "_" + col.propertyName;
-                            return col;
-                        })).toArray();
-
-                    // replace old include with new one
-                    select.includes.remove(include);
-                    let includeJoinRel: IExpression<boolean>;
-                    tempSelect.entity.primaryColumns.each(o => {
-                        const relCol = relDataSelect.entity.columns.first(c => c.columnName === o.columnName);
-                        const childCol = include.child.entity.columns.first(c => c.columnName === o.columnName);
-                        const logicalExp = new StrictEqualExpression(relCol, childCol);
-                        includeJoinRel = includeJoinRel ? new AndExpression(includeJoinRel, logicalExp) : logicalExp;
-                    });
-                    const includeRel = select.addInclude(include.name, relDataSelect, includeJoinRel, "many");
-                    includeRel.isFinish = true;
-                    includeRel.relationMap = new Map();
-                    select.entity.primaryColumns.each(o => {
-                        includeRel.relationMap.set(o, relDataSelect.selects.except(relDataSelect.entity.columns).first(c => c.columnName === o.columnName));
-                    });
-
-                    // add join to temp
-                    const joinRel = relDataSelect.addJoinRelation(tempSelect, relations.clone(replaceMap), JoinType.INNER);
-                    joinRel.isFinish = true;
-
-                    // add include to rel data select as bridge
-                    let childRel: IExpression<boolean>;
-                    include.child.entity.primaryColumns.each(o => {
-                        const relCol = relDataSelect.entity.columns.first(c => c.columnName === o.columnName);
-                        const logicalExp = new StrictEqualExpression(relCol, o);
-                        childRel = childRel ? new AndExpression(childRel, logicalExp) : logicalExp;
-                    });
-                    relDataSelect.addInclude(include.name, include.child, childRel, "one");
-                    childExp = relDataSelect;
+        // subselect should not have include
+        if (!select.isSubSelect && !skipInclude) {
+            // select each include as separated query as it more beneficial for performance
+            for (const include of select.resolvedIncludes) {
+                if (!include.isManyToManyRelation) {
+                    result = result.concat(this.getSelectQuery(include.child));
                 }
                 else {
-                    include.relationMap = relMap;
-                    include.isFinish = true;
-                    include.child.addJoinRelation(tempSelect, relations, JoinType.INNER);
-                    childExp = include.child;
-                }
+                    // create relation data (clone select join clone child)
+                    select.includes.remove(include);
+                    const oriInclude = select.includes;
+                    select.includes = [include];
+                    const relationData = select.clone();
+                    relationData.entity.alias = "rel_" + relationData.entity.alias;
+                    select.includes = oriInclude;
 
-                // For ternary
-                if (include.ternaryFilter) {
-                    tempSelect.addWhere(include.ternaryFilter.clone(tempReplaceMap));
-                    tempSelect = null;
-                }
+                    const includeRel = relationData.includes.first();
+                    relationData.includes = [];
+                    relationData.addJoin(includeRel.child, includeRel.relations, "INNER");
+                    relationData.selects = relationData.entity.primaryColumns.union(includeRel.child.entity.primaryColumns).toArray();
+                    relationData.distinct = true;
 
-                result = result.concat(this.getSelectQuery(childExp));
+                    // Bridge to Child relation
+                    let bridgeChildRelation: IExpression<boolean>;
+                    for (const childCol of include.child.entity.primaryColumns) {
+                        const bridgeCol = includeRel.child.entity.columns.first(o => o.columnName === childCol.columnName);
+
+                        const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
+                        bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
+                    }
+                    relationData.addInclude(include.name, include.child, bridgeChildRelation, "one");
+
+                    // Parent to Bridge relation
+                    let parentBridgeRelation: IExpression<boolean>;
+                    for (const parentCol of select.entity.primaryColumns) {
+                        const bridgeCol = relationData.entity.columns.first(o => o.columnName === parentCol.columnName);
+
+                        const logicalExp = new StrictEqualExpression(parentCol, bridgeCol);
+                        parentBridgeRelation = parentBridgeRelation ? new AndExpression(parentBridgeRelation, logicalExp) : logicalExp;
+                    }
+                    select.addInclude(include.name, relationData, parentBridgeRelation, "one");
+
+                    result = result.concat(this.getSelectQuery(relationData));
+                }
             }
         }
 
@@ -572,7 +472,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 const deleteOption = !isManyToMany ? o.reverseRelation.deleteOption : o.relationData.deleteOption;
                 const relationColumns = !isManyToMany ? o.reverseRelation.relationColumns : o.relationData.source === entityMeta ? o.relationData.sourceRelationColumns : o.relationData.targetRelationColumns;
                 let child = new SelectExpression(new EntityExpression(target.type, target.type.name));
-                child.addJoinRelation(deleteExp.select, o.reverseRelation);
+                child.addJoin(deleteExp.select, o.reverseRelation);
                 switch (deleteOption) {
                     case "CASCADE": {
                         const childDelete = new DeleteExpression(child, deleteExp.deleteMode);
@@ -634,7 +534,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 replaceMap.set(col, cloneChildCol);
             }
             const relations = o.relations.clone(replaceMap);
-            child.addJoinRelation(clone.select, relations, JoinType.INNER);
+            child.addJoin(clone.select, relations, "INNER");
             if (clone.select.where) {
                 child.addWhere(clone.select.where);
                 clone.select.where = null;
@@ -807,14 +707,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getColumnString(column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
-            return this.enclose(column.columnName);
+            return this.enclose(column.alias || column.columnName);
         }
-        return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.alias || column.columnName);
     }
     protected getColumnSelectString(column: IColumnExpression): string {
-        if (column instanceof EmbeddedColumnExpression) {
-            return column.selects.select(o => this.getColumnSelectString(o)).toArray().join(",");
-        }
         let result = this.getColumnDefinitionString(column);
         if (column.alias) {
             result += " AS " + this.enclose(column.alias);
@@ -828,18 +725,18 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (column instanceof ComputedColumnExpression) {
             return this.getOperandString(column.expression, true);
         }
-        else if (column instanceof EmbeddedColumnExpression) {
-            return column.selects.select(o => this.getColumnDefinitionString(o)).toArray().join(",");
-        }
         return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
     }
-    protected getSelectQueryString(select: SelectExpression): string {
+    protected getSelectQueryString(select: SelectExpression, skipInclude = false): string {
+        if (select.isSubSelect) skipInclude = true;
+
+        const selectStr = this.getSelectQuery(select, skipInclude).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
+
         if (select.isSubSelect) {
-            // TODO: SubSelect could have include.
-            return `(${this.newLine(1, true)}${this.getSelectQuery(select).select(o => o.query).toArray().join()}${this.newLine(-1, true)})`;
+            return `(${this.newLine(1, true)}${selectStr}${this.newLine(-1, true)})`;
         }
 
-        return this.getSelectQuery(select).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
+        return selectStr;
     }
     protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
         let result = "";
@@ -848,11 +745,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         result += "OFFSET " + skip;
         return result;
     }
-    protected getEntityJoinString<T>(joins: IJoinRelation<T, any>[]): string {
+    protected getEntityJoinString<T>(joins: Iterable<JoinRelation<T, any>>): string {
         let result = "";
-        if (joins.length > 0) {
+        const joinEnum = Enumerable.load(joins);
+        if (joinEnum.any()) {
             result += this.newLine();
-            result += joins.select(o => {
+            result += joinEnum.select(o => {
                 let childEntString = "";
                 if (o.child.isSimple())
                     childEntString = this.getEntityQueryString(o.child.entity);
@@ -861,40 +759,25 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 let join = o.type + " JOIN " + childEntString +
                     this.newLine(1, false) + "ON ";
 
-                if (!o.isFinish) {
-                    // parent: computed column need to be changed to it's expression not yet recognized.
-                    // child: make sure child column's entity is the direct join relation entity. (column might came from another table joined to child)
-                    replaceExpression(o.relations, (exp) => {
-                        const col = exp as IColumnExpression;
-                        if (o.parent.projectedColumns.contains(col)) {
-                            if (col instanceof ComputedColumnExpression) {
-                                return col.expression;
-                            }
-                            return col;
-                        }
-                        else if (o.child.projectedColumns.contains(col)) {
-                            if (col instanceof ComputedColumnExpression) {
-                                return new ColumnExpression(o.child.entity, col.type, col.propertyName, col.columnName, col.isPrimary, col.columnType);
-                            }
-                            if (col.entity !== o.child.entity) {
-                                return col.clone(new Map([[col.entity, o.child.entity]]));
-                            }
-                        }
-                        return exp;
-                    });
-
-                    o.isFinish = true;
-                }
-                return join + this.getOperandString(o.relations);
+                return join + this.getOperandString(o.resolvedRelations);
             }).toArray().join(this.newLine());
         }
         return result;
     }
+    protected getParentJoinString<T>(parentRel: ISelectRelation) {
+        if (!(parentRel instanceof IncludeRelation))
+            return "";
+
+        const parent = parentRel.parent;
+        const entityString = parent.isSimple() ? this.getEntityQueryString(parent.entity) : `(${this.newLine(1)}${this.getSelectQueryString(parent, true)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
+        const relationString = this.getOperandString(parentRel.resolvedRelations);
+        return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
+    }
     protected getEntityQueryString(entity: IEntityExpression): string {
         if (entity instanceof IntersectExpression) {
-            return "(" + this.newLine(1) + "(" + this.newLine(1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
+            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
                 this.newLine() + "INTERSECT" +
-                this.newLine() + "(" + this.newLine(1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof UnionExpression) {
             let isUnionAll = false;
@@ -904,17 +787,17 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     isUnionAll = isUnionAllParam.value;
                 }
             }
-            return "(" + this.newLine(1) + "(" + this.newLine(1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
+            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
                 this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
-                this.newLine() + "(" + this.newLine(1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ExceptExpression) {
-            return "(" + this.newLine(+1) + "(" + this.newLine(+1) + this.getSelectQueryString(entity.select) + this.newLine(-1) + ")" +
+            return "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect) +
                 this.newLine() + "EXCEPT" +
-                this.newLine() + "(" + this.newLine(+1) + this.getSelectQueryString(entity.select2) + this.newLine(-1) + ")" + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+            return this.getSelectQueryString(entity.subSelect) + " AS " + this.enclose(entity.alias);
         }
         return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
@@ -944,7 +827,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getMethodCallExpressionString<TType, KProp extends keyof TType, TResult = any>(expression: MethodCallExpression<TType, KProp, TResult>): string {
         let translator: IQueryTranslatorItem;
         if (expression.objectOperand instanceof SelectExpression) {
-            translator = this.resolveTranslator(SelectExpression.prototype, expression.methodName);
+            translator = this.resolveTranslator(SelectExpression.prototype, expression.methodName as any);
         }
         else if (expression.objectOperand instanceof ValueExpression) {
             translator = this.resolveTranslator(expression.objectOperand.value, expression.methodName);
@@ -984,12 +867,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#endregion
 
-    public toPropertyValue<T>(input: any, column: IColumnExpression<T>): T {
+    public toPropertyValue<T>(input: any, column: IColumnExpression<any, T>): T {
         let result: any;
-        if (input === null && (!column.columnMetaData || column.columnMetaData.nullable)) {
+        if (input === null && column.isNullable) {
             return null;
         }
-        switch (column.type) {
+        switch (column.type as any) {
             case Boolean:
                 result = Boolean(input);
                 break;

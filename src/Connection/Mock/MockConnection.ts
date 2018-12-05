@@ -2,7 +2,7 @@ import { IConnection } from "../IConnection";
 import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { IIncludeRelation, SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
+import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { QueryType, IsolationLevel } from "../../Common/Type";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
@@ -18,6 +18,10 @@ import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
+import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
+import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
+import { IEntityExpression } from "../../Queryable/QueryExpression/IEntityExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -42,41 +46,26 @@ export class MockConnection implements IConnection {
             .selectMany(o => {
                 const command = o.command;
                 if (command instanceof SelectExpressionType) {
-                    const selects = this.flattenSelectExpression(command as any).toArray();
-                    const map: Map<SelectExpression, IQueryResult> = new Map();
-                    let i = 0;
-
-                    return o.queries.select(query => {
-                        const result: IQueryResult = {
-                            effectedRows: 1
-                        };
-                        if (query.type === QueryType.DML) {
-                            const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
-                            if (Array.isArray(arrayParameter.value)) {
-                                result.effectedRows = arrayParameter.value.length;
-                            }
-                        }
-                        else if (query.type === QueryType.DQL) {
-                            const select = selects[i++];
-                            map.set(select, result);
+                    const selects = this.flattenSelectExpression(command as any);
+                    const map: Map<SelectExpression, any[]> = new Map();
+                    for (const select of selects) {
                             const rows: any[] = [];
-                            result.rows = rows;
-
+                        map.set(select, rows);
                             if (select.parentRelation) {
-                                const parentInclude = select.parentRelation as IIncludeRelation;
-                                const relMap = parentInclude.relationMap;
-                                const parentQResult = map.get(parentInclude.parent);
+                            const parentInclude = select.parentRelation as IncludeRelation;
+                            const relMap = Enumerable.load(parentInclude.relationMap()).toArray();
+                            const parentRows = map.get(parentInclude.parent);
 
                                 const maxRowCount = this.getMaxCount(select, o, 3);
 
-                                Enumerable.load(parentQResult.rows).each(parent => {
-                                    const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
+                            Enumerable.load(parentRows).each(parent => {
+                                const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
                                     for (let i = 0; i < numberOfRecord; i++) {
                                         const item = {} as any;
-                                        select.projectedColumns.each(o => {
+                                    for (const o of select.projectedColumns) {
                                             const columnName = o.alias || o.columnName;
                                             item[columnName] = this.generateValue(o);
-                                        });
+                                    }
                                         rows.push(item);
 
                                         for (const [parentCol, entityCol] of relMap) {
@@ -90,14 +79,30 @@ export class MockConnection implements IConnection {
                                 const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
-                                    select.projectedColumns.each(o => {
+                                for (const o of select.projectedColumns) {
                                         const columnName = o.alias || o.columnName;
                                         item[columnName] = this.generateValue(o);
-                                    });
+                                }
                                     rows.push(item);
                                 }
                             }
+                    }
 
+                    const generatedResults = Enumerable.load(map.values()).toArray();
+                    let i = 0;
+                    return o.queries.select(query => {
+                        const result: IQueryResult = {
+                            effectedRows: 1
+                        };
+                        if (query.type === QueryType.DML) {
+                            const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                            if (Array.isArray(arrayParameter.value)) {
+                                result.effectedRows = arrayParameter.value.length;
+                            }
+                        }
+                        else if (query.type === QueryType.DQL) {
+                            const rows = generatedResults[generatedResults.length - (++i)];
+                            result.rows = rows;
                             result.effectedRows = rows.length;
                         }
                         return result;
@@ -191,14 +196,16 @@ export class MockConnection implements IConnection {
         if (select.paging && select.paging.take) {
             defaultValue = this.extractValue(o, select.paging.take);
         }
-        else if (select.joins.any(o => o.name === "TAKE")) {
-            const takeJoin = select.joins.first(o => o.name === "TAKE") as any;
+        else {
+            const takeJoin = select.joins.first(o => o instanceof PagingJoinRelation) as PagingJoinRelation;
+            if (takeJoin) {
             if (takeJoin.end) {
                 defaultValue = this.extractValue(o, takeJoin.end);
                 if (takeJoin.start) {
                     defaultValue -= this.extractValue(o, takeJoin.start);
                 }
             }
+        }
         }
 
         return defaultValue;
@@ -212,8 +219,20 @@ export class MockConnection implements IConnection {
             return sqlParam ? sqlParam.value : null;
         }
     }
-    protected flattenSelectExpression(selectExp: SelectExpression): Enumerable<SelectExpression> {
-        return [selectExp].union(selectExp.includes.selectMany(o => this.flattenSelectExpression(o.child)), true);
+    protected flattenSelectExpression(selectExp: SelectExpression): SelectExpression[] {
+        const results = [selectExp];
+        for (let i = 0; i < results.length; i++) {
+            const select = results[i];
+            const addition = select.includes.where(o => !o.isEmbedded).select(o => o.child).toArray().reverse();
+            if (select instanceof GroupByExpression && !select.isAggregate) {
+                const keyRel = select.keyRelation;
+                if (keyRel && !keyRel.isEmbedded) {
+                    addition.unshift(keyRel.child);
+                }
+            }
+            results.splice(i + 1, 0, ...addition);
+        }
+        return results;
     }
     public generateValue(column: IColumnExpression) {
         switch (column.type) {

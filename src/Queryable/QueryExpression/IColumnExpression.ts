@@ -14,7 +14,7 @@ export interface IColumnExpression<TE = any, T = any> extends IQueryExpression<T
     entity: IEntityExpression<TE>;
     propertyName: keyof TE;
     isPrimary: boolean;
-    isShadow?: boolean;
+    isNullable?: boolean;
     clone(replaceMap?: Map<IExpression, IExpression>): IColumnExpression<TE, T>;
     hashCode(): number;
 }

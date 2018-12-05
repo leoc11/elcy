@@ -16,6 +16,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -148,7 +149,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
 
         let selectQuery =
             `SELECT ${selectInto.select.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
-            selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
+            Enumerable.load(selectInto.projectedColumns).select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
             `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
             `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.select.joins)}`;
 

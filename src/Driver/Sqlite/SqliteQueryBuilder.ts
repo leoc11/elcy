@@ -92,4 +92,36 @@ export class SqliteQueryBuilder extends QueryBuilder {
         result.push(updateCommand);
         return result;
     }
+
+    // for sqlite 3.24.0
+    protected getUpsertQuery2<T>(upsertExp: UpsertExpression<T>): IQuery[] {
+        const param: { [key: string]: any } = {};
+        for (const prop in upsertExp.setter) {
+            const val = upsertExp.setter[prop];
+            const paramExp = this.parameters.first(p => p.parameter === val);
+            if (paramExp) {
+                param[paramExp.name] = paramExp.value;
+            }
+        }
+
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const valueString = upsertExp.columns.select(o => {
+            const valueExp = upsertExp.setter[o.propertyName];
+            return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+        }).toArray().join(",");
+        const primaryColString = upsertExp.entity.primaryColumns.select(o => this.enclose(o.columnName)).toArray().join(",");
+        const updateString = upsertExp.updateColumns.select(column => {
+            const valueExp = upsertExp.setter[column.propertyName];
+            if (!valueExp) return undefined;
+            return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
+        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+
+        let queryCommand: IQuery = {
+            query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine()
+                + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
+            parameters: param,
+            type: QueryType.DML
+        };
+        return [queryCommand];
+    }
 }

@@ -3,8 +3,9 @@ import { IEntityMetaData } from "./IEntityMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 
-export interface IRelationMetaData<TSource = any, TTarget = any> {
+export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRelationMetaData<TSource, TTarget> {
     name?: string;
     fullName: string;
     propertyName?: keyof TSource;

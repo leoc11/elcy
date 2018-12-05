@@ -24,7 +24,6 @@ import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { GroupByExpression } from "./QueryExpression/GroupByExpression";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { EntityExpression } from "./QueryExpression/EntityExpression";
 
@@ -77,7 +76,6 @@ export abstract class Queryable<T = any> {
             const visitor = this.dbContext.queryVisitor;
             visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
-            if (commandQuery instanceof GroupByExpression) commandQuery.select.asIncludeResult = true;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             queryCache = {
@@ -174,7 +172,6 @@ export abstract class Queryable<T = any> {
             const visitor = this.dbContext.queryVisitor;
             visitor.options = queryBuilder.options;
             const commandQuery = this.buildQuery(visitor);
-            if (commandQuery instanceof GroupByExpression) commandQuery.select.asIncludeResult = true;
             commandQuery.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
 

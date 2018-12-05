@@ -1,13 +1,23 @@
-import { IObjectType } from "../Common/Type";
-import { IColumnMetaData } from "./Interface/IColumnMetaData";
-import { AbstractEntityMetaData } from "./AbstractEntityMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
+import { IBaseRelationMetaData } from "./Interface/IBaseRelationMetaData";
+import { IEmbeddedRelationOption } from "../Decorator/Option/IEmbeddedRelationOption";
+import { entityMetaKey } from "../Decorator/DecoratorKey";
+import { RelationshipType } from "../Common/Type";
 
-export class EmbeddedColumnMetaData<TE, T> implements IColumnMetaData<TE, T> {
-    public get type(): IObjectType<T> {
-        return this.embeddedEntity.type;
-    }
+export class EmbeddedRelationMetaData<TS = any, TT = any> implements IBaseRelationMetaData<TS, TT> {
+    public propertyName: keyof TS;
     public prefix?: string;
-    constructor(public embeddedEntity: AbstractEntityMetaData<T>, public propertyName: keyof TE, prefix?: string) {
-        this.prefix = prefix || this.propertyName;
+    public source: IEntityMetaData<TS>;
+    public target: IEntityMetaData<TT>;
+    public nullable?: boolean;
+    public get relationType(): RelationshipType {
+        return "one";
+    }
+    constructor(option: IEmbeddedRelationOption<TS, TT>) {
+        this.propertyName = option.propertyName;
+        this.source = Reflect.getOwnMetadata(entityMetaKey, option.sourceType);
+        this.target = Reflect.getOwnMetadata(entityMetaKey, option.targetType);
+        this.prefix = option.prefix;
+        this.nullable = option.nullable;
     }
 }

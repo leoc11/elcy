@@ -10,6 +10,7 @@ import { RowVersionColumnMetaData } from "../RowVersionColumnMetaData";
 import { DateTimeColumnMetaData } from "../DateTimeColumnMetaData";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
 import { IOrderQueryDefinition } from "../../Queryable/Interface/IOrderQueryDefinition";
+import { EmbeddedRelationMetaData } from "../EmbeddedColumnMetaData";
 
 export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
     name: string;
@@ -28,7 +29,8 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     descriminatorMember?: string;
     allowInheritance?: boolean;
     inheritance: InheritanceMetaData<TParent>;
-    relations?: IRelationMetaData<TE, any>[];
+    relations?: IRelationMetaData<TE>[];
+    embeds?: EmbeddedRelationMetaData<TE>[];
     priority?: number;
     hasIncrementPrimary?: boolean;
     isReadOnly?: boolean;

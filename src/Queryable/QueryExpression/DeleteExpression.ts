@@ -7,12 +7,13 @@ import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { SelectExpression, IJoinRelation } from "./SelectExpression";
+import { SelectExpression } from "./SelectExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IJoinRelation } from "../Interface/IJoinRelation";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryCommandExpression<T>;
@@ -128,10 +129,10 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         this.includes.push(child.parentRelation);
         return child.parentRelation;
     }
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): IJoinRelation<T, any>;
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
-        return this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
+        return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<T> {
         if (!replaceMap) replaceMap = new Map();

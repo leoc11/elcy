@@ -13,6 +13,8 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
     public columnType: ColumnType;
     public columnName: string;
     public isPrimary = false;
+    public isNullable = true;
+    public alias?: string;
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: keyof TE) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
@@ -27,6 +29,7 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         clone.isPrimary = this.isPrimary;
         clone.columnType = this.columnType;
         clone.columnName = this.columnName;
+        clone.alias = this.alias;
         replaceMap.set(this, clone);
         return clone;
     }

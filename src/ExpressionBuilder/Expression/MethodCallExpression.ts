@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
@@ -15,11 +15,11 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
 
         return result;
     }
-    public methodName: string;
+    public methodName: K;
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
         this.type = type;
         if (typeof method === "function") {
-            this.methodName = method.name;
+            this.methodName = method.name as any;
         }
         else {
             this.methodName = method;
@@ -29,7 +29,8 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
-                if (Queryable.isPrototypeOf(this.objectOperand.type)) {
+                const objectType = this.objectOperand.type as IObjectType<TE>;
+                if (Queryable.isPrototypeOf(objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
@@ -56,9 +57,10 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
                 }
                 else {
                     try {
-                        this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
+                        this.type = objectType.prototype[this.methodName]().constructor;
                     } catch (e) {
-                        this.type = (new (this.objectOperand.type as any)())[this.methodName]().constructor;
+                        const objectInstance = new objectType();
+                        this.type = (objectInstance[this.methodName] as any)().constructor;
                     }
                 }
             }
