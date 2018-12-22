@@ -21,7 +21,7 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
-import { IEntityExpression } from "../../Queryable/QueryExpression/IEntityExpression";
+import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -49,43 +49,48 @@ export class MockConnection implements IConnection {
                     const selects = this.flattenSelectExpression(command as any);
                     const map: Map<SelectExpression, any[]> = new Map();
                     for (const select of selects) {
-                            const rows: any[] = [];
+                        const rows: any[] = [];
                         map.set(select, rows);
-                            if (select.parentRelation) {
+                        if (select.parentRelation) {
                             const parentInclude = select.parentRelation as IncludeRelation;
                             const relMap = Enumerable.load(parentInclude.relationMap()).toArray();
-                            const parentRows = map.get(parentInclude.parent);
 
-                                const maxRowCount = this.getMaxCount(select, o, 3);
+                            let parent = parentInclude.parent;
+                            while (parent.parentRelation && parent.parentRelation.isEmbedded) {
+                                parent = parent.parentRelation.parent;
+                            }
+                            const parentRows = map.get(parent);
+
+                            const maxRowCount = this.getMaxCount(select, o, 3);
 
                             Enumerable.load(parentRows).each(parent => {
                                 const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
-                                    for (let i = 0; i < numberOfRecord; i++) {
-                                        const item = {} as any;
-                                    for (const o of select.projectedColumns) {
-                                            const columnName = o.alias || o.columnName;
-                                            item[columnName] = this.generateValue(o);
-                                    }
-                                        rows.push(item);
-
-                                        for (const [parentCol, entityCol] of relMap) {
-                                            item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
-                                        }
-                                    }
-                                });
-                            }
-                            else {
-                                const maxRowCount = this.getMaxCount(select, o, 10);
-                                const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
-                                for (const o of select.projectedColumns) {
+                                    for (const o of select.projectedColumns) {
                                         const columnName = o.alias || o.columnName;
                                         item[columnName] = this.generateValue(o);
-                                }
+                                    }
                                     rows.push(item);
+
+                                    for (const [parentCol, entityCol] of relMap) {
+                                        item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
+                                    }
                                 }
+                            });
+                        }
+                        else {
+                            const maxRowCount = this.getMaxCount(select, o, 10);
+                            const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
+                            for (let i = 0; i < numberOfRecord; i++) {
+                                const item = {} as any;
+                                for (const o of select.projectedColumns) {
+                                    const columnName = o.alias || o.columnName;
+                                    item[columnName] = this.generateValue(o);
+                                }
+                                rows.push(item);
                             }
+                        }
                     }
 
                     const generatedResults = Enumerable.load(map.values()).toArray();
@@ -199,13 +204,13 @@ export class MockConnection implements IConnection {
         else {
             const takeJoin = select.joins.first(o => o instanceof PagingJoinRelation) as PagingJoinRelation;
             if (takeJoin) {
-            if (takeJoin.end) {
-                defaultValue = this.extractValue(o, takeJoin.end);
-                if (takeJoin.start) {
-                    defaultValue -= this.extractValue(o, takeJoin.start);
+                if (takeJoin.end) {
+                    defaultValue = this.extractValue(o, takeJoin.end);
+                    if (takeJoin.start) {
+                        defaultValue -= this.extractValue(o, takeJoin.start);
+                    }
                 }
             }
-        }
         }
 
         return defaultValue;
@@ -223,13 +228,7 @@ export class MockConnection implements IConnection {
         const results = [selectExp];
         for (let i = 0; i < results.length; i++) {
             const select = results[i];
-            const addition = select.includes.where(o => !o.isEmbedded).select(o => o.child).toArray().reverse();
-            if (select instanceof GroupByExpression && !select.isAggregate) {
-                const keyRel = select.keyRelation;
-                if (keyRel && !keyRel.isEmbedded) {
-                    addition.unshift(keyRel.child);
-                }
-            }
+            const addition = Enumerable.load(select.resolvedIncludes).select(o => o.child).toArray().reverse();
             results.splice(i + 1, 0, ...addition);
         }
         return results;
@@ -242,7 +241,10 @@ export class MockConnection implements IConnection {
                 return Number((Math.random() * 10000 + 1).toFixed(2));
             case String: {
                 let result = "";
-                const number = Math.random() * 100 + 1;
+                let number = Math.random() * 100 + 1;
+                if (column.columnMetaData && column.columnMetaData instanceof StringColumnMetaData && column.columnMetaData.length > 0) {
+                    number = column.columnMetaData.length;
+                }
                 for (let i = 0; i < number; i++) {
                     let char = String.fromCharCode(Math.round(Math.random() * 90) + 32);
                     if (/[^a-z ]/i.test(char)) {

@@ -248,7 +248,7 @@ function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[
             param.index++;
     }
     param.index++;
-    return ObjectValueExpression.create(obj);
+    return new ObjectValueExpression(obj);
 }
 function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[], stopper: string) {
     const arrayVal = [];

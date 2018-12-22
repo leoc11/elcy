@@ -45,8 +45,7 @@ export class DeferredQuery<T = any> {
             });
         }
 
-        const deferredQueries = this.dbContext.deferredQueries.splice(0);
-        await this.dbContext.executeDeferred(deferredQueries);
+        await this.dbContext.executeDeferred();
         return this.value;
     }
     public buildQuery(queryBuilder: QueryBuilder) {

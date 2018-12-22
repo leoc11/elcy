@@ -21,7 +21,7 @@ import { ParameterExpression } from "../../ExpressionBuilder/Expression/Paramete
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { IJoinRelation } from "../Interface/IJoinRelation";
+import { JoinRelation } from "../Interface/JoinRelation";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression } = {};
     public select: SelectExpression<T>;
@@ -70,8 +70,8 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public addOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
         this.select.addOrder(expression as any, direction);
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }

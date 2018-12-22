@@ -3,30 +3,46 @@ import { QueryType } from "../../Common/Type";
 
 export class BatchedQuery implements IQuery {
     private _queries: IQuery[] = [];
+    private _requireRebuild: boolean;
+    private _query: string = "";
+    private _parameters: { [key: string]: any; } = {};
+    private _type: QueryType = QueryType.Unknown;
+    protected buildQuery() {
+        for (const query of this._queries) {
+            if (query.parameters)
+                Object.assign(this._parameters, query.parameters);
+            this._type |= query.type;
+            this._query += query.query + ";\n\n";
+        }
+        if (this._query) this._query = this._query.substr(0, this._query.length - 3);
+        this._requireRebuild = false;
+    }
     public get queries(): Iterable<IQuery> {
-        return this._queries.asEnumerable();
+        return this._queries;
     }
     public add(query: IQuery) {
         this._queries.push(query);
-        if (this.query) this.query += ";\n\n";
-        this.query += query.query;
-        this.type |= query.type;
+        this._requireRebuild = true;
     }
     public remove(query: IQuery) {
         this._queries.remove(query);
-        this.query = "";
-        this.type = 0;
-        this.parameters = {};
-        this._queries.each(o => {
-            if (o.parameters) Object.assign(this.parameters, o.parameters);
-            this.type |= o.type;
-            this.query += o.query + ";\n\n";
-        });
-        if (this.query) this.query = this.query.substr(0, this.query.length - 3);
+        this._requireRebuild = true;
     }
-    public query: string = "";
-    public parameters: { [key: string]: any; } = {};
-    public type = QueryType.Unknown;
+    public get query() {
+        if (this._requireRebuild)
+            this.buildQuery();
+        return this._query;
+    }
+    public get parameters() {
+        if (this._requireRebuild)
+            this.buildQuery();
+        return this._parameters;
+    }
+    public get type() {
+        if (this._requireRebuild)
+            this.buildQuery();
+        return this._type;
+    }
     public get queryCount() {
         return this._queries.length;
     }

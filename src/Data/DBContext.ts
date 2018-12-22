@@ -385,7 +385,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             throw e;
         }
     }
-    public async executeDeferred(deferredQueries: Iterable<DeferredQuery>) {
+    public async executeDeferred(deferredQueries?: Iterable<DeferredQuery>) {
+        if (!deferredQueries) {
+            deferredQueries = this.deferredQueries.splice(0);
+        }
+
         const queryBuilder = this.queryBuilder;
         let deferredQueryEnumerable = Enumerable.load(deferredQueries);
 
@@ -413,8 +417,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const alias = paramPrefix + i++;
                 o.each(p => {
                     p.name = alias;
-                    if (p.parameter.column)
-                        p.value = queryBuilder.toParameterValue(p.value, p.parameter.column);
+                    p.value = queryBuilder.toParameterValue(p.value, p.parameter.column);
                 });
             });
 

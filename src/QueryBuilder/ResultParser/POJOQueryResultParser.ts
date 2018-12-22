@@ -15,9 +15,7 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { GroupedExpression } from "../../Queryable/QueryExpression/GroupedExpression";
-import { IEntityExpression } from "../../Queryable/QueryExpression/IEntityExpression";
 import { IGroupArray } from "../Interface/IGroupArray";
-import { IIncludeRelation } from "../../Queryable/Interface/IIncludeRelation";
 import { DbSet } from "../../Data/DbSet";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
@@ -45,13 +43,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             this._orderedSelects = [this.queryExpression];
             for (let i = this._orderedSelects.length - 1; i >= 0; i--) {
                 const select = this._orderedSelects[i];
-                const addition = select.includes.where(o => !o.isEmbedded).select(o => o.child).toArray();
-                if (select instanceof GroupByExpression && !select.isAggregate) {
-                    const keyRel = select.keyRelation;
-                    if (keyRel && !keyRel.isEmbedded) {
-                        addition.unshift(keyRel.child);
-                    }
-                }
+                const addition = Enumerable.load(select.resolvedIncludes).select(o => o.child).toArray();
                 this._orderedSelects.splice(i, 0, ...addition);
                 i += addition.length;
             }
@@ -78,26 +70,27 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             if (!data.any()) continue;
 
             let dbEventEmitter: DBEventEmitter<T> = null;
+            const isGroup = select instanceof GroupByExpression && !select.isAggregate;
+            if (isGroup) {
+                select = (select as GroupByExpression).itemSelect;
+            }
             const dbSet = dbContext.set<T>(select.itemType as IObjectType);
             if (dbSet) {
                 dbEventEmitter = new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext);
             }
 
-            if (select instanceof GroupByExpression && !select.isAggregate) {
-                select = select.itemSelect;
-            }
-
             let resolveCache = this.getResolveData(select);
             const isResult = i === len - 1;
             for (const row of queryResult.rows) {
-                const entity = this.parseEntity(select, row, resolveCache, resolveMap, itemMap, dbContext, dbSet);
-                // emit after load event
-                if (dbEventEmitter) {
-                    dbEventEmitter.emitAfterLoadEvent(entity);
-                }
+                const entity = this.parseEntity(select, row, resolveCache, resolveMap, itemMap, dbContext, dbSet, dbEventEmitter);
 
                 if (isResult) {
-                    results.push(entity);
+                    if (isGroup) {
+                        results.add(entity);
+                    }
+                    else {
+                        results.push(entity);
+                    }
                 }
             }
         }
@@ -137,7 +130,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         return resolveCache;
     }
-    private parseEntity<T>(select: SelectExpression<T>, row: any, resolveCache: IResolveData<T>, resolveMap: IResolveMap, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbContext?: DbContext, dbSet?: DbSet<T>) {
+    private parseEntity<T>(select: SelectExpression<T>, row: any, resolveCache: IResolveData<T>, resolveMap: IResolveMap, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbContext?: DbContext, dbSet?: DbSet<T>, dbEventEmitter?: DBEventEmitter<T>) {
         let entity: any;
         let entry: EntityEntry<T>;
 
@@ -235,7 +228,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         if (itemMap && parentRelation) {
             let key: number = 0;
             for (const [parentCol, childCol] of parentRelation.relationMap()) {
-                key = hashCode(parentCol.propertyName + ":" + row[childCol.columnName], key);
+                key = hashCode(parentCol.propertyName + ":" + this.getColumnValue(childCol, row, dbContext), key);
             }
             if (parentRelation.type === "many") {
                 let values = itemMap.get(key) as IResolvedRelationData[];
@@ -250,6 +243,9 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             }
         }
 
+        // emit after load event
+        if (dbEventEmitter) dbEventEmitter.emitAfterLoadEvent(entity);
+
         if (select instanceof GroupedExpression && !select.groupByExp.isAggregate) {
             let groupMap = resolveMap.get(select.groupByExp);
             if (!groupMap) {
@@ -260,7 +256,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             const groupExp = select as GroupedExpression;
             let key: number = 0;
             for (const groupCol of groupExp.groupBy) {
-                key = hashCode(groupCol.propertyName + ":" + row[groupCol.columnName], key);
+                key = hashCode(groupCol.propertyName + ":" + row[groupCol.dataPropertyName], key);
             }
 
             let groupData = groupMap.get(key) as IResolvedRelationData;
@@ -274,7 +270,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                     const keyRel = groupExp.groupByExp.keyRelation;
                     if (keyRel.isEmbedded) {
                         const childResolveCache = this.getResolveData(keyRel.child);
-                        const child = this.parseEntity(keyRel.child, row, childResolveCache, resolveMap, groupMap);
+                        const child = this.parseEntity(keyRel.child, row, childResolveCache, resolveMap);
                         groupEntity[keyRel.name] = child;
                     }
                     else {
@@ -306,7 +302,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         const childMap = resolveMap.get(include.child);
         let key: number = 0;
         for (const col of include.parentColumns) {
-            key = hashCode(col.propertyName + ":" + row[col.columnName], key);
+            key = hashCode(col.propertyName + ":" + this.getColumnValue(col, row), key);
         }
         let relationValue = childMap.get(key);
 
@@ -325,8 +321,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
     }
     private getColumnValue<T>(column: IColumnExpression<T>, data: any, dbContext?: DbContext) {
-        const columnName = column.alias ? column.alias : column.columnName;
-        return this.queryBuilder.toPropertyValue(data[columnName], column);
+        return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], column);
     }
     private setColumnValue<T>(entryOrEntity: EntityEntry<T> | T, column: IColumnExpression<T>, data: any, dbContext?: DbContext) {
         const value = this.getColumnValue(column, data, dbContext);
@@ -345,91 +340,5 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
 
         entity[column.propertyName] = value;
-    }
-    private handleInclude<T, TChild>(childMap: Map<number, IResolvedRelationData | IResolvedRelationData[]>, include: IIncludeRelation<T, TChild>, row: any, entity: any, parentRelation: IIncludeRelation<any, T>, relationData?: any, dbSet?: DbSet<T>, entry?: EntityEntry<T>, reverseRelationMap?: any) {
-        const select = include.parent;
-        const relKey: any = {};
-        for (const key of include.parentColumns) {
-            relKey[key.propertyName] = row[key.columnName];
-        }
-        const key = hashCode(JSON.stringify(relKey));
-        let relationValue = childMap.get(key);
-
-        // Default many relation value is an empty Array.
-        if (include.type === "many" && !relationValue) {
-            relationValue = [];
-        }
-
-        if (select.entity.isRelationData && include.name === parentRelation.name) {
-            const childRelationData = relationValue as IResolvedRelationData;
-            childRelationData.data = relationData;
-            relationData = childRelationData;
-        }
-        else if (include.child.entity.isRelationData) {
-            let values = entity[include.name];
-            if (!values) {
-                values = [];
-                entity[include.name] = values;
-            }
-
-            const relDatas = relationValue as IResolvedRelationData[];
-            const relationMeta = dbSet ? dbSet.metaData.relations.first(o => o.propertyName === include.name) : null;
-            relDatas.each(o => {
-                values.push(o.entity);
-                if (relationMeta) {
-                    const relationEntry = entry.getRelation(relationMeta.fullName, o.entry);
-                    relationEntry.relationData = o.data.entity;
-                }
-            });
-        }
-        else if (include.type === "many") {
-            const relatedValues = relationValue as IResolvedRelationData[];
-            const relatedEntities = relatedValues.select(o => o.entity).toArray();
-            let valueArray: any[];
-            if (Array.isArray(entity) && include.name === "") {
-                valueArray = entity;
-            }
-            else {
-                valueArray = entity[include.name];
-                if (!valueArray) {
-                    valueArray = [];
-                    entity[include.name] = valueArray;
-                }
-            }
-            valueArray.push(...relatedEntities);
-        }
-        else {
-            const related = relationValue as IResolvedRelationData;
-            entity[include.name] = related ? related.entity : null;
-        }
-
-        if (dbSet) {
-            if (!reverseRelationMap.has(include)) {
-                const relationMeta = dbSet.metaData.relations.first(o => o.propertyName === include.name);
-                let reverseRelation: IRelationMetaData;
-                if (relationMeta) {
-                    reverseRelation = relationMeta.reverseRelation;
-                }
-                reverseRelationMap.set(include, reverseRelation);
-            }
-            const reverseRelation = reverseRelationMap.get(include);
-            if (reverseRelation) {
-                let childEntities = Array.isArray(relationValue) ? relationValue : [relationValue];
-                for (const child of childEntities) {
-                    if (reverseRelation.relationType === "many") {
-                        let entityPropValues: any[] = child.entity[reverseRelation.propertyName];
-                        if (!entityPropValues) {
-                            child.entity[reverseRelation.propertyName] = [];
-                            // needed coz array is converted to ObservableArray and get new reference.
-                            entityPropValues = child.entity[reverseRelation.propertyName];
-                        }
-                        entityPropValues.push(entity);
-                    }
-                    else {
-                        child.entity[reverseRelation.propertyName] = entity;
-                    }
-                }
-            }
-        }
     }
 }

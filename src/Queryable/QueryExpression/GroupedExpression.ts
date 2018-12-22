@@ -1,12 +1,14 @@
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
-import { hashCode, resolveClone, visitExpression } from "../../Helper/Util";
+import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp, isColumnExp } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
+import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
+import { JoinType } from "../../Common/Type";
 
 export class GroupedExpression<T = any> extends SelectExpression<T> {
     public key: IExpression;
@@ -16,17 +18,18 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
     public get groupBy() {
         if (!this._groupBy) {
             this._groupBy = [];
-            if ((this.key as any as IEntityExpression).primaryColumns) {
-                const entityExp = this.key as any as IEntityExpression;
+            if (isEntityExp(this.key)) {
+                const entityExp = this.key as IEntityExpression;
                 const childSelectExp = entityExp.select;
                 if (childSelectExp.parentRelation) {
                     const parentRel = childSelectExp.parentRelation;
                     if (parentRel.isEmbedded) {
+                        const cloneMap = new Map();
+                        mapReplaceExp(cloneMap, entityExp, this.entity);
                         const childSelects = childSelectExp.resolvedSelects.select(o => {
-                            let curCol = this.entity.columns.first(c => c.columnName === o.columnName);
+                            let curCol = this.entity.columns.first(c => c.propertyName === o.propertyName && c.constructor === o.constructor);
                             if (!curCol) {
-                                curCol = o.clone();
-                                curCol.entity = this.entity;
+                                curCol = o.clone(cloneMap);
                             }
                             return curCol;
                         });
@@ -54,6 +57,9 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         }
         return this._groupBy;
     }
+    public get allColumns() {
+        return this.groupBy.union(super.allColumns);
+    }
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
         return Enumerable.load(super.projectedColumns).union(this.groupBy);
     }
@@ -72,17 +78,17 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
             this.orders = select.orders.slice();
             Object.assign(this.paging, select.paging);
 
-            // this.parentRelation = select.parentRelation;
-            for (const include of select.includes) {
-                this.addInclude(include.name, include.child, include.relations, include.type);
-            }
-            for (const join of select.joins) {
-                this.addJoin(join.child, join.relations, join.type);
-            }
-
             this.isSubSelect = select.isSubSelect;
             this.parameters = select.parameters.slice();
         }
+    }
+
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
+        const joinRel = super.addJoin(child, relationMetaOrRelations as any, type, isEmbedded);
+        joinRel.parent = this.groupByExp;
+        return joinRel;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
         if (!replaceMap) replaceMap = new Map();

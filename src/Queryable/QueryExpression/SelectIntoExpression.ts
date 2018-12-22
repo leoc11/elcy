@@ -10,7 +10,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { EntityExpression } from "./EntityExpression";
-import { IJoinRelation } from "../Interface/IJoinRelation";
+import { JoinRelation } from "../Interface/JoinRelation";
 import { Enumerable } from "../../Enumerable/Enumerable";
 export class SelectIntoExpression<T = any> implements IQueryCommandExpression<void> {
     public get type() {
@@ -31,8 +31,8 @@ export class SelectIntoExpression<T = any> implements IQueryCommandExpression<vo
     public addOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
         this.select.addOrder(expression as any, direction);
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }

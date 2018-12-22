@@ -1,4 +1,3 @@
-import { IIncludeRelation } from "./IIncludeRelation";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { RelationshipType } from "../../Common/Type";
@@ -10,8 +9,9 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { ComputedColumnExpression } from "../QueryExpression/ComputedColumnExpression";
 import { ColumnExpression } from "../QueryExpression/ColumnExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { ISelectRelation } from "./ISelectRelation";
 
-export class IncludeRelation<T = any, TChild = any> implements IIncludeRelation<T, TChild> {
+export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T, TChild> {
     constructor();
     constructor(parent: SelectExpression<T>, child: SelectExpression<TChild>, name: string, type: RelationshipType, relations?: IExpression<boolean>);
     constructor(parent?: SelectExpression<T>, child?: SelectExpression<TChild>, name?: string, type?: RelationshipType, relations?: IExpression<boolean>) {
@@ -25,7 +25,7 @@ export class IncludeRelation<T = any, TChild = any> implements IIncludeRelation<
     }
 
     //#region Private Member
-    private _isRelationResolved: boolean;
+    private _resolvedRelation: IExpression<boolean>;
     private _parentColumns: IColumnExpression[];
     private _childColumns: IColumnExpression[];
     private _isManyManyRelation: boolean;
@@ -56,7 +56,7 @@ export class IncludeRelation<T = any, TChild = any> implements IIncludeRelation<
         });
 
         if (!this._isManyManyRelation) {
-            this._isManyManyRelation = this._childColumns.any(o => !o.isPrimary) && this._parentColumns.any(o => !o.isPrimary);
+            this._isManyManyRelation = this._childColumns.any(o => !this.child.primaryKeys.contains(o)) && this._parentColumns.any(o => !this.parent.primaryKeys.contains(o));
         }
     }
     //#endregion
@@ -92,29 +92,39 @@ export class IncludeRelation<T = any, TChild = any> implements IIncludeRelation<
         return this._isManyManyRelation;
     }
     public get resolvedRelations(): IExpression<boolean> {
-        if (!this._isRelationResolved) {
+        if (!this._resolvedRelation) {
+            const replaceMap = new Map();
+            for (const col of this.childColumns) {
+                replaceMap.set(col, col);
+            }
+            for (const col of this.parentColumns) {
+                replaceMap.set(col, col);
+            }
+
+            this._resolvedRelation = this.relations.clone(replaceMap);
+            // Use for join relation from child to parent.
             // child: computed column need to be changed to it's expression as it not yet recognized.
             // parent: make sure child column's entity is the direct join relation entity. (column might came from another table joined to child)
-            replaceExpression(this.relations, (exp) => {
-                const col = exp as IColumnExpression;
-                if (Enumerable.load(this.child.projectedColumns).contains(col)) {
-                    if (col instanceof ComputedColumnExpression) {
-                        return col.expression;
+            replaceExpression(this._resolvedRelation, (exp) => {
+                if ((exp as IColumnExpression).entity) {
+                    let colExp = exp as IColumnExpression;
+                    if (this.childColumns.contains(colExp)) {
+                        if (colExp instanceof ComputedColumnExpression) {
+                            exp = colExp.expression;
+                        }
                     }
-                    return col;
-                }
-                else if (Enumerable.load(this.parent.projectedColumns).contains(col)) {
-                    if (col instanceof ComputedColumnExpression) {
-                        return new ColumnExpression(this.parent.entity, col.type, col.propertyName as any, col.columnName, col.isPrimary, col.isNullable, col.columnType);
-                    }
-                    if (col.entity !== this.parent.entity) {
-                        return col.clone(new Map([[col.entity, this.parent.entity]]));
+                    else if (this.parentColumns.contains(colExp)) {
+                        if (colExp instanceof ComputedColumnExpression || colExp.entity !== this.parent.entity) {
+                            const resCol = new ColumnExpression(this.parent.entity, colExp.type, colExp.propertyName as any, colExp.columnName, colExp.isPrimary, colExp.isNullable, colExp.columnType);
+                            resCol.alias = colExp.alias;
+                            exp = resCol;
+                        }
                     }
                 }
                 return exp;
             });
         }
-        return this.relations;
+        return this._resolvedRelation;
     }
     //#endregion
 

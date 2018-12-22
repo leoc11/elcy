@@ -11,26 +11,34 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         return this.expression.type;
     }
     public columnType: ColumnType;
-    public columnName: string;
+    public get columnName() {
+        return this.propertyName;
+    }
+    public alias?: string;
+    public get dataPropertyName() {
+        return this.alias || this.columnName;
+    }
     public isPrimary = false;
     public isNullable = true;
-    public alias?: string;
+    /**
+     * Determined whether column has been declared in select statement.
+     */
+    public isDeclared = false;
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: keyof TE) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
         }
-        this.columnName = propertyName;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
         const entity = resolveClone(this.entity, replaceMap);
         const exp = resolveClone(this.expression, replaceMap);
         const clone = new ComputedColumnExpression(entity, exp, this.propertyName);
+        replaceMap.set(this, clone);
         clone.isPrimary = this.isPrimary;
         clone.columnType = this.columnType;
-        clone.columnName = this.columnName;
+        clone.isNullable = this.isNullable;
         clone.alias = this.alias;
-        replaceMap.set(this, clone);
         return clone;
     }
     public toString(transformer: QueryBuilder): string {

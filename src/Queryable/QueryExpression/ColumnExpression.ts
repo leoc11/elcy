@@ -13,6 +13,9 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     public columnType: ColumnType;
     public columnName: string;
     public alias?: string;
+    public get dataPropertyName() {
+        return this.alias || this.columnName;
+    }
     public columnMetaData: IColumnMetaData<TE, T>;
     public entity: IEntityExpression<TE>;
     public isPrimary: boolean;
@@ -51,6 +54,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.isNullable, this.columnType);
         clone.columnMetaData = this.columnMetaData;
         clone.alias = this.alias;
+        clone.isNullable = this.isNullable;
         replaceMap.set(this, clone);
         return clone;
     }

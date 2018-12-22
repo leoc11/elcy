@@ -3,32 +3,34 @@ import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
-import { IEntityExpression } from "./IEntityExpression";
+import { resolveClone, hashCodeAdd, hashCode, isEntityExp, visitExpression, isColumnExp, mapReplaceExp } from "../../Helper/Util";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { RelationshipType } from "../../Common/Type";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { ComputedColumnExpression } from "./ComputedColumnExpression";
+import { JoinRelation } from "../Interface/JoinRelation";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
     public get entity() {
         return this.itemSelect.entity;
     }
     public set entity(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.entity = value;
     }
     public get where() {
         return this.itemSelect.where;
     }
     public set where(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.where = value;
     }
     public get orders() {
         return this.itemSelect.orders;
     }
     public set orders(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.orders = value;
     }
     public get relationColumns() {
@@ -38,14 +40,14 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         return this.itemSelect.isSubSelect;
     }
     public set isSubSelect(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.isSubSelect = value;
     }
     public get parameters() {
         return this.itemSelect.parameters;
     }
     public set parameters(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.parameters = value;
     }
     public get key() {
@@ -58,28 +60,73 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         this.itemSelect.key = value;
     }
     public isAggregate: boolean;
-    private _selects: IColumnExpression<T>[] = [];
-    public get selects() {
-        if (this.isAggregate)
-            return this._selects;
-        return this.itemSelect.selects;
-    }
-    public set selects(value) {
-        this._selects = value;
-    }
     public get joins() {
         return this.itemSelect.joins;
     }
     public set joins(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.joins = value;
     }
     public get includes() {
         return this.itemSelect.includes;
     }
     public set includes(value) {
-        if (this.itemExpression)
+        if (this.itemSelect)
             this.itemSelect.includes = value;
+    }
+    public get parentRelation() {
+        return this.itemSelect.parentRelation;
+    }
+    public set parentRelation(value) {
+        if (this.itemSelect)
+            this.itemSelect.parentRelation = value;
+    }
+    public get paging() {
+        return this.itemSelect.paging;
+    }
+    public set paging(value) {
+        if (this.itemSelect)
+            this.itemSelect.paging = value;
+    }
+    public get resolvedGroupBy() {
+        if (isEntityExp(this.key)) {
+            const keyEntities = Enumerable.load(this.key.select.allJoinedEntities).toArray();
+            let groupBy = this.groupBy.slice();
+            for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
+                visitExpression(column.expression, (exp: IColumnExpression) => {
+                    if (isColumnExp(exp) && keyEntities.contains(exp.entity)) {
+                        groupBy.push(exp);
+                    }
+                });
+            }
+            return groupBy;
+        }
+        return this.groupBy;
+    }
+    public get resolvedSelects() {
+        let selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
+        for (const include of this.includes) {
+            if (include.isEmbedded) {
+                const cloneMap = new Map();
+                mapReplaceExp(cloneMap, include.child.entity, this.entity);
+                // add column which include in emdedded relation
+                const childSelects = include.child.resolvedSelects.select(o => {
+                    let curCol = this.entity.columns.first(c => c.propertyName === o.propertyName);
+                    if (!curCol) curCol = o.clone(cloneMap);
+                    return curCol;
+                });
+                // include.child.entity.alias = this.entity.alias;
+                selects = selects.union(childSelects);
+            }
+        }
+        return selects;
+    }
+    public get itemExpression() {
+        return this.itemSelect.itemExpression;
+    }
+    public set itemExpression(value) {
+        if (this.itemSelect)
+            this.itemSelect.itemExpression = value;
     }
     public having: IExpression<boolean>;
     public itemSelect: GroupedExpression<T>;
@@ -89,9 +136,16 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     constructor(select?: SelectExpression<T>, key?: IExpression) {
         super();
         if (select) {
-            this.itemExpression = this.itemSelect = new GroupedExpression(select, key);
+            this.itemSelect = new GroupedExpression(select, key);
             this.entity.select = this.itemSelect.groupByExp = this;
             this.selects = this.groupBy.slice();
+
+            for (const include of select.includes) {
+                this.addInclude(include.name, include.child, include.relations, include.type);
+            }
+            for (const join of select.joins) {
+                this.addJoin(join.child, join.relations, join.type);
+            }
 
             const parentRel = select.parentRelation;
             if (parentRel) {
@@ -100,25 +154,40 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                 select.parentRelation = null;
             }
 
-            if ((key as IEntityExpression).primaryColumns) {
+            if (isEntityExp(key)) {
                 // set key parent relation to this.
-                const entityExp = key as IEntityExpression;
-                const selectExp = entityExp.select;
+                const selectExp = key.select;
                 const parentRel = selectExp.parentRelation;
                 if (parentRel) {
-                    this.addKeyRelation(selectExp, parentRel.relations, "one");
+                    let relation: IExpression<boolean>;
+                    for (const col of this.groupBy) {
+                        const childCol = Enumerable.load(selectExp.projectedColumns).first(o => o.propertyName === col.propertyName);
+                        const logicalExp = new StrictEqualExpression(col, childCol);
+                        relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                    }
+                    this.addKeyRelation(selectExp, relation, "one");
                     this.keyRelation.isEmbedded = parentRel.isEmbedded;
                 }
             }
         }
     }
     public getVisitParam() {
-        return this.itemExpression;
+        if (this.isAggregate)
+            return this.itemSelect.getVisitParam();
+        return this.itemSelect;
+    }
+    public get allColumns() {
+        return this.groupBy.union(super.allColumns);
     }
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
-        if (this.isAggregate)
-            return this._selects;
+        if (this.isAggregate) {
+            return Enumerable.load(this.relationColumns)
+                .union(this.resolvedSelects);
+        }
         return this.itemSelect.projectedColumns;
+    }
+    public get primaryKeys() {
+        return this.groupBy;
     }
     public addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
@@ -136,9 +205,13 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const selectClone = resolveClone(this.itemSelect, replaceMap);
         const clone = new GroupByExpression();
+        replaceMap.set(this, clone);
         clone.itemSelect = selectClone;
+        selectClone.groupByExp = clone;
         clone.having = resolveClone(this.having, replaceMap);
         clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.isAggregate = this.isAggregate;
         return clone;
     }
     public hashCode() {
@@ -150,9 +223,21 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
 
     public get resolvedIncludes(): Iterable<IncludeRelation<T>> {
         let includes = Enumerable.load(super.resolvedIncludes);
-        if (!this.isAggregate && this.keyRelation && !this.keyRelation.isEmbedded) {
-            includes = ([this.keyRelation]).union(includes);
+        if (!this.isAggregate && this.keyRelation) {
+            if (this.keyRelation.isEmbedded) {
+                includes = Enumerable.load(this.keyRelation.child.resolvedIncludes).union(includes);
+            }
+            else {
+                includes = ([this.keyRelation]).union(includes);
+            }
         }
         return includes;
+    }
+    public get resolvedJoins(): Iterable<JoinRelation<T>> {
+        let join = Enumerable.load(super.resolvedJoins);
+        if (this.keyRelation && this.keyRelation.isEmbedded && (!this.parentRelation || !this.parentRelation.isEmbedded)) {
+            join = Enumerable.load(this.keyRelation.child.resolvedJoins).union(join);
+        }
+        return join;
     }
 }

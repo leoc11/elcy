@@ -13,7 +13,7 @@ import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { IJoinRelation } from "../Interface/IJoinRelation";
+import { JoinRelation } from "../Interface/JoinRelation";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryCommandExpression<T>;
@@ -129,8 +129,8 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         this.includes.push(child.parentRelation);
         return child.parentRelation;
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): IJoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): IJoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }

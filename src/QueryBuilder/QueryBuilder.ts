@@ -6,8 +6,8 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { isNotNull, toDateTimeString, toTimeString } from "../Helper/Util";
-import { GenericType, QueryType, DeleteMode, TimeZoneHandling } from "../Common/Type";
+import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp } from "../Helper/Util";
+import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
@@ -54,7 +54,9 @@ import { BatchedQuery } from "./Interface/BatchedQuery";
 import { JoinRelation } from "../Queryable/Interface/JoinRelation";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { ISelectRelation } from "../Queryable/Interface/ISelectRelation";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 
+// TODO: SPLIT TO SELECTQUERYBUILDER, SCHEMAQUERYBUILDER, ETC PER CommandQuery
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
     public abstract columnTypesWithOption: ColumnType[];
@@ -202,7 +204,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         if (select instanceof GroupByExpression && select.isAggregate) {
             if (select.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+                selectQuery += this.newLine() + "GROUP BY " + select.resolvedGroupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
             }
             if (select.having) {
                 selectQuery += this.newLine() + "HAVING " + this.getOperandString(select.having);
@@ -225,37 +227,49 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 else {
                     // create relation data (clone select join clone child)
                     select.includes.remove(include);
-                    const oriInclude = select.includes;
-                    select.includes = [include];
-                    const relationData = select.clone();
-                    relationData.entity.alias = "rel_" + relationData.entity.alias;
-                    select.includes = oriInclude;
+                    const cloneEntity = select.entity.clone();
+                    cloneEntity.isRelationData = true;
+                    const relationData = new SelectExpression(cloneEntity);
+                    cloneEntity.alias = "rel_" + cloneEntity.alias;
 
-                    const includeRel = relationData.includes.first();
+                    const childSelect = include.child;
+
+                    const joinChildSelect = childSelect.clone();
+                    joinChildSelect.entity.alias = "rel_" + joinChildSelect.entity.alias;
+
+                    const relDataCloneMap = new Map();
+                    mapReplaceExp(relDataCloneMap, childSelect, joinChildSelect);
+                    mapReplaceExp(relDataCloneMap, select, relationData);
                     relationData.includes = [];
-                    relationData.addJoin(includeRel.child, includeRel.relations, "INNER");
-                    relationData.selects = relationData.entity.primaryColumns.union(includeRel.child.entity.primaryColumns).toArray();
+                    relationData.addJoin(joinChildSelect, include.relations.clone(relDataCloneMap), "INNER");
+                    relationData.selects = [];
+                    relationData.itemExpression = new ObjectValueExpression({});
                     relationData.distinct = true;
 
                     // Bridge to Child relation
                     let bridgeChildRelation: IExpression<boolean>;
-                    for (const childCol of include.child.entity.primaryColumns) {
-                        const bridgeCol = includeRel.child.entity.columns.first(o => o.columnName === childCol.columnName);
-
+                    for (const childCol of childSelect.primaryKeys) {
+                        const bridgeCol = relationData.allColumns.first(o => o.columnName === childCol.columnName);
+                        relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
                         bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
                     }
-                    relationData.addInclude(include.name, include.child, bridgeChildRelation, "one");
+                    relationData.addInclude(include.name, childSelect, bridgeChildRelation, "one");
 
                     // Parent to Bridge relation
                     let parentBridgeRelation: IExpression<boolean>;
-                    for (const parentCol of select.entity.primaryColumns) {
-                        const bridgeCol = relationData.entity.columns.first(o => o.columnName === parentCol.columnName);
-
+                    const cloneMap = new Map();
+                    mapReplaceExp(cloneMap, select.entity, relationData.entity);
+                    for (const parentCol of select.primaryKeys) {
+                        let bridgeCol = relationData.allColumns.first(o => o.columnName === parentCol.columnName);
+                        if (!bridgeCol) {
+                            bridgeCol = parentCol.clone(cloneMap);
+                        }
+                        relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(parentCol, bridgeCol);
                         parentBridgeRelation = parentBridgeRelation ? new AndExpression(parentBridgeRelation, logicalExp) : logicalExp;
                     }
-                    select.addInclude(include.name, relationData, parentBridgeRelation, "one");
+                    select.addInclude(include.name, relationData, parentBridgeRelation, "many");
 
                     result = result.concat(this.getSelectQuery(relationData));
                 }
@@ -707,9 +721,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getColumnString(column: IColumnExpression) {
         if (column instanceof ComputedColumnExpression) {
-            return this.enclose(column.alias || column.columnName);
+            if (column.isDeclared)
+                return this.enclose(column.dataPropertyName);
+            else
+                return this.getExpressionString(column.expression);
         }
-        return this.enclose(column.entity.alias) + "." + this.enclose(column.alias || column.columnName);
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
     }
     protected getColumnSelectString(column: IColumnExpression): string {
         let result = this.getColumnDefinitionString(column);
@@ -717,6 +734,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             result += " AS " + this.enclose(column.alias);
         }
         else if (column instanceof ComputedColumnExpression) {
+            column.isDeclared = true;
             result += " AS " + this.enclose(column.columnName);
         }
         return result;
@@ -755,7 +773,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 if (o.child.isSimple())
                     childEntString = this.getEntityQueryString(o.child.entity);
                 else
-                    childEntString = "(" + this.newLine(1) + this.getSelectQueryString(o.child) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
+                    childEntString = "(" + this.newLine(1) + this.getSelectQueryString(o.child, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
                 let join = o.type + " JOIN " + childEntString +
                     this.newLine(1, false) + "ON ";
 
@@ -768,7 +786,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (!(parentRel instanceof IncludeRelation))
             return "";
 
-        const parent = parentRel.parent;
+        let parent = parentRel.parent;
+        while (parent.parentRelation && parent.parentRelation.isEmbedded) {
+            parent = parent.parentRelation.parent;
+        }
         const entityString = parent.isSimple() ? this.getEntityQueryString(parent.entity) : `(${this.newLine(1)}${this.getSelectQueryString(parent, true)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
         const relationString = this.getOperandString(parentRel.resolvedRelations);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
@@ -912,7 +933,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {
         let result = input;
-        switch (column.type) {
+        const type = column ? column.type : isNotNull(input) ? input.constructor : NullConstructor;
+        switch (type) {
             case Date: {
                 const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none")
