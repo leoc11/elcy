@@ -20,7 +20,6 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
-import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];

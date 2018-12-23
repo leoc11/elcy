@@ -803,9 +803,6 @@ describe("SCHEMA BUILDER", () => {
                 rollback: []
             });
         });
-        it("should update table accordingly", () => {
-            // update table collation/charset
-        });
     });
     describe("COLUMN", () => {
         it("should add new column", () => {

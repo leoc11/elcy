@@ -1,7 +1,7 @@
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
-import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp, isColumnExp } from "../../Helper/Util";
+import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";

@@ -6,17 +6,11 @@ import { TimeSpan } from "../../Data/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { UUID } from "../../Data/UUID";
-import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { isNotNull } from "../../Helper/Util";
 import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
-import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -116,16 +110,6 @@ export class MssqlQueryBuilder extends QueryBuilder {
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         return result;
     }
-    public getExpressionString<T = any>(expression: IExpression<T>): string {
-        let res = super.getExpressionString(expression);
-        if (this.isStrictSql) {
-            if (!(expression instanceof SelectExpression || expression instanceof ComputedColumnExpression || expression instanceof ColumnExpression || (expression as IBinaryOperatorExpression).rightOperand)) {
-                res = `(${res})`;
-            }
-
-        }
-        return res;
-    }
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
             return "[" + identity + "]";
@@ -134,45 +118,10 @@ export class MssqlQueryBuilder extends QueryBuilder {
     }
     public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
-        let take = 0, skip = 0;
-        if (selectInto.select.paging.take) {
-            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.take);
-            if (takeParam) {
-                take = takeParam.value;
-            }
-        }
-        if (selectInto.select.paging.skip) {
-            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.skip);
-            if (skipParam)
-                skip = skipParam.value;
-        }
-
-        let selectQuery =
-            `SELECT ${selectInto.select.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
-            Enumerable.load(selectInto.projectedColumns).select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
-            `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
-            `FROM ${this.getEntityQueryString(selectInto.entity)}${this.getEntityJoinString(selectInto.select.joins)}`;
-
-        if (selectInto.select.where)
-            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.select.where)}`;
-        if (selectInto instanceof GroupByExpression) {
-            if (selectInto.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + selectInto.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
-            }
-            if (selectInto.having) {
-                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.having);
-            }
-        }
-
-        if (selectInto.select.orders.length > 0)
-            selectQuery += this.newLine() + "ORDER BY " + selectInto.select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
-
-        if (skip > 0) {
-            if (selectInto.select.orders.length <= 0)
-                selectQuery += this.newLine() + "ORDER BY (SELECT NULL)";
-            selectQuery += this.newLine() + this.getPagingQueryString(selectInto.select, take, skip);
-        }
-
+        const selectExp = this.getSelectQueryString(selectInto, true);
+        const intoString = this.newLine() + `INSERT INTO ${this.entityQuery(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})`;
+        const index = selectExp.indexOf(this.newLine() + "FROM ");
+        let selectQuery = selectExp.substring(0, index) + intoString + selectExp.substring(index);
         result.push({
             query: selectQuery,
             parameters: this.getParameter(selectInto),

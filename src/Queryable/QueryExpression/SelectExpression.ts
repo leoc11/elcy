@@ -15,7 +15,7 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, mapKeepExp, isColumnExp } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, isColumnExp } from "../../Helper/Util";
 import { ISelectRelation } from "../Interface/ISelectRelation";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { JoinRelation } from "../Interface/JoinRelation";

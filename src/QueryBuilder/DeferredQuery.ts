@@ -78,6 +78,7 @@ export class DeferredQuery<T = any> {
                         }
                     }
                 }
+                insertQuery.values.push(itemExp);
             }
             return queryBuilder.createTable(selectExp.entity).concat(queryBuilder.getInsertQuery(insertQuery));
         });

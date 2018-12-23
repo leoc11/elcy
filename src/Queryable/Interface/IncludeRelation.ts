@@ -2,12 +2,10 @@ import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { RelationshipType } from "../../Common/Type";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
-import { visitExpression, resolveClone, replaceExpression } from "../../Helper/Util";
+import { visitExpression, resolveClone } from "../../Helper/Util";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { ComputedColumnExpression } from "../QueryExpression/ComputedColumnExpression";
-import { ColumnExpression } from "../QueryExpression/ColumnExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ISelectRelation } from "./ISelectRelation";
 
@@ -24,8 +22,6 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         }
     }
 
-    //#region Private Member
-    private _resolvedRelation: IExpression<boolean>;
     private _parentColumns: IColumnExpression[];
     private _childColumns: IColumnExpression[];
     private _isManyManyRelation: boolean;
@@ -90,41 +86,6 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
             this.analyzeRelation();
         }
         return this._isManyManyRelation;
-    }
-    public get resolvedRelations(): IExpression<boolean> {
-        if (!this._resolvedRelation) {
-            const replaceMap = new Map();
-            for (const col of this.childColumns) {
-                replaceMap.set(col, col);
-            }
-            for (const col of this.parentColumns) {
-                replaceMap.set(col, col);
-            }
-
-            this._resolvedRelation = this.relations.clone(replaceMap);
-            // Use for join relation from child to parent.
-            // child: computed column need to be changed to it's expression as it not yet recognized.
-            // parent: make sure child column's entity is the direct join relation entity. (column might came from another table joined to child)
-            replaceExpression(this._resolvedRelation, (exp) => {
-                if ((exp as IColumnExpression).entity) {
-                    let colExp = exp as IColumnExpression;
-                    if (this.childColumns.contains(colExp)) {
-                        if (colExp instanceof ComputedColumnExpression) {
-                            exp = colExp.expression;
-                        }
-                    }
-                    else if (this.parentColumns.contains(colExp)) {
-                        if (colExp instanceof ComputedColumnExpression || colExp.entity !== this.parent.entity) {
-                            const resCol = new ColumnExpression(this.parent.entity, colExp.type, colExp.propertyName as any, colExp.columnName, colExp.isPrimary, colExp.isNullable, colExp.columnType);
-                            resCol.alias = colExp.alias;
-                            exp = resCol;
-                        }
-                    }
-                }
-                return exp;
-            });
-        }
-        return this._resolvedRelation;
     }
     //#endregion
 

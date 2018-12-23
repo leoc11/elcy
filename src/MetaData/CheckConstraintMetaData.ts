@@ -40,7 +40,7 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
                 if (computedColumn) {
                     return this.toDefinitionExpression(computedColumn.functionExpression);
                 }
-                return new ComputedColumnExpression(null, exp, exp.memberName);
+                return new ComputedColumnExpression(null, exp, exp.memberName, exp.memberName);
             }
             return exp;
         });
@@ -50,6 +50,6 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
         if (typeof this.definition === "string") {
             return this.definition;
         }
-        return queryBuilder.getOperandString(this.definition);
+        return queryBuilder.getLogicalOperandString(this.definition);
     }
 }

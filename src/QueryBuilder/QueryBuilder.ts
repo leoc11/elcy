@@ -6,7 +6,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp } from "../Helper/Util";
+import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp, isEntityExp, isColumnExp } from "../Helper/Util";
 import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
@@ -64,12 +64,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract columnTypeMap: Map<ColumnTypeMapKey, ColumnType>;
     public abstract valueTypeMap: Map<GenericType, ColumnType>;
     public abstract queryLimit: IQueryLimit;
-    protected indent = 0;
     public options: ISaveChangesOption;
-    /**
-     * Whether generate sql following how it will be showed in default and check definition.
-     */
-    public isStrictSql: boolean;
     public parameters: ISqlParameter[] = [];
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
@@ -77,12 +72,76 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public resolveTranslator<T = any>(object: T, memberName?: keyof T) {
         return this.translator.resolve(object, memberName);
     }
-    private aliasObj: { [key: string]: number } = {};
     public setParameters(parameters: ISqlParameter[]) {
         this.parameters = parameters;
     }
-    //#region Formatting
+    public getExpressionString<T = any>(expression: IExpression<T>): string {
+        if (expression instanceof SelectExpression) {
+            return this.getSelectQueryString(expression) + (expression.isSubSelect ? "" : ";");
+        }
+        else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+            return this.getColumnString(expression);
+        }
+        else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
+            return this.entityQuery(expression);
+        }
+        else if (expression instanceof TernaryExpression) {
+            return this.getOperatorString(expression as any);
+        }
+        else if ((expression as IBinaryOperatorExpression).rightOperand) {
+            return `(${this.getOperatorString(expression as any)})`;
+        }
+        else if ((expression as IUnaryOperatorExpression).operand) {
+            return this.getOperatorString(expression as any);
+        }
+        else {
+            let result = "";
+            switch (expression.constructor) {
+                case MemberAccessExpression:
+                    result = this.getMemberAccessExpressionString(expression as any);
+                    break;
+                case MethodCallExpression:
+                    result = this.getMethodCallExpressionString(expression as any);
+                    break;
+                case FunctionCallExpression:
+                    result = this.getFunctionCallExpressionString(expression as any);
+                    break;
+                case SqlParameterExpression:
+                case ParameterExpression:
+                    result = this.getParameterExpressionString(expression as any);
+                    break;
+                case ValueExpression:
+                    result = this.ValueExpressionString(expression as any);
+                    break;
+                case InstantiationExpression:
+                    result = this.getInstantiationString(expression as any);
+                    break;
+                default:
+                    throw new Error(`Expression ${expression.toString()} not supported`);
+            }
+            return result;
+        }
+    }
 
+    //#region Formatting
+    protected indent = 0;
+    private aliasObj: { [key: string]: number } = {};
+    public enclose(identity: string) {
+        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
+            return "\"" + identity + "\"";
+        else
+            return identity;
+    }
+    public newLine(indent = 0, isAdd = true) {
+        indent += this.indent;
+        if (isAdd) {
+            this.indent = indent;
+        }
+        return "\n" + (Array(indent + 1).join("\t"));
+    }
+    public entityName(entityMeta: IEntityMetaData<any>) {
+        return `${entityMeta.schema ? this.enclose(entityMeta.schema) + "." : ""}${this.enclose(entityMeta.name)}`;
+    }
     public newAlias(type: "entity" | "column" | "param" = "entity") {
         if (!this.aliasObj[type])
             this.aliasObj[type] = 0;
@@ -125,100 +184,59 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return type;
     }
-    public enclose(identity: string) {
-        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
-            return "\"" + identity + "\"";
-        else
-            return identity;
-    }
-    public newLine(indent = 0, isAdd = true) {
-        indent += this.indent;
-        if (isAdd) {
-            this.indent = indent;
-        }
-        return "\n" + (Array(indent + 1).join("\t"));
-    }
-    public entityName(entityMeta: IEntityMetaData<any>) {
-        return `${entityMeta.schema ? this.enclose(entityMeta.schema) + "." : ""}${this.enclose(entityMeta.name)}`;
-    }
 
     //#endregion
 
     //#region ICommandQueryExpression
-    public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
-        let queryCommand = new BatchedQuery();
-        const result: IQuery[] = [queryCommand];
-        let parameterKeys: string[] = [];
-        Enumerable.load(queries).each(o => {
-            let isLimitExceed = false;
-            if (this.queryLimit.maxBatchQuery) {
-                isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
-            }
-            if (!isLimitExceed && this.queryLimit.maxQueryLength) {
-                isLimitExceed = queryCommand.query.length + o.query.length > this.queryLimit.maxQueryLength;
-            }
-            if (!isLimitExceed && this.queryLimit.maxParameters && o.parameters) {
-                const keys = parameterKeys.union(Object.keys(o.parameters)).toArray();
-                isLimitExceed = keys.length > this.queryLimit.maxParameters;
-                if (!isLimitExceed) {
-                    parameterKeys = keys;
-                }
-            }
 
-            if (isLimitExceed) {
-                parameterKeys = [];
-                queryCommand = new BatchedQuery();
-                result.push(queryCommand);
-            }
-            queryCommand.add(o);
-        });
-        return result;
-    }
-    protected extractValue<T>(exp: IExpression<T>): T {
-        if (exp instanceof ValueExpression) {
-            return exp.execute();
-        }
-        else {
-            const takeParam = this.parameters.first(o => o.parameter === exp);
-            if (takeParam)
-                return takeParam.value as T;
-        }
-        return null;
-    }
-    // Select
+    //#region Select
+
+    protected commandExp?: IQueryCommandExpression;
+    protected isColumnDeclared: boolean;
     public getSelectQuery<T>(select: SelectExpression<T>, skipInclude = false): IQuery[] {
+        // subselect should not have include
+        if (select.isSubSelect) skipInclude = true;
+
+        const oldSelect = this.commandExp;
+        this.commandExp = select;
+
         let result: IQuery[] = [];
         const take = this.extractValue(select.paging.take) || 0;
         const skip = this.extractValue(select.paging.skip) || 0;
 
-        let selectQuery = "SELECT" + (select.distinct ? " DISTINCT" : "") + (skip <= 0 && take > 0 ? " TOP " + take : "") +
-            " " + Enumerable.load(select.projectedColumns).select((o) => {
-                return this.getColumnSelectString(o);
-            }).toArray().join("," + this.newLine(1, false)) +
-            this.newLine() + "FROM " + this.getEntityQueryString(select.entity) +
-            this.getEntityJoinString(select.resolvedJoins) +
-            this.getParentJoinString(select.parentRelation);
+        const distinct = select.distinct ? " DISTINCT" : "";
+        const top = skip <= 0 && take > 0 ? " TOP " + take : "";
+        const selects = Enumerable.load(select.projectedColumns).select((o) => {
+            return this.columnSelectString(o);
+        }).toArray().join("," + this.newLine(1, false));
+        const entityQ = this.entityQuery(select.entity);
+        const joinStr = this.joinString(select.resolvedJoins) + this.getParentJoinString(select.parentRelation);
 
-        if (select.where)
-            selectQuery += this.newLine() + "WHERE " + this.getOperandString(select.where);
+        let selectQuery = `SELECT${distinct}${top} ${selects}`
+            + this.newLine() + `FROM ${entityQ}${joinStr}`;
+
+        if (select.where) {
+            this.isColumnDeclared = true;
+            selectQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(select.where);
+            this.isColumnDeclared = false;
+        }
 
         if (select instanceof GroupByExpression && select.isAggregate) {
             if (select.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + select.resolvedGroupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
+                selectQuery += this.newLine() + "GROUP BY " + select.resolvedGroupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
             }
             if (select.having) {
-                selectQuery += this.newLine() + "HAVING " + this.getOperandString(select.having);
+                selectQuery += this.newLine() + "HAVING " + this.getLogicalOperandString(select.having);
             }
         }
-        if (select.orders.length > 0)
+        if ((!(select.parentRelation instanceof JoinRelation) || skip > 0) && select.orders.length > 0)
             selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
             selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
         }
 
-        // subselect should not have include
-        if (!select.isSubSelect && !skipInclude) {
+        if (!skipInclude) {
             // select each include as separated query as it more beneficial for performance
             for (const include of select.resolvedIncludes) {
                 if (!include.isManyToManyRelation) {
@@ -283,48 +301,149 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             parameters: this.getParameter(select),
             type: QueryType.DQL
         });
+        this.commandExp = oldSelect;
+        return result;
+    }
+    protected getSelectQueryString(select: SelectExpression, skipInclude = false): string {
+        let result = "";
+        // if (select.isSubSelect) {
+        //     result = "(" + this.newLine(1, true);
+        // }
+        result += this.getSelectQuery(select, skipInclude).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
+        // if (select.isSubSelect) {
+        //     result += this.newLine(-1, true) + ")";
+        // }
 
         return result;
     }
+    protected extractValue<T>(exp: IExpression<T>): T {
+        if (exp instanceof ValueExpression) {
+            return exp.execute();
+        }
+        else {
+            const takeParam = this.parameters.first(o => o.parameter === exp);
+            if (takeParam)
+                return takeParam.value as T;
+        }
+        return null;
+    }
+    protected columnSelectString(column: IColumnExpression): string {
+        let result = "";
+        if (column instanceof ComputedColumnExpression) {
+            result = this.getOperandString(column.expression);
+        }
+        else {
+            result = this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
+        }
+        // TODO: make computed column Expression always has alias
+        if (column.alias) {
+            result += " AS " + this.enclose(column.alias);
+        }
+        return result;
+    }
+    protected columnDefinition(column: IColumnExpression): string {
+        if (column instanceof ComputedColumnExpression) {
+            return this.getOperandString(column.expression);
+        }
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
+    }
+    protected entityQuery(entity: IEntityExpression): string {
+        if (entity instanceof IntersectExpression) {
+            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
+                this.newLine() + "INTERSECT" +
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+        }
+        else if (entity instanceof UnionExpression) {
+            let isUnionAll = false;
+            if (entity.isUnionAll) {
+                const isUnionAllParam = this.parameters.first(o => o.parameter.valueGetter === entity.isUnionAll);
+                if (isUnionAllParam) {
+                    isUnionAll = isUnionAllParam.value;
+                }
+            }
+            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
+                this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+        }
+        else if (entity instanceof ExceptExpression) {
+            return "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect) +
+                this.newLine() + "EXCEPT" +
+                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+        }
+        else if (entity instanceof ProjectionEntityExpression) {
+            return this.getSelectQueryString(entity.subSelect) + " AS " + this.enclose(entity.alias);
+        }
+        return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
+    }
+    protected joinString<T>(joins: Iterable<JoinRelation<T, any>>): string {
+        let result = "";
+        const joinEnum = Enumerable.load(joins);
+        if (joinEnum.any()) {
+            result += this.newLine();
+            result += joinEnum.select(o => {
+                let childString = this.isSimpleSelect(o.child) ? this.entityQuery(o.child.entity)
+                    : "(" + this.newLine(1) + this.getSelectQueryString(o.child, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
+                const joinString = this.getExpressionString(o.relations);
+
+                return `${o.type} JOIN ${childString}`
+                    + this.newLine(1, false) + `ON ${joinString}`;
+            }).toArray().join(this.newLine());
+        }
+        return result;
+    }
+    protected isSimpleSelect(exp: SelectExpression) {
+        return !(exp instanceof GroupByExpression) && !exp.where && exp.joins.length === 0
+            && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.all((c) => exp.entity.columns.contains(c)))
+            && !exp.paging.skip && !exp.paging.take
+            && exp.selects.all((c) => !c.alias);
+    }
+    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+        let result = "";
+        if (take > 0)
+            result += "LIMIT " + take + " ";
+        result += "OFFSET " + skip;
+        return result;
+    }
+    protected getParentJoinString<T>(parentRel: ISelectRelation) {
+        if (!(parentRel instanceof IncludeRelation))
+            return "";
+
+        let parent = parentRel.parent;
+        while (parent.parentRelation && parent.parentRelation.isEmbedded) {
+            parent = parent.parentRelation.parent;
+        }
+        const entityString = this.isSimpleSelect(parent) ? this.entityQuery(parent.entity) : `(${this.newLine(1)}${this.getSelectQueryString(parent, true)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
+        const relationString = this.getLogicalOperandString(parentRel.relations);
+        return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
+    }
+    protected getColumnString(column: IColumnExpression) {
+        if (this.commandExp instanceof SelectExpression) {
+            if (column.entity.alias === this.commandExp.entity.alias || (this.commandExp instanceof GroupByExpression && isEntityExp(this.commandExp.key) && this.commandExp.key.alias === column.entity.alias)) {
+                if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !this.commandExp.resolvedSelects.contains(column))) {
+                    return this.getOperandString(column.expression);
+                }
+                return this.enclose(column.entity.alias) + "." + this.enclose(this.isColumnDeclared ? column.dataPropertyName : column.columnName);
+            }
+            else {
+                let childSelect = Enumerable.load(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.load(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
+                if (!childSelect) {
+                    childSelect = this.commandExp.parentRelation.parent;
+                }
+                return this.enclose(childSelect.entity.alias) + "." + this.enclose(column.dataPropertyName);
+            }
+        }
+
+        return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
+    }
+
+    //#endregion
+
+    //#region Select Insert
     public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
-        let take = 0, skip = 0;
-        if (selectInto.select.paging.take) {
-            const takeParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.take);
-            if (takeParam) {
-                take = takeParam.value;
-            }
-        }
-        if (selectInto.select.paging.skip) {
-            const skipParam = this.parameters.first(o => o.parameter.valueGetter === selectInto.select.paging.skip);
-            if (skipParam)
-                skip = skipParam.value;
-        }
-
-        let selectQuery =
-            `INSERT INTO ${this.getEntityQueryString(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})` + this.newLine() +
-            `SELECT ${selectInto.select.distinct ? "DISTINCT" : ""} ${skip <= 0 && take > 0 ? "TOP" + take : ""}` +
-            selectInto.projectedColumns.select((o) => this.getColumnSelectString(o)).toArray().join("," + this.newLine(1, false)) + this.newLine() +
-            `FROM ${this.getEntityQueryString(selectInto.select.entity)}${this.getEntityJoinString(selectInto.select.joins)}`;
-
-        if (selectInto.select.where)
-            selectQuery += this.newLine() + `WHERE ${this.getOperandString(selectInto.select.where)}`;
-        if (selectInto.select instanceof GroupByExpression) {
-            if (selectInto.select.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + selectInto.select.groupBy.select((o) => this.getColumnDefinitionString(o)).toArray().join(", ");
-            }
-            if (selectInto.select.having) {
-                selectQuery += this.newLine() + "HAVING " + this.getOperandString(selectInto.select.having);
-            }
-        }
-
-        if (selectInto.select.orders.length > 0)
-            selectQuery += this.newLine() + "ORDER BY " + selectInto.select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
-
-        if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(selectInto.select, take, skip);
-        }
-
+        const selectString = this.getSelectQueryString(selectInto.select, true);
+        const columns = selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        let selectQuery = `INSERT INTO ${this.entityQuery(selectInto.entity)}${this.newLine()} (${columns})` + this.newLine() + selectString;
         result.push({
             query: selectQuery,
             parameters: this.getParameter(selectInto),
@@ -333,7 +452,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return result;
     }
-    // Insert
+    //#endregion
+
+    //#region Insert
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         if (insertExp.values.length <= 0)
             return [];
@@ -348,6 +469,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let isLimitExceed = false;
+        this.indent++;
         insertExp.values.each(itemExp => {
             if (this.queryLimit.maxParameters) {
                 const curParamKeys: string[] = [];
@@ -382,20 +504,48 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 };
                 result.push(queryCommand);
             }
-            queryCommand.query += `${this.newLine(1, true)}(${insertExp.columns.select(o => {
+            queryCommand.query += `${this.newLine(1)}(${insertExp.columns.select(o => {
                 const valueExp = itemExp[o.propertyName];
                 return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
             }).toArray().join(",")}),`;
         });
+        this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);
-
         queryCommand.parameters = parameterKeys.select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
             acc[item.name] = item.value;
             return acc;
         });
         return result;
     }
-    // Upsert
+    //#endregion
+
+    //#region Update
+    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
+        const setQuery = Object.keys(update.setter).select((o: keyof T) => {
+            const value = update.setter[o];
+            const valueStr = this.getExpressionString(value);
+            const column = update.entity.columns.first(c => c.propertyName === o);
+            return `${this.enclose(update.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+        }).toArray().join(", ");
+        let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
+            this.newLine() + `SET ${setQuery}` +
+            this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
+            this.joinString(update.joins);
+        if (update.where)
+            updateQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(update.where);
+
+        result.push({
+            query: updateQuery,
+            parameters: this.getParameter(update),
+            type: QueryType.DML
+        });
+
+        return result;
+    }
+    //#endregion
+
+    //#region Upsert
     public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
         let pkValues: string[] = [];
         let joinString: string[] = [];
@@ -406,7 +556,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             joinString.push(`_VAL.${this.enclose(o.columnName)} = ${this.getColumnString(o)}`);
         });
 
-        let upsertQuery = `MERGE INTO ${this.getEntityQueryString(upsertExp.entity)}` + this.newLine() +
+        let upsertQuery = `MERGE INTO ${this.entityQuery(upsertExp.entity)}` + this.newLine() +
             `USING (SELECT ${pkValues.join(", ")}) AS _VAL ON ${joinString.join(" AND ")}` + this.newLine() +
             `WHEN MATCHED THEN` + this.newLine(1, true);
 
@@ -444,8 +594,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             type: QueryType.DML
         }];
     }
+    //#endregion
 
-    // Delete
+    //#region Delete
     public getBulkDeleteQuery<T>(deleteExp: DeleteExpression<T>): IQuery[] {
         let result: IQuery[] = [];
         let deleteStrategy: DeleteMode;
@@ -524,9 +675,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         else {
             let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias)}` +
                 this.newLine() + `FROM ${this.enclose(deleteExp.entity.name)} AS ${this.enclose(deleteExp.entity.alias)} ` +
-                this.getEntityJoinString(deleteExp.joins);
+                this.joinString(deleteExp.joins);
             if (deleteExp.where)
-                selectQuery += this.newLine() + "WHERE " + this.getOperandString(deleteExp.where);
+                selectQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(deleteExp.where);
             result.push({
                 query: selectQuery,
                 parameters: this.getParameter(deleteExp),
@@ -559,31 +710,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         return result;
     }
-    // update
-    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQuery[] {
-        let result: IQuery[] = [];
-        const setQuery = Object.keys(update.setter).select((o: keyof T) => {
-            const value = update.setter[o];
-            const valueStr = this.getExpressionString(value);
-            const column = update.entity.columns.first(c => c.propertyName === o);
-            return `${this.enclose(update.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-        }).toArray().join(", ");
-        let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
-            this.newLine() + `SET ${setQuery}` +
-            this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
-            this.getEntityJoinString(update.joins);
-        if (update.where)
-            updateQuery += this.newLine() + "WHERE " + this.getOperandString(update.where);
+    //#endregion
 
-        result.push({
-            query: updateQuery,
-            parameters: this.getParameter(update),
-            type: QueryType.DML
+    public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
+        let queryCommand = new BatchedQuery();
+        const result: IQuery[] = [queryCommand];
+        let parameterKeys: string[] = [];
+        Enumerable.load(queries).each(o => {
+            let isLimitExceed = false;
+            if (this.queryLimit.maxBatchQuery) {
+                isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
+            }
+            if (!isLimitExceed && this.queryLimit.maxQueryLength) {
+                isLimitExceed = queryCommand.query.length + o.query.length > this.queryLimit.maxQueryLength;
+            }
+            if (!isLimitExceed && this.queryLimit.maxParameters && o.parameters) {
+                const keys = parameterKeys.union(Object.keys(o.parameters)).toArray();
+                isLimitExceed = keys.length > this.queryLimit.maxParameters;
+                if (!isLimitExceed) {
+                    parameterKeys = keys;
+                }
+            }
+
+            if (isLimitExceed) {
+                parameterKeys = [];
+                queryCommand = new BatchedQuery();
+                result.push(queryCommand);
+            }
+            queryCommand.add(o);
         });
-
         return result;
     }
-
     protected getParameter<T>(command: IQueryCommandExpression<T>) {
         const param: { [key: string]: any } = {};
         command.parameters.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).each(o => {
@@ -596,55 +753,49 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#region Value
 
-    protected getValueExpressionString(expression: ValueExpression<any>): string {
-        if (expression.value === undefined && expression.expressionString)
-            return expression.expressionString;
-
-        return this.getValueString(expression.value);
-    }
-    public getValueString(value: any): string {
+    public valueString(value: any): string {
         if (isNotNull(value)) {
             switch (value.constructor) {
                 case Number:
-                    return this.getNumberString(value);
+                    return this.numberString(value);
                 case Boolean:
-                    return this.getBooleanString(value);
+                    return this.booleanString(value);
                 case String:
-                    return this.getString(value);
+                    return this.stringString(value);
                 case Date:
-                    return this.getDateTimeString(value);
+                    return this.dateTimeString(value);
                 case TimeSpan:
-                    return this.getTimeString(value);
+                    return this.timeString(value);
                 case UUID:
-                    return this.getIdentifierString(value);
+                    return this.identifierString(value);
                 default:
                     throw new Error("type not supported");
             }
         }
-        return this.getNullString();
+        return this.nullString();
     }
-    protected getDateTimeString(value: Date): string {
-        return this.getString(toDateTimeString(value));
+    protected dateTimeString(value: Date): string {
+        return this.stringString(toDateTimeString(value));
     }
-    protected getTimeString(value: TimeSpan): string {
-        return this.getString(toTimeString(value));
+    protected timeString(value: TimeSpan): string {
+        return this.stringString(toTimeString(value));
     }
-    protected getIdentifierString(value: UUID): string {
-        return this.getString(value.toString());
+    protected identifierString(value: UUID): string {
+        return this.stringString(value.toString());
     }
-    protected getNullString() {
+    protected nullString() {
         return "NULL";
     }
-    public getString(value: string) {
+    public stringString(value: string) {
         return "'" + this.escapeString(value) + "'";
     }
     protected escapeString(value: string) {
         return value.replace(/'/ig, "''");
     }
-    protected getBooleanString(value: boolean) {
+    protected booleanString(value: boolean) {
         return value ? "1" : "0";
     }
-    protected getNumberString(value: number) {
+    protected numberString(value: number) {
         return value.toString();
     }
 
@@ -652,52 +803,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#region IExpression
 
-    public getExpressionString<T = any>(expression: IExpression<T>): string {
-        if (expression instanceof SelectExpression) {
-            return this.getSelectQueryString(expression) + (expression.isSubSelect ? "" : ";");
-        }
-        else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
-            return this.getColumnString(expression);
-        }
-        else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
-            return this.getEntityQueryString(expression);
-        }
-        else if (expression instanceof TernaryExpression) {
-            return this.getOperatorString(expression as any);
-        }
-        else if ((expression as IBinaryOperatorExpression).rightOperand) {
-            return `(${this.getOperatorString(expression as any)})`;
-        }
-        else if ((expression as IUnaryOperatorExpression).operand) {
-            return this.getOperatorString(expression as any);
-        }
-        else {
-            let result = "";
-            switch (expression.constructor) {
-                case MemberAccessExpression:
-                    result = this.getMemberAccessExpressionString(expression as any);
-                    break;
-                case MethodCallExpression:
-                    result = this.getMethodCallExpressionString(expression as any);
-                    break;
-                case FunctionCallExpression:
-                    result = this.getFunctionCallExpressionString(expression as any);
-                    break;
-                case SqlParameterExpression:
-                case ParameterExpression:
-                    result = this.getParameterExpressionString(expression as any);
-                    break;
-                case ValueExpression:
-                    result = this.getValueExpressionString(expression as any);
-                    break;
-                case InstantiationExpression:
-                    result = this.getInstantiationString(expression as any);
-                    break;
-                default:
-                    throw new Error(`Expression ${expression.toString()} not supported`);
-            }
-            return result;
-        }
+    protected ValueExpressionString(expression: ValueExpression<any>): string {
+        if (expression.value === undefined && expression.expressionString)
+            return expression.expressionString;
+
+        return this.valueString(expression.value);
     }
     protected getInstantiationString(expression: InstantiationExpression) {
         const translator = this.resolveTranslator(expression.type);
@@ -714,113 +824,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return translator.translate(expression, this);
     }
     public getLogicalOperandString(expression: IExpression<boolean>) {
-        if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+        if (isColumnExp(expression)) {
             expression = new EqualExpression(expression, new ValueExpression(true));
         }
         return this.getExpressionString(expression);
-    }
-    protected getColumnString(column: IColumnExpression) {
-        if (column instanceof ComputedColumnExpression) {
-            if (column.isDeclared)
-                return this.enclose(column.dataPropertyName);
-            else
-                return this.getExpressionString(column.expression);
-        }
-        return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
-    }
-    protected getColumnSelectString(column: IColumnExpression): string {
-        let result = this.getColumnDefinitionString(column);
-        if (column.alias) {
-            result += " AS " + this.enclose(column.alias);
-        }
-        else if (column instanceof ComputedColumnExpression) {
-            column.isDeclared = true;
-            result += " AS " + this.enclose(column.columnName);
-        }
-        return result;
-    }
-    protected getColumnDefinitionString(column: IColumnExpression): string {
-        if (column instanceof ComputedColumnExpression) {
-            return this.getOperandString(column.expression, true);
-        }
-        return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
-    }
-    protected getSelectQueryString(select: SelectExpression, skipInclude = false): string {
-        if (select.isSubSelect) skipInclude = true;
-
-        const selectStr = this.getSelectQuery(select, skipInclude).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
-
-        if (select.isSubSelect) {
-            return `(${this.newLine(1, true)}${selectStr}${this.newLine(-1, true)})`;
-        }
-
-        return selectStr;
-    }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
-        let result = "";
-        if (take > 0)
-            result += "LIMIT " + take + " ";
-        result += "OFFSET " + skip;
-        return result;
-    }
-    protected getEntityJoinString<T>(joins: Iterable<JoinRelation<T, any>>): string {
-        let result = "";
-        const joinEnum = Enumerable.load(joins);
-        if (joinEnum.any()) {
-            result += this.newLine();
-            result += joinEnum.select(o => {
-                let childEntString = "";
-                if (o.child.isSimple())
-                    childEntString = this.getEntityQueryString(o.child.entity);
-                else
-                    childEntString = "(" + this.newLine(1) + this.getSelectQueryString(o.child, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
-                let join = o.type + " JOIN " + childEntString +
-                    this.newLine(1, false) + "ON ";
-
-                return join + this.getOperandString(o.resolvedRelations);
-            }).toArray().join(this.newLine());
-        }
-        return result;
-    }
-    protected getParentJoinString<T>(parentRel: ISelectRelation) {
-        if (!(parentRel instanceof IncludeRelation))
-            return "";
-
-        let parent = parentRel.parent;
-        while (parent.parentRelation && parent.parentRelation.isEmbedded) {
-            parent = parent.parentRelation.parent;
-        }
-        const entityString = parent.isSimple() ? this.getEntityQueryString(parent.entity) : `(${this.newLine(1)}${this.getSelectQueryString(parent, true)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
-        const relationString = this.getOperandString(parentRel.resolvedRelations);
-        return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
-    }
-    protected getEntityQueryString(entity: IEntityExpression): string {
-        if (entity instanceof IntersectExpression) {
-            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
-                this.newLine() + "INTERSECT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
-        }
-        else if (entity instanceof UnionExpression) {
-            let isUnionAll = false;
-            if (entity.isUnionAll) {
-                const isUnionAllParam = this.parameters.first(o => o.parameter.valueGetter === entity.isUnionAll);
-                if (isUnionAllParam) {
-                    isUnionAll = isUnionAllParam.value;
-                }
-            }
-            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect) +
-                this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
-        }
-        else if (entity instanceof ExceptExpression) {
-            return "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect) +
-                this.newLine() + "EXCEPT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
-        }
-        else if (entity instanceof ProjectionEntityExpression) {
-            return this.getSelectQueryString(entity.subSelect) + " AS " + this.enclose(entity.alias);
-        }
-        return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
     protected getFunctionCallExpressionString(expression: FunctionCallExpression<any>): string {
         const fn = expression.fnExpression.execute();
@@ -868,18 +875,19 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const paramValue = this.parameters.first(o => o.parameter === expression);
         if (paramValue) {
             if (!isNotNull(paramValue.value)) {
-                return this.getNullString();
+                return this.nullString();
             }
             return "@" + paramValue.name;
         }
         return "@" + expression.name;
     }
-    public getOperandString(expression: IExpression, convertBoolean = false): string {
-        if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
+    public getOperandString(expression: IExpression): string {
+        if (isEntityExp(expression)) {
+            // TODO: dead code
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnString(column);
         }
-        else if (convertBoolean && expression.type === Boolean && !(expression instanceof ValueExpression) && !(expression as IColumnExpression).entity) {
+        else if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
             expression = new TernaryExpression(expression, new ValueExpression(true), new ValueExpression(false));
         }
 
@@ -888,6 +896,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#endregion
 
+    //#region Value Convert
     public toPropertyValue<T>(input: any, column: IColumnExpression<any, T>): T {
         let result: any;
         if (input === null && column.isNullable) {
@@ -951,4 +960,5 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }
         return result;
     }
+    //#endregion
 }

@@ -103,20 +103,20 @@ relationalQueryTranslator.register(SelectExpression.prototype, "sum" as any, agg
 relationalQueryTranslator.register(SelectExpression.prototype, "min" as any, aggregateTranslator);
 relationalQueryTranslator.register(SelectExpression.prototype, "max" as any, aggregateTranslator);
 relationalQueryTranslator.register(SelectExpression.prototype, "avg" as any, aggregateTranslator);
-relationalQueryTranslator.register(SelectExpression.prototype, "contains" as any, (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN ${qb.getExpressionString(exp.objectOperand)}`);
+relationalQueryTranslator.register(SelectExpression.prototype, "contains" as any, (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.newLine(1, true)}${qb.getExpressionString(exp.objectOperand)}${qb.newLine(-1, true)})`);
 
 
 /**
  * Array
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
-relationalQueryTranslator.register(Array.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.getExpressionString(exp.objectOperand)})`);
+relationalQueryTranslator.register(Array.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.newLine(1, true)}${qb.getExpressionString(exp.objectOperand)}${qb.newLine(-1, true)})`);
 
 /**
  * Enumerable
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
-relationalQueryTranslator.register(Enumerable.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.getExpressionString(exp.objectOperand)})`);
+relationalQueryTranslator.register(Enumerable.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.newLine(1, true)}${qb.getExpressionString(exp.objectOperand)}${qb.newLine(-1, true)})`);
 
 
 /**
@@ -158,18 +158,18 @@ relationalQueryTranslator.register(Math, "trunc", (exp: MethodCallExpression<any
 relationalQueryTranslator.register(String.prototype, "charAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1)`);
 relationalQueryTranslator.register(String.prototype, "charCodeAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `UNICODE(SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1))`);
 relationalQueryTranslator.register(String.prototype, "concat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CONCAT(${qb.getExpressionString(exp.objectOperand)}, ${exp.params.select((p) => qb.getExpressionString(p)).toArray().join(", ")})`);
-relationalQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getValueString("%")}, ${qb.getExpressionString(exp.params[0])}))`);
+relationalQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.valueString("%")}, ${qb.getExpressionString(exp.params[0])}))`);
 relationalQueryTranslator.register(String.prototype, "includes", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) =>
     exp.params.length > 1
     ? `(${qb.getExpressionString(exp.params[0])} + RIGHT(${qb.getExpressionString(exp.objectOperand)}, (LEN(${qb.getExpressionString(exp.objectOperand)}) - ${qb.getExpressionString(exp.params[0])}))))`
-    : `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getValueString("%")}, ${qb.getExpressionString(exp.params[0])}, ${qb.getValueString("%")})`);
+    : `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.valueString("%")}, ${qb.getExpressionString(exp.params[0])}, ${qb.valueString("%")})`);
 relationalQueryTranslator.register(String.prototype, "indexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(CHARINDEX(${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.objectOperand) + (exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")}) - 1)`);
 relationalQueryTranslator.register(String.prototype, "lastIndexOf", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(LEN(${qb.getExpressionString(exp.objectOperand)}) - CHARINDEX(${qb.getExpressionString(exp.params[0])}, REVERSE(${qb.getExpressionString(exp.objectOperand)})${(exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")}))`);
 relationalQueryTranslator.register(String.prototype, "like", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE ${qb.getExpressionString(exp.params[0])})`);
 relationalQueryTranslator.register(String.prototype, "repeat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `REPLICATE(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])})`);
 relationalQueryTranslator.register(String.prototype, "replace", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `REPLACE(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.params[1])})`);
 relationalQueryTranslator.register(String.prototype, "split", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRING_SPLIT(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])})`);
-relationalQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getExpressionString(exp.params[0])}, ${qb.getValueString("%")}))`);
+relationalQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE CONCAT(${qb.getExpressionString(exp.params[0])}, ${qb.valueString("%")}))`);
 relationalQueryTranslator.register(String.prototype, "substr", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1), ${(exp.params.length > 1 ? qb.getExpressionString(exp.params[1]) : "8000")})`);
 relationalQueryTranslator.register(String.prototype, "substring", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTRING(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1), ${(exp.params.length > 1 ? `(${qb.getExpressionString(exp.params[1])} - ${qb.getExpressionString(exp.params[0])})` : "8000")})`);
 const tolowerTranslator = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `LOWER(${qb.getExpressionString(exp.objectOperand)})`;
@@ -199,7 +199,7 @@ relationalQueryTranslator.register(Number.prototype, "valueOf", (exp: MethodCall
  * Boolean
  * TODO: 
  */
-relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(CASE WHEN (${qb.getExpressionString(exp.objectOperand)}) THEN ${qb.getValueString("true")} ELSE ${qb.getValueString("false")} END)`);
+relationalQueryTranslator.register(Boolean.prototype, "toString" as any, (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(CASE WHEN (${qb.getExpressionString(exp.objectOperand)}) THEN ${qb.valueString("true")} ELSE ${qb.valueString("false")} END)`);
 
 /**
  * Date
@@ -228,7 +228,7 @@ relationalQueryTranslator.register(Date.prototype, "setMilliseconds", (exp: Meth
 relationalQueryTranslator.register(Date.prototype, "setMinutes", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(MI, (${qb.getExpressionString(exp.params[0])} - DATEPART(minute, ${qb.getExpressionString(exp.objectOperand)})), ${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "setMonth", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(MM, (${qb.getExpressionString(exp.params[0])} - (MONTH(${qb.getExpressionString(exp.objectOperand)}) - 1)), ${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "setSeconds", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(SS, (${qb.getExpressionString(exp.params[0])} - DATEPART(second, ${qb.getExpressionString(exp.objectOperand)})), ${qb.getExpressionString(exp.objectOperand)})`);
-relationalQueryTranslator.register(Date.prototype, "toDateString", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CONCAT(LEFT(DATENAME(WEEKDAY, ${qb.getExpressionString(exp.objectOperand)}), 3), ${qb.getValueString(" ")}, LEFT(DATENAME(MONTH, ${qb.getExpressionString(exp.objectOperand)}), 3), ${qb.getValueString(" ")}, RIGHT(CONCAT(${qb.getValueString("0")}, RTRIM(MONTH(${qb.getExpressionString(exp.objectOperand)}))), 2), ${qb.getValueString(" ")}, RIGHT(CONCAT(${qb.getValueString("0")}, RTRIM(MONTH(${qb.getExpressionString(exp.objectOperand)}))), 2))`);
+relationalQueryTranslator.register(Date.prototype, "toDateString", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `CONCAT(LEFT(DATENAME(WEEKDAY, ${qb.getExpressionString(exp.objectOperand)}), 3), ${qb.valueString(" ")}, LEFT(DATENAME(MONTH, ${qb.getExpressionString(exp.objectOperand)}), 3), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.getExpressionString(exp.objectOperand)}))), 2), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.getExpressionString(exp.objectOperand)}))), 2))`);
 relationalQueryTranslator.register(Date.prototype, "addDays", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(DAY, ${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "addMonths", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(MM, ${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.objectOperand)})`);
 relationalQueryTranslator.register(Date.prototype, "addYears", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `DATEADD(YYYY, ${qb.getExpressionString(exp.params[0])}, ${qb.getExpressionString(exp.objectOperand)})`);
@@ -309,8 +309,8 @@ relationalQueryTranslator.register(BitwiseOrExpression, (exp: any, qb: QueryBuil
 relationalQueryTranslator.register(BitwiseXorExpression, (exp: any, qb: QueryBuilder) => binaryTranslator(exp, qb, "^"));
 
 const notEqualTranslator = (exp: NotEqualExpression | StrictNotEqualExpression, qb: QueryBuilder) => {
-    const leftExpString = qb.getOperandString(exp.leftOperand, true);
-    const rightExpString = qb.getOperandString(exp.rightOperand, true);
+    const leftExpString = qb.getOperandString(exp.leftOperand);
+    const rightExpString = qb.getOperandString(exp.rightOperand);
     if (leftExpString === "NULL")
         return `${rightExpString} IS NOT ${leftExpString}`;
     else if (rightExpString === "NULL")
@@ -321,8 +321,8 @@ relationalQueryTranslator.register(NotEqualExpression, notEqualTranslator);
 relationalQueryTranslator.register(StrictNotEqualExpression, notEqualTranslator);
 
 const equalTransalator = (exp: IBinaryOperatorExpression, qb: QueryBuilder) => {
-    const leftExpString = qb.getOperandString(exp.leftOperand, true);
-    const rightExpString = qb.getOperandString(exp.rightOperand, true);
+    const leftExpString = qb.getOperandString(exp.leftOperand);
+    const rightExpString = qb.getOperandString(exp.rightOperand);
     if (leftExpString === "NULL")
         return `${rightExpString} IS ${leftExpString}`;
     else if (rightExpString === "NULL")
@@ -336,6 +336,6 @@ relationalQueryTranslator.register(OrExpression, (exp: any, qb: QueryBuilder) =>
 relationalQueryTranslator.register(AndExpression, (exp: any, qb: QueryBuilder) => `${qb.getLogicalOperandString(exp.leftOperand)} AND ${qb.getLogicalOperandString(exp.rightOperand)}`);
 relationalQueryTranslator.register(NotExpression, (exp: any, qb: QueryBuilder) => `NOT(${qb.newLine(1)}${qb.getLogicalOperandString(exp.operand)}${qb.newLine(-1)})`);
 relationalQueryTranslator.register(BitwiseNotExpression, (exp: any, qb: QueryBuilder) => `~(${qb.getLogicalOperandString(exp.operand)})`);
-relationalQueryTranslator.register(TernaryExpression, (exp: TernaryExpression, qb: QueryBuilder) => `(${qb.newLine(1)}CASE WHEN (${qb.getExpressionString(exp.logicalOperand)}) ${qb.newLine()}THEN ${qb.getOperandString(exp.trueResultOperand, true)}${qb.newLine()}ELSE ${qb.getOperandString(exp.falseResultOperand, true)}${qb.newLine()}END${qb.newLine(-1)})`);
+relationalQueryTranslator.register(TernaryExpression, (exp: TernaryExpression, qb: QueryBuilder) => `(${qb.newLine(1)}CASE WHEN (${qb.getExpressionString(exp.logicalOperand)}) ${qb.newLine()}THEN ${qb.getOperandString(exp.trueResultOperand)}${qb.newLine()}ELSE ${qb.getOperandString(exp.falseResultOperand)}${qb.newLine()}END${qb.newLine(-1)})`);
 
 //#endregion

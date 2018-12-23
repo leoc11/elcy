@@ -70,8 +70,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 if (!relationGroup)
                     continue;
 
-                for (const key in relationGroup) {
-                    const relation = relationGroup.get(key);
+                for (const [, relation] of relationGroup) {
                     const entry = relation.masterEntry === this ? relation.slaveEntry : relation.masterEntry;
                     entry.updateRelationKey(relation, oldKey);
                 }

@@ -166,7 +166,6 @@ export class MssqlConnection implements IConnection {
         });
     }
     public executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        console.log(command.query);
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
             let result: IQueryResult = {

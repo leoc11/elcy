@@ -2,11 +2,12 @@ import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { JoinType } from "../../Common/Type";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
-import { visitExpression, resolveClone, replaceExpression } from "../../Helper/Util";
-import { ComputedColumnExpression } from "../QueryExpression/ComputedColumnExpression";
-import { ColumnExpression } from "../QueryExpression/ColumnExpression";
+import { visitExpression, resolveClone, isColumnExp } from "../../Helper/Util";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ISelectRelation } from "./ISelectRelation";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 
 export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, TChild> {
     constructor();
@@ -20,37 +21,52 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
         }
     }
 
-    //#region Private Member
-    private _resolvedRelation: IExpression<boolean>;
     private _parentColumns: IColumnExpression[];
+    private _relations: IExpression<boolean>;
     private _childColumns: IColumnExpression[];
+    private _isManyManyRelation: boolean;
     private analyzeRelation() {
         this._parentColumns = [];
         this._childColumns = [];
-        visitExpression(this.relations, (exp: IExpression) => {
-            if ((exp as IColumnExpression).entity) {
-                const colExp = exp as IColumnExpression;
-                if (this.child.entity === colExp.entity) {
-                    this._childColumns.push(colExp);
+        if (this.relations) {
+            visitExpression(this.relations, (exp: IExpression) => {
+                if (isColumnExp(exp)) {
+                    const colExp = exp as IColumnExpression;
+                    if (this.child.entity === colExp.entity) {
+                        this._childColumns.push(colExp);
+                    }
+                    else if (this.parent.entity === colExp.entity) {
+                        this._parentColumns.push(colExp);
+                    }
+                    else if (Enumerable.load(this.child.allJoinedEntities).contains(colExp.entity)) {
+                        this._childColumns.push(colExp);
+                    }
+                    else if (Enumerable.load(this.parent.allJoinedEntities).contains(colExp.entity)) {
+                        this._parentColumns.push(colExp);
+                    }
                 }
-                else if (this.parent.entity === colExp.entity) {
-                    this._parentColumns.push(colExp);
+                else if (!(exp instanceof AndExpression || exp instanceof EqualExpression || exp instanceof StrictEqualExpression)) {
+                    this._isManyManyRelation = true;
                 }
-                else if (Enumerable.load(this.child.allJoinedEntities).contains(colExp.entity)) {
-                    this._childColumns.push(colExp);
-                }
-                else if (Enumerable.load(this.parent.allJoinedEntities).contains(colExp.entity)) {
-                    this._parentColumns.push(colExp);
-                }
+            });
+
+            if (!this._isManyManyRelation) {
+                this._isManyManyRelation = this._childColumns.any(o => !this.child.primaryKeys.contains(o)) && this._parentColumns.any(o => !this.parent.primaryKeys.contains(o));
             }
-        });
+        }
     }
     //#endregion
 
     //#region Properties
     public parent: SelectExpression<T>;
     public child: SelectExpression<TChild>;
-    public relations: IExpression<boolean>;
+    public get relations() {
+        return this._relations;
+    }
+    public set relations(value) {
+        this._relations = value;
+        this._childColumns = this._parentColumns = this._isManyManyRelation = null;
+    }
     public type: JoinType;
     public isEmbedded: boolean;
     public get parentColumns() {
@@ -65,39 +81,11 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
         }
         return this._childColumns;
     }
-    public get resolvedRelations(): IExpression<boolean> {
-        if (!this._resolvedRelation) {
-            const replaceMap = new Map();
-            for (const col of this.childColumns) {
-                replaceMap.set(col, col);
-            }
-            for (const col of this.parentColumns) {
-                replaceMap.set(col, col);
-            }
-
-            this._resolvedRelation = this.relations.clone(replaceMap);
-            // parent: computed column need to be changed to it's expression as it not yet recognized.
-            // child: make sure child column's entity is the direct join relation entity. (column might came from another table joined to child)
-            replaceExpression(this._resolvedRelation, (exp) => {
-                if ((exp as IColumnExpression).entity) {
-                    let colExp = exp as IColumnExpression;
-                    if (this.childColumns.contains(colExp)) {
-                        if (colExp instanceof ComputedColumnExpression || colExp.entity !== this.child.entity) {
-                            const resCol = new ColumnExpression(this.child.entity, colExp.type, colExp.propertyName as any, colExp.columnName, colExp.isPrimary, colExp.isNullable, colExp.columnType);
-                            resCol.alias = colExp.alias;
-                            exp = resCol;
-                        }
-                    }
-                    else if (this.parentColumns.contains(colExp)) {
-                        if (colExp instanceof ComputedColumnExpression) {
-                            exp = colExp.expression;
-                        }
-                    }
-                }
-                return exp;
-            });
+    public get isManyToManyRelation() {
+        if (typeof this._isManyManyRelation !== "boolean") {
+            this.analyzeRelation();
         }
-        return this._resolvedRelation;
+        return this._isManyManyRelation;
     }
     //#endregion
 

@@ -12,9 +12,12 @@ import { Enumerable } from "../Enumerable/Enumerable";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
 
-export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>, existAction?: (exp: T) => void): T {
+export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>): T {
     if (!exp) return exp;
     return (replaceMap.has(exp) ? replaceMap.get(exp) : exp.clone(replaceMap)) as T;
+};
+export const isEqual = function (a: any, b: any) {
+    return a === b || (isNotNull(a) && isNotNull(b) && a.constructor === b.constructor && a[Symbol.toPrimitive] === b[Symbol.toPrimitive]);
 };
 export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>, sourceExp: IExpression, targetExp: IExpression) {
     replaceMap.set(sourceExp, targetExp);

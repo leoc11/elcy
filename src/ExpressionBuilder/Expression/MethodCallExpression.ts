@@ -5,6 +5,7 @@ import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { Queryable } from "../../Queryable/Queryable";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
     public static create<TE, K extends keyof TE, T = any>(objectOperand: IExpression<TE>, params: IExpression[], methodName?: K, methodFn?: () => T) {
@@ -30,7 +31,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if (!this._type && this.objectOperand.type) {
             try {
                 const objectType = this.objectOperand.type as IObjectType<TE>;
-                if (Queryable.isPrototypeOf(objectType)) {
+                if (Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":

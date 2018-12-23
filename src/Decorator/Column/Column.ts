@@ -13,6 +13,7 @@ import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { isEqual } from "../../Helper/Util";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
     return (target: TE, propertyKey: keyof TE) => {
@@ -73,7 +74,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             }
         }
         descriptor = {
-            set: function (this: any, value: T) {
+            set: function (this: any, value: any) {
                 if (!oldGet && !this.hasOwnProperty(privatePropertySymbol)) {
                     Object.defineProperty(this, privatePropertySymbol, {
                         value: undefined,
@@ -84,7 +85,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                 }
                 const oldValue = this[propertyKey];
                 // tslint:disable-next-line:triple-equals
-                if (oldValue != value) {
+                if (!isEqual(oldValue, value)) {
                     if (oldSet)
                         oldSet.apply(this, value);
                     else

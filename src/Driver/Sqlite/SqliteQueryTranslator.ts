@@ -94,14 +94,14 @@ sqliteQueryTranslator.register(Math, "trunc", null);
  */
 sqliteQueryTranslator.register(String.prototype, "charAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1)`);
 sqliteQueryTranslator.register(String.prototype, "concat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.objectOperand)} || ${exp.params.select((p) => qb.getExpressionString(p)).toArray().join(" || ")}`);
-sqliteQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getValueString("%")} || ${qb.getExpressionString(exp.params[0])}))`);
+sqliteQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.valueString("%")} || ${qb.getExpressionString(exp.params[0])}))`);
 sqliteQueryTranslator.register(String.prototype, "indexOf", (exp: MethodCallExpression, qb: QueryBuilder) => {
     if (exp.params.length > 1) {
         syntaxNotSupported("'indexOf' with start_pos parameter");
     }
     return `(INSTR(${qb.getExpressionString(exp.objectOperand)},${qb.getExpressionString(exp.params[0])}) - 1)`;
 });
-sqliteQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getExpressionString(exp.params[0])} || ${qb.getValueString("%")}))`);
+sqliteQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getExpressionString(exp.params[0])} || ${qb.valueString("%")}))`);
 sqliteQueryTranslator.register(String.prototype, "substr", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1)${(exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")})`);
 sqliteQueryTranslator.register(String.prototype, "substring", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1)${(exp.params.length > 1 ? `, (${qb.getExpressionString(exp.params[1])} - ${qb.getExpressionString(exp.params[0])})` : "")})`);
 const stringValueOf = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => qb.getExpressionString(exp.objectOperand);

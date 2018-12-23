@@ -32,7 +32,6 @@ import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
 
 export abstract class SchemaBuilder {
     constructor(public connection: IConnection, protected readonly queryBuilder: QueryBuilder) {
-        this.queryBuilder.isStrictSql = true;
     }
 
     public async getSchemaQuery(entityTypes: IObjectType[]) {
@@ -95,7 +94,7 @@ export abstract class SchemaBuilder {
     }
     public async loadSchemas(entities: IEntityMetaData<any>[]) {
         const schemaGroups = entities.groupBy(o => o.schema).toArray();
-        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.queryBuilder.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
+        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
 
         const batchedQuery = new BatchedQuery();
         // table schema
@@ -151,7 +150,7 @@ export abstract class SchemaBuilder {
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
                 ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
-                ` and (${schemaGroups.select(o => `s.name = '${o.key}' AND t.name IN (${o.select(p => this.queryBuilder.getValueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
+                ` and (${schemaGroups.select(o => `s.name = '${o.key}' AND t.name IN (${o.select(p => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
                 ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`,
             type: QueryType.DQL
         });
@@ -626,7 +625,7 @@ export abstract class SchemaBuilder {
             }
             if (type === "create") {
                 if (columnMetaData.description)
-                    result += " COMMENT " + this.queryBuilder.getString(columnMetaData.description);
+                    result += " COMMENT " + this.queryBuilder.stringString(columnMetaData.description);
             }
         }
         return result;
@@ -726,13 +725,13 @@ export abstract class SchemaBuilder {
         }
         const groupType = this.queryBuilder.supportedColumnTypes.get(columnMeta.columnType);
         if (groupType === "Integer" || groupType === "Decimal" || groupType === "Real" || columnMeta instanceof IntegerColumnMetaData || columnMeta instanceof DecimalColumnMetaData)
-            return this.queryBuilder.getValueString(0);
+            return this.queryBuilder.valueString(0);
         if (groupType === "Identifier" || columnMeta instanceof IdentifierColumnMetaData)
             return "NEWID()";
         if (groupType === "String" || columnMeta instanceof StringColumnMetaData)
-            return this.queryBuilder.getValueString("");
+            return this.queryBuilder.valueString("");
         if (groupType === "DataSerialization" || columnMeta instanceof DataSerializationColumnMetaData)
-            return this.queryBuilder.getValueString("{}");
+            return this.queryBuilder.valueString("{}");
         if (groupType === "Date" || columnMeta instanceof DateColumnMetaData)
             return "GETUTCDATE()";
         if (groupType === "Time" || columnMeta instanceof TimeColumnMetaData)

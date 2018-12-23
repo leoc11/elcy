@@ -55,7 +55,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
     }
     public getUpsertQuery<T>(upsertExp: UpsertExpression<T>): IQuery[] {
         const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine() +
+        const insertQuery = `INSERT OR IGNORE INTO ${this.entityQuery(upsertExp.entity)}(${colString})` + this.newLine() +
             `VALUES (${upsertExp.columns.select(o => {
                 const valueExp = upsertExp.setter[o.propertyName];
                 return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
@@ -85,7 +85,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
         }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const updateCommand: IQuery = {
-            query: `UPDATE ${this.getEntityQueryString(upsertExp.entity)} SET ${updateString} WHERE ${this.getOperandString(upsertExp.where)}`,
+            query: `UPDATE ${this.entityQuery(upsertExp.entity)} SET ${updateString} WHERE ${this.getLogicalOperandString(upsertExp.where)}`,
             parameters: queryCommand.parameters,
             type: QueryType.DML
         };
@@ -117,7 +117,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
         }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
 
         let queryCommand: IQuery = {
-            query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine()
+            query: `INSERT INTO ${this.entityQuery(upsertExp.entity)}(${colString})` + this.newLine()
                 + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
             parameters: param,
             type: QueryType.DML

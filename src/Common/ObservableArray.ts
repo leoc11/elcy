@@ -10,7 +10,9 @@ export class ObservableArray<T> extends Array<T> {
     }
     static observe<T>(items: T[]): ObservableArray<T> {
         Object.setPrototypeOf(items, ObservableArray.prototype);
-        return items as any;
+        const observable = items as ObservableArray<T>;
+        observable._observers = [];
+        return observable;
     }
     public register(observer: (eventType: ArrayChangeType, items: T[]) => void) {
         this._observers.push(observer);
