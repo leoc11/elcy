@@ -13,10 +13,11 @@ export interface IMockedConnectionManager {
 export const mockContext = function (context: DbContext & IMockedContext) {
     mockConnectionManager(context.connectionManager);
     context.oriExecuteDeferred = context.executeDeferred;
-    context.executeDeferred = async function (deferredQueries: Iterable<DeferredQuery>) {
+    context.executeDeferred = async function (deferredQueries?: Iterable<DeferredQuery>) {
+        if (!deferredQueries) deferredQueries = context.deferredQueries.splice(0);
         const connection: MockConnection = this.connection = await this.getConnection() as any;
         connection.deferredQueries = deferredQueries;
-        return context.oriExecuteDeferred.apply(this, arguments);
+        return context.oriExecuteDeferred.apply(this, [deferredQueries]);
     };
 };
 export const mockConnectionManager = function (conManager: IConnectionManager & IMockedConnectionManager) {

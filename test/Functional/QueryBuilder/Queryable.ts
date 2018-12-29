@@ -1521,35 +1521,6 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("sum").that.is.an("number");
             });
         });
-        it("groupBy(o => ({obj: {prop: o.col} }))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
-
-            const groupBy = db.orderDetails.groupBy(o => ({
-                obj: {
-                    pid: o.ProductId
-                },
-                Quantity: o.quantity * 2
-            }));
-            const results = await groupBy.toArray();
-
-            chai.should();
-            spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted],\n\t([entity0].[Quantity]*2) AS [column1],\n\t[entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
-                type: QueryType.DQL,
-                parameters: {}
-            } as IQuery);
-
-            results.should.be.an("array").and.not.empty;
-            results.each(o => {
-                o.should.have.property("key").that.is.an.instanceof(Object);
-                o.key.should.have.property("obj").that.is.an.instanceof(Object);
-                o.key.obj.should.have.property("pid").that.is.an.instanceof(UUID);
-                o.key.Quantity.should.be.an("number");
-                o.each(o => {
-                    o.should.be.an.instanceOf(OrderDetail);
-                });
-            });
-        });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
@@ -1805,12 +1776,12 @@ describe("QUERYABLE", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
             const groupBy = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate.getDate())
-                .where(o => o.count() >= 1);
+                .where(o => o.count() > 3);
             const results = await groupBy.toArray();
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate],\n\tDAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]>20000)",
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate],\n\tDAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT DISTINCT DAY([rel_entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [rel_entity0]\n\tWHERE ([rel_entity0].[TotalAmount]>20000)\n\tGROUP BY DAY([rel_entity0].[OrderDate])\n\tHAVING (COUNT([rel_entity0].[OrderId])>3)\n) AS [rel_entity0]\n\tON (DAY([entity0].[OrderDate])=[rel_entity0].[column0])\nWHERE ([entity0].[TotalAmount]>20000)",
                 type: QueryType.DQL,
                 parameters: {}
             } as IQuery);
@@ -1860,6 +1831,35 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.be.an("array").with.property("key").that.have.property("price").that.is.a("number");
                 o.each(od => od.should.be.an.instanceof(OrderDetail));
+            });
+        });
+        it("groupBy(o => ({obj: {prop: o.col} }))", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+
+            const groupBy = db.orderDetails.groupBy(o => ({
+                obj: {
+                    pid: o.ProductId
+                },
+                Quantity: o.quantity * 2
+            }));
+            const results = await groupBy.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted],\n\t([entity0].[Quantity]*2) AS [column1],\n\t[entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.an("array").and.not.empty;
+            results.each(o => {
+                o.should.have.property("key").that.is.an.instanceof(Object);
+                o.key.should.have.property("obj").that.is.an.instanceof(Object);
+                o.key.obj.should.have.property("pid").that.is.an.instanceof(UUID);
+                o.key.Quantity.should.be.an("number");
+                o.each(o => {
+                    o.should.be.an.instanceOf(OrderDetail);
+                });
             });
         });
         it("groupBy.(o => ({col: o.toOneRelation }))", async () => {

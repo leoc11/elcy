@@ -744,7 +744,7 @@ export class QueryVisitor {
                     }
 
                     if (param.scope !== "queryable") {
-                        let takeJoinRel = objectOperand.joins.first(o => o instanceof PagingJoinRelation) as PagingJoinRelation;
+                        let takeJoinRel = objectOperand.joins.ofType(PagingJoinRelation).first();
                         if (takeJoinRel) {
                             // relation with paging
                             const orderJoinRel = takeJoinRel.child.joins[takeJoinRel.child.joins.length - 1];
@@ -1178,7 +1178,7 @@ export class QueryVisitor {
                         }
                     }
                     else {
-                        let takeJoinRel = objectOperand.joins.first(o => o instanceof PagingJoinRelation) as PagingJoinRelation;
+                        let takeJoinRel = objectOperand.joins.ofType(PagingJoinRelation).first();
                         if (!takeJoinRel) {
                             const entityExp = objectOperand.entity;
                             const filterer = (objectOperand as SelectExpression).clone();

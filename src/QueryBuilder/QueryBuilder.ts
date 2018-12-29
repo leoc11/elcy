@@ -55,8 +55,8 @@ import { JoinRelation } from "../Queryable/Interface/JoinRelation";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { ISelectRelation } from "../Queryable/Interface/ISelectRelation";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { HavingJoinRelation } from "../Queryable/Interface/HavingJoinRelation";
 
-// TODO: SPLIT TO SELECTQUERYBUILDER, SCHEMAQUERYBUILDER, ETC PER CommandQuery
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
     public abstract columnTypesWithOption: ColumnType[];
@@ -65,6 +65,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract valueTypeMap: Map<GenericType, ColumnType>;
     public abstract queryLimit: IQueryLimit;
     public options: ISaveChangesOption;
+    public version: Version;
     public parameters: ISqlParameter[] = [];
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
@@ -210,31 +211,52 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             return this.columnSelectString(o);
         }).toArray().join("," + this.newLine(1, false));
         const entityQ = this.entityQuery(select.entity);
-        const joinStr = this.joinString(select.resolvedJoins) + this.getParentJoinString(select.parentRelation);
 
-        let selectQuery = `SELECT${distinct}${top} ${selects}`
-            + this.newLine() + `FROM ${entityQ}${joinStr}`;
+        if (select instanceof GroupByExpression && !select.isAggregate && select.having && !select.joins.ofType(HavingJoinRelation).any()) {
+            const clone = select.clone();
+            clone.entity.alias = "rel_" + clone.entity.alias;
+            clone.isAggregate = true;
+            clone.distinct = true;
+            clone.selects = clone.resolvedGroupBy.slice();
 
+            let relation: IExpression<boolean>;
+            for (const col of select.resolvedGroupBy) {
+                const cloneCol = clone.resolvedGroupBy.first(o => o.dataPropertyName === col.dataPropertyName);
+                const logicalExp = new StrictEqualExpression(col, cloneCol);
+                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+            }
+
+            const joinRel = clone.parentRelation = new JoinRelation(select, clone, relation, "INNER");
+            select.joins.push(joinRel);
+        }
+
+        let joinStr = this.joinString(select.resolvedJoins) + this.getParentJoinString(select.parentRelation);
+
+        let selectQuerySuffix = "";
         if (select.where) {
             this.isColumnDeclared = true;
-            selectQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(select.where);
+            selectQuerySuffix += this.newLine() + "WHERE " + this.getLogicalOperandString(select.where);
             this.isColumnDeclared = false;
         }
 
         if (select instanceof GroupByExpression && select.isAggregate) {
             if (select.groupBy.length > 0) {
-                selectQuery += this.newLine() + "GROUP BY " + select.resolvedGroupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
+                selectQuerySuffix += this.newLine() + "GROUP BY " + select.resolvedGroupBy.select((o) => this.getColumnString(o)).toArray().join(", ");
             }
             if (select.having) {
-                selectQuery += this.newLine() + "HAVING " + this.getLogicalOperandString(select.having);
+                selectQuerySuffix += this.newLine() + "HAVING " + this.getLogicalOperandString(select.having);
             }
         }
+
         if ((!(select.parentRelation instanceof JoinRelation) || skip > 0) && select.orders.length > 0)
-            selectQuery += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
+            selectQuerySuffix += this.newLine() + "ORDER BY " + select.orders.select((c) => this.getExpressionString(c.column) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
-            selectQuery += this.newLine() + this.getPagingQueryString(select, take, skip);
+            selectQuerySuffix += this.newLine() + this.getPagingQueryString(select, take, skip);
         }
+
+        let selectQuery = `SELECT${distinct}${top} ${selects}`
+            + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
 
         if (!skipInclude) {
             // select each include as separated query as it more beneficial for performance
