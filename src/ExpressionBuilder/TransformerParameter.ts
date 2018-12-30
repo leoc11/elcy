@@ -14,4 +14,7 @@ export class TransformerParameter {
         const vales = this.parameters[key] || [];
         return vales.shift();
     }
+    public get keys() {
+        return Object.keys(this.parameters);
+    }
 }

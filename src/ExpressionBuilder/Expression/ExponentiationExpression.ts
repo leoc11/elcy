@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
-export class ExponentiationExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+export class ExponentiationExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new ExponentiationExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,10 +11,8 @@ export class ExponentiationExpression extends ExpressionBase<number> implements 
 
         return result;
     }
-    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) {
-        super(Number);
-    }
-
+    public type = Number;
+    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -30,5 +28,8 @@ export class ExponentiationExpression extends ExpressionBase<number> implements 
         const clone = new ExponentiationExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("**", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

@@ -1,14 +1,14 @@
 import { DbSet } from "./DbSet";
 import { EntityEntry } from "./EntityEntry";
 import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
-import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EntityState } from "./EntityState";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
 
 export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
-    public column: EmbeddedColumnMetaData<TP, T>;
+    public column: EmbeddedRelationMetaData<TP, T>;
     constructor(public dbSet: DbSet<T>, public entity: T, public parentEntry: EntityEntry<TP>) {
         super(dbSet, entity, null);
         let propertyChangeHandler: IEventHandler<T> = (entity as any)[propertyChangeHandlerMetaKey];

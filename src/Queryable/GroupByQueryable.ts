@@ -1,6 +1,6 @@
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -10,7 +10,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     protected readonly keySelectorFn: (item: T) => K;
-    private _keySelector: FunctionExpression<T, any>;
+    private _keySelector: FunctionExpression;
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn)
             this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, this.flatParameterStacks);
@@ -19,7 +19,7 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
     protected set keySelector(value) {
         this._keySelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<T, K> | ((item: T) => K)) {
+    constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<K> | ((item: T) => K)) {
         super(Array as any, parent);
         if (keySelector instanceof FunctionExpression)
             this.keySelector = keySelector;
@@ -35,6 +35,6 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         return result;
     }
     public hashCode() {
-        return hashCode("GROUPBY", this.parent.hashCode() + hashCode((this.keySelectorFn || this.keySelector || "").toString()));
+        return hashCodeAdd(hashCode("GROUPBY", this.parent.hashCode()), this.keySelector ? this.keySelector.hashCode() : 0);
     }
 }

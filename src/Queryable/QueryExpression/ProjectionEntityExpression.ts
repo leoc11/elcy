@@ -2,11 +2,12 @@ import { GenericType, IObjectType } from "../../Common/Type";
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { IOrderExpression } from "./IOrderExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ColumnExpression } from "./ColumnExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
@@ -18,22 +19,25 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         }
         return this._primaryColumns;
     }
-    public defaultOrders: IOrderExpression[] = [];
+    public defaultOrders: IOrderQueryDefinition[] = [];
     private _primaryColumns: IColumnExpression[];
     private _selectedColumns: IColumnExpression[];
-    private _relationColumns: IColumnExpression[];
     public alias: string;
     public readonly entityTypes: IObjectType[];
-    constructor(public subSelect: SelectExpression<T>, public readonly type: GenericType<T> = Object as any) {
+    public readonly type: GenericType<T>;
+    constructor(public subSelect: SelectExpression<T>, type?: GenericType<T>) {
+        subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
-        this.columns = subSelect.projectedColumns.select(o => {
-            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.columnType);
+        this.columns = Enumerable.load(subSelect.projectedColumns).select(o => {
+            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable, o.columnType);
             col.columnMetaData = o.columnMetaData;
             return col;
         }).toArray();
-        this.defaultOrders = subSelect.orders.slice(0);
+        // TODO
+        // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
+        this.type = type ? type : subSelect.itemType;
     }
     public get selectedColumns() {
         if (!this._selectedColumns)
@@ -41,9 +45,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         return this._selectedColumns;
     }
     public get relationColumns() {
-        if (!this._relationColumns)
-            this._relationColumns = this.subSelect.relationColumns.select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
-        return this._relationColumns;
+        return Enumerable.load(this.subSelect.relationColumns).select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);
@@ -53,16 +55,21 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const select = resolveClone(this.select, replaceMap);
+        const select = resolveClone(this.subSelect, replaceMap);
         const clone = new ProjectionEntityExpression(select, this.type);
         clone.alias = this.alias;
-        clone.defaultOrders = this.defaultOrders.select(o => ({
-            column: resolveClone(o.column, replaceMap),
-            direction: o.direction
-        })).toArray();
+        clone.defaultOrders = this.defaultOrders.slice();
         clone.name = this.name;
-        clone.columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.columns = this.columns.select(o => {
+            let cloneCol = clone.columns.first(c => c.propertyName === o.propertyName);
+            if (!cloneCol) cloneCol = resolveClone(o, replaceMap);
+            replaceMap.set(o, cloneCol);
+            return cloneCol;
+        }).toArray();
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.sum(o => o.hashCode()));
     }
 }

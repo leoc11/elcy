@@ -1,20 +1,25 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCodeAdd } from "../../Helper/Util";
+import { GenericType } from "../../Common/Type";
 
-export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
-    public static create<TType>(...values: Array<IExpression<TType>>) {
-        const result = new ArrayValueExpression<TType>(...values);
+export class ArrayValueExpression<T = any> implements IExpression<T[]> {
+    public static create<T>(...values: Array<IExpression<T>>) {
+        const result = new ArrayValueExpression<T>(...values);
         if (values.every((param) => param instanceof ValueExpression))
-            return ValueExpression.create<TType[]>(result);
+            return ValueExpression.create<T[]>(result);
 
         return result;
     }
-    public items: Array<IExpression<TType>>;
-    constructor(...items: Array<IExpression<TType>>) {
-        super(Array);
+    public type = Array;
+    public itemType?: GenericType<T>;
+    public items: Array<IExpression<T>>;
+    constructor(...items: Array<IExpression<T>>) {
         this.items = items;
+        if (items.length > 0) {
+            this.itemType = items.first().type;
+        }
     }
 
     public toString(transformer?: ExpressionTransformer): string {
@@ -37,5 +42,12 @@ export class ArrayValueExpression<TType = any> extends ExpressionBase<TType[]> {
         const clone = new ArrayValueExpression(...items);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        let hash = 0;
+        this.items.each((o, index) => {
+            hash += hashCodeAdd(index, o.hashCode());
+        });
+        return hash;
     }
 }

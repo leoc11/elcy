@@ -10,6 +10,7 @@ import { ISaveChangesOption } from "./Interface/IQueryOption";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
 import { QueryType } from "../Common/Type";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -44,8 +45,7 @@ export class DeferredQuery<T = any> {
             });
         }
 
-        const deferredQueries = this.dbContext.deferredQueries.splice(0);
-        await this.dbContext.executeDeferred(deferredQueries);
+        await this.dbContext.executeDeferred();
         return this.value;
     }
     public buildQuery(queryBuilder: QueryBuilder) {
@@ -56,20 +56,30 @@ export class DeferredQuery<T = any> {
         const arrayParameterTempTableQueries = arrayParameters.selectMany(o => {
             const selectExp = o.parameter.select;
             let i = 0;
-            const tempValues = o.value.select((o: any) => selectExp.entity.columns.select(col => {
-                switch (col.propertyName) {
-                    case "__index": {
-                        return i++;
-                    }
-                    case "__value": {
-                        return o;
-                    }
-                    default: {
-                        return o[col.propertyName];
+            const arrayValues = o.value as any[];
+            const columns = selectExp.entity.columns;
+            let insertQuery = new InsertExpression(selectExp.entity, [], columns);
+            for (const item of arrayValues) {
+                const itemExp: { [key: string]: IExpression } = {};
+                for (const col of columns) {
+                    switch (col.propertyName) {
+                        case "__index": {
+                            itemExp[col.propertyName] = new ValueExpression(i++);
+                            break;
+                        }
+                        case "__value": {
+                            itemExp[col.propertyName] = new ValueExpression(item);
+                            break;
+                        }
+                        default: {
+                            const propVal = item[col.propertyName];
+                            itemExp[col.propertyName] = new ValueExpression(isNotNull(propVal) ? propVal : null);
+                            break;
+                        }
                     }
                 }
-            }).select(o => new ValueExpression(isNotNull(o) ? o : null)).toArray()).toArray();
-            let insertQuery = new InsertExpression(selectExp.entity, tempValues, selectExp.entity.columns);
+                insertQuery.values.push(itemExp);
+            }
             return queryBuilder.createTable(selectExp.entity).concat(queryBuilder.getInsertQuery(insertQuery));
         });
         const dropArrayTempTableQueries = arrayParameters.select(o => {

@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
-import { resolveClone } from "../../Helper/Util";
-export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
+export class FunctionCallExpression<T = any> implements IExpression<T> {
     public static create<T>(functionFn: ((...params: any[]) => T) | IExpression<(...params: any[]) => T>, params: IExpression[], functionName?: string) {
         let fnExp: IExpression<(...params: any[]) => T>;
         if ((functionFn as IExpression).type) {
@@ -23,9 +23,7 @@ export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
 
         return result;
     }
-    constructor(public fnExpression: IExpression<(...params: any[]) => T>, public params: IExpression[], functionName?: string) {
-        super();
-    }
+    constructor(public fnExpression: IExpression<(...params: any[]) => T>, public params: IExpression[], functionName?: string) { }
     public get functionName() {
         return this.fnExpression.toString();
     }
@@ -85,5 +83,10 @@ export class FunctionCallExpression<T = any> extends ExpressionBase<T> {
         const clone = new FunctionCallExpression(fnExpression, params);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        let hash = hashCode(this.functionName);
+        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
+        return hash;
     }
 }

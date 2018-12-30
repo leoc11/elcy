@@ -5,8 +5,14 @@ export class ObservableArray<T> extends Array<T> {
         super(...items);
         Object.setPrototypeOf(this, ObservableArray.prototype);
     }
-    static create<T>(items: T[]): ObservableArray<T> {
+    static from<T>(items: T[]): ObservableArray<T> {
         return new ObservableArray(items);
+    }
+    static observe<T>(items: T[]): ObservableArray<T> {
+        Object.setPrototypeOf(items, ObservableArray.prototype);
+        const observable = items as ObservableArray<T>;
+        observable._observers = [];
+        return observable;
     }
     public register(observer: (eventType: ArrayChangeType, items: T[]) => void) {
         this._observers.push(observer);

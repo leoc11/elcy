@@ -1,16 +1,19 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { resolveClone } from "../../Helper/Util";
-export class AdditionAssignmentExpression<T extends number | string = number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { GenericType } from "../../Common/Type";
+export class AdditionAssignmentExpression<T extends number | string = number | string> implements IBinaryOperatorExpression<T> {
     public static create(leftOperand: ParameterExpression, rightOperand: IExpression) {
         return new AdditionAssignmentExpression(leftOperand, rightOperand);
     }
-    constructor(public leftOperand: ParameterExpression, public rightOperand: IExpression) {
-        super(rightOperand.type);
-        if (leftOperand.type === String) {
+    public type: GenericType<T>;
+    public itemType: GenericType<any>;
+    constructor(public leftOperand: ParameterExpression<T>, public rightOperand: IExpression<T>) {
+        this.type = this.leftOperand.type;
+        if (leftOperand.type as any === String) {
             this.rightOperand = this.convertToStringOperand(rightOperand) as any;
         }
     }
@@ -38,5 +41,8 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
         const clone = new AdditionAssignmentExpression<T>(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("+=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

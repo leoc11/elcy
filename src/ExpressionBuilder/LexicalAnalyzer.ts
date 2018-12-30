@@ -39,7 +39,7 @@ export class LexicalAnalyzer {
                 lastToken = analyzeLexicalIdentifier(pointer, input);
                 yield lastToken;
             }
-            else if (char === "(" || char === "[" || (char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
+            else if (char === "(" || char === "[" || char === "%" || (char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
                 lastToken = analyzeLexicalOperator(pointer, input);
                 yield lastToken;

@@ -2,7 +2,7 @@ import { IConnection } from "../IConnection";
 import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { IIncludeRelation, SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
+import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { QueryType, IsolationLevel } from "../../Common/Type";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
@@ -12,12 +12,15 @@ import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpressi
 import { UUID } from "../../Data/UUID";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { IBatchedQuery } from "../../QueryBuilder/Interface/IBatchedQuery";
+import { BatchedQuery } from "../../QueryBuilder/Interface/BatchedQuery";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
+import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
+import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -34,15 +37,63 @@ export class MockConnection implements IConnection {
 
         return this._results;
     }
+    public set results(value) {
+        this._results = value;
+    }
     public generateQueryResult() {
         return Enumerable.load(this.deferredQueries)
             .selectMany(o => {
                 const command = o.command;
                 if (command instanceof SelectExpressionType) {
-                    const selects = this.flattenSelectExpression(command as any).toArray();
-                    const map: Map<SelectExpression, IQueryResult> = new Map();
-                    let i = 0;
+                    const selects = this.flattenSelectExpression(command as any);
+                    const map: Map<SelectExpression, any[]> = new Map();
+                    for (const select of selects) {
+                        const rows: any[] = [];
+                        map.set(select, rows);
+                        if (select.parentRelation) {
+                            const parentInclude = select.parentRelation as IncludeRelation;
+                            const relMap = Enumerable.load(parentInclude.relationMap()).toArray();
 
+                            let parent = parentInclude.parent;
+                            while (parent.parentRelation && parent.parentRelation.isEmbedded) {
+                                parent = parent.parentRelation.parent;
+                            }
+                            const parentRows = map.get(parent);
+
+                            const maxRowCount = this.getMaxCount(select, o, 3);
+
+                            Enumerable.load(parentRows).each(parent => {
+                                const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
+                                for (let i = 0; i < numberOfRecord; i++) {
+                                    const item = {} as any;
+                                    for (const o of select.projectedColumns) {
+                                        const columnName = o.alias || o.columnName;
+                                        item[columnName] = this.generateValue(o);
+                                    }
+                                    rows.push(item);
+
+                                    for (const [parentCol, entityCol] of relMap) {
+                                        item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
+                                    }
+                                }
+                            });
+                        }
+                        else {
+                            const maxRowCount = this.getMaxCount(select, o, 10);
+                            const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
+                            for (let i = 0; i < numberOfRecord; i++) {
+                                const item = {} as any;
+                                for (const o of select.projectedColumns) {
+                                    const columnName = o.alias || o.columnName;
+                                    item[columnName] = this.generateValue(o);
+                                }
+                                rows.push(item);
+                            }
+                        }
+                    }
+
+                    const generatedResults = Enumerable.load(map.values()).toArray();
+                    let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
                             effectedRows: 1
@@ -54,47 +105,8 @@ export class MockConnection implements IConnection {
                             }
                         }
                         else if (query.type === QueryType.DQL) {
-                            const select = selects[i++];
-                            map.set(select, result);
-                            const rows: any[] = [];
+                            const rows = generatedResults[generatedResults.length - (++i)];
                             result.rows = rows;
-
-                            if (select.parentRelation) {
-                                const parentInclude = select.parentRelation as IIncludeRelation;
-                                const relMap = parentInclude.relationMap;
-                                const parentQResult = map.get(parentInclude.parent);
-
-                                const maxRowCount = this.getMaxCount(select, o, 3);
-
-                                Enumerable.load(parentQResult.rows).each(parent => {
-                                    const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
-                                    for (let i = 0; i < numberOfRecord; i++) {
-                                        const item = {} as any;
-                                        select.projectedColumns.each(o => {
-                                            const columnName = o.alias || o.columnName;
-                                            item[columnName] = this.generateValue(o);
-                                        });
-                                        rows.push(item);
-
-                                        for (const [parentCol, entityCol] of relMap) {
-                                            item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
-                                        }
-                                    }
-                                });
-                            }
-                            else {
-                                const maxRowCount = this.getMaxCount(select, o, 10);
-                                const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
-                                for (let i = 0; i < numberOfRecord; i++) {
-                                    const item = {} as any;
-                                    select.projectedColumns.each(o => {
-                                        const columnName = o.alias || o.columnName;
-                                        item[columnName] = this.generateValue(o);
-                                    });
-                                    rows.push(item);
-                                }
-                            }
-
                             result.effectedRows = rows.length;
                         }
                         return result;
@@ -188,12 +200,14 @@ export class MockConnection implements IConnection {
         if (select.paging && select.paging.take) {
             defaultValue = this.extractValue(o, select.paging.take);
         }
-        else if (select.joins.any(o => o.name === "TAKE")) {
-            const takeJoin = select.joins.first(o => o.name === "TAKE") as any;
-            if (takeJoin.end) {
-                defaultValue = this.extractValue(o, takeJoin.end);
-                if (takeJoin.start) {
-                    defaultValue -= this.extractValue(o, takeJoin.start);
+        else {
+            const takeJoin = select.joins.first(o => o instanceof PagingJoinRelation) as PagingJoinRelation;
+            if (takeJoin) {
+                if (takeJoin.end) {
+                    defaultValue = this.extractValue(o, takeJoin.end);
+                    if (takeJoin.start) {
+                        defaultValue -= this.extractValue(o, takeJoin.start);
+                    }
                 }
             }
         }
@@ -209,8 +223,14 @@ export class MockConnection implements IConnection {
             return sqlParam ? sqlParam.value : null;
         }
     }
-    protected flattenSelectExpression(selectExp: SelectExpression): Enumerable<SelectExpression> {
-        return [selectExp].union(selectExp.includes.selectMany(o => this.flattenSelectExpression(o.child)), true);
+    protected flattenSelectExpression(selectExp: SelectExpression): SelectExpression[] {
+        const results = [selectExp];
+        for (let i = 0; i < results.length; i++) {
+            const select = results[i];
+            const addition = Enumerable.load(select.resolvedIncludes).select(o => o.child).toArray().reverse();
+            results.splice(i + 1, 0, ...addition);
+        }
+        return results;
     }
     public generateValue(column: IColumnExpression) {
         switch (column.type) {
@@ -220,7 +240,10 @@ export class MockConnection implements IConnection {
                 return Number((Math.random() * 10000 + 1).toFixed(2));
             case String: {
                 let result = "";
-                const number = Math.random() * 100 + 1;
+                let number = Math.random() * 100 + 1;
+                if (column.columnMetaData && column.columnMetaData instanceof StringColumnMetaData && column.columnMetaData.length > 0) {
+                    number = column.columnMetaData.length;
+                }
                 for (let i = 0; i < number; i++) {
                     let char = String.fromCharCode(Math.round(Math.random() * 90) + 32);
                     if (/[^a-z ]/i.test(char)) {
@@ -245,7 +268,7 @@ export class MockConnection implements IConnection {
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        const batchedQuery = command as IBatchedQuery;
+        const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 0;
         return this.results.splice(0, count);
     }

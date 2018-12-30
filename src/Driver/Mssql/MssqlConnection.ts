@@ -168,8 +168,9 @@ export class MssqlConnection implements IConnection {
     public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
             const results: IQueryResult[] = [];
-            let result: IQueryResult;
-
+            let result: IQueryResult = {
+                effectedRows: 0
+            };
             const request = new tedious.Request(command.query, (error: string, rowCount: number, rows: any[]) => {
                 if (error) {
                     reject(error);
@@ -197,14 +198,11 @@ export class MssqlConnection implements IConnection {
             });
 
             const doneHandler = (rowCount: number, more: boolean) => {
-                if (result) {
-                    result.effectedRows = rowCount;
-                    results.push(result);
-                    result = null;
-                }
-                else {
-                    results.push({ effectedRows: rowCount });
-                }
+                if (rowCount) result.effectedRows = rowCount;
+                results.push(result);
+                result = {
+                    effectedRows: 0
+                };
             };
             request.on("doneInProc", doneHandler);
             request.on("done", doneHandler);

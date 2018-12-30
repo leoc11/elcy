@@ -1,20 +1,19 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
-export class RightDecrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
-    public static create(operand: IExpression<number>) {
+import { resolveClone, hashCode } from "../../Helper/Util";
+import { ParameterExpression } from "./ParameterExpression";
+export class RightDecrementExpression implements IUnaryOperatorExpression<number> {
+    public static create(operand: ParameterExpression<number>) {
         const result = new RightDecrementExpression(operand);
         if (operand instanceof ValueExpression)
             return ValueExpression.create<number>(result);
 
         return result;
     }
-    constructor(public readonly operand: IExpression) {
-        super(Number);
-    }
-
+    public type = Number;
+    constructor(public readonly operand: ParameterExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -29,5 +28,8 @@ export class RightDecrementExpression extends ExpressionBase<number> implements 
         const clone = new RightDecrementExpression(operand);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCode("--", this.operand.hashCode());
     }
 }
