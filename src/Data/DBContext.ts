@@ -116,8 +116,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async getConnection(writable?: boolean) {
         const con = this.connection ? this.connection : await this.connectionManager.getConnection(writable);
         if (Diagnostic.enabled) Diagnostic.trace(this, `Get connection. used existing connection: ${!!this.connection}`);
-        if (!con.isOpen)
-            await con.open();
         return con;
     }
     public async closeConnection(con?: IConnection) {
@@ -336,6 +334,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
         const con = this.connection ? this.connection : await this.getConnection(command.type !== QueryType.DQL);
+        if (!con.isOpen) await con.open();
         const timer = Diagnostic.timer();
         if (Diagnostic.enabled) Diagnostic.debug(con, `Execute Query.`, command);
         const result = await con.executeQuery(command);
@@ -349,7 +348,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public async executeQueries(queryCommands: IQuery[]): Promise<IQueryResult[]> {
         let results: IQueryResult[] = [];
-        const con = await this.getConnection(queryCommands.any(o => o.type !== QueryType.DQL));
+        const con = await this.getConnection(queryCommands.any(o => (o.type & QueryType.DQL) && true));
+        if (!con.isOpen) await con.open();
         for (const query of queryCommands) {
             const res = await con.executeQuery(query);
             results = results.concat(res);
@@ -424,13 +424,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const mergedQueries = queryBuilder.mergeQueryCommands(deferredQueryEnumerable.selectMany(o => {
             return o.buildQuery(queryBuilder);
         }));
-        let queryResult: IQueryResult[] = [];
-        this.connection = await this.getConnection(mergedQueries.any(o => o.type !== QueryType.DQL));
-        for (const command of mergedQueries) {
-            const result = await this.executeQuery(command);
-            queryResult = queryResult.concat(result);
-        }
-        this.closeConnection();
+        const queryResult: IQueryResult[] = await this.executeQueries(mergedQueries);
         for (const deferredQuery of deferredQueryEnumerable) {
             const results = queryResult.splice(0, deferredQuery.queries.length);
             deferredQuery.resolve(results);
@@ -467,6 +461,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public async getUpdateSchemaQueries(entityTypes: IObjectType[]) {
         const con = await this.getConnection();
+        if (!con.isOpen) await con.open();
         const schemaBuilder = new this.schemaBuilderType(con, this.queryBuilder);
         return await schemaBuilder.getSchemaQuery(entityTypes);
     }

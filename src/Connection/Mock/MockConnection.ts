@@ -98,13 +98,13 @@ export class MockConnection implements IConnection {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type === QueryType.DML) {
+                        if (query.type & QueryType.DML) {
                             const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
                             if (Array.isArray(arrayParameter.value)) {
                                 result.effectedRows = arrayParameter.value.length;
                             }
                         }
-                        else if (query.type === QueryType.DQL) {
+                        else if (query.type & QueryType.DQL) {
                             const rows = generatedResults[generatedResults.length - (++i)];
                             result.rows = rows;
                             result.effectedRows = rows.length;
@@ -268,6 +268,7 @@ export class MockConnection implements IConnection {
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
+        console.log(JSON.stringify(command.query));
         const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 0;
         return this.results.splice(0, count);

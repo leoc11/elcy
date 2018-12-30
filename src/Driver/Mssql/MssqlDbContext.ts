@@ -62,7 +62,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             let effectedRows = 0;
             commands.each((command, index) => {
                 const result = results[index];
-                if (command.type & QueryType.DQL && result.rows) {
+                if ((command.type & QueryType.DQL) && result.rows) {
                     rows = rows.concat(Enumerable.load(result.rows).toArray());
                 }
                 if (command.type & QueryType.DML) {

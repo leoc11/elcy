@@ -63,6 +63,8 @@ export class MssqlConnection implements IConnection {
         return Promise.resolve();
     }
     public open(): Promise<void> {
+        if (this.isOpen) return Promise.resolve();
+
         return new Promise<void>(async (resolve, reject) => {
             if (!tedious) {
                 tedious = await import("tedious" as any);
@@ -167,6 +169,7 @@ export class MssqlConnection implements IConnection {
     }
     public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
+            console.log(command.query);
             const results: IQueryResult[] = [];
             let result: IQueryResult = {
                 effectedRows: 0
@@ -176,6 +179,7 @@ export class MssqlConnection implements IConnection {
                     reject(error);
                 }
                 else {
+                    console.log(JSON.stringify(command.query));
                     resolve(results);
                 }
             });

@@ -7,6 +7,9 @@ import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { ISqliteConnectionOption } from "./ISqliteConnectionOption";
 
 let sqlite3: any;
+(async () => {
+    sqlite3 = await import("sqlite3");
+})();
 interface ITransactionData {
     prevIsolationLevel: IsolationLevel;
     isolationLevel: IsolationLevel;
@@ -15,11 +18,6 @@ interface ITransactionData {
 export class SqliteConnection implements IConnection {
     constructor(public connectionOption: ISqliteConnectionOption) {
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
-        if (!sqlite3) {
-            (async () => {
-                sqlite3 = await import("sqlite3");
-            })();
-        }
     }
     public isolationLevel: IsolationLevel = "READ COMMITTED";
     private connection: any; // sqlite3.Database
@@ -39,6 +37,8 @@ export class SqliteConnection implements IConnection {
         return !!this.connection;
     }
     public open(): Promise<void> {
+        if (this.isOpen) return Promise.resolve();
+
         return new Promise<void>((resolve, reject) => {
             const con = new sqlite3.Database(this.connectionOption.database, this.connectionMode, (error: Error) => {
                 reject(error);

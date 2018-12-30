@@ -17,7 +17,16 @@ chai.use(sinonChai);
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
 const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
 
-let db = new MyDb();
+let db = new MyDb(() => new MssqlDriver({
+    host: "localhost\\SQLEXPRESS",
+    database: "Database",
+    port: 1433,
+    user: "sa",
+    password: "password",
+    // options: {
+    //     trustedConnection: true
+    // }
+}));
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
@@ -405,7 +414,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("array").and.not.empty;
             results.each(o => o.should.be.an.instanceof(Product));
-                });
+        });
         it("select many with nested select to related entity property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
@@ -421,7 +430,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("array").and.not.empty;
             results.each(o => o.should.be.a("number"));
-            });
+        });
         it("select many with nested select to many relation", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
@@ -438,7 +447,7 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.a("array");
-        });
+            });
 
             const isAllEmpty = results.all(o => !o.any());
             isAllEmpty.should.not.true;
@@ -459,8 +468,8 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(OrderDetailProperty);
+            });
         });
-    });
         it("nested selectMany", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
@@ -477,7 +486,7 @@ describe("QUERYABLE", async () => {
             results.should.be.a("array").and.not.empty;
             results.each(o => {
                 o.should.be.an.instanceof(OrderDetailProperty);
-        });
+            });
         });
     });
     describe("WHERE", async () => {
@@ -515,7 +524,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array");
                 o.OrderDetails.each(od => {
                     od.should.be.an.instanceof(OrderDetail);
-        });
+                });
             });
         });
         it("should be supported in select statement", async () => {
@@ -537,7 +546,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.has.property("ods").that.is.an("array");
                 o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-        });
+            });
         });
         it("could be used more than once in chain", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -572,8 +581,8 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("array").and.not.empty;
             results.each(o => o.should.be.a("date"));
-            });
         });
+    });
     describe("ORDER BY", async () => {
         it("should work", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -590,7 +599,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("array").and.not.empty;
             results.each(o => o.should.be.an.instanceof(Order));
-    });
+        });
         it("by related entity", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 

@@ -188,7 +188,7 @@ export abstract class Queryable<T = any> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => {
                 let i = 0;
-                result = result.where(o => query.queries[i++].type === QueryType.DQL).toArray();
+                result = result.where(o => (query.queries[i++].type & QueryType.DQL) && true).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext);
             }, this.queryOption);
         this.dbContext.deferredQueries.add(query);
@@ -599,7 +599,7 @@ export abstract class Queryable<T = any> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => {
                 let i = 0;
-                result = result.where(o => query.queries[i++].type === QueryType.DQL).toArray();
+                result = result.where(o => (query.queries[i++].type & QueryType.DQL) && true).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext).first();
             }, this.queryOption);
         this.dbContext.deferredQueries.add(query);
