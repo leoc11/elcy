@@ -1,24 +1,26 @@
 import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 
-export class ObjectValueExpression<T = any> implements IExpression<T> {
-    public static create<T extends { [Key: string]: IExpression }>(objectValue: T) {
+export class ObjectValueExpression<T = any> extends ExpressionBase<T> {
+    public static create<TType extends { [Key: string]: IExpression }>(objectValue: TType) {
         const result = new ObjectValueExpression(objectValue);
         let isAllValue = Object.keys(objectValue).all(o => objectValue[o] instanceof ValueExpression);
         if (isAllValue)
-            return ValueExpression.create<T>(objectValue);
+            return ValueExpression.create<TType>(objectValue);
 
         return result;
     }
     public object: { [key in keyof T]?: IExpression };
     public type: IObjectType<T>;
     constructor(objectValue: { [key in keyof T]?: IExpression }, type?: IObjectType<T>) {
+        super();
         this.object = objectValue;
         this.type = type ? type : objectValue.constructor as IObjectType<T>;
     }
+
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -43,12 +45,5 @@ export class ObjectValueExpression<T = any> implements IExpression<T> {
         const clone = new ObjectValueExpression(obj, this.type);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        let hash = 0;
-        for (const prop in this.object) {
-            hash = hashCodeAdd(hash, hashCode(prop, this.object[prop].hashCode()));
-        }
-        return hash;
     }
 }

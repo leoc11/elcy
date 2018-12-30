@@ -1,19 +1,20 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
-import { ParameterExpression } from "./ParameterExpression";
-export class LeftIncrementExpression implements IUnaryOperatorExpression<number> {
-    public static create(operand: ParameterExpression<number>) {
+import { resolveClone } from "../../Helper/Util";
+export class LeftIncrementExpression extends ExpressionBase<number> implements IUnaryOperatorExpression {
+    public static create(operand: IExpression<number>) {
         const result = new LeftIncrementExpression(operand);
         if (operand instanceof ValueExpression)
             return ValueExpression.create<number>(result);
 
         return result;
     }
-    public type = Number;
-    constructor(public operand: ParameterExpression<number>) { }
+    constructor(public operand: IExpression) {
+        super(Number);
+    }
+
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -28,8 +29,5 @@ export class LeftIncrementExpression implements IUnaryOperatorExpression<number>
         const clone = new LeftIncrementExpression(operand);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("++"), this.operand.hashCode());
     }
 }

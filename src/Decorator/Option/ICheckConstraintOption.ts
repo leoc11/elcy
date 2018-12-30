@@ -1,5 +1,5 @@
 
 export interface ICheckConstraintOption {
     name?: string;
-    check: (entity: any) => boolean;
+    check?: (entity: any) => boolean;
 }

@@ -1,6 +1,6 @@
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { hashCode } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -9,7 +9,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class DistinctQueryable<T> extends Queryable<T> {
     protected readonly selectorFn?: (item: T) => any;
-    private _selector?: FunctionExpression;
+    private _selector?: FunctionExpression<T, any>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
             this._selector = ExpressionBuilder.parse(this.selectorFn, this.parameters);
@@ -32,6 +32,6 @@ export class DistinctQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("DISTINCT", this.parent.hashCode()), this.selector ? this.selector.hashCode() : 0);
+        return hashCode("DISTINCT", this.parent.hashCode() + hashCode((this.selectorFn || this.selector || "").toString()));
     }
 }

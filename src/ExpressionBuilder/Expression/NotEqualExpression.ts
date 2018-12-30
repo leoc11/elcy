@@ -1,9 +1,10 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class NotEqualExpression implements IBinaryOperatorExpression<boolean> {
+import { GenericType } from "../../Common/Type";
+import { resolveClone } from "../../Helper/Util";
+export class NotEqualExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression, rightOperand: IExpression) {
         const result = new NotEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,8 +12,11 @@ export class NotEqualExpression implements IBinaryOperatorExpression<boolean> {
 
         return result;
     }
-    public type = Boolean;
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
+        super(Boolean);
+    }
+    public type: GenericType<boolean>;
+
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -29,8 +33,5 @@ export class NotEqualExpression implements IBinaryOperatorExpression<boolean> {
         const clone = new NotEqualExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("!=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

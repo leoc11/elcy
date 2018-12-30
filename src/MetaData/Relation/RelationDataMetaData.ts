@@ -51,15 +51,15 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.sourceRelationMeta.completeRelation(this.targetRelationMeta);
 
         const isManyToMany = (this.sourceRelationMeta.relationType === "many") && (this.targetRelationMeta.relationType === "many");
-        const len = this.sourceRelationColumns.length;
-        for (let i = 0; i < len; i++) {
+        let l = this.sourceRelationColumns.length;
+        for (let i = 0; i < l; i++) {
             const dataKey = this.sourceRelationColumns[i];
             const sourceKey = this.sourceRelationMeta.relationColumns[i];
             this.sourceRelationMaps.set(dataKey, sourceKey);
             if (isManyToMany)
                 this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey);
         }
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < l; i++) {
             const dataKey = this.targetRelationColumns[i];
             const targetKey = this.targetRelationMeta.relationColumns[i];
             this.targetRelationMaps.set(dataKey, targetKey);

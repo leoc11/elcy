@@ -1,9 +1,10 @@
 import { OrderDirection } from "../Common/Type";
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
+import { hashCode } from "../Helper/Util";
+import { IQueryableOrderDefinition } from "./Interface/IQueryableOrderDefinition";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -13,8 +14,8 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
-    protected readonly selectorsFn: IOrderQueryDefinition<T>[];
-    protected _selectors: Array<ArrayValueExpression<FunctionExpression | IExpression<OrderDirection>>>;
+    protected readonly selectorsFn: IQueryableOrderDefinition<T>[];
+    protected _selectors: Array<ObjectValueExpression<{ selector: FunctionExpression, direction: IExpression<OrderDirection> }>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select(o => {
@@ -23,7 +24,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                 const itemArray: IExpression[] = [];
                 itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
-                return new ArrayValueExpression(...itemArray);
+                return new ArrayValueExpression(...itemArray) as any;
             }).toArray();
         }
         return this._selectors;
@@ -31,7 +32,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, ...selectors: IOrderQueryDefinition<T>[]) {
+    constructor(public readonly parent: Queryable<T>, ...selectors: IQueryableOrderDefinition<T>[]) {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }
@@ -42,6 +43,13 @@ export class OrderQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("ORDERBY", this.parent.hashCode()), this.selectors.sum(o => o.hashCode()));
+        let code = this.parent.hashCode();
+        if (this.selectorsFn) {
+            code += this.selectorsFn.sum(o => hashCode(o[0].toString()) + hashCode(o[1] ? o[1] : "ASC"));
+        }
+        else if (this.selectors) {
+            code += this.selectors.sum(o => hashCode(o.toString()));
+        }
+        return hashCode("ORDERBY", code);
     }
 }

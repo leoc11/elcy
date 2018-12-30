@@ -6,7 +6,6 @@ import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/Membe
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../QueryBuilder/DbFunction";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -94,14 +93,14 @@ sqliteQueryTranslator.register(Math, "trunc", null);
  */
 sqliteQueryTranslator.register(String.prototype, "charAt", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, ${qb.getExpressionString(exp.params[0])} + 1, 1)`);
 sqliteQueryTranslator.register(String.prototype, "concat", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.objectOperand)} || ${exp.params.select((p) => qb.getExpressionString(p)).toArray().join(" || ")}`);
-sqliteQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.valueString("%")} || ${qb.getExpressionString(exp.params[0])}))`);
+sqliteQueryTranslator.register(String.prototype, "endsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getValueString("%")} || ${qb.getExpressionString(exp.params[0])}))`);
 sqliteQueryTranslator.register(String.prototype, "indexOf", (exp: MethodCallExpression, qb: QueryBuilder) => {
     if (exp.params.length > 1) {
         syntaxNotSupported("'indexOf' with start_pos parameter");
     }
     return `(INSTR(${qb.getExpressionString(exp.objectOperand)},${qb.getExpressionString(exp.params[0])}) - 1)`;
 });
-sqliteQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getExpressionString(exp.params[0])} || ${qb.valueString("%")}))`);
+sqliteQueryTranslator.register(String.prototype, "startsWith", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `(${qb.getExpressionString(exp.objectOperand)} LIKE (${qb.getExpressionString(exp.params[0])} || ${qb.getValueString("%")}))`);
 sqliteQueryTranslator.register(String.prototype, "substr", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1)${(exp.params.length > 1 ? `, ${qb.getExpressionString(exp.params[1])}` : "")})`);
 sqliteQueryTranslator.register(String.prototype, "substring", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `SUBSTR(${qb.getExpressionString(exp.objectOperand)}, (${qb.getExpressionString(exp.params[0])} + 1)${(exp.params.length > 1 ? `, (${qb.getExpressionString(exp.params[1])} - ${qb.getExpressionString(exp.params[0])})` : "")})`);
 const stringValueOf = (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => qb.getExpressionString(exp.objectOperand);
@@ -118,14 +117,7 @@ sqliteQueryTranslator.register(String.prototype, "split", null);
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
  */
-sqliteQueryTranslator.register(Date, "timestamp", (exp: MethodCallExpression) => {
-    if (exp.params.length > 0 && exp.params[0].execute() === true) {
-        return "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')";
-    }
-    return "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')";
-}, (exp: MethodCallExpression) => {
-    return exp.params.length <= 0 || exp.params[0] instanceof ValueExpression;
-});
+sqliteQueryTranslator.register(Date, "currentTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
 sqliteQueryTranslator.register(Date.prototype, "getDate", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%d', ${qb.getExpressionString(exp.objectOperand)})`);
 sqliteQueryTranslator.register(Date.prototype, "getDay", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%w', ${qb.getExpressionString(exp.objectOperand)})`);
 sqliteQueryTranslator.register(Date.prototype, "getFullYear", (exp: MethodCallExpression<any, any>, qb: QueryBuilder) => `STRFTIME('%Y', ${qb.getExpressionString(exp.objectOperand)})`);

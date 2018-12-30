@@ -74,26 +74,26 @@ Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector:
 Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {
     return new DistinctEnumerable(this, selector);
 };
-Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new InnerJoinEnumerable(this, Enumerable.load(array2), relation, resultSelector);
+Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new InnerJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new LeftJoinEnumerable(this, Enumerable.load(array2), relation, resultSelector);
+Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new LeftJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new RightJoinEnumerable(this, Enumerable.load(array2), relation, resultSelector);
+Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new RightJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
-    return new FullJoinEnumerable(this, Enumerable.load(array2), relation, resultSelector);
+Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2> | Enumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new FullJoinEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), relation, resultSelector);
 };
-Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: Iterable<T>, isUnionAll: boolean = false): Enumerable<T> {
-    return new UnionEnumerable(this, Enumerable.load(array2), isUnionAll);
+Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: Iterable<T> | Enumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
+    return new UnionEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2), isUnionAll);
 };
-Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: Iterable<T>): Enumerable<T> {
-    return new IntersectEnumerable(this, Enumerable.load(array2));
+Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: Iterable<T> | Enumerable<T>): Enumerable<T> {
+    return new IntersectEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2));
 };
-Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: Iterable<T>): Enumerable<T> {
-    return new ExceptEnumerable(this, Enumerable.load(array2));
+Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: Iterable<T> | Enumerable<T>): Enumerable<T> {
+    return new ExceptEnumerable(this, array2 instanceof Enumerable ? array2 : new Enumerable(array2));
 };
 Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
     return new SelectEnumerable(new GroupByEnumerable(this, (o) => {

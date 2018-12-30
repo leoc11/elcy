@@ -1,14 +1,13 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { Queryable } from "../../Queryable/Queryable";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { resolveClone } from "../../Helper/Util";
 
-export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
-    public static create<TE, K extends keyof TE, T = any>(objectOperand: IExpression<TE>, params: IExpression[], methodName?: K, methodFn?: () => T) {
+export class MethodCallExpression<TType = any, KProp extends keyof TType = any, TResult = any> extends ExpressionBase<TResult> implements IMemberOperatorExpression<TType, TResult> {
+    public static create<TType, KProp extends keyof TType, TResult = any>(objectOperand: IExpression<TType>, params: IExpression[], methodName?: KProp, methodFn?: () => TResult) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
         if (objectOperand instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
             return ValueExpression.create(result);
@@ -16,22 +15,21 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
 
         return result;
     }
-    public methodName: K;
-    constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
-        this.type = type;
+    public methodName: string;
+    constructor(public objectOperand: IExpression<TType>, method: KProp | (() => TResult), public params: IExpression[], type?: GenericType<TResult>) {
+        super(type);
         if (typeof method === "function") {
-            this.methodName = method.name as any;
+            this.methodName = method.name;
         }
         else {
             this.methodName = method;
         }
     }
-    private _type: GenericType<T>;
+    private _type: GenericType<TResult>;
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
-                const objectType = this.objectOperand.type as IObjectType<TE>;
-                if (Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
+                if (Queryable.isPrototypeOf(this.objectOperand.type)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
@@ -58,10 +56,9 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
                 }
                 else {
                     try {
-                        this.type = objectType.prototype[this.methodName]().constructor;
+                        this.type = this.objectOperand.type.prototype[this.methodName]().constructor;
                     } catch (e) {
-                        const objectInstance = new objectType();
-                        this.type = (objectInstance[this.methodName] as any)().constructor;
+                        this.type = (new (this.objectOperand.type as any)())[this.methodName]().constructor;
                     }
                 }
             }
@@ -93,13 +90,8 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if (!replaceMap) replaceMap = new Map();
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
-        const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
+        const clone = new MethodCallExpression(objectOperand, this.methodName as KProp, params, this.type);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        let hash = hashCode("." + this.methodName, this.objectOperand.hashCode());
-        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
-        return hash;
     }
 }

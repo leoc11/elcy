@@ -100,7 +100,8 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
                         this.relationColumns = this.relationColumns.concat(this.source.primaryKeys);
                     }
                 }
-                for (let i = 0, len = this.relationColumns.length; i < len; i++) {
+                const l = this.relationColumns.length;
+                for (let i = 0; i < l; i++) {
                     const col = this.relationColumns[i];
                     const reverseCol = this.reverseRelation.relationColumns[i];
                     if (!reverseCol.type) {

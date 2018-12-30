@@ -1,12 +1,12 @@
-import { IObjectType, NullConstructor } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
-export class InstantiationExpression<T = any> implements IExpression<T> {
+import { resolveClone } from "../../Helper/Util";
+export class InstantiationExpression<T = any> extends ExpressionBase<T> {
     public static create<T>(type: IObjectType<T> | IExpression<IObjectType<T>>, params: IExpression[]) {
         let typeExp: IExpression<IObjectType<T>>;
-        if ((type as IExpression).type)
+        if (type instanceof ExpressionBase)
             typeExp = type as IExpression<IObjectType<T>>;
         else
             typeExp = new ValueExpression(type as IObjectType<T>);
@@ -18,12 +18,14 @@ export class InstantiationExpression<T = any> implements IExpression<T> {
 
         return result;
     }
-    constructor(public typeOperand: IExpression<IObjectType<T>>, public params: IExpression[]) { }
+    constructor(public typeOperand: IExpression<IObjectType<T>>, public params: IExpression[]) {
+        super();
+    }
     public get type() {
         try {
             return this.typeOperand.execute();
         }
-        catch (e) { return NullConstructor; }
+        catch (e) { return null; }
     }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
@@ -47,10 +49,5 @@ export class InstantiationExpression<T = any> implements IExpression<T> {
         const clone = new InstantiationExpression(typeOperand, params);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        let hash = hashCodeAdd(this.typeOperand.hashCode(), hashCode("new"));
-        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
-        return hash;
     }
 }

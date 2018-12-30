@@ -6,30 +6,30 @@ import { QueryVisitor, IVisitParameter } from "../QueryBuilder/QueryVisitor";
 import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { hashCode } from "../Helper/Util";
 
 export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected readonly relationFn: (item: T, item2: T2) => boolean;
     protected readonly resultSelectorFn: (item1: T, item2: T2[]) => R;
-    private _relation: FunctionExpression<boolean>;
+    private _relation: FunctionExpression<T | T2, boolean>;
     protected get relation() {
         if (!this._relation && this.relationFn)
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, this.flatParameterStacks);
+            this._relation = ExpressionBuilder.parse<T | T2, boolean>(this.relationFn, this.flatParameterStacks);
         return this._relation;
     }
     protected set relation(value) {
         this._relation = value;
     }
-    private _resultSelector: FunctionExpression<R>;
+    private _resultSelector: FunctionExpression<T | T2[], R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, this.flatParameterStacks);
+            this._resultSelector = ExpressionBuilder.parse<T | T2[], any>(this.resultSelectorFn, this.flatParameterStacks);
         return this._resultSelector;
     }
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T, item2: T2[]) => R), public type: IObjectType<R> = Object as any) {
+    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<T | T2, boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<T | T2[], R> | ((item1: T, item2: T2[]) => R), public type: IObjectType<R> = Object as any) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relationShip instanceof FunctionExpression)
@@ -52,6 +52,6 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("GROUPJOIN", this.parent.hashCode()), this.parent2.hashCode());
+        return hashCode("GROUPJOIN", this.parent.hashCode() + this.parent2.hashCode());
     }
 }

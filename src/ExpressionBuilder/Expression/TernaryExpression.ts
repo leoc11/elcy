@@ -1,13 +1,13 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType, NullConstructor } from "../../Common/Type";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T2> {
-    public static create<T>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<T>, falseResultOperand: IExpression<T>) {
+import { resolveClone } from "../../Helper/Util";
+export class TernaryExpression<T1 = any, T2 = any> extends ExpressionBase<T1 | T2> {
+    public static create<TType>(logicalOperand: IExpression<boolean>, trueResultOperand: IExpression<TType>, falseResultOperand: IExpression<TType>) {
         const result = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
         if (logicalOperand instanceof ValueExpression && trueResultOperand instanceof ValueExpression && falseResultOperand instanceof ValueExpression)
-            return ValueExpression.create<T>(result);
+            return ValueExpression.create<TType>(result);
 
         return result;
     }
@@ -25,7 +25,10 @@ export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T
         return Object;
     }
 
-    constructor(public logicalOperand: IExpression<boolean>, public trueResultOperand: IExpression<T1>, public falseResultOperand: IExpression<T2>) { }
+    constructor(public logicalOperand: IExpression<boolean>, public trueResultOperand: IExpression<T1>, public falseResultOperand: IExpression<T2>) {
+        super();
+    }
+
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -42,8 +45,5 @@ export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T
         const clone = new TernaryExpression(logicalOperand, trueResultOperand, falseResultOperand);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCodeAdd(hashCode(":", hashCode("?", this.logicalOperand.hashCode())), this.trueResultOperand.hashCode()), this.falseResultOperand.hashCode());
     }
 }

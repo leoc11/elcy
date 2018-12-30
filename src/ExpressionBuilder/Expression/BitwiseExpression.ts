@@ -1,10 +1,10 @@
 import { FunctionCallExpression } from "./FunctionCallExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { ExpressionTransformer } from "../ExpressionTransformer";
-export abstract class BitwiseExpression implements IExpression<number> {
-    public type = Number;
-    constructor() { }
+export abstract class BitwiseExpression extends ExpressionBase<number> {
+    constructor() {
+        super(Number);
+    }
     protected convertOperand(operand: IExpression): IExpression<number> {
         if (operand.type === String) {
             operand = FunctionCallExpression.create(parseInt, [operand], "parseInt");
@@ -14,7 +14,5 @@ export abstract class BitwiseExpression implements IExpression<number> {
         }
         return operand as any;
     }
-    public abstract execute(transformer?: ExpressionTransformer): any;
-    public abstract hashCode(): number;
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): BitwiseExpression;
 }

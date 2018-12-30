@@ -2,7 +2,7 @@ import "../Enumerable/Enumerable.partial";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
-import { IObjectType, ValueType, GenericType } from "../Common/Type";
+import { IObjectType, ValueType } from "../Common/Type";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -43,9 +43,6 @@ declare global {
          */
         except(array2: Iterable<T>): Enumerable<T>;
         pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
-    
-        // Helper Extension
-        ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
     }
     interface Map<K, V> {
         asEnumerable(): Enumerable<[K, V]>;
@@ -82,11 +79,11 @@ Array.prototype.orderBy = function <T>(this: T[], ...selectors: IOrderDefinition
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];
 };
-Array.prototype.any = function <T>(this: T[], predicate: (item: T) => boolean = o => true) {
-    return this.some(predicate);
+Array.prototype.any = function <T>(this: T[], predicate?: (item: T) => boolean) {
+    return predicate ? this.asEnumerable().any(predicate) : this.length > 0;
 };
 Array.prototype.all = function <T>(this: T[], predicate: (item: T) => boolean) {
-    return this.every(predicate);
+    return this.asEnumerable().all(predicate);
 };
 Array.prototype.skip = function <T>(this: T[], skip: number) {
     return this.asEnumerable().skip(skip);
@@ -139,8 +136,4 @@ Array.prototype.except = function <T>(this: T[], array2: Iterable<T>) {
 };
 Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
     return this.asEnumerable().pivot(dimensions, metrics);
-};
-
-Array.prototype.ofType = function <T, TR>(this: T[], type: GenericType<TR>): Enumerable<TR> {
-    return this.asEnumerable().ofType(type);
 };

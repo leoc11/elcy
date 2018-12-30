@@ -127,7 +127,7 @@ export type IdentifierColumnType = "uuid" // postgres
 /**
  * column type with string data format
  */
-export type DataSerializationColumnType = "xml" // mssql, postgres
+export type DataStringColumnType = "xml" // mssql, postgres
     | "json" // mysql, postgres
     | "jsonb"; // postgres
 
@@ -168,13 +168,13 @@ export type ColumnType = IntColumnType
     | BooleanColumnType
     | GeometricColumnType
     | IdentifierColumnType
-    | DataSerializationColumnType
+    | DataStringColumnType
     | EnumColumnType
     | OtherColumnType;
 
 export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultInteger"
-    | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataSerialization"
+    | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataString"
     | "defaultDate" | "defaultDateTime" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnGroupType = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataSerialization"
+export type ColumnGroupType = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataString"
     | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";

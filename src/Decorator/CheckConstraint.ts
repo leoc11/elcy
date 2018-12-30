@@ -10,7 +10,7 @@ export function CheckContraint(option: ICheckConstraintOption): (target: object,
 export function CheckContraint<T>(check: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void;
 export function CheckContraint<T>(name: string, check: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void;
 export function CheckContraint<T>(optionOrCheckOrName: ICheckConstraintOption | string | ((entity: T) => boolean), check?: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void {
-    let option: ICheckConstraintOption = {} as any;
+    let option: ICheckConstraintOption = {};
     switch (typeof optionOrCheckOrName) {
         case "object":
             option = optionOrCheckOrName as any;
@@ -25,11 +25,11 @@ export function CheckContraint<T>(optionOrCheckOrName: ICheckConstraintOption | 
     if (check)
         option.check = check;
 
-    return (target: GenericType<T> | object, propertyKey?: keyof T /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
+    return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
         const entConstructor: GenericType<T> = propertyKey ? target.constructor as any : target;
         if (!option.name)
             option.name = `CK_${entConstructor.name}_${(propertyKey ? propertyKey : (target as GenericType<T>).name)}`;
-
+        
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as any);

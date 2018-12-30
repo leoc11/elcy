@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class TypeofExpression implements IUnaryOperatorExpression<string> {
+import { resolveClone } from "../../Helper/Util";
+export class TypeofExpression extends ExpressionBase<string> implements IUnaryOperatorExpression {
     public static create(operand: IExpression) {
         const result = new TypeofExpression(operand);
         if (operand instanceof ValueExpression)
@@ -11,8 +11,10 @@ export class TypeofExpression implements IUnaryOperatorExpression<string> {
 
         return result;
     }
-    public type = String;
-    constructor(public operand: IExpression) { }
+    constructor(public operand: IExpression) {
+        super(String);
+    }
+
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -27,8 +29,5 @@ export class TypeofExpression implements IUnaryOperatorExpression<string> {
         const clone = new TypeofExpression(operand);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("typeof"), this.operand.hashCode());
     }
 }

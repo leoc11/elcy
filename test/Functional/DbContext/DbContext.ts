@@ -3,19 +3,18 @@ import { Order } from "../../Common/Model";
 import { expect } from "chai";
 import { EntityState } from "../../../src/Data/EntityState";
 
-const db = new MyDb();
-afterEach(() => {
-    db.clear();
-});
 describe("DBCONTEXT", () => {
+    const db = new MyDb();
     describe("ATTACH", () => {
         it("should attach entity", () => {
             const entry = db.attach(new Order());
             expect(entry.state).equal(EntityState.Unchanged);
+            db.clear();
         });
         it("should attach and mark added", () => {
             const entry = db.add(new Order());
             expect(entry.state).equal(EntityState.Added);
+            db.clear();
         });
         it("should attach and mark update", () => {
             const entry = db.update(new Order());
@@ -36,11 +35,5 @@ describe("DBCONTEXT", () => {
         it("should detect relation changes", () => {
 
         });
-    });
-    describe("ENTITY ENTRY", () => {
-        it("should reload all properties", () => {});
-        it("should load to-one relation", () => {});
-        it("should load to-many relation", () => {});
-        it("should load multiple relations", () => {});
     });
 });

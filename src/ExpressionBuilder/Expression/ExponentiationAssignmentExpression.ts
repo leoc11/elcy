@@ -1,14 +1,15 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class ExponentiationAssignmentExpression implements IBinaryOperatorExpression<number> {
+import { resolveClone } from "../../Helper/Util";
+export class ExponentiationAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new ExponentiationAssignmentExpression(leftOperand, rightOperand);
     }
-    public type = Number;
-    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
+    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) {
+        super(rightOperand.type);
+    }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -27,8 +28,5 @@ export class ExponentiationAssignmentExpression implements IBinaryOperatorExpres
         const clone = new ExponentiationAssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("**=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }
