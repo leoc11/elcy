@@ -1,5 +1,6 @@
 import { GenericType, DeleteMode, QueryType, ValueType, IObjectType } from "../Common/Type";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { SelectIntoExpression } from "./QueryExpression/SelectIntoExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
@@ -18,7 +19,6 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryCache } from "../Cache/IQueryCache";
-import { SelectIntoExpression } from "./QueryExpression/SelectIntoExpression";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";

@@ -8,6 +8,7 @@ import { replaceExpression } from "../Helper/Util";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
+import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 
 export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE> {
     constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: string | ((entity: TE) => boolean) | IExpression<boolean>) {
@@ -36,8 +37,8 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
         const entityParamExp = fnExp.params[0];
         replaceExpression(fnExp.body, (exp) => {
             if (exp instanceof MemberAccessExpression && exp.objectOperand === entityParamExp) {
-                const computedColumn = this.entity.computedProperties.first(o => o.propertyName === exp.memberName);
-                if (computedColumn) {
+                const computedColumn = this.entity.columns.first(o => o.propertyName === exp.memberName);
+                if (computedColumn instanceof ComputedColumnMetaData) {
                     return this.toDefinitionExpression(computedColumn.functionExpression);
                 }
                 return new ComputedColumnExpression(null, exp, exp.memberName, exp.memberName);

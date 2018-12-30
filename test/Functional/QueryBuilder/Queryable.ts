@@ -11,7 +11,6 @@ import { IQuery } from "../../../src/QueryBuilder/Interface/IQuery";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { mockContext } from "../../../src/Connection/Mock/MockContext";
-import { MssqlDriver } from "../../../src/Driver/Mssql/MssqlDriver";
 
 chai.use(sinonChai);
 

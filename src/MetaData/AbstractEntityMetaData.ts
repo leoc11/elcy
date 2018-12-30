@@ -21,7 +21,6 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IndexMetaData<TE>[] = [];
-    public computedProperties: ComputedColumnMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
 
     // inheritance

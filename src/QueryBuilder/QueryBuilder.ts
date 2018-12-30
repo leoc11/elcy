@@ -14,7 +14,6 @@ import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQuery } from "./Interface/IQuery";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
 import { ProjectionEntityExpression } from "../Queryable/QueryExpression/ProjectionEntityExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
@@ -79,10 +78,10 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (expression instanceof SelectExpression) {
             return this.getSelectQueryString(expression) + (expression.isSubSelect ? "" : ";");
         }
-        else if (expression instanceof ColumnExpression || expression instanceof ComputedColumnExpression) {
+        else if (isColumnExp(expression)) {
             return this.getColumnString(expression);
         }
-        else if (expression instanceof EntityExpression || expression instanceof ProjectionEntityExpression) {
+        else if (isEntityExp(expression)) {
             return this.entityQuery(expression);
         }
         else if (expression instanceof TernaryExpression) {

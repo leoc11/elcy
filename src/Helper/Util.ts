@@ -25,7 +25,7 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
         const selectExp1 = sourceExp as SelectExpression;
         const selectExp2 = targetExp as SelectExpression;
         mapReplaceExp(replaceMap, selectExp1.entity, selectExp2.entity);
-        if (selectExp1 instanceof GroupByExpression && selectExp2 instanceof GroupByExpression) {
+        if (isGroupExp(selectExp1) && isGroupExp(selectExp2)) {
             mapReplaceExp(replaceMap, selectExp1.key, selectExp2.key);
             mapReplaceExp(replaceMap, selectExp1.itemSelect, selectExp2.itemSelect);
         }
@@ -49,7 +49,7 @@ export const mapKeepExp = function (replaceMap: Map<IExpression, IExpression>, e
     if ((exp as SelectExpression).projectedColumns) {
         const selectExp = exp as SelectExpression;
         mapKeepExp(replaceMap, selectExp.entity);
-        if (selectExp instanceof GroupByExpression) {
+        if (isGroupExp(selectExp)) {
             mapKeepExp(replaceMap, selectExp.key);
             mapKeepExp(replaceMap, selectExp.itemSelect);
         }
@@ -66,7 +66,7 @@ export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpressi
     if ((exp as SelectExpression).projectedColumns) {
         const selectExp = exp as SelectExpression;
         removeExpFromMap(replaceMap, selectExp.entity);
-        if (selectExp instanceof GroupByExpression) {
+        if (isGroupExp(selectExp)) {
             removeExpFromMap(replaceMap, selectExp.key);
             removeExpFromMap(replaceMap, selectExp.itemSelect);
         }
@@ -130,6 +130,9 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
 };
 export const isEntityExp = (data: IExpression): data is IEntityExpression => {
     return !!(data as IEntityExpression).entityTypes;
+};
+export const isGroupExp = (data: IExpression): data is GroupByExpression => {
+    return !!(data as GroupByExpression).itemSelect;
 };
 export const isColumnExp = (data: IExpression): data is IColumnExpression => {
     return !!(data as IColumnExpression).entity;

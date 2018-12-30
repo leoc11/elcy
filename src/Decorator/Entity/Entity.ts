@@ -66,7 +66,7 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
                 isInheritance = true;
             }
             if (isInheritance) {
-                parentMetaData.columns.forEach((parentColumnMeta) => {
+                parentMetaData.columns.each((parentColumnMeta) => {
                     let columnMeta: IColumnMetaData<T> = entityMetadata.columns.first(p => p.propertyName === parentColumnMeta.propertyName);
                     if (parentColumnMeta instanceof ComputedColumnMetaData) {
                         if (columnMeta) {
@@ -108,21 +108,6 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
                     entityMetadata.deletedColumn = entityMetadata.columns.first(p => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
                 if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders)
                     entityMetadata.defaultOrders = parentMetaData.defaultOrders;
-
-                parentMetaData.computedProperties.forEach((parentColumnMeta) => {
-                    if (!entityMetadata.computedProperties.any(o => o.propertyName === parentColumnMeta.propertyName)) {
-                        let computedMeta: ComputedColumnMetaData<T>;
-                        if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
-                            computedMeta = new ComputedColumnMetaData<T>();
-                            computedMeta.applyOption(parentColumnMeta as any);
-                        }
-                        else {
-                            computedMeta = new InheritedComputedColumnMetaData<T, TParent>(entityMetadata, parentColumnMeta);
-                        }
-                        entityMetadata.computedProperties.push(computedMeta);
-                        Reflect.defineMetadata(columnMetaKey, computedMeta, type, parentColumnMeta.propertyName);
-                    }
-                });
             }
         }
         Reflect.defineMetadata(entityMetaKey, entityMetadata, type);

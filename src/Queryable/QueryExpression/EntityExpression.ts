@@ -9,6 +9,7 @@ import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone, hashCode } from "../../Helper/Util";
 import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
     public name: string;
@@ -33,7 +34,10 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     public get columns(): IColumnExpression<T>[] {
         if (!this._columns) {
             if (this.metaData)
-                this._columns = this.metaData.columns.select((o) => new ColumnExpression<T>(this, o, this.metaData.primaryKeys.contains(o))).toArray();
+                this._columns = this.metaData.columns
+                    .where(o => !(o instanceof ComputedColumnMetaData))
+                    .select((o) => new ColumnExpression<T>(this, o, this.metaData.primaryKeys.contains(o)))
+                    .toArray();
             else
                 this._columns = [];
         }

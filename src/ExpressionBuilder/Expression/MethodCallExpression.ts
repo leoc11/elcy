@@ -3,10 +3,14 @@ import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
-import { Queryable } from "../../Queryable/Queryable";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-import { Enumerable } from "../../Enumerable/Enumerable";
 
+let Queryable: any;
+let Enumerable: any;
+(async () => {
+    Queryable = (await import("../../Queryable/Queryable")).Queryable;
+    Enumerable = (await import("../../Enumerable/Enumerable")).Enumerable;
+})();
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
     public static create<TE, K extends keyof TE, T = any>(objectOperand: IExpression<TE>, params: IExpression[], methodName?: K, methodFn?: () => T) {
         const result = new MethodCallExpression(objectOperand, methodName ? methodName : methodFn!, params);
