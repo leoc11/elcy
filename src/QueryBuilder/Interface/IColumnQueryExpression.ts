@@ -3,6 +3,6 @@ import { IEntityQueryExpression } from "./IEntityQueryExpression";
 
 export interface IColumnQueryExpression<T> {
     entity: IEntityQueryExpression<T>;
-    property: FunctionExpression | string;
+    property: FunctionExpression<T, any> | string;
     alias?: string;
 }

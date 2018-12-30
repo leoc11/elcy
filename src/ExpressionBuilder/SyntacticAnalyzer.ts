@@ -65,7 +65,7 @@ export class SyntacticAnalyzer {
             scopedParameters: new Map(),
             userParameters: userParameters
         };
-        const result = createExpression(param, Enumerable.load(tokens).toArray()) as FunctionExpression;
+        const result = createExpression(param, new Enumerable(tokens).toArray()) as FunctionExpression;
         return result;
     }
 }
@@ -81,7 +81,7 @@ function isGreatherThan(precedence1: IOperatorPrecedence, precedence2: IOperator
     }
     return precedence1.precedence >= precedence2.precedence;
 }
-function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], expression?: IExpression, prevOperator?: IOperator): IExpression {
+function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], expression?: IExpression, prevOperator?: IOperator) {
     while (param.index < tokens.length) {
         let token = tokens[param.index];
         switch (token.type) {
@@ -150,17 +150,17 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             if (operator.identifier === "(") {
                                 let params = createParamExpression(param, tokens, ")");
                                 if (expression instanceof MemberAccessExpression) {
-                                    expression = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);
+                                    expression = MethodCallExpression.create(expression.objectOperand, params.items, expression.memberName);
                                 }
                                 else {
-                                    expression = new FunctionCallExpression(expression, params.items);
+                                    expression = FunctionCallExpression.create(expression, params.items);
                                 }
                                 continue;
                             }
                             const operand = createExpression(param, tokens, undefined, operator);
                             if (operator.identifier === ".") {
                                 const memberName = operand.toString();
-                                expression = new MemberAccessExpression(expression, memberName);
+                                expression = MemberAccessExpression.create(expression, memberName);
                             }
                             else {
                                 expression = operator.expressionFactory(expression, operand);
@@ -248,7 +248,7 @@ function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[
             param.index++;
     }
     param.index++;
-    return new ObjectValueExpression(obj);
+    return ObjectValueExpression.create(obj);
 }
 function createParamExpression(param: SyntaticParameter, tokens: ILexicalToken[], stopper: string) {
     const arrayVal = [];

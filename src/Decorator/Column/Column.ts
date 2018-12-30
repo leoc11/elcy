@@ -13,10 +13,9 @@ import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
-import { isEqual } from "../../Helper/Util";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
-    return (target: TE, propertyKey: keyof TE) => {
+    return (target: TE, propertyKey: any) => {
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
@@ -27,7 +26,8 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         metadata.isProjected = true;
         metadata.applyOption(columnOption as any);
         if (!metadata.columnName) {
-            metadata.columnName = propertyKey;
+            if (typeof (propertyKey) === "string")
+                metadata.columnName = propertyKey;
         }
         metadata.propertyName = propertyKey;
 
@@ -74,7 +74,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             }
         }
         descriptor = {
-            set: function (this: any, value: any) {
+            set: function (this: any, value: T) {
                 if (!oldGet && !this.hasOwnProperty(privatePropertySymbol)) {
                     Object.defineProperty(this, privatePropertySymbol, {
                         value: undefined,
@@ -85,7 +85,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                 }
                 const oldValue = this[propertyKey];
                 // tslint:disable-next-line:triple-equals
-                if (!isEqual(oldValue, value)) {
+                if (oldValue != value) {
                     if (oldSet)
                         oldSet.apply(this, value);
                     else

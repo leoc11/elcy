@@ -11,13 +11,6 @@ import { IObjectType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { EntityState } from "../../Data/EntityState";
-import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 export class UpsertExpression<T = any> implements IQueryCommandExpression<void> {
     private _updateColumns: IColumnExpression<T>[];
     public get updateColumns(): IColumnExpression<T>[] {
@@ -46,23 +39,21 @@ export class UpsertExpression<T = any> implements IQueryCommandExpression<void> 
     }
     public get where(): IExpression<boolean> {
         return this.entity.primaryColumns.select(o => {
-            const valueExp = this.setter[o.propertyName];
+            const index = this.columns.indexOf(o);
+            const valueExp = this.values[index];
             return new StrictEqualExpression(o, valueExp);
         }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item);
     }
     public get type() {
         return undefined as any;
     }
-    constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression }) {
+    constructor(public readonly entity: EntityExpression<T>, public readonly values: Array<IExpression<any> | undefined>) {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const entity = resolveClone(this.entity, replaceMap);
-        const setter: { [key in keyof T]?: IExpression } = {};
-        for (const prop in this.setter) {
-            setter[prop] = resolveClone(this.setter[prop], replaceMap);
-        }
-        const clone = new UpsertExpression(entity, setter);
+        const values = this.values.select(o => resolveClone(o, replaceMap)).toArray();
+        const clone = new UpsertExpression(entity, values);
         replaceMap.set(this, clone);
         return clone;
     }
@@ -90,58 +81,9 @@ export class UpsertExpression<T = any> implements IQueryCommandExpression<void> 
         return result;
     }
     public hashCode() {
-        let code = 0;
-        for (const prop in this.setter) {
-            code += hashCode(prop, this.setter[prop].hashCode());
-        }
-        return hashCode("UPSERT", hashCode(this.entity.name, code));
+        return hashCode("UPSERT", hashCode(this.entity.name, this.values.select(o => hashCode(o.toString())).sum()));
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes;
     }
 }
-
-export const upsertEntryExp = <T>(upsertExp: UpsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
-    for (const col of columns) {
-        let value = entry.entity[col.propertyName];
-        if (value !== undefined) {
-            let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), col.type), col);
-            const paramv: ISqlParameter = {
-                name: "",
-                parameter: param,
-                value: value
-            };
-            queryParameters.push(paramv);
-        }
-    }
-
-    for (const rel of relations) {
-        const parentEntity = entry.entity[rel.propertyName] as any;
-        if (parentEntity) {
-            const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-            const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
-            for (const [col, parentCol] of rel.relationMaps) {
-                let paramExp = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), parentCol.type), parentCol);
-                if (isGeneratedPrimary) {
-                    // TODO: get value from parent.
-                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
-                    upsertExp.parameters.push(paramExp);
-                }
-                else {
-                    let value = parentEntity[parentCol.propertyName];
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: paramExp,
-                        value: value
-                    };
-                    queryParameters.push(paramv);
-                }
-
-                upsertExp.setter[col.propertyName] = paramExp;
-            }
-        }
-    }
-
-    return upsertExp.setter;
-};

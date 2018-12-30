@@ -1,21 +1,22 @@
 import { GenericType, NullConstructor } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { IExpression } from "./IExpression";
-import { hashCode } from "../../Helper/Util";
+import { ExpressionBase, IExpression } from "./IExpression";
 
-export class ValueExpression<T> implements IExpression<T> {
-    public static create<T>(value: IExpression<T> | T, expressionString?: string): ValueExpression<T> {
-        if ((value as IExpression).type)
-            return new ValueExpression<T>((value as IExpression).execute(), value.toString());
+export class ValueExpression<T> extends ExpressionBase<T> {
+    public static create<TType>(value: ExpressionBase<TType> | TType, expressionString?: string): ValueExpression<TType> {
+        if (value instanceof ExpressionBase)
+            return new ValueExpression<TType>(value.execute(), value.toString());
 
-        return new ValueExpression(value as T, expressionString);
+        return new ValueExpression(value, expressionString);
     }
     public get type(): GenericType<T> {
         if (this.value === null || this.value === undefined)
             return NullConstructor as any;
         return this.value.constructor as any;
     }
-    constructor(public readonly value: T, public expressionString: string = "") { }
+    constructor(public readonly value: T, private expressionString: string = "") {
+        super();
+    }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -29,8 +30,5 @@ export class ValueExpression<T> implements IExpression<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         return this;
-    }
-    public hashCode() {
-        return hashCode(this.expressionString ? this.expressionString : this.value ? this.value.toString() : "NULL");
     }
 }

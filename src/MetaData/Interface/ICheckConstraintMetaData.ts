@@ -1,8 +1,6 @@
 import { IConstraintMetaData } from "./IConstraintMetaData";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 
 export interface ICheckConstraintMetaData<TE = any> extends IConstraintMetaData<TE> {
-    definition?: IExpression<boolean> | string;
-    getDefinitionString(queryBuilder: QueryBuilder): string;
+    definition?: FunctionExpression<TE, boolean> | string;
 }

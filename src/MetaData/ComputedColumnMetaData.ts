@@ -7,7 +7,7 @@ import { GenericType } from "../Common/Type";
 export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {
     public entity: IEntityMetaData<TE>;
     public description: string;
-    public functionExpression: FunctionExpression<T>;
+    public functionExpression: FunctionExpression<TE, T>;
     public get type(): GenericType<T> {
         return this.functionExpression.type;
     }

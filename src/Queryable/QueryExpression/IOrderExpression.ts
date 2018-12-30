@@ -1,7 +1,8 @@
 import { OrderDirection } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { IColumnExpression } from "./IColumnExpression";
 
 export interface IOrderExpression {
-    column: IExpression;
+    column: IColumnExpression | IExpression;
     direction: OrderDirection;
 }

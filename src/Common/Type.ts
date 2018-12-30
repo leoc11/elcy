@@ -5,7 +5,7 @@ export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type PropertySelector<T> = keyof T | ((source: T) => any);
-export type ValueType = number | string | boolean | Date | TimeSpan | UUID | ArrayBufferView;
+export type ValueType = number | string | boolean | Date | TimeSpan | UUID;
 export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
 export type RelationshipType = "one" | "many";
 export type CompleteRelationshipType = "one-one" | "one-many" | "many-one" | "many-many";
@@ -23,7 +23,13 @@ export enum InheritanceType {
 }
 export type OrderDirection  = "ASC" | "DESC";
 export type TimeZoneHandling = "none" | "utc";
-export type JoinType = "INNER" | "FULL" | "RIGHT" | "LEFT";
+
+export enum JoinType {
+    INNER = "INNER",
+    FULL = "FULL",
+    RIGHT = "RIGHT",
+    LEFT = "LEFT"
+}
 export type ReferenceOption = "NO ACTION" | "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";
 export type IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" | "SNAPSHOT";
 export type ConcurrencyModel = "NONE" | "PESSIMISTIC" | "OPTIMISTIC DIRTY" | "OPTIMISTIC VERSION";
@@ -52,7 +58,6 @@ export enum EventListenerType {
 }
 
 export enum QueryType {
-    Unknown = 0,
     /**
      * Data Query Language
      */

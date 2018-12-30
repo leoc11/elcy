@@ -3,5 +3,6 @@ import { IColumnOption } from "./IColumnOption";
 export interface IDecimalColumnOption extends IColumnOption<number> {
     precision?: number;
     scale?: number;
+    length?: number;
     columnType?: DecimalColumnType;
 }

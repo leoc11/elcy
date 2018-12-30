@@ -1,12 +1,11 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
-import { GenericType } from "../../Common/Type";
+import { resolveClone } from "../../Helper/Util";
 
-export class AdditionExpression<T extends number | string> implements IBinaryOperatorExpression<T> {
+export class AdditionExpression<T extends number | string> extends ExpressionBase<T> implements IBinaryOperatorExpression {
     public static create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
     public static create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
     public static create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;
@@ -21,9 +20,8 @@ export class AdditionExpression<T extends number | string> implements IBinaryOpe
     }
     public leftOperand: IExpression<T>;
     public rightOperand: IExpression<T>;
-    public type: GenericType<T>;
-    public itemType?: GenericType<T>;
     constructor(leftOperand: IExpression, rightOperand: IExpression) {
+        super();
         if (leftOperand.type === String || rightOperand.type === String) {
             this.type = String as any;
             this.leftOperand = this.convertToStringOperand(leftOperand) as any;
@@ -57,8 +55,5 @@ export class AdditionExpression<T extends number | string> implements IBinaryOpe
         const clone = new AdditionExpression<T>(left, right);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("+", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

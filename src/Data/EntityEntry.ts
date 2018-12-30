@@ -5,7 +5,7 @@ import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
-import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { EmbeddedColumnMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
 import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
@@ -70,15 +70,16 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 if (!relationGroup)
                     continue;
 
-                for (const [, relation] of relationGroup) {
+                for (const key in relationGroup) {
+                    const relation = relationGroup.get(key);
                     const entry = relation.masterEntry === this ? relation.slaveEntry : relation.masterEntry;
                     entry.updateRelationKey(relation, oldKey);
                 }
             }
         }
 
-        if (param.oldValue !== param.newValue && param.column instanceof EmbeddedRelationMetaData) {
-            const embeddedDbSet = this.dbSet.dbContext.set(param.column.target.type);
+        if (param.oldValue !== param.newValue && param.column instanceof EmbeddedColumnMetaData) {
+            const embeddedDbSet = this.dbSet.dbContext.set(param.column.type);
             new embeddedEntityEntry(embeddedDbSet, param.newValue, this);
         }
 

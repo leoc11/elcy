@@ -43,7 +43,8 @@ export class UUID extends Uint8Array {
     }
     public static new() {
         const res = new UUID();
-        for (let i = 0, len = res.length; i < len; i++) {
+        const l = res.length;
+        for (let i = 0; i < l; i++) {
             res[i] = Math.floor(Math.random() * 256);
         }
         res[6] &= 0x0F;

@@ -8,7 +8,7 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { IndexMetaData } from "../MetaData/IndexMetaData";
 
-export function ColumnIndex(option?: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
+export function ColumnIndex(option: IIndexOption): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex(name: string, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex<T>(name: string, columns: Array<string | ((item: T) => any)>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
 export function ColumnIndex<T>(columns: Array<string | ((item: T) => any)>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
@@ -25,10 +25,10 @@ export function ColumnIndex<T>(optionOrNameOrColumns: IIndexOption | string | Ar
     });
 
     return (target: GenericType<T> | object, propertyKey?: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        if (propertyKey)
-            option.properties = [propertyKey];
         if (!option.name)
             option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : propertyKey ? propertyKey : (target as GenericType<T>).name);
+        if (propertyKey)
+            option.properties = [propertyKey];
 
         const entConstructor = propertyKey ? target.constructor : target;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);

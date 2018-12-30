@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class ModulusExpression implements IBinaryOperatorExpression<number> {
+import { resolveClone } from "../../Helper/Util";
+export class ModulusExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
     public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new ModulusExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,8 +11,9 @@ export class ModulusExpression implements IBinaryOperatorExpression<number> {
 
         return result;
     }
-    public type = Number;
-    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
+    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) {
+        super(Number);
+    }
 
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
@@ -29,8 +30,5 @@ export class ModulusExpression implements IBinaryOperatorExpression<number> {
         const clone = new ModulusExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("%", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

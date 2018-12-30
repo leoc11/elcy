@@ -3,6 +3,7 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
+import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { IntegerColumnMetaData } from "./IntegerColumnMetaData";
@@ -10,18 +11,15 @@ import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
 import { isNotNull } from "../Helper/Util";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
-import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
-import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
-import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
     public name: string;
-    public defaultOrders?: IOrderQueryDefinition<TE>[];
+    public defaultOrder?: IOrderMetaData[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deletedColumn: BooleanColumnMetaData<TE>;
-    public createDateColumn: DateTimeColumnMetaData<TE>;
-    public modifiedDateColumn: DateTimeColumnMetaData<TE>;
+    public deletedColumn: IColumnMetaData<TE>;
+    public createDateColumn: IColumnMetaData<TE>;
+    public modifiedDateColumn: IColumnMetaData<TE>;
     public versionColumn?: RowVersionColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IIndexMetaData<TE>[] = [];
@@ -62,14 +60,12 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         }
         if (typeof entityMeta.createDateColumn !== "undefined")
             this.createDateColumn = entityMeta.createDateColumn;
-        if (typeof entityMeta.defaultOrders !== "undefined")
-            this.defaultOrders = entityMeta.defaultOrders;
+        if (typeof entityMeta.defaultOrder !== "undefined")
+            this.defaultOrder = entityMeta.defaultOrder;
         if (typeof entityMeta.deletedColumn !== "undefined")
             this.deletedColumn = entityMeta.deletedColumn;
         if (typeof entityMeta.indices !== "undefined")
             this.indices = entityMeta.indices;
-        if (typeof entityMeta.constraints !== "undefined")
-            this.constraints = entityMeta.constraints;
         if (typeof entityMeta.modifiedDateColumn !== "undefined")
             this.modifiedDateColumn = entityMeta.modifiedDateColumn;
         if (typeof entityMeta.primaryKeys !== "undefined")

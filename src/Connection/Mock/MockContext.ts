@@ -2,43 +2,34 @@ import { DbContext } from "../../Data/DBContext";
 import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
 import { IConnection } from "../IConnection";
 import { MockConnection } from "./MockConnection";
-import { IConnectionManager } from "../IConnectionManager";
 
 export interface IMockedContext {
+    oriGetConnection?(writable?: boolean): Promise<IConnection>;
     oriExecuteDeferred?(deferredQueries: Iterable<DeferredQuery>): Promise<void>;
 }
-export interface IMockedConnectionManager {
-    oriGetConnection?(writable?: boolean): Promise<IConnection>;
-}
 export const mockContext = function (context: DbContext & IMockedContext) {
-    mockConnectionManager(context.connectionManager);
     context.oriExecuteDeferred = context.executeDeferred;
-    context.executeDeferred = async function (deferredQueries?: Iterable<DeferredQuery>) {
-        if (!deferredQueries) deferredQueries = context.deferredQueries.splice(0);
+    context.oriGetConnection = context.getConnection;
+    context.getConnection = async function () {
+        if (!this.connection) {
+            const con = new MockConnection();
+            return con;
+        }
+        return this.connection;
+    };
+    context.executeDeferred = async function (deferredQueries: Iterable<DeferredQuery>) {
         const connection: MockConnection = this.connection = await this.getConnection() as any;
         connection.deferredQueries = deferredQueries;
-        return context.oriExecuteDeferred.apply(this, [deferredQueries]);
+        return context.oriExecuteDeferred.apply(this, arguments);
     };
 };
-export const mockConnectionManager = function (conManager: IConnectionManager & IMockedConnectionManager) {
-    conManager.oriGetConnection = conManager.getConnection;
-    conManager.getConnection = async function () {
-        return new MockConnection();
-    };
-};
-
-export function restore(context: DbContext & IMockedContext): void;
-export function restore(conManager: IConnectionManager & IMockedConnectionManager): void;
-export function restore(conManagerOrContext: (IConnectionManager & IMockedConnectionManager) | (DbContext & IMockedContext)) {
-    if ((conManagerOrContext as DbContext & IMockedContext).oriExecuteDeferred) {
-        const context = conManagerOrContext as DbContext & IMockedContext;
+export const restore = function (context: DbContext & IMockedContext) {
+    if (context.oriGetConnection) {
+        context.getConnection = context.oriGetConnection;
+        context.oriGetConnection = undefined;
+    }
+    if (context.oriExecuteDeferred) {
         context.executeDeferred = context.oriExecuteDeferred;
         context.oriExecuteDeferred = undefined;
-        restore(context.connectionManager);
     }
-    else if ((conManagerOrContext as IConnectionManager & IMockedConnectionManager).oriGetConnection) {
-        const conManager = conManagerOrContext as IConnectionManager & IMockedConnectionManager;
-        conManager.getConnection = conManager.oriGetConnection;
-        conManager.oriGetConnection = undefined;
-    }
-}
+};

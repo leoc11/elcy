@@ -1,18 +1,19 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { IExpression } from "./IExpression";
+import { ExpressionBase, IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-export class LessEqualExpression implements IBinaryOperatorExpression<boolean> {
-    public static create(leftOperand: IExpression, rightOperand: IExpression) {
+import { resolveClone } from "../../Helper/Util";
+export class LessEqualExpression<TType = any> extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
+    public static create<TType>(leftOperand: IExpression<TType>, rightOperand: IExpression<TType>) {
         const result = new LessEqualExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
             return ValueExpression.create<boolean>(result);
 
         return result;
     }
-    public type = Boolean;
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
+    constructor(public leftOperand: IExpression<TType>, public rightOperand: IExpression<TType>) {
+        super(Boolean);
+    }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -28,8 +29,5 @@ export class LessEqualExpression implements IBinaryOperatorExpression<boolean> {
         const clone = new LessEqualExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public hashCode() {
-        return hashCodeAdd(hashCode("<=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

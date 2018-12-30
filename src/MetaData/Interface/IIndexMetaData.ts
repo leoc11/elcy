@@ -6,6 +6,6 @@ export interface IIndexMetaData<TE = any> {
     entity: IEntityMetaData<TE>;
     columns: Array<IColumnMetaData<TE>>;
     unique: boolean;
-    // type?: string;
+    type?: string;
     apply?(indexOption: IIndexMetaData): void;
 }
