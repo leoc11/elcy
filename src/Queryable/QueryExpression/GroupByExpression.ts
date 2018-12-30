@@ -1,141 +1,243 @@
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { SelectExpression, IIncludeRelation, IJoinRelation, } from "./SelectExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { resolveClone, hashCodeAdd, hashCode, isEntityExp, visitExpression, isColumnExp, mapReplaceExp } from "../../Helper/Util";
+import { Enumerable } from "../../Enumerable/Enumerable";
+import { IncludeRelation } from "../Interface/IncludeRelation";
+import { RelationshipType } from "../../Common/Type";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { resolveClone } from "../../Helper/Util";
+import { ComputedColumnExpression } from "./ComputedColumnExpression";
+import { JoinRelation } from "../Interface/JoinRelation";
 
 export class GroupByExpression<T = any> extends SelectExpression<T> {
-    public having: IExpression<boolean>;
-    public select: GroupedExpression<T, any>;
-    public where: IExpression<boolean>;
-    public readonly key: IExpression;
-    public itemExpression: IExpression;
-    protected selectori: SelectExpression<T>;
-    constructor(select: SelectExpression<T>, public readonly groupBy: IColumnExpression<T>[], key: IExpression, hasItems?: boolean) {
-        super(select.entity);
-        // reset having added by parent constructor
-        this.having = undefined;
-        this.selects = [];
-        if (select.parentRelation)
-            select.parentRelation.child = this;
-        if (select.where) {
-            this.where = select.where.clone();
-        }
-        this.selectori = select;
-        this.key = key;
-
-        for (const join of select.joins) {
-            const relation = join.relations;
-            this.addJoinRelation(join.child, relation, join.type);
-        }
-
-        for (const include of select.includes) {
-            this.addInclude(include.name, include.child, include.relations, include.type);
-        }
-        let groupExp: GroupedExpression;
-        if (select instanceof GroupedExpression) {
-            groupExp = new GroupedExpression(select.select);
-        }
-        else {
-            groupExp = new GroupedExpression(this);
-        }
-        if (hasItems) {
-            let relation: IExpression<boolean>;
-            for (const col of groupBy) {
-                // groupby column is primary.
-                col.isPrimary = true;
-                let clone = col.clone(new Map([[col.entity, col.entity]]));
-                groupExp.relationColumns.add(clone);
-                // remove current col if it's exist to avoid select same column.
-                groupExp.selects.remove(col);
-                const logicalExp = new StrictEqualExpression(col, clone);
-                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+    public get entity() {
+        return this.itemSelect.entity;
+    }
+    public set entity(value) {
+        if (this.itemSelect)
+            this.itemSelect.entity = value;
+    }
+    public get where() {
+        return this.itemSelect.where;
+    }
+    public set where(value) {
+        if (this.itemSelect)
+            this.itemSelect.where = value;
+    }
+    public get orders() {
+        return this.itemSelect.orders;
+    }
+    public set orders(value) {
+        if (this.itemSelect)
+            this.itemSelect.orders = value;
+    }
+    public get relationColumns() {
+        return this.itemSelect.relationColumns;
+    }
+    public get isSubSelect() {
+        return this.itemSelect.isSubSelect;
+    }
+    public set isSubSelect(value) {
+        if (this.itemSelect)
+            this.itemSelect.isSubSelect = value;
+    }
+    public get parameters() {
+        return this.itemSelect.parameters;
+    }
+    public set parameters(value) {
+        if (this.itemSelect)
+            this.itemSelect.parameters = value;
+    }
+    public get key() {
+        return this.itemSelect.key;
+    }
+    public get groupBy() {
+        return this.itemSelect.groupBy;
+    }
+    public set key(value) {
+        this.itemSelect.key = value;
+    }
+    public isAggregate: boolean;
+    public get joins() {
+        return this.itemSelect.joins;
+    }
+    public set joins(value) {
+        if (this.itemSelect)
+            this.itemSelect.joins = value;
+    }
+    public get includes() {
+        return this.itemSelect.includes;
+    }
+    public set includes(value) {
+        if (this.itemSelect)
+            this.itemSelect.includes = value;
+    }
+    public get parentRelation() {
+        return this.itemSelect.parentRelation;
+    }
+    public set parentRelation(value) {
+        if (this.itemSelect)
+            this.itemSelect.parentRelation = value;
+    }
+    public get paging() {
+        return this.itemSelect.paging;
+    }
+    public set paging(value) {
+        if (this.itemSelect)
+            this.itemSelect.paging = value;
+    }
+    public get resolvedGroupBy() {
+        if (isEntityExp(this.key)) {
+            const keyEntities = Enumerable.load(this.key.select.allJoinedEntities).toArray();
+            let groupBy = this.groupBy.slice();
+            for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
+                visitExpression(column.expression, (exp: IColumnExpression) => {
+                    if (isColumnExp(exp) && keyEntities.contains(exp.entity)) {
+                        groupBy.push(exp);
+                    }
+                });
             }
-            this.addInclude("", groupExp, relation, "many");
+            return groupBy;
         }
-        this.select = groupExp;
-        this.itemExpression = this.select;
+        return this.groupBy;
+    }
+    public get resolvedSelects() {
+        let selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
+        for (const include of this.includes) {
+            if (include.isEmbedded) {
+                const cloneMap = new Map();
+                mapReplaceExp(cloneMap, include.child.entity, this.entity);
+                // add column which include in emdedded relation
+                const childSelects = include.child.resolvedSelects.select(o => {
+                    let curCol = this.entity.columns.first(c => c.propertyName === o.propertyName);
+                    if (!curCol) curCol = o.clone(cloneMap);
+                    return curCol;
+                });
+                // include.child.entity.alias = this.entity.alias;
+                selects = selects.union(childSelects);
+            }
+        }
+        return selects;
+    }
+    public get itemExpression() {
+        return this.itemSelect.itemExpression;
+    }
+    public set itemExpression(value) {
+        if (this.itemSelect)
+            this.itemSelect.itemExpression = value;
+    }
+    public having: IExpression<boolean>;
+    public itemSelect: GroupedExpression<T>;
+    public keyRelation: IncludeRelation<T>;
+    constructor();
+    constructor(select: SelectExpression<T>, key: IExpression);
+    constructor(select?: SelectExpression<T>, key?: IExpression) {
+        super();
+        if (select) {
+            this.itemSelect = new GroupedExpression(select, key);
+            this.entity.select = this.itemSelect.groupByExp = this;
+            this.selects = this.groupBy.slice();
+
+            for (const include of select.includes) {
+                this.addInclude(include.name, include.child, include.relations, include.type);
+            }
+            for (const join of select.joins) {
+                this.addJoin(join.child, join.relations, join.type);
+            }
+
+            const parentRel = select.parentRelation;
+            if (parentRel) {
+                parentRel.child = this;
+                this.parentRelation = parentRel;
+                select.parentRelation = null;
+            }
+
+            if (isEntityExp(key)) {
+                // set key parent relation to this.
+                const selectExp = key.select;
+                const parentRel = selectExp.parentRelation;
+                if (parentRel) {
+                    let relation: IExpression<boolean>;
+                    for (const col of this.groupBy) {
+                        const childCol = Enumerable.load(selectExp.projectedColumns).first(o => o.propertyName === col.propertyName);
+                        const logicalExp = new StrictEqualExpression(col, childCol);
+                        relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                    }
+                    this.addKeyRelation(selectExp, relation, "one");
+                    this.keyRelation.isEmbedded = parentRel.isEmbedded;
+                }
+            }
+        }
     }
     public getVisitParam() {
-        return this.itemExpression;
-    }
-    public get projectedColumns(): Enumerable<IColumnExpression<T>> {
         if (this.isAggregate)
-            return this.selects.asEnumerable();
-        return this.groupBy.union(this.relationColumns).union(this.selects);
+            return this.itemSelect.getVisitParam();
+        return this.itemSelect;
+    }
+    public get allColumns() {
+        return this.groupBy.union(super.allColumns);
+    }
+    public get projectedColumns(): Iterable<IColumnExpression<T>> {
+        if (this.isAggregate) {
+            return Enumerable.load(this.relationColumns)
+                .union(this.resolvedSelects);
+        }
+        return this.itemSelect.projectedColumns;
+    }
+    public get primaryKeys() {
+        return this.groupBy;
     }
     public addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
+    }
+    public addKeyRelation<TChild>(child: SelectExpression<TChild>, relation: IExpression<boolean>, type?: RelationshipType): IncludeRelation<T, TChild> {
+        const includeRel = new IncludeRelation(this, child, "key", type, relation);
+        child.parentRelation = includeRel;
+        this.keyRelation = includeRel;
+        return includeRel;
     }
     public isSimple() {
         return false;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const selectClone = resolveClone(this.selectori, replaceMap);
-        const groupBy = this.groupBy.select(o => resolveClone(o, replaceMap)).toArray();
-        const key = resolveClone(this.key, replaceMap);
-        const hasItems = this.includes.any(o => o.name === "");
-        const oriIncludes = selectClone.includes;
-        const oriJoins = selectClone.joins;
-        selectClone.joins = selectClone.includes = [];
-        const clone = new GroupByExpression(selectClone, groupBy, key, hasItems);
-        selectClone.includes = oriIncludes;
-        selectClone.joins = oriJoins;
-
+        const selectClone = resolveClone(this.itemSelect, replaceMap);
+        const clone = new GroupByExpression();
         replaceMap.set(this, clone);
-        replaceMap.set(this.select, clone.select);
-        clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.itemSelect = selectClone;
+        selectClone.groupByExp = clone;
+        clone.having = resolveClone(this.having, replaceMap);
         clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
-        
-        clone.joins = this.joins.select(o => {
-            const child = resolveClone(o.child, replaceMap);
-            const relation = resolveClone(o.relations, replaceMap);
-            const rel: IJoinRelation = {
-                child: child,
-                parent: clone,
-                relations: relation,
-                type: o.type,
-                isFinish: o.isFinish,
-                name: o.name
-            };
-            if (child !== o.child) child.parentRelation = rel;
-            return rel;
-        }).toArray();
-
-        clone.includes = this.includes.select(o => {
-            let map: Map<IColumnExpression, IColumnExpression>;
-            if (o.relationMap) {
-                map = new Map();
-                for (const item of o.relationMap) {
-                    const key = replaceMap.has(item[0]) ? replaceMap.get(item[0]) as any : item[0];
-                    const value = replaceMap.has(item[1]) ? replaceMap.get(item[1]) as any : item[1];
-                    map.set(key, value);
-                }
-            }
-            const cloneChild = resolveClone(o.child, replaceMap);
-            const relation = resolveClone(o.relations, replaceMap);
-            const rel: IIncludeRelation = {
-                child: cloneChild,
-                isFinish: o.isFinish,
-                name: o.name,
-                parent: clone,
-                relations: relation,
-                relationMap: map,
-                type: o.type
-            };
-            if (cloneChild !== o.child) cloneChild.parentRelation = rel;
-            return rel;
-        }).toArray();
-        
-        if (this.where) clone.where = selectClone.where;
-        if (this.having) clone.having = resolveClone(this.having, replaceMap);
-        clone.relationColumns = this.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
-        clone.select.relationColumns = this.select.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
-        Object.assign(clone.paging, this.paging);
+        clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.isAggregate = this.isAggregate;
         return clone;
+    }
+    public hashCode() {
+        let code: number = super.hashCode();
+        code = hashCodeAdd(hashCode("GROUPBY", code), this.groupBy.select(o => o.hashCode()).sum());
+        if (this.having) code = hashCodeAdd(this.where.hashCode(), code);
+        return code;
+    }
+
+    public get resolvedIncludes(): Iterable<IncludeRelation<T>> {
+        let includes = Enumerable.load(super.resolvedIncludes);
+        if (!this.isAggregate && this.keyRelation) {
+            if (this.keyRelation.isEmbedded) {
+                includes = Enumerable.load(this.keyRelation.child.resolvedIncludes).union(includes);
+            }
+            else {
+                includes = ([this.keyRelation]).union(includes);
+            }
+        }
+        return includes;
+    }
+    public get resolvedJoins(): Iterable<JoinRelation<T>> {
+        let join = Enumerable.load(super.resolvedJoins);
+        if (this.keyRelation && this.keyRelation.isEmbedded && (!this.parentRelation || !this.parentRelation.isEmbedded)) {
+            join = Enumerable.load(this.keyRelation.child.resolvedJoins).union(join);
+        }
+        return join;
     }
 }

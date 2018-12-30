@@ -9,8 +9,10 @@ import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
+import { Version } from "../../Common/Version";
 
 export class SqliteQueryBuilder extends QueryBuilder {
+    public version = new Version(3, 24);
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,
         maxParameters: 999,
@@ -28,7 +30,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
         ["defaultBoolean", "numeric"],
         ["defaultBinary", "blob"],
-        ["defaultDataString", "text"],
+        ["defaultDataSerialization", "text"],
         ["defaultDate", "text"],
         ["defaultDateTime", "text"],
         ["defaultTime", "text"],
@@ -53,39 +55,78 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public entityName(entityMeta: IEntityMetaData<any>) {
         return `${this.enclose(entityMeta.name)}`;
     }
-    public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
-        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.values.select(o => o ? this.getExpressionString(o) : "DEFAULT").toArray().join(",")})`;
 
+    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>): IQuery[] {
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const insertQuery = `INSERT OR IGNORE INTO ${this.entityQuery(upsertExp.entity)}(${colString})` + this.newLine() +
+            `VALUES (${upsertExp.columns.select(o => {
+                const valueExp = upsertExp.setter[o.propertyName];
+                return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+            }).toArray().join(",")})`;
+
+        const param: { [key: string]: any } = {};
+        for (const prop in upsertExp.setter) {
+            const val = upsertExp.setter[prop];
+            const paramExp = this.parameters.first(p => p.parameter === val);
+            if (paramExp) {
+                param[paramExp.name] = paramExp.value;
+            }
+        }
         let queryCommand: IQuery = {
             query: insertQuery,
-            parameters: upsertExp.values.select(o => this.parameters.first(p => p.parameter === o)).where(o => !!o).select(o => o.name).select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
-                acc[item.name] = item.value;
-                return acc;
-            }),
+            parameters: param,
             type: QueryType.DML
         };
 
         const result: IQuery[] = [queryCommand];
 
-        const updateString = upsertExp.updateColumns.select(o => {
-            if (o.isPrimary)
-                return undefined;
-            const index = upsertExp.columns.indexOf(o);
-            const value = upsertExp.values[index];
-            if (!value) {
-                return undefined;
-            }
-            return `${this.enclose(o.columnName)} = ${this.getOperandString(value)}`;
+        const updateString = upsertExp.updateColumns.select(column => {
+            const valueExp = upsertExp.setter[column.propertyName];
+            if (!valueExp) return undefined;
+
+            return `${this.enclose(column.columnName)} = ${this.getOperandString(valueExp)}`;
         }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const updateCommand: IQuery = {
-            query: `UPDATE ${this.getEntityQueryString(upsertExp.entity)} SET ${updateString} WHERE ${this.getOperandString(upsertExp.where)}`,
+            query: `UPDATE ${this.entityQuery(upsertExp.entity)} SET ${updateString} WHERE ${this.getLogicalOperandString(upsertExp.where)}`,
             parameters: queryCommand.parameters,
             type: QueryType.DML
         };
         result.push(updateCommand);
         return result;
+    }
+    public getUpsertQuery<T>(upsertExp: UpsertExpression<T>): IQuery[] {
+        if (this.version < new Version(3, 24)) {
+            return this.getUpsertQueryOlder(upsertExp);
+        }
+
+        const param: { [key: string]: any } = {};
+        for (const prop in upsertExp.setter) {
+            const val = upsertExp.setter[prop];
+            const paramExp = this.parameters.first(p => p.parameter === val);
+            if (paramExp) {
+                param[paramExp.name] = paramExp.value;
+            }
+        }
+
+        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const valueString = upsertExp.columns.select(o => {
+            const valueExp = upsertExp.setter[o.propertyName];
+            return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
+        }).toArray().join(",");
+        const primaryColString = upsertExp.entity.primaryColumns.select(o => this.enclose(o.columnName)).toArray().join(",");
+        const updateString = upsertExp.updateColumns.select(column => {
+            const valueExp = upsertExp.setter[column.propertyName];
+            if (!valueExp) return undefined;
+            return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
+        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+
+        let queryCommand: IQuery = {
+            query: `INSERT INTO ${this.entityQuery(upsertExp.entity)}(${colString})` + this.newLine()
+                + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
+            parameters: param,
+            type: QueryType.DML
+        };
+        return [queryCommand];
     }
 }

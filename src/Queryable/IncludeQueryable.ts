@@ -1,6 +1,6 @@
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -9,7 +9,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
-    private _selectors: Array<FunctionExpression<T, any>>;
+    private _selectors: Array<FunctionExpression>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, this.flatParameterStacks)).toArray();
@@ -20,7 +20,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression<T, any>>) {
+    constructor(public readonly parent: Queryable<T>, selectors: Array<((item: T) => any)> | Array<FunctionExpression>) {
         super(parent.type, parent);
         if (selectors.length > 0 && selectors[0] instanceof FunctionExpression) {
             this.selectors = selectors as any;
@@ -36,8 +36,6 @@ export class IncludeQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
-        return hashCode("INCLUDE", this.parent.hashCode() + ((this.selectorsFn || this.selectors) as any[])
-            .select((o) => hashCode(o.toString()))
-            .sum());
+        return hashCodeAdd(hashCode("INCLUDE", this.parent.hashCode()), this.selectors.sum(o => o.hashCode()));
     }
 }

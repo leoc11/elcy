@@ -3,8 +3,8 @@ import { BitwiseExpression } from "./BitwiseExpression";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
-export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression {
+import { resolveClone, hashCode } from "../../Helper/Util";
+export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression<number> {
     public static create(operand: IExpression) {
         const result = new BitwiseNotExpression(operand);
         if (operand instanceof ValueExpression)
@@ -32,5 +32,8 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
         const clone = new BitwiseNotExpression(operand);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCode("~", this.operand.hashCode());
     }
 }

@@ -1,12 +1,13 @@
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { resolveClone } from "../../Helper/Util";
-export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase<T[K]> implements IMemberOperatorExpression<T> {
+import { resolveClone, hashCode } from "../../Helper/Util";
+import { GenericType } from "../../Common/Type";
+export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implements IMemberOperatorExpression<TE, T> {
     public static create<T, K extends keyof T>(objectOperand: IExpression<T>, member: K) {
         const result = new MemberAccessExpression(objectOperand, member);
         if (objectOperand instanceof ValueExpression)
@@ -14,15 +15,14 @@ export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase
 
         return result;
     }
-    constructor(public objectOperand: IExpression<T>, public memberName: K) {
-        super();
-    }
-    private _type: any;
+    public itemType?: GenericType;
+    constructor(public objectOperand: IExpression<TE>, public memberName: K) { }
+    private _type: GenericType<T>;
     public get type() {
         if (!this._type) {
             if (this.objectOperand.type) {
                 const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.objectOperand.type, this.memberName);
-                const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.objectOperand.type, this.memberName);
+                const relationMeta: RelationMetaData<TE, any> = Reflect.getOwnMetadata(relationMetaKey, this.objectOperand.type, this.memberName);
                 if (columnMeta)
                     this._type = columnMeta.type;
                 else if (relationMeta) {
@@ -55,8 +55,11 @@ export class MemberAccessExpression<T, K extends keyof T> extends ExpressionBase
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
-        const clone = new MemberAccessExpression(objectOperand, this.memberName);
+        const clone = new MemberAccessExpression<TE, K, T>(objectOperand, this.memberName);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCode("." + this.memberName, this.objectOperand.hashCode());
     }
 }

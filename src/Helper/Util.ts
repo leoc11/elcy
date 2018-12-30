@@ -7,19 +7,75 @@ import { TimeSpan } from "../Data/TimeSpan";
 import { UUID } from "../Data/UUID";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
+import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
+import { Enumerable } from "../Enumerable/Enumerable";
+import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
+import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
 
-export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>, existAction?: (exp: T) => void): T {
+export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>): T {
     if (!exp) return exp;
     return (replaceMap.has(exp) ? replaceMap.get(exp) : exp.clone(replaceMap)) as T;
 };
-export const excludeCloneMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+export const isEqual = function (a: any, b: any) {
+    return a === b || (isNotNull(a) && isNotNull(b) && a.constructor === b.constructor && a[Symbol.toPrimitive] === b[Symbol.toPrimitive]);
+};
+export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>, sourceExp: IExpression, targetExp: IExpression) {
+    replaceMap.set(sourceExp, targetExp);
+    if ((sourceExp as SelectExpression).projectedColumns && (targetExp as SelectExpression).projectedColumns) {
+        const selectExp1 = sourceExp as SelectExpression;
+        const selectExp2 = targetExp as SelectExpression;
+        mapReplaceExp(replaceMap, selectExp1.entity, selectExp2.entity);
+        if (selectExp1 instanceof GroupByExpression && selectExp2 instanceof GroupByExpression) {
+            mapReplaceExp(replaceMap, selectExp1.key, selectExp2.key);
+            mapReplaceExp(replaceMap, selectExp1.itemSelect, selectExp2.itemSelect);
+        }
+        const projectedCol = Enumerable.load(selectExp2.projectedColumns);
+        for (const col of selectExp1.projectedColumns) {
+            const tCol = projectedCol.first(o => o.propertyName === col.propertyName);
+            if (tCol) replaceMap.set(col, tCol);
+        }
+    }
+    else if ((sourceExp as IEntityExpression).primaryColumns && (targetExp as IEntityExpression).primaryColumns) {
+        const entityExp1 = sourceExp as IEntityExpression;
+        const entityExp2 = targetExp as IEntityExpression;
+        for (const col of entityExp1.columns) {
+            const tCol = entityExp2.columns.first(o => o.propertyName === col.propertyName);
+            if (tCol) replaceMap.set(col, tCol);
+        }
+    }
+};
+export const mapKeepExp = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
     replaceMap.set(exp, exp);
     if ((exp as SelectExpression).projectedColumns) {
-        excludeCloneMap(replaceMap, (exp as SelectExpression).entity);
-        (exp as SelectExpression).projectedColumns.each(o => excludeCloneMap(replaceMap, o));
+        const selectExp = exp as SelectExpression;
+        mapKeepExp(replaceMap, selectExp.entity);
+        if (selectExp instanceof GroupByExpression) {
+            mapKeepExp(replaceMap, selectExp.key);
+            mapKeepExp(replaceMap, selectExp.itemSelect);
+        }
+        for (const o of selectExp.projectedColumns)
+            mapKeepExp(replaceMap, o);
     }
     else if ((exp as IEntityExpression).primaryColumns) {
-        (exp as IEntityExpression).columns.each(o => excludeCloneMap(replaceMap, o));
+        const entityExp = exp as IEntityExpression;
+        entityExp.columns.each(o => mapKeepExp(replaceMap, o));
+    }
+};
+export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+    replaceMap.delete(exp);
+    if ((exp as SelectExpression).projectedColumns) {
+        const selectExp = exp as SelectExpression;
+        removeExpFromMap(replaceMap, selectExp.entity);
+        if (selectExp instanceof GroupByExpression) {
+            removeExpFromMap(replaceMap, selectExp.key);
+            removeExpFromMap(replaceMap, selectExp.itemSelect);
+        }
+        for (const o of selectExp.projectedColumns)
+            removeExpFromMap(replaceMap, o);
+    }
+    else if ((exp as IEntityExpression).primaryColumns) {
+        const entityExp = exp as IEntityExpression;
+        entityExp.columns.each(o => removeExpFromMap(replaceMap, o));
     }
 };
 export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {
@@ -40,6 +96,10 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
         visitExpression(unaryOperatorExp.operand, finder);
+    }
+    else if ((source as IMemberOperatorExpression).objectOperand) {
+        const memberOperatorExp = source as IMemberOperatorExpression;
+        visitExpression(memberOperatorExp.objectOperand, finder);
     }
 };
 export const replaceExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => IExpression) => {
@@ -62,14 +122,45 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
         const unaryOperatorExp = source as IUnaryOperatorExpression;
         unaryOperatorExp.operand = replaceExpression(unaryOperatorExp.operand, finder);
     }
+    else if ((source as IMemberOperatorExpression).objectOperand) {
+        const memberOperatorExp = source as IMemberOperatorExpression;
+        memberOperatorExp.objectOperand = replaceExpression(memberOperatorExp.objectOperand, finder);
+    }
     return source;
 };
-
+export const isEntityExp = (data: IExpression): data is IEntityExpression => {
+    return !!(data as IEntityExpression).entityTypes;
+};
+export const isColumnExp = (data: IExpression): data is IColumnExpression => {
+    return !!(data as IColumnExpression).entity;
+};
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);
 };
-export const isValueType = <T>(type: GenericType<T>) => {
-    return [Number, String, Date, TimeSpan, UUID, Boolean].contains(type as any);
+export const isValueType = (type: GenericType) => {
+    switch (type) {
+        case Number:
+        case String:
+        case Date:
+        case TimeSpan:
+        case UUID:
+        case Boolean:
+        case ArrayBuffer:
+        // TypedArray
+        case Uint8Array:
+        case Uint16Array:
+        case Uint32Array:
+        case Int8Array:
+        case Int16Array:
+        case Int32Array:
+        case Uint8ClampedArray:
+        case Float32Array:
+        case Float64Array:
+        case DataView:
+            return true;
+        default:
+            return false;
+    }
 };
 export const isNotNull = (value: any) => {
     return value !== null && value !== undefined;
@@ -99,8 +190,7 @@ export const fillZero = (value: number, factor = 2): string => {
 export const hashCode = (str: string, hash: number = 0) => {
     if (!str || str.length === 0)
         return hash;
-    const l = str.length;
-    for (let i = 0; i < l; i++) {
+    for (let i = 0, len = str.length; i < len; i++) {
         hash = hashCodeAdd(hash, str.charCodeAt(i));
     }
     return hash;

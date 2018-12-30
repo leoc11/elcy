@@ -1,15 +1,14 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { resolveClone } from "../../Helper/Util";
-export class BitwiseXorAssignmentExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+export class BitwiseXorAssignmentExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
         return new BitwiseXorAssignmentExpression(leftOperand, rightOperand);
     }
-    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) {
-        super(rightOperand.type);
-    }
+    public type = Number;
+    constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -28,5 +27,8 @@ export class BitwiseXorAssignmentExpression extends ExpressionBase<number> imple
         const clone = new BitwiseXorAssignmentExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("^=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

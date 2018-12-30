@@ -60,10 +60,6 @@ export class QueryTranslator {
     }
     public resolve(object: any, memberName?: string) {
         let map = this._map.get(object);
-        if (!map) {
-            map = {};
-            this._map.set(object, map);
-        }
         let item = map ? map[memberName || ""] : undefined;
         if (item === undefined) {
             for (const fallback of this.fallbacks) {

@@ -2,22 +2,27 @@ import { ClassBase, GenericType, IObjectType, ColumnGeneration } from "../Common
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "./EntityMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { IOrderMetaData } from "./Interface/IOrderMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IndexMetaData } from "./IndexMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { isNotNull } from "../Helper/Util";
+import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
+import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
+import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
+import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
-    public defaultOrder?: IOrderMetaData[];
+    public defaultOrders?: IOrderQueryDefinition<TE>[];
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deletedColumn?: IColumnMetaData<TE>;
+    public deletedColumn?: BooleanColumnMetaData<TE>;
     public relations: IRelationMetaData<TE, any>[] = [];
-    public createDateColumn?: IColumnMetaData<TE>;
-    public modifiedDateColumn?: IColumnMetaData<TE>;
+    public createDateColumn?: DateTimeColumnMetaData<TE>;
+    public modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     public columns: IColumnMetaData<TE>[] = [];
     public indices: IndexMetaData<TE>[] = [];
+    public computedProperties: ComputedColumnMetaData<TE>[] = [];
+    public constraints: IConstraintMetaData<TE>[] = [];
 
     // inheritance
     public parentType?: GenericType<TParent>;

@@ -1,105 +1,125 @@
-import { SelectExpression, IJoinRelation, IIncludeRelation } from "./SelectExpression";
+import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
-import { IOrderExpression } from "./IOrderExpression";
-import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { JoinType } from "../../Common/Type";
-import { resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
+import { IEntityExpression } from "./IEntityExpression";
+import { Enumerable } from "../../Enumerable/Enumerable";
+import { JoinRelation } from "../Interface/JoinRelation";
+import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
+import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
+import { JoinType } from "../../Common/Type";
 
-export class GroupedExpression<T = any, TKey = any> extends SelectExpression<T> {
-    public get where() {
-        if (this.select)
-            return this.select.where;
-        return undefined;
+export class GroupedExpression<T = any> extends SelectExpression<T> {
+    public key: IExpression;
+    public groupByExp: GroupByExpression<T>;
+
+    private _groupBy: IColumnExpression<T>[];
+    public get groupBy() {
+        if (!this._groupBy) {
+            this._groupBy = [];
+            if (isEntityExp(this.key)) {
+                const entityExp = this.key as IEntityExpression;
+                const childSelectExp = entityExp.select;
+                if (childSelectExp.parentRelation) {
+                    const parentRel = childSelectExp.parentRelation;
+                    if (parentRel.isEmbedded) {
+                        const cloneMap = new Map();
+                        mapReplaceExp(cloneMap, entityExp, this.entity);
+                        const childSelects = childSelectExp.resolvedSelects.select(o => {
+                            let curCol = this.entity.columns.first(c => c.propertyName === o.propertyName && c.constructor === o.constructor);
+                            if (!curCol) {
+                                curCol = o.clone(cloneMap);
+                            }
+                            return curCol;
+                        });
+                        this._groupBy = childSelects.toArray();
+                    }
+                    else {
+                        visitExpression(parentRel.relations, (exp: IExpression): boolean | void => {
+                            if ((exp as IColumnExpression).entity && Enumerable.load(parentRel.parent.projectedColumns).contains(exp as any)) {
+                                this._groupBy.add(exp as any);
+                                return false;
+                            }
+                        });
+                    }
+                }
+            }
+            else if (this.key instanceof ObjectValueExpression) {
+                for (const prop in this.key.object) {
+                    this._groupBy.push(this.key.object[prop] as any);
+                }
+            }
+            else {
+                const column = this.key as any as IColumnExpression;
+                this._groupBy.push(column);
+            }
+        }
+        return this._groupBy;
     }
-    public set where(value) {
-        if (this.select)
-            this.select.where = value;
+    public get allColumns() {
+        return this.groupBy.union(super.allColumns);
     }
-    public get orders(): IOrderExpression[] {
-        if (this.select)
-            return this.select.orders;
-        return [];
+    public get projectedColumns(): Iterable<IColumnExpression<T>> {
+        return Enumerable.load(super.projectedColumns).union(this.groupBy);
     }
-    public set orders(value) {
-        if (this.select)
-            this.select.orders = value;
+    constructor();
+    constructor(select: SelectExpression<T>, key: IExpression);
+    constructor(select?: SelectExpression<T>, key?: IExpression) {
+        super();
+        if (select) {
+            this.key = key;
+            this.itemExpression = this.entity = select.entity;
+
+            this.selects = select.selects.slice();
+            this.distinct = select.distinct;
+            // this.isAggregate = select.isAggregate;
+            this.where = select.where;
+            this.orders = select.orders.slice();
+            Object.assign(this.paging, select.paging);
+
+            this.isSubSelect = select.isSubSelect;
+            this.parameters = select.parameters.slice();
+        }
     }
-    public get key() {
-        if (this.select)
-            return this.select.key;
-        return undefined;
-    }
-    public asIncludeResult: boolean;
-    constructor(public readonly select: GroupByExpression<T>) {
-        super(select.entity);
-        this.joins = select.joins.slice(0);
-        this.includes = [];
-    }
-    public addJoinRelation<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
-        if (!this.asIncludeResult) this.select.addJoinRelation(child, relationMetaOrRelations as any, type);
-        return super.addJoinRelation(child, relationMetaOrRelations as any, type);
+
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
+        const joinRel = super.addJoin(child, relationMetaOrRelations as any, type, isEmbedded);
+        joinRel.parent = this.groupByExp;
+        return joinRel;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
         if (!replaceMap) replaceMap = new Map();
-        const select = resolveClone(this.select, replaceMap);
-        const clone = new GroupedExpression(select);
+        const entity = resolveClone(this.entity, replaceMap);
+        const clone = new GroupedExpression();
         replaceMap.set(this, clone);
+        clone.entity = entity;
+        if ((this.key as IEntityExpression).primaryColumns) {
+            const entityExp = this.key as IEntityExpression;
+            const relKeyClone = (entityExp.select.parentRelation as JoinRelation).clone(replaceMap);
+            clone.key = relKeyClone.child.entity;
+        }
+        else {
+            clone.key = resolveClone(this.key, replaceMap);
+        }
+
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
+        clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
         clone.orders = this.orders.select(o => ({
             column: resolveClone(o.column, replaceMap),
             direction: o.direction
         })).toArray();
-        clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
 
-        clone.joins = this.joins.select(o => {
-            const child = resolveClone(o.child, replaceMap);
-            const relation = resolveClone(o.relations, replaceMap);
-            const rel: IJoinRelation = {
-                child: child,
-                parent: clone,
-                relations: relation,
-                type: o.type,
-                isFinish: o.isFinish,
-                name: o.name
-            };
-            child.parentRelation = rel;
-            return rel;
-        }).toArray();
+        clone.joins = this.joins.select(o => o.clone(replaceMap)).toArray();
+        clone.includes = this.includes.select(o => o.clone(replaceMap)).toArray();
 
-        clone.includes = this.includes.select(o => {
-            const cloneChild = resolveClone(o.child, replaceMap);
-            const relation = resolveClone(o.relations, replaceMap);
-            let map: Map<IColumnExpression, IColumnExpression>;
-            if (o.relationMap) {
-                for (const item of o.relationMap) {
-                    const key = replaceMap.has(item[0]) ? replaceMap.get(item[0]) as any : item[0];
-                    const value = replaceMap.has(item[1]) ? replaceMap.get(item[1]) as any : item[1];
-                    map.set(key, value);
-                }
-            }
-
-            const rel: IIncludeRelation = {
-                child: cloneChild,
-                parent: clone,
-                relations: relation,
-                relationMap: map,
-                type: o.type,
-                name: o.name,
-                isFinish: o.isFinish
-            };
-            cloneChild.parentRelation = rel;
-            return rel;
-        }).toArray();
-
-        clone.relationColumns = this.relationColumns.select(o => resolveClone(o, replaceMap)).toArray();
         clone.where = resolveClone(this.where, replaceMap);
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public addWhere(expression: IExpression<boolean>) {
-        this.where = this.where ? new AndExpression(this.where, expression) : expression;
+    public hashCode() {
+        return hashCode("GROUPED", super.hashCode());
     }
 }

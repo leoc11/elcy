@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
-export class SubtractionExpression extends ExpressionBase<number> implements IBinaryOperatorExpression {
+import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+export class SubtractionExpression implements IBinaryOperatorExpression<number> {
     public static create(leftOperand: IExpression<number>, rightOperand: IExpression<number>) {
         const result = new SubtractionExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,10 +11,8 @@ export class SubtractionExpression extends ExpressionBase<number> implements IBi
 
         return result;
     }
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
-        super(Number);
-    }
-
+    public type = Number;
+    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -30,5 +28,8 @@ export class SubtractionExpression extends ExpressionBase<number> implements IBi
         const clone = new SubtractionExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("-", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

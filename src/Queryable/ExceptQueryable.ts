@@ -1,7 +1,7 @@
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { Queryable } from "./Queryable";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { hashCode } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
@@ -18,6 +18,6 @@ export class ExceptQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
-        return hashCode("EXCLUDE", this.parent.hashCode() + this.parent2.hashCode());
+        return hashCodeAdd(hashCode("EXCLUDE", this.parent.hashCode()), this.parent2.hashCode());
     }
 }
