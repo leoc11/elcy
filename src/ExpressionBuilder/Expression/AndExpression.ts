@@ -1,9 +1,9 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { resolveClone } from "../../Helper/Util";
-export class AndExpression extends ExpressionBase<boolean> implements IBinaryOperatorExpression {
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
+export class AndExpression implements IBinaryOperatorExpression<boolean> {
     public static create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
         const result = new AndExpression(leftOperand, rightOperand);
         if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
@@ -11,9 +11,8 @@ export class AndExpression extends ExpressionBase<boolean> implements IBinaryOpe
 
         return result;
     }
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) {
-        super(Boolean);
-    }
+    public type = Boolean;
+    constructor(public leftOperand: IExpression<boolean>, public rightOperand: IExpression<boolean>) { }
 
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
@@ -30,5 +29,8 @@ export class AndExpression extends ExpressionBase<boolean> implements IBinaryOpe
         const clone = new AndExpression(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("&&", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

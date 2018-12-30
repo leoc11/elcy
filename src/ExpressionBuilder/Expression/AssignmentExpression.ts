@@ -1,15 +1,18 @@
 import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { resolveClone } from "../../Helper/Util";
-export class AssignmentExpression extends ExpressionBase implements IBinaryOperatorExpression {
+import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
+import { GenericType } from "../../Common/Type";
+export class AssignmentExpression<T> implements IBinaryOperatorExpression<T> {
     public static create(leftOperand: ParameterExpression, rightOperand: IExpression) {
         return new AssignmentExpression(leftOperand, rightOperand);
     }
+    public type: GenericType<T>;
+    public itemType?: GenericType<T>;
     constructor(public leftOperand: ParameterExpression, public rightOperand: IExpression) {
-        super(leftOperand.type);
+        this.type = leftOperand.type;
         if (leftOperand.type === String) {
             this.rightOperand = this.convertToStringOperand(rightOperand) as any;
         }
@@ -35,8 +38,11 @@ export class AssignmentExpression extends ExpressionBase implements IBinaryOpera
         if (!replaceMap) replaceMap = new Map();
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
-        const clone = new AssignmentExpression(left, right);
+        const clone = new AssignmentExpression<T>(left, right);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return hashCodeAdd(hashCode("=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

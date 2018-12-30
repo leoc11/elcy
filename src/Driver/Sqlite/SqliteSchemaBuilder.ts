@@ -15,8 +15,8 @@ import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class SqliteSchemaBuilder extends SchemaBuilder {
-    constructor(public connection: IConnection, public q: SqliteQueryBuilder) {
-        super(connection, q);
+    constructor(public connection: IConnection, protected readonly queryBuilder: SqliteQueryBuilder) {
+        super(connection, queryBuilder);
     }
     public async getSchemaQuery(entityTypes: IObjectType[]) {
         let commitQueries: IQuery[] = [];
@@ -184,7 +184,8 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                     name: name,
                     entity: entity,
                     columns: [],
-                    definition: defStr
+                    definition: defStr,
+                    getDefinitionString: function () { return this.definition as string; }
                 };
                 entity.constraints.push(check);
             }
@@ -247,8 +248,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
                 fkRelation.reverseRelation = reverseFkRelation;
 
                 // set relationmaps
-                const l = fkRelation.relationColumns.length;
-                for (let i = 0; i < l; i++) {
+                for (let i = 0, len = fkRelation.relationColumns.length; i < len; i++) {
                     const fkColumn = fkRelation.relationColumns[i];
                     const masterColumn = reverseFkRelation.relationColumns[i];
                     fkRelation.relationMaps.set(fkColumn, masterColumn);
@@ -263,7 +263,7 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
         return Object.keys(result).select(o => result[o]).toArray();
     }
     public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
-        let query = `ALTER TABLE ${this.q.entityName(entityMetaData)} RENAME TO ${this.q.enclose(newName)}`;
+        let query = `ALTER TABLE ${this.queryBuilder.entityName(entityMetaData)} RENAME TO ${this.queryBuilder.enclose(newName)}`;
         return [{
             query,
             type: QueryType.DDL
@@ -275,13 +275,13 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
             return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
         };
         const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
-            return !!index1.unique === !!index2.unique && index1.type === index2.type && isColumnsEquals(index1.columns, index1.columns);
+            return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
         };
         const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
             const check1 = cons1 as ICheckConstraintMetaData;
             const check2 = cons2 as ICheckConstraintMetaData;
-            const checkDef1 = !check1.definition ? undefined : check1.definition instanceof FunctionExpression ? this.q.getExpressionString(check1.definition) : check1.definition;
-            const checkDef2 = !check2.definition ? undefined : check2.definition instanceof FunctionExpression ? this.q.getExpressionString(check2.definition) : check2.definition;
+            const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
+            const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
             return checkDef1 === checkDef2 && isColumnsEquals(cons1.columns, cons2.columns);
         };
         const isColumnEquals = (col1: IColumnMetaData, col2: IColumnMetaData) => {
@@ -314,9 +314,9 @@ export class SqliteSchemaBuilder extends SchemaBuilder {
             const tempName = `temp_${schema.name}`;
             result = result.concat(this.createTable(schema, tempName));
 
-            const columns = schema.columns.where(o => oldSchema.columns.any(c => c.columnName === o.columnName)).select(o => this.q.enclose(o.columnName)).toArray().join(",");
+            const columns = schema.columns.where(o => oldSchema.columns.any(c => c.columnName === o.columnName)).select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
             result.push({
-                query: `INSERT INTO ${this.q.enclose(tempName)} (${columns}) SELECT ${columns} FROM ${this.q.entityName(oldSchema)}`,
+                query: `INSERT INTO ${this.queryBuilder.enclose(tempName)} (${columns}) SELECT ${columns} FROM ${this.queryBuilder.entityName(oldSchema)}`,
                 type: QueryType.DML
             });
 

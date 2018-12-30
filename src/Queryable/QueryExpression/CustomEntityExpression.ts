@@ -3,9 +3,9 @@ import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { IOrderExpression } from "./IOrderExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone, hashCode } from "../../Helper/Util";
+import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 
 export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
     public isRelationData?: boolean;
@@ -18,7 +18,7 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         return this._primaryColumns;
     }
     private _primaryColumns: IColumnExpression[];
-    constructor(public name: string, columns: IColumnExpression[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: IOrderExpression[] = []) {
+    constructor(public name: string, columns: IColumnExpression[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: IOrderQueryDefinition[] = []) {
         this.columns = columns.select(o => {
             const clone = o.clone();
             clone.entity = this;
@@ -43,4 +43,7 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
         return clone;
     }
     public entityTypes: IObjectType[] = [];
+    public hashCode() {
+        return hashCode(this.name, hashCode(this.type.name, this.columns.length));
+    }
 }

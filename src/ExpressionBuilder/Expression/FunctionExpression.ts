@@ -1,24 +1,26 @@
 import { GenericType } from "../../Common/Type";
 import { ExpressionBuilder } from "../ExpressionBuilder";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ValueExpressionTransformer } from "../ValueExpressionTransformer";
 import { resolveClone } from "../../Helper/Util";
 
-export class FunctionExpression<TType = any, TResult = any> extends ExpressionBase<TResult> {
-    public static create<TType, TResult>(functionFn: ExpressionBase<TResult>, params: Array<ParameterExpression<TType>>): FunctionExpression<TType>;
-    public static create<TType, TResult>(functionFn: ((...params: any[]) => TResult), ctors: GenericType[]): FunctionExpression<TType>;
-    public static create<TType, TResult>(functionFn: ExpressionBase<TResult> | ((...params: any[]) => TResult), ctors: GenericType[] | Array<ParameterExpression<TType>>) {
-        if (functionFn instanceof ExpressionBase)
-            return new FunctionExpression(functionFn, ctors as Array<ParameterExpression<TType>>);
+export class FunctionExpression<T = any> implements IExpression<T> {
+    public static create<T>(functionFn: IExpression<T>, params: Array<ParameterExpression>): FunctionExpression<T>;
+    public static create<T>(functionFn: ((...params: any[]) => T), ctors: GenericType[]): FunctionExpression<T>;
+    public static create<T>(functionFn: IExpression<T> | ((...params: any[]) => T), ctors: GenericType[] | Array<ParameterExpression>) {
+        if ((functionFn as IExpression).type)
+            return new FunctionExpression(functionFn as IExpression, ctors as Array<ParameterExpression>);
 
-        return ExpressionBuilder.parse(functionFn);
+        return ExpressionBuilder.parse(functionFn as any);
     }
+    public type: GenericType<T>;
+    public itemType?: GenericType;
     // TODO: type must always specified
-    constructor(public body: IExpression<TResult>, public params: Array<ParameterExpression<TType>>, type?: GenericType<TResult>) {
-        super(type);
+    constructor(public body: IExpression<T>, public params: Array<ParameterExpression>, type?: GenericType<T>) { 
+        this.type = type;
     }
 
     public toString(transformer?: ExpressionTransformer): string {
@@ -44,5 +46,8 @@ export class FunctionExpression<TType = any, TResult = any> extends ExpressionBa
         const clone = new FunctionExpression(body, params);
         replaceMap.set(this, clone);
         return clone;
+    }
+    public hashCode() {
+        return this.body.hashCode();
     }
 }

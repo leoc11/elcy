@@ -93,9 +93,9 @@ export class RedisResultCacheManager implements IResultCacheManager {
         tags.each(tag => pipeline.smembers("tag:" + tag));
         const res: any[] = await pipeline.exec();
         const keys = res.selectMany(o => o as any[]).distinct().toArray();
-        await this.remove(...keys);
+        return this.remove(...keys);
     }
     public async clear(): Promise<void> {
-        this.connection.flushdb();
+        await this.connection.flushdb();
     }
 }

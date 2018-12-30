@@ -4,7 +4,7 @@ import { PooledConnectionManager } from "../../../src/Connection/PooledConnectio
 import { expect, use } from "chai";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
-import { MockDriver } from "../../../src/Connection/Mock/MockDriver";
+import { mockConnectionManager } from "../../../src/Connection/Mock/MockContext";
 
 describe("POOLED CONNECTION MANAGER", () => {
     use(chaiPromise);
@@ -13,7 +13,9 @@ describe("POOLED CONNECTION MANAGER", () => {
             option = {};
         }
         option = Object.assign({ maxConnection: 3, idleTimeout: 1000, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 }, option);
-        return new PooledConnectionManager(new MockDriver(), option);
+        const manager = new PooledConnectionManager(null, option);
+        mockConnectionManager(manager);
+        return manager;
     };
 
     it("should used pooled connection", async () => {

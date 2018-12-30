@@ -1,5 +1,5 @@
 import "../Extensions/ArrayItemTypeExtension";
-import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, JoinType } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -32,20 +32,17 @@ import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryComm
 import { ISqlParameter } from "../QueryBuilder/ISqlParameter";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
-import { columnMetaKey } from "../Decorator/DecoratorKey";
-import { ColumnMetaData } from "../MetaData/ColumnMetaData";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
-import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
+import { UpdateExpression, updateItemExp } from "../Queryable/QueryExpression/UpdateExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { OrExpression } from "../ExpressionBuilder/Expression/OrExpression";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
-import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
+import { InsertExpression, insertEntryExp } from "../Queryable/QueryExpression/InsertExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
@@ -54,8 +51,10 @@ import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
 import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
-import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { UpsertExpression, upsertEntryExp } from "../Queryable/QueryExpression/UpsertExpression";
 import { DbFunction } from "../QueryBuilder/DbFunction";
+import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
@@ -95,7 +94,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public resultCacheManager: IResultCacheManager;
     private _connectionManager: IConnectionManager;
-    protected get connectionManager() {
+    public get connectionManager() {
         if (!this._connectionManager) {
             this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
             if (!this._connectionManager) {
@@ -130,7 +129,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             await con.close();
         }
     }
-    protected cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
+    private _cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
     constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
         this.relationEntries = {
             add: new Map(),
@@ -145,10 +144,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
     //#region Entity Tracker
     public set<T>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
-        let result: DbSet<T> = isClearCache ? undefined as any : this.cachedDbSets.get(type);
+        let result: DbSet<T> = isClearCache ? undefined as any : this._cachedDbSets.get(type);
         if (!result && this.entityTypes.contains(type)) {
             result = new DbSet(type, this);
-            this.cachedDbSets.set(type, result);
+            this._cachedDbSets.set(type, result);
         }
         return result;
     }
@@ -329,7 +328,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         this.entityEntries.delete.clear();
         this.entityEntries.add.clear();
         this.entityEntries.update.clear();
-        for (const [, dbSet] of this.cachedDbSets) {
+        for (const [, dbSet] of this._cachedDbSets) {
             dbSet.clear();
         }
     }
@@ -386,9 +385,13 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             throw e;
         }
     }
-    public async executeDeferred(deferredQueries: Iterable<DeferredQuery>) {
+    public async executeDeferred(deferredQueries?: Iterable<DeferredQuery>) {
+        if (!deferredQueries) {
+            deferredQueries = this.deferredQueries.splice(0);
+        }
+
         const queryBuilder = this.queryBuilder;
-        let deferredQueryEnumerable = new Enumerable(deferredQueries);
+        let deferredQueryEnumerable = Enumerable.load(deferredQueries);
 
         // check cached
         if (this.resultCacheManager) {
@@ -414,8 +417,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const alias = paramPrefix + i++;
                 o.each(p => {
                     p.name = alias;
-                    if (p.parameter.column)
-                        p.value = queryBuilder.toParameterValue(p.value, p.parameter.column);
+                    p.value = queryBuilder.toParameterValue(p.value, p.parameter.column);
                 });
             });
 
@@ -450,8 +452,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         }
     }
-    public async updateSchema() {
-        const schemaQuery = await this.getUpdateSchemaQueries(...this.entityTypes);
+    public async syncSchema() {
+        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
         const commands = this.queryBuilder.mergeQueryCommands(schemaQuery.commit);
 
         // must be executed to all connection in case connection manager handle replication
@@ -463,7 +465,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             });
         }
     }
-    public async getUpdateSchemaQueries(...entityTypes: IObjectType[]) {
+    public async getUpdateSchemaQueries(entityTypes: IObjectType[]) {
         const con = await this.getConnection();
         const schemaBuilder = new this.schemaBuilderType(con, this.queryBuilder);
         return await schemaBuilder.getSchemaQuery(entityTypes);
@@ -574,8 +576,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         orderedRelationAdd.each(([relMetaData, addEntries]) => {
             // filter out add relation that has been set at insert query.
             // NOTE: this only required for relation db.
-            const entries = addEntries.where(o => !(o.slaveRelation.relationType === "one" && o.slaveEntry.state === EntityState.Added/* && !o.slaveRelation.nullable*/));
-            relationAddQueries.set(relMetaData, this.getRelationAddQueries(relMetaData, entries));
+            const entries = addEntries.where(o => !(o.slaveRelation.relationType === "one" && o.slaveEntry.state === EntityState.Added));
+            relationAddQueries.set(relMetaData, this.getRelationAddQueries(relMetaData, entries, visitor));
         });
 
         // generate remove relation here.
@@ -691,115 +693,25 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return allQueries.sum(o => o.value.effectedRows);
     }
     protected getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = new Enumerable(entries);
-        if (entryEnumerable.count() <= 0)
-            return [];
+        let entryEnumerable = Enumerable.load(entries);
+        const results: DeferredQuery<IQueryResult>[] = [];
+        if (!entryEnumerable.any()) return results;
 
         if (!visitor) visitor = this.queryVisitor;
-        const option = visitor.options;
+
+        const entityExp = new EntityExpression(entityMetaData.type, visitor.newAlias());
 
         let autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
-        if (autoUpdateColumns.any()) {
+        const hasUpdateColumn = autoUpdateColumns.any();
+        if (hasUpdateColumn) {
             autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
         }
 
-        const entityExp = new EntityExpression(entityMetaData.type, visitor.newAlias());
-        const updateSelectParameters: ISqlParameter[] = [];
-        const dataSelectExp = new SelectExpression(entityExp);
-        if (entityMetaData.deletedColumn && !(option && option.includeSoftDeleted)) {
-            dataSelectExp.addWhere(new StrictEqualExpression(dataSelectExp.entity.deleteColumn, new ValueExpression(false)));
-        }
-
-        dataSelectExp.selects = autoUpdateColumns.select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
-
-        let result: DeferredQuery<IQueryResult>[] = entryEnumerable.select(entry => {
-            const modifiedColumns = entry.getModifiedProperties().select(o => Reflect.getMetadata(columnMetaKey, entityMetaData.type, o) as ColumnMetaData<T>);
-
-            const set: { [key: string]: IExpression<any> } = {};
-
+        for (const entry of entryEnumerable) {
+            const updateExp = new UpdateExpression(entityExp, {});
             const queryParameters: ISqlParameter[] = [];
-            modifiedColumns.each(o => {
-                const paramName = visitor.newAlias("param");
-                const paramExp = new SqlParameterExpression(paramName, new ParameterExpression(paramName, o.type), o);
-                queryParameters.push({
-                    name: paramName,
-                    parameter: paramExp,
-                    value: entry.entity[o.propertyName as keyof T]
-                });
-                set[o.columnName] = paramExp;
-            });
-
-            if (entry.metaData.modifiedDateColumn) {
-                set[entry.metaData.modifiedDateColumn.columnName] = new MethodCallExpression(new ValueExpression(Date), "currentTimestamp", []);
-            }
-
-            const updateExp = new UpdateExpression(entityExp as any, set);
-            if (updateExp.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
-                updateExp.addWhere(new StrictEqualExpression(updateExp.entity.deleteColumn, new ValueExpression(false)));
-            }
-
-            entityMetaData.primaryKeys.each(o => {
-                const paramName = visitor.newAlias("param");
-                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, o.type), o);
-                const sqlParam = {
-                    name: paramName,
-                    parameter: parameter,
-                    value: entry.entity[o.propertyName]
-                };
-                queryParameters.push(sqlParam);
-
-                const colExp = updateExp.entity.columns.first(c => c.propertyName === o.propertyName);
-                const compExp = new StrictEqualExpression(colExp, parameter);
-                updateExp.addWhere(compExp);
-
-                if (dataSelectExp.selects.any()) {
-                    updateSelectParameters.push(sqlParam);
-                }
-            });
-
-            if (dataSelectExp.selects.any()) {
-                dataSelectExp.where = dataSelectExp.where ? new OrExpression(dataSelectExp.where, updateExp.where) : updateExp.where;
-            }
-
-            switch (entityMetaData.concurrencyMode) {
-                case "OPTIMISTIC VERSION": {
-                    let versionCol: IColumnMetaData<T> = entityMetaData.versionColumn;
-                    if (!versionCol) {
-                        versionCol = entityMetaData.modifiedDateColumn;
-                    }
-
-                    const paramName = visitor.newAlias("param");
-                    const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, versionCol.type), versionCol);
-                    const sqlParam = {
-                        name: paramName,
-                        parameter: parameter,
-                        value: entry.entity[versionCol.propertyName]
-                    };
-                    queryParameters.push(sqlParam);
-
-                    const colExp = updateExp.entity.columns.first(c => c.propertyName === versionCol.propertyName);
-                    const compExp = new StrictEqualExpression(colExp, parameter);
-                    updateExp.addWhere(compExp);
-                    break;
-                }
-                case "OPTIMISTIC DIRTY": {
-                    modifiedColumns.each(o => {
-                        const paramName = visitor.newAlias("param");
-                        const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, o.type), o);
-                        const sqlParam = {
-                            name: paramName,
-                            parameter: parameter,
-                            value: entry.getOriginalValue(o.propertyName)
-                        };
-                        queryParameters.push(sqlParam);
-                        const colExp = updateExp.entity.columns.first(c => c.propertyName === o.propertyName);
-                        const compExp = new StrictEqualExpression(colExp, parameter);
-                        updateExp.addWhere(compExp);
-                    });
-                    break;
-                }
-            }
-            return new DeferredQuery(this, updateExp, queryParameters, (results) => {
+            updateItemExp(updateExp, entry, visitor, queryParameters);
+            const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                 const effectedRows = results.sum(o => o.effectedRows);
                 if (entityMetaData.concurrencyMode !== "NONE" && effectedRows <= 0) {
                     throw new Error("Concurrency Error");
@@ -809,220 +721,202 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     rows: []
                 };
             });
-        }).toArray();
+            results.push(updateQuery);
+        }
 
         // get changes done by server.
-        if (autoUpdateColumns.any()) {
-            result = result.concat(new DeferredQuery(this, dataSelectExp, updateSelectParameters, (results) => {
+        if (hasUpdateColumn) {
+            let selectParameters: ISqlParameter[] = [];
+            const selectExp = new SelectExpression(entityExp);
+            selectExp.selects = autoUpdateColumns.select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
+
+            for (const result of results) {
+                const updateExp = result.command as UpdateExpression<T>;
+                selectParameters = selectParameters.union(result.parameters.where(o => o.parameter.column.isPrimaryColumn)).toArray();
+                selectExp.where = selectExp.where ? new OrExpression(selectExp.where, updateExp.where) : updateExp.where;
+            }
+
+            const selectQuery = new DeferredQuery(this, selectExp, selectParameters, (results) => {
                 return {
                     effectedRows: 0,
                     rows: results.selectMany(o => o.rows)
                 };
-            }));
+            });
+            results.push(selectQuery);
         }
 
-        return result;
+        return results;
     }
     protected getDeleteQueries<T>(entityMeta: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = new Enumerable(entries);
+        let entryEnumerable = Enumerable.load(entries);
+        const results: Array<DeferredQuery<IQueryResult>> = [];
         if (entryEnumerable.count() <= 0)
-            return [];
+            return results;
 
         if (!visitor) visitor = this.queryVisitor;
         const option = visitor.options as ISaveChangesOption;
+
         let deleteMode: DeleteMode = !entityMeta.deletedColumn ? "Soft" : "Hard";
         if (option && option.forceHardDelete) {
             deleteMode = "Hard";
         }
 
-        const deleteExp = new DeleteExpression(new EntityExpression(entityMeta.type, visitor.newAlias()), new ValueExpression(deleteMode));
-        if (deleteExp.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
-            deleteExp.addWhere(new StrictEqualExpression(deleteExp.entity.deleteColumn, new ValueExpression(false)));
-        }
+        const entityExp = new EntityExpression(entityMeta.type, visitor.newAlias());
+        const deleteExp = new DeleteExpression(entityExp, new ValueExpression(deleteMode));
+
         const queryParameters: ISqlParameter[] = [];
-        if (entityMeta.primaryKeys.length === 1) {
-            const primaryCol = entityMeta.primaryKeys.first();
-            const primaryValues = entryEnumerable.select(o => {
-                return o.entity[primaryCol.propertyName];
-            }).toArray();
-            const paramName = visitor.newAlias("param");
-            const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, Array), primaryCol);
-            queryParameters.push({
-                name: paramName,
-                parameter: parameter,
-                value: primaryValues
-            });
-            deleteExp.addWhere(new MethodCallExpression(parameter, "contains", deleteExp.entity.primaryColumns));
-        }
-        else {
-            const condition = entryEnumerable.select(o => {
-                return entityMeta.primaryKeys.select(pk => {
+        const hasCompositeKeys = entityMeta.primaryKeys.length > 1;
+        let whereExp: IExpression<boolean>;
+
+        if (hasCompositeKeys) {
+            for (const entry of entryEnumerable) {
+                let primaryExp: IExpression<boolean>;
+                for (const col of entityExp.primaryColumns) {
                     const paramName = visitor.newAlias("param");
-                    const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, pk.type), pk);
+                    const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, col.type), col.columnMetaData);
                     queryParameters.push({
                         name: paramName,
                         parameter: parameter,
-                        value: o.entity[pk.propertyName]
+                        value: entry.entity[col.propertyName]
                     });
-                    return parameter;
-                }).reduce<IExpression<boolean>>((aggregated, item) => {
-                    return aggregated ? new AndExpression(aggregated, item) : item;
+
+                    const logicalExp = new StrictEqualExpression(col, parameter);
+                    primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
+                }
+                whereExp = whereExp ? new OrExpression(whereExp, primaryExp) : primaryExp;
+            }
+        }
+        else {
+            const arrayValue = new ArrayValueExpression();
+            const primaryKey = entityExp.primaryColumns.first();
+            for (const entry of entryEnumerable) {
+                const paramName = visitor.newAlias("param");
+                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, primaryKey.type), primaryKey.columnMetaData);
+                queryParameters.push({
+                    name: paramName,
+                    parameter: parameter,
+                    value: entry.entity[primaryKey.propertyName]
                 });
-            }).reduce<IExpression<boolean>>((aggregated, item) => {
-                return aggregated ? new OrExpression(aggregated, item) : item;
-            });
-            deleteExp.addWhere(condition);
+                arrayValue.items.push(parameter);
+            }
+            whereExp = new MethodCallExpression(arrayValue, "contains", entityExp.primaryColumns);
         }
-        return [new DeferredQuery(this, deleteExp, queryParameters, (results) => {
-            return {
-                effectedRows: results.sum(o => o.effectedRows),
-                rows: []
-            };
-        })];
+
+        if (whereExp) {
+            deleteExp.addWhere(whereExp);
+            const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
+                return {
+                    effectedRows: results.sum(o => o.effectedRows),
+                    rows: []
+                };
+            });
+            results.push(deleteQuery);
+        }
+        return results;
     }
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        if (!visitor) visitor = this.queryVisitor;
-        let entryEnumerable = new Enumerable(entries);
+    protected getInsertQueries<T>(entityMeta: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
+        let entryEnumerable = Enumerable.load(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
+        if (!entryEnumerable.any()) return results;
 
-        const columns = entityMetaData.columns;
-        const relations = entityMetaData.relations
-            .where(o => !o.nullable && !o.isMaster && o.relationType === "one");
-        const relationDatas = relations.selectMany(o => o.relationColumns.select(c => ({
-            column: c,
-            relationProperty: o.propertyName,
-            fullName: o.fullName,
-            relationColumn: o.relationMaps.get(c)
-        })));
-        const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).except(entityMetaData.insertGeneratedColumns);
+        if (!visitor) visitor = this.queryVisitor;
+        const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
+        const relations = entityMeta.relations
+            .where(o => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
+        let columns = relations.selectMany(o => o.relationColumns)
+            .union(entityExp.metaData.columns)
+            .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
-        const entityExp = new EntityExpression(entityMetaData.type, visitor.newAlias());
-        let insertExp = new InsertExpression(entityExp, []);
-        let queryParameters: ISqlParameter[] = [];
-        const getEntryValues = (entry: EntityEntry<T>) => {
-            const values: Array<IExpression | undefined> = [];
-            let primaryKeyExp: IExpression<boolean>;
-            relationDatas.each(o => {
-                const parentEntity = entry.entity[o.relationProperty] as any;
-                if (!parentEntity) {
-                    throw new Error(`${o.relationProperty} cannot be null`);
-                }
-
-                const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.relationColumn.type), o.relationColumn);
-                const parentHasGeneratedPrimary = parentEntry.metaData.primaryKeys.any(o => !!(o.generation & ColumnGeneration.Insert) || (o.default && parentEntity[o.propertyName] === undefined));
-                if (parentEntry.state === EntityState.Added && parentHasGeneratedPrimary) {
-                    // TODO: get value from parent.
-                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
-                    param = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), o.relationColumn.columnName), o.relationColumn);
-                    insertExp.parameters.push(param);
-                }
-                else {
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: parentEntity[o.relationColumn.propertyName]
-                    };
-                    queryParameters.push(paramv);
-                }
-
-                values.push(param);
-                if (o.column.isPrimaryColumn) {
-                    const eqExp = new StrictEqualExpression(insertExp.entity.primaryColumns.first(c => c.propertyName === o.column.propertyName), param);
-                    primaryKeyExp = primaryKeyExp ? new AndExpression(primaryKeyExp, eqExp) : eqExp;
-                }
-            });
-
-            valueColumns.each(o => {
-                let value = entry.entity[o.propertyName as keyof T];
-                if (value === undefined) {
-                    if (o.default)
-                        values.push(undefined);
-                    else
-                        values.push(new ValueExpression(null));
-                }
-                else {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type), o);
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: value
-                    };
-                    queryParameters.push(paramv);
-
-                    if (o.isPrimaryColumn) {
-                        const eqExp = new StrictEqualExpression(insertExp.entity.primaryColumns.first(c => c.propertyName === o.propertyName), param);
-                        primaryKeyExp = primaryKeyExp ? new AndExpression(primaryKeyExp, eqExp) : eqExp;
-                    }
-                }
-            });
-
-            insertExp.values.push(values);
-
-            return primaryKeyExp;
-        };
-
-        let generatedColumns = entityMetaData.insertGeneratedColumns.asEnumerable();
-        if (generatedColumns.any()) {
-            generatedColumns = entityMetaData.primaryKeys.union(generatedColumns);
+        let generatedColumns = entityMeta.insertGeneratedColumns.asEnumerable();
+        const hasGeneratedColumn = generatedColumns.any();
+        if (hasGeneratedColumn) {
+            generatedColumns = entityMeta.primaryKeys.union(generatedColumns);
         }
 
-        if (entityMetaData.hasIncrementPrimary) {
+        if (entityMeta.hasIncrementPrimary) {
             const queryBuilder = this.queryBuilder;
             // if primary key is auto increment, then need to split all query per entry.
-            const incrementColumn = entityMetaData.primaryKeys.first(o => (o as any as IntegerColumnMetaData).autoIncrement);
+            const incrementColumn = entityMeta.primaryKeys.first(o => (o as any as IntegerColumnMetaData).autoIncrement);
             for (const entry of entryEnumerable) {
-                getEntryValues(entry);
-                results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
+                const insertExp = new InsertExpression(entityExp, []);
+                const queryParameters: ISqlParameter[] = [];
+                insertEntryExp(insertExp, entry, columns, relations, visitor, queryParameters);
+
+                const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
                         rows: []
                     };
-                }));
+                });
+                results.push(insertQuery);
+
                 const selectExp = new SelectExpression(entityExp);
                 selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
 
                 const translator = queryBuilder.resolveTranslator(DbFunction, "lastInsertedId");
                 const lastId = translator ? translator.translate(null, queryBuilder) : "LAST_INSERT_ID()";
                 selectExp.addWhere(new StrictEqualExpression(entityExp.columns.first(c => c.propertyName === incrementColumn.columnName), new RawSqlExpression(incrementColumn.type, lastId)));
-                results.push(new DeferredQuery(this, selectExp, [], (results) => {
+
+                const selectQuery = new DeferredQuery(this, selectExp, [], (results) => {
                     return {
                         effectedRows: 0,
                         rows: results.selectMany(o => o.rows)
                     };
-                }));
-
-                // reset
-                insertExp = new InsertExpression(entityExp, []);
-                queryParameters = [];
+                });
+                results.push(selectQuery);
             }
         }
         else {
-            const selectExp = new SelectExpression(entityExp);
-            selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
+            const insertExp = new InsertExpression<T>(entityExp, []);
+            const queryParameters: ISqlParameter[] = [];
 
-            const arrayValue = new ArrayValueExpression();
-            entryEnumerable.each(entry => {
-                const entryFilterExp = getEntryValues(entry);
-                if (entityMetaData.primaryKeys.length === 1) {
-                    arrayValue.items.push((entryFilterExp as StrictEqualExpression).rightOperand);
+            let isCompositePrimaryKey: boolean;
+            let primaryKey: IColumnExpression<T>;
+            let whereExp: IExpression<boolean>;
+            let arrayValue: ArrayValueExpression;
+            if (hasGeneratedColumn) {
+                arrayValue = new ArrayValueExpression();
+                isCompositePrimaryKey = entityMeta.primaryKeys.length > 1;
+                if (!isCompositePrimaryKey) {
+                    primaryKey = entityExp.primaryColumns.first();
                 }
-                else {
-                    selectExp.where = selectExp.where ? new OrExpression(selectExp.where, entryFilterExp) : entryFilterExp;
-                }
-            });
-
-            if (entityMetaData.primaryKeys.length === 1) {
-                selectExp.addWhere(new MethodCallExpression(arrayValue, "contains", [entityExp.primaryColumns.first()]));
             }
-            results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
+
+            for (const entry of entryEnumerable) {
+                const itemExp = insertEntryExp(insertExp, entry, columns, relations, visitor, queryParameters);
+
+                if (hasGeneratedColumn) {
+                    if (isCompositePrimaryKey) {
+                        let primaryExp: IExpression<boolean>;
+                        for (const col of insertExp.entity.primaryColumns) {
+                            const logicalExp = new StrictEqualExpression(col, itemExp[col.propertyName]);
+                            primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
+                        }
+                        whereExp = whereExp ? new OrExpression(whereExp, primaryExp) : primaryExp;
+                    }
+                    else {
+                        arrayValue.items.push(itemExp[primaryKey.propertyName]);
+                    }
+                }
+            }
+
+            const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (results) => {
                 return {
                     effectedRows: results.sum(o => o.effectedRows),
                     rows: []
                 };
-            }));
-            if (generatedColumns.any()) {
+            });
+            results.push(insertQuery);
+
+            if (hasGeneratedColumn) {
+                if (!isCompositePrimaryKey) {
+                    whereExp = new MethodCallExpression(arrayValue, "contains", [primaryKey]);
+                }
+
+                const selectExp = new SelectExpression(entityExp);
+                selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
+                selectExp.addWhere(whereExp);
+
                 results.push(new DeferredQuery(this, selectExp, [], (results) => {
                     return {
                         effectedRows: 0,
@@ -1040,145 +934,78 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             return this.getInsertQueries(entityMeta, entries);
         }
 
-        if (!visitor) visitor = this.queryVisitor;
-        const option = visitor.options as ISaveChangesOption;
-        let entryEnumerable = new Enumerable(entries);
+        let entryEnumerable = Enumerable.load(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
+        if (!entryEnumerable.any()) return results;
 
-        const columns = entityMeta.columns;
-        let generatedColumns = entityMeta.insertGeneratedColumns.union(entityMeta.updateGeneratedColumns);
-
+        if (!visitor) visitor = this.queryVisitor;
+        const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
         const relations = entityMeta.relations
-            .where(o => !o.nullable && !o.isMaster && o.relationType === "one");
-        const relationDatas = relations.selectMany(o => o.relationColumns.select(c => ({
-            column: c,
-            relationProperty: o.propertyName,
-            fullName: o.fullName,
-            relationColumn: o.relationMaps.get(c)
-        })));
-        const relationColumns = relationDatas.select(o => o.column);
-        const valueColumns = columns.except(relationColumns).except(generatedColumns);
+            .where(o => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
+        let columns = relations.selectMany(o => o.relationColumns)
+            .union(entityExp.metaData.columns)
+            .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
-        const entityExp = new EntityExpression(entityMeta.type, visitor.newAlias());
-        let upsertExp = new UpsertExpression(entityExp, []);
-        let queryParameters: ISqlParameter[] = [];
-        const getEntryValues = (entry: EntityEntry<T>) => {
-            let primaryKeyExp: IExpression<boolean>;
-            relationDatas.each(o => {
-                const parentEntity = entry.entity[o.relationProperty] as any;
-                if (!parentEntity) {
-                    throw new Error(`${o.relationProperty} cannot be null`);
-                }
-
-                const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.relationColumn.type), o.relationColumn);
-                const parentHasGeneratedPrimary = parentEntry.metaData.primaryKeys.any(o => !!(o.generation & ColumnGeneration.Insert) || (o.default && parentEntity[o.propertyName] === undefined));
-                if (parentEntry.state === EntityState.Added && parentHasGeneratedPrimary) {
-                    // TODO: get value from parent.
-                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
-                    param = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), o.relationColumn.columnName), o.relationColumn);
-                    upsertExp.parameters.push(param);
-                }
-                else {
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: parentEntity[o.relationColumn.propertyName]
-                    };
-                    queryParameters.push(paramv);
-                }
-
-                upsertExp.values.push(param);
-                if (o.column.isPrimaryColumn) {
-                    const eqExp = new StrictEqualExpression(upsertExp.entity.primaryColumns.first(c => c.propertyName === o.column.propertyName), param);
-                    primaryKeyExp = primaryKeyExp ? new AndExpression(primaryKeyExp, eqExp) : eqExp;
-                }
-            });
-
-            valueColumns.each(o => {
-                let value = entry.entity[o.propertyName as keyof T];
-                if (value === undefined) {
-                    if (o.default)
-                        upsertExp.values.push(undefined);
-                    else
-                        upsertExp.values.push(new ValueExpression(null));
-                }
-                else {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), o.type), o);
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: value
-                    };
-                    queryParameters.push(paramv);
-
-                    if (o.isPrimaryColumn) {
-                        const eqExp = new StrictEqualExpression(upsertExp.entity.primaryColumns.first(c => c.propertyName === o.propertyName), param);
-                        primaryKeyExp = primaryKeyExp ? new AndExpression(primaryKeyExp, eqExp) : eqExp;
-                    }
-                }
-            });
-
-            return primaryKeyExp;
-        };
-
-        if (generatedColumns.any()) {
+        let generatedColumns = entityMeta.insertGeneratedColumns.union(entityMeta.updateGeneratedColumns);
+        const hasGeneratedColumn = generatedColumns.any();
+        if (hasGeneratedColumn) {
             generatedColumns = entityMeta.primaryKeys.union(generatedColumns);
         }
 
-        const selectExp = new SelectExpression(entityExp);
-        if (entityMeta.deletedColumn && !(option && option.includeSoftDeleted)) {
-            selectExp.addWhere(new StrictEqualExpression(selectExp.entity.deleteColumn, new ValueExpression(false)));
+        let isCompositePrimaryKey: boolean;
+        let primaryKey: IColumnExpression<T>;
+        let whereExp: IExpression<boolean>;
+        let arrayValue: ArrayValueExpression;
+        if (hasGeneratedColumn) {
+            arrayValue = new ArrayValueExpression();
+            isCompositePrimaryKey = entityMeta.primaryKeys.length > 1;
+            if (!isCompositePrimaryKey) {
+                primaryKey = entityExp.primaryColumns.first();
+            }
         }
-        const arrayValue = new ArrayValueExpression();
 
         for (const entry of entryEnumerable) {
-            const entryFilterExp = getEntryValues(entry);
-            // select filter
-            if (entityMeta.primaryKeys.length === 1) {
-                arrayValue.items.push((entryFilterExp as StrictEqualExpression).rightOperand);
-            }
-            else {
-                selectExp.where = selectExp.where ? new OrExpression(selectExp.where, entryFilterExp) : entryFilterExp;
-            }
+            const upsertExp = new UpsertExpression(entityExp, {});
+            upsertExp.updateColumns = entry.state === EntityState.Added ? entityExp.columns.where(o => !o.isPrimary).toArray() : entityExp.columns.where(o => !o.isPrimary && entry.isPropertyModified(o.propertyName)).toArray();
 
-            if (entry.state === EntityState.Added) {
-                upsertExp.updateColumns = entityExp.columns.where(o => !o.isPrimary).toArray();
-            }
-            else {
-                upsertExp.updateColumns = entityExp.columns.where(o => !o.isPrimary && entry.isPropertyModified(o.propertyName)).toArray();
-            }
+            const queryParameters: ISqlParameter[] = [];
+            upsertEntryExp(upsertExp, entry, columns, relations, visitor, queryParameters);
 
-            results.push(new DeferredQuery(this, upsertExp, queryParameters, (results) => {
+            const upsertQuery = new DeferredQuery(this, upsertExp, queryParameters, (results) => {
                 return {
                     effectedRows: results.max(o => o.effectedRows),
                     rows: []
                 };
-            }));
+            });
+            results.push(upsertQuery);
 
-            // reset
-            upsertExp = new UpsertExpression(entityExp, []);
-            queryParameters = [];
+            // select filter
+            if (hasGeneratedColumn) {
+                if (hasGeneratedColumn) {
+                    if (isCompositePrimaryKey) {
+                        let primaryExp: IExpression<boolean>;
+                        for (const col of upsertExp.entity.primaryColumns) {
+                            const logicalExp = new StrictEqualExpression(col, upsertExp.setter[col.propertyName]);
+                            primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
+                        }
+                        whereExp = whereExp ? new OrExpression(whereExp, primaryExp) : primaryExp;
+                    }
+                    else {
+                        arrayValue.items.push(upsertExp.setter[primaryKey.propertyName]);
+                    }
+                }
+            }
+
         }
 
-        if (generatedColumns.any()) {
-            // only select query if there is at least a generated column exist.
-            selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
-
-            const arrayValue = new ArrayValueExpression();
-            entryEnumerable.each(entry => {
-                const entryFilterExp = getEntryValues(entry);
-                if (entityMeta.primaryKeys.length === 1) {
-                    arrayValue.items.push((entryFilterExp as StrictEqualExpression).rightOperand);
-                }
-                else {
-                    selectExp.where = selectExp.where ? new OrExpression(selectExp.where, entryFilterExp) : entryFilterExp;
-                }
-            });
-
-            if (entityMeta.primaryKeys.length === 1) {
-                selectExp.addWhere(new MethodCallExpression(arrayValue, "contains", [entityExp.primaryColumns.first()]));
+        if (hasGeneratedColumn) {
+            if (!isCompositePrimaryKey) {
+                whereExp = new MethodCallExpression(arrayValue, "contains", [primaryKey]);
             }
+
+            const selectExp = new SelectExpression(entityExp);
+            selectExp.selects = generatedColumns.select(c => entityExp.columns.first(e => e.propertyName === c.propertyName)).toArray();
+            selectExp.addWhere(whereExp);
 
             results.push(new DeferredQuery(this, selectExp, results.selectMany(o => o.parameters).toArray(), (results) => {
                 return {
@@ -1190,257 +1017,285 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         return results;
     }
-    protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>): DeferredQuery<IQueryResult>[] {
-        const visitor = this.queryVisitor;
-        const option = visitor.options as ISaveChangesOption;
-        const entityExp = new EntityExpression(slaveRelationMetaData.source.type, visitor.newAlias());
-        return new Enumerable(relationEntries).selectMany(relationEntry => {
-            const results: DeferredQuery<IQueryResult>[] = [];
+    protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
+        const results: DeferredQuery<IQueryResult>[] = [];
+        const relationEntryEnumerable = Enumerable.load(relationEntries);
+        if (!relationEntryEnumerable.any()) return results;
 
-            const isMasterAdded = relationEntry.masterEntry.state === EntityState.Added;
-            if (slaveRelationMetaData.relationType === "one") {
+        if (!visitor) visitor = this.queryVisitor;
+        const slaveEntityMeta = slaveRelationMetaData.source;
+        const masterEntityMeta = slaveRelationMetaData.target;
+        const relationDataMeta = slaveRelationMetaData.relationData;
+        const entityExp = new EntityExpression(slaveEntityMeta.type, visitor.newAlias());
+
+
+        const isToOneRelation = slaveRelationMetaData.relationType === "one";
+        for (const relationEntry of relationEntryEnumerable) {
+            let dbContext: DbContext = null;
+            const masterEntry = relationEntry.masterEntry;
+            const slaveEntry = relationEntry.slaveEntry;
+            const isMasterAdded = masterEntry.state === EntityState.Added;
+
+            if (isToOneRelation) {
                 let queryParameters: ISqlParameter[] = [];
                 const updateExp = new UpdateExpression(entityExp, {});
-                if (updateExp.entity.deleteColumn && !(option && option.includeSoftDeleted)) {
-                    updateExp.addWhere(new StrictEqualExpression(updateExp.entity.deleteColumn, new ValueExpression(false)));
-                }
-                slaveRelationMetaData.relationColumns.each(o => {
+
+                for (const relCol of slaveRelationMetaData.relationColumns) {
                     const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type), o);
-                    if (isMasterAdded) {
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    if (isMasterAdded && (relCol.generation & ColumnGeneration.Insert)) {
                         // TODO: get value from parent.
-                        const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
-                        param = new SqlParameterExpression(`${relationEntry.masterEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), relationEntry.masterEntry.metaData.type), o.columnName), o);
+                        if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
+                        const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
+                        param = new SqlParameterExpression(masterEntityMeta.name, new MemberAccessExpression(new ParameterExpression(index.toString(), masterEntityMeta.type), relCol.columnName), relCol);
                         updateExp.parameters.push(param);
                     }
                     else {
-                        const reverseProperty = relationEntry.slaveRelation.relationMaps.get(o).propertyName as keyof T2;
+                        const reverseProperty = slaveRelationMetaData.relationMaps.get(relCol).propertyName;
                         const paramv: ISqlParameter = {
                             name: alias,
                             parameter: param,
-                            value: relationEntry.masterEntry.entity[reverseProperty]
+                            value: masterEntry.entity[reverseProperty as keyof T2]
                         };
                         queryParameters.push(paramv);
                     }
-                    updateExp.setter[o.propertyName] = param;
-                });
+                    updateExp.setter[relCol.propertyName] = param;
+                }
 
-                slaveRelationMetaData.source.primaryKeys.each(o => {
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type), o);
-                    const paramv: ISqlParameter = {
-                        name: alias,
-                        parameter: param,
-                        value: relationEntry.slaveEntry.entity[o.propertyName]
-                    };
-                    queryParameters.push(paramv);
-                    updateExp.addWhere(new StrictEqualExpression(entityExp.primaryColumns.first(c => c.propertyName === o.propertyName), param));
-                });
+                for (const col of entityExp.primaryColumns) {
+                    const paramExp = getEntryColumnParam(slaveEntry, col, visitor, queryParameters);
+                    updateExp.addWhere(new StrictEqualExpression(col, paramExp));
+                }
 
-                results.push(new DeferredQuery(this, updateExp, queryParameters, (results) => {
+                const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
                         rows: []
                     };
-                }));
+                });
+                results.push(updateQuery);
             }
             else {
-                const relationDataMeta = relationEntry.slaveRelation.relationData;
+                const isSlaveAdded = slaveEntry.state === EntityState.Added;
                 const insertExp = new InsertExpression(new EntityExpression(relationDataMeta.type, visitor.newAlias()), []);
                 const queryParameters: ISqlParameter[] = [];
 
-                const values = relationDataMeta.sourceRelationColumns.select(o => {
-                    const sourceCol = relationDataMeta.sourceRelationMaps.get(o);
+                const itemExp: { [key: string]: IExpression } = {};
+                for (const relCol of relationDataMeta.sourceRelationColumns) {
+                    const masterCol = relationDataMeta.sourceRelationMaps.get(relCol) as IColumnMetaData<T2>;
                     const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type), o);
-                    if (isMasterAdded) {
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    if (isMasterAdded && (masterCol.generation & ColumnGeneration.Insert)) {
                         // TODO: get value from parent.
-                        const index = relationEntry.masterEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.masterEntry.dbSet.metaData).indexOf(relationEntry.masterEntry);
-                        param = new SqlParameterExpression(relationEntry.masterEntry.metaData.name, new MemberAccessExpression(new ParameterExpression(index.toString(), relationEntry.masterEntry.metaData.type), sourceCol.columnName), o);
+                        if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
+                        const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
+                        const masterLookupParamExp = new ParameterExpression(index.toString(), masterEntityMeta.type);
+                        param = new SqlParameterExpression(masterEntityMeta.name, new MemberAccessExpression(masterLookupParamExp, masterCol.columnName), relCol);
                         insertExp.parameters.push(param);
                     }
                     else {
-                        const relProperty = sourceCol.propertyName as keyof T2;
                         const paramv: ISqlParameter = {
                             name: alias,
                             parameter: param,
-                            value: relationEntry.masterEntry.entity[relProperty]
+                            value: masterEntry.entity[masterCol.propertyName]
                         };
                         queryParameters.push(paramv);
                     }
-                    return param;
-                }).union(relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns).select(o => {
-                    const targetCol = relationDataMeta.targetRelationMaps.get(o);
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, o.type), o);
-                    if (isMasterAdded) {
-                        // TODO: get value from parent.
-                        const index = relationEntry.slaveEntry.dbSet.dbContext.entityEntries.add.get(relationEntry.slaveEntry.dbSet.metaData).indexOf(relationEntry.slaveEntry);
-                        param = new SqlParameterExpression(relationEntry.masterEntry.metaData.name, new MemberAccessExpression(new ParameterExpression(index.toString(), relationEntry.masterEntry.metaData.type), targetCol.columnName), o);
-                        insertExp.parameters.push(param);
-                    }
-                    else {
-                        const relProperty = targetCol.propertyName as keyof T;
-                        const paramv: ISqlParameter = {
-                            name: alias,
-                            parameter: param,
-                            value: relationEntry.slaveEntry.entity[relProperty]
-                        };
-                        queryParameters.push(paramv);
-                    }
-                    return param;
-                })).toArray();
-                insertExp.values.push(values);
+                    itemExp[relCol.propertyName] = param;
+                }
 
-                results.push(new DeferredQuery(this, insertExp, queryParameters, (results) => {
+                for (const relCol of relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns)) {
+                    const slaveCol = relationDataMeta.targetRelationMaps.get(relCol) as IColumnMetaData<T>;
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    if (isSlaveAdded && (slaveCol.generation & ColumnGeneration.Insert)) {
+                        // TODO: get value from parent.
+                        if (!dbContext) dbContext = slaveEntry.dbSet.dbContext;
+                        const index = dbContext.entityEntries.add.get(slaveEntityMeta).indexOf(slaveEntry);
+                        param = new SqlParameterExpression(slaveEntityMeta.name, new MemberAccessExpression(new ParameterExpression(index.toString(), slaveEntityMeta.type), slaveCol.columnName), relCol);
+                        insertExp.parameters.push(param);
+                    }
+                    else {
+                        const paramv: ISqlParameter = {
+                            name: alias,
+                            parameter: param,
+                            value: slaveEntry.entity[slaveCol.propertyName]
+                        };
+                        queryParameters.push(paramv);
+                    }
+                    itemExp[relCol.propertyName] = param;
+                }
+
+                insertExp.values.push(itemExp);
+                const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (results) => {
                     return {
                         effectedRows: 0,
                         rows: results.selectMany(o => o.rows)
                     };
-                }));
+                });
+                results.push(insertQuery);
             }
-            return results;
-        }).toArray();
+        }
+
+        return results;
     }
     protected getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
+        const results: DeferredQuery<IQueryResult>[] = [];
+        let relationEntryEnumerable = Enumerable.load(relationEntries);
+        if (!relationEntryEnumerable.any())
+            return results;
+
         if (!visitor) visitor = this.queryVisitor;
-        const option = visitor.options as ISaveChangesOption;
-        let relationEntryEnumerable = new Enumerable(relationEntries);
         const isManyToMany = slaveRelationMetaData.relationType === "many";
-        let result: DeferredQuery<IQueryResult>[] = [];
+        const relationDataMeta = slaveRelationMetaData.relationData;
+
         if (!isManyToMany) {
-            // only process relation that it's slave entity not deleted.
+            // only process relation with not deleted slave entity.
             relationEntryEnumerable = relationEntryEnumerable.where(o => o.slaveEntry.state !== EntityState.Deleted);
-            const queryParameters: ISqlParameter[] = [];
-            const slaveEntity = new EntityExpression(slaveRelationMetaData.source.type, visitor.newAlias());
+
+            const slaveMetadata = slaveRelationMetaData.source;
+            const slaveEntity = new EntityExpression(slaveMetadata.type, visitor.newAlias());
             const slaveSelect = new SelectExpression(slaveEntity);
-            if (slaveEntity.deleteColumn && !(option && option.includeSoftDeleted)) {
-                slaveSelect.addWhere(new StrictEqualExpression(slaveEntity.deleteColumn, new ValueExpression(false)));
-            }
-            if (slaveRelationMetaData.source.primaryKeys.length === 1) {
+
+            const queryParameters: ISqlParameter[] = [];
+            const slaveHasCompositeKeys = slaveMetadata.primaryKeys.length > 1;
+            let whereExp: IExpression<boolean>;
+            if (!slaveHasCompositeKeys) {
                 const arrayExp = new ArrayValueExpression();
-                const primaryCol = slaveRelationMetaData.source.primaryKeys.first();
-                arrayExp.items = relationEntryEnumerable.select(o => {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), primaryCol.type), primaryCol);
-                    const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: o.slaveEntry.entity[primaryCol.propertyName]
-                    };
-                    queryParameters.push(paramv);
-                    return param;
-                }).toArray();
-                slaveSelect.addWhere(new MethodCallExpression(arrayExp, "contains", [slaveEntity.primaryColumns.first()]));
+                const primaryCol = slaveEntity.primaryColumns.first();
+                for (const entry of relationEntryEnumerable) {
+                    const paramExp = getEntryColumnParam(entry.slaveEntry, primaryCol, visitor, queryParameters);
+                    arrayExp.items.push(paramExp);
+                }
+                whereExp = new MethodCallExpression(arrayExp, "contains", slaveEntity.primaryColumns);
             }
             else {
-                const condition = relationEntryEnumerable.select(o => {
-                    return slaveRelationMetaData.source.primaryKeys.select(pk => {
-                        let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), pk.type), pk);
-                        const paramv: ISqlParameter = {
-                            name: "",
-                            parameter: param,
-                            value: o.slaveEntry.entity[pk.propertyName]
-                        };
-                        queryParameters.push(paramv);
-                        return param;
-                    }).reduce<IExpression<boolean>>((ac, item) => ac ? new AndExpression(ac, item) : ac);
-                }).reduce<IExpression<boolean>>((ac, item) => ac ? new OrExpression(ac, item) : ac);
-                slaveSelect.addWhere(condition);
+                for (const entry of relationEntryEnumerable) {
+                    let primaryExp: IExpression<boolean>;
+                    for (const col of slaveEntity.primaryColumns) {
+                        const paramExp = getEntryColumnParam(entry.slaveEntry, col, visitor, queryParameters);
+                        const logicalExp = new StrictEqualExpression(col, paramExp);
+                        primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
+                    }
+                    whereExp = whereExp ? new OrExpression(whereExp, primaryExp) : primaryExp;
+                }
             }
+            slaveSelect.addWhere(whereExp);
 
             // delete relation data if exist.
-            if (slaveRelationMetaData.relationData) {
-                const relationData = new EntityExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name, true);
-                const dataDelete = new DeleteExpression(relationData, new ValueExpression<DeleteMode>("Hard"));
+            if (relationDataMeta) {
+                const dataEntityExp = new EntityExpression<TData>(relationDataMeta.type, relationDataMeta.name, true);
+                const dataDeleteExp = new DeleteExpression(dataEntityExp, new ValueExpression<DeleteMode>("Hard"));
 
                 let relations: IExpression<boolean>;
-                for (const [relColMeta, childColMeta] of slaveRelationMetaData.relationData.targetRelationMaps) {
-                    const relationCol = dataDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const childCol = slaveSelect.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
+                for (const [relColMeta, slaveColMeta] of relationDataMeta.targetRelationMaps) {
+                    const relationCol = dataDeleteExp.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
+                    const childCol = slaveSelect.entity.columns.first((o) => o.propertyName === slaveColMeta.propertyName);
                     const logicalExp = new StrictEqualExpression(relationCol, childCol);
                     relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
-                dataDelete.addJoinRelation(slaveSelect, relations, JoinType.INNER);
+                dataDeleteExp.addJoin(slaveSelect, relations, "INNER");
 
-                result.push(new DeferredQuery(this, dataDelete, queryParameters, (results) => {
+                const dataDeleteQuery = new DeferredQuery(this, dataDeleteExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
                         rows: []
                     };
-                }));
+                });
+                results.push(dataDeleteQuery);
             }
 
             if (slaveRelationMetaData.nullable) {
                 // set foreignkey to null query.
-                const set = slaveRelationMetaData.relationColumns
-                    .reduce<{ [key in keyof T]?: IExpression<any> }>((acc, o) => {
-                        acc[o.propertyName] = new ValueExpression(null);
-                        return acc;
-                    }, {});
-
-                const updateExp = new UpdateExpression(slaveSelect, set);
-                result.push(new DeferredQuery(this, updateExp, queryParameters, (results) => {
+                const setter: { [key in keyof T]?: IExpression } = {};
+                for (const relCol of slaveRelationMetaData.relationColumns) {
+                    setter[relCol.propertyName] = new ValueExpression(null);
+                }
+                const updateExp = new UpdateExpression(slaveSelect, setter);
+                const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
                         rows: []
                     };
-                }));
+                });
+                results.push(updateQuery);
             }
             else {
                 // delete slave entity
-                const deleteExp = new DeleteExpression(slaveSelect);
-                result.push(new DeferredQuery(this, deleteExp, queryParameters, (results) => {
+                const deleteExp = new DeleteExpression(slaveSelect, new ValueExpression<DeleteMode>("Soft"));
+                const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
                         rows: []
                     };
-                }));
+                });
+                results.push(deleteQuery);
             }
         }
         else {
             // remove relation table.
             // after save remove all reference to this relation entry.
+            const dataEntityExp = new EntityExpression<TData>(relationDataMeta.type, relationDataMeta.name, true);
             const queryParameters: ISqlParameter[] = [];
-
-            const condition = relationEntryEnumerable.select(o => {
-                return slaveRelationMetaData.source.primaryKeys.select(pk => {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), pk.type), pk);
+            let whereExp: IExpression<boolean>;
+            for (const relEntry of relationEntryEnumerable) {
+                let primaryExp: IExpression<boolean>;
+                for (const [relCol, masterCol] of relationDataMeta.sourceRelationMaps) {
+                    const relColExp = dataEntityExp.columns.first(o => o.propertyName === relCol.propertyName);
+                    const alias = visitor.newAlias("param");
+                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
                     const paramv: ISqlParameter = {
-                        name: "",
+                        name: alias,
                         parameter: param,
-                        value: o.slaveEntry.entity[pk.propertyName]
+                        value: relEntry.masterEntry.entity[masterCol.propertyName as keyof T2]
                     };
                     queryParameters.push(paramv);
-                    return param;
-                }).union(slaveRelationMetaData.target.primaryKeys.select(pk => {
-                    let param = new SqlParameterExpression("", new ParameterExpression(visitor.newAlias("param"), pk.type), pk);
+                    const logicalExp = new AndExpression(relColExp, param);
+                    primaryExp = primaryExp ? new AndExpression(logicalExp, primaryExp) : logicalExp;
+                }
+
+                for (const [relCol, slaveCol] of relationDataMeta.targetRelationMaps) {
+                    if (relationDataMeta.sourceRelationColumns.contains(relCol))
+                        continue;
+
+                    const relColExp = dataEntityExp.columns.first(o => o.propertyName === relCol.propertyName);
+                    const alias = visitor.newAlias("param");
+                    let paramExp = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
                     const paramv: ISqlParameter = {
-                        name: "",
-                        parameter: param,
-                        value: o.masterEntry.entity[pk.propertyName]
+                        name: alias,
+                        parameter: paramExp,
+                        value: relEntry.slaveEntry.entity[slaveCol.propertyName as keyof T]
                     };
                     queryParameters.push(paramv);
-                    return param;
-                })).reduce<IExpression<boolean>>((ac, item) => {
-                    return ac ? new AndExpression(ac, item) : ac;
-                });
-            }).reduce<IExpression<boolean>>((ac, item) => {
-                return ac ? new OrExpression(ac, item) : ac;
-            });
+                    const logicalExp = new AndExpression(relColExp, paramExp);
+                    primaryExp = primaryExp ? new AndExpression(logicalExp, primaryExp) : logicalExp;
+                }
+                whereExp = whereExp ? new OrExpression(whereExp, primaryExp) : primaryExp;
+            }
 
-            const relationData = new EntityExpression<TData>(slaveRelationMetaData.relationData.type, slaveRelationMetaData.relationData.name, true);
-            const deleteExp = new DeleteExpression(relationData, new ValueExpression<DeleteMode>("Hard"));
-            deleteExp.addWhere(condition);
-
-            result.push(new DeferredQuery(this, deleteExp, queryParameters, (results) => {
+            const deleteExp = new DeleteExpression(dataEntityExp, new ValueExpression<DeleteMode>("Hard"));
+            deleteExp.addWhere(whereExp);
+            const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
                 return {
                     effectedRows: results.sum(o => o.effectedRows),
                     rows: []
                 };
-            }));
+            });
+            results.push(deleteQuery);
         }
 
-        return result;
+        return results;
     }
     //#endregion
 }
+
+const getEntryColumnParam = <T>(entry: EntityEntry<T>, colExp: IColumnExpression<T>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
+    const alias = visitor.newAlias("param");
+    let paramExp = new SqlParameterExpression(alias, new ParameterExpression(alias, colExp.type), colExp.columnMetaData);
+    queryParameters.push({
+        name: alias,
+        parameter: paramExp,
+        value: entry.entity[colExp.propertyName]
+    });
+    return paramExp;
+};

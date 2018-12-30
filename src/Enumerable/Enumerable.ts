@@ -1,6 +1,8 @@
+import { GenericType } from "../Common/Type";
+
 export const keyComparer = <T = any>(a: T, b: T) => {
     let result = a === b;
-    if (!result && a instanceof Object) {
+    if (!result && a instanceof Object && b instanceof Object) {
         try {
             const aKeys = Object.keys(a);
             const bKeys = Object.keys(b);
@@ -18,6 +20,14 @@ export const keyComparer = <T = any>(a: T, b: T) => {
 export class Enumerable<T = any> implements Iterable<T> {
     public static load<T>(source?: Iterable<T> | Iterator<T>): Enumerable<T> {
         return source instanceof Enumerable ? source : new Enumerable(source);
+    }
+    public static range(start: number, end: number, step: number = 1) {
+        return new Enumerable(function* () {
+            while (start <= end) {
+                yield start;
+                start += step;
+            }
+        }());
     }
     public enableCache: boolean;
     protected isResultComplete: boolean;
@@ -55,13 +65,6 @@ export class Enumerable<T = any> implements Iterable<T> {
         if (this.enableCache) {
             this.result = result;
             this.isResultComplete = true;
-        }
-    }
-    public reset() {
-        if (this.parent) {
-            this.iterator = this.parent[Symbol.iterator]();
-            this.result = [];
-            this.isResultComplete = false;
         }
     }
     public toArray(): T[] {
@@ -155,6 +158,9 @@ export class Enumerable<T = any> implements Iterable<T> {
         for (const item of this) {
             executor(item, index++);
         }
+    }
+    public ofType<T>(type: GenericType<T>): Enumerable<T> {
+        return this.where(o => o instanceof (type as any)) as any;
     }
     public reduce<R>(func: (accumulated: R, item: T) => R): R;
     public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;

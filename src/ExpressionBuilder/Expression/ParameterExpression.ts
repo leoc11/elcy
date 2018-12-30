@@ -1,8 +1,9 @@
 import { GenericType } from "../../Common/Type";
 import { ExpressionTransformer } from "../ExpressionTransformer";
-import { ExpressionBase, IExpression } from "./IExpression";
+import { IExpression } from "./IExpression";
+import { hashCode } from "../../Helper/Util";
 
-export class ParameterExpression<T = any> extends ExpressionBase<T> {
+export class ParameterExpression<T = any> implements IExpression<T> {
     public static create(name: string): ParameterExpression<any>;
     public static create<T>(ctor: GenericType<T>, name: string): ParameterExpression<T>;
     public static create<T>(ctor: GenericType<T> | string, name?: string) {
@@ -12,10 +13,11 @@ export class ParameterExpression<T = any> extends ExpressionBase<T> {
             throw new Error("Name must be specified");
         return new ParameterExpression(name, ctor);
     }
+    public type: GenericType<T>;
+    public itemType?: GenericType<T>;
     constructor(public readonly name: string, type?: GenericType<T>) {
-        super(type);
+        this.type = type;
     }
-
     public toString(transformer?: ExpressionTransformer): string {
         if (transformer)
             return transformer.getExpressionString(this);
@@ -26,5 +28,8 @@ export class ParameterExpression<T = any> extends ExpressionBase<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): ParameterExpression<T> {
         return this;
+    }
+    public hashCode() {
+        return this.type ? hashCode(this.type.name) : 27;
     }
 }
