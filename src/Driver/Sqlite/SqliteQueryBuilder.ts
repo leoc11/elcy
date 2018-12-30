@@ -9,8 +9,10 @@ import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
+import { Version } from "../../Common/Version";
 
 export class SqliteQueryBuilder extends QueryBuilder {
+    public version = new Version(3, 24);
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,
         maxParameters: 999,
@@ -53,7 +55,8 @@ export class SqliteQueryBuilder extends QueryBuilder {
     public entityName(entityMeta: IEntityMetaData<any>) {
         return `${this.enclose(entityMeta.name)}`;
     }
-    public getUpsertQuery<T>(upsertExp: UpsertExpression<T>): IQuery[] {
+
+    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>): IQuery[] {
         const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.entityQuery(upsertExp.entity)}(${colString})` + this.newLine() +
             `VALUES (${upsertExp.columns.select(o => {
@@ -92,9 +95,11 @@ export class SqliteQueryBuilder extends QueryBuilder {
         result.push(updateCommand);
         return result;
     }
+    public getUpsertQuery<T>(upsertExp: UpsertExpression<T>): IQuery[] {
+        if (this.version < new Version(3, 24)) {
+            return this.getUpsertQueryOlder(upsertExp);
+        }
 
-    // for sqlite 3.24.0
-    protected getUpsertQuery2<T>(upsertExp: UpsertExpression<T>): IQuery[] {
         const param: { [key: string]: any } = {};
         for (const prop in upsertExp.setter) {
             const val = upsertExp.setter[prop];

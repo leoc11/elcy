@@ -65,7 +65,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract valueTypeMap: Map<GenericType, ColumnType>;
     public abstract queryLimit: IQueryLimit;
     public options: ISaveChangesOption;
-    public version: Version;
     public parameters: ISqlParameter[] = [];
     constructor(public namingStrategy: NamingStrategy, public translator: QueryTranslator) {
         super();
