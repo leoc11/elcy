@@ -1,5 +1,4 @@
 import { IObjectType, ConcurrencyModel } from "../../Common/Type";
-import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { InheritanceMetaData } from "../Relation/InheritanceMetaData";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IColumnMetaData } from "./IColumnMetaData";
@@ -24,7 +23,6 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     columns: IColumnMetaData<TE>[];
     indices?: IIndexMetaData<TE>[];
     constraints?: IConstraintMetaData<TE>[];
-    computedProperties?: ComputedColumnMetaData<TE>[];
     type: IObjectType<TE>;
     descriminatorMember?: string;
     allowInheritance?: boolean;

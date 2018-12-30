@@ -1,6 +1,6 @@
 # Elcy
 Elcy is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
-for typescript and javascript that is intend to be platform independent and follow ECMAScript standard (ES5, ES6, ES7). Elcy is highly influenced by [Entity Framework](https://www.asp.net/entity-framework) and [NHibernate](http://nhibernate.info/).
+for typescript and javascript. Elcy is highly influenced by [Entity Framework](https://www.asp.net/entity-framework) and [NHibernate](http://nhibernate.info/).
 
 ## Installation
 To be updated...

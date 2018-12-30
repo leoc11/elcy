@@ -5,7 +5,6 @@ import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { IndexMetaData } from "./IndexMetaData";
-import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { isNotNull } from "../Helper/Util";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";

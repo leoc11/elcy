@@ -59,13 +59,23 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
                 if (isInheritance) {
                     parentMetaData.columns.forEach((parentColumnMeta) => {
                         const existing = entityMetadata.columns.first(o => o.propertyName === parentColumnMeta.propertyName);
-                        if (existing) {
-                            entityMetadata.columns.remove(existing);
+                        let inheritedColumnMeta: IColumnMetaData<T>;
+                        if (parentColumnMeta instanceof ComputedColumnMetaData) {
+                            if (!existing) {
+                                inheritedColumnMeta = new InheritedComputedColumnMetaData(entityMetadata, parentColumnMeta);
+                            }
+                        }
+                        else {
+                            if (existing) {
+                                entityMetadata.columns.remove(existing);
+                            }
+                            inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }
 
-                        const inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
-                        entityMetadata.columns.push(inheritedColumnMeta);
-                        Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
+                        if (inheritedColumnMeta) {
+                            entityMetadata.columns.push(inheritedColumnMeta);
+                            Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
+                        }
                     });
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
                         const additionProperties = entityMetadata.columns.where(o => parentMetaData.columns.all(p => p.propertyName !== o.propertyName)).toArray();

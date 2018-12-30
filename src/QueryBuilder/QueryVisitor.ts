@@ -281,7 +281,7 @@ export class QueryVisitor {
                         paramName = computedColumnMeta.functionExpression.params[0].name;
                     if (paramName)
                         this.scopeParameters.add(paramName, objectOperand);
-                    const result = this.visit(computedColumnMeta.functionExpression.clone(), { selectExpression: param.selectExpression });
+                    const result = this.visit(computedColumnMeta.functionExpression, { selectExpression: param.selectExpression });
                     if (paramName)
                         this.scopeParameters.remove(paramName);
                     if (result instanceof EntityExpression || result instanceof SelectExpression)
