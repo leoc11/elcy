@@ -41,7 +41,7 @@ export class MockConnection implements IConnection {
         this._results = value;
     }
     public generateQueryResult() {
-        return Enumerable.load(this.deferredQueries)
+        return Enumerable.from(this.deferredQueries)
             .selectMany(o => {
                 const command = o.command;
                 if (command instanceof SelectExpressionType) {
@@ -52,7 +52,7 @@ export class MockConnection implements IConnection {
                         map.set(select, rows);
                         if (select.parentRelation) {
                             const parentInclude = select.parentRelation as IncludeRelation;
-                            const relMap = Enumerable.load(parentInclude.relationMap()).toArray();
+                            const relMap = Enumerable.from(parentInclude.relationMap()).toArray();
 
                             let parent = parentInclude.parent;
                             while (parent.parentRelation && parent.parentRelation.isEmbedded) {
@@ -62,7 +62,7 @@ export class MockConnection implements IConnection {
 
                             const maxRowCount = this.getMaxCount(select, o, 3);
 
-                            Enumerable.load(parentRows).each(parent => {
+                            Enumerable.from(parentRows).each(parent => {
                                 const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
@@ -92,7 +92,7 @@ export class MockConnection implements IConnection {
                         }
                     }
 
-                    const generatedResults = Enumerable.load(map.values()).toArray();
+                    const generatedResults = Enumerable.from(map.values()).toArray();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -227,7 +227,7 @@ export class MockConnection implements IConnection {
         const results = [selectExp];
         for (let i = 0; i < results.length; i++) {
             const select = results[i];
-            const addition = Enumerable.load(select.resolvedIncludes).select(o => o.child).toArray().reverse();
+            const addition = Enumerable.from(select.resolvedIncludes).select(o => o.child).toArray().reverse();
             results.splice(i + 1, 0, ...addition);
         }
         return results;

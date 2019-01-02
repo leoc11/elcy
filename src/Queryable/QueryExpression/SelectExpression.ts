@@ -53,7 +53,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public selects: IColumnExpression[] = [];
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
         if (this.distinct) {
-            return Enumerable.load(this.relationColumns).union(this.resolvedSelects);
+            return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
         }
 
         // primary column used in hydration to identify an entity.

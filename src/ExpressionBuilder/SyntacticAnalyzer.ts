@@ -65,7 +65,7 @@ export class SyntacticAnalyzer {
             scopedParameters: new Map(),
             userParameters: userParameters
         };
-        const result = createExpression(param, Enumerable.load(tokens).toArray()) as FunctionExpression;
+        const result = createExpression(param, Enumerable.from(tokens).toArray()) as FunctionExpression;
         return result;
     }
 }

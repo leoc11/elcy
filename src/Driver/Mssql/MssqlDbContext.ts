@@ -19,7 +19,6 @@ import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
-    protected queryParser = POJOQueryResultParser;
     protected queryBuilderType = MssqlQueryBuilder;
     protected schemaBuilderType = MssqlSchemaBuilder;
     protected queryVisitorType = QueryVisitor;
@@ -33,7 +32,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
         super(factory);
     }
     protected getInsertQueries2<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = Enumerable.load(entries);
+        let entryEnumerable = Enumerable.from(entries);
         if (!visitor) visitor = this.queryVisitor;
         const results: DeferredQuery[] = [];
 
@@ -63,7 +62,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             commands.each((command, index) => {
                 const result = results[index];
                 if ((command.type & QueryType.DQL) && result.rows) {
-                    rows = rows.concat(Enumerable.load(result.rows).toArray());
+                    rows = rows.concat(Enumerable.from(result.rows).toArray());
                 }
                 if (command.type & QueryType.DML) {
                     effectedRows += result.effectedRows;

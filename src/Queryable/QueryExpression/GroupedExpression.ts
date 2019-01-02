@@ -37,7 +37,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                     }
                     else {
                         visitExpression(parentRel.relations, (exp: IExpression): boolean | void => {
-                            if ((exp as IColumnExpression).entity && Enumerable.load(parentRel.parent.projectedColumns).contains(exp as any)) {
+                            if ((exp as IColumnExpression).entity && Enumerable.from(parentRel.parent.projectedColumns).contains(exp as any)) {
                                 this._groupBy.add(exp as any);
                                 return false;
                             }
@@ -61,7 +61,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         return this.groupBy.union(super.allColumns);
     }
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
-        return Enumerable.load(super.projectedColumns).union(this.groupBy);
+        return Enumerable.from(super.projectedColumns).union(this.groupBy);
     }
     constructor();
     constructor(select: SelectExpression<T>, key: IExpression);

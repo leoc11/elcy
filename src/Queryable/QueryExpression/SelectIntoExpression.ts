@@ -18,7 +18,7 @@ export class SelectIntoExpression<T = any> extends SelectExpression<T> {
         return this.select.parameters;
     }
     public get projectedColumns() {
-        return Enumerable.load(this.select.projectedColumns).where(o => this.entity.metaData.columns.any(c => c.propertyName === o.propertyName));
+        return Enumerable.from(this.select.projectedColumns).where(o => this.entity.metaData.columns.any(c => c.propertyName === o.propertyName));
     }
     constructor(public entity: EntityExpression<T>, public select: SelectExpression) { 
         super();

@@ -29,7 +29,7 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
             mapReplaceExp(replaceMap, selectExp1.key, selectExp2.key);
             mapReplaceExp(replaceMap, selectExp1.itemSelect, selectExp2.itemSelect);
         }
-        const projectedCol = Enumerable.load(selectExp2.projectedColumns);
+        const projectedCol = Enumerable.from(selectExp2.projectedColumns);
         for (const col of selectExp1.projectedColumns) {
             const tCol = projectedCol.first(o => o.propertyName === col.propertyName);
             if (tCol) replaceMap.set(col, tCol);

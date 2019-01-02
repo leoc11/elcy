@@ -29,7 +29,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
-        this.columns = Enumerable.load(subSelect.projectedColumns).select(o => {
+        this.columns = Enumerable.from(subSelect.projectedColumns).select(o => {
             const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable, o.columnType);
             col.columnMetaData = o.columnMetaData;
             return col;
@@ -45,7 +45,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         return this._selectedColumns;
     }
     public get relationColumns() {
-        return Enumerable.load(this.subSelect.relationColumns).select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
+        return Enumerable.from(this.subSelect.relationColumns).select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
     }
     public toString(queryBuilder: QueryBuilder): string {
         return queryBuilder.getExpressionString(this);

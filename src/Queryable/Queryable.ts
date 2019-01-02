@@ -479,7 +479,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => !Enumerable.load(result.first().rows).any(), this.queryOption);
+            (result) => !Enumerable.from(result.first().rows).any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -527,7 +527,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => Enumerable.load(result.first().rows).any(), this.queryOption);
+            (result) => Enumerable.from(result.first().rows).any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -658,7 +658,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => Enumerable.load(result.first().rows).any(), this.queryOption);
+            (result) => Enumerable.from(result.first().rows).any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }

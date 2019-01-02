@@ -39,10 +39,10 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
                 else if (this.parent.entity === colExp.entity) {
                     this._parentColumns.push(colExp);
                 }
-                else if (Enumerable.load(this.child.allJoinedEntities).contains(colExp.entity)) {
+                else if (Enumerable.from(this.child.allJoinedEntities).contains(colExp.entity)) {
                     this._childColumns.push(colExp);
                 }
-                else if (Enumerable.load(this.parent.allJoinedEntities).contains(colExp.entity)) {
+                else if (Enumerable.from(this.parent.allJoinedEntities).contains(colExp.entity)) {
                     this._parentColumns.push(colExp);
                 }
             }

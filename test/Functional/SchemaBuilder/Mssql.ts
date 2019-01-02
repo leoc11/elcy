@@ -19,7 +19,7 @@ afterEach(() => {
 describe("SCHEMA BUILDER", () => {
     describe("ENTITY", () => {
         it("should create new table correctly", async () => {
-            const mockConnection = db.connection as MockConnection;
+            const mockConnection = (db.connection instanceof PooledConnection ? db.connection.connection : db.connection) as MockConnection;
             mockConnection.results = [
                 { rows: [{ "SCHEMA": "dbo" }], effectedRows: 1 },
                 { rows: [], effectedRows: 0 },
@@ -71,7 +71,7 @@ describe("SCHEMA BUILDER", () => {
             });
         });
         it("should not detect any changes", async () => {
-            const mockConnection = db.connection as MockConnection;
+            const mockConnection = (db.connection instanceof PooledConnection ? db.connection.connection : db.connection) as MockConnection;
             mockConnection.results = [
                 {
                     "rows": [{

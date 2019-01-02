@@ -205,7 +205,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         const distinct = select.distinct ? " DISTINCT" : "";
         const top = skip <= 0 && take > 0 ? " TOP " + take : "";
-        const selects = Enumerable.load(select.projectedColumns).select((o) => {
+        const selects = Enumerable.from(select.projectedColumns).select((o) => {
             return this.columnSelectString(o);
         }).toArray().join("," + this.newLine(1, false));
         const entityQ = this.entityQuery(select.entity);
@@ -397,7 +397,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected joinString<T>(joins: Iterable<JoinRelation<T, any>>): string {
         let result = "";
-        const joinEnum = Enumerable.load(joins);
+        const joinEnum = Enumerable.from(joins);
         if (joinEnum.any()) {
             result += this.newLine();
             result += joinEnum.select(o => {
@@ -445,7 +445,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 return this.enclose(column.entity.alias) + "." + this.enclose(this.isColumnDeclared ? column.dataPropertyName : column.columnName);
             }
             else {
-                let childSelect = Enumerable.load(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.load(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
+                let childSelect = Enumerable.from(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
                 if (!childSelect) {
                     childSelect = this.commandExp.parentRelation.parent;
                 }
@@ -736,7 +736,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         let queryCommand = new BatchedQuery();
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
-        Enumerable.load(queries).each(o => {
+        Enumerable.from(queries).each(o => {
             let isLimitExceed = false;
             if (this.queryLimit.maxBatchQuery) {
                 isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;

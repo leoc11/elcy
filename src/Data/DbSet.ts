@@ -59,7 +59,7 @@ export class DbSet<T> extends Queryable<T> {
         return hashCode(this.type.name!);
     }
     public get local(): Enumerable<T> {
-        return (Enumerable.load(this.dictionary.values())).select(o => o.entity);
+        return (Enumerable.from(this.dictionary.values())).select(o => o.entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
     protected relationDictionary: Map<string, RelationEntry<T>> = new Map();

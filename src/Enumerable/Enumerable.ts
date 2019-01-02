@@ -18,7 +18,7 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
-    public static load<T>(source?: Iterable<T> | Iterator<T>): Enumerable<T> {
+    public static from<T>(source?: Iterable<T> | Iterator<T>): Enumerable<T> {
         return source instanceof Enumerable ? source : new Enumerable(source);
     }
     public static range(start: number, end: number, step: number = 1) {

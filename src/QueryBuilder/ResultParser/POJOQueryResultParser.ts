@@ -43,7 +43,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             this._orderedSelects = [this.queryExpression];
             for (let i = this._orderedSelects.length - 1; i >= 0; i--) {
                 const select = this._orderedSelects[i];
-                const addition = Enumerable.load(select.resolvedIncludes).select(o => o.child).toArray();
+                const addition = Enumerable.from(select.resolvedIncludes).select(o => o.child).toArray();
                 this._orderedSelects.splice(i, 0, ...addition);
                 i += addition.length;
             }
@@ -66,7 +66,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
             resolveMap.set(select, itemMap);
 
-            const data = Enumerable.load(queryResult.rows);
+            const data = Enumerable.from(queryResult.rows);
             if (!data.any()) continue;
 
             let dbEventEmitter: DBEventEmitter<T> = null;

@@ -90,7 +90,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
     public get resolvedGroupBy() {
         if (isEntityExp(this.key)) {
-            const keyEntities = Enumerable.load(this.key.select.allJoinedEntities).toArray();
+            const keyEntities = Enumerable.from(this.key.select.allJoinedEntities).toArray();
             let groupBy = this.groupBy.slice();
             for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
                 visitExpression(column.expression, (exp: IColumnExpression) => {
@@ -161,7 +161,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
                 if (parentRel) {
                     let relation: IExpression<boolean>;
                     for (const col of this.groupBy) {
-                        const childCol = Enumerable.load(selectExp.projectedColumns).first(o => o.propertyName === col.propertyName);
+                        const childCol = Enumerable.from(selectExp.projectedColumns).first(o => o.propertyName === col.propertyName);
                         const logicalExp = new StrictEqualExpression(col, childCol);
                         relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                     }
@@ -181,7 +181,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
         if (this.isAggregate) {
-            return Enumerable.load(this.relationColumns)
+            return Enumerable.from(this.relationColumns)
                 .union(this.resolvedSelects);
         }
         return this.itemSelect.projectedColumns;
@@ -222,10 +222,10 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
 
     public get resolvedIncludes(): Iterable<IncludeRelation<T>> {
-        let includes = Enumerable.load(super.resolvedIncludes);
+        let includes = Enumerable.from(super.resolvedIncludes);
         if (!this.isAggregate && this.keyRelation) {
             if (this.keyRelation.isEmbedded) {
-                includes = Enumerable.load(this.keyRelation.child.resolvedIncludes).union(includes);
+                includes = Enumerable.from(this.keyRelation.child.resolvedIncludes).union(includes);
             }
             else {
                 includes = ([this.keyRelation]).union(includes);
@@ -234,9 +234,9 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         return includes;
     }
     public get resolvedJoins(): Iterable<JoinRelation<T>> {
-        let join = Enumerable.load(super.resolvedJoins);
+        let join = Enumerable.from(super.resolvedJoins);
         if (this.keyRelation && this.keyRelation.isEmbedded && (!this.parentRelation || !this.parentRelation.isEmbedded)) {
-            join = Enumerable.load(this.keyRelation.child.resolvedJoins).union(join);
+            join = Enumerable.from(this.keyRelation.child.resolvedJoins).union(join);
         }
         return join;
     }

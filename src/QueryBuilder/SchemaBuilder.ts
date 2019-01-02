@@ -42,7 +42,7 @@ export abstract class SchemaBuilder {
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
         })).first().rows;
-        const defaultSchema = Enumerable.load(defSchemaResult).first()["SCHEMA"];
+        const defaultSchema = Enumerable.from(defSchemaResult).first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 

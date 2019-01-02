@@ -391,7 +391,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
 
         const queryBuilder = this.queryBuilder;
-        let deferredQueryEnumerable = Enumerable.load(deferredQueries);
+        let deferredQueryEnumerable = Enumerable.from(deferredQueries);
 
         // check cached
         if (this.resultCacheManager) {
@@ -688,7 +688,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return allQueries.sum(o => o.value.effectedRows);
     }
     protected getUpdateQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = Enumerable.load(entries);
+        let entryEnumerable = Enumerable.from(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
         if (!entryEnumerable.any()) return results;
 
@@ -743,7 +743,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return results;
     }
     protected getDeleteQueries<T>(entityMeta: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = Enumerable.load(entries);
+        let entryEnumerable = Enumerable.from(entries);
         const results: Array<DeferredQuery<IQueryResult>> = [];
         if (entryEnumerable.count() <= 0)
             return results;
@@ -810,7 +810,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return results;
     }
     protected getInsertQueries<T>(entityMeta: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = Enumerable.load(entries);
+        let entryEnumerable = Enumerable.from(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
         if (!entryEnumerable.any()) return results;
 
@@ -929,7 +929,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             return this.getInsertQueries(entityMeta, entries);
         }
 
-        let entryEnumerable = Enumerable.load(entries);
+        let entryEnumerable = Enumerable.from(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
         if (!entryEnumerable.any()) return results;
 
@@ -1014,7 +1014,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
         const results: DeferredQuery<IQueryResult>[] = [];
-        const relationEntryEnumerable = Enumerable.load(relationEntries);
+        const relationEntryEnumerable = Enumerable.from(relationEntries);
         if (!relationEntryEnumerable.any()) return results;
 
         if (!visitor) visitor = this.queryVisitor;
@@ -1136,7 +1136,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     protected getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: Iterable<RelationEntry<T, T2, TData>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
         const results: DeferredQuery<IQueryResult>[] = [];
-        let relationEntryEnumerable = Enumerable.load(relationEntries);
+        let relationEntryEnumerable = Enumerable.from(relationEntries);
         if (!relationEntryEnumerable.any())
             return results;
 
