@@ -95,6 +95,6 @@ export class Schema {
     @DeletedColumn()
     public deleted: boolean;
 
-    @Relationship("own", "one", SubSchema || "SubSchema", [(o: Schema) => o.identifier])
+    @Relationship<Schema>("own", "one", SubSchema || "SubSchema", [o => o.identifier])
     public subSchema: SubSchema;
 }

@@ -1,6 +1,7 @@
+import { PropertySelector } from "../../Common/Type";
 
-export interface IIndexOption {
+export interface IIndexOption<TE = any> {
     name?: string;
     unique?: boolean;
-    properties?: string[];
+    properties?: PropertySelector<TE>[];
 }

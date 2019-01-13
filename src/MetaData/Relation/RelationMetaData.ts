@@ -9,8 +9,8 @@ import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { ColumnMetaData } from "../ColumnMetaData";
 
-export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSource, TTarget> {
-    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData> = new Map();
+export class RelationMetaData<TSource = any, TTarget = any> implements IRelationMetaData<TSource, TTarget> {
+    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
     public propertyName: keyof TSource;
     public reverseRelation: IRelationMetaData<TTarget, TSource>;
     public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
@@ -63,6 +63,9 @@ export class RelationMetaData<TSource, TTarget> implements IRelationMetaData<TSo
     }
     public completeRelation(reverseRelation: IRelationMetaData<TTarget, TSource>) {
         if (this.isMaster) {
+            this.relationMaps = new Map();
+            reverseRelation.relationMaps = new Map();
+
             this.reverseRelation = reverseRelation;
             this.reverseRelation.reverseRelation = this;
             // set each target for to make sure no problem

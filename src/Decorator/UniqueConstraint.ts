@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { GenericType } from "../Common/Type";
+import { GenericType, PropertySelector } from "../Common/Type";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { entityMetaKey, columnMetaKey } from "./DecoratorKey";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
@@ -8,11 +8,11 @@ import { FunctionHelper } from "../Helper/FunctionHelper";
 import { UniqueConstraintMetaData } from "../MetaData/UniqueConstraintMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 
-export function UniqueConstraint<T>(option?: IUniqueConstraintOption<T>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<T>(properties: Array<keyof T | ((item: T) => any)>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<T>(name: string, properties: Array<string | ((item: T) => any)>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<T>(optionOrPropertiesOrName?: IUniqueConstraintOption<T> | string | Array<keyof T | ((item: T) => any)>, properties?: Array<string | ((item: T) => any)>): (target: object, propertyKey?: string | symbol) => void {
-    let option: IUniqueConstraintOption<T> = {};
+export function UniqueConstraint<TE>(option?: IUniqueConstraintOption<TE>): (target: object, propertyKey?: string | symbol) => void;
+export function UniqueConstraint<TE>(properties: Array<keyof TE | ((item: TE) => any)>): (target: object, propertyKey?: string | symbol) => void;
+export function UniqueConstraint<TE>(name: string, properties: Array<PropertySelector<TE>>): (target: object, propertyKey?: string | symbol) => void;
+export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstraintOption<TE> | string | Array<PropertySelector<TE>>, properties?: Array<PropertySelector<TE>>): (target: object, propertyKey?: string | symbol) => void {
+    let option: IUniqueConstraintOption<TE> = {};
     switch (typeof optionOrPropertiesOrName) {
         case "object":
             option = optionOrPropertiesOrName as any;
@@ -25,19 +25,21 @@ export function UniqueConstraint<T>(optionOrPropertiesOrName?: IUniqueConstraint
             break;
     }
     if (properties)
-        option.properties = properties.select((item) => {
-            if (typeof item === "string")
-                return item as keyof T;
-            return FunctionHelper.propertyName<T>(item);
-        }).toArray();
+        option.properties = properties;
 
-    return (target: GenericType<T> | object, propertyKey?: keyof T /*, descriptor: PropertyDescriptor*/) => {
-        const entConstructor: GenericType<T> = propertyKey ? target.constructor as any : target;
-        if (!option.name)
-            option.name = `UQ_${entConstructor.name}${(option.properties ? "_" + option.properties.join("_") : propertyKey ? "_" + propertyKey : "")}`;
-        if (propertyKey) {
+    return (target: GenericType<TE> | object, propertyKey?: keyof TE) => {
+        const entConstructor: GenericType<TE> = propertyKey ? target.constructor as any : target;
+        if (propertyKey)
             option.properties = [propertyKey];
+        else {
+            option.properties = option.properties
+                .select(o => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+                .toArray();
         }
+
+        if (!option.name)
+            option.name = `UQ_${entConstructor.name}${(option.properties ? "_" + option.properties.join("_") : "")}`;
+
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as any);
@@ -48,7 +50,7 @@ export function UniqueConstraint<T>(optionOrPropertiesOrName?: IUniqueConstraint
             entityMetaData.constraints.remove(checkMetaData);
         }
         const columns = option.properties
-            .select(o => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o) as IColumnMetaData)
+            .select(o => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o as keyof TE) as IColumnMetaData)
             .where(o => !!o)
             .toArray();
         checkMetaData = new UniqueConstraintMetaData(option.name, entityMetaData, columns);

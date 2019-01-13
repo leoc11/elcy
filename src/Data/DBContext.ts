@@ -369,6 +369,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 isolationLevel = isolationOrBody;
 
             this.connection = await this.getConnection(true);
+            if (!this.connection.isOpen) await this.connection.open();
+
             isSavePoint = this.connection.inTransaction;
             await this.connection.startTransaction(isolationLevel);
             if (Diagnostic.enabled) Diagnostic.debug(this.connection, isSavePoint ? "Set transaction save point" : "Start transaction");

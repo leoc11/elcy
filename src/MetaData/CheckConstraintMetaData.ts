@@ -9,13 +9,12 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
 import { ComputedColumnMetaData } from "./ComputedColumnMetaData";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
+import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 
 export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE> {
-    constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: string | ((entity: TE) => boolean) | IExpression<boolean>) {
-        if (typeof definition === "string") {
-            this._definition = definition;
-        }
-        else if (definition instanceof Function) {
+    constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: ((entity: TE) => boolean) | IExpression<boolean>) {
+        if (definition instanceof Function) {
             this.checkFn = definition;
         }
         else {
@@ -26,22 +25,25 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
     private _definition: IExpression<boolean> | string;
     public get definition(): IExpression<boolean> | string {
         if (!this._definition) {
-            const fnExp = ExpressionBuilder.parse(this.checkFn);
+            let fnExp = ExpressionBuilder.parse(this.checkFn);
             this._definition = this.toDefinitionExpression(fnExp);
             this.checkFn = null;
         }
         return this._definition;
     }
     public columns: Array<IColumnMetaData<TE>>;
-    protected toDefinitionExpression(fnExp: FunctionExpression) {
+    protected toDefinitionExpression(fnExp: FunctionExpression<boolean>) {
         const entityParamExp = fnExp.params[0];
+        const entityExp = new EntityExpression(this.entity.type, entityParamExp.name);
         replaceExpression(fnExp.body, (exp) => {
             if (exp instanceof MemberAccessExpression && exp.objectOperand === entityParamExp) {
-                const computedColumn = this.entity.columns.first(o => o.propertyName === exp.memberName);
-                if (computedColumn instanceof ComputedColumnMetaData) {
-                    return this.toDefinitionExpression(computedColumn.functionExpression);
+                const columnMeta = this.entity.columns.first(o => o.propertyName === exp.memberName);
+                if (columnMeta instanceof ComputedColumnMetaData) {
+                    const fnExp = columnMeta.functionExpression.clone();
+                    replaceExpression(fnExp, (exp2) => exp2 === fnExp.params[0] ? entityParamExp : exp2);
+                    return new ComputedColumnExpression(entityExp, fnExp.body, columnMeta.propertyName);
                 }
-                return new ComputedColumnExpression(null, exp, exp.memberName, exp.memberName);
+                return new ColumnExpression(entityExp, columnMeta);
             }
             return exp;
         });
@@ -51,6 +53,7 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
         if (typeof this.definition === "string") {
             return this.definition;
         }
+
         return queryBuilder.getLogicalOperandString(this.definition);
     }
 }

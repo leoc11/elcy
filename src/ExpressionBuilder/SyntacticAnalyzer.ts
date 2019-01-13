@@ -47,6 +47,17 @@ const globalObjectMaps = new Map<string, any>([
     ["Set", Set],
     ["WeakMap", WeakMap],
     ["WeakSet", WeakSet],
+    ["ArrayBuffer", ArrayBuffer],
+    ["Uint8Array", Uint8Array],
+    ["Uint16Array", Uint16Array],
+    ["Uint32Array", Uint32Array],
+    ["Int8Array", Int8Array],
+    ["Int16Array", Int16Array],
+    ["Int32Array", Int32Array],
+    ["Uint8ClampedArray", Uint8ClampedArray],
+    ["Float32Array", Float32Array],
+    ["Float64Array", Float64Array],
+    ["DataView", DataView],
 
     // Value
     ["Infinity", Infinity],
@@ -65,7 +76,7 @@ export class SyntacticAnalyzer {
             scopedParameters: new Map(),
             userParameters: userParameters
         };
-        const result = createExpression(param, Enumerable.from(tokens).toArray()) as FunctionExpression;
+        const result = createExpression(param, Enumerable.from(tokens).toArray());
         return result;
     }
 }
@@ -119,7 +130,8 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                     case "[": {
                                         // TODO
                                         if (!expression) {
-                                            return createArrayExpression(param, tokens);
+                                            expression = createArrayExpression(param, tokens);
+                                            break;
                                         }
                                         else {
                                             throw new Error("expression not supported");
@@ -233,7 +245,7 @@ function createArrayExpression(param: SyntaticParameter, tokens: ILexicalToken[]
             param.index++;
     }
     param.index++;
-    return ArrayValueExpression.create(...arrayVal);
+    return new ArrayValueExpression(...arrayVal);
 }
 function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
     const obj: any = {};

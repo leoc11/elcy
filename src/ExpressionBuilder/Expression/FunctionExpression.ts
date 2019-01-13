@@ -41,8 +41,8 @@ export class FunctionExpression<T = any> implements IExpression<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const body = resolveClone(this.body, replaceMap);
         const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
+        const body = resolveClone(this.body, replaceMap);
         const clone = new FunctionExpression(body, params);
         replaceMap.set(this, clone);
         return clone;

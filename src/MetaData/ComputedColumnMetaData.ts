@@ -11,6 +11,7 @@ export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaDat
     public get type(): GenericType<T> {
         return this.functionExpression.type;
     }
+    public columnName = "";
     public propertyName: keyof TE;
     constructor();
     constructor(entity: IEntityMetaData<TE>, fn: (item: TE) => T, propertyName: keyof TE)

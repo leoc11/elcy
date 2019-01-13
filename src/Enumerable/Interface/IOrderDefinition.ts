@@ -1,6 +1,6 @@
-import { OrderDirection, ValueType } from "../../Common/Type";
+import { OrderDirection, PropertySelector } from "../../Common/Type";
 
 export interface IOrderDefinition<T = any> {
-    0: ((o: T) => ValueType);
+    0: PropertySelector<T>;
     1?: OrderDirection;
 }

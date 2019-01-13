@@ -4,7 +4,7 @@ export interface IObjectType<T = any> { name?: string; new(...values: any[]): T;
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
-export type PropertySelector<T> = keyof T | ((source: T) => any);
+export type PropertySelector<TE> = keyof TE | ((source: TE) => ValueType);
 export type ValueType = number | string | boolean | Date | TimeSpan | UUID | ArrayBufferView;
 export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
 export type RelationshipType = "one" | "many";

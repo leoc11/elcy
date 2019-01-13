@@ -40,8 +40,10 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         clone.isNullable = this.isNullable;
         return clone;
     }
-    public toString(transformer: QueryBuilder): string {
-        return transformer.getExpressionString(this);
+    public toString(transformer?: QueryBuilder): string {
+        if (transformer)
+            return transformer.getExpressionString(this);
+        return this.expression.toString();
     }
     public execute(transformer: QueryBuilder) {
         return this.toString(transformer) as any;

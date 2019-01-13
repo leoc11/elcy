@@ -3,9 +3,9 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { GenericType } from "../Common/Type";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class BinaryColumnMetaData<TE> extends ColumnMetaData<TE, ArrayBufferView> {
+export class BinaryColumnMetaData<TE = any> extends ColumnMetaData<TE, ArrayBufferView> {
     public size?: number;
-    public columnType: BinaryColumnType = "blob";
+    public columnType: BinaryColumnType = "binary";
     constructor(type: GenericType<ArrayBufferView>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
     }

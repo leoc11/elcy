@@ -29,6 +29,16 @@ import { DateTimeColumnMetaData } from "../MetaData/DateTimeColumnMetaData";
 import { BatchedQuery } from "./Interface/BatchedQuery";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { BinaryColumnMetaData } from "../MetaData/BinaryColumnMetaData";
+import { RelationDataMetaData } from "../MetaData/Relation/RelationDataMetaData";
+
+const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+    return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+};
+const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
+    return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
+};
 
 export abstract class SchemaBuilder {
     constructor(public connection: IConnection, protected readonly queryBuilder: QueryBuilder) {
@@ -85,6 +95,7 @@ export abstract class SchemaBuilder {
 
                 postCommitQueries = postCommitQueries.concat(schema.relations.where(o => !o.isMaster).selectMany(o => this.addForeignKey(o)).toArray());
             }
+            // TODO: handle remove old table?
         }
 
         return {
@@ -224,7 +235,9 @@ export abstract class SchemaBuilder {
             };
 
             if (type === "CHECK") {
-                constraintMeta = new CheckConstraintMetaData(name, entity, constraint["CHECK_CLAUSE"]);
+                let checkDefinition: string = constraint["CHECK_CLAUSE"];
+                const checkExp = new ValueExpression(undefined, checkDefinition);
+                constraintMeta = new CheckConstraintMetaData(name, entity, checkExp);
                 constraintMeta.columns = columns;
             }
             constraints[name] = {
@@ -347,7 +360,8 @@ export abstract class SchemaBuilder {
         const query = `DROP TABLE ${this.queryBuilder.entityName(entityMeta)}`;
         return [{
             query,
-            type: QueryType.DDL
+            type: QueryType.DDL,
+            comment: "You might lost your data"
         }];
     }
     public addColumn(columnMeta: IColumnMetaData): IQuery[] {
@@ -375,7 +389,8 @@ export abstract class SchemaBuilder {
         let query = `ALTER TABLE ${this.queryBuilder.entityName(columnMeta.entity)} DROP COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}`;
         return [{
             query,
-            type: QueryType.DDL
+            type: QueryType.DDL,
+            comment: "You might lost your data"
         }];
     }
     public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
@@ -455,40 +470,55 @@ export abstract class SchemaBuilder {
     }
 
     protected dropAllOldRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
-        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
-            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
-        };
+        const isRelationData = schema instanceof RelationDataMetaData || oldSchema instanceof RelationDataMetaData;
+        if (isRelationData) {
+            
+        }
+        else {
 
-        const relations = schema.relations.where(o => !o.isMaster).toArray();
-        return oldSchema.relations.where(o => !o.isMaster)
-            .where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
-            .selectMany(o => this.dropForeignKey(o)).toArray();
+            const relations = schema.relations.where(o => !o.isMaster).toArray();
+            return oldSchema.relations.where(o => !o.isMaster)
+                .where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+                .selectMany(o => this.dropForeignKey(o)).toArray();
+        }
     }
     protected addAllNewRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
-        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
-            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
-        };
-
         const oldRelations = oldSchema.relations.where(o => !o.isMaster).toArray();
-        return schema.relations.where(o => !o.isMaster).where(o => !oldRelations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns)))
+        return schema.relations.where(o => !o.isMaster)
+            .where(o => !oldRelations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
             .selectMany(o => this.addForeignKey(o)).toArray();
     }
     protected updateEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
-        let result: IQuery[] = [];
-        const columnMetas = schema.columns.select(o => ({
-            columnSchema: o,
-            oldColumnSchema: oldSchema.columns.first(c => c.columnName.toLowerCase() === o.columnName.toLowerCase())
-        }));
+        const oldColumns = oldSchema.columns.where(o => !!o.columnName).toArray();
+        let columnMetas = schema.columns.where(o => !!o.columnName).select(o => {
+            const oldCol = oldColumns.first(c => c.columnName.toLowerCase() === o.columnName.toLowerCase());
+            oldColumns.remove(oldCol);
+            return {
+                columnSchema: o,
+                oldColumnSchema: oldCol
+            };
+        });
+        columnMetas = columnMetas.union(oldColumns.select(o => ({
+            columnSchema: null,
+            oldColumnSchema: o
+        })));
 
-        result = columnMetas.selectMany(o => this.getColumnChanges(o.columnSchema, o.oldColumnSchema)).toArray();
+        let result = columnMetas.selectMany(o => {
+            if (o.columnSchema && o.oldColumnSchema)
+                return this.getColumnChanges(o.columnSchema, o.oldColumnSchema);
+            else if (o.columnSchema)
+                return this.addColumn(o.columnSchema);
+            // TODO: add option to always drop column
+            else if (o.oldColumnSchema && !o.oldColumnSchema.default && !o.oldColumnSchema.nullable)
+                return this.dropColumn(o.oldColumnSchema);
 
-        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
-            return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
-        };
+            return undefined;
+        });
+
         // primary key changes
         if (!isColumnsEquals(schema.primaryKeys, oldSchema.primaryKeys)) {
-            result = result.concat(this.dropPrimaryKey(oldSchema));
-            result = result.concat(this.addPrimaryKey(schema));
+            result = result.union(this.dropPrimaryKey(oldSchema));
+            result = result.union(this.addPrimaryKey(schema));
         }
 
         const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
@@ -497,42 +527,53 @@ export abstract class SchemaBuilder {
                 const check2 = cons2 as ICheckConstraintMetaData;
                 const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
                 const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
-                return checkDef1 === checkDef2;
+                return this.normalizeCheckDefinition(checkDef1) === this.normalizeCheckDefinition(checkDef2);
             }
 
             return isColumnsEquals(cons1.columns, cons2.columns);
         };
         // remove old constraint
-        result = result.concat(oldSchema.constraints.where(o => !schema.constraints.any(or => isConstraintEquals(o, or)))
-            .selectMany(o => this.dropConstraint(o)).toArray());
+        result = result.union(oldSchema.constraints.where(o => !schema.constraints.any(or => isConstraintEquals(o, or)))
+            .selectMany(o => this.dropConstraint(o)));
         // add new constraint
-        result = result.concat(schema.constraints.where(o => !oldSchema.constraints.any(or => isConstraintEquals(o, or)))
-            .selectMany(o => this.addConstraint(o)).toArray());
-
-        const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
-            return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
-        };
+        result = result.union(schema.constraints.where(o => !oldSchema.constraints.any(or => isConstraintEquals(o, or)))
+            .selectMany(o => this.addConstraint(o)));
 
         // index
         const oldIndices = oldSchema.indices.slice(0);
-        const indexMap = schema.indices.select(o => ({
-            index: o,
-            oldIndex: oldIndices.first(c => c.name === o.name)
-        }));
+        let indexMap = schema.indices.select(o => {
+            const oldIndex = oldIndices.first(c => c.name === o.name);
+            oldIndices.remove(oldIndex);
+            return ({
+                index: o,
+                oldIndex: oldIndex
+            });
+        });
+        indexMap = indexMap.union(oldIndices.select(o => ({
+            index: null,
+            oldIndex: o
+        })));
+        const indicesResults = indexMap.selectMany(o => {
+            if (o.index && o.oldIndex) {
+                if (!isIndexEquals(o.index, o.oldIndex))
+                    return this.dropIndex(o.oldIndex).union(this.addIndex(o.index));
+            }
+            else if (o.index) {
+                return this.addIndex(o.index);
+            }
+            else if (o.oldIndex) {
+                return this.dropIndex(o.oldIndex);
+            }
+            return [];
+        });
 
-        // modify old index by drop and add index with newer definition
-        result = result.concat(indexMap.where(o => o.oldIndex && !isIndexEquals(o.index, o.oldIndex)).selectMany(o => {
-            oldIndices.remove(o.oldIndex);
-            return this.dropIndex(o.oldIndex).concat(this.addIndex(o.index));
-        }).toArray());
-
-        // add new index
-        result = result.concat(indexMap.where(o => !o.oldIndex && !oldIndices.any(oi => isIndexEquals(o.index, oi)))
-            .selectMany(o => this.addIndex(o.index)).toArray());
-
-        return result;
+        result = result.union(indicesResults);
+        return result.toArray();
     }
 
+    protected normalizeCheckDefinition(definition: string) {
+        return definition ? ExpressionBuilder.parse(definition).toString() : "";
+    }
     protected getColumnChanges<TE>(columnSchema: IColumnMetaData<TE>, oldColumnSchema: IColumnMetaData<TE>) {
         let result: IQuery[] = [];
         const entitySchema = oldColumnSchema.entity;
@@ -668,30 +709,30 @@ export abstract class SchemaBuilder {
                 if (this.queryBuilder.columnTypeMap) {
                     if (this.queryBuilder.columnTypeMap.has(type))
                         type = this.queryBuilder.columnTypeMap.get(type);
-                    else if (this.queryBuilder.columnTypeMap.has("defaultBinary") && columnOption instanceof StringColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultBinary");
                     else if (this.queryBuilder.columnTypeMap.has("defaultBoolean") && columnOption instanceof BooleanColumnMetaData)
                         type = this.queryBuilder.columnTypeMap.get("defaultBoolean");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultDataSerialization") && columnOption instanceof DataSerializationColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultDataSerialization");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultDate");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultDateTime") && columnOption instanceof DateTimeColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultDateTime");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultTime");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultDecimal") && columnOption instanceof DecimalColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultDecimal");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultEnum") && columnOption instanceof EnumColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultEnum");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultIdentifier") && columnOption instanceof IdentifierColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultIdentifier");
-                    else if (this.queryBuilder.columnTypeMap.has("defaultInteger") && columnOption instanceof IntegerColumnMetaData)
-                        type = this.queryBuilder.columnTypeMap.get("defaultInteger");
                     else if (this.queryBuilder.columnTypeMap.has("defaultString") && columnOption instanceof StringColumnMetaData)
                         type = this.queryBuilder.columnTypeMap.get("defaultString");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultInteger") && columnOption instanceof IntegerColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultInteger");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultDecimal") && columnOption instanceof DecimalColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultDecimal");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultDateTime") && columnOption instanceof DateTimeColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultDateTime");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultIdentifier") && columnOption instanceof IdentifierColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultIdentifier");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultDate") && columnOption instanceof DateColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultDate");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultEnum") && columnOption instanceof EnumColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultEnum");
                     else if (this.queryBuilder.columnTypeMap.has("defaultRowVersion") && columnOption instanceof RowVersionColumnMetaData)
                         type = this.queryBuilder.columnTypeMap.get("defaultRowVersion");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultTime") && columnOption instanceof TimeColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultTime");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultDataSerialization") && columnOption instanceof DataSerializationColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultDataSerialization");
+                    else if (this.queryBuilder.columnTypeMap.has("defaultBinary") && columnOption instanceof BinaryColumnMetaData)
+                        type = this.queryBuilder.columnTypeMap.get("defaultBinary");
                     else
                         throw new Error(`${type} is not supported`);
                 }
@@ -711,9 +752,9 @@ export abstract class SchemaBuilder {
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.queryBuilder.entityName(relationMeta.target)} (${referenceColumns})`;
-        if (relationMeta.updateOption)
+        if (relationMeta.updateOption && relationMeta.updateOption !== "NO ACTION")
             result += ` ON UPDATE ${relationMeta.updateOption}`;
-        if (relationMeta.deleteOption)
+        if (relationMeta.deleteOption && relationMeta.deleteOption !== "NO ACTION")
             result += ` ON DELETE ${relationMeta.deleteOption}`;
 
         return result;
@@ -737,6 +778,8 @@ export abstract class SchemaBuilder {
             return "CONVERT(TIME, GETUTCDATE())";
         if (groupType === "RowVersion" || columnMeta instanceof RowVersionColumn)
             return "CURRENT_TIMESTAMP";
+        if (groupType === "Binary" || columnMeta instanceof BinaryColumnMetaData)
+            return this.queryBuilder.valueString(new Uint8Array(0));
 
         throw new Error(`${columnMeta.columnType} not supported`);
     }

@@ -14,10 +14,12 @@ export class MssqlSchemaBuilder extends SchemaBuilder {
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.queryBuilder.entityName(relationMeta.target)} (${referenceColumns})`;
 
-        if (relationMeta.updateOption)
-            result += ` ON UPDATE ${this.referenceOption(relationMeta.updateOption)}`;
-        if (relationMeta.deleteOption)
-            result += ` ON DELETE ${this.referenceOption(relationMeta.deleteOption)}`;
+        const updateOption = this.referenceOption(relationMeta.updateOption);
+        const deleteOption = this.referenceOption(relationMeta.deleteOption);
+        if (updateOption && updateOption !== "NO ACTION")
+            result += ` ON UPDATE ${updateOption}`;
+        if (deleteOption && deleteOption !== "NO ACTION")
+            result += ` ON DELETE ${deleteOption}`;
 
         return result;
     }
@@ -49,7 +51,7 @@ export class MssqlSchemaBuilder extends SchemaBuilder {
                 ` join sys.columns c on dc.parent_object_id = c.object_id and dc.parent_column_id = c.column_id` +
                 ` where SCHEMA_NAME(schema_id) = '${columnMeta.entity.schema}' and OBJECT_NAME(parent_object_id) = '${columnMeta.entity.name}' and c.name = '${columnMeta.columnName}'` +
                 ` )`,
-            type: QueryType.DDL
+            type: QueryType.DQL
         });
         result.push({
             query: `EXEC('ALTER TABLE ${this.queryBuilder.entityName(columnMeta.entity)} DROP CONSTRAINT [' + @${variableName} + ']')`,

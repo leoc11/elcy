@@ -67,6 +67,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
     ];
     public columnTypeDefaults = new Map<ColumnType, IColumnTypeDefaults>([
         ["binary", { size: 50 }],
+        ["varbinary", { size: 100 }],
         ["char", { length: 10 }],
         ["datetime2", { precision: 1 }],
         ["datetimeoffset", { precision: 7 }],
@@ -75,7 +76,6 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["nchar", { length: 10 }],
         ["numeric", { precision: 18, scale: 0 }],
         ["nvarchar", { length: 255 }],
-        ["varbinary", { length: 50 }],
         ["varchar", { length: 50 }]
     ]);
     public columnTypeMap = new Map<ColumnTypeMapKey, ColumnType>([
@@ -185,7 +185,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 };
                 result.push(queryCommand);
             }
-            
+
             queryCommand.query += `${this.newLine(1, true)}(${insertExp.columns.select(o => {
                 const valueExp = itemExp[o.propertyName];
                 return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";

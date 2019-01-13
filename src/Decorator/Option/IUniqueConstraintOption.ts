@@ -1,5 +1,6 @@
+import { PropertySelector } from "../../Common/Type";
 
-export interface IUniqueConstraintOption<T = any> {
+export interface IUniqueConstraintOption<TE = any> {
     name?: string;
-    properties?: Array<keyof T>;
+    properties?: Array<PropertySelector<TE>>;
 }

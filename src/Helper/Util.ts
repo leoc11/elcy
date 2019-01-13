@@ -11,7 +11,21 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
-
+type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
+export const toHexaString = function (binary: ArrayBuffer | ArrayView): string {
+    if (binary instanceof ArrayBuffer) {
+        let hexaString = Array.from(new Uint8Array(binary))
+            .map(b => {
+                const a = b.toString(16);
+                return a.length < 2 ? "0" + a : a;
+            }).join("");
+        if (!hexaString) hexaString = "0";
+        return `0x${hexaString}`;
+    }
+    else {
+        return toHexaString(binary.buffer);
+    }
+};
 export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>): T {
     if (!exp) return exp;
     return (replaceMap.has(exp) ? replaceMap.get(exp) : exp.clone(replaceMap)) as T;

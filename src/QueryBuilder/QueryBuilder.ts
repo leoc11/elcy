@@ -6,7 +6,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
-import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp, isEntityExp, isColumnExp } from "../Helper/Util";
+import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp, isEntityExp, isColumnExp, toHexaString } from "../Helper/Util";
 import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
@@ -436,24 +436,28 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         const relationString = this.getLogicalOperandString(parentRel.relations);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
     }
+
     protected getColumnString(column: IColumnExpression) {
-        if (this.commandExp instanceof SelectExpression) {
-            if (column.entity.alias === this.commandExp.entity.alias || (this.commandExp instanceof GroupByExpression && isEntityExp(this.commandExp.key) && this.commandExp.key.alias === column.entity.alias)) {
-                if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !this.commandExp.resolvedSelects.contains(column))) {
-                    return this.getOperandString(column.expression);
+        if (this.commandExp) {
+            if (this.commandExp instanceof SelectExpression) {
+                if (column.entity.alias === this.commandExp.entity.alias || (this.commandExp instanceof GroupByExpression && isEntityExp(this.commandExp.key) && this.commandExp.key.alias === column.entity.alias)) {
+                    if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !this.commandExp.resolvedSelects.contains(column))) {
+                        return this.getOperandString(column.expression);
+                    }
+                    return this.enclose(column.entity.alias) + "." + this.enclose(this.isColumnDeclared ? column.dataPropertyName : column.columnName);
                 }
-                return this.enclose(column.entity.alias) + "." + this.enclose(this.isColumnDeclared ? column.dataPropertyName : column.columnName);
-            }
-            else {
-                let childSelect = Enumerable.from(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
-                if (!childSelect) {
-                    childSelect = this.commandExp.parentRelation.parent;
+                else {
+                    let childSelect = Enumerable.from(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
+                    if (!childSelect) {
+                        childSelect = this.commandExp.parentRelation.parent;
+                    }
+                    return this.enclose(childSelect.entity.alias) + "." + this.enclose(column.dataPropertyName);
                 }
-                return this.enclose(childSelect.entity.alias) + "." + this.enclose(column.dataPropertyName);
             }
+            return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
         }
 
-        return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
+        return this.enclose(column.dataPropertyName);
     }
 
     //#endregion
@@ -788,8 +792,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     return this.timeString(value);
                 case UUID:
                     return this.identifierString(value);
+                case ArrayBuffer:
+                case Uint8Array:
+                case Uint16Array:
+                case Uint32Array:
+                case Int8Array:
+                case Int16Array:
+                case Int32Array:
+                case Uint8ClampedArray:
+                case Float32Array:
+                case Float64Array:
+                case DataView:
+                    return toHexaString(value);
                 default:
-                    throw new Error("type not supported");
+                    throw new Error(`type "${value.constructor.name}" not supported`);
             }
         }
         return this.nullString();
@@ -832,7 +848,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getInstantiationString(expression: InstantiationExpression) {
         const translator = this.resolveTranslator(expression.type);
         if (!translator) {
-            throw new Error(`operator "${expression.constructor.name}" not supported`);
+            try {
+                const value = expression.execute();
+                return this.valueString(value);
+            } catch (e) { }
+            throw new Error(`instantiate "${expression.type.name}" not supported`);
         }
         return translator.translate(expression, this);
     }

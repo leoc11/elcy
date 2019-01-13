@@ -6,11 +6,11 @@ import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { ICheckConstraintOption } from "./Option/ICheckConstraintOption";
 import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
 
-export function CheckContraint(option: ICheckConstraintOption): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<T>(check: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<T>(name: string, check: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<T>(optionOrCheckOrName: ICheckConstraintOption | string | ((entity: T) => boolean), check?: (entity: T) => boolean): (target: object, propertyKey?: string | symbol) => void {
-    let option: ICheckConstraintOption = {} as any;
+export function CheckContraint<TE>(option: ICheckConstraintOption<TE>): (target: object, propertyKey?: string | symbol) => void;
+export function CheckContraint<TE>(check: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void;
+export function CheckContraint<TE>(name: string, check: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void;
+export function CheckContraint<TE>(optionOrCheckOrName: ICheckConstraintOption | string | ((entity: TE) => boolean), check?: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void {
+    let option: ICheckConstraintOption<TE> = {} as any;
     switch (typeof optionOrCheckOrName) {
         case "object":
             option = optionOrCheckOrName as any;
@@ -25,10 +25,10 @@ export function CheckContraint<T>(optionOrCheckOrName: ICheckConstraintOption | 
     if (check)
         option.check = check;
 
-    return (target: GenericType<T> | object, propertyKey?: keyof T /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        const entConstructor: GenericType<T> = propertyKey ? target.constructor as any : target;
+    return (target: GenericType<TE> | object, propertyKey?: keyof TE) => {
+        const entConstructor: GenericType<TE> = propertyKey ? target.constructor as any : target;
         if (!option.name)
-            option.name = `CK_${entConstructor.name}_${(propertyKey ? propertyKey : (target as GenericType<T>).name)}`;
+            option.name = `CK_${entConstructor.name}_${(propertyKey ? propertyKey : (target as GenericType<TE>).name)}`;
 
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
         if (entityMetaData == null) {

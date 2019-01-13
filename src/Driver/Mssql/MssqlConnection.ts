@@ -34,7 +34,7 @@ export class MssqlConnection implements IConnection {
         return this.transactions.length > 0;
     }
     public get isOpen() {
-        return this.connection;
+        return !!this.connection;
     }
     public close(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -85,8 +85,8 @@ export class MssqlConnection implements IConnection {
         });
     }
     public startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        if (!this.isOpen) Promise.reject(new Error("Connection not open"));
         return new Promise((resolve, reject) => {
-            if (this.isOpen) {
                 const transactionName = "transaction_" + this.transactions.length;
                 const useSavePoint = this.inTransaction;
                 const curIsolationLevel = this.isolationLevel;
@@ -123,7 +123,7 @@ export class MssqlConnection implements IConnection {
 
                     this.connection.beginTransaction(cb, transactionName, tediousIsolationLevel);
                 }
-            }
+
         });
     }
     public commitTransaction(): Promise<void> {
