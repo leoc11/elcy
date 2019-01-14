@@ -177,7 +177,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         return entry;
     }
-    public update<T>(entity: T, originalValues?: { [key in keyof T]: any }) {
+    public update<T>(entity: T, originalValues?: { [key in keyof T]: T[key] }) {
         const entry = this.attach(entity);
         if (entry) {
             if (originalValues instanceof Object)
@@ -1204,7 +1204,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
             if (slaveRelationMetaData.nullable) {
                 // set foreignkey to null query.
-                const setter: { [key in keyof T]?: IExpression } = {};
+                const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
                 for (const relCol of slaveRelationMetaData.relationColumns) {
                     setter[relCol.propertyName] = new ValueExpression(null);
                 }

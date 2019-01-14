@@ -35,7 +35,7 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
     public get type() {
         return undefined as any;
     }
-    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression }>, columns?: IColumnExpression<T>[]) {
+    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: IColumnExpression<T>[]) {
         if (columns) this._columns = columns;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
@@ -43,7 +43,7 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
         const entity = resolveClone(this.entity, replaceMap);
         const columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
         const values = this.values.select(o => {
-            const item: { [key in keyof T]?: IExpression } = {};
+            const item: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in o) {
                 item[prop] = resolveClone(o[prop], replaceMap);
             }
@@ -91,7 +91,7 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
 }
 
 export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
-    const itemExp: { [key in keyof T]?: IExpression } = {};
+    const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
     for (const col of columns) {
         let value = entry.entity[col.propertyName];
         if (value !== undefined) {

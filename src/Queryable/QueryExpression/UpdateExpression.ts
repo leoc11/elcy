@@ -23,7 +23,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
-    public setter: { [key in keyof T]?: IExpression } = {};
+    public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public select: SelectExpression<T>;
     public get parameters() {
         return this.select.parameters;
@@ -46,9 +46,9 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
-    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression });
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: any }) | { [key in keyof T]?: IExpression }) {
+    constructor(entity: IEntityExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> });
+    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> });
+    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> }) {
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity.clone();
         } else {
@@ -78,7 +78,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     public clone(replaceMap?: Map<IExpression, IExpression>): UpdateExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const select = resolveClone(this.select, replaceMap);
-        const setter: { [key in keyof T]?: IExpression } = {};
+        const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.setter) {
             setter[prop] = resolveClone(this.setter[prop], replaceMap);
         }

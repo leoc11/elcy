@@ -13,9 +13,9 @@ export class ObjectValueExpression<T = any> implements IExpression<T> {
 
         return result;
     }
-    public object: { [key in keyof T]?: IExpression };
+    public object: { [key in keyof T]?: IExpression<T[key]> };
     public type: IObjectType<T>;
-    constructor(objectValue: { [key in keyof T]?: IExpression }, type?: IObjectType<T>) {
+    constructor(objectValue: { [key in keyof T]?: IExpression<T[key]> }, type?: IObjectType<T>) {
         this.object = objectValue;
         this.type = type ? type : objectValue.constructor as IObjectType<T>;
     }
@@ -35,7 +35,7 @@ export class ObjectValueExpression<T = any> implements IExpression<T> {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
-        const obj: { [key in keyof T]?: IExpression } = {};
+        const obj: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.object) {
             const propEx = this.object[prop];
             obj[prop] = resolveClone(propEx, replaceMap);

@@ -124,7 +124,7 @@ export abstract class Queryable<T = any> {
         const query = this.deferredAny(predicate);
         return await query.execute();
     }
-    public async find(id: ValueType | { [key in keyof T]: ValueType }) {
+    public async find(id: ValueType | { [key in keyof T]: T[key] }) {
         const query = this.deferredFind(id);
         return await query.execute();
     }
@@ -132,7 +132,7 @@ export abstract class Queryable<T = any> {
         const query = this.deferredFirst(predicate);
         return await query.execute();
     }
-    public async update(setter: { [key in keyof T]?: ValueType | ((item: T) => ValueType) }) {
+    public async update(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
         const query = this.deferredUpdate(setter);
         return await query.execute();
     }
@@ -531,7 +531,7 @@ export abstract class Queryable<T = any> {
         this.dbContext.deferredQueries.add(query);
         return query;
     }
-    public deferredFind(id: ValueType | { [key in keyof T]: ValueType }) {
+    public deferredFind(id: ValueType | { [key in keyof T]: T[key] }) {
         const isValueType = isValue(id);
         const dbSet = this.dbContext.set(this.type as any);
         if (!dbSet) {
@@ -662,7 +662,7 @@ export abstract class Queryable<T = any> {
         this.dbContext.deferredQueries.add(query);
         return query;
     }
-    public deferredUpdate(setter: { [key in keyof T]?: ValueType | ((item: T) => ValueType) }) {
+    public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
         let queryCache: IQueryCache<T>, cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
@@ -689,7 +689,7 @@ export abstract class Queryable<T = any> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
 
-            const setterExp: { [key in keyof T]?: IExpression } = {};
+            const setterExp: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in setter) {
                 const val = setter[prop];
                 if (val instanceof Function) {

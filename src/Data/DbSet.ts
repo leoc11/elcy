@@ -62,24 +62,23 @@ export class DbSet<T> extends Queryable<T> {
         return (Enumerable.from(this.dictionary.values())).select(o => o.entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
-    protected relationDictionary: Map<string, RelationEntry<T>> = new Map();
-    public async find(id: ValueType | { [key in keyof T]: ValueType }, forceReload?: boolean) {
+    public async find(id: ValueType | { [key in keyof T]: T[key] & ValueType }, forceReload?: boolean) {
         let entity = forceReload ? null : this.findLocal(id);
         if (!entity) {
             entity = await super.find(id);
         }
         return entity;
     }
-    public findLocal(id: ValueType | { [key in keyof T]: ValueType }): T {
+    public findLocal(id: ValueType | { [key in keyof T]: T[key] & ValueType }): T {
         const entry = this.entry(id);
         return entry ? entry.entity : undefined;
     }
-    public entry(entity: T | ValueType | { [key in keyof T]: ValueType }) {
+    public entry(entity: T | ValueType | { [key in keyof T]: T[key] & ValueType }) {
         const key = this.getMapKey(entity);
         return this.dictionary.get(key);
     }
     public attach(entity: T): EntityEntry<T> {
-        const key = this.getMapKey(entity as any);
+        const key = this.getMapKey(entity);
         let entry = this.entry(key) as EntityEntry<T>;
         if (entry) {
             Object.keys(entity).union(Object.keys(entry.dbSet.type.prototype)).each((prop: keyof T) => {
@@ -121,7 +120,7 @@ export class DbSet<T> extends Queryable<T> {
         }
         return entry;
     }
-    public new(primaryValue: ValueType | { [key in keyof T]?: ValueType }) {
+    public new(primaryValue: ValueType | { [key in keyof T]?: T[key] }) {
         const entity = new this.type();
         if (isValue(primaryValue)) {
             if (this.primaryKeys.length !== 1) {
@@ -141,7 +140,7 @@ export class DbSet<T> extends Queryable<T> {
     public clear() {
         this.dictionary = new Map();
     }
-    protected getMapKey(id: ValueType | { [key in keyof T]: any }): string {
+    protected getMapKey(id: ValueType | { [key in keyof T]: T[key] }): string {
         if (isValue(id))
             return id.toString();
         return this.primaryKeys.select(o => {
@@ -155,11 +154,11 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary.set(entry.key, entry);
     }
 
-    public async insert(...items: Array<{ [key in keyof T]: ValueType }>) {
+    public async insert(...items: Array<{ [key in keyof T]?: T[key] }>) {
         const query = this.deferredInsert(...items);
         return await query.execute();
     }
-    public deferredInsert(...items: Array<{ [key in keyof T]: ValueType }>) {
+    public deferredInsert(...items: Array<{ [key in keyof T]?: T[key] }>) {
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.queryOption, true);
 
@@ -169,9 +168,9 @@ export class DbSet<T> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const valueExp: Array<{ [key in keyof T]?: IExpression }> = [];
+        const valueExp: Array<{ [key in keyof T]?: IExpression<T[key]> }> = [];
         for (const item of items) {
-            const itemExp: { [key in keyof T]?: IExpression } = {};
+            const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in item) {
                 itemExp[prop] = new ValueExpression(item[prop]);
             }
@@ -188,7 +187,7 @@ export class DbSet<T> extends Queryable<T> {
         return query;
     }
     // simple update.
-    public deferredUpdate(setter: { [key in keyof T]?: ValueType | ((item: T) => ValueType) }) {
+    public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
         let pkFilter: IExpression<boolean> = null;
         const setterObj = Object.assign({}, setter);
         const paramExp = new ParameterExpression("o", this.type);
@@ -214,9 +213,9 @@ export class DbSet<T> extends Queryable<T> {
     }
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(key: { [key in keyof T]?: ValueType }, mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(key: { [key in keyof T]?: T[key] }, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrKeyOrPredicate?: { [key in keyof T]?: ValueType } | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public deferredDelete(modeOrKeyOrPredicate?: { [key in keyof T]?: T[key] } | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
             return super.deferredDelete(modeOrKeyOrPredicate as any, mode);
         }
@@ -243,11 +242,11 @@ export class DbSet<T> extends Queryable<T> {
         }
     }
 
-    public async upsert(item: { [key in keyof T]: ValueType }) {
+    public async upsert(item: { [key in keyof T]: T[key] }) {
         const query = this.deferredUpsert(item);
         return await query.execute();
     }
-    public deferredUpsert(item: { [key in keyof T]: ValueType }) {
+    public deferredUpsert(item: { [key in keyof T]: T[key] }) {
         const queryBuilder = this.dbContext.queryBuilder;
         queryBuilder.options = clone(this.queryOption, true);
 
@@ -257,7 +256,7 @@ export class DbSet<T> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const setterExp: { [key in keyof T]?: IExpression } = {};
+        const setterExp: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in item) {
             setterExp[prop] = new ValueExpression(item[prop]);
         }

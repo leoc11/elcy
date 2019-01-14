@@ -29,7 +29,7 @@ declare module "./Queryable" {
     interface Queryable<T> {
         parameter(params: { [key: string]: any }): Queryable<T>;
         option(option: ISelectQueryOption): Queryable<T>;
-        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Queryable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;

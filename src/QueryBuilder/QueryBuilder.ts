@@ -647,8 +647,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
         if (deleteStrategy === "Soft") {
             // if soft delete, set delete column to true
-            const set: { [key in keyof T]?: IExpression<any> } = {};
-            set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true);
+            const set: { [key in keyof T]?: IExpression<T[key]> } = {};
+            set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true) as any;
             const updateQuery = new UpdateExpression(deleteExp.entity, set);
             result = this.getBulkUpdateQuery(updateQuery);
 

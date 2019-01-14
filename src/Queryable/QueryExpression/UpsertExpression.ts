@@ -53,12 +53,12 @@ export class UpsertExpression<T = any> implements IQueryCommandExpression<void> 
     public get type() {
         return undefined as any;
     }
-    constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression }) {
+    constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression<T[key]> }) {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
         if (!replaceMap) replaceMap = new Map();
         const entity = resolveClone(this.entity, replaceMap);
-        const setter: { [key in keyof T]?: IExpression } = {};
+        const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.setter) {
             setter[prop] = resolveClone(this.setter[prop], replaceMap);
         }
