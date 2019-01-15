@@ -1,15 +1,14 @@
 import "../Queryable/Queryable.partial";
-import { IObjectType, ValueType, DeleteMode } from "../Common/Type";
+import { IObjectType, ValueType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";
-import { hashCode, isValue, clone } from "../Helper/Util";
+import { hashCode, isValue, clone, isNotNull } from "../Helper/Util";
 import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { RelationEntry } from "./RelationEntry";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
@@ -130,8 +129,12 @@ export class DbSet<T> extends Queryable<T> {
             entity[this.primaryKeys.first().propertyName] = primaryValue as any;
         }
         else {
-            for (const pk of this.primaryKeys) {
-                entity[pk.propertyName] = primaryValue[pk.propertyName] as any;
+            if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.default && !primaryValue[o.propertyName])) {
+                throw new Error(`Primary keys is required`);
+            }
+
+            for (const prop in primaryValue) {
+                entity[prop] = primaryValue[prop] as any;
             }
         }
         this.dbContext.add(entity);
@@ -141,12 +144,33 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary = new Map();
     }
     protected getMapKey(id: ValueType | { [key in keyof T]: T[key] }): string {
+        if (!isNotNull(id))
+            throw new Error("Parameter cannot be null");
         if (isValue(id))
             return id.toString();
-        return this.primaryKeys.select(o => {
+
+        let keyString = "";
+        let useReference = false;
+        for (const o of this.primaryKeys) {
             const val = (id as any)[o.propertyName];
-            return val ? val.toString() : "";
-        }).toArray().join("|");
+            if (!val) {
+                if (o.generation & ColumnGeneration.Insert) {
+                    useReference = true;
+                }
+                else {
+                    throw new Error(`primary key "${o.propertyName}" required`);
+                }
+                break;
+            }
+            else {
+                keyString += val.toString() + "|";
+            }
+        }
+
+        if (useReference) {
+            return id as any;
+        }
+        return keyString.slice(0, - 1);
     }
     public updateEntryKey(entry: EntityEntry<T>) {
         this.dictionary.delete(entry.key);
