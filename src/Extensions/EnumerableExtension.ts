@@ -53,7 +53,7 @@ declare global {
 }
 
 Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
-    return new Enumerable(this);
+    return Enumerable.from(this);
 };
 Array.prototype.toArray = function <T>(this: T[]) {
     return this as T[];
@@ -62,7 +62,7 @@ Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
     return this as TTarget[];
 };
 Array.prototype.asEnumerable = function <T>(this: T[]) {
-    return new Enumerable(this);
+    return Enumerable.from(this);
 };
 Array.prototype.selectMany = function <T>(this: T[], selector: (item: T) => any[] | Enumerable) {
     return this.asEnumerable().selectMany(selector);

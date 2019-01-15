@@ -14,8 +14,10 @@ export class GroupedEnumerable<T, K> extends Enumerable<T> {
     protected set isResultComplete(value){
         this.parent.isResultComplete = value;
     }
+    protected iterator: Iterator<any>;
     constructor(protected readonly parent: GroupByEnumerable<T, K>, public readonly key: K, iterator: Iterator<T>, protected parentResult: GroupedEnumerable<T, K>[]) {
-        super(iterator);
+        super();
+        this.iterator = iterator;
     }
     public addResult(value: T) {
         this.result.push(value);

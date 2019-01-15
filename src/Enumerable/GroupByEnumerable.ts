@@ -6,8 +6,8 @@ export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>>
         super(parent as any);
     }
     public isResultComplete: boolean;
-    protected *generator() {
-        const iterator = this.iterator;
+    protected *generator(): IterableIterator<GroupedEnumerable<T, K>> {
+        const iterator = this.parent[Symbol.iterator]();
         const result = this.result;
 
         let iteratorResult: IteratorResult<T>;
