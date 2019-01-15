@@ -1,7 +1,5 @@
 import { SchemaContext } from "./Entities/SchemaContext";
-import * as sinon from "sinon";
 import * as chai from "chai";
-import * as sinonChai from "sinon-chai";
 import { MockConnection } from "../../../src/Connection/Mock/MockConnection";
 import { Schema } from "./Entities/Schema";
 import { QueryType } from "../../../src/Common/Type";
@@ -18,7 +16,6 @@ import { CheckConstraintMetaData } from "../../../src/MetaData/CheckConstraintMe
 import { UniqueConstraintMetaData } from "../../../src/MetaData/UniqueConstraintMetaData";
 import { mockContext } from "../../../src/Connection/Mock/MockContext";
 
-chai.use(sinonChai);
 const db = new SchemaContext();
 mockContext(db);
 beforeEach(async () => {
@@ -27,13 +24,12 @@ beforeEach(async () => {
 });
 afterEach(() => {
     db.clear();
-    sinon.restore();
     db.closeConnection();
 });
 
 const getConnection = (con: IConnection) => (con instanceof PooledConnection ? con.connection : con) as MockConnection;
 
-describe("SCHEMA BUILDER", () => {
+describe("SCHEMA BUILDER - MSSQL", () => {
     describe("ENTITY", () => {
         it("should create new table correctly", async () => {
             const mockConnection = getConnection(db.connection);
