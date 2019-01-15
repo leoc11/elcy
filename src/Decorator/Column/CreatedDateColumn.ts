@@ -1,8 +1,8 @@
 import { TimeZoneHandling } from "../../Common/Type";
-import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { Column } from "./Column";
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 
 export function CreatedDateColumn(option?: IDateTimeColumnOption): PropertyDecorator;
 export function CreatedDateColumn(name: string, dbtype: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator;
@@ -23,5 +23,5 @@ export function CreatedDateColumn(optionOrName?: IDateTimeColumnOption | string,
         option.default = () => Date.timestamp();
     else
         option.default = () => Date.timestamp(true);
-    return Column<any, Date>(DateColumnMetaData, option);
+    return Column<any, Date>(DateTimeColumnMetaData, option);
 }
