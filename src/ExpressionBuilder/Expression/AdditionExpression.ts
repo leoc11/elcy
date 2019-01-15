@@ -6,7 +6,7 @@ import { MethodCallExpression } from "./MethodCallExpression";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 import { GenericType } from "../../Common/Type";
 
-export class AdditionExpression<T extends number | string> implements IBinaryOperatorExpression<T> {
+export class AdditionExpression<T extends number | string = any> implements IBinaryOperatorExpression<T> {
     public static create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
     public static create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
     public static create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;

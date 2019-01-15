@@ -60,7 +60,7 @@ export class QueryTranslator {
     }
     public resolve(object: any, memberName?: string) {
         let map = this._map.get(object);
-        let item = map ? map[memberName || ""] : undefined;
+        let item = map && (!memberName || map.hasOwnProperty(memberName)) ? map[memberName || ""] : undefined;
         if (item === undefined) {
             for (const fallback of this.fallbacks) {
                 item = fallback.resolve(object, memberName);
