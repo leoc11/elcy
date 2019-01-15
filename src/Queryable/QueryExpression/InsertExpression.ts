@@ -18,7 +18,7 @@ import { EntityState } from "../../Data/EntityState";
 import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
-    public parameters: SqlParameterExpression[];
+    public parameters: SqlParameterExpression[] = [];
     private _columns: IColumnExpression<T>[];
     public get columns(): IColumnExpression<T>[] {
         if (!this._columns && this.entity instanceof EntityExpression) {
@@ -102,6 +102,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                 value: value
             };
             queryParameters.push(paramv);
+            itemExp[col.propertyName] = param;
         }
     }
 

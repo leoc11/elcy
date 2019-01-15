@@ -51,7 +51,11 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public itemExpression: IExpression;
 
     public selects: IColumnExpression[] = [];
+    // TODO: remove this workaround for insertInto Expression
+    public isSelectOnly = false;
     public get projectedColumns(): Iterable<IColumnExpression<T>> {
+        if (this.isSelectOnly) return this.selects;
+
         if (this.distinct) {
             return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
         }
