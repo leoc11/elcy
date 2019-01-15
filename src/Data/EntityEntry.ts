@@ -25,7 +25,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public get metaData(): EntityMetaData<T> {
         return this.dbSet.metaData;
     }
-    public relationMap: { [relationName: string]: Map<string, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
+    public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this.state = EntityState.Unchanged;
 
@@ -108,10 +108,10 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 relationGroup = new Map();
                 this.relationMap[param.relation.fullName] = relationGroup;
             }
-            let relationEntry = relationGroup.get(entry.key);
+            let relationEntry = relationGroup.get(entry);
             if (!relationEntry) {
                 relationEntry = param.relation.isMaster ? new RelationEntry(entry, this, param.relation.reverseRelation) : new RelationEntry(this, entry, param.relation);
-                relationGroup.set(entry.key, relationEntry);
+                relationGroup.set(entry, relationEntry);
                 entry.registerRelation(relationEntry);
             }
             let state = EntityState.Unchanged;
@@ -127,20 +127,35 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         }
     }
     public registerRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
-        const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry).key;
+        const isMaster = relationEntry.masterEntry === this;
+        const key = isMaster ? relationEntry.slaveEntry : relationEntry.masterEntry;
         let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
         if (!relGroup) {
             relGroup = new Map();
             this.relationMap[relationEntry.slaveRelation.fullName] = relGroup;
         }
+
+        const reverseRelation = isMaster ? relationEntry.slaveRelation.reverseRelation : relationEntry.slaveRelation;
+        const reverseEntry = isMaster ? relationEntry.masterEntry : relationEntry.slaveEntry;
+        if (reverseRelation.relationType === "one")
+            reverseEntry.entity[reverseRelation.propertyName] = key.entity;
+        else {
+            let relationVal: any[] = reverseEntry.entity[reverseRelation.propertyName];
+            if (!Array.isArray(relationVal)) {
+                relationVal = [];
+                reverseEntry.entity[reverseRelation.propertyName] = relationVal;
+            }
+            relationVal.add(key.entity);
+        }
+
         relGroup.set(key, relationEntry);
     }
     public getRelation(relationName: string, relatedEntry: EntityEntry) {
         const relGroup = this.relationMap[relationName];
-        return relGroup ? relGroup.get(relatedEntry.key) : null;
+        return relGroup ? relGroup.get(relatedEntry) : null;
     }
     public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
-        const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry).key;
+        const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry);
         let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
         if (relGroup) {
             relGroup.delete(key);
