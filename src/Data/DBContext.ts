@@ -1,5 +1,5 @@
 import "../Extensions/ArrayItemTypeExtension";
-import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, ValueType } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -348,13 +348,15 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     }
     public async executeQueries(queryCommands: IQuery[]): Promise<IQueryResult[]> {
         let results: IQueryResult[] = [];
-        const con = await this.getConnection(queryCommands.any(o => (o.type & QueryType.DQL) && true));
-        if (!con.isOpen) await con.open();
-        for (const query of queryCommands) {
-            const res = await con.executeQuery(query);
-            results = results.concat(res);
+        if (queryCommands.any()) {
+            const con = await this.getConnection(queryCommands.any(o => (o.type & QueryType.DQL) && true));
+            if (!con.isOpen) await con.open();
+            for (const query of queryCommands) {
+                const res = await con.executeQuery(query);
+                results = results.concat(res);
+            }
+            await this.closeConnection(con);
         }
-        await this.closeConnection(con);
         return results;
     }
     public async transaction(transactionBody: () => Promise<void>): Promise<void>;
@@ -531,11 +533,16 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // order by priority
         const orderedEntityAdd = this.entityEntries.add.asEnumerable().orderBy([o => o[0].priority, "ASC"]);
+        orderedEntityAdd.enableCache = true;
+
         const orderedEntityUpdate = this.entityEntries.update.asEnumerable().orderBy([o => o[0].priority, "ASC"]);
         const orderedEntityDelete = this.entityEntries.delete.asEnumerable().orderBy([o => o[0].priority, "DESC"]);
 
         const orderedRelationAdd = this.relationEntries.add.asEnumerable().orderBy([o => o[0].source.priority, "ASC"]);
+        orderedRelationAdd.enableCache = true;
+
         const orderedRelationDelete = this.relationEntries.delete.asEnumerable().orderBy([o => o[0].source.priority, "DESC"]);
+        orderedRelationDelete.enableCache = true;
 
         const visitor = this.queryVisitor;
         visitor.options = options;
@@ -605,14 +612,15 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // execute all in transaction;
         await this.transaction(async () => {
-            const asdQ = identityInsertQueries.union(nonIdentityInsertQueries, true).union(relationAddQueries.asEnumerable().select(o => [o[0].source, o[1]] as [IEntityMetaData, DeferredQuery[]]), true);
+            const allQueries = identityInsertQueries.union(nonIdentityInsertQueries, true).union(relationAddQueries.asEnumerable().select(o => [o[0].source, o[1]] as [IEntityMetaData, DeferredQuery[]]), true);
+            allQueries.enableCache = true;
             // execute all identity insert queries
             let i = 0;
-            identityInsertQueries.each(async ([entityMeta, queries]) => {
+            for (const [entityMeta, queries] of identityInsertQueries) {
                 await this.executeDeferred(queries);
 
                 const values = queries.selectMany(o => o.value.rows).toArray();
-                asdQ.skip(i).selectMany(o => o[1]).each(dQ => {
+                allQueries.skip(i).selectMany(o => o[1]).each(dQ => {
                     dQ.command.parameters.where(p => p.name === entityMeta.name).each(p => {
                         let paramVal = p.execute(new ValueExpressionTransformer(values));
                         dQ.parameters.push({
@@ -623,7 +631,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     });
                 });
                 i++;
-            });
+            }
 
             const queries = nonIdentityInsertQueries.selectMany(o => o[1])
                 .union(updateQueries.asEnumerable().selectMany(o => o[1]), true)
@@ -632,53 +640,55 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 .union(deleteQueries.asEnumerable().selectMany(o => o[1]), true);
 
             await this.executeDeferred(queries);
-        });
 
-        // update all generated value from database. ex: identity, default, etc...
-        insertQueries.asEnumerable().each(([entityMeta, queries]) => {
-            const eventEmitter = new DBEventEmitter(this, entityMeta);
-            const insertedData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
-            const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
-            for (const entityEntry of entityEntries) {
-                const data = insertedData.next().value as T;
-                for (const prop in data) {
-                    entityEntry.entity[prop] = data[prop];
-                }
-                entityEntry.acceptChanges();
-                eventEmitter.emitAfterSaveEvent(entityEntry.entity, { type: "insert" });
-            }
-        });
-
-        // update all relation changes
-        orderedRelationAdd.union(orderedRelationDelete).selectMany(o => o[1])
-            .where(o => o.masterEntry.state !== EntityState.Detached && o.slaveEntry.state !== EntityState.Detached)
-            .each(o => o.acceptChanges());
-
-        // accept update changes.
-        updateQueries.asEnumerable().each(([entityMeta, queries]) => {
-            const eventEmitter = new DBEventEmitter(this, entityMeta);
-            const updateData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
-            const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
-            for (const entityEntry of entityEntries) {
-                const data = updateData.next().value as any;
-                if (data) {
+            // update all generated value from database. ex: identity, default, etc...
+            for (const [entityMeta, queries] of insertQueries) {
+                const eventEmitter = new DBEventEmitter(this, entityMeta);
+                const insertedData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
+                const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
+                for (const entityEntry of entityEntries) {
+                    const data = insertedData.next().value as T;
                     for (const prop in data) {
-                        entityEntry.entity[prop] = data[prop];
+                        const column = entityMeta.columns.first(o => o.columnName === prop);
+                        if (column) entityEntry.entity[prop] = this.queryBuilder.toPropertyValue(data[prop], column);
                     }
+                    entityEntry.acceptChanges();
+                    eventEmitter.emitAfterSaveEvent(entityEntry.entity, { type: "insert" });
                 }
-                entityEntry.acceptChanges();
-                eventEmitter.emitAfterSaveEvent(entityEntry.entity, { type: "update" });
             }
-        });
 
-        // accept delete changes.
-        deleteQueries.asEnumerable().each(([entityMeta]) => {
-            const eventEmitter = new DBEventEmitter(this, entityMeta);
-            const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
-            for (const entry of entityEntries) {
-                entry.acceptChanges();
-                eventEmitter.emitAfterDeleteEvent(entry.entity, { type: deleteMode });
-            }
+            // update all relation changes
+            orderedRelationAdd.union(orderedRelationDelete).selectMany(o => o[1])
+                .where(o => o.masterEntry.state !== EntityState.Detached && o.slaveEntry.state !== EntityState.Detached)
+                .each(o => o.acceptChanges());
+
+            // accept update changes.
+            updateQueries.asEnumerable().each(([entityMeta, queries]) => {
+                const eventEmitter = new DBEventEmitter(this, entityMeta);
+                const updateData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
+                const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
+                for (const entityEntry of entityEntries) {
+                    const data = updateData.next().value as any;
+                    if (data) {
+                        for (const prop in data) {
+                            const column = entityMeta.columns.first(o => o.columnName === prop);
+                            if (column) entityEntry.entity[prop] = this.queryBuilder.toPropertyValue(data[prop], column);
+                        }
+                    }
+                    entityEntry.acceptChanges();
+                    eventEmitter.emitAfterSaveEvent(entityEntry.entity, { type: "update" });
+                }
+            });
+
+            // accept delete changes.
+            deleteQueries.asEnumerable().each(([entityMeta]) => {
+                const eventEmitter = new DBEventEmitter(this, entityMeta);
+                const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
+                for (const entry of entityEntries) {
+                    entry.acceptChanges();
+                    eventEmitter.emitAfterDeleteEvent(entry.entity, { type: deleteMode });
+                }
+            });
         });
 
         const allQueries = insertQueries.asEnumerable().selectMany(o => o[1])
@@ -824,7 +834,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             .union(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
-        let generatedColumns = entityMeta.insertGeneratedColumns.asEnumerable();
+        let generatedColumns = entityMeta.insertGeneratedColumns.union(entityMeta.columns.where(o => !!o.default));
         const hasGeneratedColumn = generatedColumns.any();
         if (hasGeneratedColumn) {
             generatedColumns = entityMeta.primaryKeys.union(generatedColumns);
@@ -1024,7 +1034,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const masterEntityMeta = slaveRelationMetaData.target;
         const relationDataMeta = slaveRelationMetaData.relationData;
         const entityExp = new EntityExpression(slaveEntityMeta.type, visitor.newAlias());
-
 
         const isToOneRelation = slaveRelationMetaData.relationType === "one";
         for (const relationEntry of relationEntryEnumerable) {
