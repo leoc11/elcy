@@ -31,7 +31,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
     constructor(factory: () => IConnectionManager | IDriver<"mssql">) {
         super(factory);
     }
-    protected getInsertQueries2<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
+    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
         let entryEnumerable = Enumerable.from(entries);
         if (!visitor) visitor = this.queryVisitor;
         const results: DeferredQuery[] = [];
@@ -45,11 +45,6 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             .union(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
-        let generatedColumns = entityMetaData.insertGeneratedColumns.asEnumerable();
-        if (generatedColumns.any()) {
-            generatedColumns = entityMetaData.primaryKeys.union(generatedColumns);
-        }
-
         const insertExp = new InsertExpression(entityExp, []);
         const queryParameters: ISqlParameter[] = [];
         entryEnumerable.each(entry => {
@@ -59,7 +54,8 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
         const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQuery[]) => {
             let rows: any[] = [];
             let effectedRows = 0;
-            commands.each((command, index) => {
+            for (let index = 0, len = commands.length; index < len; index++) {
+                const command = commands[index];
                 const result = results[index];
                 if ((command.type & QueryType.DQL) && result.rows) {
                     rows = rows.concat(Enumerable.from(result.rows).toArray());
@@ -67,7 +63,8 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
                 if (command.type & QueryType.DML) {
                     effectedRows += result.effectedRows;
                 }
-            });
+            }
+
             return {
                 rows: rows,
                 effectedRows: effectedRows

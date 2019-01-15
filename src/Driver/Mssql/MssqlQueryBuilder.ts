@@ -9,7 +9,6 @@ import { UUID } from "../../Data/UUID";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { isNotNull } from "../../Helper/Util";
-import { SelectIntoExpression } from "../../Queryable/QueryExpression/SelectIntoExpression";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
 export class MssqlQueryBuilder extends QueryBuilder {
@@ -49,6 +48,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["sql_variant", "Binary"],
         ["table", "Binary"],
         ["rowversion", "RowVersion"],
+        ["timestamp", "RowVersion"],
         ["uniqueidentifier", "Identifier"],
         ["xml", "DataSerialization"]
     ]);
@@ -116,27 +116,13 @@ export class MssqlQueryBuilder extends QueryBuilder {
         else
             return identity;
     }
-    public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
-        let result: IQuery[] = [];
-        const selectExp = this.getSelectQueryString(selectInto, true);
-        const intoString = this.newLine() + `INSERT INTO ${this.entityQuery(selectInto.entity)}${this.newLine()} (${selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",")})`;
-        const index = selectExp.indexOf(this.newLine() + "FROM ");
-        let selectQuery = selectExp.substring(0, index) + intoString + selectExp.substring(index);
-        result.push({
-            query: selectQuery,
-            parameters: this.getParameter(selectInto),
-            type: QueryType.DML
-        });
-
-        return result;
-    }
     public getInsertQuery<T>(insertExp: InsertExpression<T>): IQuery[] {
         if (insertExp.values.length <= 0)
             return [];
 
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
         let output = insertExp.entity.columns.where(o => isNotNull(o.columnMetaData))
-            .where(o => o.columnMetaData!.generation === ColumnGeneration.Insert || o.columnMetaData!.default !== undefined)
+            .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default)
             .select(o => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
         if (output) {
             output = " OUTPUT " + output;
@@ -148,6 +134,8 @@ export class MssqlQueryBuilder extends QueryBuilder {
             parameters: {},
             type: QueryType.DML
         };
+        if (output) queryCommand.type |= QueryType.DQL;
+
         const result: IQuery[] = [queryCommand];
         let parameterKeys: string[] = [];
         let isLimitExceed = false;
@@ -186,12 +174,16 @@ export class MssqlQueryBuilder extends QueryBuilder {
                 result.push(queryCommand);
             }
 
-            queryCommand.query += `${this.newLine(1, true)}(${insertExp.columns.select(o => {
+            queryCommand.query += `${this.newLine(1, false)}(${insertExp.columns.select(o => {
                 const valueExp = itemExp[o.propertyName];
                 return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
             }).toArray().join(",")}),`;
         });
         queryCommand.query = queryCommand.query.slice(0, -1);
+        queryCommand.parameters = parameterKeys.select(o => this.parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
+            acc[item.name] = item.value;
+            return acc;
+        });
 
         return result;
     }
