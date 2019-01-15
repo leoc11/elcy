@@ -8,8 +8,8 @@ import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
  * Register before save event. only for concrete
  * @handler: if named function was passed, then it will override last function with the same name
  */
-export function BeforeSave<T = any>(handler?: (this: T, item?: ISaveEventParam) => boolean): MethodDecorator | ClassDecorator {
-    return (target: object | IObjectType<T>, propertyKey?: string /* | symbol*/, descriptor?: PropertyDescriptor) => {
+export function BeforeSave<T = any>(handler?: (this: T, item?: ISaveEventParam) => boolean): MethodDecorator & ClassDecorator {
+    return (target: object | IObjectType<T>, propertyKey?: keyof T, descriptor?: PropertyDescriptor) => {
         const ctor = (propertyKey ? target.constructor : target) as ObjectConstructor;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, ctor);
         if (!entityMetaData) {
