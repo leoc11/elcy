@@ -7,7 +7,7 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp, isEntityExp, isColumnExp, toHexaString } from "../Helper/Util";
-import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor } from "../Common/Type";
+import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor, ValueType } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
@@ -39,7 +39,7 @@ import { QueryTranslator } from "./QueryTranslator/QueryTranslator";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { SelectIntoExpression } from "../Queryable/QueryExpression/SelectIntoExpression";
+import { InsertIntoExpression } from "../Queryable/QueryExpression/InsertIntoExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
@@ -55,6 +55,7 @@ import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { ISelectRelation } from "../Queryable/Interface/ISelectRelation";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { HavingJoinRelation } from "../Queryable/Interface/HavingJoinRelation";
+import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -114,6 +115,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                     break;
                 case InstantiationExpression:
                     result = this.getInstantiationString(expression as any);
+                    break;
+                case RawSqlExpression:
+                    result = (expression as RawSqlExpression).sqlStatement;
                     break;
                 default:
                     throw new Error(`Expression ${expression.toString()} not supported`);
@@ -440,16 +444,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     protected getColumnString(column: IColumnExpression) {
         if (this.commandExp) {
             if (this.commandExp instanceof SelectExpression) {
-                if (column.entity.alias === this.commandExp.entity.alias || (this.commandExp instanceof GroupByExpression && isEntityExp(this.commandExp.key) && this.commandExp.key.alias === column.entity.alias)) {
-                    if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !this.commandExp.resolvedSelects.contains(column))) {
+                let commandExp = this.commandExp;
+                if (commandExp instanceof InsertIntoExpression)
+                    commandExp = commandExp.select;
+
+                if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
+                    if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !commandExp.resolvedSelects.contains(column))) {
                         return this.getOperandString(column.expression);
                     }
                     return this.enclose(column.entity.alias) + "." + this.enclose(this.isColumnDeclared ? column.dataPropertyName : column.columnName);
                 }
                 else {
-                    let childSelect = Enumerable.from(this.commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
+                    let childSelect = Enumerable.from(commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
                     if (!childSelect) {
-                        childSelect = this.commandExp.parentRelation.parent;
+                        childSelect = commandExp.parentRelation.parent;
                     }
                     return this.enclose(childSelect.entity.alias) + "." + this.enclose(column.dataPropertyName);
                 }
@@ -463,14 +471,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#endregion
 
     //#region Select Insert
-    public getSelectInsertQuery<T>(selectInto: SelectIntoExpression<T>): IQuery[] {
+    public getSelectInsertQuery<T>(insertInto: InsertIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
-        const selectString = this.getSelectQueryString(selectInto.select, true);
-        const columns = selectInto.projectedColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
-        let selectQuery = `INSERT INTO ${this.entityQuery(selectInto.entity)}${this.newLine()} (${columns})` + this.newLine() + selectString;
+        const selectString = this.getSelectQueryString(insertInto.select, true);
+        const columns = insertInto.columns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        let selectQuery = `INSERT INTO ${this.enclose(insertInto.entity.name)} (${columns})` + this.newLine() + selectString;
         result.push({
             query: selectQuery,
-            parameters: this.getParameter(selectInto),
+            parameters: this.getParameter(insertInto),
             type: QueryType.DML
         });
 
@@ -528,7 +536,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 };
                 result.push(queryCommand);
             }
-            queryCommand.query += `${this.newLine(1)}(${insertExp.columns.select(o => {
+            queryCommand.query += `${this.newLine(1, false)}(${insertExp.columns.select(o => {
                 const valueExp = itemExp[o.propertyName];
                 return valueExp ? this.getExpressionString(valueExp) : "DEFAULT";
             }).toArray().join(",")}),`;
@@ -737,17 +745,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#endregion
 
     public mergeQueryCommands(queries: Iterable<IQuery>): IQuery[] {
-        let queryCommand = new BatchedQuery();
-        const result: IQuery[] = [queryCommand];
+        const result: IQuery[] = [];
+        let queryCommand: BatchedQuery = null;
         let parameterKeys: string[] = [];
-        Enumerable.from(queries).each(o => {
-            let isLimitExceed = false;
-            if (this.queryLimit.maxBatchQuery) {
-                isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
+        let isLimitExceed = false;
+        for (const o of queries) {
+            if (queryCommand) {
+                if (this.queryLimit.maxBatchQuery) {
+                    isLimitExceed = queryCommand.queryCount > this.queryLimit.maxBatchQuery;
+                }
+                if (!isLimitExceed && this.queryLimit.maxQueryLength) {
+                    isLimitExceed = queryCommand.query.length + o.query.length > this.queryLimit.maxQueryLength;
+                }
             }
-            if (!isLimitExceed && this.queryLimit.maxQueryLength) {
-                isLimitExceed = queryCommand.query.length + o.query.length > this.queryLimit.maxQueryLength;
-            }
+
             if (!isLimitExceed && this.queryLimit.maxParameters && o.parameters) {
                 const keys = parameterKeys.union(Object.keys(o.parameters)).toArray();
                 isLimitExceed = keys.length > this.queryLimit.maxParameters;
@@ -756,13 +767,14 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 }
             }
 
-            if (isLimitExceed) {
+            if (isLimitExceed || !queryCommand) {
                 parameterKeys = [];
                 queryCommand = new BatchedQuery();
                 result.push(queryCommand);
             }
             queryCommand.add(o);
-        });
+        }
+
         return result;
     }
     protected getParameter<T>(command: IQueryCommandExpression<T>) {
@@ -937,9 +949,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#endregion
 
     //#region Value Convert
-    public toPropertyValue<T>(input: any, column: IColumnExpression<any, T>): T {
+    public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
         let result: any;
-        if (input === null && column.isNullable) {
+        if (input === null && column.nullable) {
             return null;
         }
         switch (column.type as any) {
@@ -949,7 +961,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case Number:
                 result = Number.parseFloat(input);
                 if (!isFinite(result)) {
-                    result = column.columnMetaData && column.columnMetaData.nullable ? null : 0;
+                    result = column.nullable ? null : 0;
                 }
                 break;
             case String:
@@ -957,22 +969,37 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 break;
             case Date: {
                 result = new Date(input);
-                const colMeta = column.columnMetaData;
-                const timeZoneHandling: TimeZoneHandling = colMeta instanceof DateTimeColumnMetaData ? colMeta.timeZoneHandling : "none";
+                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none")
                     result = (result as Date).fromUTCDate();
                 break;
             }
             case TimeSpan: {
                 result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
-                const colMeta = column.columnMetaData;
-                const timeZoneHandling: TimeZoneHandling = colMeta instanceof TimeColumnMetaData ? colMeta.timeZoneHandling : "none";
+                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none")
                     result = result.addMinutes(-(new Date(result.totalMilliSeconds())).getTimezoneOffset());
                 break;
             }
             case UUID: {
                 result = input ? new UUID(input.toString()) : UUID.empty;
+                break;
+            }
+            case ArrayBuffer: {
+                result = input.buffer ? input.buffer : input;
+                break;
+            }
+            case Uint8Array:
+            case Uint16Array:
+            case Uint32Array:
+            case Int8Array:
+            case Int16Array:
+            case Int32Array:
+            case Uint8ClampedArray:
+            case Float32Array:
+            case Float64Array:
+            case DataView: {
+                result = new (column.type as any)(input.buffer ? input.buffer : input);
                 break;
             }
             default:
@@ -995,6 +1022,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none")
                     result = (result as TimeSpan).addMinutes((new Date(result.totalMilliSeconds())).getTimezoneOffset());
+                break;
+            }
+            case ArrayBuffer:
+            case Uint8Array:
+            case Uint16Array:
+            case Uint32Array:
+            case Int8Array:
+            case Int16Array:
+            case Int32Array:
+            case Uint8ClampedArray:
+            case Float32Array:
+            case Float64Array:
+            case DataView: {
+                result = new Uint8Array(input.buffer ? input.buffer : input);
                 break;
             }
         }

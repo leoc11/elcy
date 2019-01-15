@@ -6,9 +6,14 @@ import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { IIndexMetaData } from "../Interface/IIndexMetaData";
+import { IConstraintMetaData } from "../Interface/IConstraintMetaData";
 
 export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataMetaData<TType, TSource, TTarget> {
     public inheritance: InheritanceMetaData<TType>;
+    public relations: IRelationMetaData<TType, any>[] = [];
+    public indices: IIndexMetaData<TType>[] = [];
+    public constraints: IConstraintMetaData<TType>[] = [];
     public get source() {
         return this.sourceRelationMeta.source;
     }
@@ -48,6 +53,8 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         targetRelation.relationData = this;
         sourceRelation.isMaster = targetRelation.isMaster = true;
 
+        this.sourceRelationMaps = new Map();
+        this.targetRelationMaps = new Map();
         this.sourceRelationMeta.completeRelation(this.targetRelationMeta);
 
         const isManyToMany = (this.sourceRelationMeta.relationType === "many") && (this.targetRelationMeta.relationType === "many");

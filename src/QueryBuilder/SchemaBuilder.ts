@@ -328,7 +328,7 @@ export abstract class SchemaBuilder {
         return Object.keys(result).select(o => result[o]).toArray();
     }
     public createTable<TE>(entityMetaData: IEntityMetaData<TE>, name?: string): IQuery[] {
-        const columnDefinitions = entityMetaData.columns.select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
+        const columnDefinitions = entityMetaData.columns.where(o => !!o.columnName).select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
         const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.queryBuilder.newLine(1, false));
         let tableName = this.queryBuilder.entityName(entityMetaData);
         if (name) {
@@ -417,11 +417,15 @@ export abstract class SchemaBuilder {
         }];
     }
     public addForeignKey(relationMeta: IRelationMetaData): IQuery[] {
-        const query = `ALTER TABLE ${this.queryBuilder.entityName(relationMeta.source)} ADD ${this.foreignKeyDeclaration(relationMeta)}`;
-        return [{
-            query,
-            type: QueryType.DDL
-        }];
+        const result: IQuery[] = [];
+        if (relationMeta.reverseRelation) {
+            result.push({
+                query: `ALTER TABLE ${this.queryBuilder.entityName(relationMeta.source)} ADD ${this.foreignKeyDeclaration(relationMeta)}`,
+                type: QueryType.DDL
+            });
+        }
+
+        return result;
     }
     public addConstraint(constraintMeta: IConstraintMetaData): IQuery[] {
         let query = `ALTER TABLE ${this.queryBuilder.entityName(constraintMeta.entity)}` +
@@ -472,7 +476,7 @@ export abstract class SchemaBuilder {
     protected dropAllOldRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
         const isRelationData = schema instanceof RelationDataMetaData || oldSchema instanceof RelationDataMetaData;
         if (isRelationData) {
-            
+
         }
         else {
 
@@ -484,7 +488,7 @@ export abstract class SchemaBuilder {
     }
     protected addAllNewRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
         const oldRelations = oldSchema.relations.where(o => !o.isMaster).toArray();
-        return schema.relations.where(o => !o.isMaster)
+        return schema.relations.where(o => !o.isMaster && !!o.reverseRelation)
             .where(o => !oldRelations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
             .selectMany(o => this.addForeignKey(o)).toArray();
     }
@@ -579,13 +583,11 @@ export abstract class SchemaBuilder {
         const entitySchema = oldColumnSchema.entity;
         // If auto increment, column must be not nullable.
         const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as IntegerColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement);
-        let isDefaultChange = (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
         const isIdentityChange = !!(columnSchema as any as IntegerColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement;
-        const isColumnChange = isNullableChange || columnSchema.columnType !== columnSchema.columnType
-            || (columnSchema.collation && columnSchema.collation !== columnSchema.collation)
-            || ((columnSchema as any as IntegerColumnMetaData).length !== undefined && (oldColumnSchema as any as IntegerColumnMetaData).length !== undefined && (columnSchema as any as IntegerColumnMetaData).length !== (oldColumnSchema as any as IntegerColumnMetaData).length)
-            || ((columnSchema as DecimalColumnMetaData).precision !== undefined && (oldColumnSchema as DecimalColumnMetaData).precision !== undefined && (columnSchema as DecimalColumnMetaData).precision !== (oldColumnSchema as DecimalColumnMetaData).precision)
-            || ((columnSchema as DecimalColumnMetaData).scale !== undefined && (oldColumnSchema as DecimalColumnMetaData).scale !== undefined && (columnSchema as DecimalColumnMetaData).scale !== (oldColumnSchema as DecimalColumnMetaData).scale);
+        const isColumnChange = isNullableChange
+            || this.getColumnType(columnSchema) !== this.getColumnType(oldColumnSchema)
+            || (columnSchema.collation && columnSchema.collation !== oldColumnSchema.collation);
+        let isDefaultChange = isColumnChange || (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
 
         if (isDefaultChange && oldColumnSchema.default) {
             result = result.concat(this.dropDefaultContraint(oldColumnSchema));

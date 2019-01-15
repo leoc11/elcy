@@ -525,7 +525,6 @@ export class QueryVisitor {
                     this.scopeParameters.remove(selectorFn.params[0].name);
 
                     if (selectExp !== selectOperand.getVisitParam()) {
-                        const type = expression.params.length > 1 ? expression.params[0] as ValueExpression<GenericType> : null;
                         if (selectOperand instanceof GroupByExpression) {
                             selectOperand.isAggregate = true;
                         }
@@ -565,9 +564,6 @@ export class QueryVisitor {
                                 else {
                                     // return child select and add current select expression as a join relation.
                                     selectOperand = reverseJoin(childExp, selectOperand, cloneObjectOperand);
-                                }
-                                if (type) {
-                                    selectOperand.itemExpression.type = type.value;
                                 }
                             }
                             else {
@@ -624,13 +620,15 @@ export class QueryVisitor {
                                 throw new Error(`Queryable<${objectOperand.itemType.name}>.selectMany required selector with array or queryable or enumerable return value.`);
                             }
                             selectOperand = reverseJoin(selectExp, selectOperand, cloneObjectOperand);
-                            if (type) {
-                                selectOperand.itemExpression.type = type.value;
-                            }
                         }
 
                         if (!selectOperand.isSubSelect)
                             param.selectExpression = selectOperand;
+                    }
+
+                    const type = expression.params.length > 1 ? expression.params[0] as ValueExpression<GenericType> : null;
+                    if (type) {
+                        selectOperand.itemExpression.type = type.value;
                     }
 
                     return selectOperand;

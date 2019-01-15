@@ -8,7 +8,6 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { IntegerColumnMetaData } from "./IntegerColumnMetaData";
 import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { IDeleteEventParam } from "./Interface/IDeleteEventParam";
-import { isNotNull } from "../Helper/Util";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
@@ -82,11 +81,22 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
                     rel.reverseRelation.target = this;
             }
         }
+
+        if (typeof entityMeta.beforeDelete !== "undefined")
+            this.beforeDelete = entityMeta.beforeDelete;
+        if (typeof entityMeta.beforeSave !== "undefined")
+            this.beforeSave = entityMeta.beforeSave;
+        if (typeof entityMeta.afterLoad !== "undefined")
+            this.afterLoad = entityMeta.afterLoad;
+        if (typeof entityMeta.afterSave !== "undefined")
+            this.afterSave = entityMeta.afterSave;
+        if (typeof entityMeta.afterDelete !== "undefined")
+            this.afterDelete = entityMeta.afterDelete;
     }
 
     public get insertGeneratedColumns() {
         return this.columns.where(o => {
-            return !isNotNull(o.default) || (o.generation & ColumnGeneration.Insert) as any;
+            return (o.generation & ColumnGeneration.Insert) as any;
         }).toArray();
     }
     public get updateGeneratedColumns() {

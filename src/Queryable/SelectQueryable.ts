@@ -7,6 +7,8 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
@@ -28,7 +30,9 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     }
     public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
-        const methodExpression = new MethodCallExpression(objectOperand, "select", [this.selector]);
+        const params: IExpression[] = [this.selector];
+        if (this.type !== Object) params.unshift(new ValueExpression(this.type));
+        const methodExpression = new MethodCallExpression(objectOperand, "select", params);
         const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;

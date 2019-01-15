@@ -20,6 +20,7 @@ export function RelationshipData<M, S = any, T = any>(optionsOrSourceType: IRela
     else {
         relationOption = {
             relationName: relationName,
+            name,
             sourceRelationKeys: sourceRelationKeys.select(o => o instanceof Function ? FunctionHelper.propertyName(o) : o).toArray(),
             targetRelationKeys: targetRelationKeys.select(o => o instanceof Function ? FunctionHelper.propertyName(o) : o).toArray()
         };

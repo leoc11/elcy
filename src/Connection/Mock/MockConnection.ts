@@ -3,7 +3,7 @@ import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
 import { IQueryResult } from "../../QueryBuilder/IQueryResult";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
-import { QueryType, IsolationLevel } from "../../Common/Type";
+import { QueryType, IsolationLevel, ColumnGeneration } from "../../Common/Type";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
@@ -21,6 +21,9 @@ import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlPa
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
+import { isNotNull } from "../../Helper/Util";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { InsertIntoExpression } from "../../Queryable/QueryExpression/InsertIntoExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -30,9 +33,16 @@ let SelectExpressionType: any;
 export class MockConnection implements IConnection {
     public deferredQueries: Iterable<DeferredQuery>;
     private _results: IQueryResult[];
+    private _generatedResults: IQueryResult[];
+    public setQueries(deferredQueries: Iterable<DeferredQuery>) {
+        this.deferredQueries = deferredQueries;
+        this._generatedResults = null;
+    }
     public get results() {
         if (!this._results) {
-            this._results = this.generateQueryResult();
+            if (!this._generatedResults)
+                this._generatedResults = this.generateQueryResult();
+            return this._generatedResults;
         }
 
         return this._results;
@@ -44,7 +54,29 @@ export class MockConnection implements IConnection {
         return Enumerable.from(this.deferredQueries)
             .selectMany(o => {
                 const command = o.command;
-                if (command instanceof SelectExpressionType) {
+                if (command instanceof InsertIntoExpression) {
+                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
+                    let i = 0;
+                    return o.queries.select(query => {
+                        const result: IQueryResult = {
+                            effectedRows: 1
+                        };
+                        i++;
+                        if (query.type & QueryType.DML) {
+                            if (i === dmlCount) {
+                                result.effectedRows = Math.floor(Math.random() * 100 + 1);
+                            }
+                            else {
+                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                if (Array.isArray(arrayParameter.value)) {
+                                    result.effectedRows = arrayParameter.value.length;
+                                }
+                            }
+                        }
+                        return result;
+                    });
+                }
+                else if (command instanceof SelectExpressionType) {
                     const selects = this.flattenSelectExpression(command as any);
                     const map: Map<SelectExpression, any[]> = new Map();
                     for (const select of selects) {
@@ -67,8 +99,7 @@ export class MockConnection implements IConnection {
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
                                     for (const o of select.projectedColumns) {
-                                        const columnName = o.alias || o.columnName;
-                                        item[columnName] = this.generateValue(o);
+                                        item[o.dataPropertyName] = this.generateValue(o);
                                     }
                                     rows.push(item);
 
@@ -84,8 +115,7 @@ export class MockConnection implements IConnection {
                             for (let i = 0; i < numberOfRecord; i++) {
                                 const item = {} as any;
                                 for (const o of select.projectedColumns) {
-                                    const columnName = o.alias || o.columnName;
-                                    item[columnName] = this.generateValue(o);
+                                    item[o.dataPropertyName] = this.generateValue(o);
                                 }
                                 rows.push(item);
                             }
@@ -113,14 +143,28 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof InsertExpression) {
-                    const dmlCount = o.queries.where(o => o.type === QueryType.DML).count();
+                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
                     let i = 0;
-                    o.queries.select(query => {
+                    const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMetaData))
+                        .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default).toArray();
+
+                    return o.queries.select(query => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type === QueryType.DML) {
-                            i++;
+                        i++;
+                        if (query.type & QueryType.DQL) {
+                            const rows = command.values.select(o => {
+                                const val: { [key in any]: any } = {};
+                                for (const col of generatedColumns) {
+                                    val[col.dataPropertyName] = this.generateValue(col);
+                                }
+                                return val;
+                            }).toArray();
+                            result.rows = rows;
+                            result.effectedRows = rows.length;
+                        }
+                        else if (query.type & QueryType.DML) {
                             if (i === dmlCount) {
                                 result.effectedRows = command.values.length;
                             }
@@ -135,13 +179,13 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpdateExpression) {
-                    const dmlCount = o.queries.where(o => o.type === QueryType.DML).count();
+                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
                     let i = 0;
-                    o.queries.select(query => {
+                    return o.queries.select(query => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type === QueryType.DML) {
+                        if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
                                 const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
@@ -154,13 +198,13 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof DeleteExpression) {
-                    const dmlCount = o.queries.where(o => o.type === QueryType.DML).count();
+                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
                     let i = 0;
-                    o.queries.select(query => {
+                    return o.queries.select(query => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type === QueryType.DML) {
+                        if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
                                 const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
@@ -173,13 +217,13 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpsertExpression) {
-                    const dmlCount = o.queries.where(o => o.type === QueryType.DML).count();
+                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
                     let i = 0;
-                    o.queries.select(query => {
+                    return o.queries.select(query => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type === QueryType.DML) {
+                        if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
                                 const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
@@ -233,11 +277,21 @@ export class MockConnection implements IConnection {
         return results;
     }
     public generateValue(column: IColumnExpression) {
+        if (column.columnMetaData) {
+            const columnMeta = column.columnMetaData;
+            if (columnMeta.default)
+                return columnMeta.default.body.execute();
+        }
+
         switch (column.type) {
             case UUID:
                 return UUID.new().toString();
             case Number:
-                return Number((Math.random() * 10000 + 1).toFixed(2));
+                let fix = 2;
+                if (column.columnMetaData && column.columnMetaData instanceof IntegerColumnMetaData)
+                    fix = 0;
+
+                return Number((Math.random() * 10000 + 1).toFixed(fix));
             case String: {
                 let result = "";
                 let number = Math.random() * 100 + 1;
@@ -264,11 +318,30 @@ export class MockConnection implements IConnection {
             case Boolean: {
                 return Boolean(Math.round(Math.random()));
             }
+            case ArrayBuffer:
+            case Uint8Array:
+            case Uint16Array:
+            case Uint32Array:
+            case Int8Array:
+            case Int16Array:
+            case Int32Array:
+            case Uint8ClampedArray:
+            case Float32Array:
+            case Float64Array:
+            case DataView: {
+                const size = (Math.random() * 16 + 1);
+                const values = Array(size);
+                for (let i = 0; i < size; i++) {
+                    values[0] = Math.floor(Math.random() * 256);
+                }
+                const result = new Uint8Array(values);
+                return result;
+            }
         }
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        console.log(JSON.stringify(command.query));
+        console.log(JSON.stringify(command));
         const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 1;
         return this.results.splice(0, count);
@@ -277,8 +350,11 @@ export class MockConnection implements IConnection {
     //#region Abstract Member
     public isolationLevel: IsolationLevel;
     public database: string;
-    public inTransaction: boolean;
+    public get inTransaction(): boolean {
+        return this._transactionCount > 0;
+    }
     public isOpen: boolean;
+    private _transactionCount: number = 0;
     constructor(database?: string) {
         this.database = database || "database";
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
@@ -293,12 +369,15 @@ export class MockConnection implements IConnection {
         return Promise.resolve();
     }
     public startTransaction(): Promise<void> {
+        this._transactionCount++;
         return Promise.resolve();
     }
     public commitTransaction(): Promise<void> {
+        this._transactionCount--;
         return Promise.resolve();
     }
     public rollbackTransaction(): Promise<void> {
+        this._transactionCount--;
         return Promise.resolve();
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {

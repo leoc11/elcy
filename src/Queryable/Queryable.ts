@@ -1,6 +1,6 @@
 import { GenericType, DeleteMode, QueryType, ValueType, IObjectType } from "../Common/Type";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { SelectIntoExpression } from "./QueryExpression/SelectIntoExpression";
+import { InsertIntoExpression } from "./QueryExpression/InsertIntoExpression";
 import { DbContext } from "../Data/DBContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
@@ -188,7 +188,7 @@ export abstract class Queryable<T = any> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => {
                 let i = 0;
-                result = result.where(o => (query.queries[i++].type & QueryType.DQL) && true).toArray();
+                result = result.where(() => query.queries[i++].type === QueryType.DQL).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext);
             }, this.queryOption);
         this.dbContext.deferredQueries.add(query);
@@ -699,7 +699,7 @@ export abstract class Queryable<T = any> {
                     visitor.scopeParameters.remove(funcExp.params[0].name);
                 }
                 else {
-                    setterExp[prop] = new ValueExpression(val);
+                    setterExp[prop] = new ValueExpression(val as T[keyof T]);
                 }
             }
 
@@ -822,7 +822,7 @@ export abstract class Queryable<T = any> {
             selectExp.parameters = visitor.sqlParameters.asEnumerable().select(o => o[1]).toArray();
 
             const entityExp = new EntityExpression(targetSet.type, visitor.newAlias());
-            const commandQuery = new SelectIntoExpression(entityExp, selectExp);
+            const commandQuery = new InsertIntoExpression(entityExp, selectExp);
             if (Diagnostic.enabled) Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
 
             queryCache = {

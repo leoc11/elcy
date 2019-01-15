@@ -19,6 +19,7 @@ import { IGroupArray } from "../Interface/IGroupArray";
 import { DbSet } from "../../Data/DbSet";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 interface IResolvedRelationData<T = any, TData = any> {
     data?: IResolvedRelationData<TData>;
@@ -26,9 +27,10 @@ interface IResolvedRelationData<T = any, TData = any> {
     entry?: EntityEntry<T>;
 }
 interface IResolveData<T = any> {
-    primaryColumns?: IColumnExpression<T>[];
+    primaryColumns?: Iterable<IColumnExpression<T>>;
     columns?: IColumnExpression<T>[];
     isValueType: boolean;
+    dbSet?: DbSet<T>;
     column?: IColumnExpression<T>;
     reverseRelationMap?: Map<any, any>;
 }
@@ -53,36 +55,37 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: QueryBuilder) {
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
-        return this.parseData(queryResults, dbContext, new Date());
+        return this.parseData(queryResults, dbContext);
     }
-    private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext, loadTime: Date): T[] {
+    private parseData<T>(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         const results: T[] = [];
         const resolveMap: IResolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
         const loops = this.orderedSelects;
 
         for (let i = 0, len = loops.length; i < len; i++) {
             const queryResult = queryResults[i];
-            let select = loops[i];
-            const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
-            resolveMap.set(select, itemMap);
+            if (!queryResult.rows) continue;
 
             const data = Enumerable.from(queryResult.rows);
             if (!data.any()) continue;
+
+            let select = loops[i];
+            const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
+            resolveMap.set(select, itemMap);
 
             let dbEventEmitter: DBEventEmitter<T> = null;
             const isGroup = select instanceof GroupByExpression && !select.isAggregate;
             if (isGroup) {
                 select = (select as GroupByExpression).itemSelect;
             }
-            const dbSet = dbContext.set<T>(select.itemType as IObjectType);
-            if (dbSet) {
-                dbEventEmitter = new DBEventEmitter<T>(dbSet.metaData as IDBEventListener<T>, dbContext);
-            }
 
-            let resolveCache = this.getResolveData(select);
+            let resolveCache = this.getResolveData(select, dbContext);
+            if (resolveCache.dbSet) {
+                dbEventEmitter = new DBEventEmitter<T>(resolveCache.dbSet.metaData as IDBEventListener<T>, dbContext);
+            }
             const isResult = i === len - 1;
             for (const row of queryResult.rows) {
-                const entity = this.parseEntity(select, row, resolveCache, resolveMap, itemMap, dbContext, dbSet, dbEventEmitter);
+                const entity = this.parseEntity(select, row, resolveCache, resolveMap, dbContext, itemMap, dbEventEmitter);
 
                 if (isResult) {
                     if (isGroup) {
@@ -97,17 +100,22 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         return results;
     }
-    private getResolveData<T>(select: SelectExpression<T>) {
+    private getResolveData<T>(select: SelectExpression<T>, dbContext: DbContext) {
         let resolveCache = this._cache.get(select);
         if (!resolveCache) {
             resolveCache = {
+                dbSet: dbContext.set<T>(select.itemType as IObjectType<T>),
                 isValueType: isValueType(select.itemType)
             };
             if (resolveCache.isValueType) {
                 resolveCache.column = select.selects.first();
             }
             else {
-                const primaryColumns = select.entity.primaryColumns;
+                let primaryColumns = select.entity.primaryColumns.where(o => o.columnName !== "__index");
+                if (resolveCache.dbSet) {
+                    primaryColumns = primaryColumns.union(select.resolvedSelects.where(o => resolveCache.dbSet.primaryKeys.any(c => c.propertyName === o.propertyName)));
+                }
+                primaryColumns.enableCache = true;
                 resolveCache.primaryColumns = primaryColumns;
                 resolveCache.columns = select.selects;
 
@@ -130,16 +138,16 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         return resolveCache;
     }
-    private parseEntity<T>(select: SelectExpression<T>, row: any, resolveCache: IResolveData<T>, resolveMap: IResolveMap, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbContext?: DbContext, dbSet?: DbSet<T>, dbEventEmitter?: DBEventEmitter<T>) {
+    private parseEntity<T>(select: SelectExpression<T>, row: any, resolveCache: IResolveData<T>, resolveMap: IResolveMap, dbContext?: DbContext, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbEventEmitter?: DBEventEmitter<T>) {
         let entity: any;
         let entry: EntityEntry<T>;
 
         const parentRelation = select.parentRelation as IncludeRelation;
         const reverseRelationMap = resolveCache.reverseRelationMap;
+        const dbSet = resolveCache.dbSet;
         if (resolveCache.isValueType) {
             const column = resolveCache.column;
-            const columnName = column.alias ? column.alias : column.columnName;
-            entity = this.queryBuilder.toPropertyValue(row[columnName], column);
+            entity = this.getColumnValue(column, row, dbContext);
         }
         else {
             entity = new (select.itemType as IObjectType)();
@@ -165,8 +173,8 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         };
         for (const include of select.includes) {
             if (include.isEmbedded) {
-                const childResolveCache = this.getResolveData(include.child);
-                const child = this.parseEntity(include.child, row, childResolveCache, resolveMap);
+                const childResolveCache = this.getResolveData(include.child, dbContext);
+                const child = this.parseEntity(include.child, row, childResolveCache, resolveMap, dbContext);
                 entity[include.name] = child;
             }
             else {
@@ -269,8 +277,8 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 if (groupExp.groupByExp.keyRelation) {
                     const keyRel = groupExp.groupByExp.keyRelation;
                     if (keyRel.isEmbedded) {
-                        const childResolveCache = this.getResolveData(keyRel.child);
-                        const child = this.parseEntity(keyRel.child, row, childResolveCache, resolveMap);
+                        const childResolveCache = this.getResolveData(keyRel.child, dbContext);
+                        const child = this.parseEntity(keyRel.child, row, childResolveCache, resolveMap, dbContext);
                         groupEntity[keyRel.name] = child;
                     }
                     else {
@@ -321,7 +329,8 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
     }
     private getColumnValue<T>(column: IColumnExpression<T>, data: any, dbContext?: DbContext) {
-        return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], column);
+        const columnMeta: IColumnMetaData = column.columnMetaData ? column.columnMetaData : { type: column.type, nullable: column.isNullable };
+        return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta);
     }
     private setColumnValue<T>(entryOrEntity: EntityEntry<T> | T, column: IColumnExpression<T>, data: any, dbContext?: DbContext) {
         const value = this.getColumnValue(column, data, dbContext);

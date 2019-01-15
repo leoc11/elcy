@@ -27,7 +27,7 @@ export const mockContext = function (context: DbContext & IMockedContext) {
         if (!deferredQueries) deferredQueries = context.deferredQueries.splice(0);
         this.connection = await this.getConnection();
         const mockConnection: MockConnection = this.connection instanceof PooledConnection ? this.connection.connection as any : this.connection as any;
-        mockConnection.deferredQueries = deferredQueries;
+        mockConnection.setQueries(deferredQueries);
         return context.oriExecuteDeferred.apply(this, [deferredQueries]);
     };
 };
