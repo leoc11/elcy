@@ -3,15 +3,13 @@ import { IObjectType, ValueType, DeleteMode, ColumnGeneration } from "../Common/
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";
 import { hashCode, isValue, clone, isNotNull } from "../Helper/Util";
-import { entityMetaKey, relationMetaKey, columnMetaKey } from "../Decorator/DecoratorKey";
+import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { RelationMetaData } from "../MetaData/Relation/RelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
 import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
@@ -69,52 +67,27 @@ export class DbSet<T> extends Queryable<T> {
         return entity;
     }
     public findLocal(id: ValueType | { [key in keyof T]: T[key] & ValueType }): T {
-        const entry = this.entry(id);
+        let key = this.getMapKey(id);
+        const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
-    public entry(entity: T | ValueType | { [key in keyof T]: T[key] & ValueType }) {
+    public entry(entity: T | { [key in keyof T]: T[key] & ValueType }) {
         const key = this.getMapKey(entity);
-        return this.dictionary.get(key);
-    }
-    public attach(entity: T): EntityEntry<T> {
-        const key = this.getMapKey(entity);
-        let entry = this.entry(key) as EntityEntry<T>;
+        let entry = this.dictionary.get(key);
         if (entry) {
-            Object.keys(entity).union(Object.keys(entry.dbSet.type.prototype)).each((prop: keyof T) => {
-                let value = entity[prop];
-                if (value === undefined)
-                    return;
-                const relationMeta: RelationMetaData<T, any> = Reflect.getOwnMetadata(relationMetaKey, this.type, prop);
-                const childSet = relationMeta ? this.dbContext.set(relationMeta.target.type) : undefined;
-                if (childSet) {
-                    if (relationMeta.relationType === "one") {
-                        const childEntry = childSet.attach(value);
-                        entity[prop] = value = childEntry.entity;
-                    }
-                    else if (Array.isArray(value)) {
-                        entity[prop] = value = value.select((val: any) => {
-                            const childEntry = childSet.attach(val);
-                            return childEntry.entity;
-                        }).toArray() as any;
-                    }
-                }
-                else {
-                    const columnMeta: IColumnMetaData<T, any> = Reflect.getOwnMetadata(columnMetaKey, this.type, prop);
-                    if (columnMeta instanceof EmbeddedRelationMetaData) {
-                        const childSet = this.dbContext.set(columnMeta.target.type);
-                        if (childSet) {
-                            // TODO
-                            const childEntry = childSet.attach(value);
-                            entity[prop] = value = childEntry.entity;
-                        }
-                    }
-                    else if (!entry.isPropertyModified(prop) || entry.getOriginalValue(prop) !== value)
-                        entry.entity[prop] = value;
-                }
-            });
+            if (entry.entity !== entity) {
+                entry.setOriginalValues(entity);
+            }
         }
         else {
-            entry = new EntityEntry(this, entity, key);
+            if (!(entity instanceof this.type)) {
+                const entityType = new this.type();
+                entry = new EntityEntry<T>(this, entityType, key);
+                entry.setOriginalValues(entity);
+            }
+            else {
+                entry = new EntityEntry<T>(this, entity, key);
+            }
             this.dictionary.set(key, entry);
         }
         return entry;

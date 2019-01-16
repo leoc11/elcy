@@ -20,6 +20,7 @@ import { DbSet } from "../../Data/DbSet";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { EntityState } from "../../Data/EntityState";
 
 interface IResolvedRelationData<T = any, TData = any> {
     data?: IResolvedRelationData<TData>;
@@ -158,8 +159,12 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 }
 
                 entry = dbSet.entry(entity);
-                if (entry) entity = entry.entity;
-                else entry = dbSet.attach(entity);
+                if (entry.state === EntityState.Detached) {
+                    entry.state = EntityState.Unchanged;
+                }
+                else {
+                    entity = entry.entity;
+                }
             }
 
             for (const column of resolveCache.columns) {

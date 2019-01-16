@@ -1,5 +1,5 @@
 import "../Extensions/ArrayItemTypeExtension";
-import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, ValueType } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
@@ -149,13 +149,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         return result;
     }
-    public attach<T>(entity: T) {
-        const set = this.set<T>(entity.constructor as any);
-        if (set) {
-            return set.attach(entity);
-        }
-        return undefined;
-    }
     public entry<T>(entity: T) {
         const set = this.set<T>(entity.constructor as any);
         if (set) {
@@ -163,15 +156,47 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         return undefined;
     }
+    public attach<T>(entity: T, all = false) {
+        const entry = this.entry(entity);
+        if (entry && entry.state === EntityState.Detached) {
+            entry.state = EntityState.Unchanged;
+            if (all) {
+                for (const relation of entry.metaData.relations) {
+                    const relEntity = entity[relation.propertyName];
+                    if (relEntity) {
+                        if (relation.relationType === "one") {
+                            const relEntry = this.attach(relEntity, true);
+                            if (relEntry) entity[relation.propertyName] = relEntry.entity;
+                        }
+                        else if (Array.isArray(relEntity)) {
+                            entity[relation.propertyName] = relEntity.select((itemEntity: any) => {
+                                const relEntry = this.attach(itemEntity, true);
+                                return relEntry ? relEntry.entity : itemEntity;
+                            }).toArray() as T[keyof T] & any[];
+                        }
+                    }
+                }
+                for (const relation of entry.metaData.embeds) {
+                    const relEntity = entity[relation.propertyName];
+                    if (relEntity) {
+                        const relEntry = this.attach(relEntity, true);
+                        if (relEntry) entity[relation.propertyName] = relEntry.entity;
+                    }
+                }
+            }
+        }
+
+        return entry;
+    }
     public add<T>(entity: T) {
-        const entry = this.attach(entity);
+        const entry = this.entry(entity);
         if (entry) {
             entry.state = EntityState.Added;
         }
         return entry;
     }
     public delete<T>(entity: T) {
-        const entry = this.attach(entity);
+        const entry = this.entry(entity);
         if (entry) {
             entry.state = EntityState.Deleted;
         }

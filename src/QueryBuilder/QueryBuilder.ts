@@ -7,7 +7,7 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UnionExpression } from "../Queryable/QueryExpression/UnionExpression";
 import { isNotNull, toDateTimeString, toTimeString, mapReplaceExp, isEntityExp, isColumnExp, toHexaString } from "../Helper/Util";
-import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor, ValueType } from "../Common/Type";
+import { GenericType, QueryType, DeleteMode, TimeZoneHandling, NullConstructor } from "../Common/Type";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../Common/ColumnType";
 import { IColumnTypeDefaults } from "../Common/IColumnTypeDefaults";
 import { entityMetaKey } from "../Decorator/DecoratorKey";

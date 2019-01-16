@@ -6,7 +6,6 @@ import { IObjectType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { SelectExpression } from "./SelectExpression";
 import { EntityExpression } from "./EntityExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryCommandExpression } from "./IQueryCommandExpression";
 import { IColumnExpression } from "./IColumnExpression";
 export class InsertIntoExpression<T = any> implements IQueryCommandExpression<void> {

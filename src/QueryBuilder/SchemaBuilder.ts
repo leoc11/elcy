@@ -476,10 +476,9 @@ export abstract class SchemaBuilder {
     protected dropAllOldRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
         const isRelationData = schema instanceof RelationDataMetaData || oldSchema instanceof RelationDataMetaData;
         if (isRelationData) {
-
+            // TODO
         }
         else {
-
             const relations = schema.relations.where(o => !o.isMaster).toArray();
             return oldSchema.relations.where(o => !o.isMaster)
                 .where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))

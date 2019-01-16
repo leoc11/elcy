@@ -3,7 +3,6 @@ import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interf
 import { EntityState } from "./EntityState";
 import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
@@ -13,6 +12,7 @@ import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 
 let embeddedEntityEntry: typeof EmbeddedEntityEntry;
 (async () => {
@@ -89,12 +89,12 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         }
     }
     public enableTrackChanges = true;
-    public get metaData(): EntityMetaData<T> {
+    public get metaData(): IEntityMetaData<T> {
         return this.dbSet.metaData;
     }
     public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
-        this._state = EntityState.Unchanged;
+        this._state = EntityState.Detached;
 
         let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = (entity as any)[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
