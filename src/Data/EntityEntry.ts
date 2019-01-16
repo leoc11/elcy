@@ -20,14 +20,81 @@ let embeddedEntityEntry: typeof EmbeddedEntityEntry;
 })();
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
-    public state: EntityState;
+    private _state: EntityState;
+    public get state() {
+        return this._state;
+    }
+    public set state(value) {
+        if (this._state !== value) {
+            const dbContext = this.dbSet.dbContext;
+            switch (this.state) {
+                case EntityState.Added: {
+                    const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
+                    if (typedAddEntries)
+                        typedAddEntries.remove(this);
+                    if (value === EntityState.Deleted)
+                        value = EntityState.Detached;
+                    break;
+                }
+                case EntityState.Deleted: {
+                    const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
+                    if (typedEntries)
+                        typedEntries.remove(this);
+                    if (value === EntityState.Added)
+                        value = EntityState.Detached;
+                    break;
+                }
+                case EntityState.Modified: {
+                    const typedEntries = dbContext.entityEntries.update.get(this.metaData);
+                    if (typedEntries)
+                        typedEntries.remove(this);
+                    break;
+                }
+                case EntityState.Detached: {
+                    if (value === EntityState.Deleted)
+                        value = EntityState.Detached;
+                    break;
+                }
+            }
+            switch (value) {
+                case EntityState.Added: {
+                    let typedEntries = dbContext.entityEntries.add.get(this.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        dbContext.entityEntries.add.set(this.metaData, typedEntries);
+                    }
+                    typedEntries.push(this);
+                }
+                    break;
+                case EntityState.Deleted: {
+                    let typedEntries = dbContext.entityEntries.delete.get(this.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        dbContext.entityEntries.delete.set(this.metaData, typedEntries);
+                    }
+                    typedEntries.push(this);
+                    break;
+                }
+                case EntityState.Modified: {
+                    let typedEntries = dbContext.entityEntries.update.get(this.metaData);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        dbContext.entityEntries.update.set(this.metaData, typedEntries);
+                    }
+                    typedEntries.push(this);
+                    break;
+                }
+            }
+            this._state = value;
+        }
+    }
     public enableTrackChanges = true;
     public get metaData(): EntityMetaData<T> {
         return this.dbSet.metaData;
     }
     public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
-        this.state = EntityState.Unchanged;
+        this._state = EntityState.Unchanged;
 
         let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = (entity as any)[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
@@ -87,13 +154,13 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             if (oriValue === param.newValue) {
                 this.originalValues.delete(param.column.propertyName);
                 if (this.originalValues.size <= 0) {
-                    this.changeState(EntityState.Unchanged);
+                    this.state = EntityState.Unchanged;
                 }
             }
             else if (oriValue === undefined && param.oldValue !== undefined && !param.column.isReadOnly) {
                 this.originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
-                    this.changeState(EntityState.Modified);
+                    this.state = EntityState.Modified;
                 }
             }
         }
@@ -123,7 +190,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     state = EntityState.Deleted;
                     break;
             }
-            this.dbSet.dbContext.changeRelationState(relationEntry, state);
+            relationEntry.state = state;
         }
     }
     public registerRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
@@ -234,12 +301,12 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     });
 
                 if (this.originalValues.size <= 0) {
-                    this.changeState(EntityState.Unchanged);
+                    this.state = EntityState.Unchanged;
                 }
                 break;
             }
             case EntityState.Deleted: {
-                this.changeState(EntityState.Unchanged);
+                this.state = EntityState.Unchanged;
 
                 for (const relMeta of this.dbSet.metaData.relations) {
                     let relEntities: any[] = [];
@@ -301,10 +368,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             const value = originalValues[prop];
             this.setOriginalValue(prop as any, value);
         }
-        this.changeState(this.originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged);
-    }
-    public changeState(state: EntityState) {
-        this.dbSet.dbContext.changeState(this, state);
+        this.state = this.originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
     }
     public setOriginalValue(property: keyof T, value: any) {
         if (!(property in this.entity))

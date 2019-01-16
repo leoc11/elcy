@@ -25,6 +25,30 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             parentPropertyChangeHandler.add(this.onParentPropertyChange);
         }
     }
+
+    public get state() {
+        return super.state;
+    }
+    public set state(value) {
+        if (super.state !== value) {
+            const dbContext = this.dbSet.dbContext;
+            const isModified = (this.state === EntityState.Detached || this.state === EntityState.Unchanged) && !(value === EntityState.Detached || value === EntityState.Unchanged);
+            const isUnchanged = !(this.state === EntityState.Detached || this.state === EntityState.Unchanged) && (value === EntityState.Detached || value === EntityState.Unchanged);
+            if (isUnchanged) {
+                const embeddedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);
+                if (embeddedEntries)
+                    embeddedEntries.remove(this);
+            }
+            else if (isModified) {
+                let typedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);
+                if (!typedEntries) {
+                    typedEntries = [];
+                    dbContext.modifiedEmbeddedEntries.set(this.metaData, typedEntries);
+                }
+                typedEntries.push(this);
+            }
+        }
+    }
     private onParentPropertyChange(entity: TP, param: IChangeEventParam<TP, T>) {
         if (param.column === this.column) {
             if (param.oldValue === this.entity) {
@@ -32,7 +56,7 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
                 if (parentChangeHandler) {
                     parentChangeHandler.remove(this.onParentPropertyChange);
                 }
-                this.changeState(EntityState.Detached);
+                this.state = EntityState.Detached;
             }
         }
     }

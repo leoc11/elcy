@@ -166,14 +166,14 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public add<T>(entity: T) {
         const entry = this.attach(entity);
         if (entry) {
-            this.changeState(entry, EntityState.Added);
+            entry.state = EntityState.Added;
         }
         return entry;
     }
     public delete<T>(entity: T) {
         const entry = this.attach(entity);
         if (entry) {
-            this.changeState(entry, EntityState.Deleted);
+            entry.state = EntityState.Deleted;
         }
         return entry;
     }
@@ -182,139 +182,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         if (entry) {
             if (originalValues instanceof Object)
                 entry.setOriginalValues(originalValues);
-            this.changeState(entry, EntityState.Modified);
+            entry.state = EntityState.Modified;
         }
         return entry;
-    }
-    public changeState(entityEntry: EntityEntry, state: EntityState) {
-        if (entityEntry.state === state)
-            return;
-
-        if (entityEntry instanceof EmbeddedEntityEntry) {
-            const isModified = (entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && !(state === EntityState.Detached || state === EntityState.Unchanged);
-            const isUnchanged = !(entityEntry.state === EntityState.Detached || entityEntry.state === EntityState.Unchanged) && (state === EntityState.Detached || state === EntityState.Unchanged);
-            if (isUnchanged) {
-                const embeddedEntries = this.modifiedEmbeddedEntries.get(entityEntry.entity.constructor);
-                if (embeddedEntries)
-                    embeddedEntries.remove(entityEntry);
-            }
-            else if (isModified) {
-                let typedEntries = this.modifiedEmbeddedEntries.get(entityEntry.dbSet.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.modifiedEmbeddedEntries.set(entityEntry.dbSet.metaData, typedEntries);
-                }
-                typedEntries.push(entityEntry);
-            }
-            return;
-        }
-
-        switch (entityEntry.state) {
-            case EntityState.Added: {
-                const typedAddEntries = this.entityEntries.add.get(entityEntry.metaData);
-                if (typedAddEntries)
-                    typedAddEntries.remove(entityEntry);
-                if (state === EntityState.Deleted)
-                    state = EntityState.Detached;
-                break;
-            }
-            case EntityState.Deleted: {
-                const typedEntries = this.entityEntries.delete.get(entityEntry.metaData);
-                if (typedEntries)
-                    typedEntries.remove(entityEntry);
-                if (state === EntityState.Added)
-                    state = EntityState.Detached;
-                break;
-            }
-            case EntityState.Modified: {
-                const typedEntries = this.entityEntries.update.get(entityEntry.metaData);
-                if (typedEntries)
-                    typedEntries.remove(entityEntry);
-                break;
-            }
-            case EntityState.Detached:
-                if (state === EntityState.Deleted)
-                    state = EntityState.Detached;
-                break;
-        }
-        switch (state) {
-            case EntityState.Added: {
-                let typedEntries = this.entityEntries.add.get(entityEntry.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.entityEntries.add.set(entityEntry.metaData, typedEntries);
-                }
-                typedEntries.push(entityEntry);
-            }
-                break;
-            case EntityState.Deleted: {
-                let typedEntries = this.entityEntries.delete.get(entityEntry.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.entityEntries.delete.set(entityEntry.metaData, typedEntries);
-                }
-                typedEntries.push(entityEntry);
-                break;
-            }
-            case EntityState.Modified: {
-                let typedEntries = this.entityEntries.update.get(entityEntry.metaData);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.entityEntries.update.set(entityEntry.metaData, typedEntries);
-                }
-                typedEntries.push(entityEntry);
-                break;
-            }
-        }
-        entityEntry.state = state;
-    }
-    public changeRelationState(relationEntry: RelationEntry, state: EntityState) {
-        if (relationEntry.state === state)
-            return;
-
-        switch (relationEntry.state) {
-            case EntityState.Added: {
-                const typedAddEntries = this.relationEntries.add.get(relationEntry.slaveRelation);
-                if (typedAddEntries)
-                    typedAddEntries.remove(relationEntry);
-                if (state === EntityState.Deleted)
-                    state = EntityState.Detached;
-                break;
-            }
-            case EntityState.Deleted: {
-                const typedEntries = this.relationEntries.delete.get(relationEntry.slaveRelation);
-                if (typedEntries)
-                    typedEntries.remove(relationEntry);
-                if (state === EntityState.Added)
-                    state = EntityState.Detached;
-                break;
-            }
-            case EntityState.Detached:
-                if (state === EntityState.Deleted)
-                    state = EntityState.Detached;
-                break;
-        }
-        switch (state) {
-            case EntityState.Added: {
-                let typedEntries = this.relationEntries.add.get(relationEntry.slaveRelation);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.relationEntries.add.set(relationEntry.slaveRelation, typedEntries);
-                }
-                typedEntries.push(relationEntry);
-                break;
-            }
-            case EntityState.Deleted: {
-                let typedEntries = this.relationEntries.delete.get(relationEntry.slaveRelation);
-                if (!typedEntries) {
-                    typedEntries = [];
-                    this.relationEntries.delete.set(relationEntry.slaveRelation, typedEntries);
-                }
-                typedEntries.push(relationEntry);
-                break;
-            }
-        }
-        relationEntry.state = state;
     }
     public entityEntries: IChangeEntryMap<"add" | "update" | "delete", IEntityMetaData, EntityEntry>;
     public relationEntries: IChangeEntryMap<"add" | "delete", IRelationMetaData, RelationEntry>;
@@ -552,7 +422,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             // TODO: decide whether event emitter required here
             for (const entry of embeddedEntries) {
                 if (entry.parentEntry.state === EntityState.Unchanged)
-                    entry.parentEntry.changeState(EntityState.Modified);
+                    entry.parentEntry.state = EntityState.Modified;
                 continue;
             }
         }

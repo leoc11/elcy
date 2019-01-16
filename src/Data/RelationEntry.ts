@@ -3,13 +3,64 @@ import { EntityEntry } from "./EntityEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 
 export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
-    public state: EntityState;
+    private _state: EntityState;
+    public get state() {
+        return this._state;
+    }
+    public set state(value) {
+        if (this._state !== value) {
+            const dbContext = this.slaveEntry.dbSet.dbContext;
+            switch (this.state) {
+                case EntityState.Added: {
+                    const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation);
+                    if (typedAddEntries)
+                        typedAddEntries.remove(this);
+                    if (value === EntityState.Deleted)
+                        value = EntityState.Detached;
+                    break;
+                }
+                case EntityState.Deleted: {
+                    const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
+                    if (typedEntries)
+                        typedEntries.remove(this);
+                    if (value === EntityState.Added)
+                        value = EntityState.Detached;
+                    break;
+                }
+                case EntityState.Detached: {
+                    if (value === EntityState.Deleted)
+                        value = EntityState.Detached;
+                    break;
+                }
+            }
+            switch (value) {
+                case EntityState.Added: {
+                    let typedEntries = dbContext.relationEntries.add.get(this.slaveRelation);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        dbContext.relationEntries.add.set(this.slaveRelation, typedEntries);
+                    }
+                    typedEntries.push(this);
+                    break;
+                }
+                case EntityState.Deleted: {
+                    let typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
+                    if (!typedEntries) {
+                        typedEntries = [];
+                        dbContext.relationEntries.delete.set(this.slaveRelation, typedEntries);
+                    }
+                    typedEntries.push(this);
+                    break;
+                }
+            }
+
+            this._state = value;
+        }
+    }
     constructor(public slaveEntry: EntityEntry<TE1>, public masterEntry: EntityEntry<TE2>, public slaveRelation: IRelationMetaData<TE1, TE2>, public relationData?: TRD) {
-        this.state = EntityState.Unchanged;
+        this._state = EntityState.Unchanged;
     }
-    public changeState(state: EntityState) {
-        this.masterEntry.dbSet.dbContext.changeRelationState(this, state);
-    }
+
     public acceptChanges() {
         if (this.state === EntityState.Added) {
             const cols = this.slaveRelation.mappedRelationColumns;
@@ -48,6 +99,6 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             this.masterEntry.removeRelation(this);
             this.slaveEntry.removeRelation(this);
         }
-        this.changeState(EntityState.Unchanged);
+        this.state = EntityState.Unchanged;
     }
 }
