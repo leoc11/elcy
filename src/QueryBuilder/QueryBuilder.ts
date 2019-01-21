@@ -56,6 +56,9 @@ import { ISelectRelation } from "../Queryable/Interface/ISelectRelation";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { HavingJoinRelation } from "../Queryable/Interface/HavingJoinRelation";
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
+import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
+import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -330,14 +333,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     }
     protected getSelectQueryString(select: SelectExpression, skipInclude = false): string {
         let result = "";
-        // if (select.isSubSelect) {
-        //     result = "(" + this.newLine(1, true);
-        // }
         result += this.getSelectQuery(select, skipInclude).select(o => o.query).toArray().join(";" + this.newLine() + this.newLine());
-        // if (select.isSubSelect) {
-        //     result += this.newLine(-1, true) + ")";
-        // }
-
         return result;
     }
     protected extractValue<T>(exp: IExpression<T>): T {
@@ -470,8 +466,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#endregion
 
-    //#region Select Insert
-    public getSelectInsertQuery<T>(insertInto: InsertIntoExpression<T>): IQuery[] {
+    //#region Insert Into
+    public getInsertIntoQuery<T>(insertInto: InsertIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
         const selectString = this.getSelectQueryString(insertInto.select, true);
         const columns = insertInto.columns.select((o) => this.enclose(o.columnName)).toArray().join(",");
@@ -559,9 +555,33 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             const valueStr = this.getExpressionString(value);
             const column = update.entity.columns.first(c => c.propertyName === o);
             return `${this.enclose(update.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-        }).toArray().join(", ");
+        }).toArray();
+
+        if (update.entity.metaData) {
+            if (update.entity.metaData.modifiedDateColumn) {
+                const colMeta = update.entity.metaData.modifiedDateColumn;
+                // only update modifiedDate column if not explicitly specified in update set statement.
+                if (!update.setter[colMeta.propertyName]) {
+                    const valueExp = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(colMeta.timeZoneHandling === "utc")]);
+                    const valueStr = this.getExpressionString(valueExp);
+                    setQuery.push(`${this.enclose(update.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+                }
+            }
+
+            if (update.entity.metaData.versionColumn) {
+                const colMeta = update.entity.metaData.versionColumn;
+                if (update.setter[colMeta.propertyName]) {
+                    throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
+                }
+
+                const valueExp = new AdditionExpression(update.entity.versionColumn, new ValueExpression(1));
+                const valueStr = this.getExpressionString(valueExp);
+                setQuery.push(`${this.enclose(update.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+            }
+        }
+
         let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
-            this.newLine() + `SET ${setQuery}` +
+            this.newLine() + `SET ${setQuery.join(", ")}` +
             this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
             this.joinString(update.joins);
         if (update.where)
@@ -999,6 +1019,12 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case Float32Array:
             case Float64Array:
             case DataView: {
+                if (typeof input === "number") {
+                    const dataView = new DataView(new ArrayBuffer(4));
+                    dataView.setUint32(0, input);
+                    input = dataView.buffer;
+                }
+
                 result = new (column.type as any)(input.buffer ? input.buffer : input);
                 break;
             }
@@ -1008,6 +1034,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         return result;
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {
+        if (!isNotNull(input)) {
+            return null;
+        }
         let result = input;
         const type = column ? column.type : isNotNull(input) ? input.constructor : NullConstructor;
         switch (type) {
@@ -1036,6 +1065,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             case Float64Array:
             case DataView: {
                 result = new Uint8Array(input.buffer ? input.buffer : input);
+                if (column instanceof ColumnExpression && column.columnMetaData instanceof RowVersionColumnMetaData) {
+                    return new DataView(result.buffer).getUint32(0);
+                }
                 break;
             }
         }

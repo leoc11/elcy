@@ -143,5 +143,6 @@ export const upsertEntryExp = <T>(upsertExp: UpsertExpression<T>, entry: EntityE
         }
     }
 
+    upsertExp.parameters = queryParameters.select(o => o.parameter).toArray();
     return upsertExp.setter;
 };

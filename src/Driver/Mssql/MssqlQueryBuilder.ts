@@ -1,7 +1,7 @@
 import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnType, ColumnTypeMapKey, ColumnGroupType } from "../../Common/ColumnType";
 import { IColumnTypeDefaults } from "../../Common/IColumnTypeDefaults";
-import { GenericType, QueryType, ColumnGeneration } from "../../Common/Type";
+import { GenericType, QueryType, ColumnGeneration, IObjectType } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { IQuery } from "../../QueryBuilder/Interface/IQuery";
@@ -10,6 +10,12 @@ import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { isNotNull } from "../../Helper/Util";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
+import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
+import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 
 export class MssqlQueryBuilder extends QueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -48,7 +54,6 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["sql_variant", "Binary"],
         ["table", "Binary"],
         ["rowversion", "RowVersion"],
-        ["timestamp", "RowVersion"],
         ["uniqueidentifier", "Identifier"],
         ["xml", "DataSerialization"]
     ]);
@@ -90,7 +95,7 @@ export class MssqlQueryBuilder extends QueryBuilder {
         ["defaultIdentifier", "uniqueidentifier"],
         ["defaultInteger", "int"],
         ["defaultString", "nvarchar"],
-        ["defaultRowVersion", "timestamp"]
+        ["defaultRowVersion", "rowversion"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([
         [UUID, "uniqueidentifier"],
@@ -186,5 +191,66 @@ export class MssqlQueryBuilder extends QueryBuilder {
         });
 
         return result;
+    }
+
+    //#region Update
+    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQuery[] {
+        let result: IQuery[] = [];
+        const setQuery = Object.keys(update.setter).select((o: keyof T) => {
+            const value = update.setter[o];
+            const valueStr = this.getExpressionString(value);
+            const column = update.entity.columns.first(c => c.propertyName === o);
+            return `${this.enclose(update.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+        }).toArray();
+
+        if (update.entity.metaData) {
+            if (update.entity.metaData.modifiedDateColumn) {
+                const colMeta = update.entity.metaData.modifiedDateColumn;
+                // only update modifiedDate column if not explicitly specified in update set statement.
+                if (!update.setter[colMeta.propertyName]) {
+                    const valueExp = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(colMeta.timeZoneHandling === "utc")]);
+                    const valueStr = this.getExpressionString(valueExp);
+                    setQuery.push(`${this.enclose(update.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+                }
+            }
+
+            if (update.entity.metaData.versionColumn) {
+                const colMeta = update.entity.metaData.versionColumn;
+                if (update.setter[colMeta.propertyName]) {
+                    throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
+                }
+            }
+        }
+
+        let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
+            this.newLine() + `SET ${setQuery.join(", ")}` +
+            this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
+            this.joinString(update.joins);
+        if (update.where)
+            updateQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(update.where);
+
+        result.push({
+            query: updateQuery,
+            parameters: this.getParameter(update),
+            type: QueryType.DML
+        });
+
+        return result;
+    }
+    //#endregion
+    public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
+        if (column instanceof RowVersionColumnMetaData) {
+            return new (column.type as IObjectType<T>)(input.buffer ? input.buffer : input);
+        }
+        return super.toPropertyValue(input, column);
+    }
+    public toParameterValue(input: any, column: IColumnMetaData): any {
+        if (!isNotNull(input)) {
+            return null;
+        }
+        if (column instanceof ColumnExpression && column.columnMetaData instanceof RowVersionColumnMetaData) {
+            return new Uint8Array(input.buffer ? input.buffer : input);
+        }
+        return super.toParameterValue(input, column);
     }
 }

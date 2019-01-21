@@ -458,7 +458,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             for (const entry of addEntries) {
                 eventEmitter.emitBeforeSaveEvent(entry.entity, { type: "insert" });
             }
-            const insertResult = options && options.useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor) : this.getInsertQueries(entityMeta, addEntries, visitor);
+            const insertResult = options && options.useUpsert && !entityMeta.hasIncrementPrimary ? this.getUpsertQueries(entityMeta, addEntries, visitor) : this.getInsertQueries(entityMeta, addEntries, visitor);
             insertQueries.set(entityMeta, insertResult);
         });
 
@@ -561,7 +561,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             updateQueries.asEnumerable().each(([entityMeta, queries]) => {
                 const eventEmitter = new DBEventEmitter(this, entityMeta);
                 const updateData = queries.selectMany(o => o.value.rows)[Symbol.iterator]();
-                const entityEntries = orderedEntityAdd.first(o => o[0] === entityMeta)[1];
+                const entityEntries = orderedEntityUpdate.first(o => o[0] === entityMeta)[1];
                 for (const entityEntry of entityEntries) {
                     const data = updateData.next().value as any;
                     if (data) {
@@ -603,16 +603,44 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         const entityExp = new EntityExpression(entityMetaData.type, visitor.newAlias());
 
-        let autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
+        const autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
         const hasUpdateColumn = autoUpdateColumns.any();
+        let selectExp: SelectExpression<T>;
+        let selectParameters: ISqlParameter[];
         if (hasUpdateColumn) {
-            autoUpdateColumns = entityMetaData.primaryKeys.union(autoUpdateColumns);
+            selectExp = new SelectExpression(entityExp);
+            selectExp.selects = entityMetaData.primaryKeys.union(autoUpdateColumns).select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
+            selectParameters = [];
         }
 
         for (const entry of entryEnumerable) {
             const updateExp = new UpdateExpression(entityExp, {});
-            const queryParameters: ISqlParameter[] = [];
+            let queryParameters: ISqlParameter[] = [];
+
+            let pkFilter: IExpression<boolean>;
+            for (const colExp of updateExp.entity.primaryColumns) {
+                const paramName = visitor.newAlias("param");
+                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, colExp.type), colExp.columnMetaData);
+                const sqlParam = {
+                    name: paramName,
+                    parameter: parameter,
+                    value: entry.entity[colExp.propertyName as keyof T]
+                };
+                queryParameters.push(sqlParam);
+                if (hasUpdateColumn) {
+                    selectParameters.push(sqlParam);
+                }
+
+                const compExp = new StrictEqualExpression(colExp, parameter);
+                pkFilter = pkFilter ? new AndExpression(pkFilter, compExp) : compExp;
+            }
+
+            updateExp.addWhere(pkFilter);
             updateItemExp(updateExp, entry, visitor, queryParameters);
+            if (hasUpdateColumn) {
+                selectExp.where = selectExp.where ? new OrExpression(selectExp.where, pkFilter) : pkFilter;
+            }
+
             const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                 const effectedRows = results.sum(o => o.effectedRows);
                 if (entityMetaData.concurrencyMode !== "NONE" && effectedRows <= 0) {
@@ -628,16 +656,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // get changes done by server.
         if (hasUpdateColumn) {
-            let selectParameters: ISqlParameter[] = [];
-            const selectExp = new SelectExpression(entityExp);
-            selectExp.selects = autoUpdateColumns.select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
-
-            for (const result of results) {
-                const updateExp = result.command as UpdateExpression<T>;
-                selectParameters = selectParameters.union(result.parameters.where(o => o.parameter.column.isPrimaryColumn)).toArray();
-                selectExp.where = selectExp.where ? new OrExpression(selectExp.where, updateExp.where) : updateExp.where;
-            }
-
             const selectQuery = new DeferredQuery(this, selectExp, selectParameters, (results) => {
                 return {
                     effectedRows: 0,
@@ -831,11 +849,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return results;
     }
     protected getUpsertQueries<T>(entityMeta: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: QueryVisitor): DeferredQuery<IQueryResult>[] {
-        if (entityMeta.hasIncrementPrimary) {
-            // if it has auto increment column then no need to use upsert.
-            return this.getInsertQueries(entityMeta, entries);
-        }
-
         let entryEnumerable = Enumerable.from(entries);
         const results: DeferredQuery<IQueryResult>[] = [];
         if (!entryEnumerable.any()) return results;

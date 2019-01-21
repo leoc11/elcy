@@ -18,15 +18,17 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
+import { EntityExpression } from "./EntityExpression";
 export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
     public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public select: SelectExpression<T>;
     public get parameters() {
         return this.select.parameters;
+    }
+    public set parameters(value) {
+        this.select.parameters = value;
     }
     public get joins() {
         return this.select.joins;
@@ -35,7 +37,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         return undefined as any;
     }
     public get entity() {
-        return this.select.entity;
+        return this.select.entity as EntityExpression<T>;
     }
     public get paging() {
         return this.select.paging;
@@ -127,29 +129,10 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
         updateExp.setter[o.propertyName] = paramExp;
     }
 
-    const modifiedColumn = entityMeta.modifiedDateColumn;
-    if (modifiedColumn) {
-        updateExp.setter[modifiedColumn.propertyName] = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(modifiedColumn.timeZoneHandling === "utc")]);
-    }
-
-    for (const colExp of updateExp.entity.primaryColumns) {
-        const paramName = visitor.newAlias("param");
-        const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, colExp.type), colExp.columnMetaData);
-        const sqlParam = {
-            name: paramName,
-            parameter: parameter,
-            value: entity[colExp.propertyName]
-        };
-        queryParameters.push(sqlParam);
-
-        const compExp = new StrictEqualExpression(colExp, parameter);
-        updateExp.addWhere(compExp);
-    }
-
-    switch (entityMeta.concurencyModel) {
+    switch (entityMeta.concurrencyMode) {
         case "OPTIMISTIC VERSION": {
             let versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
-            if (!versionCol) throw new Error("Entity did not have version column");
+            if (!versionCol) throw new Error(`${entityMeta.name} did not have version column`);
 
             const paramName = visitor.newAlias("param");
             const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, versionCol.type), versionCol);
@@ -159,6 +142,7 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
                 value: entity[versionCol.propertyName]
             };
             queryParameters.push(sqlParam);
+            updateExp.parameters.push(parameter);
 
             const colExp = updateExp.entity.columns.first(c => c.propertyName === versionCol.propertyName);
             const compExp = new StrictEqualExpression(colExp, parameter);
@@ -175,6 +159,7 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
                     value: entry.getOriginalValue(col.propertyName)
                 };
                 queryParameters.push(sqlParam);
+                updateExp.parameters.push(parameter);
                 const colExp = updateExp.entity.columns.first(c => c.propertyName === col.propertyName);
                 const compExp = new StrictEqualExpression(colExp, parameter);
                 updateExp.addWhere(compExp);
@@ -182,4 +167,5 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
             break;
         }
     }
+    updateExp.parameters = queryParameters.select(o => o.parameter).toArray();
 };

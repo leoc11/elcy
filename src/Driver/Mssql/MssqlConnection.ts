@@ -169,7 +169,6 @@ export class MssqlConnection implements IConnection {
     }
     public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
-            console.log(command.query);
             const results: IQueryResult[] = [];
             let result: IQueryResult = {
                 effectedRows: 0
@@ -179,7 +178,6 @@ export class MssqlConnection implements IConnection {
                     reject(error);
                 }
                 else {
-                    console.log(JSON.stringify(command.query));
                     resolve(results);
                 }
             });
@@ -261,6 +259,8 @@ export class MssqlConnection implements IConnection {
                     driverType = tedious.TYPES.Time;
                     break;
                 }
+                case ArrayBuffer:
+                case DataView:
                 case Int8Array:
                 case Int16Array:
                 case Int32Array:
@@ -270,6 +270,7 @@ export class MssqlConnection implements IConnection {
                 case Float32Array:
                 case Float64Array: {
                     driverType = tedious.TYPES.VarBinary;
+                    value = new Buffer(value.buffer ? value.buffer : value);
                     break;
                 }
                 case Array: {

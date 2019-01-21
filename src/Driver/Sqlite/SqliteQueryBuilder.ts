@@ -40,7 +40,7 @@ export class SqliteQueryBuilder extends QueryBuilder {
         ["defaultInteger", "integer"],
         ["defaultReal", "real"],
         ["defaultString", "text"],
-        ["defaultRowVersion", "blob"]
+        ["defaultRowVersion", "numeric"]
     ]);
     public valueTypeMap = new Map<GenericType, ColumnType>([
         [TimeSpan, "text"],

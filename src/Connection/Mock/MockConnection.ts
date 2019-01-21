@@ -329,7 +329,7 @@ export class MockConnection implements IConnection {
             case Float32Array:
             case Float64Array:
             case DataView: {
-                const size = (Math.random() * 16 + 1);
+                const size =  Math.floor((Math.random() * 16) + 1);
                 const values = Array(size);
                 for (let i = 0; i < size; i++) {
                     values[0] = Math.floor(Math.random() * 256);

@@ -58,11 +58,7 @@ export type IntervalColumnType = "interval year" // oracle
     | "interval" // postgres
     | "year"; // mysql
 
-export type RowVersionColumnType = "timestamp" // mysql, postgres, oracle
-    | "rowversion" // mssql
-    | "timestamp without time zone" // postgres
-    | "timestamp with time zone" // postgres, oracle
-    | "timestamp with local time zone"; // oracle
+export type RowVersionColumnType = "rowversion"; // mssql
 
 export type BinaryColumnType = "binary" // mssql
     | "varbinary" // mssql

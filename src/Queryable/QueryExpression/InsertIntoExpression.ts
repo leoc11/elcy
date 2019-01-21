@@ -31,7 +31,7 @@ export class InsertIntoExpression<T = any> implements IQueryCommandExpression<vo
     }
     public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
         queryBuilder.setParameters(parameters ? parameters : []);
-        return queryBuilder.getSelectInsertQuery(this);
+        return queryBuilder.getInsertIntoQuery(this);
     }
     public execute() {
         return this as any;

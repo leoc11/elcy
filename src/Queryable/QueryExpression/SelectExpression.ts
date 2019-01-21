@@ -63,7 +63,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         // primary column used in hydration to identify an entity.
         // relation column used in hydration to build relationship.
         let projectedColumns = this.primaryKeys.union(this.relationColumns);
-        if (this.entity instanceof EntityExpression && this.entity.versionColumn && this.entity.metaData.concurencyModel === "OPTIMISTIC VERSION") {
+        if (this.entity instanceof EntityExpression && this.entity.versionColumn && this.entity.metaData.concurrencyMode === "OPTIMISTIC VERSION") {
             // Version column for optimistic concurency.
             projectedColumns = projectedColumns.union([this.entity.versionColumn]);
         }

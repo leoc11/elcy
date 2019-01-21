@@ -26,8 +26,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public indices: IIndexMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
     public relations: IRelationMetaData<TE, any>[] = [];
-
-    public concurencyModel: ConcurrencyModel;
+    public concurrencyMode: ConcurrencyModel;
     // inheritance
     public descriminatorMember = "__type__";
     public get allowInheritance(): boolean {
@@ -71,6 +70,8 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.constraints = entityMeta.constraints;
         if (typeof entityMeta.modifiedDateColumn !== "undefined")
             this.modifiedDateColumn = entityMeta.modifiedDateColumn;
+        if (typeof entityMeta.versionColumn !== "undefined")
+            this.versionColumn = entityMeta.versionColumn;
         if (typeof entityMeta.primaryKeys !== "undefined")
             this.primaryKeys = entityMeta.primaryKeys;
         if (typeof entityMeta.relations !== "undefined") {
@@ -92,6 +93,8 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.afterSave = entityMeta.afterSave;
         if (typeof entityMeta.afterDelete !== "undefined")
             this.afterDelete = entityMeta.afterDelete;
+        if (typeof entityMeta.concurrencyMode !== "undefined")
+            this.concurrencyMode = entityMeta.concurrencyMode;
     }
 
     public get insertGeneratedColumns() {

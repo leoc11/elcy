@@ -31,6 +31,12 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._versionColumn;
     }
+    public get modifiedColumn() {
+        if (typeof this._modifiedColumn === "undefined") {
+            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first(o => o.propertyName === this.metaData.modifiedDateColumn.propertyName);
+        }
+        return this._modifiedColumn;
+    }
     public get columns(): IColumnExpression<T>[] {
         if (!this._columns) {
             if (this.metaData)
@@ -75,6 +81,7 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
     private _defaultOrders: IOrderQueryDefinition[];
     private _versionColumn: IColumnExpression<T>;
     private _deleteColumn: IColumnExpression<T>;
+    private _modifiedColumn: IColumnExpression<T>;
     public readonly entityTypes: IObjectType[];
     constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
         if (this.metaData) {
