@@ -7,17 +7,16 @@ import "mocha";
 import * as sinon from "sinon";
 import * as chai from "chai";
 import * as sinonChai from "sinon-chai";
+import * as chaiPromise from "chai-as-promised";
 import { QueryType } from "../../../src/Common/Type";
 import { IQuery } from "../../../src/QueryBuilder/Interface/IQuery";
-import { IConnection } from "../../../src/Connection/IConnection";
-import { PooledConnection } from "../../../src/Connection/PooledConnection";
-import { MockConnection } from "../../../src/Connection/Mock/MockConnection";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { EntityState } from "../../../src/Data/EntityState";
 
 chai.use(sinonChai);
+chai.use(chaiPromise);
 const db = new MyDb();
 mockContext(db);
 beforeEach(async () => {
@@ -131,7 +130,7 @@ describe("DATA MANIPULATION", () => {
                 parameters: { "param0": "Insert 1" }
             } as IQuery);
             spy.should.have.been.calledWithMatch({
-                query: `INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id VALUES\n\t(@param2,@param0),\n\t(@param2,@param1)`,
+                query: `INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[version] AS version VALUES\n\t(@param2,@param0),\n\t(@param2,@param1)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { "param0": "detail 1", "param2": data.id, "param1": "detail 2" }
             } as IQuery);
@@ -199,9 +198,9 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param0, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param1);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param1)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: "Updated", param1: 1 }
+                parameters: { param0: 1, param1: "Updated" }
             } as IQuery);
             effected.should.equal(1);
         });
@@ -213,7 +212,7 @@ describe("DATA MANIPULATION", () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = 'Updated'\nFROM [AutoParent] AS [entity0] \nWHERE (([isDeleted]=0) AND ([id]=1))",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = 'Updated', [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([isDeleted]=0) AND ([id]=1))",
                 type: QueryType.DML,
                 parameters: {}
             } as IQuery);
@@ -222,7 +221,7 @@ describe("DATA MANIPULATION", () => {
         it("should update with DIRTY concurrency check", async () => {
             const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
             entityMeta.concurrencyMode = "OPTIMISTIC DIRTY";
-            
+
             const spy = sinon.spy(db.connection, "executeQuery");
             const parent = new AutoParent();
             parent.id = 1;
@@ -237,19 +236,19 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param0, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param1) AND ([name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[id]=@param1) AND ([entity0].[name]=@param2))",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param0) AND ([name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: "Updated", param1: 1, param2: "Original" }
+                parameters: { param0: 1, param1: "Updated", param2: "Original" }
             } as IQuery);
             effected.should.equal(1);
         });
         it("should update with VERSION concurrency check", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
-        
+
             const parent = new AutoDetail();
             parent.id = 1;
             parent.description = "Original";
-            parent.version = new Uint8Array([1, 200, 0, 0, 100]);
+            const oldVersion = parent.version = new Uint8Array([1, 200, 0, 0, 100]);
             const entry = db.entry(parent);
             entry.state = EntityState.Unchanged;
             parent.description = "Updated";
@@ -260,21 +259,22 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param0, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param1) AND ([modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[id]=@param1) AND ([entity0].[modifiedDate]=@param2))",
+                query: "UPDATE [entity0]\nSET [entity0].[description] = @param1\nFROM [AutoDetail] AS [entity0] \nWHERE (([id]=@param0) AND ([version]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[version]\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: "Updated", param1: 1, param2: parent.modifiedDate }
+                parameters: { param0: 1, param1: "Updated", param2: oldVersion }
             } as IQuery);
             effected.should.equal(1);
         });
         it("should update with VERSION concurrency check (fallback to ModifiedDate)", async () => {
             const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
             entityMeta.concurrencyMode = "OPTIMISTIC VERSION";
-            
+
             const spy = sinon.spy(db.connection, "executeQuery");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
-            parent.modifiedDate = Date.timestamp();
+            const oldModifiedDate = Date.timestamp(true);
+            parent.modifiedDate = oldModifiedDate;
             const entry = db.entry(parent);
             entry.state = EntityState.Unchanged;
             parent.name = "Updated";
@@ -285,26 +285,109 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param0, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param1) AND ([modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[id]=@param1) AND ([entity0].[modifiedDate]=@param2))",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param0) AND ([modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: "Updated", param1: 1, param2: parent.modifiedDate }
+                parameters: { param0: 1, param1: "Updated", param2: oldModifiedDate.toUTCDate() }
             } as IQuery);
             effected.should.equal(1);
         });
-        it("should update without concurrency check", () => {
+        it("should update without concurrency check", async () => {
+            const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
+            entityMeta.concurrencyMode = "NONE";
 
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.entry(parent);
+            entry.state = EntityState.Unchanged;
+            parent.name = "Updated";
+
+            chai.should();
+            entry.state.should.equal(EntityState.Modified);
+
+            const effected = await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                type: QueryType.DML | QueryType.DQL,
+                parameters: { param0: 1, param1: "Updated" }
+            } as IQuery);
+            effected.should.equal(1);
         });
-        it("should throw concurrency error", () => {
+        it("should throw concurrency error", async () => {
+            const parent = new AutoDetail();
+            parent.id = 1;
+            parent.description = "Original";
+            parent.version = new Uint8Array([1, 200, 0, 0, 100]);
+            const entry = db.entry(parent);
+            entry.state = EntityState.Unchanged;
+            parent.description = "Updated";
 
+            chai.should();
+            const promise = db.saveChanges();
+            promise.should.eventually.be.rejectedWith("Concurrency Error");
         });
-        it("should update ModifiedDate", () => {
+        it("should update ModifiedDate", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.entry(parent);
+            entry.state = EntityState.Unchanged;
+            parent.name = "Updated";
 
+            chai.should();
+            await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                type: QueryType.DML | QueryType.DQL,
+                parameters: { param0: 1, param1: "Updated" }
+            } as IQuery);
         });
-        it("should not update Readonly Column, ex: CreatedDate", () => {
+        it("should not update Readonly Column, ex: CreatedDate", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.attach(parent);
+            parent.createdDate = new Date();
+            parent.modifiedDate = new Date();
 
+            chai.should();
+            entry.state.should.equal(EntityState.Unchanged);
+
+            parent.name = "Updated";
+
+            entry.state.should.equal(EntityState.Modified);
+
+            const effected = await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                type: QueryType.DML | QueryType.DQL,
+                parameters: { param0: 1, param1: "Updated" }
+            } as IQuery);
+            effected.should.equal(1);
         });
-        it("should trigger before/after save event", () => {
+        it("should trigger before/after save event", async () => {
+            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const spy = sinon.spy(entityMetaData, "beforeSave");
+            const spy2 = sinon.spy(entityMetaData, "afterSave");
 
+            const data = new AutoParent();
+            data.id = 1;
+            data.name = "Original";
+            db.attach(data);
+            data.name = "Updated";
+            const effected = await db.saveChanges();
+
+            chai.should();
+            effected.should.equal(1);
+            spy.should.have.been.calledOnce.and.calledWithMatch(data, { type: "update" } as ISaveEventParam);
+            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { type: "update" } as ISaveEventParam);
+            spy.should.be.calledBefore(spy2);
         });
     });
     describe("DELETE", () => {
