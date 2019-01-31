@@ -165,6 +165,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 else {
                     entity = entry.entity;
                 }
+                if (entry) entry.enableTrackChanges = false;
             }
 
             for (const column of resolveCache.columns) {
@@ -255,6 +256,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 itemMap.set(key, relationData);
             }
         }
+        if (entry) entry.enableTrackChanges = true;
 
         // emit after load event
         if (dbEventEmitter) dbEventEmitter.emitAfterLoadEvent(entity);

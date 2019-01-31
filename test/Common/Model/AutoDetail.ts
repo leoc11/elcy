@@ -11,7 +11,7 @@ export class AutoDetail {
     @PrimaryKey()
     @IntegerColumn({ columnType: "int", autoIncrement: true })
     public id: number;
-    @IntegerColumn({ columnType: "int" })
+    @IntegerColumn({ columnType: "int", default: () => 0 })
     public parentId: number;
     @StringColumn()
     public description: string;

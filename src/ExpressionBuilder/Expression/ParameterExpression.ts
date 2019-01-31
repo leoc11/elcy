@@ -15,7 +15,7 @@ export class ParameterExpression<T = any> implements IExpression<T> {
     }
     public type: GenericType<T>;
     public itemType?: GenericType<T>;
-    constructor(public readonly name: string, type?: GenericType<T>) {
+    constructor(public name: string, type?: GenericType<T>) {
         this.type = type;
     }
     public toString(transformer?: ExpressionTransformer): string {

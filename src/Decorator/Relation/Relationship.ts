@@ -95,7 +95,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                 // tslint:disable-next-line:triple-equals
                 if (oldValue != value) {
                     if (relationMeta.relationType === "many") {
-                        const observed = ObservableArray.observe(value);
+                        const observed = ObservableArray.observe(value || []);
                         observed.register((type, items) => {
                             const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                             if (changeListener) {

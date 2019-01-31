@@ -7,7 +7,7 @@ declare global {
         each(executor: (item: T, index: number) => void): void;
         eachAsync(executor: (item: T, index: number) => Promise<void>): Promise<void>;
         selectAwait<TReturn>(selector: (item: T) => Promise<TReturn>): Promise<TReturn[]>;
-        toMap<TKey>(keySelector: (item: T) => TKey): Map<TKey, T>;
+        toMap<K, V>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
     }
 }
 
@@ -32,10 +32,10 @@ Array.prototype.eachAsync = async function <T>(this: T[], executor: (item: T, in
         await executor(item, index++);
     }
 };
-Array.prototype.toMap = function <T, TKey>(this: T[], keySelector: (item: T) => TKey) {
+Array.prototype.toMap = function <T, K, V>(this: T[], keySelector: (item: T) => K, valueSelector?: (item: T) => V) {
     const result = new Map();
     for (const item of this) {
-        result.set(keySelector(item), item);
+        result.set(keySelector(item), valueSelector ? valueSelector(item) : item);
     }
     return result;
 };

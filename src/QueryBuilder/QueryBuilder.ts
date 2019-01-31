@@ -59,6 +59,7 @@ import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression"
 import { AdditionExpression } from "../ExpressionBuilder/Expression/AdditionExpression";
 import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { RowVersionColumnMetaData } from "../MetaData/RowVersionColumnMetaData";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 
 export abstract class QueryBuilder extends ExpressionTransformer {
     public abstract supportedColumnTypes: Map<ColumnType, ColumnGroupType>;
@@ -113,8 +114,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 case ParameterExpression:
                     result = this.getParameterExpressionString(expression as any);
                     break;
+                case ArrayValueExpression:
+                    result = this.arrayExpressionString(expression as any);
+                    break;
                 case ValueExpression:
-                    result = this.ValueExpressionString(expression as any);
+                    result = this.valueExpressionString(expression as any);
                     break;
                 case InstantiationExpression:
                     result = this.getInstantiationString(expression as any);
@@ -203,7 +207,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         // subselect should not have include
         if (select.isSubSelect) skipInclude = true;
 
-        const oldSelect = this.commandExp;
+        const prevCommandExp = this.commandExp;
         this.commandExp = select;
 
         let result: IQuery[] = [];
@@ -328,7 +332,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             parameters: this.getParameter(select),
             type: QueryType.DQL
         });
-        this.commandExp = oldSelect;
+        this.commandExp = prevCommandExp;
         return result;
     }
     protected getSelectQueryString(select: SelectExpression, skipInclude = false): string {
@@ -441,8 +445,6 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (this.commandExp) {
             if (this.commandExp instanceof SelectExpression) {
                 let commandExp = this.commandExp;
-                if (commandExp instanceof InsertIntoExpression)
-                    commandExp = commandExp.select;
 
                 if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
                     if (column instanceof ComputedColumnExpression && (!this.isColumnDeclared || !commandExp.resolvedSelects.contains(column))) {
@@ -467,17 +469,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     //#endregion
 
     //#region Insert Into
-    public getInsertIntoQuery<T>(insertInto: InsertIntoExpression<T>): IQuery[] {
+    public getInsertIntoQuery<T>(insertIntoExp: InsertIntoExpression<T>): IQuery[] {
         let result: IQuery[] = [];
-        const selectString = this.getSelectQueryString(insertInto.select, true);
-        const columns = insertInto.columns.select((o) => this.enclose(o.columnName)).toArray().join(",");
-        let selectQuery = `INSERT INTO ${this.enclose(insertInto.entity.name)} (${columns})` + this.newLine() + selectString;
+        const prevCommandExp = this.commandExp;
+        this.commandExp = insertIntoExp;
+        const selectString = this.getSelectQueryString(insertIntoExp.select, true);
+        const columns = insertIntoExp.columns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        let selectQuery = `INSERT INTO ${this.enclose(insertIntoExp.entity.name)} (${columns})` + this.newLine() + selectString;
         result.push({
             query: selectQuery,
-            parameters: this.getParameter(insertInto),
+            parameters: this.getParameter(insertIntoExp),
             type: QueryType.DML
         });
 
+        this.commandExp = prevCommandExp;
         return result;
     }
     //#endregion
@@ -487,6 +492,8 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         if (insertExp.values.length <= 0)
             return [];
 
+        const prevCommandExp = this.commandExp;
+        this.commandExp = insertExp;
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString}) VALUES`;
         let queryCommand: IQuery = {
@@ -543,56 +550,62 @@ export abstract class QueryBuilder extends ExpressionTransformer {
             acc[item.name] = item.value;
             return acc;
         });
+
+        this.commandExp = prevCommandExp;
         return result;
     }
     //#endregion
 
     //#region Update
-    public getBulkUpdateQuery<T>(update: UpdateExpression<T>): IQuery[] {
+    public getBulkUpdateQuery<T>(updateExp: UpdateExpression<T>): IQuery[] {
         let result: IQuery[] = [];
-        const setQuery = Object.keys(update.setter).select((o: keyof T) => {
-            const value = update.setter[o];
-            const valueStr = this.getExpressionString(value);
-            const column = update.entity.columns.first(c => c.propertyName === o);
-            return `${this.enclose(update.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+        const prevCommandExp = this.commandExp;
+        this.commandExp = null;
+
+        const setQuery = Object.keys(updateExp.setter).select((o: keyof T) => {
+            const value = updateExp.setter[o];
+            const valueStr = this.getOperandString(value);
+            const column = updateExp.entity.columns.first(c => c.propertyName === o);
+            return `${this.enclose(column.columnName)} = ${valueStr}`;
         }).toArray();
 
-        if (update.entity.metaData) {
-            if (update.entity.metaData.modifiedDateColumn) {
-                const colMeta = update.entity.metaData.modifiedDateColumn;
+        if (updateExp.entity.metaData) {
+            if (updateExp.entity.metaData.modifiedDateColumn) {
+                const colMeta = updateExp.entity.metaData.modifiedDateColumn;
                 // only update modifiedDate column if not explicitly specified in update set statement.
-                if (!update.setter[colMeta.propertyName]) {
+                if (!updateExp.setter[colMeta.propertyName]) {
                     const valueExp = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(colMeta.timeZoneHandling === "utc")]);
                     const valueStr = this.getExpressionString(valueExp);
-                    setQuery.push(`${this.enclose(update.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+                    setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
                 }
             }
 
-            if (update.entity.metaData.versionColumn) {
-                const colMeta = update.entity.metaData.versionColumn;
-                if (update.setter[colMeta.propertyName]) {
+            if (updateExp.entity.metaData.versionColumn) {
+                const colMeta = updateExp.entity.metaData.versionColumn;
+                if (updateExp.setter[colMeta.propertyName]) {
                     throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
                 }
 
-                const valueExp = new AdditionExpression(update.entity.versionColumn, new ValueExpression(1));
+                const valueExp = new AdditionExpression(updateExp.entity.versionColumn, new ValueExpression(1));
                 const valueStr = this.getExpressionString(valueExp);
-                setQuery.push(`${this.enclose(update.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+                setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
             }
         }
 
-        let updateQuery = `UPDATE ${this.enclose(update.entity.alias)}` +
+        let updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias)}` +
             this.newLine() + `SET ${setQuery.join(", ")}` +
-            this.newLine() + `FROM ${this.enclose(update.entity.name)} AS ${this.enclose(update.entity.alias)} ` +
-            this.joinString(update.joins);
-        if (update.where)
-            updateQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(update.where);
+            this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)} ` +
+            this.joinString(updateExp.joins);
+        if (updateExp.where)
+            updateQuery += this.newLine() + "WHERE " + this.getLogicalOperandString(updateExp.where);
 
         result.push({
             query: updateQuery,
-            parameters: this.getParameter(update),
+            parameters: this.getParameter(updateExp),
             type: QueryType.DML
         });
 
+        this.commandExp = prevCommandExp;
         return result;
     }
     //#endregion
@@ -601,6 +614,9 @@ export abstract class QueryBuilder extends ExpressionTransformer {
     public getUpsertQuery(upsertExp: UpsertExpression): IQuery[] {
         let pkValues: string[] = [];
         let joinString: string[] = [];
+        const prevCommandExp = this.commandExp;
+        this.commandExp = upsertExp;
+
         upsertExp.entity.primaryColumns.each(o => {
             const index = upsertExp.columns.indexOf(o);
             const valueExp = upsertExp.setter[index];
@@ -640,44 +656,42 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                 param[paramExp.name] = paramExp.value;
             }
         }
-        return [{
+
+        const results = [{
             query: upsertQuery,
             parameters: param,
             type: QueryType.DML
         }];
+
+        this.commandExp = prevCommandExp;
+        return results;
     }
     //#endregion
 
     //#region Delete
     public getBulkDeleteQuery<T>(deleteExp: DeleteExpression<T>): IQuery[] {
         let result: IQuery[] = [];
+        const prevCommandExp = this.commandExp;
+        this.commandExp = deleteExp;
+
         let deleteStrategy: DeleteMode;
         if (deleteExp.deleteMode) {
-            if (deleteExp.deleteMode instanceof ParameterExpression) {
-                const modeParam = this.parameters.first(o => o.parameter.valueGetter === deleteExp.deleteMode);
-                if (modeParam) {
-                    deleteStrategy = modeParam.value;
-                }
-            }
-            else {
-                deleteStrategy = deleteExp.deleteMode.execute();
-            }
+            deleteStrategy = this.extractValue(deleteExp.deleteMode);
         }
 
         if (!deleteStrategy) {
-            deleteStrategy = deleteExp.entity.deleteColumn ? "Soft" : "Hard";
+            deleteStrategy = deleteExp.entity.deleteColumn ? "soft" : "hard";
         }
-
-        else if (deleteStrategy === "Soft" && !deleteExp.entity.deleteColumn) {
+        else if (deleteStrategy === "soft" && !deleteExp.entity.deleteColumn) {
             // if entity did not support soft delete, then abort.
-            return result;
+            throw new Error(`'${deleteExp.entity.name}' did not support 'Soft' delete`);
         }
 
-        if (deleteStrategy === "Soft") {
+        if (deleteStrategy === "soft") {
             // if soft delete, set delete column to true
             const set: { [key in keyof T]?: IExpression<T[key]> } = {};
             set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true) as any;
-            const updateQuery = new UpdateExpression(deleteExp.entity, set);
+            const updateQuery = new UpdateExpression(deleteExp.select, set);
             result = this.getBulkUpdateQuery(updateQuery);
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
@@ -699,20 +713,20 @@ export abstract class QueryBuilder extends ExpressionTransformer {
                         return this.getBulkDeleteQuery(childDelete);
                     }
                     case "SET NULL": {
-                        const setOption: { [key: string]: any } = {};
+                        const setOption: { [key: string]: IExpression<any> } = {};
                         for (const col of relationColumns) {
-                            setOption[col.propertyName] = null;
+                            setOption[col.propertyName] = new ValueExpression(null);
                         }
                         const childUpdate = new UpdateExpression(child, setOption);
                         return this.getBulkUpdateQuery(childUpdate);
                     }
                     case "SET DEFAULT": {
-                        const setOption: { [key: string]: any } = {};
+                        const setOption: { [key: string]: IExpression<any> } = {};
                         for (const col of o.reverseRelation.relationColumns) {
                             if (col.default)
-                                setOption[col.columnName] = col.default.execute();
+                                setOption[col.columnName] = col.default.body;
                             else
-                                setOption[col.columnName] = null;
+                                setOption[col.columnName] = new ValueExpression(null);
                         }
                         const childUpdate = new UpdateExpression(child, setOption);
                         return this.getBulkUpdateQuery(childUpdate);
@@ -760,6 +774,7 @@ export abstract class QueryBuilder extends ExpressionTransformer {
         }).toArray();
         result = result.concat(includedDeletes);
 
+        this.commandExp = prevCommandExp;
         return result;
     }
     //#endregion
@@ -871,7 +886,11 @@ export abstract class QueryBuilder extends ExpressionTransformer {
 
     //#region IExpression
 
-    protected ValueExpressionString(expression: ValueExpression<any>): string {
+    protected arrayExpressionString(expression: ArrayValueExpression<any>): string {
+        const itemStr = expression.items.select(o => this.getOperandString(o)).toArray().join(", ");
+        return `(${itemStr})`;
+    }
+    protected valueExpressionString(expression: ValueExpression<any>): string {
         if (expression.value === undefined && expression.expressionString)
             return expression.expressionString;
 

@@ -52,7 +52,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> });
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> }) {
         if (selectOrEntity instanceof SelectExpression) {
-            selectOrEntity = selectOrEntity.clone();
+            selectOrEntity = selectOrEntity;
         } else {
             selectOrEntity = new SelectExpression(selectOrEntity);
         }

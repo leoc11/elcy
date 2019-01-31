@@ -72,6 +72,13 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return arr;
     }
+    public toMap<K, V>(keySelector: (item: T) => K, valueSelector: (item: T) => V): Map<K, V> {
+        const rel = new Map<K, V>();
+        for (const i of this) {
+            rel.set(keySelector(i), valueSelector(i));
+        }
+        return rel;
+    }
     public all(predicate: (item: T) => boolean): boolean {
         for (const item of this) {
             if (!predicate(item)) {

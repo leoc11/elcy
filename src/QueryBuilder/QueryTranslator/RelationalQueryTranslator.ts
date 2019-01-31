@@ -110,7 +110,7 @@ relationalQueryTranslator.register(SelectExpression.prototype, "contains" as any
  * Array
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
-relationalQueryTranslator.register(Array.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN (${qb.newLine(1, true)}${qb.getExpressionString(exp.objectOperand)}${qb.newLine(-1, true)})`);
+relationalQueryTranslator.register(Array.prototype, "contains", (exp: MethodCallExpression<Array<any>, any>, qb: QueryBuilder) => `${qb.getExpressionString(exp.params[0])} IN ${qb.getExpressionString(exp.objectOperand)}`);
 
 /**
  * Enumerable

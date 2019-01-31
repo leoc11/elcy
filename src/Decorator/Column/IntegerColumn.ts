@@ -16,5 +16,6 @@ export function IntegerColumn(optionOrName?: string | INumericColumnOption, defa
         if (typeof defaultValue !== "undefined")
             option.default = defaultValue;
     }
+
     return Column<any, number>(IntegerColumnMetaData, option);
 }

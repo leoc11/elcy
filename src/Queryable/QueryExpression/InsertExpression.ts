@@ -135,6 +135,6 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
     }
 
     insertExp.values.push(itemExp);
-    insertExp.parameters = queryParameters.select(o => o.parameter).toArray();
+    insertExp.parameters = insertExp.parameters.union(queryParameters.select(o => o.parameter)).toArray();
     return itemExp;
 };

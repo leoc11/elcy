@@ -55,7 +55,7 @@ export class MockConnection implements IConnection {
             .selectMany(o => {
                 const command = o.command;
                 if (command instanceof InsertIntoExpression) {
-                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
+                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -63,7 +63,7 @@ export class MockConnection implements IConnection {
                         };
                         i++;
                         if (query.type & QueryType.DML) {
-                            if (i === dmlCount) {
+                            if (i > skipCount) {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
                             }
                             else {
@@ -143,7 +143,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof InsertExpression) {
-                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
+                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
                     let i = 0;
                     const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMetaData))
                         .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default).toArray();
@@ -165,7 +165,7 @@ export class MockConnection implements IConnection {
                             result.effectedRows = rows.length;
                         }
                         else if (query.type & QueryType.DML) {
-                            if (i === dmlCount) {
+                            if (i > skipCount) {
                                 result.effectedRows = command.values.length;
                             }
                             else {
@@ -179,7 +179,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpdateExpression) {
-                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
+                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -187,7 +187,7 @@ export class MockConnection implements IConnection {
                         };
                         if (query.type & QueryType.DML) {
                             i++;
-                            if (i !== dmlCount) {
+                            if (i <= skipCount) {
                                 const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
@@ -198,7 +198,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof DeleteExpression) {
-                    const dmlCount = o.queries.where(o => (o.type & QueryType.DML) !== 0).count();
+                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -206,7 +206,7 @@ export class MockConnection implements IConnection {
                         };
                         if (query.type & QueryType.DML) {
                             i++;
-                            if (i !== dmlCount) {
+                            if (i <= skipCount) {
                                 const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;

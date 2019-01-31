@@ -1623,7 +1623,7 @@ export class QueryVisitor {
                 break;
             }
             default: {
-                throw new Error("Should not be called");
+                throw new Error("Operation not supported");
             }
         }
 
@@ -1667,6 +1667,7 @@ export class QueryVisitor {
             }
         }
 
+        const includes: IncludeRelation[] = [];
         const selects: IColumnExpression[] = [];
         for (const prop in expression.object) {
             let valExp = expression.object[prop];
@@ -1689,32 +1690,42 @@ export class QueryVisitor {
                             const logicalExp = new StrictEqualExpression(pCol, childCol);
                             relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                         }
-                        embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
+                        const include = embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
+                        embeddedSelect.includes.remove(include);
+                        includes.push(include);
                     }
                     else {
-                        joinToInclude(valExp, embeddedSelect, prop, "many");
+                        const include = joinToInclude(valExp, embeddedSelect, prop, "many");
+                        embeddedSelect.includes.remove(include);
+                        includes.push(include);
                     }
                 }
                 else {
-                    joinToInclude(valExp, embeddedSelect, prop, "many");
+                    const include = joinToInclude(valExp, embeddedSelect, prop, "many");
+                    embeddedSelect.includes.remove(include);
+                    includes.push(include);
                 }
             }
             else if (isEntityExp(valExp)) {
                 if (valExp === embeddedSelect.entity) {
-                    const entityClone = valExp.clone();
+                    const childSelectExp = embeddedSelect.clone();
+                    const entityClone = childSelectExp.entity;
                     entityClone.alias = this.newAlias();
-                    const childSelectExp = new SelectExpression(entityClone);
                     let relation: IExpression<boolean>;
                     for (const pCol of entityClone.primaryColumns) {
                         const childCol = valExp.primaryColumns.first(o => o.propertyName === pCol.propertyName);
                         const logicalExp = new StrictEqualExpression(pCol, childCol);
                         relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                     }
-                    embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
+                    const include = embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
+                    embeddedSelect.includes.remove(include);
+                    includes.push(include);
                 }
                 else {
                     const childSelectExp = valExp.select!;
-                    joinToInclude(childSelectExp, embeddedSelect, prop, "one");
+                    const include = joinToInclude(childSelectExp, embeddedSelect, prop, "one");
+                    embeddedSelect.includes.remove(include);
+                    includes.push(include);
                 }
             }
             else if (isColumnExp(valExp)) {
@@ -1747,6 +1758,7 @@ export class QueryVisitor {
         }
 
         embeddedSelect.selects = selects;
+        embeddedSelect.includes = includes;
         embeddedSelect.itemExpression = expression;
         if (embeddedSelect instanceof GroupByExpression) {
             embeddedSelect.isAggregate = true;

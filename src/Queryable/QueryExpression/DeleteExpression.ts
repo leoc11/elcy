@@ -27,6 +27,9 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
     public get parameters() {
         return this.select.parameters;
     }
+    public set parameters(value) {
+        this.select.parameters = value;
+    }
     public get joins() {
         return this.select.joins;
     }
@@ -48,17 +51,19 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
     constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
+        this.deleteMode = deleteMode;
         if (selectOrEntity instanceof SelectExpression) {
-            selectOrEntity = selectOrEntity.clone();
+            selectOrEntity = selectOrEntity;
         } else {
             selectOrEntity = new SelectExpression(selectOrEntity);
         }
         this.select = selectOrEntity;
         this.select.includes.each(o => {
-            this.addInclude(new DeleteExpression(o.child, this.deleteMode), o.relations);
+            const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
+            childDeleteExp.parameters = childDeleteExp.parameters.concat(this.parameters);
+            this.addInclude(childDeleteExp, o.relations);
         });
         this.select.includes = [];
-        this.deleteMode = deleteMode;
     }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);

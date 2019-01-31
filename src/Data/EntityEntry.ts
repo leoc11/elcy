@@ -32,27 +32,18 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries)
                         typedAddEntries.remove(this);
-                    if (value === EntityState.Deleted)
-                        value = EntityState.Detached;
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (typedEntries)
                         typedEntries.remove(this);
-                    if (value === EntityState.Added)
-                        value = EntityState.Detached;
                     break;
                 }
                 case EntityState.Modified: {
                     const typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (typedEntries)
                         typedEntries.remove(this);
-                    break;
-                }
-                case EntityState.Detached: {
-                    if (value === EntityState.Deleted)
-                        value = EntityState.Detached;
                     break;
                 }
             }
@@ -64,8 +55,8 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                         dbContext.entityEntries.add.set(this.metaData, typedEntries);
                     }
                     typedEntries.push(this);
-                }
                     break;
+                }
                 case EntityState.Deleted: {
                     let typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (!typedEntries) {
@@ -88,6 +79,19 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             this._state = value;
         }
     }
+
+    //#region change state
+
+    public delete() {
+        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
+    }
+
+    public add() {
+        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+    }
+
+    //#endregion
+
     public enableTrackChanges = true;
     public get metaData(): IEntityMetaData<T> {
         return this.dbSet.metaData;
@@ -166,61 +170,53 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         }
     }
     protected onRelationChanged(entity: T, param: IRelationChangeEventParam) {
-        if (!this.enableTrackChanges)
-            return;
         for (const item of param.entities) {
             const entry = this.dbSet.dbContext.entry(item);
-            let relationGroup = this.relationMap[param.relation.fullName];
-            if (!relationGroup) {
-                relationGroup = new Map();
-                this.relationMap[param.relation.fullName] = relationGroup;
+            const relationEntry = this.getRelation(param.relation.fullName, entry);
+
+            if (this.enableTrackChanges) {
+                switch (param.type) {
+                    case "add": {
+                        if (relationEntry.state === EntityState.Detached) {
+                            relationEntry.add();
+                        }
+                        break;
+                    }
+                    case "del":
+                        if (relationEntry.state !== EntityState.Detached) {
+                            relationEntry.delete();
+                        }
+                        break;
+                }
             }
-            let relationEntry = relationGroup.get(entry);
-            if (!relationEntry) {
-                relationEntry = param.relation.isMaster ? new RelationEntry(entry, this, param.relation.reverseRelation) : new RelationEntry(this, entry, param.relation);
-                relationGroup.set(entry, relationEntry);
-                entry.registerRelation(relationEntry);
+            else {
+                relationEntry.state = EntityState.Unchanged;
             }
-            let state = EntityState.Unchanged;
-            switch (param.type) {
-                case "add":
-                    state = EntityState.Added;
-                    break;
-                case "del":
-                    state = EntityState.Deleted;
-                    break;
-            }
-            relationEntry.state = state;
         }
     }
-    public registerRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
-        const isMaster = relationEntry.masterEntry === this;
-        const key = isMaster ? relationEntry.slaveEntry : relationEntry.masterEntry;
-        let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
+
+    //#region Relations
+    public getRelation(relationName: string, relatedEntry: EntityEntry): RelationEntry {
+        const relationMeta = this.metaData.relations.first(o => o.fullName === relationName);
+        let relGroup = this.relationMap[relationName];
         if (!relGroup) {
             relGroup = new Map();
-            this.relationMap[relationEntry.slaveRelation.fullName] = relGroup;
+            this.relationMap[relationName] = relGroup;
         }
-
-        const reverseRelation = isMaster ? relationEntry.slaveRelation.reverseRelation : relationEntry.slaveRelation;
-        const reverseEntry = isMaster ? relationEntry.masterEntry : relationEntry.slaveEntry;
-        if (reverseRelation.relationType === "one")
-            reverseEntry.entity[reverseRelation.propertyName] = key.entity;
-        else {
-            let relationVal: any[] = reverseEntry.entity[reverseRelation.propertyName];
-            if (!Array.isArray(relationVal)) {
-                relationVal = [];
-                reverseEntry.entity[reverseRelation.propertyName] = relationVal;
+        let relEntry = relGroup.get(relatedEntry);
+        if (!relEntry) {
+            if (relationMeta.isMaster) {
+                relEntry = relatedEntry.getRelation(relationName, this);
             }
-            relationVal.add(key.entity);
+            else {
+                relEntry = new RelationEntry(this, relatedEntry, relationMeta);
+            }
+            relGroup.set(relatedEntry, relEntry);
         }
+        return relEntry;
+    }
+    //#endregion
 
-        relGroup.set(key, relationEntry);
-    }
-    public getRelation(relationName: string, relatedEntry: EntityEntry) {
-        const relGroup = this.relationMap[relationName];
-        return relGroup ? relGroup.get(relatedEntry) : null;
-    }
     public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
         const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry);
         let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
@@ -231,7 +227,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     protected updateRelationKey(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>, oldEntityKey: string) {
         const oldKey = relationEntry.slaveRelation.fullName + ":" + oldEntityKey;
         this.relationMap[oldKey] = undefined;
-        this.registerRelation(relationEntry);
+        relationEntry.join();
     }
     public resetChanges(...properties: Array<keyof T>) {
         if (properties) {
@@ -306,7 +302,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 break;
             }
             case EntityState.Deleted: {
-                this.state = EntityState.Unchanged;
+                this.state = EntityState.Detached;
 
                 for (const relMeta of this.dbSet.metaData.relations) {
                     let relEntities: any[] = [];
@@ -360,6 +356,9 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                         });
                 }
                 break;
+            }
+            case EntityState.Added: {
+                this.state = EntityState.Unchanged;
             }
         }
     }

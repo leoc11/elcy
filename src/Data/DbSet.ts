@@ -116,7 +116,7 @@ export class DbSet<T> extends Queryable<T> {
     public clear() {
         this.dictionary = new Map();
     }
-    protected getMapKey(id: ValueType | { [key in keyof T]: T[key] }): string {
+    public getMapKey(id: ValueType | { [key in keyof T]: T[key] }): string {
         if (!isNotNull(id))
             throw new Error("Parameter cannot be null");
         if (isValue(id))

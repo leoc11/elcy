@@ -12,6 +12,7 @@ import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
 import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
+import { EmbeddedRelationMetaData } from "./EmbeddedColumnMetaData";
 
 export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
     public schema: string = "dbo";
@@ -26,6 +27,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public indices: IIndexMetaData<TE>[] = [];
     public constraints: IConstraintMetaData<TE>[] = [];
     public relations: IRelationMetaData<TE, any>[] = [];
+    public embeds: EmbeddedRelationMetaData<TE>[] = [];
     public concurrencyMode: ConcurrencyModel;
     // inheritance
     public descriminatorMember = "__type__";

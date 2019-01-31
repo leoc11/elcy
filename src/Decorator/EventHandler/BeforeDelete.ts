@@ -7,8 +7,8 @@ import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 /**
  * Register before save event. only for concrete entity
  */
-export function BeforeDelete<T = any>(handler?: (this: T, param?: IDeleteEventParam) => boolean): MethodDecorator | ClassDecorator {
-    return (target: object | IObjectType<T>, propertyKey?: string /* | symbol*/, descriptor?: PropertyDescriptor) => {
+export function BeforeDelete<TE = any>(handler?: (this: TE, param?: IDeleteEventParam) => boolean): MethodDecorator & ClassDecorator {
+    return (target: object | IObjectType<TE>, propertyKey?: keyof TE, descriptor?: PropertyDescriptor) => {
         const ctor = (propertyKey ? target.constructor : target) as ObjectConstructor;
         let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, ctor);
         if (!entityMetaData) {

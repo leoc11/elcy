@@ -11,6 +11,8 @@ import { ModifiedDateColumn } from "../../../src/Decorator/Column/ModifiedDateCo
 import { BeforeSave } from "../../../src/Decorator/EventHandler/BeforeSave";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
 import { AfterSave } from "../../../src/Decorator/EventHandler/AfterSave";
+import { BeforeDelete } from "../../../src/Decorator/EventHandler/BeforeDelete";
+import { AfterDelete } from "../../../src/Decorator/EventHandler/AfterDelete";
 
 @Entity("AutoParent")
 export class AutoParent {
@@ -38,6 +40,16 @@ export class AutoParent {
 
     @AfterSave<AutoParent>()
     public afterSave(entity: AutoParent, param: ISaveEventParam) {
+        // after save
+    }
+
+    @BeforeDelete<AutoParent>()
+    public beforeDelete(entity: AutoParent, param: ISaveEventParam) {
+        // before save
+    }
+
+    @AfterDelete<AutoParent>()
+    public afterDelete(entity: AutoParent, param: ISaveEventParam) {
         // after save
     }
 }

@@ -14,6 +14,7 @@ import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaDat
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { isEqual } from "../../Helper/Util";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 
 export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
     return (target: TE, propertyKey: keyof TE) => {
@@ -59,6 +60,10 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             entityMetaData.versionColumn = metadata;
             if (!entityMetaData.concurrencyMode)
                 entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
+        }
+        else if (metadata instanceof IntegerColumnMetaData) {
+            if (metadata.autoIncrement && metadata.default)
+                console.warn("Auto increment cannot has default value");
         }
 
         // add property to use setter getter.

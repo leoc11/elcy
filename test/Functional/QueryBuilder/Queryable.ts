@@ -1883,6 +1883,45 @@ describe("QUERYABLE", async () => {
             });
         });
     });
+    describe("TOMAP", async () => {
+        it("should work", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const results = await db.orders.toMap(o => o.OrderId, o => o.OrderDate);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[OrderDate] AS [column1]\nFROM [Orders] AS [entity0]",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.a("map").and.not.empty;
+            for (const [key, value] of results) {
+                key.should.be.instanceOf(UUID);
+                value.should.be.a("date");
+            }
+        });
+        it("should support self select and keep defined includes", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const results = await db.orders.include(o => o.OrderDetails).toMap(o => o.OrderId, o => o);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t[entity2].[TotalAmount],\n\t\t[entity2].[OrderDate]\n\tFROM [Orders] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity0].[OrderId],\n\t\t\t[entity0].[OrderId] AS [column0]\n\t\tFROM [Orders] AS [entity0]\n\t) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])\n) AS [entity2] ON ([entity2].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[OrderId] AS [column0]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0]\nFROM [Orders] AS [entity0]",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.a("map").and.not.empty;
+            for (const [key, value] of results) {
+                key.should.be.instanceOf(UUID);
+                value.should.be.an.instanceOf(Order);
+                value.OrderDetails.each(o => {
+                    o.should.be.an.instanceOf(OrderDetail);
+                });
+            }
+        });
+    });
     describe("PIVOT", async () => {
         it("should work", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");

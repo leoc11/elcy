@@ -419,6 +419,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
+        clone.parameters = this.parameters.select(o => resolveClone(o, replaceMap)).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
     }
