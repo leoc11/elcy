@@ -103,6 +103,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
             };
             queryParameters.push(paramv);
             itemExp[col.propertyName] = param;
+            insertExp.parameters.push(param);
         }
     }
 
@@ -117,7 +118,6 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                     // TODO: get value from parent.
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.dbSet.metaData).indexOf(parentEntry);
                     paramExp = new SqlParameterExpression(`${parentEntry.metaData.name}`, new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
-                    insertExp.parameters.push(paramExp);
                 }
                 else {
                     let value = parentEntity[parentCol.propertyName];
@@ -129,12 +129,12 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                     queryParameters.push(paramv);
                 }
 
+                insertExp.parameters.push(paramExp);
                 itemExp[col.propertyName] = paramExp;
             }
         }
     }
 
     insertExp.values.push(itemExp);
-    insertExp.parameters = insertExp.parameters.union(queryParameters.select(o => o.parameter)).toArray();
     return itemExp;
 };

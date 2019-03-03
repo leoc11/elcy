@@ -11,9 +11,11 @@ import * as chaiPromise from "chai-as-promised";
 import { QueryType } from "../../../src/Common/Type";
 import { IQuery } from "../../../src/QueryBuilder/Interface/IQuery";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
-import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
+import { entityMetaKey, relationMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { EntityState } from "../../../src/Data/EntityState";
+import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
+import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
 
 chai.use(sinonChai);
 chai.use(chaiPromise);
@@ -130,7 +132,7 @@ describe("DATA MANIPULATION", () => {
                 parameters: { "param0": "Insert 1" }
             } as IQuery);
             spy.should.have.been.calledWithMatch({
-                query: `INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[version] AS version VALUES\n\t(@param2,@param0),\n\t(@param2,@param1)`,
+                query: `INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES\n\t(@param2,@param0),\n\t(@param2,@param1)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { "param0": "detail 1", "param2": data.id, "param1": "detail 2" }
             } as IQuery);
@@ -198,7 +200,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated" }
             } as IQuery);
@@ -207,12 +209,13 @@ describe("DATA MANIPULATION", () => {
         it("should bulk update entity", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
             const effected = await db.autoParents.where(o => o.id === 1).update({
-                name: "Updated"
+                name: "Updated",
+                isDefault: o => !o.isDefault
             });
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = 'Updated', [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([isDeleted]=0) AND ([id]=1))",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = 'Updated', [entity0].[isDefault] = (\n\tCASE WHEN (NOT(\n\t\t([entity0].[isDefault]=1)\n\t)) \n\tTHEN 1\n\tELSE 0\n\tEND\n), [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
                 type: QueryType.DML,
                 parameters: {}
             } as IQuery);
@@ -236,7 +239,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param0) AND ([name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated", param2: "Original" }
             } as IQuery);
@@ -259,7 +262,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[description] = @param1\nFROM [AutoDetail] AS [entity0] \nWHERE (([id]=@param0) AND ([version]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[version]\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[description] = @param1\nFROM [AutoDetail] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[version]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[version]\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated", param2: oldVersion }
             } as IQuery);
@@ -285,7 +288,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([id]=@param0) AND ([modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated", param2: oldModifiedDate.toUTCDate() }
             } as IQuery);
@@ -309,7 +312,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated" }
             } as IQuery);
@@ -341,7 +344,7 @@ describe("DATA MANIPULATION", () => {
             await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated" }
             } as IQuery);
@@ -365,7 +368,7 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
                 parameters: { param0: 1, param1: "Updated" }
             } as IQuery);
@@ -391,46 +394,178 @@ describe("DATA MANIPULATION", () => {
         });
     });
     describe("DELETE", () => {
-        it("should delete entity with save changes", () => {
+        it("should delete entity (soft delete) + should update modifiedDate", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.delete(parent);
 
+            chai.should();
+            entry.state.should.equal(EntityState.Deleted);
+
+            const effected = await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+            effected.should.equal(1);
         });
-        it("should bulk delete entity + included", () => {
+        it("should delete entity (hard delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.delete(parent);
 
+            chai.should();
+            entry.state.should.equal(EntityState.Deleted);
+
+            const effected = await db.saveChanges({
+                forceHardDelete: true
+            });
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+            effected.should.equal(1);
         });
-        it("should delete using soft delete mode", () => {
+        it("should bulk delete with include (soft delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const effected = await db.autoParents.include(o => o.details).delete(o => o.id === 1);
 
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));\n\nDELETE [entity1]\nFROM [AutoDetail] AS [entity1] \nINNER JOIN [AutoParent] AS [entity0]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
+                type: QueryType.DML,
+                parameters: {}
+            } as IQuery);
+            effected.should.be.greaterThan(0);
         });
-        it("should delete using hard delete mode", () => {
+        it("should bulk delete with include (hard delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const effected = await db.autoParents.include(o => o.details)
+                .where(o => o.id === 1)
+                .delete("hard");
 
-        });
-        it("should update ModifiedDate for soft delete mode", () => {
-
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));\n\nDELETE [entity1]\nFROM [AutoDetail] AS [entity1] \nINNER JOIN [AutoParent] AS [entity0]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
+                type: QueryType.DML,
+                parameters: {}
+            } as IQuery);
+            effected.should.be.greaterThan(0);
         });
         it("should fail soft delete for not supported entity", () => {
+            const promise = db.autoParents.include(o => o.details)
+                .where(o => o.id === 1)
+                .delete("soft");
 
+            promise.should.eventually.be.rejectedWith("'AutoDetail' did not support 'Soft' delete");
         });
-        it("should fail hard delete because relation still exist", () => {
+        // it("should fail hard delete when relation still exist", () => {
+        // });
+        it("should cascade delete entity + relation (soft delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            relationMeta.deleteOption = "CASCADE";
 
+            const parent = new AutoParent();
+            parent.id = 1;
+            db.delete(parent);
+
+            await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nDELETE [AutoDetail]\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+
+            relationMeta.deleteOption = "NO ACTION";
         });
-        it("should cascade delete entity + relation (soft delete)", () => {
+        it("should delete with SET NULL option (soft delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            relationMeta.deleteOption = "SET NULL";
 
+            const parent = new AutoParent();
+            parent.id = 1;
+            db.delete(parent);
+
+            await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = NULL\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+
+            relationMeta.deleteOption = "NO ACTION";
         });
-        it("should delete with SET NULL option (soft delete)", () => {
+        it("should delete with SET DEFAULT option (soft delete)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            relationMeta.deleteOption = "SET DEFAULT";
 
+            const parent = new AutoParent();
+            parent.id = 1;
+            db.delete(parent);
+
+            await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = 0\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+
+            relationMeta.deleteOption = "NO ACTION";
         });
-        it("should delete with SET DEFAULT option (soft delete)", () => {
+        it("should trigger before/after delete event", async () => {
+            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const spy = sinon.spy(entityMetaData, "beforeDelete");
+            const spy2 = sinon.spy(entityMetaData, "afterDelete");
 
-        });
-        it("should trigger before/after delete event", () => {
+            const data = new AutoParent();
+            data.id = 1;
+            db.delete(data);
+            const effected = await db.saveChanges();
 
+            chai.should();
+            effected.should.equal(1);
+            spy.should.have.been.calledOnce.and.calledWithMatch(data, { type: "soft" } as IDeleteEventParam);
+            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { type: "soft" } as IDeleteEventParam);
+            spy.should.be.calledBefore(spy2);
         });
     });
     describe("ADD RELATION", () => {
         it("should add one-one relation", () => {
 
         });
-        it("should add one-many relation", () => {
+        it("should add one-many relation", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const parent = new AutoParent();
+            parent.id = 1;
+            db.attach(parent);
+            
+            const detail = new AutoDetail();
+            detail.id = 10;
+            db.attach(detail);
 
+            chai.should();
+            const effected = await db.saveChanges();
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
+                type: QueryType.DML,
+                parameters: { param0: 1 }
+            } as IQuery);
+            effected.should.equal(1);
         });
         it("should add many-many relation", () => {
 

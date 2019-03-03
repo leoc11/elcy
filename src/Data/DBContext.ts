@@ -567,9 +567,13 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
 
             // update all relation changes
-            orderedRelationAdd.union(orderedRelationDelete).selectMany(o => o[1])
+            // Note: toArray coz acceptChanges will modify source array.
+            const savedRelations = orderedRelationAdd.union(orderedRelationDelete).selectMany(o => o[1])
                 .where(o => o.masterEntry.state !== EntityState.Detached && o.slaveEntry.state !== EntityState.Detached)
-                .each(o => o.acceptChanges());
+                .toArray();
+            for (const relEntry of savedRelations) {
+                relEntry.acceptChanges();
+            }
 
             // accept update changes.
             updateQueries.asEnumerable().each(([entityMeta, queries]) => {
