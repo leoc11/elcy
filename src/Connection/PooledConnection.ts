@@ -1,6 +1,6 @@
 import { IConnection } from "./IConnection";
-import { IQuery } from "../QueryBuilder/Interface/IQuery";
-import { IQueryResult } from "../QueryBuilder/IQueryResult";
+import { IQuery } from "../Query/IQuery";
+import { IQueryResult } from "../Query/IQueryResult";
 import { IsolationLevel } from "../Common/Type";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 

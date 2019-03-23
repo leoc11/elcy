@@ -1,4 +1,3 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { ParameterExpression } from "./ParameterExpression";
 import { IExpression } from "./IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
@@ -10,13 +9,8 @@ export class SqlParameterExpression<T = any> extends ParameterExpression<T> {
     constructor(name: string, public readonly valueGetter: IExpression<T>, public readonly column?: IColumnMetaData) {
         super(name, valueGetter.type);
     }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         return this.name;
-    }
-    public execute(transformer: ExpressionTransformer): any {
-        return this.valueGetter.execute(transformer);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
         if (!replaceMap) replaceMap = new Map();

@@ -16,7 +16,7 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
         if (parent) {
             this.parent = parent;
             this.child = child;
-            this.relations = relations;
+            this.relation = relations;
             this.type = type;
         }
     }
@@ -28,8 +28,8 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
     private analyzeRelation() {
         this._parentColumns = [];
         this._childColumns = [];
-        if (this.relations) {
-            visitExpression(this.relations, (exp: IExpression) => {
+        if (this.relation) {
+            visitExpression(this.relation, (exp: IExpression) => {
                 if (isColumnExp(exp)) {
                     const colExp = exp as IColumnExpression;
                     if (this.child.entity === colExp.entity) {
@@ -60,10 +60,10 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
     //#region Properties
     public parent: SelectExpression<T>;
     public child: SelectExpression<TChild>;
-    public get relations() {
+    public get relation() {
         return this._relations;
     }
-    public set relations(value) {
+    public set relation(value) {
         this._relations = value;
         this._childColumns = this._parentColumns = this._isManyManyRelation = null;
     }
@@ -93,7 +93,7 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         const child = resolveClone(this.child, replaceMap);
         const parent = resolveClone(this.parent, replaceMap);
-        const relation = resolveClone(this.relations, replaceMap);
+        const relation = resolveClone(this.relation, replaceMap);
         const clone = new JoinRelation(parent, child, relation, this.type);
         if (child !== this.child) child.parentRelation = clone;
         clone.isEmbedded = this.isEmbedded;

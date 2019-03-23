@@ -44,7 +44,8 @@ export type DateColumnType = "date"; // mysql, postgres, mssql, oracle, sqlite
 export type DateTimeColumnType = "datetime" // mssql, mysql, sqlite
     | "datetime2" // mssql
     | "smalldatetime" // mssql
-    | "datetimeoffset"; // mssql
+    | "datetimeoffset" // mssql
+    | "timestamp"; // mysql, sqlite, postgresql
 
 /**
  * Time column types
@@ -172,5 +173,5 @@ export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultInteger"
     | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataSerialization"
     | "defaultDate" | "defaultDateTime" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnGroupType = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataSerialization"
+export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataSerialization"
     | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";

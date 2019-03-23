@@ -20,7 +20,7 @@ const db = new SchemaContext();
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
-    db.connectionManager.getAllServerConnections = () => Promise.resolve([db.connection]);
+    db.connectionManager.getAllConnections = () => Promise.resolve([db.connection]);
 });
 afterEach(() => {
     db.clear();

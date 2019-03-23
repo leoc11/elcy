@@ -5,14 +5,13 @@ export interface ISelectCacheOption extends ICacheOption {
 }
 
 export interface IQueryOption {
-    buildKey?: string;
     noQueryCache?: boolean;
-    noTracking?: boolean;
-    batchSize?: number;
-    batchDelay?: number;
+    includeSoftDeleted?: boolean;
+    // noTracking?: boolean;
+    // batchSize?: number;
+    // batchDelay?: number;
 }
 export interface ISelectQueryOption extends IQueryOption {
-    includeSoftDeleted?: boolean;
     resultCache?: "none" | ISelectCacheOption;
 }
 export interface IInsertQueryIOption extends IQueryOption {

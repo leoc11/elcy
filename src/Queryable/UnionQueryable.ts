@@ -1,9 +1,10 @@
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode } from "../Helper/Util";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class UnionQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>, public readonly isUnionAll = false) {
@@ -13,11 +14,11 @@ export class UnionQueryable<T> extends Queryable<T> {
     public get parameterName() {
         return "__union" + Math.abs(this.hashCode());
     }
-    public buildQuery(queryVisitor: QueryVisitor) {
+    public buildQuery(queryVisitor: IQueryVisitor) {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression(this.parameterName, Boolean)]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

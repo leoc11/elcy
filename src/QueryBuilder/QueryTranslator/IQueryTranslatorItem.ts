@@ -1,7 +1,8 @@
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { QueryBuilder } from "../QueryBuilder";
+import { IQueryBuilder } from "../../Query/IQueryBuilder";
+import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 
 export interface IQueryTranslatorItem<T extends IExpression = IExpression> {
-    translate: (exp: T, qb: QueryBuilder) => string;
-    isPreferTranslate: (exp: T, isValidInApp: boolean) => boolean;
+    translate: (qb: IQueryBuilder, exp: T, param?: IQueryBuilderParameter) => string;
+    isTranslate: (exp: T) => boolean;
 }

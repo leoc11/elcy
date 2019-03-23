@@ -3,7 +3,7 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { ColumnGeneration } from "../Common/Type";
 
 export class RowVersionColumnMetaData<TE = any> extends ColumnMetaData<TE, Uint8Array> {
-    public columnType: RowVersionColumnType = "timestamp";
+    public columnType: RowVersionColumnType = "rowversion";
     constructor() {
         super(Uint8Array);
     }

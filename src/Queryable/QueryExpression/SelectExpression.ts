@@ -1,19 +1,15 @@
 import { GenericType, OrderDirection, JoinType, RelationshipType, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryStatementExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
 import { EntityExpression } from "./EntityExpression";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, isColumnExp } from "../../Helper/Util";
 import { ISelectRelation } from "../Interface/ISelectRelation";
@@ -23,8 +19,9 @@ import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMet
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { ISelectQueryOption } from "./ISelectQueryOption";
 
-export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
+export class SelectExpression<T = any> implements IQueryExpression<T> {
     constructor(entity?: IEntityExpression<T>) {
         if (entity) {
             this.entity = entity;
@@ -45,6 +42,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     //#region Properties
     public entity: IEntityExpression<T>;
     public type = Array;
+    public option: ISelectQueryOption;
     public get itemType(): GenericType<any> {
         return this.itemExpression.type;
     }
@@ -166,7 +164,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             });
 
             if (isRelationFilter) {
-                this.parentRelation.relations = this.parentRelation.relations ? new AndExpression(this.parentRelation.relations, expression) : expression;
+                this.parentRelation.relation = this.parentRelation.relation ? new AndExpression(this.parentRelation.relation, expression) : expression;
                 return;
             }
         }
@@ -342,23 +340,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         this.joins.push(joinRel);
         return joinRel;
     }
-    public getVisitParam(): IExpression {
+    public getItemExpression(): IExpression {
         if (isColumnExp(this.itemExpression))
             return this.itemExpression;
         return this.entity;
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        const result: ISqlParameter[] = [];
-        const valueTransformer = new ValueExpressionTransformer(params);
-        for (const sqlParameter of this.parameters) {
-            const value = sqlParameter.execute(valueTransformer);
-            result.push({
-                name: sqlParameter.name,
-                parameter: sqlParameter,
-                value: value
-            });
-        }
-        return result;
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes
@@ -372,22 +357,14 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public get allJoinedEntities(): Iterable<IEntityExpression> {
         return [this.entity].union(this.joins.selectMany(o => o.child.allJoinedEntities));
     }
-    public isSimple() {
-        return !this.where && this.joins.length === 0
-            && (!this.parentRelation || this.parentRelation instanceof JoinRelation && this.parentRelation.childColumns.all((c) => this.entity.columns.contains(c)))
-            && !this.paging.skip && !this.paging.take
-            && this.selects.all((c) => this.entity.columns.contains(c));
-    }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        if (parameters)
-            queryBuilder.setParameters(parameters);
-        return queryBuilder.getSelectQuery(this);
-    }
-    public execute(queryBuilder: QueryBuilder) {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";\n\n");
+    public toString(): string {
+        return `Select({
+Entity:${this.entity.toString()},
+Select:${this.selects.select(o => o.toString()).toArray().join(",")},
+Where:${this.where ? this.where.toString() : ""},
+Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
+})`;
     }
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));

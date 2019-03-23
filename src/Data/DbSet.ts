@@ -10,21 +10,21 @@ import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
-import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryStatementExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
-import { IQueryOption } from "../QueryBuilder/Interface/IQueryOption";
+import { IQueryOption } from "../Queryable/QueryExpression/IQueryOption";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
-import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
+import { DeferredQuery } from "../Query/DeferredQuery";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -47,7 +47,7 @@ export class DbSet<T> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(visitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
         visitor.setDefaultBehaviour(result);
         return result;
@@ -156,9 +156,6 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredInsert(...items: Array<{ [key in keyof T]?: T[key] }>) {
-        const queryBuilder = this.dbContext.queryBuilder;
-        queryBuilder.options = clone(this.queryOption, true);
-
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 
@@ -174,10 +171,11 @@ export class DbSet<T> extends Queryable<T> {
             valueExp.push(itemExp);
         }
         let insertExp = new InsertExpression(entityExp, valueExp);
+        insertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = insertExp.buildParameter(this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        const params = this.buildParameter(insertExp, this.flatParameterStacks);
+        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);
@@ -194,7 +192,7 @@ export class DbSet<T> extends Queryable<T> {
                 pkFilter = null;
                 break;
             }
-            const valExp = new ValueExpression(val);
+            const valExp = new ValueExpression(val as T[keyof T]);
             const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
             pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
             setterObj[primaryCol.propertyName] = undefined;
@@ -244,9 +242,6 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredUpsert(item: { [key in keyof T]: T[key] }) {
-        const queryBuilder = this.dbContext.queryBuilder;
-        queryBuilder.options = clone(this.queryOption, true);
-
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 
@@ -258,10 +253,11 @@ export class DbSet<T> extends Queryable<T> {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
         let upsertExp = new UpsertExpression(entityExp, setterExp);
+        upsertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = upsertExp.buildParameter(this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        const params = this.buildParameter(upsertExp, this.flatParameterStacks);
+        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);

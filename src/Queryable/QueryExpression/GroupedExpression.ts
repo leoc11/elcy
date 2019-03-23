@@ -36,7 +36,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                         this._groupBy = childSelects.toArray();
                     }
                     else {
-                        visitExpression(parentRel.relations, (exp: IExpression): boolean | void => {
+                        visitExpression(parentRel.relation, (exp: IExpression): boolean | void => {
                             if ((exp as IColumnExpression).entity && Enumerable.from(parentRel.parent.projectedColumns).contains(exp as any)) {
                                 this._groupBy.add(exp as any);
                                 return false;
@@ -89,6 +89,15 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         const joinRel = super.addJoin(child, relationMetaOrRelations as any, type, isEmbedded);
         joinRel.parent = this.groupByExp;
         return joinRel;
+    }
+    public toString() {
+        return `Grouped({
+Entity:${this.entity.toString()},
+Select:${this.selects.select(o => o.toString()).toArray().join(",")},
+Where:${this.where ? this.where.toString(): ""},
+Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
+})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
         if (!replaceMap) replaceMap = new Map();

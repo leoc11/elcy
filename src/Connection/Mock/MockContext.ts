@@ -1,5 +1,5 @@
 import { DbContext } from "../../Data/DBContext";
-import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
+import { DeferredQuery } from "../../Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";
 import { PooledConnection } from "../PooledConnection";
 import { IConnection } from "../IConnection";

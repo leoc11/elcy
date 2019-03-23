@@ -13,6 +13,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 
 let embeddedEntityEntry: typeof EmbeddedEntityEntry;
 (async () => {
@@ -287,7 +288,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                                     break;
                                                 }
                                                 case "SET DEFAULT": {
-                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = rCol.default.execute();
+                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
                                                     break;
                                                 }
                                             }
@@ -344,7 +345,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                             case "SET DEFAULT": {
                                                 (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
                                                     if (rCol.default) {
-                                                        (relEntry.slaveEntry as any)[rCol.propertyName] = rCol.default.execute();
+                                                        (relEntry.slaveEntry as any)[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
                                                         (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                                     }
                                                 });

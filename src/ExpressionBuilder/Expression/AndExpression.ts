@@ -1,26 +1,12 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 export class AndExpression implements IBinaryOperatorExpression<boolean> {
-    public static create(leftOperand: IExpression<boolean>, rightOperand: IExpression<boolean>) {
-        const result = new AndExpression(leftOperand, rightOperand);
-        if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.create<boolean>(result);
-
-        return result;
-    }
     public type = Boolean;
     constructor(public leftOperand: IExpression<boolean>, public rightOperand: IExpression<boolean>) { }
 
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         return "(" + this.leftOperand.toString() + " && " + this.rightOperand.toString() + ")";
-    }
-    public execute(transformer: ExpressionTransformer) {
-        return this.leftOperand.execute(transformer) && this.rightOperand.execute(transformer);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

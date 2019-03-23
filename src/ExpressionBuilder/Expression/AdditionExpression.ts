@@ -1,24 +1,10 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-import { ValueExpression } from "./ValueExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 import { GenericType } from "../../Common/Type";
 
 export class AdditionExpression<T extends number | string = any> implements IBinaryOperatorExpression<T> {
-    public static create<TModel>(leftOperand: IExpression<TModel>, rightOperand: IExpression<TModel>): IExpression<TModel>;
-    public static create(leftOperand: IExpression, rightOperand: IExpression<string>): IExpression<string>;
-    public static create(leftOperand: IExpression<string>, rightOperand: IExpression): IExpression<string>;
-    public static create(leftOperand: IExpression<number>, rightOperand: IExpression): IExpression<number>;
-    public static create(leftOperand: IExpression, rightOperand: IExpression<number>): IExpression<number>;
-    public static create(leftOperand: IExpression, rightOperand: IExpression): IExpression {
-        const result = new AdditionExpression(leftOperand, rightOperand);
-        if (leftOperand instanceof ValueExpression && rightOperand instanceof ValueExpression)
-            return ValueExpression.create(result);
-
-        return result;
-    }
     public leftOperand: IExpression<T>;
     public rightOperand: IExpression<T>;
     public type: GenericType<T>;
@@ -41,14 +27,8 @@ export class AdditionExpression<T extends number | string = any> implements IBin
         }
         return operand as any;
     }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
-
+    public toString(): string {
         return "(" + this.leftOperand.toString() + " + " + this.rightOperand.toString() + ")";
-    }
-    public execute(transformer: ExpressionTransformer) {
-        return (this.leftOperand.execute(transformer) as any) + (this.rightOperand.execute(transformer) as any);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

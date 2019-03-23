@@ -1,11 +1,12 @@
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
@@ -25,10 +26,10 @@ export class WhereQueryable<T> extends Queryable<T> {
         else
             this.predicateFn = predicate;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

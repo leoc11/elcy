@@ -1,8 +1,5 @@
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
+import { IQueryExpression } from "./IQueryStatementExpression";
 import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
@@ -13,11 +10,13 @@ import { IEntityExpression } from "./IEntityExpression";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
 import { EntityState } from "../../Data/EntityState";
 import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-export class InsertExpression<T = any> implements IQueryCommandExpression<void> {
+import { IQueryOption } from "./IQueryOption";
+import { IQueryVisitor } from "../../Query/IQueryVisitor";
+export class InsertExpression<T = any> implements IQueryExpression<void> {
+    public option: IQueryOption;
     public parameters: SqlParameterExpression[] = [];
     private _columns: IColumnExpression<T>[];
     public get columns(): IColumnExpression<T>[] {
@@ -53,28 +52,8 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
         replaceMap.set(this, clone);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters ? parameters : []);
-        return queryBuilder.getInsertQuery(this);
-    }
-    public execute() {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";" + queryBuilder.newLine() + queryBuilder.newLine());
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        const result: ISqlParameter[] = [];
-        const valueTransformer = new ValueExpressionTransformer(params);
-        for (const sqlParameter of this.parameters) {
-            const value = sqlParameter.execute(valueTransformer);
-            result.push({
-                name: sqlParameter.name,
-                parameter: sqlParameter,
-                value: value
-            });
-        }
-        return result;
+    public toString(): string {
+        return `Insert(${this.entity.toString()})`;
     }
     public hashCode() {
         return hashCode("INSERT", hashCode(this.entity.name, this.values.select(o => {
@@ -90,7 +69,7 @@ export class InsertExpression<T = any> implements IQueryCommandExpression<void> 
     }
 }
 
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
+export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, visitor: IQueryVisitor, queryParameters: ISqlParameter[]) => {
     const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
     for (const col of columns) {
         let value = entry.entity[col.propertyName];

@@ -9,7 +9,7 @@ import * as chai from "chai";
 import * as sinonChai from "sinon-chai";
 import * as chaiPromise from "chai-as-promised";
 import { QueryType } from "../../../src/Common/Type";
-import { IQuery } from "../../../src/QueryBuilder/Interface/IQuery";
+import { IQuery } from "../../../src/Query/IQuery";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
 import { entityMetaKey, relationMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
@@ -23,7 +23,7 @@ const db = new MyDb();
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
-    db.connectionManager.getAllServerConnections = () => Promise.resolve([db.connection]);
+    db.connectionManager.getAllConnections = () => Promise.resolve([db.connection]);
 });
 afterEach(() => {
     db.clear();
@@ -276,7 +276,7 @@ describe("DATA MANIPULATION", () => {
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
-            const oldModifiedDate = Date.timestamp(true);
+            const oldModifiedDate = Date.utcTimestamp();
             parent.modifiedDate = oldModifiedDate;
             const entry = db.entry(parent);
             entry.state = EntityState.Unchanged;

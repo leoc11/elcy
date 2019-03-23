@@ -1,5 +1,4 @@
 import { GenericType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { ColumnType } from "../../Common/ColumnType";
@@ -10,7 +9,6 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: GenericType<T>;
     public propertyName: keyof TE;
-    public columnType: ColumnType;
     public columnName: string;
     public alias?: string;
     public get dataPropertyName() {
@@ -30,7 +28,6 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
             this.propertyName = this.columnMetaData.propertyName;
             this.columnName = this.columnMetaData.columnName;
             this.isPrimary = isPrimaryOrPropertyName as boolean;
-            this.columnType = this.columnMetaData.columnType;
             this.isNullable = this.columnMetaData.nullable;
         }
         else {
@@ -39,19 +36,15 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
             this.columnName = columnName;
             this.isPrimary = isPrimary;
             this.isNullable = isNullable;
-            this.columnType = columnType;
         }
     }
-    public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
-    }
-    public execute(queryBuilder: QueryBuilder) {
-        return this.toString(queryBuilder) as any;
+    public toString(): string {
+        return `Column(${this.propertyName})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
         const entity = resolveClone(this.entity, replaceMap);
-        const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.isNullable, this.columnType);
+        const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.isNullable);
         clone.columnMetaData = this.columnMetaData;
         clone.alias = this.alias;
         clone.isNullable = this.isNullable;

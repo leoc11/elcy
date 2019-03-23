@@ -2,7 +2,7 @@ import "../../Extensions/QueryableExtension";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
 import { DbContext } from "../../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";
-import { IQueryResult } from "../IQueryResult";
+import { IQueryResult } from "../../Query/IQueryResult";
 import { IObjectType } from "../../Common/Type";
 import { hashCode, isValueType } from "../../Helper/Util";
 import { EntityEntry } from "../../Data/EntityEntry";
@@ -10,17 +10,17 @@ import { DBEventEmitter } from "../../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { QueryBuilder } from "../QueryBuilder";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { GroupedExpression } from "../../Queryable/QueryExpression/GroupedExpression";
-import { IGroupArray } from "../Interface/IGroupArray";
+import { IGroupArray } from "../../Common/IGroupArray";
 import { DbSet } from "../../Data/DbSet";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { EntityState } from "../../Data/EntityState";
+import { IQueryBuilder } from "../../Query/IQueryBuilder";
 
 interface IResolvedRelationData<T = any, TData = any> {
     data?: IResolvedRelationData<TData>;
@@ -53,7 +53,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
         return this._orderedSelects;
     }
-    constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: QueryBuilder) {
+    constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: IQueryBuilder) {
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext);

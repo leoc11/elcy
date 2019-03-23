@@ -16,7 +16,7 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         if (parent) {
             this.parent = parent;
             this.child = child;
-            this.relations = relations;
+            this.relation = relations;
             this.type = type;
             this.name = name;
         }
@@ -30,7 +30,7 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         this._parentColumns = [];
         this._childColumns = [];
         this._isManyManyRelation = false;
-        visitExpression(this.relations, (exp: IExpression) => {
+        visitExpression(this.relation, (exp: IExpression) => {
             if ((exp as IColumnExpression).entity) {
                 const colExp = exp as IColumnExpression;
                 if (this.child.entity === colExp.entity) {
@@ -60,7 +60,7 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
     //#region Properties
     public parent: SelectExpression<T>;
     public child: SelectExpression<TChild>;
-    public relations: IExpression<boolean>;
+    public relation: IExpression<boolean>;
     public type: RelationshipType;
     public name: string;
     public isEmbedded: boolean;
@@ -92,12 +92,12 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
     //#region Methods
     public addRelation(parentColumn: IColumnExpression, childColumn: IColumnExpression) {
         const logicalExp = new StrictEqualExpression(parentColumn, childColumn);
-        this.relations = this.relations ? new AndExpression(this.relations, logicalExp) : logicalExp;
+        this.relation = this.relation ? new AndExpression(this.relation, logicalExp) : logicalExp;
     }
     public clone(replaceMap: Map<IExpression, IExpression>) {
         const child = resolveClone(this.child, replaceMap);
         const parent = resolveClone(this.parent, replaceMap);
-        const relation = resolveClone(this.relations, replaceMap);
+        const relation = resolveClone(this.relation, replaceMap);
         const clone = new IncludeRelation(parent, child, this.name, this.type, relation);
         if (child !== this.child) child.parentRelation = clone;
         clone.isEmbedded = this.isEmbedded;

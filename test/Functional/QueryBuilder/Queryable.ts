@@ -7,17 +7,27 @@ import "../../../src/Extensions/DateExtension";
 import { UUID } from "../../../src/Data/UUID";
 import * as sinon from "sinon";
 import { QueryType } from "../../../src/Common/Type";
-import { IQuery } from "../../../src/QueryBuilder/Interface/IQuery";
+import { IQuery } from "../../../src/Query/IQuery";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { mockContext } from "../../../src/Connection/Mock/MockContext";
+import { MssqlDriver } from "../../../src/Provider/Mssql/MssqlDriver";
 
 chai.use(sinonChai);
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
 const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
 
-let db = new MyDb();
+let db = new MyDb(() => new MssqlDriver({
+    host: "localhost\\SQLEXPRESS",
+    database: "Database",
+    port: 1433,
+    user: "sa",
+    password: "password",
+    // options: {
+    //     trustedConnection: true
+    // }
+}));
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
@@ -1176,7 +1186,7 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledWithMatch({
-                query: "SELECT TOP 1 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (([entity0].[OrderDate]<GETDATE()) AND ([entity0].[TotalAmount]>20000))",
+                query: "SELECT TOP 1 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (([entity0].[OrderDate]<getdate()) AND ([entity0].[TotalAmount]>20000))",
                 type: QueryType.DQL,
                 parameters: {}
             } as IQuery);
@@ -1998,7 +2008,7 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<GETDATE())",
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<getdate())",
                 type: QueryType.DQL,
                 parameters: {}
             } as IQuery);

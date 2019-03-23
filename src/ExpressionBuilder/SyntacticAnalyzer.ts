@@ -67,8 +67,8 @@ const globalObjectMaps = new Map<string, any>([
     ["true", true],
     ["false", false],
 ]);
-const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toArray().toMap(o => o.identifier);
-const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toArray().toMap(o => o.identifier);
+const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap(o => o.identifier);
+const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap(o => o.identifier);
 export class SyntacticAnalyzer {
     public static parse(tokens: IterableIterator<ILexicalToken>, userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {
@@ -124,7 +124,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                             let exp = createParamExpression(param, tokens, ")");
                                             params = exp.items;
                                         }
-                                        expression = new InstantiationExpression(typeExp, params);
+                                        expression = new InstantiationExpression(typeExp as ValueExpression, params);
                                         break;
                                     }
                                     case "[": {
@@ -209,19 +209,19 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 return createKeywordExpression(param, token, tokens);
             }
             case LexicalTokenType.Number: {
-                expression = ValueExpression.create(Number.parseFloat(token.data as string));
+                expression = new ValueExpression(Number.parseFloat(token.data as string));
                 param.index++;
                 break;
             }
             case LexicalTokenType.String: {
-                expression = ValueExpression.create(token.data as string);
+                expression = new ValueExpression(token.data as string);
                 param.index++;
                 break;
             }
             case LexicalTokenType.Regexp: {
                 const dataStr = token.data as string;
                 const last = dataStr.lastIndexOf("/");
-                expression = ValueExpression.create(new RegExp(dataStr.substring(1, last), dataStr.substring(last + 1)));
+                expression = new ValueExpression(new RegExp(dataStr.substring(1, last), dataStr.substring(last + 1)));
                 param.index++;
                 break;
             }

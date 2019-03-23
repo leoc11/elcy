@@ -1,6 +1,5 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
-
 export class GroupedEnumerable<T, K> extends Enumerable<T> {
     public get source() {
         return this.parent.parent;

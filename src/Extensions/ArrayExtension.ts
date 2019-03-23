@@ -7,7 +7,7 @@ declare global {
         each(executor: (item: T, index: number) => void): void;
         eachAsync(executor: (item: T, index: number) => Promise<void>): Promise<void>;
         selectAwait<TReturn>(selector: (item: T) => Promise<TReturn>): Promise<TReturn[]>;
-        toMap<K, V>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
+        toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
     }
 }
 

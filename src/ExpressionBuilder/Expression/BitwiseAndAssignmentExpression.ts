@@ -1,25 +1,13 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class BitwiseAndAssignmentExpression implements IBinaryOperatorExpression<number> {
-    public static create(leftOperand: ParameterExpression<number>, rightOperand: IExpression<number>) {
-        return new BitwiseAndAssignmentExpression(leftOperand, rightOperand);
-    }
     public type = Number;
     constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         return "(" + this.leftOperand.toString() + " &= " + this.rightOperand.toString() + ")";
-    }
-    public execute(transformer: ExpressionTransformer) {
-        const value = this.rightOperand.execute(transformer);
-        transformer.scopeParameters.remove(this.leftOperand.name);
-        transformer.scopeParameters.add(this.leftOperand.name, transformer.scopeParameters.get(this.leftOperand.name) & value);
-        return value;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

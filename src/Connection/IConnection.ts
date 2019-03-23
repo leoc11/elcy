@@ -1,7 +1,7 @@
-import { IQueryResult } from "../QueryBuilder/IQueryResult";
+import { IQueryResult } from "../Query/IQueryResult";
 import { IEventHandler } from "../Event/IEventHandler";
 import { IsolationLevel } from "../Common/Type";
-import { IQuery } from "../QueryBuilder/Interface/IQuery";
+import { IQuery } from "../Query/IQuery";
 
 export interface IConnection {
     isolationLevel: IsolationLevel;

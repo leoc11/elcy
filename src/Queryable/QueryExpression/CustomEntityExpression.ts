@@ -1,5 +1,4 @@
 import { GenericType, IObjectType, } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
@@ -29,11 +28,8 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
             return clone;
         }).toArray();
     }
-    public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
-    }
-    public execute(queryBuilder: QueryBuilder): any {
-        return queryBuilder.getExpressionString(this);
+    public toString(): string {
+        return `CustomEntity(${this.name})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T> {
         if (!replaceMap) replaceMap = new Map();

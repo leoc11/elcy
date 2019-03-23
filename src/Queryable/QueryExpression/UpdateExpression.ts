@@ -1,10 +1,8 @@
 import { OrderDirection, JoinType, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryStatementExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression } from "./SelectExpression";
@@ -15,15 +13,17 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
-export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
+import { IQueryOption } from "./IQueryOption";
+import { IQueryVisitor } from "../../Query/IQueryVisitor";
+export class UpdateExpression<T = any> implements IQueryExpression<void> {
     public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public select: SelectExpression<T>;
+    public option: IQueryOption;
     public get parameters() {
         return this.select.parameters;
     }
@@ -88,18 +88,13 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         replaceMap.set(this, clone);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters);
-        return queryBuilder.getBulkUpdateQuery(this);
-    }
-    public execute() {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";" + queryBuilder.newLine() + queryBuilder.newLine());
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        return this.select.buildParameter(params);
+    public toString(): string {
+        let setter = "";
+        for (const prop in this.setter) {
+            const val = this.setter[prop];
+            setter += `${prop}:${val.toString()},\n`;
+        }
+        return `Update(${this.entity.toString()}, {${setter}})`;
     }
     public hashCode() {
         let code = 0;
@@ -113,7 +108,7 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     }
 }
 
-export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
+export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, visitor: IQueryVisitor, queryParameters: ISqlParameter[]) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
     const modifiedColumns = entry.getModifiedProperties().select(o => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where(o => !!o);

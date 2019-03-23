@@ -1,6 +1,6 @@
 import { IConnection } from "../IConnection";
-import { DeferredQuery } from "../../QueryBuilder/DeferredQuery";
-import { IQueryResult } from "../../QueryBuilder/IQueryResult";
+import { DeferredQuery } from "../../Query/DeferredQuery";
+import { IQueryResult } from "../../Query/IQueryResult";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { QueryType, IsolationLevel, ColumnGeneration } from "../../Common/Type";
@@ -11,8 +11,8 @@ import { DeleteExpression } from "../../Queryable/QueryExpression/DeleteExpressi
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { UUID } from "../../Data/UUID";
 import { TimeSpan } from "../../Data/TimeSpan";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { BatchedQuery } from "../../QueryBuilder/Interface/BatchedQuery";
+import { IQuery } from "../../Query/IQuery";
+import { BatchedQuery } from "../../Query/BatchedQuery";
 import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
@@ -24,6 +24,7 @@ import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 import { isNotNull } from "../../Helper/Util";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { InsertIntoExpression } from "../../Queryable/QueryExpression/InsertIntoExpression";
+import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -260,7 +261,7 @@ export class MockConnection implements IConnection {
     }
     protected extractValue(o: DeferredQuery, exp: IExpression) {
         if (exp instanceof ValueExpression) {
-            return exp.execute();
+            return ExpressionExecutor.execute(exp);
         }
         else {
             const sqlParam = o.parameters.first(o => o.name === (exp as SqlParameterExpression).name);
@@ -280,7 +281,7 @@ export class MockConnection implements IConnection {
         if (column.columnMetaData) {
             const columnMeta = column.columnMetaData;
             if (columnMeta.default)
-                return columnMeta.default.body.execute();
+                return ExpressionExecutor.execute(columnMeta.default.body);
         }
 
         switch (column.type) {

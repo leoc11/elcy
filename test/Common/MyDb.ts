@@ -1,4 +1,4 @@
-import { MssqlDbContext } from "../../src/Driver/Mssql/MssqlDbContext";
+import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection, CollectionProductData, AutoParent, AutoDetail } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
 import { IDriver } from "../../src/Connection/IDriver";

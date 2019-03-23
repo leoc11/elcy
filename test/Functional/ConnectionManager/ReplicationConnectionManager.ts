@@ -19,7 +19,7 @@ describe("REPLICATION CONNECTION MANAGER", () => {
         expect(con.database).to.equal("Replica");
     });
     it("should return all connections", async () => {
-        const cons = await connectionManager.getAllServerConnections();
+        const cons = await connectionManager.getAllConnections();
         await cons.eachAsync(async o => await o.close());
         expect(cons).has.lengthOf(2);
     });

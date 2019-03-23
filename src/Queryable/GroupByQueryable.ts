@@ -1,14 +1,15 @@
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 
-export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
+export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression;
     protected get keySelector() {
@@ -26,10 +27,10 @@ export class GroupByQueryable<T, K> extends Queryable<IGroupArray<T, K>> {
         else
             this.keySelectorFn = keySelector;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<IGroupArray<T, K>> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<T, K>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;

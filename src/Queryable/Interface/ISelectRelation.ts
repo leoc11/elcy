@@ -5,7 +5,7 @@ import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 export interface ISelectRelation<T = any, TChild = any> {
     child: SelectExpression<TChild>;
     parent: SelectExpression<T>;
-    relations: IExpression<boolean>;
+    relation: IExpression<boolean>;
     childColumns: IColumnExpression[];
     parentColumns: IColumnExpression[];
     type: any;

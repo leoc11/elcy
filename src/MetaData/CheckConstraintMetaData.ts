@@ -3,7 +3,7 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { QueryBuilder } from "../QueryBuilder/QueryBuilder";
+import { RelationQueryBuilder } from "../Provider/Relation/RelationQueryBuilder";
 import { replaceExpression } from "../Helper/Util";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -49,11 +49,11 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
         });
         return fnExp.body;
     }
-    public getDefinitionString(queryBuilder: QueryBuilder) {
+    public getDefinitionString(queryBuilder: RelationQueryBuilder) {
         if (typeof this.definition === "string") {
             return this.definition;
         }
 
-        return queryBuilder.getLogicalOperandString(this.definition);
+        return queryBuilder.toLogicalString(this.definition);
     }
 }

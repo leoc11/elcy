@@ -1,7 +1,7 @@
 import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
-import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryStatementExpression";
 
 export interface IQueryCache<T = any> {
-    commandQuery: IQueryCommandExpression<T>;
+    commandQuery: IQueryExpression<T>;
     resultParser?: IQueryResultParser<T>;
 }

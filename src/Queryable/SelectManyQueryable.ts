@@ -1,12 +1,13 @@
 import { GenericType } from "../Common/Type";
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: ((item: S) => T[] | Queryable<T>);
@@ -26,10 +27,10 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
         else
             this.selectorFn = selector;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;

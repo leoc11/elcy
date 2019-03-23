@@ -18,12 +18,12 @@ import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
-import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { ProjectQueryable } from "./ProjectQueryable";
 import { GroupJoinQueryable } from "./GroupJoinQueryable";
-import { ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 import { OptionQueryable } from "./OptionQueryable";
+import { ISelectQueryOption } from "./QueryExpression/ISelectQueryOption";
+import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -37,7 +37,7 @@ declare module "./Queryable" {
         orderBy(...selectors: IOrderQueryDefinition<T>[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
+        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
         distinct(): Queryable<T>;
         project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
         include(...includes: Array<(item: T) => any>): Queryable<T>;
@@ -84,7 +84,7 @@ Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Query
 Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Queryable<T> {
     return new TakeQueryable(this, take);
 };
-Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<IGroupArray<T, K>> {
+Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>> {
     return new GroupByQueryable(this, keySelector);
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {

@@ -1,25 +1,11 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
-import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class NegationExpression implements IUnaryOperatorExpression<number> {
-    public static create(operand: IExpression<number>) {
-        const result = new NegationExpression(operand);
-        if (operand instanceof ValueExpression)
-            return ValueExpression.create<number>(result);
-
-        return result;
-    }
     public type = Number;
     constructor(public operand: IExpression<number>) { }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         return "-" + this.operand.toString();
-    }
-    public execute(transformer: ExpressionTransformer) {
-        return -this.operand.execute(transformer);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

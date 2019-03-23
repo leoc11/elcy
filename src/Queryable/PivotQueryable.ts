@@ -1,6 +1,6 @@
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -8,8 +8,9 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class PivotQueryable<T,
     TD extends FunctionExpression,
@@ -66,10 +67,10 @@ export class PivotQueryable<T,
         else
             this.metricFn = metrics;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<TResult> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<TResult> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
