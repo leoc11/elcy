@@ -1,5 +1,5 @@
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class ParameterQueryable<T> extends Queryable<T> {
@@ -16,7 +16,7 @@ export class ParameterQueryable<T> extends Queryable<T> {
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const command = this.parent.buildQuery(queryVisitor);
-        queryVisitor.setParameter(this.flatParameterStacks, this.parameterStackIndex, this.parameters);
+        queryVisitor.setParameter(this.flatParameterStacks, this.parameterStackIndex);
         return command;
     }
     public hashCode() {

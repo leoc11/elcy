@@ -8,12 +8,11 @@ import { IQuery } from "../../Query/IQuery";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 import { Version } from "../../Common/Version";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { IQueryOption } from "../../Queryable/QueryExpression/IQueryOption";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { IQueryParameter } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 
 export class SqliteQueryBuilder extends RelationQueryBuilder {
-    public version = new Version(3, 24);
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,
         maxParameters: 999,
@@ -28,10 +27,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         [UUID, () => ({ columnType: "text" })]
     ]);
     public translator = sqliteQueryTranslator;
-    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: ISqlParameter[]): IQuery[] {
-        if (this.version < new Version(3, 24)) {
-            return this.getUpsertQueryOlder(upsertExp, option, parameters);
-        }
+    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
@@ -39,7 +35,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         };
 
         if (option && option.version && option.version < new Version(3, 24)) {
-
+            return this.getUpsertQueryOlder(upsertExp, option, parameters);
         }
 
         const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
@@ -62,7 +58,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         };
         return [queryCommand];
     }
-    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: ISqlParameter[]): IQuery[] {
+    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,

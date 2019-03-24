@@ -123,18 +123,27 @@ describe("DATA MANIPULATION", () => {
             data.details.push(detail1);
             data.details.push(detail2);
 
+            const data2 = db.autoParents.new({
+                name: "Insert 2",
+                createdDate: null,
+                modifiedDate: null
+            });
+            const detail21 = db.autoDetails.new({ description: "detail 21" });
+            data2.details = [];
+            data2.details.push(detail21);
+
             const effected = await db.saveChanges();
             chai.should();
-            effected.should.equal(3);
+            effected.should.equal(5);
             spy.should.have.been.calledWithMatch({
-                query: `INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT)`,
+                query: "INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT),\n\t(@param1,DEFAULT,DEFAULT)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { "param0": "Insert 1" }
+                parameters: { "param0": "Insert 1", "param1": "Insert 2" }
             } as IQuery);
             spy.should.have.been.calledWithMatch({
-                query: `INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES\n\t(@param2,@param0),\n\t(@param2,@param1)`,
+                query: "INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES\n\t(@param1,@param0),\n\t(@param1,@param2),\n\t(@param4,@param3)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { "param0": "detail 1", "param2": data.id, "param1": "detail 2" }
+                parameters: { "param0": "detail 1", "param1": data.id, "param2": "detail 2", "param3": "detail 21", "param4": data2.id }
             } as IQuery);
             data.should.has.property("isDeleted").that.equal(false);
             data.should.has.property("isDefault").that.equal(true);
@@ -552,18 +561,19 @@ describe("DATA MANIPULATION", () => {
             const parent = new AutoParent();
             parent.id = 1;
             db.attach(parent);
-            
+
             const detail = new AutoDetail();
             detail.id = 10;
             db.attach(detail);
 
+            parent.details = [detail];
             chai.should();
             const effected = await db.saveChanges();
 
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
+                query: "UPDATE [entity0]\nSET [entity0].[parentId] = @param0\nFROM [AutoDetail] AS [entity0] \nWHERE ([entity0].[id]=@param1)",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: { param0: 1, param1: 10 }
             } as IQuery);
             effected.should.equal(1);
         });

@@ -8,7 +8,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";

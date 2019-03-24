@@ -3,16 +3,16 @@ import { IObjectType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { SelectExpression } from "./SelectExpression";
 import { EntityExpression } from "./EntityExpression";
-import { IQueryExpression } from "./IQueryStatementExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryOption } from "./IQueryOption";
+import { IQueryOption } from "../../Query/IQueryOption";
 export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
     public option: IQueryOption;
     public get type() {
         return undefined as any;
     }
-    public get parameters() {
-        return this.select.parameters;
+    public get paramExps() {
+        return this.select.paramExps;
     }
     public get columns(): IColumnExpression<T>[] {
         return this.select.selects;

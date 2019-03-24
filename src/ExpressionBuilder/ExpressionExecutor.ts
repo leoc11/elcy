@@ -55,6 +55,7 @@ import { ValueExpression } from "./Expression/ValueExpression";
 import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
 import { OrExpression } from "./Expression/OrExpression";
 import { SqlParameterExpression } from "./Expression/SqlParameterExpression";
+import { SqlTableValueParameterExpression } from "./Expression/SqlTableValueParameterExpression";
 
 export class ExpressionExecutor {
     constructor(params?: { [key: string]: any }) {
@@ -167,8 +168,9 @@ export class ExpressionExecutor {
                 return this.executeOr(expression as any) as any;
             case ParameterExpression:
                 return this.executeParameter(expression as ParameterExpression);
+            case SqlTableValueParameterExpression:
             case SqlParameterExpression:
-                return this.execute((expression as SqlParameterExpression).valueGetter);
+                return this.executeSqlParameter(expression as SqlParameterExpression);
             case RightDecrementExpression:
                 return this.executeRightDecrement(expression as any) as any;
             case RightIncrementExpression:
@@ -284,6 +286,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
     }
     protected executeEqual(expression: EqualExpression) {
+        // tslint:disable-next-line:triple-equals
         return this.execute(expression.leftOperand) == this.execute(expression.rightOperand);
     }
     protected executeExponentialAssignment(expression: ExponentiationAssignmentExpression) {
@@ -382,6 +385,7 @@ export class ExpressionExecutor {
         return -this.execute(expression.operand);
     }
     protected executeNotEqual(expression: NotEqualExpression) {
+        // tslint:disable-next-line:triple-equals
         return this.execute(expression.leftOperand) != this.execute(expression.rightOperand);
     }
     protected executeNot(expression: NotExpression) {
@@ -396,6 +400,9 @@ export class ExpressionExecutor {
     }
     protected executeOr(expression: OrExpression) {
         return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
+    }
+    protected executeSqlParameter<T>(expression: SqlParameterExpression<T>): T {
+        return this.execute(expression.valueExp);
     }
     protected executeParameter<T>(expression: ParameterExpression<T>): T {
         return this.scopeParameters.get(expression.name);
@@ -428,7 +435,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
     }
     protected executeTernary(expression: TernaryExpression) {
-        return this.execute(expression.logicalOperand) ? this.execute(expression.trueResultOperand) : this.execute(expression.falseResultOperand);
+        return this.execute(expression.logicalOperand) ? this.execute(expression.trueOperand) : this.execute(expression.falseOperand);
     }
     protected executeTypeof(expression: TypeofExpression) {
         return typeof this.execute(expression.operand);

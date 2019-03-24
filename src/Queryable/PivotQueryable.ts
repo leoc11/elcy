@@ -8,7 +8,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 

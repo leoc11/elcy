@@ -1,11 +1,11 @@
 import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { IQueryOption } from "../../Queryable/QueryExpression/IQueryOption";
+import { IQueryOption } from "../../Query/IQueryOption";
 
 export interface IQueryExpression<T = any> extends IExpression<T[]> {
     clone(replaceMap?: Map<IExpression, IExpression>): IQueryExpression<T>;
-    parameters: SqlParameterExpression[];
+    paramExps: SqlParameterExpression[];
     option?: IQueryOption;
     getEffectedEntities(): IObjectType[];
 }

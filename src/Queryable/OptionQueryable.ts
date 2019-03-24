@@ -1,16 +1,16 @@
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
-import { ISelectQueryOption } from "./QueryExpression/ISelectQueryOption";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IQueryOption } from "../Query/IQueryOption";
 
 export class OptionQueryable<T> extends Queryable<T> {
-    constructor(public readonly parent: Queryable<T>, option: ISelectQueryOption) {
+    constructor(public readonly parent: Queryable<T>, option: IQueryOption) {
         super(parent.type, parent);
         this.option(this.parent.queryOption);
         this.option(option);
     }
-    public queryOption: ISelectQueryOption = {};
-    public option(option: ISelectQueryOption) {
+    public queryOption: IQueryOption = {};
+    public option(option: IQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {

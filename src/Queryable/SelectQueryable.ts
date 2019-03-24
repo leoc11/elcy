@@ -5,7 +5,7 @@ import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";

@@ -12,8 +12,8 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
-import { IQueryOption } from "../../Queryable/QueryExpression/IQueryOption";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { IQueryParameter } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { UUID } from "../../Data/UUID";
@@ -48,7 +48,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         else
             return identity;
     }
-    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: ISqlParameter[]): IQuery[] {
+    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
         if (insertExp.values.length <= 0)
             return [];
 
@@ -82,7 +82,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                 const curParamKeys: string[] = [];
                 for (const prop in itemExp) {
                     const value = itemExp[prop];
-                    const paramExp = parameters.first(o => o.parameter === value);
+                    const paramExp = parameters.first(o => o.paramExp === value);
                     if (paramExp) {
                         curParamKeys.push(paramExp.name);
                     }
@@ -128,7 +128,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
     }
 
     //#region Update
-    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: ISqlParameter[]): IQuery[] {
+    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
@@ -148,7 +148,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                 const colMeta = updateExp.entity.metaData.modifiedDateColumn;
                 // only update modifiedDate column if not explicitly specified in update set statement.
                 if (!updateExp.setter[colMeta.propertyName]) {
-                    const valueExp = new MethodCallExpression(new ValueExpression(Date), "timestamp", [new ValueExpression(colMeta.timeZoneHandling === "utc")]);
+                    const valueExp = new MethodCallExpression(new ValueExpression(Date), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
                     const valueStr = this.toString(valueExp, param);
                     setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
                 }

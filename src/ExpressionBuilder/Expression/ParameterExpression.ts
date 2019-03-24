@@ -4,7 +4,7 @@ import { hashCode } from "../../Helper/Util";
 
 export class ParameterExpression<T = any> implements IExpression<T> {
     public type: GenericType<T>;
-    public itemType?: GenericType<T>;
+    public itemType?: GenericType;
     constructor(public name: string, type?: GenericType<T>) {
         this.type = type;
     }

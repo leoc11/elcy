@@ -1,14 +1,14 @@
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
-import { FunctionCallExpression } from "../../ExpressionBuilder/Expression/FunctionCallExpression";
-import { IUnaryOperatorExpression } from "../../ExpressionBuilder/Expression/IUnaryOperatorExpression";
-import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
-import { IQueryBuilder } from "../../Query/IQueryBuilder";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { IObjectType, GenericType } from "../../Common/Type";
-import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
-import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
+import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
+import { IQueryBuilder } from "./IQueryBuilder";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { IObjectType, GenericType } from "../Common/Type";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
 
 export class QueryTranslator {
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();

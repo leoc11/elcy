@@ -1,6 +1,6 @@
 import { GenericType, OrderDirection, JoinType, RelationshipType, IObjectType } from "../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryExpression } from "./IQueryStatementExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
@@ -19,7 +19,9 @@ import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMet
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { ISelectQueryOption } from "./ISelectQueryOption";
+import { SqlTableValueParameterExpression } from "../../ExpressionBuilder/Expression/SqlTableValueParameterExpression";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
 
 export class SelectExpression<T = any> implements IQueryExpression<T> {
     constructor(entity?: IEntityExpression<T>) {
@@ -42,7 +44,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     //#region Properties
     public entity: IEntityExpression<T>;
     public type = Array;
-    public option: ISelectQueryOption;
+    public option: IQueryOption;
     public get itemType(): GenericType<any> {
         return this.itemExpression.type;
     }
@@ -81,7 +83,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public includes: IncludeRelation<T, any>[] = [];
     public joins: JoinRelation<T, any>[] = [];
     public isSubSelect: boolean;
-    public parameters: SqlParameterExpression[] = [];
+    public paramExps: SqlParameterExpression[] = [];
 
     public get relationColumns(): Iterable<IColumnExpression> {
         // Include Relation Columns are used later for hydration
@@ -396,9 +398,22 @@ Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
-        clone.parameters = this.parameters.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.paramExps = this.paramExps.select(o => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
+    }
+    public addSqlParameter<T>(valueExp: IExpression<T[]>, colExp?: IEntityExpression<T>): SqlTableValueParameterExpression<T>;
+    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData): SqlParameterExpression<T>;
+    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<T> | SqlTableValueParameterExpression<T> {
+        let paramExp: SqlParameterExpression;
+        if ((valueExp.type as any) === Array) {
+            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<any>, colExp as IEntityExpression);
+        }
+        else {
+            paramExp = new SqlParameterExpression(valueExp, colExp as IColumnMetaData);
+        }
+        this.paramExps.add(paramExp);
+        return paramExp;
     }
     //#endregion
 }

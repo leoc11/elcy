@@ -1,8 +1,8 @@
-import { ISqlParameter } from "../QueryBuilder/ISqlParameter";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryStatementExpression";
-import { IQueryOption } from "../Queryable/QueryExpression/IQueryOption";
+import { IQueryParameter } from "./IQueryParameter";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IQueryOption } from "./IQueryOption";
 export interface IQueryBuilderParameter {
-    parameters?: ISqlParameter[];
+    parameters?: IQueryParameter[];
     option?: IQueryOption;
     queryExpression?: IQueryExpression;
     state?: string;

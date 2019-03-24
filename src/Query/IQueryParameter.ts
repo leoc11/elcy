@@ -1,7 +1,7 @@
 import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
 
-export interface ISqlParameter<T = any> {
-    parameter: SqlParameterExpression<T>;
-    value: T;
+export interface IQueryParameter<T = any> {
+    paramExp: SqlParameterExpression<T>;
+    value?: T;
     name?: string;
 }

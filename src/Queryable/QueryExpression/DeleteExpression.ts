@@ -1,5 +1,5 @@
 import { OrderDirection, JoinType, DeleteMode, IObjectType } from "../../Common/Type";
-import { IQueryExpression } from "./IQueryStatementExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
@@ -11,7 +11,7 @@ import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
-import { IQueryOption } from "./IQueryOption";
+import { IQueryOption } from "../../Query/IQueryOption";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryExpression<T>;
@@ -23,11 +23,11 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public includes: IDeleteIncludeRelation<T, any>[] = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
     public select: SelectExpression<T>;
-    public get parameters() {
-        return this.select.parameters;
+    public get paramExps() {
+        return this.select.paramExps;
     }
-    public set parameters(value) {
-        this.select.parameters = value;
+    public set paramExps(value) {
+        this.select.paramExps = value;
     }
     public get joins() {
         return this.select.joins;
@@ -60,7 +60,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         this.select = selectOrEntity;
         this.select.includes.each(o => {
             const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
-            childDeleteExp.parameters = childDeleteExp.parameters.concat(this.parameters);
+            childDeleteExp.paramExps = childDeleteExp.paramExps.concat(this.paramExps);
             this.addInclude(childDeleteExp, o.relation);
         });
         this.select.includes = [];

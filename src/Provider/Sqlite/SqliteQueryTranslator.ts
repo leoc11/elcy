@@ -1,4 +1,4 @@
-import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
+import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";

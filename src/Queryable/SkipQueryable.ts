@@ -3,7 +3,7 @@ import { hashCode } from "../Helper/Util";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { IQueryVisitor } from "../Query/IQueryVisitor";

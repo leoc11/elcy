@@ -7,6 +7,9 @@ import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { isNotNull } from "../../Helper/Util";
+import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
 
 export class MssqlSchemaBuilder extends RelationSchemaBuilder {
     public columnTypeMap: Map<ColumnTypeMapKey, ICompleteColumnType> = new Map<ColumnTypeMapKey, ICompleteColumnType>([
@@ -16,11 +19,11 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         ["char", { columnType: "char", group: "String", option: { size: 10 } }],
         ["cursor", { columnType: "cursor", group: "Binary" }],
         ["date", { columnType: "date", group: "Date" }],
-        ["datetime", { columnType: "datetime", group: "Date" }],
-        ["datetime2", { columnType: "datetime2", group: "Date", option: { precision: 1 } }],
+        ["datetime", { columnType: "datetime", group: "DateTime" }],
+        ["datetime2", { columnType: "datetime2", group: "DateTime", option: { precision: 1 } }],
         ["datetimeoffset", { columnType: "datetimeoffset", group: "Time", option: { precision: 7 } }],
         ["decimal", { columnType: "decimal", group: "Decimal", option: { precision: 18, scale: 0 } }],
-        ["float", { columnType: "float", group: "Decimal" }],
+        ["float", { columnType: "float", group: "Real", option: { size: 53 } }],
         ["hierarchyid", { columnType: "hierarchyid", group: "Binary" }],
         ["image", { columnType: "image", group: "Binary" }],
         ["int", { columnType: "int", group: "Integer" }],
@@ -31,6 +34,7 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         ["nvarchar", { columnType: "nvarchar", group: "String", option: { length: 255 } }],
         ["real", { columnType: "real", group: "Decimal" }],
         ["rowversion", { columnType: "rowversion", group: "RowVersion" }],
+        ["timestamp", { columnType: "rowversion", group: "RowVersion" }],
         ["smalldatetime", { columnType: "smalldatetime", group: "Date" }],
         ["smallint", { columnType: "smallint", group: "Integer" }],
         ["smallmoney", { columnType: "smallmoney", group: "Decimal" }],
@@ -123,5 +127,36 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
             type: QueryType.DDL
         });
         return result;
+    }
+    protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
+        const columnType = super.columnType(column);
+        switch (columnType.group) {
+            case "Integer": {
+                const size = (column as unknown as IntegerColumnMetaData).size;
+                if (isNotNull(size)) {
+                    if (size > 4)
+                        columnType.columnType = "bigint";
+                    else if (size > 2)
+                        columnType.columnType = "int";
+                    else if (size > 1)
+                        columnType.columnType = "smallint";
+                    else
+                        columnType.columnType = "tinyint";
+                }
+                break;
+            }
+            case "Real": {
+                switch (columnType.columnType) {
+                    case "float": {
+                        const size = (column as unknown as RealColumnMetaData).size;
+                        if (isNotNull(size)) {
+                            columnType.option.size = size <= 24 ? 24 : 53;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        return columnType;
     }
 }

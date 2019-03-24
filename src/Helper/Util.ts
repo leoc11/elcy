@@ -104,8 +104,8 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
     }
     else if (source instanceof TernaryExpression) {
         visitExpression(source.logicalOperand, finder);
-        visitExpression(source.trueResultOperand, finder);
-        visitExpression(source.falseResultOperand, finder);
+        visitExpression(source.trueOperand, finder);
+        visitExpression(source.falseOperand, finder);
     }
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
@@ -129,8 +129,8 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     }
     else if (source instanceof TernaryExpression) {
         source.logicalOperand = replaceExpression(source.logicalOperand, finder);
-        source.trueResultOperand = replaceExpression(source.trueResultOperand, finder);
-        source.falseResultOperand = replaceExpression(source.falseResultOperand, finder);
+        source.trueOperand = replaceExpression(source.trueOperand, finder);
+        source.falseOperand = replaceExpression(source.falseOperand, finder);
     }
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
@@ -147,7 +147,7 @@ export const isEntityExp = (data: IExpression): data is IEntityExpression => {
 };
 export const isExpression = (data: IExpression): data is IExpression => {
     return !!(data.type && data.hashCode && data.clone);
-}
+};
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;
 };

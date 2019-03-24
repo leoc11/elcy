@@ -43,12 +43,12 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         if (this.itemSelect)
             this.itemSelect.isSubSelect = value;
     }
-    public get parameters() {
-        return this.itemSelect.parameters;
+    public get paramExps() {
+        return this.itemSelect.paramExps;
     }
-    public set parameters(value) {
+    public set paramExps(value) {
         if (this.itemSelect)
-            this.itemSelect.parameters = value;
+            this.itemSelect.paramExps = value;
     }
     public get key() {
         return this.itemSelect.key;
@@ -202,7 +202,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         return `GroupBy({
 Entity:${this.entity.toString()},
 Select:${this.selects.select(o => o.toString()).toArray().join(",")},
-Where:${this.where ? this.where.toString(): ""},
+Where:${this.where ? this.where.toString() : ""},
 Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
 Include:${this.includes.select(o => o.child.toString()).toArray().join(",")},
 Group:${this.groupBy.select(o => o.toString()).toArray().join(",")},

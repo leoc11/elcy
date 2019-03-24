@@ -17,7 +17,6 @@ import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IEventHandler, IEventDispacher } from "../../Event/IEventHandler";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
@@ -25,6 +24,7 @@ import { isNotNull } from "../../Helper/Util";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { InsertIntoExpression } from "../../Queryable/QueryExpression/InsertIntoExpression";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
+import { SqlTableValueParameterExpression } from "../../ExpressionBuilder/Expression/SqlTableValueParameterExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -56,7 +56,7 @@ export class MockConnection implements IConnection {
             .selectMany(o => {
                 const command = o.command;
                 if (command instanceof InsertIntoExpression) {
-                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
+                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -68,7 +68,7 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
                             }
                             else {
-                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
                                 }
@@ -130,7 +130,7 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         if (query.type & QueryType.DML) {
-                            const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                            const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                             if (Array.isArray(arrayParameter.value)) {
                                 result.effectedRows = arrayParameter.value.length;
                             }
@@ -144,7 +144,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof InsertExpression) {
-                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
+                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMetaData))
                         .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default).toArray();
@@ -170,7 +170,7 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = command.values.length;
                             }
                             else {
-                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
                                 }
@@ -180,7 +180,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpdateExpression) {
-                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
+                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -189,7 +189,7 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i <= skipCount) {
-                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
                                 }
@@ -199,7 +199,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof DeleteExpression) {
-                    const skipCount = o.parameters.where(o => !!o.parameter.select).count();
+                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -208,7 +208,7 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i <= skipCount) {
-                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
                                 }
@@ -227,7 +227,7 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
-                                const arrayParameter = o.parameters.where(o => !!o.parameter.select).skip(i).first();
+                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
                                 if (Array.isArray(arrayParameter.value)) {
                                     result.effectedRows = arrayParameter.value.length;
                                 }
@@ -264,7 +264,7 @@ export class MockConnection implements IConnection {
             return ExpressionExecutor.execute(exp);
         }
         else {
-            const sqlParam = o.parameters.first(o => o.name === (exp as SqlParameterExpression).name);
+            const sqlParam = o.parameters.first(o => o.paramExp === exp);
             return sqlParam ? sqlParam.value : null;
         }
     }
@@ -342,7 +342,7 @@ export class MockConnection implements IConnection {
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        console.log(JSON.stringify(command));
+        // console.log(JSON.stringify(command));
         const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 1;
         return this.results.splice(0, count);

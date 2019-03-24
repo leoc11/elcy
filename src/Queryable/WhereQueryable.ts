@@ -5,7 +5,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class WhereQueryable<T> extends Queryable<T> {

@@ -1,7 +1,7 @@
 import "../Extensions/ArrayItemTypeExtension";
 import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbSet } from "./DbSet";
-import { IQueryResultParser } from "../QueryBuilder/ResultParser/IQueryResultParser";
+import { IQueryResultParser } from "../Query/IQueryResultParser";
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import { DefaultQueryCacheManager } from "../Cache/DefaultQueryCacheManager";
 import { IQueryResult } from "../Query/IQueryResult";
@@ -16,7 +16,6 @@ import { RelationEntry } from "./RelationEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
 import { isValue } from "../Helper/Util";
-import { ISaveChangesOption } from "../QueryBuilder/Interface/IQueryOption";
 import { IConnectionManager } from "../Connection/IConnectionManager";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
@@ -25,8 +24,8 @@ import { IDeleteEventParam } from "../MetaData/Interface/IDeleteEventParam";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryStatementExpression";
-import { ISqlParameter } from "../QueryBuilder/ISqlParameter";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IQueryParameter } from "../Query/IQueryParameter";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
@@ -44,8 +43,8 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { RawSqlExpression } from "../Queryable/QueryExpression/RawSqlExpression";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { NamingStrategy } from "../QueryBuilder/NamingStrategy";
-import { QueryTranslator } from "../QueryBuilder/QueryTranslator/QueryTranslator";
+import { NamingStrategy } from "../Query/NamingStrategy";
+import { QueryTranslator } from "../Query/QueryTranslator";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { UpsertExpression, upsertEntryExp } from "../Queryable/QueryExpression/UpsertExpression";
@@ -54,7 +53,7 @@ import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IQueryBuilder } from "../Query/IQueryBuilder";
 import { ISchemaBuilder } from "../Query/ISchemaBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryOption } from "../Queryable/QueryExpression/IQueryOption";
+import { IQueryOption } from "../Query/IQueryOption";
 
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
@@ -328,7 +327,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const alias = paramPrefix + i++;
                 o.each(p => {
                     p.name = alias;
-                    p.value = queryBuilder.toParameterValue(p.value, p.parameter.column);
+                    p.value = queryBuilder.toParameterValue(p.value, p.paramExp.column);
                 });
             });
 
@@ -373,7 +372,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async getUpdateSchemaQueries(entityTypes: IObjectType[]) {
         const con = await this.getConnection();
         if (!con.isOpen) await con.open();
-        const schemaBuilder = new this.schemaBuilderType(con, this.queryBuilder);
+        const schemaBuilder = new this.schemaBuilderType();
+        schemaBuilder.connection = con;
+        schemaBuilder.queryBuilder = this.queryBuilder;
         return await schemaBuilder.getSchemaQuery(entityTypes);
     }
 
@@ -387,7 +388,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             type: QueryType.DDL
         };
         const command: IQueryExpression = {
-            parameters: [],
+            paramExps: [],
             type: type as any,
             clone: () => command,
             hashCode: () => 0,
@@ -424,7 +425,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     //#endregion
 
     //#region Update
-    public async saveChanges(options?: ISaveChangesOption): Promise<number> {
+    public async saveChanges(options?: IQueryOption): Promise<number> {
         const insertQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
         const updateQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
         const deleteQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[]> = new Map();
@@ -523,13 +524,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 const values = queries.selectMany(o => o.value.rows).toArray();
                 const transformer = new ExpressionExecutor(values);
                 allQueries.skip(i).selectMany(o => o[1]).each(dQ => {
-                    dQ.command.parameters.where(p => p.name === entityMeta.name).each(p => {
-                        let paramVal = transformer.execute(p);
-                        dQ.parameters.push({
-                            name: "",
-                            parameter: p,
-                            value: paramVal
-                        });
+                    dQ.parameters.where(p => p.name === entityMeta.name).each(p => {
+                        p.value = transformer.execute(p.paramExp.valueExp);
                     });
                 });
             }
@@ -620,7 +616,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const autoUpdateColumns = entityMetaData.updateGeneratedColumns.asEnumerable();
         const hasUpdateColumn = autoUpdateColumns.any();
         let selectExp: SelectExpression<T>;
-        let selectParameters: ISqlParameter[];
+        let selectParameters: IQueryParameter[];
         if (hasUpdateColumn) {
             selectExp = new SelectExpression(entityExp);
             selectExp.selects = entityMetaData.primaryKeys.union(autoUpdateColumns).select(o => entityExp.columns.first(c => c.propertyName === o.propertyName)).toArray();
@@ -629,15 +625,13 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         for (const entry of entryEnumerable) {
             const updateExp = new UpdateExpression(entityExp, {});
-            let queryParameters: ISqlParameter[] = [];
+            let queryParameters: IQueryParameter[] = [];
 
             let pkFilter: IExpression<boolean>;
             for (const colExp of updateExp.entity.primaryColumns) {
-                const paramName = visitor.newAlias("param");
-                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, colExp.type), colExp.columnMetaData);
-                const sqlParam = {
-                    name: paramName,
-                    parameter: parameter,
+                const parameter = new SqlParameterExpression(new ParameterExpression("", colExp.type), colExp.columnMetaData);
+                const sqlParam: IQueryParameter = {
+                    paramExp: parameter,
                     value: entry.entity[colExp.propertyName as keyof T]
                 };
                 queryParameters.push(sqlParam);
@@ -650,7 +644,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
 
             updateExp.addWhere(pkFilter);
-            updateItemExp(updateExp, entry, visitor, queryParameters);
+            updateItemExp(updateExp, entry, queryParameters);
             if (hasUpdateColumn) {
                 selectExp.where = selectExp.where ? new OrExpression(selectExp.where, pkFilter) : pkFilter;
             }
@@ -693,7 +687,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         const deleteExp = new DeleteExpression(entityExp);
         if (deleteMode) deleteExp.deleteMode = new ValueExpression(deleteMode);
 
-        const queryParameters: ISqlParameter[] = [];
+        const queryParameters: IQueryParameter[] = [];
         const hasCompositeKeys = entityMeta.primaryKeys.length > 1;
         let whereExp: IExpression<boolean>;
 
@@ -701,14 +695,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             for (const entry of entryEnumerable) {
                 let primaryExp: IExpression<boolean>;
                 for (const col of entityExp.primaryColumns) {
-                    const paramName = visitor.newAlias("param");
-                    const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, col.type), col.columnMetaData);
+                    const parameter = new SqlParameterExpression(new ParameterExpression("", col.type), col.columnMetaData);
                     queryParameters.push({
-                        name: paramName,
-                        parameter: parameter,
+                        paramExp: parameter,
                         value: entry.entity[col.propertyName]
                     });
-                    deleteExp.parameters.push(parameter);
 
                     const logicalExp = new StrictEqualExpression(col, parameter);
                     primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
@@ -720,14 +711,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const arrayValue = new ArrayValueExpression();
             const primaryKey = entityExp.primaryColumns.first();
             for (const entry of entryEnumerable) {
-                const paramName = visitor.newAlias("param");
-                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, primaryKey.type), primaryKey.columnMetaData);
+                const parameter = new SqlParameterExpression(new ParameterExpression("", primaryKey.type), primaryKey.columnMetaData);
                 queryParameters.push({
-                    name: paramName,
-                    parameter: parameter,
+                    paramExp: parameter,
                     value: entry.entity[primaryKey.propertyName]
                 });
-                deleteExp.parameters.push(parameter);
                 arrayValue.items.push(parameter);
             }
             whereExp = new MethodCallExpression(arrayValue, "contains", entityExp.primaryColumns);
@@ -735,6 +723,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         if (whereExp) {
             deleteExp.addWhere(whereExp);
+            deleteExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
             const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
                 return {
                     effectedRows: results.sum(o => o.effectedRows),
@@ -770,8 +759,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const incrementColumn = entityMeta.primaryKeys.first(o => (o as any as IntegerColumnMetaData).autoIncrement);
             for (const entry of entryEnumerable) {
                 const insertExp = new InsertExpression(entityExp, []);
-                const queryParameters: ISqlParameter[] = [];
-                insertEntryExp(insertExp, entry, columns, relations, visitor, queryParameters);
+                const queryParameters: IQueryParameter[] = [];
+                insertEntryExp(insertExp, entry, columns, relations, queryParameters);
 
                 const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (results) => {
                     return {
@@ -798,7 +787,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         else {
             const insertExp = new InsertExpression<T>(entityExp, []);
-            const queryParameters: ISqlParameter[] = [];
+            const queryParameters: IQueryParameter[] = [];
 
             let isCompositePrimaryKey: boolean;
             let primaryKey: IColumnExpression<T>;
@@ -813,7 +802,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
 
             for (const entry of entryEnumerable) {
-                const itemExp = insertEntryExp(insertExp, entry, columns, relations, visitor, queryParameters);
+                const itemExp = insertEntryExp(insertExp, entry, columns, relations, queryParameters);
 
                 if (hasGeneratedColumn) {
                     if (isCompositePrimaryKey) {
@@ -893,8 +882,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const upsertExp = new UpsertExpression(entityExp, {});
             upsertExp.updateColumns = entry.state === EntityState.Added ? entityExp.columns.where(o => !o.isPrimary).toArray() : entityExp.columns.where(o => !o.isPrimary && entry.isPropertyModified(o.propertyName)).toArray();
 
-            const queryParameters: ISqlParameter[] = [];
-            upsertEntryExp(upsertExp, entry, columns, relations, visitor, queryParameters);
+            const queryParameters: IQueryParameter[] = [];
+            upsertEntryExp(upsertExp, entry, columns, relations, queryParameters);
 
             const upsertQuery = new DeferredQuery(this, upsertExp, queryParameters, (results) => {
                 return {
@@ -961,24 +950,26 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const isMasterAdded = masterEntry.state === EntityState.Added;
 
             if (isToOneRelation) {
-                let queryParameters: ISqlParameter[] = [];
+                let queryParameters: IQueryParameter[] = [];
                 const updateExp = new UpdateExpression(entityExp, {});
 
                 for (const relCol of slaveRelationMetaData.relationColumns) {
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isMasterAdded && (relCol.generation & ColumnGeneration.Insert)) {
                         // TODO: get value from parent.
                         if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
-                        param = new SqlParameterExpression(masterEntityMeta.name, new MemberAccessExpression(new ParameterExpression(index.toString(), masterEntityMeta.type), relCol.columnName as keyof T2), relCol);
-                        updateExp.parameters.push(param);
+                        param = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), masterEntityMeta.type), relCol.columnName as keyof T2), relCol);
+                        const paramv: IQueryParameter = {
+                            name: masterEntityMeta.name,
+                            paramExp: param
+                        };
+                        queryParameters.push(paramv);
                     }
                     else {
                         const reverseProperty = slaveRelationMetaData.relationMaps.get(relCol).propertyName;
-                        const paramv: ISqlParameter = {
-                            name: alias,
-                            parameter: param,
+                        const paramv: IQueryParameter = {
+                            paramExp: param,
                             value: masterEntry.entity[reverseProperty as keyof T2]
                         };
                         queryParameters.push(paramv);
@@ -987,10 +978,11 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 }
 
                 for (const col of entityExp.primaryColumns) {
-                    const paramExp = getEntryColumnParam(slaveEntry, col, visitor, queryParameters);
+                    const paramExp = getEntryColumnParam(slaveEntry, col, queryParameters);
                     updateExp.addWhere(new StrictEqualExpression(col, paramExp));
                 }
 
+                updateExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
                 const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
@@ -1002,25 +994,27 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             else {
                 const isSlaveAdded = slaveEntry.state === EntityState.Added;
                 const insertExp = new InsertExpression(new EntityExpression(relationDataMeta.type, visitor.newAlias()), []);
-                const queryParameters: ISqlParameter[] = [];
+                const queryParameters: IQueryParameter[] = [];
 
                 const itemExp: { [key: string]: IExpression } = {};
                 for (const relCol of relationDataMeta.sourceRelationColumns) {
                     const masterCol = relationDataMeta.sourceRelationMaps.get(relCol) as IColumnMetaData<T2>;
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isMasterAdded && (masterCol.generation & ColumnGeneration.Insert)) {
                         // TODO: get value from parent.
                         if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
                         const masterLookupParamExp = new ParameterExpression(index.toString(), masterEntityMeta.type);
-                        param = new SqlParameterExpression(masterEntityMeta.name, new MemberAccessExpression(masterLookupParamExp, masterCol.columnName as any), relCol);
-                        insertExp.parameters.push(param);
+                        param = new SqlParameterExpression(new MemberAccessExpression(masterLookupParamExp, masterCol.columnName as any), relCol);
+                        const paramv: IQueryParameter = {
+                            name: masterEntityMeta.name,
+                            paramExp: param
+                        };
+                        queryParameters.push(paramv);
                     }
                     else {
-                        const paramv: ISqlParameter = {
-                            name: alias,
-                            parameter: param,
+                        const paramv: IQueryParameter = {
+                            paramExp: param,
                             value: masterEntry.entity[masterCol.propertyName]
                         };
                         queryParameters.push(paramv);
@@ -1030,19 +1024,21 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
                 for (const relCol of relationDataMeta.targetRelationColumns.except(relationDataMeta.sourceRelationColumns)) {
                     const slaveCol = relationDataMeta.targetRelationMaps.get(relCol) as IColumnMetaData<T>;
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
+                    let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isSlaveAdded && (slaveCol.generation & ColumnGeneration.Insert)) {
                         // TODO: get value from parent.
                         if (!dbContext) dbContext = slaveEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(slaveEntityMeta).indexOf(slaveEntry);
-                        param = new SqlParameterExpression(slaveEntityMeta.name, new MemberAccessExpression(new ParameterExpression(index.toString(), slaveEntityMeta.type), slaveCol.columnName as any), relCol);
-                        insertExp.parameters.push(param);
+                        param = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), slaveEntityMeta.type), slaveCol.columnName as any), relCol);
+                        const paramv: IQueryParameter = {
+                            name: slaveEntityMeta.name,
+                            paramExp: param
+                        };
+                        queryParameters.push(paramv);
                     }
                     else {
-                        const paramv: ISqlParameter = {
-                            name: alias,
-                            parameter: param,
+                        const paramv: IQueryParameter = {
+                            paramExp: param,
                             value: slaveEntry.entity[slaveCol.propertyName]
                         };
                         queryParameters.push(paramv);
@@ -1051,6 +1047,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 }
 
                 insertExp.values.push(itemExp);
+                insertExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
                 const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (results) => {
                     return {
                         effectedRows: 0,
@@ -1081,14 +1078,14 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const slaveEntity = new EntityExpression(slaveMetadata.type, visitor.newAlias());
             const slaveSelect = new SelectExpression(slaveEntity);
 
-            const queryParameters: ISqlParameter[] = [];
+            const queryParameters: IQueryParameter[] = [];
             const slaveHasCompositeKeys = slaveMetadata.primaryKeys.length > 1;
             let whereExp: IExpression<boolean>;
             if (!slaveHasCompositeKeys) {
                 const arrayExp = new ArrayValueExpression();
                 const primaryCol = slaveEntity.primaryColumns.first();
                 for (const entry of relationEntryEnumerable) {
-                    const paramExp = getEntryColumnParam(entry.slaveEntry, primaryCol, visitor, queryParameters);
+                    const paramExp = getEntryColumnParam(entry.slaveEntry, primaryCol, queryParameters);
                     arrayExp.items.push(paramExp);
                 }
                 whereExp = new MethodCallExpression(arrayExp, "contains", slaveEntity.primaryColumns);
@@ -1097,7 +1094,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 for (const entry of relationEntryEnumerable) {
                     let primaryExp: IExpression<boolean>;
                     for (const col of slaveEntity.primaryColumns) {
-                        const paramExp = getEntryColumnParam(entry.slaveEntry, col, visitor, queryParameters);
+                        const paramExp = getEntryColumnParam(entry.slaveEntry, col, queryParameters);
                         const logicalExp = new StrictEqualExpression(col, paramExp);
                         primaryExp = primaryExp ? new AndExpression(primaryExp, logicalExp) : logicalExp;
                     }
@@ -1119,8 +1116,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
                 }
                 dataDeleteExp.addJoin(slaveSelect, relations, "INNER");
-                dataDeleteExp.parameters = queryParameters.select(o => o.parameter).toArray();
 
+                dataDeleteExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
                 const dataDeleteQuery = new DeferredQuery(this, dataDeleteExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
@@ -1137,7 +1134,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     setter[relCol.propertyName] = new ValueExpression(null);
                 }
                 const updateExp = new UpdateExpression(slaveSelect, setter);
-                updateExp.parameters = queryParameters.select(o => o.parameter).toArray();
+                updateExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
                 const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
@@ -1149,7 +1146,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             else {
                 // delete slave entity
                 const deleteExp = new DeleteExpression(slaveSelect);
-                deleteExp.parameters = queryParameters.select(o => o.parameter).toArray();
+                deleteExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
                 const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
                     return {
                         effectedRows: results.sum(o => o.effectedRows),
@@ -1163,17 +1160,15 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             // remove relation table.
             // after save remove all reference to this relation entry.
             const dataEntityExp = new EntityExpression<TData>(relationDataMeta.type, relationDataMeta.name, true);
-            const queryParameters: ISqlParameter[] = [];
+            const queryParameters: IQueryParameter[] = [];
             let whereExp: IExpression<boolean>;
             for (const relEntry of relationEntryEnumerable) {
                 let primaryExp: IExpression<boolean>;
                 for (const [relCol, masterCol] of relationDataMeta.sourceRelationMaps) {
                     const relColExp = dataEntityExp.columns.first(o => o.propertyName === relCol.propertyName);
-                    const alias = visitor.newAlias("param");
-                    let param = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
-                    const paramv: ISqlParameter = {
-                        name: alias,
-                        parameter: param,
+                    let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
+                    const paramv: IQueryParameter = {
+                        paramExp: param,
                         value: relEntry.masterEntry.entity[masterCol.propertyName as keyof T2]
                     };
                     queryParameters.push(paramv);
@@ -1186,11 +1181,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                         continue;
 
                     const relColExp = dataEntityExp.columns.first(o => o.propertyName === relCol.propertyName);
-                    const alias = visitor.newAlias("param");
-                    let paramExp = new SqlParameterExpression(alias, new ParameterExpression(alias, relCol.type), relCol);
-                    const paramv: ISqlParameter = {
-                        name: alias,
-                        parameter: paramExp,
+                    let paramExp = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
+                    const paramv: IQueryParameter = {
+                        paramExp: paramExp,
                         value: relEntry.slaveEntry.entity[slaveCol.propertyName as keyof T]
                     };
                     queryParameters.push(paramv);
@@ -1202,7 +1195,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
             const deleteExp = new DeleteExpression(dataEntityExp, new ValueExpression<DeleteMode>("hard"));
             deleteExp.addWhere(whereExp);
-            deleteExp.parameters = queryParameters.select(o => o.parameter).toArray();
+            deleteExp.paramExps = queryParameters.select(o => o.paramExp).toArray();
             const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (results) => {
                 return {
                     effectedRows: results.sum(o => o.effectedRows),
@@ -1217,12 +1210,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     //#endregion
 }
 
-const getEntryColumnParam = <T>(entry: EntityEntry<T>, colExp: IColumnExpression<T>, visitor: IQueryVisitor, queryParameters: ISqlParameter[]) => {
-    const alias = visitor.newAlias("param");
-    let paramExp = new SqlParameterExpression(alias, new ParameterExpression(alias, colExp.type), colExp.columnMetaData);
+const getEntryColumnParam = <T>(entry: EntityEntry<T>, colExp: IColumnExpression<T>, queryParameters: IQueryParameter[]) => {
+    let paramExp = new SqlParameterExpression(new ParameterExpression("", colExp.type), colExp.columnMetaData);
     queryParameters.push({
-        name: alias,
-        parameter: paramExp,
+        paramExp: paramExp,
         value: entry.entity[colExp.propertyName]
     });
     return paramExp;

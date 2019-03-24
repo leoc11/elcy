@@ -1,16 +1,16 @@
 import { DbContext } from "../../Data/DBContext";
-import { POJOQueryResultParser } from "../../QueryBuilder/ResultParser/POJOQueryResultParser";
+import { POJOQueryResultParser } from "../../Query/POJOQueryResultParser";
 import { IDriver } from "../../Connection/IDriver";
 import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 import { IConnectionManager } from "../../Connection/IConnectionManager";
-import { NamingStrategy } from "../../QueryBuilder/NamingStrategy";
+import { NamingStrategy } from "../../Query/NamingStrategy";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { DeferredQuery } from "../../Query/DeferredQuery";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { InsertExpression, insertEntryExp } from "../../Queryable/QueryExpression/InsertExpression";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { IQueryParameter } from "../../Query/IQueryParameter";
 import { QueryType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryResult } from "../../Query/IQueryResult";
@@ -47,9 +47,9 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
         const insertExp = new InsertExpression(entityExp, []);
-        const queryParameters: ISqlParameter[] = [];
+        const queryParameters: IQueryParameter[] = [];
         entryEnumerable.each(entry => {
-            insertEntryExp(insertExp, entry, columns, relations, visitor, queryParameters);
+            insertEntryExp(insertExp, entry, columns, relations, queryParameters);
         });
 
         const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQuery[]) => {

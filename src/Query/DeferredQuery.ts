@@ -1,12 +1,12 @@
 import { DbContext } from "../Data/DBContext";
 import { IQueryResult } from "./IQueryResult";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryStatementExpression";
-import { ISqlParameter } from "../QueryBuilder/ISqlParameter";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IQueryParameter } from "./IQueryParameter";
 import { IQuery } from "./IQuery";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { hashCode } from "../Helper/Util";
 import { IQueryBuilder } from "./IQueryBuilder";
-import { ISelectQueryOption } from "../Queryable/QueryExpression/ISelectQueryOption";
+import { IQueryOption } from "./IQueryOption";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -18,9 +18,9 @@ export class DeferredQuery<T = any> {
     constructor(
         protected readonly dbContext: DbContext,
         public readonly command: IQueryExpression,
-        public readonly parameters: ISqlParameter[],
+        public readonly parameters: IQueryParameter[],
         public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T,
-        public readonly option: ISelectQueryOption
+        public readonly option: IQueryOption
     ) { }
     public resolve(result: IQueryResult[]) {
         this.value = this.resultParser(result, this._queries);

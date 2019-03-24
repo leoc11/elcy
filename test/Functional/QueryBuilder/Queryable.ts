@@ -435,12 +435,12 @@ describe("QUERYABLE", async () => {
         it("select many with nested select to many relation", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
-            const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.OrderDetailProperties));
+            const order = db.orders.where(o => o.TotalAmount > 10000).selectMany(o => o.OrderDetails.select(o => o.OrderDetailProperties));
             const results = await order.toArray();
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])",
+                query: "SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]>10000)\n) AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])",
                 type: QueryType.DQL,
                 parameters: {}
             } as IQuery);

@@ -2,6 +2,7 @@ import { MyDb } from "../../Common/MyDb";
 import { Order } from "../../Common/Model";
 import { expect } from "chai";
 import { EntityState } from "../../../src/Data/EntityState";
+import { UUID } from "../../../src/Data/UUID";
 
 const db = new MyDb();
 afterEach(() => {
@@ -10,19 +11,27 @@ afterEach(() => {
 describe("DBCONTEXT", () => {
     describe("ATTACH", () => {
         it("should attach entity", () => {
-            const entry = db.attach(new Order());
+            const entry = db.attach(new Order({
+                OrderId: UUID.new()
+            }));
             expect(entry.state).equal(EntityState.Unchanged);
         });
         it("should attach and mark added", () => {
-            const entry = db.add(new Order());
+            const entry = db.add(new Order({
+                OrderId: UUID.new()
+            }));
             expect(entry.state).equal(EntityState.Added);
         });
         it("should attach and mark update", () => {
-            const entry = db.update(new Order());
+            const entry = db.update(new Order({
+                OrderId: UUID.new()
+            }));
             expect(entry.state).equal(EntityState.Modified);
         });
         it("should mark delete", () => {
-            const entry = db.delete(new Order());
+            const entry = db.delete(new Order({
+                OrderId: UUID.new()
+            }));
             expect(entry.state).equal(EntityState.Deleted);
         });
     });

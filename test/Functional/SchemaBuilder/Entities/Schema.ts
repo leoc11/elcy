@@ -61,7 +61,7 @@ export class Schema {
     @ComputedColumn((o: Schema) => o.integer + o.decimal)
     public computed: number;
 
-    @RealColumn({ precision: 10, scale: 2 })
+    @RealColumn({ size: 10 })
     public real: number;
 
     @RowVersionColumn()

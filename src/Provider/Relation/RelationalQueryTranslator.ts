@@ -1,4 +1,4 @@
-import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
+import { QueryTranslator } from "../../Query/QueryTranslator";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
@@ -342,6 +342,6 @@ relationalQueryTranslator.registerOperator(OrExpression, (qb, exp, param) => `${
 relationalQueryTranslator.registerOperator(AndExpression, (qb, exp, param) => `${qb.toLogicalString(exp.leftOperand, param)} AND ${qb.toLogicalString(exp.rightOperand, param)}`);
 relationalQueryTranslator.registerOperator(NotExpression, (qb, exp, param) => `NOT(${qb.newLine(1)}${qb.toLogicalString(exp.operand, param)}${qb.newLine(-1)})`);
 relationalQueryTranslator.registerOperator(BitwiseNotExpression, (qb, exp, param) => `~(${qb.toOperandString(exp.operand, param)})`);
-relationalQueryTranslator.registerOperator(TernaryExpression, (qb, exp, param) => `(${qb.newLine(1)}CASE WHEN (${qb.toString(exp.logicalOperand, param)}) ${qb.newLine()}THEN ${qb.toOperandString(exp.trueResultOperand, param)}${qb.newLine()}ELSE ${qb.toOperandString(exp.falseResultOperand, param)}${qb.newLine()}END${qb.newLine(-1)})`);
+relationalQueryTranslator.registerOperator(TernaryExpression, (qb, exp, param) => `(${qb.newLine(1)}CASE WHEN (${qb.toString(exp.logicalOperand, param)}) ${qb.newLine()}THEN ${qb.toOperandString(exp.trueOperand, param)}${qb.newLine()}ELSE ${qb.toOperandString(exp.falseOperand, param)}${qb.newLine()}END${qb.newLine(-1)})`);
 
 //#endregion

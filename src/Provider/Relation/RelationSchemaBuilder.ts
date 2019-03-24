@@ -37,6 +37,7 @@ import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
 import { UUID } from "../../Data/UUID";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { clone, isNotNull } from "../../Helper/Util";
 
 const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
     return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
@@ -223,7 +224,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                 const defaultExp = new FunctionExpression(body, []);
                 column.default = defaultExp;
             }
-            const typeMap = this.columnTypeMap.get(column.columnType);
+            const typeMap = this.columnType(column);
             switch (typeMap.group) {
                 case "Binary":
                     (column as BinaryColumnMetaData).size = columnSchema["CHARACTER_MAXIMUM_LENGTH"];
@@ -236,9 +237,11 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                     (column as DateTimeColumnMetaData).precision = columnSchema["DATETIME_PRECISION"];
                     break;
                 case "Decimal":
-                case "Real":
                     (column as DecimalColumnMetaData).scale = columnSchema["NUMERIC_SCALE"];
                     (column as DecimalColumnMetaData).precision = columnSchema["NUMERIC_PRECISION"];
+                    break;
+                case "Real":
+                    (column as RealColumnMetaData).size = columnSchema["NUMERIC_PRECISION"];
                     break;
                 case "Integer":
                     // NOTE: work around coz information schema did not contain int storage size (bytes)
@@ -616,8 +619,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const isNullableChange = (!!columnSchema.nullable && !(columnSchema as any as IntegerColumnMetaData).autoIncrement) !== (!!oldColumnSchema.nullable && !(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement);
         const isIdentityChange = !!(columnSchema as any as IntegerColumnMetaData).autoIncrement !== !!(oldColumnSchema as any as IntegerColumnMetaData).autoIncrement;
         const isColumnChange = isNullableChange
-            || this.columnType(columnSchema) !== this.columnType(oldColumnSchema)
-            || (columnSchema.collation && columnSchema.collation !== oldColumnSchema.collation);
+            || this.queryBuilder.columnTypeString(this.columnType(columnSchema)) !== this.queryBuilder.columnTypeString(this.columnType(oldColumnSchema))
+            || (columnSchema.collation && oldColumnSchema.collation && columnSchema.collation !== oldColumnSchema.collation);
         let isDefaultChange = isColumnChange || (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
 
         if (isDefaultChange && oldColumnSchema.default) {
@@ -677,7 +680,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         return result;
     }
     protected columnDeclaration(columnMeta: IColumnMetaData, type: "alter" | "create" | "add" = "alter") {
-        let result = `${this.queryBuilder.enclose(columnMeta.columnName)} ${this.columnType(columnMeta)}`;
+        let result = `${this.queryBuilder.enclose(columnMeta.columnName)} ${this.queryBuilder.columnTypeString(this.columnType(columnMeta))}`;
         if (type !== "alter" && columnMeta.default) {
             result += ` DEFAULT ${this.defaultValue(columnMeta)}`;
         }
@@ -706,8 +709,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }
         return result;
     }
-
-    protected columnType<T>(column: IColumnMetaData<T>): string {
+    protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
         let columnType: ICompleteColumnType;
         if (this.columnTypeMap.has(column.columnType)) {
             columnType = this.columnTypeMap.get(column.columnType);
@@ -753,7 +755,48 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             throw new Error(`column type '${column.columnType}' is not supported`);
         }
 
-        return this.queryBuilder.columnTypeString(columnType);
+        columnType = clone(columnType, true);
+        if (columnType.option) {
+            switch (columnType.group) {
+                case "Binary": {
+                    const size = (column as BinaryColumnMetaData).size;
+                    if (isNotNull(size))
+                        columnType.option.size = size;
+                    break;
+                }
+                case "String": {
+                    const length = (column as StringColumnMetaData).length;
+                    if (isNotNull(length))
+                        columnType.option.length = length;
+                    break;
+                }
+                case "DateTime":
+                case "Time": {
+                    const precision = (column as unknown as TimeColumnMetaData).precision;
+                    if (isNotNull(precision))
+                        columnType.option.precision = precision;
+                    break;
+                }
+                case "Decimal": {
+                    const scale = (column as DecimalColumnMetaData).scale;
+                    const precision = (column as DecimalColumnMetaData).precision;
+                    if (isNotNull(scale))
+                        columnType.option.scale = scale;
+                    if (isNotNull(precision))
+                        columnType.option.precision = precision;
+                    break;
+                }
+                case "Integer":
+                case "Real": {
+                    const size = (column as BinaryColumnMetaData).size;
+                    if (isNotNull(size))
+                        columnType.option.size = size;
+                    break;
+                }
+            }
+        }
+
+        return columnType;
     }
     protected primaryKeyDeclaration(entityMeta: IEntityMetaData) {
         const pkName = "PK_" + entityMeta.name;

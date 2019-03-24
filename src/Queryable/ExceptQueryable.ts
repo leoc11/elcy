@@ -2,7 +2,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { Queryable } from "./Queryable";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { IQueryExpression } from "./QueryExpression/IQueryStatementExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 

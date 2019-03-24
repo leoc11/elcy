@@ -9,6 +9,7 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { JoinType } from "../../Common/Type";
+import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
 
 export class GroupedExpression<T = any> extends SelectExpression<T> {
     public key: IExpression;
@@ -79,7 +80,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
             Object.assign(this.paging, select.paging);
 
             this.isSubSelect = select.isSubSelect;
-            this.parameters = select.parameters.slice();
+            this.paramExps = select.paramExps.slice();
         }
     }
 
@@ -94,7 +95,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         return `Grouped({
 Entity:${this.entity.toString()},
 Select:${this.selects.select(o => o.toString()).toArray().join(",")},
-Where:${this.where ? this.where.toString(): ""},
+Where:${this.where ? this.where.toString() : ""},
 Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
 Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
 })`;
@@ -125,6 +126,7 @@ Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
         clone.includes = this.includes.select(o => o.clone(replaceMap)).toArray();
 
         clone.where = resolveClone(this.where, replaceMap);
+        clone.paramExps = this.paramExps.select(o => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
     }

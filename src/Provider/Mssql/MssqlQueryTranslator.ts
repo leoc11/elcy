@@ -1,4 +1,4 @@
-import { QueryTranslator } from "../../QueryBuilder/QueryTranslator/QueryTranslator";
+import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
 import { UUID } from "../../Data/UUID";
 import { DbFunction } from "../../Query/DbFunction";
@@ -11,6 +11,7 @@ mssqlQueryTranslator.registerMethod(UUID, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerType(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
 mssqlQueryTranslator.registerMethod(Date, "timestamp", (qb, exp, param) => "getdate()", () => true);
+mssqlQueryTranslator.registerMethod(Date, "utcTimestamp", () => "getutcdate()", () => true);
 
 
 /**
