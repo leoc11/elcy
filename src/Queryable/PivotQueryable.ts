@@ -69,7 +69,7 @@ export class PivotQueryable<T,
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<TResult> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions, this.metrics]);
+        const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions.clone(), this.metrics.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }

@@ -91,7 +91,6 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
             for (const [col, parentCol] of rel.relationMaps) {
                 let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type), parentCol);
                 if (isGeneratedPrimary) {
-                    // TODO: get value from parent.
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
                     paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
                     queryParameters.push({

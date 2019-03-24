@@ -956,7 +956,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 for (const relCol of slaveRelationMetaData.relationColumns) {
                     let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isMasterAdded && (relCol.generation & ColumnGeneration.Insert)) {
-                        // TODO: get value from parent.
                         if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
                         param = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), masterEntityMeta.type), relCol.columnName as keyof T2), relCol);
@@ -1001,7 +1000,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     const masterCol = relationDataMeta.sourceRelationMaps.get(relCol) as IColumnMetaData<T2>;
                     let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isMasterAdded && (masterCol.generation & ColumnGeneration.Insert)) {
-                        // TODO: get value from parent.
                         if (!dbContext) dbContext = masterEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(masterEntityMeta).indexOf(masterEntry);
                         const masterLookupParamExp = new ParameterExpression(index.toString(), masterEntityMeta.type);
@@ -1026,7 +1024,6 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     const slaveCol = relationDataMeta.targetRelationMaps.get(relCol) as IColumnMetaData<T>;
                     let param = new SqlParameterExpression(new ParameterExpression("", relCol.type), relCol);
                     if (isSlaveAdded && (slaveCol.generation & ColumnGeneration.Insert)) {
-                        // TODO: get value from parent.
                         if (!dbContext) dbContext = slaveEntry.dbSet.dbContext;
                         const index = dbContext.entityEntries.add.get(slaveEntityMeta).indexOf(slaveEntry);
                         param = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), slaveEntityMeta.type), slaveCol.columnName as any), relCol);

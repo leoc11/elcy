@@ -32,7 +32,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "include", this.selectors);
+        const selectors = this.selectors.map(o => o.clone());
+        const methodExpression = new MethodCallExpression(objectOperand, "include", selectors);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
