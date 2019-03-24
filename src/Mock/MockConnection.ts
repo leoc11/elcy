@@ -342,7 +342,6 @@ export class MockConnection implements IConnection {
         return null;
     }
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
-        // console.log(JSON.stringify(command));
         const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 1;
         return this.results.splice(0, count);

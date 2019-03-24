@@ -25,7 +25,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if (!this._type && this.objectOperand.type) {
             try {
                 const objectType = this.objectOperand.type as IObjectType<TE>;
-                if ((Queryable && Queryable.isPrototypeOf(objectType)) || (Enumerable && Enumerable.isPrototypeOf(objectType))) {
+                if (Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":

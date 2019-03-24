@@ -169,7 +169,6 @@ export class MssqlConnection implements IConnection {
     }
     public executeQuery(command: IQuery): Promise<IQueryResult[]> {
         return new Promise<IQueryResult[]>((resolve, reject) => {
-            // console.log(command);
             const results: IQueryResult[] = [];
             let result: IQueryResult = {
                 effectedRows: 0
@@ -179,7 +178,6 @@ export class MssqlConnection implements IConnection {
                     reject(error);
                 }
                 else {
-                    // console.log(JSON.stringify(results));
                     resolve(results);
                 }
             });
