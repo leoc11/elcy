@@ -899,3 +899,5 @@ export abstract class Queryable<T = any> {
     }
     //#endregion
 }
+
+import "./Queryable.partial";

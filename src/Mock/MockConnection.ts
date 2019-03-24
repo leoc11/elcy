@@ -27,10 +27,6 @@ import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
-let SelectExpressionType: any;
-(async function () {
-    SelectExpressionType = (await import("../Queryable/QueryExpression/SelectExpression")).SelectExpression;
-})();
 export class MockConnection implements IConnection {
     public deferredQueries: Iterable<DeferredQuery>;
     private _results: IQueryResult[];
@@ -77,7 +73,7 @@ export class MockConnection implements IConnection {
                         return result;
                     });
                 }
-                else if (command instanceof SelectExpressionType) {
+                else if (command instanceof SelectExpression) {
                     const selects = this.flattenSelectExpression(command as any);
                     const map: Map<SelectExpression, any[]> = new Map();
                     for (const select of selects) {

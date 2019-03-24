@@ -180,3 +180,5 @@ export class Enumerable<T = any> implements Iterable<T> {
         return accumulated;
     }
 }
+
+import "./Enumerable.partial";

@@ -1,4 +1,3 @@
-import "../Enumerable/Enumerable.partial";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";

@@ -1,4 +1,3 @@
-import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";

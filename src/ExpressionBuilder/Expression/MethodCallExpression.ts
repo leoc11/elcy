@@ -2,13 +2,9 @@ import { GenericType, IObjectType } from "../../Common/Type";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { Queryable } from "../../Queryable/Queryable";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
-let Queryable: any;
-let Enumerable: any;
-(async () => {
-    Queryable = (await import("../../Queryable/Queryable")).Queryable;
-    Enumerable = (await import("../../Enumerable/Enumerable")).Enumerable;
-})();
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
     public methodName: K;
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
