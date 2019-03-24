@@ -1,4 +1,4 @@
-import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 
 export interface IQueryParameter<T = any> {
     paramExp: SqlParameterExpression<T>;

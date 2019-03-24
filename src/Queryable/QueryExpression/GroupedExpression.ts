@@ -9,7 +9,7 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { JoinType } from "../../Common/Type";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export class GroupedExpression<T = any> extends SelectExpression<T> {
     public key: IExpression;

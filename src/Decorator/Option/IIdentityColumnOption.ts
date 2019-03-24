@@ -1,7 +1,7 @@
 import { IdentifierColumnType } from "../../Common/ColumnType";
 import { IColumnOption } from "./IColumnOption";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 // tslint:disable-next-line:ban-types
-export interface IIdentityColumnOption extends IColumnOption<UUID> {
+export interface IIdentityColumnOption extends IColumnOption<Uuid> {
     columnType?: IdentifierColumnType;
 }

@@ -1,6 +1,6 @@
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { IEntityExpression } from "../../Queryable/QueryExpression/IEntityExpression";
-import { IExpression } from "./IExpression";
+import { IEntityExpression } from "./IEntityExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone } from "../../Helper/Util";
 
 export class SqlTableValueParameterExpression<T = any> extends SqlParameterExpression<T[]> {

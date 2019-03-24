@@ -10,7 +10,7 @@ import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
 import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 import { NullableColumn } from "../../../src/Decorator/Column/NullableColumn";
 
 @Entity("OrderDetails")
@@ -25,12 +25,12 @@ export class OrderDetail {
     }
     @PrimaryKey()
     @IdentifierColumn()
-    public OrderDetailId: UUID;
+    public OrderDetailId: Uuid;
     @IdentifierColumn()
     @NullableColumn()
-    public OrderId: UUID;
+    public OrderId: Uuid;
     @IdentifierColumn()
-    public ProductId: UUID;
+    public ProductId: Uuid;
     @StringColumn({ columnType: "nvarchar", columnName: "ProductName" })
     public name: string;
     @DecimalColumn({ columnType: "decimal", columnName: "Quantity" })

@@ -1,4 +1,4 @@
-import { IExpression } from "./IExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { resolveClone } from "../../Helper/Util";
 import { GenericType } from "../../Common/Type";

@@ -1,11 +1,11 @@
 import { IdentifierColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
-import { UUID } from "../Data/UUID";
+import { Uuid } from "../Data/Uuid";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class IdentifierColumnMetaData<TE> extends ColumnMetaData<TE, UUID> {
+export class IdentifierColumnMetaData<TE> extends ColumnMetaData<TE, Uuid> {
     public columnType: IdentifierColumnType = "uniqueidentifier";
     constructor(entity?: IEntityMetaData<TE>) {
-        super(UUID, entity);
+        super(Uuid, entity);
     }
 }

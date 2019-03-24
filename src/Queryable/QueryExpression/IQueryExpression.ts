@@ -1,4 +1,4 @@
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IQueryOption } from "../../Query/IQueryOption";

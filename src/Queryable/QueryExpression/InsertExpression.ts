@@ -1,6 +1,6 @@
 import { IQueryExpression } from "./IQueryExpression";
 import { IQueryParameter } from "../../Query/IQueryParameter";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";

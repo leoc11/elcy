@@ -9,7 +9,7 @@ import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression"
 import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
-import { UUID } from "../Data/UUID";
+import { Uuid } from "../Data/Uuid";
 import { TimeSpan } from "../Data/TimeSpan";
 import { IQuery } from "../Query/IQuery";
 import { BatchedQuery } from "../Query/BatchedQuery";
@@ -24,7 +24,7 @@ import { isNotNull } from "../Helper/Util";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { InsertIntoExpression } from "../Queryable/QueryExpression/InsertIntoExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { SqlTableValueParameterExpression } from "../ExpressionBuilder/Expression/SqlTableValueParameterExpression";
+import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 let SelectExpressionType: any;
@@ -285,8 +285,8 @@ export class MockConnection implements IConnection {
         }
 
         switch (column.type) {
-            case UUID:
-                return UUID.new().toString();
+            case Uuid:
+                return Uuid.new().toString();
             case Number:
                 let fix = 2;
                 if (column.columnMetaData && column.columnMetaData instanceof IntegerColumnMetaData)

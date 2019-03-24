@@ -1,7 +1,7 @@
 import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
 import { GenericType, QueryType } from "../../Common/Type";
 import { TimeSpan } from "../../Data/TimeSpan";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../Query/IQuery";
@@ -24,7 +24,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         [String, () => ({ columnType: "text" })],
         [Number, () => ({ columnType: "numeric" })],
         [Boolean, () => ({ columnType: "numeric" })],
-        [UUID, () => ({ columnType: "text" })]
+        [Uuid, () => ({ columnType: "text" })]
     ]);
     public translator = sqliteQueryTranslator;
     public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {

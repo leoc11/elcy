@@ -31,7 +31,7 @@ import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression"
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 import { UpdateExpression, updateItemExp } from "../Queryable/QueryExpression/UpdateExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";

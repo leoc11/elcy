@@ -2,7 +2,7 @@ import "../../../src/Extensions";
 import { MyDb } from "../../Common/MyDb";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { Product, AutoParent, AutoDetail } from "../../Common/Model";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 import "mocha";
 import * as sinon from "sinon";
 import * as chai from "chai";
@@ -16,6 +16,9 @@ import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData
 import { EntityState } from "../../../src/Data/EntityState";
 import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
 import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
+import { IConnection } from "../../../src/Connection/IConnection";
+import { PooledConnection } from "../../../src/Connection/PooledConnection";
+import { MockConnection } from "../../../src/Mock/MockConnection";
 
 chai.use(sinonChai);
 chai.use(chaiPromise);
@@ -30,13 +33,14 @@ afterEach(() => {
     sinon.restore();
     db.closeConnection();
 });
+const getConnection = (con: IConnection) => (con instanceof PooledConnection ? con.connection : con) as MockConnection;
 
 describe("DATA MANIPULATION", () => {
     describe("INSERT", () => {
         it("should insert new entity 1", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
-            const productId = UUID.new();
+            const productId = Uuid.new();
             const effected = await db.products.insert({
                 ProductId: productId,
                 Price: 10000
@@ -54,7 +58,7 @@ describe("DATA MANIPULATION", () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
             const product = new Product();
-            product.ProductId = UUID.new();
+            product.ProductId = Uuid.new();
             product.Price = 10000;
             db.add(product);
             const effected = await db.saveChanges();
@@ -71,7 +75,7 @@ describe("DATA MANIPULATION", () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
             const product = db.products.new({
-                ProductId: UUID.new(),
+                ProductId: Uuid.new(),
                 Price: 10000
             });
             const effected = await db.saveChanges();
@@ -337,6 +341,10 @@ describe("DATA MANIPULATION", () => {
             parent.description = "Updated";
 
             chai.should();
+            const mockConnection = getConnection(db.connection);
+            mockConnection.results = [{
+                effectedRows: 0
+            }];
             const promise = db.saveChanges();
             promise.should.eventually.be.rejectedWith("Concurrency Error");
         });

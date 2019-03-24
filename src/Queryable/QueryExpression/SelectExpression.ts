@@ -9,7 +9,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
 import { EntityExpression } from "./EntityExpression";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, isColumnExp } from "../../Helper/Util";
 import { ISelectRelation } from "../Interface/ISelectRelation";
@@ -19,7 +19,7 @@ import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMet
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
-import { SqlTableValueParameterExpression } from "../../ExpressionBuilder/Expression/SqlTableValueParameterExpression";
+import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IQueryOption } from "../../Query/IQueryOption";
 

@@ -5,7 +5,7 @@ import { EventHandlerFactory } from "../../Event/EventHandlerFactory";
 import { IsolationLevel } from "../../Common/Type";
 import { IQuery } from "../../Query/IQuery";
 import { ConnectionError } from "../../Error/ConnectionError";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 
@@ -250,8 +250,8 @@ export class MssqlConnection implements IConnection {
                     driverType = tedious.TYPES.DateTime;
                     break;
                 }
-                case UUID: {
-                    value = (input as UUID).toString();
+                case Uuid: {
+                    value = (input as Uuid).toString();
                     // driverType = tedious.TYPES.UniqueIdentifier;
                     break;
                 }

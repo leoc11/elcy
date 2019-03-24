@@ -13,7 +13,7 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { JoinRelation } from "../Interface/JoinRelation";

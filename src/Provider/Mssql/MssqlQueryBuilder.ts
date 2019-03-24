@@ -16,7 +16,7 @@ import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameter } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { TimeSpan } from "../../Data/TimeSpan";
 
 export class MssqlQueryBuilder extends RelationQueryBuilder {
@@ -25,7 +25,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         maxQueryLength: 67108864
     };
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType>([
-        [UUID, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
+        [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
         [Date, () => ({ columnType: "datetime", group: "DateTime" })],
         [String, (val: string) => ({ columnType: "nvarchar", group: "String", option: { length: 255 } })],

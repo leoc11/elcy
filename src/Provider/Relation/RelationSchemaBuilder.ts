@@ -34,7 +34,7 @@ import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
 import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { clone, isNotNull } from "../../Helper/Util";
@@ -833,7 +833,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             return this.queryBuilder.valueString(0);
         }
         if (columnMeta instanceof IdentifierColumnMetaData || groupType === "Identifier") {
-            return this.queryBuilder.toString(ExpressionBuilder.parse(() => UUID.new()).body);
+            return this.queryBuilder.toString(ExpressionBuilder.parse(() => Uuid.new()).body);
         }
         if (columnMeta instanceof StringColumnMetaData
             || columnMeta instanceof DataSerializationColumnMetaData

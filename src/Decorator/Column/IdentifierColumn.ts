@@ -2,11 +2,11 @@ import "reflect-metadata";
 import { Column } from "./Column";
 import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
 import { IIdentityColumnOption } from "../Option/IIdentityColumnOption";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 
 export function IdentifierColumn(option?: IIdentityColumnOption): PropertyDecorator;
-export function IdentifierColumn(name: string, defaultValue?: () => UUID): PropertyDecorator;
-export function IdentifierColumn(optionOrName?: string | IIdentityColumnOption, defaultValue?: () => UUID): PropertyDecorator {
+export function IdentifierColumn(name: string, defaultValue?: () => Uuid): PropertyDecorator;
+export function IdentifierColumn(optionOrName?: string | IIdentityColumnOption, defaultValue?: () => Uuid): PropertyDecorator {
     let option: IIdentityColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -17,5 +17,5 @@ export function IdentifierColumn(optionOrName?: string | IIdentityColumnOption, 
         if (typeof defaultValue !== "undefined")
             option.default = defaultValue;
     }
-    return Column<any, UUID>(IdentifierColumnMetaData, option);
+    return Column<any, Uuid>(IdentifierColumnMetaData, option);
 }

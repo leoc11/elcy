@@ -29,7 +29,7 @@ import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpressi
 import { IQueryParameter } from "../../Query/IQueryParameter";
 import { DeleteExpression } from "../../Queryable/QueryExpression/DeleteExpression";
 import { IQueryExpression } from "../../Queryable/QueryExpression/IQueryExpression";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { Enumerable } from "../../Enumerable/Enumerable";
@@ -39,7 +39,7 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { TimeSpan } from "../../Data/TimeSpan";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
@@ -62,7 +62,7 @@ import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { SqlTableValueParameterExpression } from "../../ExpressionBuilder/Expression/SqlTableValueParameterExpression";
+import { SqlTableValueParameterExpression } from "../../Queryable/QueryExpression/SqlTableValueParameterExpression";
 
 export abstract class RelationQueryBuilder implements IQueryBuilder {
     public abstract queryLimit: IQueryLimit;
@@ -893,8 +893,8 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                     return this.dateTimeString(value as Date);
                 case TimeSpan:
                     return this.timeString(value as TimeSpan);
-                case UUID:
-                    return this.identifierString(value as UUID);
+                case Uuid:
+                    return this.identifierString(value as Uuid);
                 case ArrayBuffer:
                 case Uint8Array:
                 case Uint16Array:
@@ -919,7 +919,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
     protected timeString(value: TimeSpan): string {
         return this.stringString(toTimeString(value));
     }
-    protected identifierString(value: UUID): string {
+    protected identifierString(value: Uuid): string {
         return this.stringString(value.toString());
     }
     protected nullString() {
@@ -1076,8 +1076,8 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                     result = result.addMinutes(-(new Date(result.totalMilliSeconds())).getTimezoneOffset());
                 break;
             }
-            case UUID: {
-                result = input ? new UUID(input.toString()) : UUID.empty;
+            case Uuid: {
+                result = input ? new Uuid(input.toString()) : Uuid.empty;
                 break;
             }
             case ArrayBuffer: {

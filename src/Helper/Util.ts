@@ -4,7 +4,7 @@ import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBina
 import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { TimeSpan } from "../Data/TimeSpan";
-import { UUID } from "../Data/UUID";
+import { Uuid } from "../Data/Uuid";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
@@ -163,7 +163,7 @@ export const isValueType = (type: GenericType) => {
         case String:
         case Date:
         case TimeSpan:
-        case UUID:
+        case Uuid:
         case Boolean:
         case ArrayBuffer:
         // TypedArray

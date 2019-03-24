@@ -54,8 +54,8 @@ import { TypeofExpression } from "./Expression/TypeofExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
 import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
 import { OrExpression } from "./Expression/OrExpression";
-import { SqlParameterExpression } from "./Expression/SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "./Expression/SqlTableValueParameterExpression";
+import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
+import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 
 export class ExpressionExecutor {
     constructor(params?: { [key: string]: any }) {

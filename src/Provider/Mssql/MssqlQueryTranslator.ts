@@ -1,13 +1,13 @@
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
-import { UUID } from "../../Data/UUID";
+import { Uuid } from "../../Data/Uuid";
 import { DbFunction } from "../../Query/DbFunction";
 import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
-mssqlQueryTranslator.registerMethod(UUID, "new", () => "newid()", () => true);
+mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerType(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
 mssqlQueryTranslator.registerMethod(Date, "timestamp", (qb, exp, param) => "getdate()", () => true);

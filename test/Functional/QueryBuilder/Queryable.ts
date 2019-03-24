@@ -4,7 +4,7 @@ import "mocha";
 import * as chai from "chai";
 import * as sinonChai from "sinon-chai";
 import "../../../src/Extensions/DateExtension";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 import * as sinon from "sinon";
 import { QueryType } from "../../../src/Common/Type";
 import { IQuery } from "../../../src/Query/IQuery";
@@ -1551,7 +1551,7 @@ describe("QUERYABLE", async () => {
             results.should.be.an("array").and.not.empty;
             results.each(o => {
                 o.should.have.property("obj").that.is.an.instanceof(Object);
-                o.obj.should.have.property("pid").that.is.an.instanceof(UUID);
+                o.obj.should.have.property("pid").that.is.an.instanceof(Uuid);
                 o.Quantity.should.be.an("number");
             });
         });
@@ -1575,7 +1575,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.an("array").and.not.empty;
             results.each(o => {
-                o.should.have.property("pid").that.is.an.instanceof(UUID);
+                o.should.have.property("pid").that.is.an.instanceof(Uuid);
             });
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj.prop)", async () => {
@@ -1598,7 +1598,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.an("array").and.not.empty;
             results.each(o => {
-                o.should.be.an.instanceof(UUID);
+                o.should.be.an.instanceof(Uuid);
             });
         });
         it("groupBy(o => o.toOneRelation.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
@@ -1659,7 +1659,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.an("array").and.not.empty;
             results.each(o => {
-                o.should.have.property("productid").that.is.an.instanceof(UUID);
+                o.should.have.property("productid").that.is.an.instanceof(Uuid);
                 o.should.have.property("Quantity").that.is.a("number");
             });
         });
@@ -1864,7 +1864,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("key").that.is.an.instanceof(Object);
                 o.key.should.have.property("obj").that.is.an.instanceof(Object);
-                o.key.obj.should.have.property("pid").that.is.an.instanceof(UUID);
+                o.key.obj.should.have.property("pid").that.is.an.instanceof(Uuid);
                 o.key.Quantity.should.be.an("number");
                 o.each(o => {
                     o.should.be.an.instanceOf(OrderDetail);
@@ -1907,7 +1907,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("map").and.not.empty;
             for (const [key, value] of results) {
-                key.should.be.instanceOf(UUID);
+                key.should.be.instanceOf(Uuid);
                 value.should.be.a("date");
             }
         });
@@ -1924,7 +1924,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("map").and.not.empty;
             for (const [key, value] of results) {
-                key.should.be.instanceOf(UUID);
+                key.should.be.instanceOf(Uuid);
                 value.should.be.an.instanceOf(Order);
                 value.OrderDetails.each(o => {
                     o.should.be.an.instanceOf(OrderDetail);
@@ -2281,7 +2281,7 @@ describe("QUERYABLE", async () => {
             results.each(o => {
                 o.should.have.property("TotalAmount").that.is.a("number");
                 o.should.have.property("Accumulated").that.is.a("number");
-                o.should.have.property("OrderId").that.is.an.instanceof(UUID);
+                o.should.have.property("OrderId").that.is.an.instanceof(Uuid);
             });
         });
         it("should work in select (Any SubQuery)", async () => {
@@ -2343,7 +2343,7 @@ describe("QUERYABLE", async () => {
             // specify item type in case array did not have any item.
             ad[Symbol.arrayItemType] = {
                 constructor: OrderDetail,
-                OrderId: UUID
+                OrderId: Uuid
             };
             const subQuery = db.orders.parameter({ ad }).where(o => ad.select(od => od.OrderId).contains(o.OrderId));
             let results = await subQuery.toArray();
@@ -2511,7 +2511,7 @@ describe("QUERYABLE", async () => {
 
             results.should.be.an("array").and.not.empty;
             results.each(o => {
-                o.should.have.property("OrderId").that.is.an.instanceof(UUID);
+                o.should.have.property("OrderId").that.is.an.instanceof(Uuid);
                 o.should.have.property("TotalAmount").that.is.an("number");
                 o.should.have.property("Accumulated").that.is.an("number");
             });

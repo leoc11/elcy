@@ -12,7 +12,7 @@ import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { SqlParameterExpression } from "../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { Enumerable } from "../Enumerable/Enumerable";

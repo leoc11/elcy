@@ -38,7 +38,7 @@ import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData"
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 import { SubstractionExpression } from "../../ExpressionBuilder/Expression/SubstractionExpression";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { NamingStrategy } from "../../Query/NamingStrategy";
 import { Queryable } from "../../Queryable/Queryable";
@@ -351,18 +351,6 @@ export class RelationQueryVisitor implements IQueryVisitor {
             param.selectExpression.paramExps.remove(objectOperand);
             exp.objectOperand = objectOperand.valueExp;
             return param.selectExpression.addSqlParameter(exp);
-        }
-        else if (objectOperand instanceof ParameterExpression) {
-            console.error("Access parameter Exp 1");
-            // const key = this.getParameterExpressionKey(objectOperand);
-            // const existing = this.sqlParameters.get(key);
-            // this.sqlParameters.delete(key);
-            // exp.objectOperand = existing.valueExp;
-            // const result = this.createParamBuilderItem(exp, param);
-            // return result;
-        }
-        else if (objectOperand instanceof ObjectValueExpression) {
-            throw new Error("NOT NEEDED");
         }
         else {
             let translator;
