@@ -1,7 +1,7 @@
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
 import "mocha";
 import { expect } from "chai";
-import { MockDriver } from "../../../src/Connection/Mock/MockDriver";
+import { MockDriver } from "../../../src/Mock/MockDriver";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MockDriver({ database: "Master" });

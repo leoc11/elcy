@@ -2,7 +2,7 @@ import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection, CollectionProductData, AutoParent, AutoDetail } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
 import { IDriver } from "../../src/Connection/IDriver";
-import { MockDriver } from "../../src/Connection/Mock/MockDriver";
+import { MockDriver } from "../../src/Mock/MockDriver";
 
 export class MyDb extends MssqlDbContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {

@@ -1,6 +1,6 @@
 import { SchemaContext } from "./Entities/SchemaContext";
 import * as chai from "chai";
-import { MockConnection } from "../../../src/Connection/Mock/MockConnection";
+import { MockConnection } from "../../../src/Mock/MockConnection";
 import { Schema } from "./Entities/Schema";
 import { QueryType } from "../../../src/Common/Type";
 import { SubSchema } from "./Entities/SubSchema";
@@ -14,7 +14,7 @@ import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaDa
 import { ColumnIndex } from "../../../src/Decorator/ColumnIndex";
 import { CheckConstraintMetaData } from "../../../src/MetaData/CheckConstraintMetaData";
 import { UniqueConstraintMetaData } from "../../../src/MetaData/UniqueConstraintMetaData";
-import { mockContext } from "../../../src/Connection/Mock/MockContext";
+import { mockContext } from "../../../src/Mock/MockContext";
 
 const db = new SchemaContext();
 mockContext(db);

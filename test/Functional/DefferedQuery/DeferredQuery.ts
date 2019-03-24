@@ -3,7 +3,7 @@ import "../../../src/Extensions/DateExtension";
 import { MyDb } from "../../Common/MyDb";
 import { Collection, Order } from "../../Common/Model";
 import { should, expect } from "chai";
-import { mockContext } from "../../../src/Connection/Mock/MockContext";
+import { mockContext } from "../../../src/Mock/MockContext";
 
 const db = new MyDb();
 mockContext(db);

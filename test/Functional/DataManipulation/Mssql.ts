@@ -1,6 +1,6 @@
 import "../../../src/Extensions";
 import { MyDb } from "../../Common/MyDb";
-import { mockContext } from "../../../src/Connection/Mock/MockContext";
+import { mockContext } from "../../../src/Mock/MockContext";
 import { Product, AutoParent, AutoDetail } from "../../Common/Model";
 import { UUID } from "../../../src/Data/UUID";
 import "mocha";

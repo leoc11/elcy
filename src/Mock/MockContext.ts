@@ -1,8 +1,8 @@
-import { DbContext } from "../../Data/DBContext";
-import { DeferredQuery } from "../../Query/DeferredQuery";
+import { DbContext } from "../Data/DBContext";
+import { DeferredQuery } from "../Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";
-import { PooledConnection } from "../PooledConnection";
-import { IConnection } from "../IConnection";
+import { PooledConnection } from "../Connection/PooledConnection";
+import { IConnection } from "../Connection/IConnection";
 
 export interface IMockedContext {
     oriExecuteDeferred?(deferredQueries: Iterable<DeferredQuery>): Promise<void>;

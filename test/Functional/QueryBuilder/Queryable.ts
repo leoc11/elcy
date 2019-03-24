@@ -10,7 +10,7 @@ import { QueryType } from "../../../src/Common/Type";
 import { IQuery } from "../../../src/Query/IQuery";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
-import { mockContext } from "../../../src/Connection/Mock/MockContext";
+import { mockContext } from "../../../src/Mock/MockContext";
 import { MssqlDriver } from "../../../src/Provider/Mssql/MssqlDriver";
 
 chai.use(sinonChai);

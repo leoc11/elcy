@@ -1,6 +1,6 @@
 import { MssqlDbContext } from "../../../../src/Provider/Mssql/MssqlDbContext";
 import { IDriver } from "../../../../src/Connection/IDriver";
-import { MockDriver } from "../../../../src/Connection/Mock/MockDriver";
+import { MockDriver } from "../../../../src/Mock/MockDriver";
 import { Schema } from "./Schema";
 import { DefaultResultCacheManager } from "../../../../src/Cache/DefaultResultCacheManager";
 import { IObjectType } from "../../../../src/Common/Type";

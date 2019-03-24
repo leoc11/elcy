@@ -4,7 +4,7 @@ import { PooledConnectionManager } from "../../../src/Connection/PooledConnectio
 import { expect, use } from "chai";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
-import { MockDriver } from "../../../src/Connection/Mock/MockDriver";
+import { MockDriver } from "../../../src/Mock/MockDriver";
 
 describe("POOLED CONNECTION MANAGER", () => {
     use(chaiPromise);
