@@ -10,7 +10,7 @@ export abstract class BitwiseExpression implements IExpression<number> {
             operand = new FunctionCallExpression(new ValueExpression(parseInt), [operand], "parseInt");
         }
         else if (operand.type !== Number) {
-            operand = new FunctionCallExpression(new ValueExpression(parseInt), [new MethodCallExpression(operand, "toString", [])], "parseInt");
+            operand = new FunctionCallExpression(new ValueExpression(parseInt), [new MethodCallExpression(operand, "toString", [], String)], "parseInt");
         }
         return operand as any;
     }

@@ -23,7 +23,7 @@ export class AdditionExpression<T extends number | string = any> implements IBin
     }
     public convertToStringOperand(operand: IExpression): IExpression<string> {
         if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", []);
+            operand = new MethodCallExpression(operand, "toString", [], String);
         }
         return operand as any;
     }

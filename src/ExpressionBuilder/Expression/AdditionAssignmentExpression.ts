@@ -15,7 +15,7 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
     }
     protected convertToStringOperand(operand: IExpression): IExpression<string> {
         if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", []);
+            operand = new MethodCallExpression(operand, "toString", [], String);
         }
         return operand;
     }
