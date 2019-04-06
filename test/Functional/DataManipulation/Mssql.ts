@@ -1,4 +1,3 @@
-import "../../../src/Extensions";
 import { MyDb } from "../../Common/MyDb";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { Product, AutoParent, AutoDetail } from "../../Common/Model";
