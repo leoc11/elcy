@@ -34,12 +34,10 @@
         "noStrictGenericChecks": true,
     },
     "include": [
-        "test/**/*.ts",
-        "src/**/*.ts"
+        "test",
+        "src"
     ],
     "exclude": [
-        "tmp",
-        "temp",
         "build",
         "node_modules",
         "**/node_modules/*"
