@@ -1,14 +1,15 @@
 import { GenericType } from "../Common/Type";
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
@@ -28,12 +29,12 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         else
             this.selectorFn = selector;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
-        const params: IExpression[] = [this.selector];
+        const params: IExpression[] = [this.selector.clone()];
         if (this.type !== Object) params.unshift(new ValueExpression(this.type));
         const methodExpression = new MethodCallExpression(objectOperand, "select", params);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;

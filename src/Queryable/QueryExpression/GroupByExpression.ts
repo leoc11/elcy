@@ -43,12 +43,12 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         if (this.itemSelect)
             this.itemSelect.isSubSelect = value;
     }
-    public get parameters() {
-        return this.itemSelect.parameters;
+    public get paramExps() {
+        return this.itemSelect.paramExps;
     }
-    public set parameters(value) {
+    public set paramExps(value) {
         if (this.itemSelect)
-            this.itemSelect.parameters = value;
+            this.itemSelect.paramExps = value;
     }
     public get key() {
         return this.itemSelect.key;
@@ -93,7 +93,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             const keyEntities = Enumerable.from(this.key.select.allJoinedEntities).toArray();
             let groupBy = this.groupBy.slice();
             for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
-                visitExpression(column.expression, (exp: IColumnExpression) => {
+                visitExpression(column.expression, (exp: IColumnExpression<any>) => {
                     if (isColumnExp(exp) && keyEntities.contains(exp.entity)) {
                         groupBy.push(exp);
                     }
@@ -141,10 +141,10 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             this.selects = this.groupBy.slice();
 
             for (const include of select.includes) {
-                this.addInclude(include.name, include.child, include.relations, include.type);
+                this.addInclude(include.name, include.child, include.relation, include.type);
             }
             for (const join of select.joins) {
-                this.addJoin(join.child, join.relations, join.type);
+                this.addJoin(join.child, join.relation, join.type);
             }
 
             const parentRel = select.parentRelation;
@@ -171,9 +171,9 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             }
         }
     }
-    public getVisitParam() {
+    public getItemExpression() {
         if (this.isAggregate)
-            return this.itemSelect.getVisitParam();
+            return this.itemSelect.getItemExpression();
         return this.itemSelect;
     }
     public get allColumns() {
@@ -198,8 +198,16 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         this.keyRelation = includeRel;
         return includeRel;
     }
-    public isSimple() {
-        return false;
+    public toString() {
+        return `GroupBy({
+Entity:${this.entity.toString()},
+Select:${this.selects.select(o => o.toString()).toArray().join(",")},
+Where:${this.where ? this.where.toString() : ""},
+Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select(o => o.child.toString()).toArray().join(",")},
+Group:${this.groupBy.select(o => o.toString()).toArray().join(",")},
+Having:${this.having ? this.having.toString() : ""}
+})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<T> {
         if (!replaceMap) replaceMap = new Map();
@@ -217,7 +225,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     public hashCode() {
         let code: number = super.hashCode();
         code = hashCodeAdd(hashCode("GROUPBY", code), this.groupBy.select(o => o.hashCode()).sum());
-        if (this.having) code = hashCodeAdd(this.where.hashCode(), code);
+        if (this.having) code = hashCodeAdd(this.having.hashCode(), code);
         return code;
     }
 

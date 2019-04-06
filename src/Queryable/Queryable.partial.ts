@@ -18,17 +18,17 @@ import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
-import { IGroupArray } from "../QueryBuilder/Interface/IGroupArray";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { ProjectQueryable } from "./ProjectQueryable";
 import { GroupJoinQueryable } from "./GroupJoinQueryable";
-import { ISelectQueryOption } from "../QueryBuilder/Interface/IQueryOption";
 import { OptionQueryable } from "./OptionQueryable";
+import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
+import { IQueryOption } from "../Query/IQueryOption";
 
 declare module "./Queryable" {
     interface Queryable<T> {
         parameter(params: { [key: string]: any }): Queryable<T>;
-        option(option: ISelectQueryOption): Queryable<T>;
+        option(option: IQueryOption): Queryable<T>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
@@ -37,7 +37,7 @@ declare module "./Queryable" {
         orderBy(...selectors: IOrderQueryDefinition<T>[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>;
+        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
         distinct(): Queryable<T>;
         project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
         include(...includes: Array<(item: T) => any>): Queryable<T>;
@@ -66,7 +66,7 @@ Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, typeOrSel
 Queryable.prototype.parameter = function <T>(params: { [key: string]: any }): Queryable<T> {
     return new ParameterQueryable(this, params);
 };
-Queryable.prototype.option = function <T>(option: ISelectQueryOption): Queryable<T> {
+Queryable.prototype.option = function <T>(option: IQueryOption): Queryable<T> {
     return new OptionQueryable(this, option);
 };
 Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn> {
@@ -84,7 +84,7 @@ Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Query
 Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Queryable<T> {
     return new TakeQueryable(this, take);
 };
-Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<IGroupArray<T, K>> {
+Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>> {
     return new GroupByQueryable(this, keySelector);
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {

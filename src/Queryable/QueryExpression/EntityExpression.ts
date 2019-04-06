@@ -1,7 +1,6 @@
 import { IObjectType, } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -92,11 +91,8 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
             this.entityTypes = [this.type];
         }
     }
-    public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
-    }
-    public execute(queryBuilder: QueryBuilder): any {
-        return queryBuilder.getExpressionString(this);
+    public toString(): string {
+        return `Entity(${this.name})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
         if (!replaceMap) replaceMap = new Map();
@@ -112,6 +108,6 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         return clone;
     }
     public hashCode() {
-        return hashCode(this.type.name);
+        return hashCode(this.name);
     }
 }

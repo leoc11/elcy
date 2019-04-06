@@ -1,4 +1,4 @@
-import { UUID } from "../../../../src/Data/UUID";
+import { Uuid } from "../../../../src/Data/Uuid";
 import { PrimaryKey } from "../../../../src/Decorator/Column/PrimaryKey";
 import { StringColumn } from "../../../../src/Decorator/Column/StringColumn";
 import { IdentifierColumn } from "../../../../src/Decorator/Column/IdentifierColumn";
@@ -10,7 +10,7 @@ import { Relationship } from "../../../../src/Decorator/Relation/Relationship";
 export class SubSchema {
     @PrimaryKey()
     @IdentifierColumn()
-    public identifier: UUID;
+    public identifier: Uuid;
 
     @StringColumn()
     public name: string;

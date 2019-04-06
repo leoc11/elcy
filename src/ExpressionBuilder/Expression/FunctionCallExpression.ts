@@ -1,80 +1,64 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 import { GenericType } from "../../Common/Type";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 export class FunctionCallExpression<T = any> implements IExpression<T> {
-    public static create<T>(functionFn: ((...params: any[]) => T) | IExpression<(...params: any[]) => T>, params: IExpression[], functionName?: string) {
-        let fnExp: IExpression<(...params: any[]) => T>;
-        if ((functionFn as IExpression).type) {
-            fnExp = functionFn as IExpression<(...params: any[]) => T>;
+    constructor(fnExpression: IExpression<(...params: any[]) => T> | ((...params: any[]) => T), params: IExpression[], functionName?: string) {
+        if (fnExpression instanceof Function) {
+            functionName = fnExpression.name;
+            fnExpression = new ValueExpression(fnExpression);
         }
         else {
-            const fn = functionFn as (...params: any[]) => T;
-            if (typeof functionName !== "string")
-                functionName = fn.name;
-            fnExp = new ValueExpression(fn);
+            functionName = fnExpression.toString();
         }
-
-        const result = new FunctionCallExpression<T>(fnExp, params, functionName);
-        if (fnExp instanceof ValueExpression && params.every((param) => param instanceof ValueExpression)) {
-            return ValueExpression.create(result);
-        }
-
-        return result;
+        this.fnExpression = fnExpression;
+        this.params = params;
+        this.functionName = functionName;
     }
-    constructor(public fnExpression: IExpression<(...params: any[]) => T>, public params: IExpression[], functionName?: string) { }
-    public get functionName() {
-        return this.fnExpression.toString();
-    }
+    public fnExpression: IExpression<(...params: any[]) => T>;
+    public params: IExpression[];
+    public functionName: string;
     private _type: GenericType<T>;
     public get type() {
         if (!this._type) {
-            try {
-                const fn = this.fnExpression.execute();
-                switch (fn as any) {
-                    case parseInt:
-                    case parseFloat:
-                        this._type = Number as any;
-                        break;
-                    case decodeURI:
-                    case decodeURIComponent:
-                    case encodeURI:
-                    case encodeURIComponent:
-                        this._type = String as any;
-                        break;
-                    case isNaN:
-                    case isFinite:
-                        this._type = Boolean as any;
-                        break;
-                    case eval:
-                        this._type = Function as any;
-                        break;
-                    default:
-                        try { this._type = fn().constructor as any; } catch (e) { }
+            if (this.fnExpression instanceof ValueExpression) {
+                try {
+                    const fn = this.fnExpression.value;
+                    switch (fn as any) {
+                        case parseInt:
+                        case parseFloat:
+                            this._type = Number as any;
+                            break;
+                        case decodeURI:
+                        case decodeURIComponent:
+                        case encodeURI:
+                        case encodeURIComponent:
+                            this._type = String as any;
+                            break;
+                        case isNaN:
+                        case isFinite:
+                            this._type = Boolean as any;
+                            break;
+                        case eval:
+                            this._type = Function as any;
+                            break;
+                        default:
+                            try { this._type = fn().constructor as any; } catch (e) { }
+                    }
                 }
-            }
-            catch (e) {
-                return Object;
+                catch (e) {
+                    return Object;
+                }
             }
         }
 
         return this._type;
     }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         const paramStr = [];
         for (const param of this.params)
             paramStr.push(param.toString());
         return this.functionName + "(" + paramStr.join(", ") + ")";
-    }
-    public execute(transformer?: ExpressionTransformer) {
-        const params = [];
-        for (const param of this.params)
-            params.push(param.execute(transformer));
-        const fn = this.fnExpression.execute(transformer);
-        return fn.apply(null, params);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

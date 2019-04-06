@@ -4,13 +4,13 @@ import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 
 @Entity("Products")
 export class Product {
     @PrimaryKey()
     @IdentifierColumn()
-    public ProductId: UUID;
+    public ProductId: Uuid;
 
     @IntegerColumn({ columnType: "bigint" })
     public Price: number;

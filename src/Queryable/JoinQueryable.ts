@@ -1,11 +1,12 @@
 import { IObjectType, JoinType } from "../Common/Type";
 import { Queryable } from "./Queryable";
-import { IVisitParameter, QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected readonly relationFn: (item: T, item2: T2) => boolean;
@@ -43,12 +44,12 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
                 this.resultSelectorFn = resultSelector;
         }
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<R> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
         const type = this.joinType.toLowerCase() + "Join";
-        const methodExpression = new MethodCallExpression(objectOperand, type, [childOperand, this.relation, this.resultSelector]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const methodExpression = new MethodCallExpression(objectOperand, type as any, [childOperand, this.relation.clone(), this.resultSelector.clone()]);
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
 }

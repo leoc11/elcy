@@ -1,4 +1,4 @@
-import { IQueryResult } from "../QueryBuilder/IQueryResult";
+import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheOption } from "./ICacheOption";
 
 export interface IResultCacheManager {

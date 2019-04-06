@@ -1,5 +1,4 @@
 import { GenericType, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
@@ -30,8 +29,8 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = Enumerable.from(subSelect.projectedColumns).select(o => {
-            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable, o.columnType);
-            col.columnMetaData = o.columnMetaData;
+            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
+            col.columnMeta = o.columnMeta;
             return col;
         }).toArray();
         // TODO
@@ -47,11 +46,8 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     public get relationColumns() {
         return Enumerable.from(this.subSelect.relationColumns).select(o => this.columns.first(c => c.columnName === o.columnName)).toArray();
     }
-    public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
-    }
-    public execute(queryBuilder: QueryBuilder): any {
-        return queryBuilder.getExpressionString(this);
+    public toString(): string {
+        return `ProjectionEntity(${this.subSelect.toString()})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

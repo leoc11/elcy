@@ -4,14 +4,14 @@ import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBina
 import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { TimeSpan } from "../Data/TimeSpan";
-import { UUID } from "../Data/UUID";
+import { Uuid } from "../Data/Uuid";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
-type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
+export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
 export const toHexaString = function (binary: ArrayBuffer | ArrayView): string {
     if (binary instanceof ArrayBuffer) {
         let hexaString = Array.from(new Uint8Array(binary))
@@ -104,8 +104,8 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
     }
     else if (source instanceof TernaryExpression) {
         visitExpression(source.logicalOperand, finder);
-        visitExpression(source.trueResultOperand, finder);
-        visitExpression(source.falseResultOperand, finder);
+        visitExpression(source.trueOperand, finder);
+        visitExpression(source.falseOperand, finder);
     }
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
@@ -129,8 +129,8 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     }
     else if (source instanceof TernaryExpression) {
         source.logicalOperand = replaceExpression(source.logicalOperand, finder);
-        source.trueResultOperand = replaceExpression(source.trueResultOperand, finder);
-        source.falseResultOperand = replaceExpression(source.falseResultOperand, finder);
+        source.trueOperand = replaceExpression(source.trueOperand, finder);
+        source.falseOperand = replaceExpression(source.falseOperand, finder);
     }
     else if ((source as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as IUnaryOperatorExpression;
@@ -144,6 +144,9 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
 };
 export const isEntityExp = (data: IExpression): data is IEntityExpression => {
     return !!(data as IEntityExpression).entityTypes;
+};
+export const isExpression = (data: IExpression): data is IExpression => {
+    return !!(data.type && data.hashCode && data.clone);
 };
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;
@@ -160,7 +163,7 @@ export const isValueType = (type: GenericType) => {
         case String:
         case Date:
         case TimeSpan:
-        case UUID:
+        case Uuid:
         case Boolean:
         case ArrayBuffer:
         // TypedArray

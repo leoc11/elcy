@@ -4,7 +4,7 @@ import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 // import { TimestampColumn } from "../../../src/Decorator/Column/TimestampColumn";
 
@@ -26,7 +26,7 @@ export class Order {
     }
     @PrimaryKey()
     @IdentifierColumn()
-    public OrderId: UUID;
+    public OrderId: Uuid;
 
     @DecimalColumn({ columnType: "decimal" })
     public TotalAmount: number;

@@ -1,7 +1,7 @@
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
 import "mocha";
 import { expect } from "chai";
-import { MockDriver } from "../../../src/Connection/Mock/MockDriver";
+import { MockDriver } from "../../../src/Mock/MockDriver";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MockDriver({ database: "Master" });
@@ -19,7 +19,7 @@ describe("REPLICATION CONNECTION MANAGER", () => {
         expect(con.database).to.equal("Replica");
     });
     it("should return all connections", async () => {
-        const cons = await connectionManager.getAllServerConnections();
+        const cons = await connectionManager.getAllConnections();
         await cons.eachAsync(async o => await o.close());
         expect(cons).has.lengthOf(2);
     });

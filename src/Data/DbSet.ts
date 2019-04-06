@@ -1,4 +1,3 @@
-import "../Queryable/Queryable.partial";
 import { IObjectType, ValueType, DeleteMode, ColumnGeneration } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";
@@ -10,21 +9,21 @@ import { EntityEntry } from "./EntityEntry";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { IQueryCommandExpression } from "../Queryable/QueryExpression/IQueryCommandExpression";
-import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
-import { IQueryOption } from "../QueryBuilder/Interface/IQueryOption";
+import { IQueryOption } from "../Query/IQueryOption";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
-import { DeferredQuery } from "../QueryBuilder/DeferredQuery";
+import { DeferredQuery } from "../Query/DeferredQuery";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -47,7 +46,7 @@ export class DbSet<T> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    public buildQuery(visitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
         visitor.setDefaultBehaviour(result);
         return result;
@@ -99,7 +98,7 @@ export class DbSet<T> extends Queryable<T> {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.first().propertyName] = primaryValue as any;
+            entity[this.primaryKeys.first().propertyName] = primaryValue as unknown as T[keyof T];
         }
         else {
             if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.default && !primaryValue[o.propertyName])) {
@@ -107,7 +106,7 @@ export class DbSet<T> extends Queryable<T> {
             }
 
             for (const prop in primaryValue) {
-                entity[prop] = primaryValue[prop] as any;
+                entity[prop] = primaryValue[prop] as unknown as T[keyof T];
             }
         }
         this.dbContext.add(entity);
@@ -125,7 +124,7 @@ export class DbSet<T> extends Queryable<T> {
         let keyString = "";
         let useReference = false;
         for (const o of this.primaryKeys) {
-            const val = (id as any)[o.propertyName];
+            const val = id[o.propertyName];
             if (!val) {
                 if (o.generation & ColumnGeneration.Insert) {
                     useReference = true;
@@ -156,9 +155,6 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredInsert(...items: Array<{ [key in keyof T]?: T[key] }>) {
-        const queryBuilder = this.dbContext.queryBuilder;
-        queryBuilder.options = clone(this.queryOption, true);
-
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 
@@ -169,15 +165,18 @@ export class DbSet<T> extends Queryable<T> {
         for (const item of items) {
             const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in item) {
-                itemExp[prop] = new ValueExpression(item[prop]);
+                const propValue = item[prop];
+                if (propValue !== undefined && !(propValue instanceof Function))
+                    itemExp[prop] = new ValueExpression(propValue);
             }
             valueExp.push(itemExp);
         }
         let insertExp = new InsertExpression(entityExp, valueExp);
+        insertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = insertExp.buildParameter(this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        const params = this.buildParameter(insertExp, this.flatParameterStacks);
+        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);
@@ -194,7 +193,7 @@ export class DbSet<T> extends Queryable<T> {
                 pkFilter = null;
                 break;
             }
-            const valExp = new ValueExpression(val);
+            const valExp = new ValueExpression(val as T[keyof T]);
             const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
             pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
             setterObj[primaryCol.propertyName] = undefined;
@@ -214,7 +213,7 @@ export class DbSet<T> extends Queryable<T> {
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(modeOrKeyOrPredicate?: { [key in keyof T]?: T[key] } | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
-            return super.deferredDelete(modeOrKeyOrPredicate as any, mode);
+            return super.deferredDelete(modeOrKeyOrPredicate as () => boolean, mode);
         }
         else {
             const key = modeOrKeyOrPredicate;
@@ -244,9 +243,6 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredUpsert(item: { [key in keyof T]: T[key] }) {
-        const queryBuilder = this.dbContext.queryBuilder;
-        queryBuilder.options = clone(this.queryOption, true);
-
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 
@@ -258,10 +254,11 @@ export class DbSet<T> extends Queryable<T> {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
         let upsertExp = new UpsertExpression(entityExp, setterExp);
+        upsertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = upsertExp.buildParameter(this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        const params = this.buildParameter(upsertExp, this.flatParameterStacks);
+        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.add(query);

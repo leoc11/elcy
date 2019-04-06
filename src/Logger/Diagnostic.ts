@@ -9,11 +9,11 @@ export abstract class Diagnostic {
     public static get enabled() {
         return !!Diagnostic.logger;
     }
-    public static timer(): Timer | undefined {
+    public static timer(autoStart = true): Timer | undefined {
         if (!Diagnostic.enabled) return undefined;
 
         const res = new Timer();
-        res.start();
+        if (autoStart) res.start();
         return res;
     }
     public static trace(source: any, message: string, ...args: any[]): void;

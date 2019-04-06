@@ -72,10 +72,10 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return arr;
     }
-    public toMap<K, V>(keySelector: (item: T) => K, valueSelector: (item: T) => V): Map<K, V> {
+    public toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V> {
         const rel = new Map<K, V>();
         for (const i of this) {
-            rel.set(keySelector(i), valueSelector(i));
+            rel.set(keySelector(i), valueSelector ? valueSelector(i) : i as any);
         }
         return rel;
     }
@@ -180,3 +180,5 @@ export class Enumerable<T = any> implements Iterable<T> {
         return accumulated;
     }
 }
+
+import "./Enumerable.partial";

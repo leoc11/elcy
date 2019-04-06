@@ -1,27 +1,12 @@
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
-import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCode } from "../../Helper/Util";
 import { ParameterExpression } from "./ParameterExpression";
 export class RightIncrementExpression implements IUnaryOperatorExpression<number> {
-    public static create(operand: ParameterExpression<number>) {
-        const result = new RightIncrementExpression(operand);
-        if (operand instanceof ValueExpression)
-            return ValueExpression.create<number>(result);
-
-        return result;
-    }
     public type = Number;
     constructor(public readonly operand: ParameterExpression<number>) { }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         return this.operand.toString() + "++";
-    }
-    // TODO: return before increment;
-    public execute(transformer: ExpressionTransformer) {
-        return this.operand.execute(transformer);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

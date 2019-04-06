@@ -1,6 +1,6 @@
 import { BooleanColumn } from "../../../../src/Decorator/Column/BooleanColumn";
 import { CreatedDateColumn } from "../../../../src/Decorator/Column/CreatedDateColumn";
-import { UUID } from "../../../../src/Data/UUID";
+import { Uuid } from "../../../../src/Data/Uuid";
 import { ComputedColumn } from "../../../../src/Decorator/Column/ComputedColumn";
 import { IntegerColumn } from "../../../../src/Decorator/Column/IntegerColumn";
 import { PrimaryKey } from "../../../../src/Decorator/Column/PrimaryKey";
@@ -49,7 +49,7 @@ export class Schema {
 
     @UniqueConstraint()
     @IdentifierColumn()
-    public identifier: UUID;
+    public identifier: Uuid;
 
     @IntegerColumn({ length: 4 })
     public integer: number;
@@ -61,7 +61,7 @@ export class Schema {
     @ComputedColumn((o: Schema) => o.integer + o.decimal)
     public computed: number;
 
-    @RealColumn({ precision: 10, scale: 2 })
+    @RealColumn({ size: 10 })
     public real: number;
 
     @RowVersionColumn()

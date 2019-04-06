@@ -2,11 +2,12 @@ import { IObjectType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { Queryable } from "./Queryable";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { QueryVisitor, IVisitParameter } from "../QueryBuilder/QueryVisitor";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected readonly relationFn: (item: T, item2: T2) => boolean;
@@ -44,11 +45,11 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
                 this.resultSelectorFn = resultSelector;
         }
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<R> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
-        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin", [childOperand, this.relation, this.resultSelector]);
-        const visitParam: IVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin", [childOperand, this.relation.clone(), this.resultSelector.clone()]);
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

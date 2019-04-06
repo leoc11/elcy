@@ -22,12 +22,15 @@ export class ReplicationConnectionManager implements IConnectionManager {
         this.replicaConnectionManagers = replicaDrivers.select(o => o === masterDriver ? this.masterConnectionManager : new PooledConnectionManager(o)).toArray();
     }
     public readonly masterConnectionManager: PooledConnectionManager;
+    public get driver() {
+        return this.masterConnectionManager.driver;
+    }
     public readonly replicaConnectionManagers: PooledConnectionManager[];
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
         const manager = writable ? this.masterConnectionManager : this.replicaConnectionManagers.orderBy([o => o.connectionCount]).first();
         return await manager.getConnection(writable);
     }
-    public async getAllServerConnections(): Promise<IConnection[]> {
+    public async getAllConnections(): Promise<IConnection[]> {
         const res: IConnection[] = [await this.masterConnectionManager.getConnection(true)];
         for (const a of this.replicaConnectionManagers) {
             res.push(await a.getConnection(false));

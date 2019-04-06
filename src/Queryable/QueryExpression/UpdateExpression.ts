@@ -1,34 +1,33 @@
 import { OrderDirection, JoinType, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { QueryVisitor } from "../../QueryBuilder/QueryVisitor";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
-export class UpdateExpression<T = any> implements IQueryCommandExpression<void> {
+import { IQueryOption } from "../../Query/IQueryOption";
+export class UpdateExpression<T = any> implements IQueryExpression<void> {
     public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public select: SelectExpression<T>;
-    public get parameters() {
-        return this.select.parameters;
+    public option: IQueryOption;
+    public get paramExps() {
+        return this.select.paramExps;
     }
-    public set parameters(value) {
-        this.select.parameters = value;
+    public set paramExps(value) {
+        this.select.paramExps = value;
     }
     public get joins() {
         return this.select.joins;
@@ -88,18 +87,13 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
         replaceMap.set(this, clone);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters);
-        return queryBuilder.getBulkUpdateQuery(this);
-    }
-    public execute() {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";" + queryBuilder.newLine() + queryBuilder.newLine());
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        return this.select.buildParameter(params);
+    public toString(): string {
+        let setter = "";
+        for (const prop in this.setter) {
+            const val = this.setter[prop];
+            setter += `${prop}:${val.toString()},\n`;
+        }
+        return `Update(${this.entity.toString()}, {${setter}})`;
     }
     public hashCode() {
         let code = 0;
@@ -113,19 +107,14 @@ export class UpdateExpression<T = any> implements IQueryCommandExpression<void> 
     }
 }
 
-export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, visitor: QueryVisitor, queryParameters: ISqlParameter[]) => {
+export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
     const modifiedColumns = entry.getModifiedProperties().select(o => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where(o => !!o);
 
     for (const o of modifiedColumns) {
-        const paramName = visitor.newAlias("param");
-        const paramExp = new SqlParameterExpression(paramName, new ParameterExpression(paramName, o.type), o);
-        queryParameters.push({
-            name: paramName,
-            parameter: paramExp,
-            value: entity[o.propertyName]
-        });
+        const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);
+        queryParameters.set(paramExp, { value: entity[o.propertyName] });
         updateExp.setter[o.propertyName] = paramExp;
     }
 
@@ -134,15 +123,9 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
             let versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
             if (!versionCol) throw new Error(`${entityMeta.name} did not have version column`);
 
-            const paramName = visitor.newAlias("param");
-            const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, versionCol.type), versionCol);
-            const sqlParam = {
-                name: paramName,
-                parameter: parameter,
-                value: entity[versionCol.propertyName]
-            };
-            queryParameters.push(sqlParam);
-            updateExp.parameters.push(parameter);
+            const parameter = new SqlParameterExpression(new ParameterExpression("", versionCol.type), versionCol);
+            queryParameters.set(parameter, { value: entity[versionCol.propertyName] });
+            updateExp.paramExps.push(parameter);
 
             const colExp = updateExp.entity.columns.first(c => c.propertyName === versionCol.propertyName);
             const compExp = new StrictEqualExpression(colExp, parameter);
@@ -151,15 +134,9 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
         }
         case "OPTIMISTIC DIRTY": {
             for (const col of modifiedColumns) {
-                const paramName = visitor.newAlias("param");
-                const parameter = new SqlParameterExpression(paramName, new ParameterExpression(paramName, col.type), col);
-                const sqlParam = {
-                    name: paramName,
-                    parameter: parameter,
-                    value: entry.getOriginalValue(col.propertyName)
-                };
-                queryParameters.push(sqlParam);
-                updateExp.parameters.push(parameter);
+                const parameter = new SqlParameterExpression(new ParameterExpression("", col.type), col);
+                queryParameters.set(parameter, { value: entry.getOriginalValue(col.propertyName) });
+                updateExp.paramExps.push(parameter);
                 const colExp = updateExp.entity.columns.first(c => c.propertyName === col.propertyName);
                 const compExp = new StrictEqualExpression(colExp, parameter);
                 updateExp.addWhere(compExp);
@@ -167,5 +144,5 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
             break;
         }
     }
-    updateExp.parameters = queryParameters.select(o => o.parameter).toArray();
+    updateExp.paramExps = Array.from(queryParameters.keys());
 };

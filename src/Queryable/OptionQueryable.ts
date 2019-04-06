@@ -1,16 +1,16 @@
 import { Queryable } from "./Queryable";
-import { QueryVisitor } from "../QueryBuilder/QueryVisitor";
-import { IQueryCommandExpression } from "./QueryExpression/IQueryCommandExpression";
-import { ISelectQueryOption, IQueryOption } from "../QueryBuilder/Interface/IQueryOption";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IQueryOption } from "../Query/IQueryOption";
 
 export class OptionQueryable<T> extends Queryable<T> {
-    constructor(public readonly parent: Queryable<T>, option: ISelectQueryOption) {
+    constructor(public readonly parent: Queryable<T>, option: IQueryOption) {
         super(parent.type, parent);
         this.option(this.parent.queryOption);
         this.option(option);
     }
     public queryOption: IQueryOption = {};
-    public option(option: ISelectQueryOption) {
+    public option(option: IQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {
@@ -24,7 +24,7 @@ export class OptionQueryable<T> extends Queryable<T> {
         }
         return this;
     }
-    public buildQuery(queryVisitor: QueryVisitor): IQueryCommandExpression<T> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         return this.parent.buildQuery(queryVisitor);
     }
     public hashCode() {

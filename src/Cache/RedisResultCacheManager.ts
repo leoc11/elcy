@@ -1,5 +1,5 @@
 import { IResultCacheManager } from "./IResultCacheManager";
-import { IQueryResult } from "../QueryBuilder/IQueryResult";
+import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheOption } from "./ICacheOption";
 import { ICacheItem } from "./ICacheItem";
 import * as Redis from "ioredis";
@@ -91,8 +91,8 @@ export class RedisResultCacheManager implements IResultCacheManager {
     public async removeTag(...tags: string[]): Promise<void> {
         const pipeline = this.connection.pipeline();
         tags.each(tag => pipeline.smembers("tag:" + tag));
-        const res: any[] = await pipeline.exec();
-        const keys = res.selectMany(o => o as any[]).distinct().toArray();
+        const res: any[][] = await pipeline.exec();
+        const keys = res.selectMany(o => o).distinct().toArray();
         return this.remove(...keys);
     }
     public async clear(): Promise<void> {

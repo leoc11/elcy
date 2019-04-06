@@ -1,5 +1,4 @@
 import { IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -12,11 +11,8 @@ export class UnionExpression<T> extends ProjectionEntityExpression {
         this.subSelect2.isSubSelect = true;
         this.entityTypes = this.subSelect.entity.entityTypes.concat(this.subSelect2.entity.entityTypes).distinct().toArray();
     }
-    public toString(queryBuilder: QueryBuilder): string {
-        return queryBuilder.getExpressionString(this);
-    }
-    public execute(queryBuilder: QueryBuilder): any {
-        throw new Error("Method not implemented.");
+    public toString(): string {
+        return `Union(${this.subSelect.toString()}, ${this.subSelect2.toString()})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

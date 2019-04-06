@@ -1,5 +1,5 @@
 import { IResultCacheManager } from "./IResultCacheManager";
-import { IQueryResult } from "../QueryBuilder/IQueryResult";
+import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheOption } from "./ICacheOption";
 import { ICacheItem } from "./ICacheItem";
 import { QueuedTimeout } from "../Common/QueuedTimeout";

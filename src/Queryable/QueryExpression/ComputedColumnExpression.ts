@@ -1,16 +1,13 @@
 import { GenericType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { ColumnType } from "../../Common/ColumnType";
 import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
         return this.expression.type;
     }
-    public columnType: ColumnType;
     public get columnName() {
         return this.propertyName;
     }
@@ -36,17 +33,14 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         const clone = new ComputedColumnExpression(entity, exp, this.propertyName, this.alias);
         replaceMap.set(this, clone);
         clone.isPrimary = this.isPrimary;
-        clone.columnType = this.columnType;
         clone.isNullable = this.isNullable;
         return clone;
     }
-    public toString(transformer?: QueryBuilder): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
-        return this.expression.toString();
-    }
-    public execute(transformer: QueryBuilder) {
-        return this.toString(transformer) as any;
+    public toString(): string {
+        return `ComputedColum({
+Expression:${this.expression.toString()},
+Name:${this.propertyName}
+})`;
     }
     public hashCode() {
         return hashCode(this.propertyName, hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));

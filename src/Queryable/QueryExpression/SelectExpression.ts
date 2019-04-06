@@ -1,19 +1,15 @@
 import { GenericType, OrderDirection, JoinType, RelationshipType, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
 import { EntityExpression } from "./EntityExpression";
-import { SqlParameterExpression } from "../../ExpressionBuilder/Expression/SqlParameterExpression";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
-import { ValueExpressionTransformer } from "../../ExpressionBuilder/ValueExpressionTransformer";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, isColumnExp } from "../../Helper/Util";
 import { ISelectRelation } from "../Interface/ISelectRelation";
@@ -23,8 +19,11 @@ import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMet
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { Enumerable } from "../../Enumerable/Enumerable";
+import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
 
-export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
+export class SelectExpression<T = any> implements IQueryExpression<T> {
     constructor(entity?: IEntityExpression<T>) {
         if (entity) {
             this.entity = entity;
@@ -37,7 +36,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
                 // this.relationColumns = entity.relationColumns.slice(0);
             }
             else
-                this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
+                this.selects = entity.columns.where(o => o.columnMeta && o.columnMeta.isProjected).toArray();
             entity.select = this;
         }
     }
@@ -45,6 +44,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     //#region Properties
     public entity: IEntityExpression<T>;
     public type = Array;
+    public option: IQueryOption;
     public get itemType(): GenericType<any> {
         return this.itemExpression.type;
     }
@@ -83,7 +83,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public includes: IncludeRelation<T, any>[] = [];
     public joins: JoinRelation<T, any>[] = [];
     public isSubSelect: boolean;
-    public parameters: SqlParameterExpression[] = [];
+    public paramExps: SqlParameterExpression[] = [];
 
     public get relationColumns(): Iterable<IColumnExpression> {
         // Include Relation Columns are used later for hydration
@@ -166,7 +166,7 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
             });
 
             if (isRelationFilter) {
-                this.parentRelation.relations = this.parentRelation.relations ? new AndExpression(this.parentRelation.relations, expression) : expression;
+                this.parentRelation.relation = this.parentRelation.relation ? new AndExpression(this.parentRelation.relation, expression) : expression;
                 return;
             }
         }
@@ -342,23 +342,10 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
         this.joins.push(joinRel);
         return joinRel;
     }
-    public getVisitParam(): IExpression {
+    public getItemExpression(): IExpression {
         if (isColumnExp(this.itemExpression))
             return this.itemExpression;
         return this.entity;
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        const result: ISqlParameter[] = [];
-        const valueTransformer = new ValueExpressionTransformer(params);
-        for (const sqlParameter of this.parameters) {
-            const value = sqlParameter.execute(valueTransformer);
-            result.push({
-                name: sqlParameter.name,
-                parameter: sqlParameter,
-                value: value
-            });
-        }
-        return result;
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes
@@ -372,22 +359,14 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
     public get allJoinedEntities(): Iterable<IEntityExpression> {
         return [this.entity].union(this.joins.selectMany(o => o.child.allJoinedEntities));
     }
-    public isSimple() {
-        return !this.where && this.joins.length === 0
-            && (!this.parentRelation || this.parentRelation instanceof JoinRelation && this.parentRelation.childColumns.all((c) => this.entity.columns.contains(c)))
-            && !this.paging.skip && !this.paging.take
-            && this.selects.all((c) => this.entity.columns.contains(c));
-    }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        if (parameters)
-            queryBuilder.setParameters(parameters);
-        return queryBuilder.getSelectQuery(this);
-    }
-    public execute(queryBuilder: QueryBuilder) {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";\n\n");
+    public toString(): string {
+        return `Select({
+Entity:${this.entity.toString()},
+Select:${this.selects.select(o => o.toString()).toArray().join(",")},
+Where:${this.where ? this.where.toString() : ""},
+Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
+})`;
     }
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
@@ -419,9 +398,22 @@ export class SelectExpression<T = any> implements IQueryCommandExpression<T> {
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
-        clone.parameters = this.parameters.select(o => resolveClone(o, replaceMap)).toArray();
+        clone.paramExps = this.paramExps.select(o => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
+    }
+    public addSqlParameter<T>(valueExp: IExpression<T[]>, colExp?: IEntityExpression<T>): SqlTableValueParameterExpression<T>;
+    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData): SqlParameterExpression<T>;
+    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<T> | SqlTableValueParameterExpression<T> {
+        let paramExp: SqlParameterExpression;
+        if ((valueExp.type as any) === Array) {
+            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<any>, colExp as IEntityExpression);
+        }
+        else {
+            paramExp = new SqlParameterExpression(valueExp, colExp as IColumnMetaData);
+        }
+        this.paramExps.add(paramExp);
+        return paramExp;
     }
     //#endregion
 }

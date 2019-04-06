@@ -1,37 +1,19 @@
 import { IObjectType } from "../../Common/Type";
-import { ExpressionTransformer } from "../ExpressionTransformer";
 import { IExpression } from "./IExpression";
-import { ValueExpression } from "./ValueExpression";
 import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class ObjectValueExpression<T = any> implements IExpression<T> {
-    public static create<T extends { [Key: string]: IExpression }>(objectValue: T) {
-        const result = new ObjectValueExpression(objectValue);
-        let isAllValue = Object.keys(objectValue).all(o => objectValue[o] instanceof ValueExpression);
-        if (isAllValue)
-            return ValueExpression.create<T>(objectValue);
-
-        return result;
-    }
     public object: { [key in keyof T]?: IExpression<T[key]> };
     public type: IObjectType<T>;
     constructor(objectValue: { [key in keyof T]?: IExpression<T[key]> }, type?: IObjectType<T>) {
         this.object = objectValue;
         this.type = type ? type : objectValue.constructor as IObjectType<T>;
     }
-    public toString(transformer?: ExpressionTransformer): string {
-        if (transformer)
-            return transformer.getExpressionString(this);
+    public toString(): string {
         const itemString = [];
         for (const item in this.object)
             itemString.push(item + ": " + this.object[item].toString());
         return "{" + itemString.join(", ") + "}";
-    }
-    public execute(transformer: ExpressionTransformer): T {
-        const objectValue: T = {} as any;
-        for (const prop in this.object)
-            objectValue[prop] = this.object[prop].execute(transformer);
-        return objectValue;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();

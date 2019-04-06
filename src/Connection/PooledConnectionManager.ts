@@ -12,7 +12,7 @@ interface IResolver<T> {
     reject: (reason: any) => void;
 }
 export class PooledConnectionManager implements IConnectionManager {
-    constructor(protected driver: IDriver<any>, public readonly poolOption?: IConnectionPoolOption) {
+    constructor(public readonly driver: IDriver<any>, public readonly poolOption?: IConnectionPoolOption) {
         if (!this.poolOption) this.poolOption = {};
         if (typeof this.poolOption.idleTimeout !== "number") this.poolOption.idleTimeout = 30000;
         if (typeof this.poolOption.maxConnection !== "number") this.poolOption.maxConnection = Infinity;
@@ -41,7 +41,7 @@ export class PooledConnectionManager implements IConnectionManager {
         }
         else {
             if (this.connectionCount >= this.poolOption.maxConnection) {
-                let resolver: IResolver<PooledConnection> = {} as any;
+                let resolver: IResolver<PooledConnection> = {} as IResolver<PooledConnection>;
                 const promise = new Promise<PooledConnection>((ok, fail) => {
                     resolver.resolve = ok;
                     resolver.reject = fail;
@@ -57,7 +57,7 @@ export class PooledConnectionManager implements IConnectionManager {
 
         return con;
     }
-    public async getAllServerConnections(): Promise<IConnection[]> {
+    public async getAllConnections(): Promise<IConnection[]> {
         return [await this.driver.getConnection()];
     }
     public release(connection: PooledConnection): Promise<void> {

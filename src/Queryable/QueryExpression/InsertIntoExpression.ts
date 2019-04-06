@@ -1,19 +1,18 @@
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IObjectType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { SelectExpression } from "./SelectExpression";
 import { EntityExpression } from "./EntityExpression";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IColumnExpression } from "./IColumnExpression";
-export class InsertIntoExpression<T = any> implements IQueryCommandExpression<void> {
+import { IQueryOption } from "../../Query/IQueryOption";
+export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
+    public option: IQueryOption;
     public get type() {
         return undefined as any;
     }
-    public get parameters() {
-        return this.select.parameters;
+    public get paramExps() {
+        return this.select.paramExps;
     }
     public get columns(): IColumnExpression<T>[] {
         return this.select.selects;
@@ -29,18 +28,11 @@ export class InsertIntoExpression<T = any> implements IQueryCommandExpression<vo
         replaceMap.set(this, clone);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters ? parameters : []);
-        return queryBuilder.getInsertIntoQuery(this);
-    }
-    public execute() {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";" + queryBuilder.newLine() + queryBuilder.newLine());
-    }
-    public buildParameter(params: { [key: string]: any }): ISqlParameter[] {
-        return this.select.buildParameter(params);
+    public toString(): string {
+        return `InsertInto({
+Entity:${this.entity.toString()},
+Select:${this.select.toString()}
+})`;
     }
     public hashCode() {
         return hashCode("INSERT", this.select.hashCode());

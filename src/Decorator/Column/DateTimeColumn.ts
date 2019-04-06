@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { Column } from "./Column";
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { TimeZoneHandling } from "../../Common/Type";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 
 export function DateTimeColumn(option?: IDateTimeColumnOption): PropertyDecorator;
 export function DateTimeColumn(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator;
@@ -19,5 +19,5 @@ export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, db
         option = optionOrName;
     }
 
-    return Column<any, Date>(DateColumnMetaData, option);
+    return Column<any, Date>(DateTimeColumnMetaData, option);
 }

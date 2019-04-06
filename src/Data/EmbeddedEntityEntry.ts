@@ -11,16 +11,16 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
     public column: EmbeddedRelationMetaData<TP, T>;
     constructor(public dbSet: DbSet<T>, public entity: T, public parentEntry: EntityEntry<TP>) {
         super(dbSet, entity, null);
-        let propertyChangeHandler: IEventHandler<T> = (entity as any)[propertyChangeHandlerMetaKey];
+        let propertyChangeHandler: IEventHandler<T> = entity[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
             let propertyChangeDispatcher: any;
             [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            (entity as any)[propertyChangeHandlerMetaKey] = propertyChangeHandler;
-            (entity as any)[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
+            entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
+            entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
         }
         propertyChangeHandler.add(this.onPropertyChanged);
 
-        let parentPropertyChangeHandler: IEventHandler<TP> = (parentEntry.entity as any)[propertyChangeHandlerMetaKey];
+        let parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
         if (!parentPropertyChangeHandler) {
             parentPropertyChangeHandler.add(this.onParentPropertyChange);
         }
@@ -52,7 +52,7 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
     private onParentPropertyChange(entity: TP, param: IChangeEventParam<TP, T>) {
         if (param.column === this.column) {
             if (param.oldValue === this.entity) {
-                const parentChangeHandler: IEventHandler<TP, IChangeEventParam> = (this.parentEntry.entity as any)[propertyChangeHandlerMetaKey];
+                const parentChangeHandler: IEventHandler<TP, IChangeEventParam> = this.parentEntry.entity[propertyChangeHandlerMetaKey];
                 if (parentChangeHandler) {
                     parentChangeHandler.remove(this.onParentPropertyChange);
                 }

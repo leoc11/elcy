@@ -2,7 +2,7 @@ const toHex = (u: number) => {
     const a = (u).toString(16);
     return a.length < 2 ? "0" + a : a;
 };
-export class UUID extends Uint8Array {
+export class Uuid extends Uint8Array {
     constructor(uuid?: string) {
         super(16);
         if (uuid) this.parse(uuid);
@@ -42,7 +42,7 @@ export class UUID extends Uint8Array {
         return this.toString();
     }
     public static new() {
-        const res = new UUID();
+        const res = new Uuid();
         for (let i = 0, len = res.length; i < len; i++) {
             res[i] = Math.floor(Math.random() * 256);
         }
@@ -53,5 +53,5 @@ export class UUID extends Uint8Array {
         res[8] |= 0x80;
         return res;
     }
-    public static readonly empty = new UUID();
+    public static readonly empty = new Uuid();
 }

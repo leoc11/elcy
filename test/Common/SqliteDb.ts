@@ -1,7 +1,7 @@
-import { SqliteDbContext } from "../../src/Driver/Sqlite/SqliteDbContext";
+import { SqliteDbContext } from "../../src/Provider/Sqlite/SqliteDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection, CollectionProductData, AutoParent, AutoDetail } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
-import { SqliteDriver } from "../../src/Driver/Sqlite/SqliteDriver";
+import { SqliteDriver } from "../../src/Provider/Sqlite/SqliteDriver";
 
 export class SqliteDb extends SqliteDbContext {
     constructor() {

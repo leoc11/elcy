@@ -5,16 +5,16 @@ import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
-import { UUID } from "../../../src/Data/UUID";
+import { Uuid } from "../../../src/Data/Uuid";
 
 @Entity("OrderDetailProperties")
 export class OrderDetailProperty {
     @PrimaryKey()
     @IdentifierColumn()
-    public OrderDetailPropertyId: UUID;
+    public OrderDetailPropertyId: Uuid;
 
     @IdentifierColumn()
-    public OrderDetailId: UUID;
+    public OrderDetailId: Uuid;
     @StringColumn({ columnType: "nvarchar", columnName: "Name" })
     public name: string;
     @DecimalColumn({ columnType: "decimal", columnName: "Amount" })

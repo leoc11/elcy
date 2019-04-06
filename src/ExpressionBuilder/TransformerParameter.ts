@@ -14,6 +14,15 @@ export class TransformerParameter {
         const vales = this.parameters[key] || [];
         return vales.shift();
     }
+    public clear() {
+        this.parameters = {};
+    }
+    public set(param: { [key: string]: any }) {
+        for (const prop in param) {
+            const value = param[prop];
+            this.add(prop, value);
+        }
+    }
     public get keys() {
         return Object.keys(this.parameters);
     }

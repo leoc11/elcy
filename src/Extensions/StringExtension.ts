@@ -6,10 +6,45 @@ declare global {
     }
 }
 
-String.prototype.like = function (this: string, pattern: string) {
-    if (!pattern) {
-        return false;
+function toRegExp(pattern: string, escape: string = "\\") {
+    let regexStr = "^";
+    for (let i = 0, len = pattern.length; i < len; i++) {
+        let char = pattern[i];
+        switch (char) {
+            case escape:
+                char = pattern[++i];
+                break;
+            case "%":
+                regexStr += ".*";
+                continue;
+            case "_":
+                regexStr += ".";
+                continue;
+        }
+        switch (char) {
+            case "^":
+            case "*":
+            case ".":
+            case "[":
+            case "]":
+            case "?":
+            case "$":
+            case "+":
+            case "(":
+            case ")":
+            case "{":
+            case "}":
+            case "\\":
+                regexStr += "\\" + char;
+                break;
+            default:
+                regexStr += char;
+        }
     }
-    const regex = new RegExp("^" + pattern.replace(/([\^\\//$.+\(\)\{\}])/ig, "[\$1]").replace(/\[!/ig, "[^").replace(/[_]/ig, ".").replace(/[%]/ig, ".*") + "$");
+
+    return new RegExp(regexStr + "$");
+}
+String.prototype.like = function (this: string, pattern: string, escape = "\\") {
+    const regex = toRegExp(pattern || "", escape);
     return regex.test(this);
 };

@@ -1,34 +1,33 @@
 import { OrderDirection, JoinType, DeleteMode, IObjectType } from "../../Common/Type";
-import { QueryBuilder } from "../../QueryBuilder/QueryBuilder";
-import { IQueryCommandExpression } from "./IQueryCommandExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IQuery } from "../../QueryBuilder/Interface/IQuery";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression } from "./SelectExpression";
-import { ISqlParameter } from "../../QueryBuilder/ISqlParameter";
 import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
+import { IQueryOption } from "../../Query/IQueryOption";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
-    parent: IQueryCommandExpression<T>;
+    parent: IQueryExpression<T>;
     relations: IExpression<boolean>;
 }
-export class DeleteExpression<T = any> implements IQueryCommandExpression<void> {
+export class DeleteExpression<T = any> implements IQueryExpression<void> {
+    public option: IQueryOption;
     public deleteMode?: IExpression<DeleteMode>;
     public includes: IDeleteIncludeRelation<T, any>[] = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
     public select: SelectExpression<T>;
-    public get parameters() {
-        return this.select.parameters;
+    public get paramExps() {
+        return this.select.paramExps;
     }
-    public set parameters(value) {
-        this.select.parameters = value;
+    public set paramExps(value) {
+        this.select.paramExps = value;
     }
     public get joins() {
         return this.select.joins;
@@ -51,6 +50,7 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
     constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
+        this.option = {};
         this.deleteMode = deleteMode;
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
@@ -60,8 +60,8 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         this.select = selectOrEntity;
         this.select.includes.each(o => {
             const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
-            childDeleteExp.parameters = childDeleteExp.parameters.concat(this.parameters);
-            this.addInclude(childDeleteExp, o.relations);
+            childDeleteExp.paramExps = childDeleteExp.paramExps.concat(this.paramExps);
+            this.addInclude(childDeleteExp, o.relation);
         });
         this.select.includes = [];
     }
@@ -146,18 +146,12 @@ export class DeleteExpression<T = any> implements IQueryCommandExpression<void> 
         replaceMap.set(this, clone);
         return clone;
     }
-    public toQueryCommands(queryBuilder: QueryBuilder, parameters?: ISqlParameter[]): IQuery[] {
-        queryBuilder.setParameters(parameters);
-        return queryBuilder.getBulkDeleteQuery(this);
-    }
-    public execute() {
-        return this as any;
-    }
-    public toString(queryBuilder: QueryBuilder): string {
-        return this.toQueryCommands(queryBuilder).select(o => o.query).toArray().join(";" + queryBuilder.newLine() + queryBuilder.newLine());
-    }
-    public buildParameter(paramStacks: Array<{ [key: string]: any }>): ISqlParameter[] {
-        return this.select.buildParameter(paramStacks);
+    public toString(): string {
+        return `Delete({
+Entity:${this.entity.toString()},
+Where:${this.where ? this.where.toString() : ""},
+Mode:${this.deleteMode}
+})`;
     }
     public hashCode() {
         return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));

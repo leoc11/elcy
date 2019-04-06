@@ -17,6 +17,7 @@ import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
 import { IObjectType, ValueType } from "../Common/Type";
+import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
@@ -34,6 +35,7 @@ declare module "./Enumerable" {
         leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         rightJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        groupJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
         union(array2: Iterable<T>, isUnionAll?: boolean): Enumerable<T>;
         intersect(array2: Iterable<T>): Enumerable<T>;
         except(array2: Iterable<T>): Enumerable<T>;
@@ -86,6 +88,9 @@ Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, 
 Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
     return new FullJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
+Enumerable.prototype.groupJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new GroupJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
 Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: Iterable<T>, isUnionAll: boolean = false): Enumerable<T> {
     return new UnionEnumerable(this, Enumerable.from(array2), isUnionAll);
 };
@@ -100,13 +105,13 @@ Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) 
         const dimensionKey: TResult = {} as any;
         for (const key in dimensions) {
             if (dimensions[key] instanceof Function)
-                dimensionKey[key] = dimensions[key](o);
+                dimensionKey[key] = dimensions[key](o) as TResult[keyof TD];
         }
         return dimensionKey;
     }), (o) => {
         for (const key in metrics) {
             if (o.key)
-                o.key[key] = metrics[key](o.toArray());
+                o.key[key] = metrics[key](o.toArray()) as TResult[keyof TM];
         }
         return o.key;
     });

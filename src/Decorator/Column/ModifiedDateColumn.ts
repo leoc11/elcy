@@ -23,6 +23,6 @@ export function ModifiedDateColumn(optionOrName?: IDateTimeColumnOption | string
     if (option.timeZoneHandling === "none")
         option.default = () => Date.timestamp();
     else
-        option.default = () => Date.timestamp(true);
+        option.default = () => Date.utcTimestamp();
     return Column<any, Date>(DateTimeColumnMetaData, option);
 }

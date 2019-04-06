@@ -1,5 +1,3 @@
-import "../Enumerable/Enumerable.partial";
-import "../Queryable/Queryable.partial";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { Queryable } from "../Queryable/Queryable";
 import { relationMetaKey } from "../Decorator/DecoratorKey";
