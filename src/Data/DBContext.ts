@@ -326,15 +326,18 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         deferredQueryEnumerable.selectMany(o => o.parameters)
             .each(([key, p]) => {
                 let alias = paramNameMap.get(p.value);
-                if (!alias) alias = paramPrefix + i++;
-                    p.name = alias;
+                if (!alias) {
+                    alias = paramPrefix + i++;
+                    paramNameMap.set(p.value, alias);
+                }
+                p.name = alias;
                 p.value = queryBuilder.toParameterValue(p.value, key.column);
-                });
             });
 
         const queries = deferredQueryEnumerable.selectMany(o => o.buildQuery(queryBuilder));
         const mergedQueries = queryBuilder.mergeQueries(queries);
         const queryResult: IQueryResult[] = await this.executeQueries(...mergedQueries);
+        
         for (const deferredQuery of deferredQueryEnumerable) {
             const results = queryResult.splice(0, deferredQuery.queries.length);
             deferredQuery.resolve(results);
@@ -471,13 +474,14 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             return emitter;
         };
 
+        // Before add event and generate query
         for (const [entityMeta, addEntries] of orderedEntityAdd) {
             const eventEmitter = getEventEmitter(entityMeta, this);
             eventEmitter.emitBeforeSaveEvent({ type: "insert" }, ...addEntries);
             const insertResult = options && options.useUpsert && !entityMeta.hasIncrementPrimary ? this.getUpsertQueries(entityMeta, addEntries, visitor) : this.getInsertQueries(entityMeta, addEntries, visitor);
             insertQueries.set(entityMeta, insertResult);
         }
-
+        
         // Before update event and generate query
         orderedEntityUpdate.each(([entityMeta, updateEntries]) => {
             const eventEmitter = getEventEmitter(entityMeta, this);
