@@ -36,7 +36,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
                 // this.relationColumns = entity.relationColumns.slice(0);
             }
             else
-                this.selects = entity.columns.where(o => o.columnMetaData && o.columnMetaData.isProjected).toArray();
+                this.selects = entity.columns.where(o => o.columnMeta && o.columnMeta.isProjected).toArray();
             entity.select = this;
         }
     }

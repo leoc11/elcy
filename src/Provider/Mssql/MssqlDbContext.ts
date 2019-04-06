@@ -10,7 +10,7 @@ import { EntityEntry } from "../../Data/EntityEntry";
 import { DeferredQuery } from "../../Query/DeferredQuery";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { InsertExpression, insertEntryExp } from "../../Queryable/QueryExpression/InsertExpression";
-import { IQueryParameter } from "../../Query/IQueryParameter";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { QueryType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryResult } from "../../Query/IQueryResult";
@@ -47,7 +47,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
         const insertExp = new InsertExpression(entityExp, []);
-        const queryParameters: IQueryParameter[] = [];
+        const queryParameters: IQueryParameterMap = new Map();
         entryEnumerable.each(entry => {
             insertEntryExp(insertExp, entry, columns, relations, queryParameters);
         });

@@ -25,6 +25,7 @@ import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { InsertIntoExpression } from "../Queryable/QueryExpression/InsertIntoExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
@@ -51,8 +52,9 @@ export class MockConnection implements IConnection {
         return Enumerable.from(this.deferredQueries)
             .selectMany(o => {
                 const command = o.command;
+                const tvps = Enumerable.from(o.parameters.keys()).where(o => o instanceof SqlTableValueParameterExpression);
+                const skipCount = tvps.count();
                 if (command instanceof InsertIntoExpression) {
-                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -64,9 +66,10 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
                             }
                             else {
-                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                                if (Array.isArray(arrayParameter.value)) {
-                                    result.effectedRows = arrayParameter.value.length;
+                                const arrayParameter = tvps.skip(i).first();
+                                const queryValue = o.parameters.get(arrayParameter);
+                                if (Array.isArray(queryValue.value)) {
+                                    result.effectedRows = queryValue.value.length;
                                 }
                             }
                         }
@@ -126,9 +129,10 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         if (query.type & QueryType.DML) {
-                            const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                            if (Array.isArray(arrayParameter.value)) {
-                                result.effectedRows = arrayParameter.value.length;
+                            const arrayParameter = tvps.skip(i).first();
+                            const paramValue = o.parameters.get(arrayParameter);
+                            if (Array.isArray(paramValue.value)) {
+                                result.effectedRows = paramValue.value.length;
                             }
                         }
                         else if (query.type & QueryType.DQL) {
@@ -140,10 +144,9 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof InsertExpression) {
-                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
-                    const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMetaData))
-                        .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default).toArray();
+                    const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMeta))
+                        .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.default).toArray();
 
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -166,9 +169,10 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = command.values.length;
                             }
                             else {
-                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                                if (Array.isArray(arrayParameter.value)) {
-                                    result.effectedRows = arrayParameter.value.length;
+                                const arrayParameter = tvps.skip(i).first();
+                                const paramValue = o.parameters.get(arrayParameter);
+                                if (Array.isArray(paramValue.value)) {
+                                    result.effectedRows = paramValue.value.length;
                                 }
                             }
                         }
@@ -176,7 +180,6 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpdateExpression) {
-                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -185,9 +188,10 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i <= skipCount) {
-                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                                if (Array.isArray(arrayParameter.value)) {
-                                    result.effectedRows = arrayParameter.value.length;
+                                const arrayParameter = tvps.skip(i).first();
+                                const paramValue = o.parameters.get(arrayParameter);
+                                if (Array.isArray(paramValue.value)) {
+                                    result.effectedRows = paramValue.value.length;
                                 }
                             }
                         }
@@ -195,7 +199,6 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof DeleteExpression) {
-                    const skipCount = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).count();
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -204,9 +207,10 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i <= skipCount) {
-                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                                if (Array.isArray(arrayParameter.value)) {
-                                    result.effectedRows = arrayParameter.value.length;
+                                const arrayParameter = tvps.skip(i).first();
+                                const paramValue = o.parameters.get(arrayParameter);
+                                if (Array.isArray(paramValue.value)) {
+                                    result.effectedRows = paramValue.value.length;
                                 }
                             }
                         }
@@ -223,9 +227,10 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
-                                const arrayParameter = o.parameters.where(o => o.paramExp instanceof SqlTableValueParameterExpression).skip(i).first();
-                                if (Array.isArray(arrayParameter.value)) {
-                                    result.effectedRows = arrayParameter.value.length;
+                                const arrayParameter = tvps.skip(i).first();
+                                const paramValue = o.parameters.get(arrayParameter);
+                                if (Array.isArray(paramValue.value)) {
+                                    result.effectedRows = paramValue.value.length;
                                 }
                             }
                         }
@@ -259,10 +264,12 @@ export class MockConnection implements IConnection {
         if (exp instanceof ValueExpression) {
             return ExpressionExecutor.execute(exp);
         }
-        else {
-            const sqlParam = o.parameters.first(o => o.paramExp === exp);
-            return sqlParam ? sqlParam.value : null;
+        else if (exp instanceof SqlParameterExpression) {
+            const sqlParam = o.parameters.get(exp);
+            if (sqlParam)
+                return sqlParam.value;
         }
+        return null;
     }
     protected flattenSelectExpression(selectExp: SelectExpression): SelectExpression[] {
         const results = [selectExp];
@@ -274,8 +281,8 @@ export class MockConnection implements IConnection {
         return results;
     }
     public generateValue(column: IColumnExpression) {
-        if (column.columnMetaData) {
-            const columnMeta = column.columnMetaData;
+        if (column.columnMeta) {
+            const columnMeta = column.columnMeta;
             if (columnMeta.default)
                 return ExpressionExecutor.execute(columnMeta.default.body);
         }
@@ -285,15 +292,15 @@ export class MockConnection implements IConnection {
                 return Uuid.new().toString();
             case Number:
                 let fix = 2;
-                if (column.columnMetaData && column.columnMetaData instanceof IntegerColumnMetaData)
+                if (column.columnMeta && column.columnMeta instanceof IntegerColumnMetaData)
                     fix = 0;
 
                 return Number((Math.random() * 10000 + 1).toFixed(fix));
             case String: {
                 let result = "";
                 let number = Math.random() * 100 + 1;
-                if (column.columnMetaData && column.columnMetaData instanceof StringColumnMetaData && column.columnMetaData.length > 0) {
-                    number = column.columnMetaData.length;
+                if (column.columnMeta && column.columnMeta instanceof StringColumnMetaData && column.columnMeta.length > 0) {
+                    number = column.columnMeta.length;
                 }
                 for (let i = 0; i < number; i++) {
                     let char = String.fromCharCode(Math.round(Math.random() * 90) + 32);
@@ -326,7 +333,7 @@ export class MockConnection implements IConnection {
             case Float32Array:
             case Float64Array:
             case DataView: {
-                const size =  Math.floor((Math.random() * 16) + 1);
+                const size = Math.floor((Math.random() * 16) + 1);
                 const values = Array(size);
                 for (let i = 0; i < size; i++) {
                     values[0] = Math.floor(Math.random() * 256);

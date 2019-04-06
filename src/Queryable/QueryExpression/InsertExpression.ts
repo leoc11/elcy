@@ -1,5 +1,5 @@
 import { IQueryExpression } from "./IQueryExpression";
-import { IQueryParameter } from "../../Query/IQueryParameter";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { EntityExpression } from "./EntityExpression";
@@ -68,16 +68,13 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
     }
 }
 
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, queryParameters: IQueryParameter[]) => {
+export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
     const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
     for (const col of columns) {
         let value = entry.entity[col.propertyName];
         if (value !== undefined) {
             let param = new SqlParameterExpression(new ParameterExpression("", col.type), col);
-            queryParameters.push({
-                paramExp: param,
-                value: value
-            });
+            queryParameters.set(param, { value: value });
             itemExp[col.propertyName] = param;
             insertExp.paramExps.push(param);
         }
@@ -93,17 +90,11 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
                     paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
-                    queryParameters.push({
-                        name: parentEntry.metaData.name,
-                        paramExp: paramExp
-                    });
+                    queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {
                     let value = parentEntity[parentCol.propertyName];
-                    queryParameters.push({
-                        paramExp: paramExp,
-                        value: value
-                    });
+                    queryParameters.set(paramExp, { value: value });
                 }
 
                 insertExp.paramExps.push(paramExp);

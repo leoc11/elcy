@@ -2,7 +2,7 @@ import { IQueryLimit } from "../Data/Interface/IQueryLimit";
 import { IQuery } from "./IQuery";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { IQueryParameter } from "./IQueryParameter";
+import { IQueryParameterMap } from "./IQueryParameter";
 import { NamingStrategy } from "./NamingStrategy";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
@@ -13,7 +13,7 @@ import { ICompleteColumnType } from "../Common/ICompleteColumnType";
 export interface IQueryBuilder {
     queryLimit: IQueryLimit;
     namingStrategy: NamingStrategy;
-    toQuery<T>(queryExp: IQueryExpression<T>, parameters?: IQueryParameter[], option?: IQueryOption): IQuery[];
+    toQuery<T>(queryExp: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[];
     toString<T = any>(exp: IExpression<T>, param: IQueryBuilderParameter): string;
     toOperandString(exp: IExpression, param: IQueryBuilderParameter): string;
     toLogicalString(exp: IExpression<boolean>, param: IQueryBuilderParameter): string;

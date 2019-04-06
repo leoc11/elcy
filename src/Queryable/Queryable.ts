@@ -27,7 +27,7 @@ import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { EntityExpression } from "./QueryExpression/EntityExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryParameter } from "../Query/IQueryParameter";
+import { IQueryParameterMap } from "../Query/IQueryParameter";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { IQueryOption } from "../Query/IQueryOption";
 
@@ -64,15 +64,12 @@ export abstract class Queryable<T = any> {
 
     //#region Get Result
 
-    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: any }): IQueryParameter[] {
-        const result: IQueryParameter[] = [];
+    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: any }): IQueryParameterMap {
+        const result: IQueryParameterMap = new Map();
         const valueTransformer = new ExpressionExecutor(params);
         for (const sqlParameter of queryExp.paramExps) {
             const value = valueTransformer.execute(sqlParameter);
-            result.push({
-                paramExp: sqlParameter,
-                value: value
-            });
+            result.set(sqlParameter, { value: value });
         }
         return result;
     }
@@ -827,10 +824,8 @@ export abstract class Queryable<T = any> {
 
         const params = this.buildParameter(queryCache.commandQuery, this.flatParameterStacks);
         if (mode) {
-            params.push({
-                paramExp: (queryCache.commandQuery as DeleteExpression).deleteMode as SqlParameterExpression,
-                value: mode
-            });
+            const paramExp = (queryCache.commandQuery as DeleteExpression).deleteMode as SqlParameterExpression;
+            params.set(paramExp, { value: mode });
         }
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 

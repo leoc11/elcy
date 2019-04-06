@@ -9,7 +9,7 @@ export interface IColumnExpression<TE = any, T = any> extends IExpression<T> {
     // TODO: columnName not needed. coz it not available for computed column.
     columnName: string;
     dataPropertyName: string;
-    columnMetaData?: IColumnMetaData<TE, T>;
+    columnMeta?: IColumnMetaData<TE, T>;
     entity: IEntityExpression<TE>;
     propertyName: keyof TE;
     isPrimary: boolean;

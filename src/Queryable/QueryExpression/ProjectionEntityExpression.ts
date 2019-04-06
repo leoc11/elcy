@@ -30,7 +30,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
         this.name = subSelect.entity.name;
         this.columns = Enumerable.from(subSelect.projectedColumns).select(o => {
             const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMetaData = o.columnMetaData;
+            col.columnMeta = o.columnMeta;
             return col;
         }).toArray();
         // TODO

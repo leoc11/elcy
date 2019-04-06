@@ -43,7 +43,7 @@ declare global {
          */
         except(array2: Iterable<T>): Enumerable<T>;
         pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
-    
+
         // Helper Extension
         ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
     }
@@ -100,12 +100,12 @@ Array.prototype.sum = function <T>(this: T[], selector?: (item: T) => number) {
 Array.prototype.avg = function <T>(this: T[], selector?: (item: T) => number) {
     return selector ? this.select(selector).avg() : this.sum() / this.count();
 };
-Array.prototype.max = function <T>(this: T[], selector?: (item: T) => number) {
-    return selector ? this.select(selector).max() : Math.max.apply(Math, this);
+Array.prototype.max = function <T>(this: T[], selector?: (item: T) => number): number {
+    return selector ? this.select(selector).max() : Math.max.apply(Math, this as unknown as number[]);
 };
 
 Array.prototype.min = function <T>(this: T[], selector?: (item: T) => number) {
-    return selector ? this.select(selector).min() : Math.min.apply(Math, this);
+    return selector ? this.select(selector).min() : Math.min.apply(Math, this as unknown as number[]);
 };
 Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().count(predicate) : this.length;

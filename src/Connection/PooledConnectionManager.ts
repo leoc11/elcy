@@ -41,7 +41,7 @@ export class PooledConnectionManager implements IConnectionManager {
         }
         else {
             if (this.connectionCount >= this.poolOption.maxConnection) {
-                let resolver: IResolver<PooledConnection> = {} as any;
+                let resolver: IResolver<PooledConnection> = {} as IResolver<PooledConnection>;
                 const promise = new Promise<PooledConnection>((ok, fail) => {
                     resolver.resolve = ok;
                     resolver.reject = fail;

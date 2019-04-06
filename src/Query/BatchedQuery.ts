@@ -25,7 +25,16 @@ export class BatchedQuery implements IQuery {
     }
     public add(query: IQuery) {
         this._queries.push(query);
-        this._isBuildComplete = false;
+        if (this._isBuildComplete) {
+            this._query += ";\n\n" + query.query;
+            this._type |= query.type;
+            if (query.parameters) {
+                for (const prop in query.parameters) {
+                    const value = query.parameters[prop];
+                    this._parameters[prop] = value;
+                }
+            }
+        }
     }
     public remove(query: IQuery) {
         this._queries.remove(query);

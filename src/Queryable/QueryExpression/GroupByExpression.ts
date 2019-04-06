@@ -93,7 +93,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             const keyEntities = Enumerable.from(this.key.select.allJoinedEntities).toArray();
             let groupBy = this.groupBy.slice();
             for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
-                visitExpression(column.expression, (exp: IColumnExpression) => {
+                visitExpression(column.expression, (exp: IColumnExpression<any>) => {
                     if (isColumnExp(exp) && keyEntities.contains(exp.entity)) {
                         groupBy.push(exp);
                     }

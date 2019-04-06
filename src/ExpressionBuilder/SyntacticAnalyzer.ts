@@ -128,7 +128,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                         break;
                                     }
                                     case "[": {
-                                        // TODO
                                         if (!expression) {
                                             expression = createArrayExpression(param, tokens);
                                             break;
@@ -193,7 +192,6 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
             }
             case LexicalTokenType.Block: {
                 param.index++;
-                // TODO
                 if (!expression) {
                     return createObjectExpression(param, tokens);
                 }

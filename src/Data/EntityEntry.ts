@@ -94,26 +94,26 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
 
-        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = (entity as any)[propertyChangeHandlerMetaKey];
+        let propertyChangeHandler: IEventHandler<T, IChangeEventParam<T>> = entity[propertyChangeHandlerMetaKey];
         if (!propertyChangeHandler) {
             let propertyChangeDispatcher: any;
             [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            (entity as any)[propertyChangeHandlerMetaKey] = propertyChangeHandler;
-            (entity as any)[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
+            entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
+            entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
         }
         propertyChangeHandler.add((source: T, args: IChangeEventParam) => this.onPropertyChanged(source, args));
 
-        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = (entity as any)[relationChangeHandlerMetaKey];
+        let relationChangeHandler: IEventHandler<T, IRelationChangeEventParam> = entity[relationChangeHandlerMetaKey];
         if (!relationChangeHandler) {
             let relationChangeDispatcher: any;
             [relationChangeHandler, relationChangeDispatcher] = EventHandlerFactory<T, IRelationChangeEventParam>(entity);
-            (entity as any)[relationChangeHandlerMetaKey] = relationChangeHandler;
-            (entity as any)[relationChangeDispatherMetaKey] = relationChangeDispatcher;
+            entity[relationChangeHandlerMetaKey] = relationChangeHandler;
+            entity[relationChangeDispatherMetaKey] = relationChangeDispatcher;
         }
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }
     public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all(o => (this.entity as any)[o.propertyName] !== undefined);
+        return this.dbSet.metaData.columns.all(o => this.entity[o.propertyName] !== undefined);
     }
     // TODO: private
     public originalValues: Map<keyof T, any> = new Map();
@@ -188,13 +188,13 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         if (properties) {
             for (const prop of properties) {
                 if (this.originalValues.has(prop))
-                    (this.entity as any)[prop] = this.originalValues.get(prop);
+                    this.entity[prop] = this.originalValues.get(prop);
             }
         }
         else {
             for (const [prop, value] of this.originalValues) {
                 if (!properties || properties.contains(prop))
-                    (this.entity as any)[prop] = value;
+                    this.entity[prop] = value;
             }
         }
     }
@@ -234,15 +234,15 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                         .each(relEntry => {
                                             switch (o.updateOption) {
                                                 case "CASCADE": {
-                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = this.entity[prop as keyof T];
+                                                    relEntry.slaveEntry[rCol.propertyName] = this.entity[prop as keyof T];
                                                     break;
                                                 }
                                                 case "SET NULL": {
-                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = null;
+                                                    relEntry.slaveEntry[rCol.propertyName] = null;
                                                     break;
                                                 }
                                                 case "SET DEFAULT": {
-                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                                    relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
                                                     break;
                                                 }
                                             }
@@ -291,7 +291,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                             }
                                             case "SET NULL": {
                                                 (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
-                                                    (relEntry.slaveEntry as any)[rCol.propertyName] = null;
+                                                    relEntry.slaveEntry[rCol.propertyName] = null;
                                                     (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                                 });
                                                 break;
@@ -299,7 +299,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                             case "SET DEFAULT": {
                                                 (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
                                                     if (rCol.default) {
-                                                        (relEntry.slaveEntry as any)[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                                        relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
                                                         (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                                     }
                                                 });

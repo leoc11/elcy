@@ -13,11 +13,12 @@ import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaDat
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameter } from "../../Query/IQueryParameter";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { Uuid } from "../../Data/Uuid";
 import { TimeSpan } from "../../Data/TimeSpan";
+import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 
 export class MssqlQueryBuilder extends RelationQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -48,7 +49,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         else
             return identity;
     }
-    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
+    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         if (insertExp.values.length <= 0)
             return [];
 
@@ -58,8 +59,8 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             queryExpression: insertExp
         };
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
-        let output = insertExp.entity.columns.where(o => isNotNull(o.columnMetaData))
-            .where(o => (o.columnMetaData!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMetaData!.default)
+        let output = insertExp.entity.columns.where(o => isNotNull(o.columnMeta))
+            .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.default)
             .select(o => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
         if (output) {
             output = " OUTPUT " + output;
@@ -74,61 +75,46 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         if (output) queryCommand.type |= QueryType.DQL;
 
         const result: IQuery[] = [queryCommand];
-        let parameterKeys: string[] = [];
-        let isLimitExceed = false;
+        let count = 0;
         this.indent++;
-        insertExp.values.each(itemExp => {
-            if (this.queryLimit.maxParameters) {
-                const curParamKeys: string[] = [];
-                for (const prop in itemExp) {
-                    const value = itemExp[prop];
-                    const paramExp = parameters.first(o => o.paramExp === value);
-                    if (paramExp) {
-                        curParamKeys.push(paramExp.name);
-                    }
-                }
-                const keys = parameterKeys.union(curParamKeys).toArray();
-                isLimitExceed = keys.length > this.queryLimit.maxParameters;
-                if (!isLimitExceed) {
-                    parameterKeys = keys;
-                }
-            }
-
+        for (const itemExp of insertExp.values) {
+            const isLimitExceed = this.queryLimit.maxParameters && (count + insertExp.columns.length) > this.queryLimit.maxParameters;
             if (isLimitExceed) {
                 queryCommand.query = queryCommand.query.slice(0, -1);
-                queryCommand.parameters = parameterKeys.select(o => parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
-                    acc[item.name] = item.value;
-                    return acc;
-                });
-
-                isLimitExceed = false;
-                parameterKeys = [];
-
                 queryCommand = {
                     query: insertQuery,
                     parameters: {},
-                    type: QueryType.DML | QueryType.DQL
+                    type: QueryType.DML
                 };
                 result.push(queryCommand);
             }
 
-            queryCommand.query += `${this.newLine()}(${insertExp.columns.select(o => {
-                const valueExp = itemExp[o.propertyName];
-                return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-            }).toArray().join(",")}),`;
-        });
+            const values: string[] = [];
+            for (const col of insertExp.columns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    values.push(this.toString(valueExp, param));
+                    const paramExp = param.parameters.get(valueExp);
+                    if (paramExp) {
+                        queryCommand.parameters[paramExp.name] = paramExp.value;
+                        count++;
+                    }
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
+            queryCommand.query += `${this.newLine(1, false)}(${values.join(",")}),`;
+        }
         this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);
-        queryCommand.parameters = parameterKeys.select(o => parameters.first(p => p.name === o)).reduce({} as { [key: string]: any }, (acc, item) => {
-            acc[item.name] = item.value;
-            return acc;
-        });
 
         return result;
     }
 
     //#region Update
-    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
+    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
@@ -188,7 +174,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         if (!isNotNull(input)) {
             return null;
         }
-        if (column instanceof ColumnExpression && column.columnMetaData instanceof RowVersionColumnMetaData) {
+        if (column instanceof ColumnExpression && column.columnMeta instanceof RowVersionColumnMetaData) {
             return new Uint8Array(input.buffer ? input.buffer : input);
         }
         return super.toParameterValue(input, column);

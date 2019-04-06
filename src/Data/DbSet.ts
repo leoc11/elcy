@@ -98,7 +98,7 @@ export class DbSet<T> extends Queryable<T> {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.first().propertyName] = primaryValue as any;
+            entity[this.primaryKeys.first().propertyName] = primaryValue as unknown as T[keyof T];
         }
         else {
             if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.default && !primaryValue[o.propertyName])) {
@@ -106,7 +106,7 @@ export class DbSet<T> extends Queryable<T> {
             }
 
             for (const prop in primaryValue) {
-                entity[prop] = primaryValue[prop] as any;
+                entity[prop] = primaryValue[prop] as unknown as T[keyof T];
             }
         }
         this.dbContext.add(entity);
@@ -124,7 +124,7 @@ export class DbSet<T> extends Queryable<T> {
         let keyString = "";
         let useReference = false;
         for (const o of this.primaryKeys) {
-            const val = (id as any)[o.propertyName];
+            const val = id[o.propertyName];
             if (!val) {
                 if (o.generation & ColumnGeneration.Insert) {
                     useReference = true;
@@ -165,7 +165,9 @@ export class DbSet<T> extends Queryable<T> {
         for (const item of items) {
             const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in item) {
-                itemExp[prop] = new ValueExpression(item[prop]);
+                const propValue = item[prop];
+                if (propValue !== undefined && !(propValue instanceof Function))
+                    itemExp[prop] = new ValueExpression(propValue);
             }
             valueExp.push(itemExp);
         }
@@ -211,7 +213,7 @@ export class DbSet<T> extends Queryable<T> {
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(modeOrKeyOrPredicate?: { [key in keyof T]?: T[key] } | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
-            return super.deferredDelete(modeOrKeyOrPredicate as any, mode);
+            return super.deferredDelete(modeOrKeyOrPredicate as () => boolean, mode);
         }
         else {
             const key = modeOrKeyOrPredicate;

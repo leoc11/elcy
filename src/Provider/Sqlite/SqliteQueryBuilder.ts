@@ -9,7 +9,7 @@ import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 import { Version } from "../../Common/Version";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameter } from "../../Query/IQueryParameter";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 
 export class SqliteQueryBuilder extends RelationQueryBuilder {
@@ -27,7 +27,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         [Uuid, () => ({ columnType: "text" })]
     ]);
     public translator = sqliteQueryTranslator;
-    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
+    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
@@ -38,8 +38,8 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
             return this.getUpsertQueryOlder(upsertExp, option, parameters);
         }
 
-        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const valueString = upsertExp.columns.select(o => {
+        const colString = upsertExp.insertColumns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const valueString = upsertExp.insertColumns.select(o => {
             const valueExp = upsertExp.setter[o.propertyName];
             return valueExp ? this.toString(valueExp, param) : "DEFAULT";
         }).toArray().join(",");
@@ -58,16 +58,16 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         };
         return [queryCommand];
     }
-    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameter[]): IQuery[] {
+    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
             queryExpression: upsertExp
         };
 
-        const colString = upsertExp.columns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = upsertExp.insertColumns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.columns.select(o => {
+            `VALUES (${upsertExp.insertColumns.select(o => {
                 const valueExp = upsertExp.setter[o.propertyName];
                 return valueExp ? this.toString(valueExp, param) : "DEFAULT";
             }).toArray().join(",")})`;

@@ -336,7 +336,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
     }
     private getColumnValue<T>(column: IColumnExpression<T>, data: any, dbContext?: DbContext) {
-        const columnMeta: IColumnMetaData = column.columnMetaData ? column.columnMetaData : { type: column.type, nullable: column.isNullable };
+        const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
         return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta);
     }
     private setColumnValue<T>(entryOrEntity: EntityEntry<T> | T, column: IColumnExpression<T>, data: any, dbContext?: DbContext) {

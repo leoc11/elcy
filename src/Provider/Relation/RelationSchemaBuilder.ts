@@ -29,7 +29,6 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { CheckConstraintMetaData } from "../../MetaData/CheckConstraintMetaData";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
-import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
 import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
