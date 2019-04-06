@@ -6,10 +6,11 @@ node_js:
 
 before_install:
   - npm install -g typescript@3.3.4000
+  - npm install codecov -g
 
 script:
   - tsc
   - npm test
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - codecov
