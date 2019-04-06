@@ -7,10 +7,11 @@ node_js:
 before_install:
   - npm install -g typescript@3.3.4000
   - npm install codecov -g
+  - npm install nyc -g
 
 script:
   - tsc
-  - npm test
+  - nyc npm test
 
 after_success:
   - codecov
