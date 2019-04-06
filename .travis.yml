@@ -1,12 +1,14 @@
 language: node_js
 node_js:
-  - lts
+  - 10
   - 8
 
 
+before_install:
+  - npm install -g typescript
 
 script:
-  - npm test
+  - tsc & npm test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
