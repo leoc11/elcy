@@ -18,7 +18,7 @@ export class DBEventEmitter<T = any> {
             for (const entry of entries) {
                 for (const handler of beforeSaves) {
                     handler(entry.entity, param);
-    }
+                }
             }
         }
     }
@@ -32,7 +32,7 @@ export class DBEventEmitter<T = any> {
             for (const entry of entries) {
                 for (const handler of beforeDeletes) {
                     handler(entry.entity, param);
-    }
+                }
             }
         }
     }
@@ -46,7 +46,7 @@ export class DBEventEmitter<T = any> {
             for (const entry of entries) {
                 for (const handler of afterLoads) {
                     handler(entry.entity);
-    }
+                }
             }
         }
     }

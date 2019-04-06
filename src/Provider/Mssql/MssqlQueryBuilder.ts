@@ -69,7 +69,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString})${output} VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
-            parameters: {},
+            parameters: new Map(),
             type: QueryType.DML
         };
         if (output) queryCommand.type |= QueryType.DQL;
@@ -83,7 +83,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                 queryCommand.query = queryCommand.query.slice(0, -1);
                 queryCommand = {
                     query: insertQuery,
-                    parameters: {},
+                    parameters: new Map(),
                     type: QueryType.DML
                 };
                 result.push(queryCommand);
@@ -96,7 +96,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                     values.push(this.toString(valueExp, param));
                     const paramExp = param.parameters.get(valueExp);
                     if (paramExp) {
-                        queryCommand.parameters[paramExp.name] = paramExp.value;
+                        queryCommand.parameters.set(paramExp.name, paramExp.value);
                         count++;
                     }
                 }
@@ -105,7 +105,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                 }
             }
 
-            queryCommand.query += `${this.newLine(1, false)}(${values.join(",")}),`;
+            queryCommand.query += `${this.newLine()}(${values.join(",")}),`;
         }
         this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);

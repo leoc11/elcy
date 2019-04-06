@@ -5,15 +5,18 @@ export class BatchedQuery implements IQuery {
     private _queries: IQuery[] = [];
     private _isBuildComplete: boolean;
     private _query: string;
-    private _parameters: { [key: string]: any; };
+    private _parameters: Map<string, any>;
     private _type: QueryType;
     protected buildQuery() {
         this._query = "";
-        this._parameters = {};
+        this._parameters = new Map();
         this._type = QueryType.Unknown;
         for (const query of this._queries) {
-            if (query.parameters)
-                Object.assign(this._parameters, query.parameters);
+            if (query.parameters) {
+                for (const [prop, value] of query.parameters) {
+                    this._parameters.set(prop, value);
+                }
+            }
             this._type |= query.type;
             this._query += query.query + ";\n\n";
         }
@@ -29,9 +32,8 @@ export class BatchedQuery implements IQuery {
             this._query += ";\n\n" + query.query;
             this._type |= query.type;
             if (query.parameters) {
-                for (const prop in query.parameters) {
-                    const value = query.parameters[prop];
-                    this._parameters[prop] = value;
+                for (const [prop, value] of query.parameters) {
+                    this._parameters.set(prop, value);
                 }
             }
         }

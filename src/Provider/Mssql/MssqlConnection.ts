@@ -210,9 +210,9 @@ export class MssqlConnection implements IConnection {
             request.on("done", doneHandler);
 
             if (command.parameters) {
-                for (const key in command.parameters) {
+                for (const [key, value] of command.parameters) {
                     // TODO: map parameter type.
-                    const param = this.resolveParameter(command.parameters[key]);
+                    const param = this.resolveParameter(value);
                     request.addParameter(key, param.type, param.value);
                 }
             }

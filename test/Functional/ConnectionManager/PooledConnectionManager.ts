@@ -12,7 +12,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         if (!option) {
             option = {};
         }
-        option = Object.assign({ maxConnection: 3, idleTimeout: 1000, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 }, option);
+        option = Object.assign({ maxConnection: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 }, option);
         const manager = new PooledConnectionManager(new MockDriver({ allowPooling: true }), option);
         return manager;
     };
@@ -46,7 +46,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         await new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
-            }, 1001);
+            }, 101);
         });
         const con2 = await connectionManager.getConnection();
         await con2.close();

@@ -332,6 +332,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 });
             });
 
+        const queries = deferredQueryEnumerable.selectMany(o => o.buildQuery(queryBuilder));
         const mergedQueries = queryBuilder.mergeQueries(queries);
         const queryResult: IQueryResult[] = await this.executeQueries(...mergedQueries);
         for (const deferredQuery of deferredQueryEnumerable) {
@@ -383,7 +384,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public async deferredFromSql<T>(type: GenericType<T>, rawQuery: string, parameters?: { [key: string]: any }) {
         const queryCommand: IQuery = {
             query: rawQuery,
-            parameters: {},
+            parameters: new Map(),
             type: QueryType.DDL
         };
         const command: IQueryExpression = {
@@ -394,7 +395,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             getEffectedEntities: () => []
         };
         if (parameters) {
-            Object.assign(queryCommand.parameters, parameters);
+            for (const prop in parameters) {
+                const value = parameters[prop];
+                queryCommand.parameters.set(prop, value);
+            }
         }
         const query = new DeferredQuery(this, command, new Map(), (result) => result.selectMany(o => o.rows).select(o => {
             let item = new (type as IObjectType)();

@@ -50,7 +50,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t('${productId.toString()}',10000)`,
                 type: QueryType.DML,
-                parameters: {}
+                parameters: new Map()
             } as IQuery);
             effected.should.equal(1);
         });
@@ -67,7 +67,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t(@param0,@param1)`,
                 type: QueryType.DML,
-                parameters: { "param0": product.ProductId, "param1": product.Price }
+                parameters: new Map<string, any>([["param0", product.ProductId], ["param1", product.Price]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -85,7 +85,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t(@param0,@param1)`,
                 type: QueryType.DML,
-                parameters: { "param0": product.ProductId, "param1": product.Price }
+                parameters: new Map<string, any>([["param0", product.ProductId], ["param1", product.Price]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -104,7 +104,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: "Insert 1" }
+                parameters: new Map<string, any>([["param0", "Insert 1"]])
             } as IQuery);
             data.should.has.property("isDeleted").that.equal(false);
             data.should.has.property("isDefault").that.equal(true);
@@ -142,12 +142,12 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledWithMatch({
                 query: "INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT),\n\t(@param1,DEFAULT,DEFAULT)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { "param0": "Insert 1", "param1": "Insert 2" }
+                parameters: new Map<string, any>([["param0", "Insert 1"], ["param1", "Insert 2"]])
             } as IQuery);
             spy.should.have.been.calledWithMatch({
                 query: "INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES\n\t(@param1,@param0),\n\t(@param1,@param2),\n\t(@param4,@param3)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { "param0": "detail 1", "param1": data.id, "param2": "detail 2", "param3": "detail 21", "param4": data2.id }
+                parameters: new Map<string, any>([["param0", "detail 1"], ["param1", data.id], ["param2", "detail 2"], ["param3", "detail 21"], ["param4", data2.id]])
             } as IQuery);
             data.should.has.property("isDeleted").that.equal(false);
             data.should.has.property("isDefault").that.equal(true);
@@ -215,7 +215,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated" }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -254,7 +254,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated", param2: "Original" }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", "Original"]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -277,7 +277,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[description] = @param1\nFROM [AutoDetail] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[version]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[version]\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated", param2: oldVersion }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", oldVersion]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -303,7 +303,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE (([entity0].[id]=@param0) AND ([entity0].[modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated", param2: oldModifiedDate.toUTCDate() }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", oldModifiedDate.toUTCDate()]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -327,7 +327,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated" }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -363,7 +363,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated" }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery);
         });
         it("should not update Readonly Column, ex: CreatedDate", async () => {
@@ -387,7 +387,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
                 type: QueryType.DML | QueryType.DQL,
-                parameters: { param0: 1, param1: "Updated" }
+                parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -426,7 +426,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: new Map<string, any>([["param0", 1]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -447,7 +447,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0)",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: new Map<string, any>([["param0", 1]])
             } as IQuery);
             effected.should.equal(1);
         });
@@ -500,7 +500,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nDELETE [AutoDetail]\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: new Map<string, any>([["param0", 1]])
             } as IQuery);
 
             relationMeta.deleteOption = "NO ACTION";
@@ -519,7 +519,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = NULL\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: new Map<string, any>([["param0", 1]])
             } as IQuery);
 
             relationMeta.deleteOption = "NO ACTION";
@@ -538,7 +538,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0] \nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = 0\nFROM [AutoDetail] AS [AutoDetail] \nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
                 type: QueryType.DML,
-                parameters: { param0: 1 }
+                parameters: new Map<string, any>([["param0", 1]])
             } as IQuery);
 
             relationMeta.deleteOption = "NO ACTION";
@@ -581,7 +581,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 query: "UPDATE [entity0]\nSET [entity0].[parentId] = @param0\nFROM [AutoDetail] AS [entity0] \nWHERE ([entity0].[id]=@param1)",
                 type: QueryType.DML,
-                parameters: { param0: 1, param1: 10 }
+                parameters: new Map<string, any>([["param0", 1], ["param1", 10]])
             } as IQuery);
             effected.should.equal(1);
         });

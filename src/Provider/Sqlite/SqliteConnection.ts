@@ -209,11 +209,11 @@ export class SqliteConnection implements IConnection {
     }
     public errorEvent: IEventHandler<SqliteConnection, Error>;
     protected onError: IEventDispacher<Error>;
-    protected getParameter(param: { [key: string]: string }) {
+    protected getParameter(param: Map<string, any>) {
         const result: { [key: string]: string } = {};
         if (param) {
-            for (const prop in param) {
-                result["@" + prop] = param[prop];
+            for (const [prop, value] of param) {
+                result["@" + prop] = value;
             }
         }
         return result;

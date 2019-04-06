@@ -52,8 +52,8 @@ export class MockConnection implements IConnection {
         return Enumerable.from(this.deferredQueries)
             .selectMany(o => {
                 const command = o.command;
-                const tvps = Enumerable.from(o.parameters.keys()).where(o => o instanceof SqlTableValueParameterExpression);
-                const skipCount = tvps.count();
+                const tvps = command.paramExps.where(o => o instanceof SqlTableValueParameterExpression).toArray();
+                const skipCount = tvps.length;
                 if (command instanceof InsertIntoExpression) {
                     let i = 0;
                     return o.queries.select(query => {
@@ -62,11 +62,11 @@ export class MockConnection implements IConnection {
                         };
                         i++;
                         if (query.type & QueryType.DML) {
-                            if (i > skipCount) {
+                            if (i >= skipCount) {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
                             }
                             else {
-                                const arrayParameter = tvps.skip(i).first();
+                                const arrayParameter = tvps[i];
                                 const queryValue = o.parameters.get(arrayParameter);
                                 if (Array.isArray(queryValue.value)) {
                                     result.effectedRows = queryValue.value.length;
@@ -129,7 +129,7 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         if (query.type & QueryType.DML) {
-                            const arrayParameter = tvps.skip(i).first();
+                            const arrayParameter = tvps[i];
                             const paramValue = o.parameters.get(arrayParameter);
                             if (Array.isArray(paramValue.value)) {
                                 result.effectedRows = paramValue.value.length;
@@ -165,11 +165,11 @@ export class MockConnection implements IConnection {
                             result.effectedRows = rows.length;
                         }
                         else if (query.type & QueryType.DML) {
-                            if (i > skipCount) {
+                            if (i >= skipCount) {
                                 result.effectedRows = command.values.length;
                             }
                             else {
-                                const arrayParameter = tvps.skip(i).first();
+                                const arrayParameter = tvps[i];
                                 const paramValue = o.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
                                     result.effectedRows = paramValue.value.length;
@@ -187,8 +187,8 @@ export class MockConnection implements IConnection {
                         };
                         if (query.type & QueryType.DML) {
                             i++;
-                            if (i <= skipCount) {
-                                const arrayParameter = tvps.skip(i).first();
+                            if (i < skipCount) {
+                                const arrayParameter = tvps[i];
                                 const paramValue = o.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
                                     result.effectedRows = paramValue.value.length;
@@ -206,8 +206,8 @@ export class MockConnection implements IConnection {
                         };
                         if (query.type & QueryType.DML) {
                             i++;
-                            if (i <= skipCount) {
-                                const arrayParameter = tvps.skip(i).first();
+                            if (i < skipCount) {
+                                const arrayParameter = tvps[i];
                                 const paramValue = o.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
                                     result.effectedRows = paramValue.value.length;
@@ -227,7 +227,7 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
-                                const arrayParameter = tvps.skip(i).first();
+                                const arrayParameter = tvps[i];
                                 const paramValue = o.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
                                     result.effectedRows = paramValue.value.length;
@@ -347,6 +347,7 @@ export class MockConnection implements IConnection {
     public async executeQuery(command: IQuery): Promise<IQueryResult[]> {
         const batchedQuery = command as BatchedQuery;
         const count = batchedQuery.queryCount || 1;
+        console.log(JSON.stringify(batchedQuery.query));
         return this.results.splice(0, count);
     }
 

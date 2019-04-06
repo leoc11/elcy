@@ -80,14 +80,14 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
     //#region Query
     public toQuery<T>(queryExpression: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[] {
         let result: IQuery[] = [];
-        let tvps: Map<SqlTableValueParameterExpression, IQueryParameter>;
+        let tvps = new Map<SqlTableValueParameterExpression, IQueryParameter>();
 
         if (!(option && option.supportTVP)) {
-            // NOTE: possible issue
             for (const [key, value] of parameters) {
                 if (key instanceof SqlTableValueParameterExpression) {
                     tvps.set(key, value);
-                    parameters.delete(key);
+                    // NOTE: maybe TVP param should be deleted for unsupported db
+                    // parameters.delete(key);
                 }
             }
         }
@@ -111,7 +111,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
             result = this.getDeleteQuery(queryExpression, option, parameters);
         }
 
-        if (tvps && tvps.size > 0) {
+        if (tvps.size > 0) {
             let preQ: IQuery[] = [];
             let postQ: IQuery[] = [];
             for (const [tableValuExp, tvp] of tvps) {
@@ -372,7 +372,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString}) VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
-            parameters: {},
+            parameters: new Map(),
             type: QueryType.DML
         };
         const result: IQuery[] = [queryCommand];
@@ -412,12 +412,12 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
 
                 queryCommand = {
                     query: insertQuery,
-                    parameters: {},
+                    parameters: new Map(),
                     type: QueryType.DML
                 };
                 result.push(queryCommand);
             }
-            queryCommand.query += `${this.newLine(1, false)}(${values.join(",")}),`;
+            queryCommand.query += `${this.newLine()}(${values.join(",")}),`;
         }
         this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);
@@ -462,12 +462,12 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         upsertQuery += insertQuery;
         this.indent--;
 
-        const paramObj: { [key: string]: any } = {};
+        const paramObj = new Map<string, any>();
         for (const prop in upsertExp.setter) {
             const val = upsertExp.setter[prop] as SqlParameterExpression;
             const paramExp = param.parameters.get(val);
             if (paramExp) {
-                paramObj[paramExp.name] = paramExp.value;
+                paramObj.set(paramExp.name, paramExp.value);
             }
         }
 
@@ -763,7 +763,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         for (const o of queries) {
             let isLimitExceed = true;
             if (queryCommand) {
-                const qParamCount = Object.keys(o.parameters).length;
+                const qParamCount = o.parameters ? o.parameters.size : 0;
                 isLimitExceed = this.queryLimit.maxBatchQuery && queryCommand.queryCount >= this.queryLimit.maxBatchQuery
                     || this.queryLimit.maxQueryLength && (queryCommand.query.length + o.query.length + 3) > this.queryLimit.maxQueryLength
                     || this.queryLimit.maxParameters && paramCount + qParamCount > this.queryLimit.maxParameters;
@@ -785,9 +785,9 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         return result;
     }
     protected getParameter(param: IQueryBuilderParameter) {
-        const paramObj: { [key: string]: any } = {};
+        const paramObj = new Map<string, any>();
         param.queryExpression.paramExps.select(o => param.parameters.get(o)).where(o => !!o).each(o => {
-            paramObj[o.name] = o.value;
+            paramObj.set(o.name, o.value);
         });
         return paramObj;
     }
