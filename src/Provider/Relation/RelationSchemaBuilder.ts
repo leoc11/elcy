@@ -37,6 +37,7 @@ import { Uuid } from "../../Data/Uuid";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { clone, isNotNull } from "../../Helper/Util";
+import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 
 const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
     return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));

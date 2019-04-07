@@ -326,15 +326,18 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         deferredQueryEnumerable.selectMany(o => o.parameters)
             .each(([key, p]) => {
                 let alias = paramNameMap.get(p.value);
-                if (!alias) alias = paramPrefix + i++;
-                    p.name = alias;
+                if (!alias) {
+                    alias = paramPrefix + i++;
+                    paramNameMap.set(p.value, alias);
+                }
+                p.name = alias;
                 p.value = queryBuilder.toParameterValue(p.value, key.column);
-                });
             });
 
         const queries = deferredQueryEnumerable.selectMany(o => o.buildQuery(queryBuilder));
         const mergedQueries = queryBuilder.mergeQueries(queries);
         const queryResult: IQueryResult[] = await this.executeQueries(...mergedQueries);
+        
         for (const deferredQuery of deferredQueryEnumerable) {
             const results = queryResult.splice(0, deferredQuery.queries.length);
             deferredQuery.resolve(results);
@@ -401,7 +404,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         }
         const query = new DeferredQuery(this, command, new Map(), (result) => result.selectMany(o => o.rows).select(o => {
-            let item = new (type as IObjectType)();
+            let item: T = new (type as IObjectType)();
             if (isValue(item)) {
                 item = o[Object.keys(o).first()];
             }
@@ -471,6 +474,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             return emitter;
         };
 
+        // Before add event and generate query
         for (const [entityMeta, addEntries] of orderedEntityAdd) {
             const eventEmitter = getEventEmitter(entityMeta, this);
             eventEmitter.emitBeforeSaveEvent({ type: "insert" }, ...addEntries);

@@ -3,7 +3,7 @@ import { Queryable } from "../Queryable/Queryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
 import { FullJoinQueryable } from "./FullJoinQueryable";
-import { GroupByQueryable } from "./GroupbyQueryable";
+import { GroupByQueryable } from "./GroupByQueryable";
 import { IncludeQueryable } from "./IncludeQueryable";
 import { InnerJoinQueryable } from "./InnerJoinQueryable";
 import { IntersectQueryable } from "./IntersectQueryable";

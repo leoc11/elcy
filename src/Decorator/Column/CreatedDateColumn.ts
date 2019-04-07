@@ -20,8 +20,10 @@ export function CreatedDateColumn(optionOrName?: IDateTimeColumnOption | string,
     }
     option.isCreatedDate = true;
     if (option.timeZoneHandling === "none")
+        /* istanbul ignore next */
         option.default = () => Date.timestamp();
     else
+        /* istanbul ignore next */
         option.default = () => Date.utcTimestamp();
     return Column<any, Date>(DateTimeColumnMetaData, option);
 }
