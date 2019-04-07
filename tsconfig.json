@@ -23,7 +23,7 @@
         "pretty": true,
         // "watch": true,
         // "strict": true,
-        // "removeComments": true,
+        "removeComments": false,
         "noImplicitAny": false,
         "noImplicitThis": true,
         "alwaysStrict": true,
