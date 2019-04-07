@@ -6,7 +6,6 @@ node_js:
 
 before_install:
   - npm install -g typescript@3.3.4000
-  - npm install codecov -g
   - npm install nyc -g
 
 script:
@@ -14,4 +13,5 @@ script:
   - nyc npm test
 
 after_success:
-  - codecov
+  - nyc report --reporter=json
+  - bash <(curl -s https://codecov.io/bash)

@@ -13,6 +13,7 @@ export function DeletedColumn(optionOrName?: IBooleanColumnOption | string): Pro
     else if (optionOrName) option = optionOrName;
 
     option.isDeletedColumn = true;
+    /* istanbul ignore next */
     option.default = () => false;
     return Column<any, boolean>(BooleanColumnMetaData, option);
 }

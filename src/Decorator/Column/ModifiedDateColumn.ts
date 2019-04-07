@@ -21,8 +21,10 @@ export function ModifiedDateColumn(optionOrName?: IDateTimeColumnOption | string
     }
     option.isModifiedDate = true;
     if (option.timeZoneHandling === "none")
+        /* istanbul ignore next */
         option.default = () => Date.timestamp();
     else
+        /* istanbul ignore next */
         option.default = () => Date.utcTimestamp();
     return Column<any, Date>(DateTimeColumnMetaData, option);
 }

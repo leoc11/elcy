@@ -404,7 +404,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
         }
         const query = new DeferredQuery(this, command, new Map(), (result) => result.selectMany(o => o.rows).select(o => {
-            let item = new (type as IObjectType)();
+            let item: T = new (type as IObjectType)();
             if (isValue(item)) {
                 item = o[Object.keys(o).first()];
             }
@@ -481,7 +481,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             const insertResult = options && options.useUpsert && !entityMeta.hasIncrementPrimary ? this.getUpsertQueries(entityMeta, addEntries, visitor) : this.getInsertQueries(entityMeta, addEntries, visitor);
             insertQueries.set(entityMeta, insertResult);
         }
-        
+
         // Before update event and generate query
         orderedEntityUpdate.each(([entityMeta, updateEntries]) => {
             const eventEmitter = getEventEmitter(entityMeta, this);
