@@ -10,6 +10,10 @@
     "type": "git",
     "url": "https://github.com/leoc11/elcy.git"
   },
+  "nyc": {
+    "include": "build/src",
+    "exclude": "build/test" 
+  },
   "tags": [
     "orm",
     "typescript",
