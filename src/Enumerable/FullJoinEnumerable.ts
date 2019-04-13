@@ -12,13 +12,15 @@ export class FullJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<R
         const array2 = this.parent2.toArray();
         for (const value1 of this.parent) {
             let hasMatch = false;
-            for (const value2 of this.parent2) {
+            for (let i = 0, len = array2.length; i < len; i++) {
+                const value2 = array2[i];
                 if (this.relation(value1, value2)) {
                     hasMatch = true;
                     const value = this.resultSelector(value1, value2);
                     if (this.enableCache) result.push(value);
                     yield value;
                     array2.remove(value2);
+                    i--; len--;
                 }
             }
             if (!hasMatch) {

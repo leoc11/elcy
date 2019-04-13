@@ -2,7 +2,7 @@ import { Enumerable } from "./Enumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
 
 // reference : http://faithlife.codes/blog/2010/04/a_truly_lazy_orderby_in_linq/
-interface IRange {
+export interface IRange {
     first: number;
     last: number;
 }
@@ -17,7 +17,7 @@ const comparers = (a: any, b: any, selectors: IOrderDefinition[]) => {
     }
     return 0;
 };
-const partition = <T>(source: T[], first: number, last: number, selectors: IOrderDefinition<T>[]) => {
+export const partition = <T>(source: T[], first: number, last: number, selectors: IOrderDefinition<T>[]) => {
     let left = first - 1;
     let right = last + 1;
     while (true) {
