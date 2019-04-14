@@ -62,7 +62,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                     for (const tag of item.tags) {
                         const keyList = this._tagMap.get(tag);
                         if (keyList) {
-                            keyList.remove(key);
+                            keyList.delete(key);
                         }
                     }
                 }

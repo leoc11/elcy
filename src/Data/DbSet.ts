@@ -66,12 +66,12 @@ export class DbSet<T> extends Queryable<T> {
         return entity;
     }
     public findLocal(id: ValueType | { [key in keyof T]: T[key] & ValueType }): T {
-        let key = this.getMapKey(id);
+        let key = this.getKey(id);
         const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
     public entry(entity: T | { [key in keyof T]: T[key] & ValueType }) {
-        const key = this.getMapKey(entity);
+        const key = this.getKey(entity);
         let entry = this.dictionary.get(key);
         if (entry) {
             if (entry.entity !== entity) {
@@ -115,7 +115,7 @@ export class DbSet<T> extends Queryable<T> {
     public clear() {
         this.dictionary = new Map();
     }
-    public getMapKey(id: ValueType | { [key in keyof T]: T[key] }): string {
+    public getKey(id: ValueType | { [key in keyof T]: T[key] }): string {
         if (!isNotNull(id))
             throw new Error("Parameter cannot be null");
         if (isValue(id))
@@ -146,7 +146,7 @@ export class DbSet<T> extends Queryable<T> {
     }
     public updateEntryKey(entry: EntityEntry<T>) {
         this.dictionary.delete(entry.key);
-        entry.key = this.getMapKey(entry.entity);
+        entry.key = this.getKey(entry.entity);
         this.dictionary.set(entry.key, entry);
     }
 
@@ -179,7 +179,7 @@ export class DbSet<T> extends Queryable<T> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     // simple update.
@@ -261,7 +261,7 @@ export class DbSet<T> extends Queryable<T> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
 
         const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
 }

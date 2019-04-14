@@ -34,14 +34,14 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         const existingMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (existingMetaData != null) {
             metadata.applyOption(existingMetaData);
-            entityMetaData.columns.remove(existingMetaData);
+            entityMetaData.columns.delete(existingMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
         entityMetaData.columns.push(metadata);
 
         const pk = entityMetaData.primaryKeys.first(o => o.propertyName === metadata.propertyName);
         if (pk) {
-            entityMetaData.primaryKeys.remove(pk);
+            entityMetaData.primaryKeys.delete(pk);
             entityMetaData.primaryKeys.push(metadata);
         }
 

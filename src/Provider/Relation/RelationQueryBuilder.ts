@@ -280,7 +280,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                 }
                 else {
                     // create relation data (clone select join clone child)
-                    selectExp.includes.remove(include);
+                    selectExp.includes.delete(include);
                     const cloneEntity = selectExp.entity.clone();
                     cloneEntity.isRelationData = true;
                     const relationData = new SelectExpression(cloneEntity);

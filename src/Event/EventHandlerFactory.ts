@@ -7,7 +7,7 @@ export const EventHandlerFactory = <TSource, TArgs = any>(source: TSource, stopO
             handlers.push(handler);
         },
         remove: (handler) => {
-            handlers.remove(handler);
+            handlers.delete(handler);
         }
     };
     const eventDispacher = function (args: TArgs) {

@@ -529,7 +529,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const oldColumns = oldSchema.columns.where(o => !!o.columnName).toArray();
         let columnMetas = schema.columns.where(o => !!o.columnName).select(o => {
             const oldCol = oldColumns.first(c => c.columnName.toLowerCase() === o.columnName.toLowerCase());
-            oldColumns.remove(oldCol);
+            oldColumns.delete(oldCol);
             return {
                 columnSchema: o,
                 oldColumnSchema: oldCol
@@ -580,7 +580,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const oldIndices = oldSchema.indices.slice(0);
         let indexMap = schema.indices.select(o => {
             const oldIndex = oldIndices.first(c => c.name === o.name);
-            oldIndices.remove(oldIndex);
+            oldIndices.delete(oldIndex);
             return ({
                 index: o,
                 oldIndex: oldIndex

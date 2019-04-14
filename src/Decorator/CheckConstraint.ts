@@ -37,7 +37,7 @@ export function CheckContraint<TE>(optionOrCheckOrName: ICheckConstraintOption |
 
         let checkMetaData = entityMetaData.constraints.first(o => o instanceof CheckConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
-            entityMetaData.constraints.remove(checkMetaData);
+            entityMetaData.constraints.delete(checkMetaData);
         }
         checkMetaData = new CheckConstraintMetaData(option.name, entityMetaData, option.check);
         entityMetaData.constraints.push(checkMetaData);

@@ -39,7 +39,7 @@ export class BatchedQuery implements IQuery {
         }
     }
     public remove(query: IQuery) {
-        this._queries.remove(query);
+        this._queries.delete(query);
         this._isBuildComplete = false;
     }
     public get query() {

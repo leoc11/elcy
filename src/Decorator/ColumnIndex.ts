@@ -42,7 +42,7 @@ export function ColumnIndex<TE>(optionOrNameOrColumns: IIndexOption<TE> | string
         }
         let indexMetaData = entityMetaData.indices.first(o => o.name === option.name);
         if (indexMetaData) {
-            entityMetaData.indices.remove(indexMetaData);
+            entityMetaData.indices.delete(indexMetaData);
         }
         indexMetaData = new IndexMetaData(entityMetaData, option.name);
         entityMetaData.indices.push(indexMetaData);

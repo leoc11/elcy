@@ -15,7 +15,7 @@ export class RightJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<
                     const value = this.resultSelector(value1, value2);
                     if (this.enableCache) result.push(value);
                     yield value;
-                    array2.remove(value2);
+                    array2.delete(value2);
                 }
             }
         }

@@ -25,19 +25,19 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries)
-                        typedAddEntries.remove(this);
+                        typedAddEntries.delete(this);
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (typedEntries)
-                        typedEntries.remove(this);
+                        typedEntries.delete(this);
                     break;
                 }
                 case EntityState.Modified: {
                     const typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (typedEntries)
-                        typedEntries.remove(this);
+                        typedEntries.delete(this);
                     break;
                 }
             }

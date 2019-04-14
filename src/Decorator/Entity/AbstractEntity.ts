@@ -69,7 +69,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
                         }
                         else {
                             if (existing) {
-                                entityMetadata.columns.remove(existing);
+                                entityMetadata.columns.delete(existing);
                             }
                             inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }

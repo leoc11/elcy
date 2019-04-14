@@ -207,7 +207,7 @@ export abstract class Queryable<T = any> {
                 result = result.where(() => query.queries[i++].type === QueryType.DQL).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext);
             }, this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredToMap<K, V>(keySelector: (item: T) => K, valueSelector?: (item: T) => V) {
@@ -265,7 +265,7 @@ export abstract class Queryable<T = any> {
                 result = result.where(() => query.queries[i++].type === QueryType.DQL).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext).toMap(o => o.Key, o => o.Value);
             }, this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredCount() {
@@ -308,7 +308,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredSum(selector?: (item: T) => number) {
@@ -355,7 +355,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredMax(selector?: (item: T) => number) {
@@ -402,7 +402,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredMin(selector?: (item: T) => number) {
@@ -449,7 +449,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredAvg(selector?: (item: T) => number) {
@@ -496,7 +496,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).first(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredAll(predicate: (item: T) => boolean) {
@@ -541,7 +541,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => !result.first().rows.any(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredAny(predicate?: (item: T) => boolean) {
@@ -586,7 +586,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => result.first().rows.any(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredFind(id: ValueType | { [key in keyof T]: T[key] }) {
@@ -658,7 +658,7 @@ export abstract class Queryable<T = any> {
                 result = result.where(o => (query.queries[i++].type & QueryType.DQL) && true).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext).first();
             }, this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredContains(item: T) {
@@ -713,7 +713,7 @@ export abstract class Queryable<T = any> {
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => result.first().rows.any(), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
@@ -766,7 +766,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
@@ -830,7 +830,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
     public deferredInsertInto<TT>(type: IObjectType<TT>) {
@@ -875,7 +875,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.add(query);
+        this.dbContext.deferredQueries.push(query);
         return query;
     }
 

@@ -2,7 +2,7 @@
 // tslint:disable-next-line:interface-name
 interface Array<T> {
     add(...items: T[]): void;
-    remove(...items: T[]): void;
+    delete(...items: T[]): void;
     toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
 }
 
@@ -12,7 +12,7 @@ Array.prototype.add = function <T>(this: T[], ...items: T[]) {
             this.push(item);
     }
 };
-Array.prototype.remove = function <T>(this: T[], ...items: T[]) {
+Array.prototype.delete = function <T>(this: T[], ...items: T[]) {
     for (const item of items) {
         const index = this.indexOf(item);
         if (index >= 0) {

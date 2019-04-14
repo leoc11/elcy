@@ -412,7 +412,7 @@ Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
         else {
             paramExp = new SqlParameterExpression(valueExp, colExp as IColumnMetaData);
         }
-        this.paramExps.add(paramExp);
+        this.paramExps.push(paramExp);
         return paramExp;
     }
     //#endregion

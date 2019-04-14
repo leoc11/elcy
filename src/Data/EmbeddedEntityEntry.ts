@@ -37,7 +37,7 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             if (isUnchanged) {
                 const embeddedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);
                 if (embeddedEntries)
-                    embeddedEntries.remove(this);
+                    embeddedEntries.delete(this);
             }
             else if (isModified) {
                 let typedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);

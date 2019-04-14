@@ -47,7 +47,7 @@ export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstrain
 
         let checkMetaData = entityMetaData.constraints.first(o => o instanceof UniqueConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
-            entityMetaData.constraints.remove(checkMetaData);
+            entityMetaData.constraints.delete(checkMetaData);
         }
         const columns = option.properties
             .select(o => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o as keyof TE) as IColumnMetaData)

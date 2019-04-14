@@ -138,7 +138,6 @@ export class MockConnection implements IConnection {
                         else if (query.type & QueryType.DQL) {
                             const rows = generatedResults[generatedResults.length - (++i)];
                             result.rows = rows;
-                            result.effectedRows = rows.length;
                         }
                         return result;
                     });
@@ -162,9 +161,8 @@ export class MockConnection implements IConnection {
                                 return val;
                             }).toArray();
                             result.rows = rows;
-                            result.effectedRows = rows.length;
                         }
-                        else if (query.type & QueryType.DML) {
+                        if (query.type & QueryType.DML) {
                             if (i >= skipCount) {
                                 result.effectedRows = command.values.length;
                             }

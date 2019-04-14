@@ -44,7 +44,7 @@ export class QueuedTimeout<T> {
                 if (timeoutItem.item !== item) {
                     const existing = this.queue.where(o => o.item === item).first();
                     if (existing) {
-                        this.queue.remove(existing);
+                        this.queue.delete(existing);
                     }
                     return;
                 }

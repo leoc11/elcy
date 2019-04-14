@@ -579,7 +579,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             updateQueries.asEnumerable().each(([entityMeta, queries]) => {
                 const eventEmitter = getEventEmitter(entityMeta, this);
                 const dbSet = this.set(entityMeta.type);
-                const updateData = queries.selectMany(o => o.value.rows).toMap(o => dbSet.getMapKey(o), o => o);
+                const updateData = queries.selectMany(o => o.value.rows).toMap(o => dbSet.getKey(o), o => o);
                 const entityEntries = orderedEntityUpdate.get(entityMeta);
                 for (const entityEntry of entityEntries) {
                     const data = updateData.get(entityEntry.key);
