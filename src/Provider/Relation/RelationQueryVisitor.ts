@@ -1,4 +1,3 @@
-import "../../Extensions/StringExtension";
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../../Decorator/DecoratorKey";
 import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
@@ -1059,7 +1058,8 @@ export class RelationQueryVisitor implements IQueryVisitor {
                         let keyExp: IExpression;
                         if (filterer.entity.primaryColumns.length > 1) {
                             keyExp = new ObjectValueExpression({});
-                            filterer.entity.primaryColumns.each(o => (keyExp as ObjectValueExpression).object[o.propertyName] = o);
+                            for (const o of filterer.entity.primaryColumns)
+                                (keyExp as ObjectValueExpression).object[o.propertyName] = o;
                         }
                         else {
                             keyExp = filterer.entity.primaryColumns.first();
@@ -1166,7 +1166,8 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             let keyExp: IExpression;
                             if (filterer.entity.primaryColumns.length > 1) {
                                 keyExp = new ObjectValueExpression({});
-                                filterer.entity.primaryColumns.each(o => (keyExp as ObjectValueExpression).object[o.propertyName] = o);
+                                for (const o of filterer.entity.primaryColumns)
+                                    (keyExp as ObjectValueExpression).object[o.propertyName] = o;
                             }
                             else {
                                 keyExp = filterer.entity.primaryColumns.first();

@@ -66,7 +66,7 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
                 isInheritance = true;
             }
             if (isInheritance) {
-                parentMetaData.columns.each((parentColumnMeta) => {
+                for (const parentColumnMeta of parentMetaData.columns) {
                     let columnMeta: IColumnMetaData<T> = entityMetadata.columns.first(p => p.propertyName === parentColumnMeta.propertyName);
                     if (parentColumnMeta instanceof ComputedColumnMetaData) {
                         if (columnMeta) {
@@ -95,7 +95,7 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
                         entityMetadata.columns.push(columnMeta);
                         Reflect.defineMetadata(columnMetaKey, columnMeta, type, parentColumnMeta.propertyName);
                     }
-                });
+                }
 
                 if (parentMetaData.primaryKeys.length > 0)
                     entityMetadata.primaryKeys = parentMetaData.primaryKeys.select(o => entityMetadata.columns.first(p => p.propertyName === o.propertyName)).toArray();

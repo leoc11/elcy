@@ -31,7 +31,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
         const entityMetadata = new AbstractEntityMetaData(type, option.name);
 
         if (defaultOrders) {
-            entityMetadata.defaultOrders =  defaultOrders.select(o => ({
+            entityMetadata.defaultOrders = defaultOrders.select(o => ({
                 0: ExpressionBuilder.parse(o[0]),
                 1: o[1]
             })).toArray();
@@ -59,7 +59,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
                     isInheritance = true;
                 }
                 if (isInheritance) {
-                    parentMetaData.columns.each((parentColumnMeta) => {
+                    for (const parentColumnMeta of parentMetaData.columns) {
                         const existing = entityMetadata.columns.first(o => o.propertyName === parentColumnMeta.propertyName);
                         let inheritedColumnMeta: IColumnMetaData<T>;
                         if (parentColumnMeta instanceof ComputedColumnMetaData) {
@@ -78,12 +78,13 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
                             entityMetadata.columns.push(inheritedColumnMeta);
                             Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
                         }
-                    });
+                    }
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
                         const additionProperties = entityMetadata.columns.where(o => parentMetaData.columns.all(p => p.propertyName !== o.propertyName)).toArray();
-                        additionProperties.forEach((columnMeta) => {
-                            parentMetaData.columns.push(columnMeta);
-                        });
+                        for (const columnMeta of additionProperties) {
+                            // TODO
+                            parentMetaData.columns.push(columnMeta as unknown as IColumnMetaData);
+                        }
                     }
 
                     if (parentMetaData.primaryKeys.length > 0)

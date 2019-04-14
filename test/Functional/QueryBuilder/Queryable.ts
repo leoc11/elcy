@@ -3,7 +3,6 @@ import { Order, OrderDetail, Product, OrderDetailProperty, Collection } from "..
 import "mocha";
 import * as chai from "chai";
 import * as sinonChai from "sinon-chai";
-import "../../../src/Extensions/DateExtension";
 import { Uuid } from "../../../src/Data/Uuid";
 import * as sinon from "sinon";
 import { QueryType } from "../../../src/Common/Type";
@@ -53,17 +52,19 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.not.be.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
                 const properties = orderMeta.columns.select(o => o.propertyName).toArray();
-                properties.each(property => o.should.property(property).that.is.not.null);
+                for (const property of properties)
+                    o.should.property(property).that.is.not.null;
                 o.should.has.property("OrderDetails").that.is.an("array");
-                o.OrderDetails.each(od => {
+                for (const od of o.OrderDetails) {
                     od.should.be.an.instanceof(OrderDetail);
                     const odProps = orderDetailMeta.columns.select(o => o.propertyName).toArray();
-                    odProps.each(prop => od.should.has.property(prop).that.is.not.null);
-                });
-            });
+                    for (const prop of odProps)
+                        od.should.has.property(prop).that.is.not.null;
+                }
+            }
         });
         it("should support nested include", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -79,11 +80,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
                 o.should.have.property("OrderDetails").that.is.an("array");
-                o.OrderDetails.each(od => od.should.be.an.instanceof(OrderDetail).and.has.property("Product").that.is.an.instanceof(Product));
-            });
+                for (const od of o.OrderDetails)
+                    od.should.be.an.instanceof(OrderDetail).and.has.property("Product").that.is.an.instanceof(Product);
+            }
         });
         it("should eager load scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -99,9 +101,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(OrderDetail).and.have.property("Order").that.is.an.instanceof(Order);
-            });
+            }
         });
         it("should eager load 2 navigation properties at once", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -117,11 +119,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(OrderDetail);
                 o.should.have.property("Order").that.is.an.instanceof(Order);
                 o.should.have.property("Product").that.is.an.instanceof(Product);
-            });
+            }
         });
         it("should load many-many relation", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -137,11 +139,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Collection);
                 o.should.have.property("Products").that.is.an("array");
-                o.Products.each(p => p.should.be.an.instanceof(Product));
-            });
+                for (const p of o.Products)
+                    p.should.be.an.instanceof(Product);
+            }
         });
     });
     describe("PROJECT", async () => {
@@ -159,10 +162,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.has.property("TotalAmount").that.not.undefined;
                 o.should.has.property("OrderDate").that.is.undefined;
-            });
+            }
         });
     });
     describe("SELECT", async () => {
@@ -180,7 +183,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("date"));
+            for (const o of results)
+                o.should.be.a("date");
         });
         it("should return an object", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -199,10 +203,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("date").that.is.a("date");
                 o.should.have.property("amount").that.is.a("number");
-            });
+            }
         });
         it("should return a value from scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -220,9 +224,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("date").that.is.a("date");
-            });
+            }
         });
         it("should return an object with list navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -240,10 +244,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("ods").that.is.an("array");
-                o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.ods)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("should return an object with scalar navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -261,7 +266,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.have.property("prod").that.is.an.instanceof(Product));
+            for (const o of results)
+                o.should.have.property("prod").that.is.an.instanceof(Product);
         });
         it("should return an value from list navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -281,10 +287,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
-                o.simpleOrderDetails.each(od => od.should.have.property("name").that.is.a("string"));
-            });
+                for (const od of o.simpleOrderDetails)
+                    od.should.have.property("name").that.is.a("string");
+            }
         });
         it("should return a scalar navigation property of list navigation property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -304,10 +311,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
-                o.simpleOrderDetails.each(od => od.should.have.property("prod").that.is.an.instanceof(Product));
-            });
+                for (const od of o.simpleOrderDetails)
+                    od.should.have.property("prod").that.is.an.instanceof(Product);
+            }
         });
         it("should support self select", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -328,13 +336,13 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
-                o.simpleOrderDetails.each(od => {
+                for (const od of o.simpleOrderDetails) {
                     od.should.have.property("od").that.is.an.instanceof(OrderDetail);
                     od.should.have.property("Price").that.is.a("number");
-                });
-            });
+                }
+            }
         });
         it("should select array", async () => {
             // TODO: could be improve with groupBy
@@ -351,10 +359,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array").and.not.empty;
-                o.each(o => o.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("should select array with where in property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -373,11 +382,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("sum").that.is.a("number");
                 o.should.have.property("ods").that.is.an("array");
-                o.ods.each(o => o.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.ods)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
 
             const isAllEmpty = results.all(o => !o.ods.any());
             isAllEmpty.should.not.true;
@@ -398,7 +408,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("select many with nested select to entity", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -414,7 +425,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Product));
+            for (const o of results)
+                o.should.be.an.instanceof(Product);
         });
         it("select many with nested select to related entity property", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -430,7 +442,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("select many with nested select to many relation", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -446,9 +459,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.a("array");
-            });
+            }
 
             const isAllEmpty = results.all(o => !o.any());
             isAllEmpty.should.not.true;
@@ -467,9 +480,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(OrderDetailProperty);
-            });
+            }
         });
         it("nested selectMany", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -485,9 +498,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(OrderDetailProperty);
-            });
+            }
         });
     });
     describe("WHERE", async () => {
@@ -505,7 +518,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order).and.have.property("TotalAmount").that.is.lte(10000));
+            for (const o of results)
+                o.should.be.an.instanceof(Order).and.have.property("TotalAmount").that.is.lte(10000);
         });
         it("should filter included list", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -521,12 +535,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array");
-                o.OrderDetails.each(od => {
+                for (const od of o.OrderDetails) {
                     od.should.be.an.instanceof(OrderDetail);
-                });
-            });
+                }
+            }
         });
         it("should be supported in select statement", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -544,10 +558,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.has.property("ods").that.is.an("array");
-                o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.ods)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("could be used more than once in chain", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -563,7 +578,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("should work with groupBy", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -581,7 +597,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.a("date"));
+            for (const o of results)
+                o.should.be.a("date");
         });
     });
     describe("ORDER BY", async () => {
@@ -599,7 +616,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("by related entity", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -615,7 +633,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("by computed column", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -631,7 +650,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("by multiple column", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -647,7 +667,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("should used last defined order", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -664,7 +685,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("could be used in include", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -680,10 +702,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array").and.not.empty;
-                o.OrderDetails.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.OrderDetails)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("could be used in select", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -701,10 +724,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("ods").that.is.an("array").and.not.empty;
-                o.ods.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.ods)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
     });
     describe("ANY", async () => {
@@ -739,10 +763,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("hasDetail").that.is.a("boolean");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -758,7 +782,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
     });
     describe("ALL", async () => {
@@ -793,10 +818,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("hasDetail").that.is.a("boolean");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -812,9 +837,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
     });
     describe("MAX", async () => {
@@ -848,10 +873,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("maxProductPrice").that.is.an("number");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -867,9 +892,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
     });
     describe("MIN", async () => {
@@ -904,10 +929,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("minProductPrice").that.is.a("number");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -923,7 +948,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
     });
     describe("AVG", async () => {
@@ -958,10 +984,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("avgProductPrice").which.is.an("number");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -977,9 +1003,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
     });
     describe("SUM", async () => {
@@ -1014,10 +1040,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("sumProductPrice").which.is.an("number");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1033,9 +1059,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
     });
     describe("COUNT", async () => {
@@ -1071,10 +1097,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").which.is.an.instanceof(Order);
                 o.should.have.property("countDetails").which.is.an("number");
-            });
+            }
         });
         it("could be used in where", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1090,9 +1116,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
         it("could be used in select with different filter", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1112,11 +1138,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("qty").that.is.a("number");
                 o.should.have.property("bc").that.is.a("number");
                 o.should.have.property("cd").that.is.a("number");
-            });
+            }
         });
     });
     describe("TAKE SKIP", async () => {
@@ -1134,7 +1160,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.a("array").and.have.lengthOf(1);
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should use same query cache for diff value", async () => {
             // build string with it's query cache
@@ -1211,10 +1238,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("lastAddedItem").that.is.an.instanceof(OrderDetail);
-            });
+            }
         });
     });
     describe("DISTINCT", async () => {
@@ -1232,9 +1259,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.a("number");
-            });
+            }
             results.should.has.lengthOf(results.distinct().count());
         });
         it("should work with select", async () => {
@@ -1254,14 +1281,14 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("quantities").that.is.an("array").and.not.empty;
-                o.quantities.each(od => {
+                for (const od of o.quantities) {
                     od.should.be.a("number");
-                });
+                }
                 o.quantities.should.have.lengthOf(o.quantities.distinct().count());
-            });
+            }
         });
     });
     describe("GROUP BY", async () => {
@@ -1279,7 +1306,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("date"));
+            for (const o of results)
+                o.should.be.a("date");
         });
         it("groupBy.(o => o.column).select(o => o.key.method())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1295,7 +1323,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy.(o => o.column).select(o => o.count())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1311,7 +1340,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy.(o => o.column + o.column).select(o => o.key)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1327,7 +1357,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy.(o => o.column + o.column).select(o => {column: o.key, count: o.count(), sum: o.sum()})", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1347,11 +1378,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("dateYear").that.is.a("number");
                 o.should.has.property("count").that.is.a("number").greaterThan(0);
                 o.should.has.property("sum").that.is.a("number");
-            });
+            }
         });
         it("groupBy computed column", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1367,12 +1398,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("key").that.is.a("number");
-                o.each(o => {
-                    o.should.be.an.instanceOf(OrderDetail);
-                });
-            });
+                for (const od of o) {
+                    od.should.be.an.instanceOf(OrderDetail);
+                }
+            }
         });
         it("groupBy computed column complex 1", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1392,11 +1423,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("dateYear").that.is.a("number");
                 o.should.has.property("count").that.is.a("number").greaterThan(0);
                 o.should.has.property("sum").that.is.a("number");
-            });
+            }
         });
         it("groupBy.(o => o.column.method()).select(o => o.toArray())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1412,12 +1443,12 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array");
-                o.each(o => {
-                    o.should.be.an.instanceOf(Order);
-                });
-            });
+                for (const od of o) {
+                    od.should.be.an.instanceOf(Order);
+                }
+            }
         });
         it("groupBy.(o => o.column.method()).select(o => ({items: o}))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1435,10 +1466,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("details").that.is.an("array");
-                o.details.each(od => od.should.be.an.instanceof(Order));
-            });
+                for (const od of o.details)
+                    od.should.be.an.instanceof(Order);
+            }
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.key)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1454,9 +1486,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.key.column.method())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1472,7 +1504,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.count())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1488,7 +1521,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy.(o => o.toOneRelation.toOneRelation).select(o => o.key.column)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1504,7 +1538,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("date"));
+            for (const o of results)
+                o.should.be.a("date");
         });
         it("groupBy.(o => o.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1524,11 +1559,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("count").that.is.an("number");
                 o.should.have.property("sum").that.is.an("number");
-            });
+            }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1549,11 +1584,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("obj").that.is.an.instanceof(Object);
                 o.obj.should.have.property("pid").that.is.an.instanceof(Uuid);
                 o.Quantity.should.be.an("number");
-            });
+            }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1574,9 +1609,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("pid").that.is.an.instanceof(Uuid);
-            });
+            }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj.prop)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1597,9 +1632,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Uuid);
-            });
+            }
         });
         it("groupBy(o => o.toOneRelation.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1619,11 +1654,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("order").that.is.an.instanceof(Order);
                 o.should.have.property("count").that.is.an("number");
                 o.should.have.property("sum").that.is.an("number");
-            });
+            }
         });
         it("groupBy(o => o.toOneRelation).select(o => o.key.toOneRelation)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1639,7 +1674,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1658,10 +1694,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("productid").that.is.an.instanceof(Uuid);
                 o.should.have.property("Quantity").that.is.a("number");
-            });
+            }
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.count())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1680,7 +1716,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key.col)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1699,7 +1736,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("number"));
+            for (const o of results)
+                o.should.be.a("number");
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => ({ col: { col: col }}))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1726,11 +1764,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("count").that.is.a("number");
                 o.should.have.property("sum").that.is.a("number");
                 o.data.should.have.keys(["pid", "qty", "avg"]);
-            });
+            }
         });
         it("groupBy(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column })).select(o => ({ col: { col: col }}))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1757,11 +1795,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("count").that.is.a("number");
                 o.should.have.property("sum").that.is.a("number");
                 o.data.should.have.keys(["day", "price", "avg"]);
-            });
+            }
         });
         it("groupBy.(o => ({col: o.toOneRelation })).select(o => o.key).select(o => o.col.name)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1779,7 +1817,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.a("string"));
+            for (const o of results)
+                o.should.be.a("string");
         });
         it("groupBy.(o => o.column.method())", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1796,10 +1835,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array").with.property("key").that.is.a("number");
-                o.each(od => od.should.be.an.instanceof(Order));
-            });
+                for (const od of o)
+                    od.should.be.an.instanceof(Order);
+            }
         });
         it("groupBy.(o => o.toOneRelation.toOneRelation)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1815,10 +1855,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array").with.property("key").that.is.an.instanceof(Order);
-                o.each(od => od.should.be.an.instanceof(OrderDetailProperty));
-            });
+                for (const od of o)
+                    od.should.be.an.instanceof(OrderDetailProperty);
+            }
         });
         it("groupBy.(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column }))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1837,10 +1878,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array").with.property("key").that.have.property("price").that.is.a("number");
-                o.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("groupBy(o => ({obj: {prop: o.col} }))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1861,15 +1903,15 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("key").that.is.an.instanceof(Object);
                 o.key.should.have.property("obj").that.is.an.instanceof(Object);
                 o.key.obj.should.have.property("pid").that.is.an.instanceof(Uuid);
                 o.key.Quantity.should.be.an("number");
-                o.each(o => {
-                    o.should.be.an.instanceOf(OrderDetail);
-                });
-            });
+                for (const od of o) {
+                    od.should.be.an.instanceOf(OrderDetail);
+                }
+            }
         });
         it("groupBy.(o => ({col: o.toOneRelation }))", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1887,10 +1929,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an("array").with.property("key").that.have.property("od").that.is.an.instanceof(OrderDetail);
-                o.each(od => od.should.be.an.instanceof(OrderDetailProperty));
-            });
+                for (const od of o)
+                    od.should.be.an.instanceof(OrderDetailProperty);
+            }
         });
     });
     describe("TOMAP", async () => {
@@ -1926,9 +1969,9 @@ describe("QUERYABLE", async () => {
             for (const [key, value] of results) {
                 key.should.be.instanceOf(Uuid);
                 value.should.be.an.instanceOf(Order);
-                value.OrderDetails.each(o => {
+                for (const o of value.OrderDetails) {
                     o.should.be.an.instanceOf(OrderDetail);
-                });
+                }
             }
         });
     });
@@ -1954,11 +1997,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.has.property("month").that.is.a("number");
                 o.should.has.property("total").that.is.a("number");
                 o.should.has.property("qty").that.is.a("number");
-            });
+            }
         });
     });
     describe("PARAMETERS", async () => {
@@ -1977,9 +2020,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.instanceof(Order);
-            });
+            }
         });
         it("should be computed in application", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -1996,9 +2039,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.instanceof(Order);
-            });
+            }
         });
         it("should be computed in query", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2014,9 +2057,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.instanceof(Order);
-            });
+            }
         });
         it("should pass function to query", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2033,7 +2076,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an("number"));
+            for (const o of results)
+                o.should.be.an("number");
         });
         it("should pass function with parameter", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2051,7 +2095,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an("number"));
+            for (const o of results)
+                o.should.be.an("number");
         });
         it("should re-build query based on Function type parameter", async () => {
             let fn = (o: number) => o + 1;
@@ -2096,9 +2141,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
 
             sinon.restore();
             db.connection = await db.getConnection();
@@ -2116,9 +2161,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => {
+            for (const o of results) {
                 o.should.be.an.instanceof(Order);
-            });
+            }
         });
     });
     describe("SUBQUERY", () => {
@@ -2138,7 +2183,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in where (Aggregate comparation)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2155,7 +2201,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in where (ANY)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2172,7 +2219,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should determine whether where filter goes to join expression or not", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2189,7 +2237,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in select (Relation/Array)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2208,10 +2257,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("orderDetails").that.is.an("array").and.not.empty;
-                o.orderDetails.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.orderDetails)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("should work in select (Aggregate)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2230,9 +2280,9 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("orderDetails").that.is.a("number");
-            });
+            }
         });
         it("should work in select (Count SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2253,10 +2303,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.a("number");
                 o.should.have.property("Count").that.is.a("number");
-            });
+            }
         });
         it("should work in select (Sum SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2278,11 +2328,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.a("number");
                 o.should.have.property("Accumulated").that.is.a("number");
                 o.should.have.property("OrderId").that.is.an.instanceof(Uuid);
-            });
+            }
         });
         it("should work in select (Any SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2303,10 +2353,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.a("number");
                 o.should.have.property("IsNotLowest").that.is.a("boolean");
-            });
+            }
         });
         it("should work in select (All SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2327,10 +2377,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.a("number");
                 o.should.have.property("IsHighest").that.is.a("boolean");
-            });
+            }
         });
     });
     describe("ARRAY PARAMETER", () => {
@@ -2356,7 +2406,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in where (Aggregate comparation)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2375,7 +2426,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in where (ANY)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2394,7 +2446,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should determine whether where filter goes to join expression or not", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2413,7 +2466,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => o.should.be.an.instanceof(Order));
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
         });
         it("should work in select (Relation/Array)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2434,10 +2488,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array");
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("orderDetails").that.is.an("array");
-                o.orderDetails.each(od => od.should.be.an.instanceof(OrderDetail));
-            });
+                for (const od of o.orderDetails)
+                    od.should.be.an.instanceof(OrderDetail);
+            }
         });
         it("should work in select (Aggregate)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2458,7 +2513,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.have.property("orderDetails").that.is.an("number"));
+            for (const o of results)
+                o.should.have.property("orderDetails").that.is.an("number");
         });
         it("should work in select (Count SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2482,10 +2538,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.an("number");
                 o.should.have.property("Count").that.is.an("number");
-            });
+            }
         });
         it("should work in select (Sum SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2510,11 +2566,11 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("OrderId").that.is.an.instanceof(Uuid);
                 o.should.have.property("TotalAmount").that.is.an("number");
                 o.should.have.property("Accumulated").that.is.an("number");
-            });
+            }
         });
         it("should work in select (Any SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2538,10 +2594,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.an("number");
                 o.should.have.property("IsNotLowest").that.is.a("boolean");
-            });
+            }
         });
         it("should work in select (All SubQuery)", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
@@ -2565,10 +2621,10 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => {
+            for (const o of results) {
                 o.should.have.property("TotalAmount").that.is.an("number");
                 o.should.have.property("IsHighest").that.is.a("boolean");
-            });
+            }
         });
     });
     describe("QUERY OPTION", () => {
@@ -2586,7 +2642,8 @@ describe("QUERYABLE", async () => {
             } as IQuery);
 
             results.should.be.an("array").and.not.empty;
-            results.each(o => o.should.be.an.instanceof(OrderDetail));
+            for (const o of results)
+                o.should.be.an.instanceof(OrderDetail);
         });
         it("should cache query with different key", () => {
             const queryExcludeSoftDeleted = db.orderDetails.toString();

@@ -28,7 +28,7 @@ export class ArrayValueExpression<T = any> implements IExpression<T[]> {
     }
     public hashCode() {
         let hash = 0;
-        this.items.each((o, index) => {
+        this.items.forEach((o, index) => {
             hash += hashCodeAdd(index, o.hashCode());
         });
         return hash;

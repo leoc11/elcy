@@ -72,7 +72,8 @@ export const mapKeepExp = function (replaceMap: Map<IExpression, IExpression>, e
     }
     else if ((exp as IEntityExpression).primaryColumns) {
         const entityExp = exp as IEntityExpression;
-        entityExp.columns.each(o => mapKeepExp(replaceMap, o));
+        for (const o of entityExp.columns)
+            mapKeepExp(replaceMap, o);
     }
 };
 export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
@@ -89,7 +90,8 @@ export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpressi
     }
     else if ((exp as IEntityExpression).primaryColumns) {
         const entityExp = exp as IEntityExpression;
-        entityExp.columns.each(o => removeExpFromMap(replaceMap, o));
+        for (const o of entityExp.columns)
+            removeExpFromMap(replaceMap, o);
     }
 };
 export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {

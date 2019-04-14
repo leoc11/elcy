@@ -43,9 +43,9 @@ export class RedisResultCacheManager implements IResultCacheManager {
     public async gets(...keys: string[]): Promise<IQueryResult[][]> {
         const connection = this.connection;
         let pipeline = connection.pipeline();
-        keys.each((key) => {
+        for (const key of keys) {
             pipeline.get(key);
-        });
+        }
 
         const results: any[] = await pipeline.exec();
         let i = 0;
@@ -76,21 +76,23 @@ export class RedisResultCacheManager implements IResultCacheManager {
             pipeline.set(key, JSON.stringify(item));
         }
         if (item.tags) {
-            item.tags.each(o => {
+            for (const o of item.tags) {
                 pipeline.sadd("tag:" + o, key);
-            });
+            }
         }
 
         await pipeline.exec();
     }
     public async remove(...keys: string[]): Promise<void> {
         const pipeline = this.connection.pipeline();
-        keys.each(key => pipeline.del(key));
+        for (const key of keys)
+            pipeline.del(key);
         await pipeline.exec();
     }
     public async removeTag(...tags: string[]): Promise<void> {
         const pipeline = this.connection.pipeline();
-        tags.each(tag => pipeline.smembers("tag:" + tag));
+        for (const tag of tags)
+            pipeline.smembers("tag:" + tag);
         const res: any[][] = await pipeline.exec();
         const keys = res.selectMany(o => o).distinct().toArray();
         return this.remove(...keys);

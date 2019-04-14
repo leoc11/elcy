@@ -155,12 +155,12 @@ describe("DATA MANIPULATION", () => {
             data.should.has.property("id").that.is.a("number").and.greaterThan(0);
 
             data.should.has.property("details").that.is.an("array").and.have.lengthOf(2);
-            data.details.each(d => {
+            for (const d of data.details) {
                 d.should.has.property("description").that.is.a("string");
                 d.should.has.property("id").that.is.a("number").and.greaterThan(0);
                 d.should.has.property("parentId").that.equal(data.id);
                 d.should.has.property("parent").that.equal(data);
-            });
+            }
         });
         it("should trigger before/after save event", async () => {
             const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;

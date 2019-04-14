@@ -1,4 +1,3 @@
-import "../Extensions/EnumerableExtension";
 import { operators } from "./IOperator";
 
 interface ILexicalPointer {

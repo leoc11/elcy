@@ -1,3 +1,4 @@
+import "../../Extensions/DateExtension";
 import { TimeZoneHandling } from "../../Common/Type";
 import { Column } from "./Column";
 import { DateTimeColumnType } from "../../Common/ColumnType";

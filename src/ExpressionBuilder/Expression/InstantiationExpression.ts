@@ -26,7 +26,7 @@ export class InstantiationExpression<T = any> implements IExpression<T> {
     }
     public hashCode() {
         let hash = hashCodeAdd(this.typeOperand.hashCode(), hashCode("new"));
-        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
+        this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
     }
 }

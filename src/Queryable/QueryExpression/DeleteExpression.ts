@@ -58,11 +58,11 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
             selectOrEntity = new SelectExpression(selectOrEntity);
         }
         this.select = selectOrEntity;
-        this.select.includes.each(o => {
+        for (const o of this.select.includes) {
             const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
             childDeleteExp.paramExps = childDeleteExp.paramExps.concat(this.paramExps);
             this.addInclude(childDeleteExp, o.relation);
-        });
+        }
         this.select.includes = [];
     }
     public addWhere(expression: IExpression<boolean>) {

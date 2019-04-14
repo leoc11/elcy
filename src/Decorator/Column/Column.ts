@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import "../../Extensions/EnumerableExtension";
 import { columnMetaKey, entityMetaKey, propertyChangeDispatherMetaKey } from "../DecoratorKey";
 import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
 import { IObjectType } from "../../Common/Type";

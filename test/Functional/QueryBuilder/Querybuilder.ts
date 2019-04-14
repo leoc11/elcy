@@ -1,5 +1,4 @@
 import "mocha";
-import "../../../src/Extensions/DateExtension";
 
 describe("QUERYBUILDER", () => {
     describe("EXPRESSION", () => {

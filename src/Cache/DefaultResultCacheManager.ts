@@ -1,3 +1,4 @@
+import "../Extensions/DateExtension";
 import { IResultCacheManager } from "./IResultCacheManager";
 import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheOption } from "./ICacheOption";
@@ -42,43 +43,43 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             this._expiredQueue.setTimeout(item, item.expiredTime);
         }
         if (item.tags) {
-            item.tags.each((tag) => {
+            for (const tag of item.tags) {
                 let tagList = this._tagMap.get(tag);
                 if (!tagList) {
                     tagList = [];
                     this._tagMap.set(tag, tagList);
                 }
                 tagList.push(key);
-            });
+            }
         }
     }
     public async remove(...keys: string[]): Promise<void> {
-        keys.each(key => {
+        for (const key of keys) {
             const item = this._keyMap.get(key);
             this._keyMap.delete(key);
             if (item) {
                 if (item.tags) {
-                    item.tags.each((tag) => {
+                    for (const tag of item.tags) {
                         const keyList = this._tagMap.get(tag);
                         if (keyList) {
                             keyList.remove(key);
                         }
-                    });
+                    }
                 }
                 this._expiredQueue.clearTimeout(item);
             }
-        });
+        }
     }
     public async removeTag(...tags: string[]): Promise<void> {
-        tags.each(tag => {
-            const keyList = this._tagMap.get(tag);
-            if (keyList) {
+        for (const tag of tags) {
+            const keys = this._tagMap.get(tag);
+            if (keys) {
                 this._tagMap.delete(tag);
-                keyList.each((key) => {
+                for (const key of keys) {
                     this._keyMap.delete(key);
-                });
+                }
             }
-        });
+        }
     }
     public async clear(): Promise<void> {
         this._keyMap.clear();

@@ -20,7 +20,9 @@ describe("REPLICATION CONNECTION MANAGER", () => {
     });
     it("should return all connections", async () => {
         const cons = await connectionManager.getAllConnections();
-        await cons.eachAsync(async o => await o.close());
+        for (const o of cons) {
+            await o.close();
+        }
         expect(cons).has.lengthOf(2);
     });
 });

@@ -1,5 +1,4 @@
 import "mocha";
-import "../../../src/Extensions/DateExtension";
 import { MyDb } from "../../Common/MyDb";
 import { Collection, Order } from "../../Common/Model";
 import { should, expect } from "chai";

@@ -376,52 +376,42 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
             type: QueryType.DML
         };
         const result: IQuery[] = [queryCommand];
-        let parameterKeys = new Map<string, any>();
-        let isLimitExceed = false;
+        let count = 0;
         this.indent++;
         for (const itemExp of insertExp.values) {
-            const values: string[] = [];
-            const curParamKeys: string[] = [];
-            for (const col of insertExp.columns) {
-                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
-                values.push(valueExp ? this.toString(valueExp, param) : "DEFAULT");
-
-                if (!param.parameters.has(valueExp)) {
-                    const paramExp = param.parameters.get(valueExp);
-                    if (paramExp) {
-                        curParamKeys.push(paramExp.name);
-                        parameterKeys.set(paramExp.name, paramExp.value);
-                    }
-                }
-            }
-
-            if (this.queryLimit.maxParameters) {
-                isLimitExceed = parameterKeys.size > this.queryLimit.maxParameters;
-                if (isLimitExceed) {
-                    for (const key of curParamKeys)
-                        parameterKeys.delete(key);
-                }
-            }
-
+            const isLimitExceed = this.queryLimit.maxParameters && (count + insertExp.columns.length) > this.queryLimit.maxParameters;
             if (isLimitExceed) {
                 queryCommand.query = queryCommand.query.slice(0, -1);
-                queryCommand.parameters = parameterKeys;
-
-                isLimitExceed = false;
-                parameterKeys = new Map();
-
                 queryCommand = {
                     query: insertQuery,
                     parameters: new Map(),
                     type: QueryType.DML
                 };
+                count = 0;
                 result.push(queryCommand);
             }
+
+            const values: string[] = [];
+            for (const col of insertExp.columns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    values.push(this.toString(valueExp, param));
+                    const paramExp = param.parameters.get(valueExp);
+                    if (paramExp) {
+                        queryCommand.parameters.set(paramExp.name, paramExp.value);
+                        count++;
+                    }
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
             queryCommand.query += `${this.newLine()}(${values.join(",")}),`;
         }
         this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);
-        queryCommand.parameters = parameterKeys;
+
         return result;
     }
     protected getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
@@ -432,11 +422,11 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
             parameters: parameters,
             queryExpression: upsertExp
         };
-        upsertExp.entity.primaryColumns.each(o => {
+        for (const o of upsertExp.entity.primaryColumns) {
             const valueExp = upsertExp.setter[o.propertyName];
             pkValues.push(`${this.toString(valueExp, param)} AS ${this.enclose(o.columnName)}`);
             joinString.push(`_VAL.${this.enclose(o.columnName)} = ${this.getColumnQueryString(o, param)}`);
-        });
+        }
 
         let upsertQuery = `MERGE INTO ${this.getEntityQueryString(upsertExp.entity, param)}` + this.newLine() +
             `USING (SELECT ${pkValues.join(", ")}) AS _VAL ON ${joinString.join(" AND ")}` + this.newLine() +

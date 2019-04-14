@@ -1,6 +1,4 @@
 import "mocha";
-import "../../../src/Extensions/EnumerableExtension";
-import "../../../src/Extensions/DateExtension";
 import { should } from "chai";
 
 describe("ENUMERABLE", () => {

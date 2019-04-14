@@ -80,7 +80,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     }
     public hashCode() {
         let hash = hashCode("." + this.methodName, this.objectOperand.hashCode());
-        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
+        this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
     }
 }

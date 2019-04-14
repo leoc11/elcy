@@ -10,14 +10,12 @@ export class RightJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<
         if (this.enableCache) result = [];
         const array2 = this.parent2.toArray();
         for (const value1 of this.parent) {
-            for (let i = 0, len = array2.length; i < len; i++) {
-                const value2 = array2[i];
+            for (const value2 of this.parent2) {
                 if (this.relation(value1, value2)) {
                     const value = this.resultSelector(value1, value2);
                     if (this.enableCache) result.push(value);
                     yield value;
                     array2.remove(value2);
-                    i--; len--;
                 }
             }
         }

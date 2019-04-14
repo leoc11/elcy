@@ -344,9 +344,9 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
 
     public getPrimaryValues() {
         const res: any = {};
-        this.dbSet.primaryKeys.each(o => {
+        for (const o of this.dbSet.primaryKeys) {
             res[o.propertyName] = this.entity[o.propertyName];
-        });
+        }
         return res;
     }
 

@@ -86,6 +86,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
                     parameters: new Map(),
                     type: QueryType.DML
                 };
+                count = 0;
                 result.push(queryCommand);
             }
 

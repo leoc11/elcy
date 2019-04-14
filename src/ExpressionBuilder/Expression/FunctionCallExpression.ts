@@ -70,7 +70,7 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
     }
     public hashCode() {
         let hash = hashCode(this.functionName);
-        this.params.each((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
+        this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
     }
 }

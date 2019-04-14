@@ -182,3 +182,5 @@ export class Enumerable<T = any> implements Iterable<T> {
 }
 
 import "./Enumerable.partial";
+import "../Extensions/EnumerableExtension";
+import "../Extensions/ArrayExtension";

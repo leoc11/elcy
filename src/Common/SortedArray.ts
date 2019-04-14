@@ -34,16 +34,19 @@ export class SortedArray<T> extends Array<T> {
         return new SortedArray(compareFunction, ...items);
     }
     public push(...items: T[]) {
-        items.each(o => this.addItem(o));
+        for (const o of items)
+            this.addItem(o);
         return this.length;
     }
     public unshift(...items: T[]) {
-        items.each(o => this.addItem(o));
+        for (const o of items)
+            this.addItem(o);
         return this.length;
     }
     public splice(start: number, deleteCount?: number, ...items: T[]) {
         const result: T[] = typeof deleteCount === "undefined" ? super.splice(start) : super.splice(start, deleteCount);
-        items.each(o => this.addItem(o));
+        for (const o of items)
+            this.addItem(o);
         return result;
     }
     public set length(value: number) {

@@ -1,4 +1,3 @@
-import "../Extensions/QueryableExtension";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { DbContext } from "../Data/DBContext";
 import { IQueryResultParser } from "./IQueryResultParser";

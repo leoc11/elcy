@@ -59,9 +59,9 @@ export class QueuedTimeout<T> {
     public reset(): void {
         const queue = this.queue.splice(0);
         this.clearTimeout();
-        queue.each((item) => {
+        for (const item of queue) {
             this.action(item.item);
-        });
+        }
     }
     public pop() {
         const item = this.queue.pop();
@@ -79,6 +79,7 @@ export class QueuedTimeout<T> {
             count = 0;
         const items = this.queue.splice(0, count);
         this.clearTimeout();
-        items.each(item => this.action(item.item));
+        for (const item of items)
+            this.action(item.item);
     }
 }

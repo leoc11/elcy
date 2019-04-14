@@ -676,7 +676,8 @@ export abstract class Queryable<T = any> {
                 const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type) as IEntityMetaData<T>;
                 if (entityMeta) {
                     const primaryItem = {} as T;
-                    entityMeta.primaryKeys.each(o => primaryItem[o.propertyName] = item[o.propertyName]);
+                    for (const o of entityMeta.primaryKeys)
+                        primaryItem[o.propertyName] = item[o.propertyName];
                     item = primaryItem;
                 }
                 paramStr = JSON.stringify(item);
@@ -896,3 +897,7 @@ export abstract class Queryable<T = any> {
 }
 
 import "./Queryable.partial";
+import "../Extensions/QueryableExtension";
+import "../Extensions/DateExtension";
+import "../Extensions/StringExtension";
+import "../Extensions/ArrayItemTypeExtension";
