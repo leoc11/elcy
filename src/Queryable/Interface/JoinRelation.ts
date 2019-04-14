@@ -3,7 +3,6 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { JoinType } from "../../Common/Type";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 import { visitExpression, resolveClone, isColumnExp } from "../../Helper/Util";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { ISelectRelation } from "./ISelectRelation";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
@@ -38,10 +37,10 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
                     else if (this.parent.entity === colExp.entity) {
                         this._parentColumns.push(colExp);
                     }
-                    else if (Enumerable.from(this.child.allJoinedEntities).contains(colExp.entity)) {
+                    else if (this.child.allJoinedEntities.contains(colExp.entity)) {
                         this._childColumns.push(colExp);
                     }
-                    else if (Enumerable.from(this.parent.allJoinedEntities).contains(colExp.entity)) {
+                    else if (this.parent.allJoinedEntities.contains(colExp.entity)) {
                         this._parentColumns.push(colExp);
                     }
                 }

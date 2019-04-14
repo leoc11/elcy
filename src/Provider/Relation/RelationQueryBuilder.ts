@@ -32,7 +32,6 @@ import { IQueryExpression } from "../../Queryable/QueryExpression/IQueryExpressi
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { InsertIntoExpression } from "../../Queryable/QueryExpression/InsertIntoExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -63,6 +62,7 @@ import { IQueryOption } from "../../Query/IQueryOption";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { SqlTableValueParameterExpression } from "../../Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 
 export abstract class RelationQueryBuilder implements IQueryBuilder {
     public abstract queryLimit: IQueryLimit;
@@ -206,7 +206,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         const distinct = selectExp.distinct ? " DISTINCT" : "";
         const top = skip <= 0 && take > 0 ? " TOP " + take : "";
 
-        const selects = Enumerable.from(selectExp.projectedColumns)
+        const selects = selectExp.projectedColumns
             .select((o) => {
                 let result = "";
                 if (o instanceof ComputedColumnExpression) {
@@ -679,12 +679,11 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         }
         return this.enclose(entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
-    protected getJoinQueryString<T>(joins: Iterable<JoinRelation<T, any>>, param?: IQueryBuilderParameter): string {
+    protected getJoinQueryString<T>(joins: IEnumerable<JoinRelation<T, any>>, param?: IQueryBuilderParameter): string {
         let result = "";
-        const joinEnum = Enumerable.from(joins);
-        if (joinEnum.any()) {
+        if (joins.any()) {
             result += this.newLine();
-            result += joinEnum.select(o => {
+            result += joins.select(o => {
                 let childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, param)
                     : "(" + this.newLine(1) + this.getSelectQueryString(o.child, param, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
                 const joinString = this.toString(o.relation, param);
@@ -732,7 +731,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                     return this.enclose(column.entity.alias) + "." + this.enclose(param.state === "column-declared" ? column.dataPropertyName : column.columnName);
                 }
                 else {
-                    let childSelect = Enumerable.from(commandExp.resolvedJoins).select(o => o.child).first(o => Enumerable.from(o.allJoinedEntities).any(o => o.alias === column.entity.alias));
+                    let childSelect = commandExp.resolvedJoins.select(o => o.child).first(o => o.allJoinedEntities.any(o => o.alias === column.entity.alias));
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
@@ -746,7 +745,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
     }
     //#endregion
 
-    public mergeQueries(queries: Iterable<IQuery>): IQuery[] {
+    public mergeQueries(queries: IEnumerable<IQuery>): IQuery[] {
         const result: IQuery[] = [];
         let queryCommand: BatchedQuery = null;
         let paramCount = 0;

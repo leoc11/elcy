@@ -9,7 +9,6 @@ import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
 import { InstantiationExpression } from "./Expression/InstantiationExpression";
 import { FunctionExpression } from "./Expression/FunctionExpression";
 import { IOperator, Associativity, operators, OperatorType, IUnaryOperator, UnaryPosition, IOperatorPrecedence } from "./IOperator";
-import { Enumerable } from "../Enumerable/Enumerable";
 import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
 import { MethodCallExpression } from "./Expression/MethodCallExpression";
 interface SyntaticParameter {
@@ -76,7 +75,7 @@ export class SyntacticAnalyzer {
             scopedParameters: new Map(),
             userParameters: userParameters
         };
-        const result = createExpression(param, Enumerable.from(tokens).toArray());
+        const result = createExpression(param, Array.from(tokens));
         return result;
     }
 }

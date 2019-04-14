@@ -53,7 +53,6 @@ import { GreaterEqualExpression } from "../../ExpressionBuilder/Expression/Great
 import { JoinRelation } from "../../Queryable/Interface/JoinRelation";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../../Query/IQueryVisitParameter";
@@ -787,7 +786,7 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             let bridgeParentRelation: IExpression<boolean>;
                             for (const primaryCol of bridge.entity.primaryColumns) {
                                 groupKey.object[primaryCol.propertyName] = primaryCol;
-                                const pCol = Enumerable.from(parentSelect.projectedColumns).first(o => o.columnName === primaryCol.columnName);
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
                                 const logicalExp = new StrictEqualExpression(primaryCol, pCol);
                                 bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
                             }
@@ -878,7 +877,7 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             let bridgeParentRelation: IExpression<boolean>;
                             for (const primaryCol of bridge.entity.primaryColumns) {
                                 groupKey.object[primaryCol.propertyName] = primaryCol;
-                                const pCol = Enumerable.from(parentSelect.projectedColumns).first(o => o.columnName === primaryCol.columnName);
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
                                 const logicalExp = new StrictEqualExpression(primaryCol, pCol);
                                 bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
                             }
@@ -980,7 +979,7 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             let bridgeParentRelation: IExpression<boolean>;
                             for (const primaryCol of bridge.entity.primaryColumns) {
                                 groupKey.object[primaryCol.propertyName] = primaryCol;
-                                const pCol = Enumerable.from(parentSelect.projectedColumns).first(o => o.columnName === primaryCol.columnName);
+                                const pCol = parentSelect.projectedColumns.first(o => o.columnName === primaryCol.columnName);
                                 const logicalExp = new StrictEqualExpression(primaryCol, pCol);
                                 bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
                             }
@@ -1788,7 +1787,7 @@ const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExcl
             mapReplaceExp(cloneMap, child.entity, parent.entity);
 
             parent.selects = child.selects.select(o => {
-                let col = Enumerable.from(parent.allColumns).first(c => c.dataPropertyName === o.dataPropertyName);
+                let col = parent.allColumns.first(c => c.dataPropertyName === o.dataPropertyName);
                 if (!col) {
                     col = o.clone(cloneMap);
                 }

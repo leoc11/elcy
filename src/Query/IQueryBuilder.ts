@@ -9,6 +9,7 @@ import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
 import { ValueType } from "../Common/Type";
 import { IQueryOption } from "./IQueryOption";
 import { ICompleteColumnType } from "../Common/ICompleteColumnType";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 export interface IQueryBuilder {
     queryLimit: IQueryLimit;
@@ -23,7 +24,7 @@ export interface IQueryBuilder {
 
     // TODO: Remove
     newLine(indent?: number, isAdd?: boolean): string;
-    mergeQueries(queries: Iterable<IQuery>): IQuery[];
+    mergeQueries(queries: IEnumerable<IQuery>): IQuery[];
     toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T;
     toParameterValue(input: any, column: IColumnMetaData): any;
 }

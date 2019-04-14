@@ -8,7 +8,6 @@ import { EntityEntry } from "../Data/EntityEntry";
 import { DBEventEmitter } from "../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
-import { Enumerable } from "../Enumerable/Enumerable";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
@@ -20,6 +19,7 @@ import { RelationDataMetaData } from "../MetaData/Relation/RelationDataMetaData"
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { EntityState } from "../Data/EntityState";
 import { IQueryBuilder } from "./IQueryBuilder";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 interface IResolvedRelationData<T = any, TData = any> {
     data?: IResolvedRelationData<TData>;
@@ -27,7 +27,7 @@ interface IResolvedRelationData<T = any, TData = any> {
     entry?: EntityEntry<T>;
 }
 interface IResolveData<T = any> {
-    primaryColumns?: Iterable<IColumnExpression<T>>;
+    primaryColumns?: IEnumerable<IColumnExpression<T>>;
     columns?: IColumnExpression<T>[];
     isValueType: boolean;
     dbSet?: DbSet<T>;
@@ -45,7 +45,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             this._orderedSelects = [this.queryExpression];
             for (let i = this._orderedSelects.length - 1; i >= 0; i--) {
                 const select = this._orderedSelects[i];
-                const addition = Enumerable.from(select.resolvedIncludes).select(o => o.child).toArray();
+                const addition = select.resolvedIncludes.select(o => o.child).toArray();
                 this._orderedSelects.splice(i, 0, ...addition);
                 i += addition.length;
             }
@@ -66,7 +66,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             const queryResult = queryResults[i];
             if (!queryResult.rows) continue;
 
-            const data = Enumerable.from(queryResult.rows);
+            const data = queryResult.rows;
             if (!data.any()) continue;
 
             let select = loops[i];

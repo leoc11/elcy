@@ -41,6 +41,9 @@ export class Enumerable<T = any> implements Iterable<T> {
             }
             else {
                 this.parent = source as Iterable<T>;
+                if ((source as IterableIterator<T>).next) {
+                    this.enableCache = true;
+                }
             }
         }
     }

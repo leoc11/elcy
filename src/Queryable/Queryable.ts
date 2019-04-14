@@ -15,7 +15,6 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { Enumerable } from "../Enumerable/Enumerable";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
@@ -541,7 +540,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => !Enumerable.from(result.first().rows).any(), this.queryOption);
+            (result) => !result.first().rows.any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -586,7 +585,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => Enumerable.from(result.first().rows).any(), this.queryOption);
+            (result) => result.first().rows.any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }
@@ -713,7 +712,7 @@ export abstract class Queryable<T = any> {
         if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => Enumerable.from(result.first().rows).any(), this.queryOption);
+            (result) => result.first().rows.any(), this.queryOption);
         this.dbContext.deferredQueries.add(query);
         return query;
     }

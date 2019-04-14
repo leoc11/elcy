@@ -18,10 +18,10 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IQueryOption } from "../../Query/IQueryOption";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 
 export class SelectExpression<T = any> implements IQueryExpression<T> {
     constructor(entity?: IEntityExpression<T>) {
@@ -53,11 +53,11 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public selects: IColumnExpression[] = [];
     // TODO: remove this workaround for insertInto Expression
     public isSelectOnly = false;
-    public get projectedColumns(): Iterable<IColumnExpression<T>> {
+    public get projectedColumns(): IEnumerable<IColumnExpression<T>> {
         if (this.isSelectOnly) return this.selects;
 
         if (this.distinct) {
-            return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
+            return this.relationColumns.union(this.resolvedSelects);
         }
 
         // primary column used in hydration to identify an entity.
@@ -85,7 +85,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public isSubSelect: boolean;
     public paramExps: SqlParameterExpression[] = [];
 
-    public get relationColumns(): Iterable<IColumnExpression> {
+    public get relationColumns(): IEnumerable<IColumnExpression> {
         // Include Relation Columns are used later for hydration
         let relations = this.includes.where(o => !o.isEmbedded).selectMany(o => o.parentColumns);
         if (this.parentRelation) {
@@ -94,7 +94,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         }
         return relations;
     }
-    public get resolvedSelects() {
+    public get resolvedSelects(): IEnumerable<IColumnExpression> {
         let selects = this.selects.asEnumerable();
         for (const include of this.includes) {
             if (include.isEmbedded) {
@@ -114,7 +114,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         }
         return selects;
     }
-    public get allColumns() {
+    public get allColumns(): IEnumerable<IColumnExpression<T>> {
         let columns = this.entity.columns.union(this.resolvedSelects);
         for (const join of this.joins) {
             const child = join.child;
@@ -126,7 +126,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         }
         return columns;
     }
-    public get resolvedIncludes(): Iterable<IncludeRelation<T>> {
+    public get resolvedIncludes(): IEnumerable<IncludeRelation<T>> {
         return this.includes.selectMany(o => {
             if (o.isEmbedded) {
                 return o.child.resolvedIncludes;
@@ -135,8 +135,8 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
                 return [o];
         });
     }
-    public get resolvedJoins(): Iterable<JoinRelation<T>> {
-        let joins = this.joins.asEnumerable();
+    public get resolvedJoins(): IEnumerable<JoinRelation<T>> {
+        let joins: IEnumerable<JoinRelation<T>> = this.joins;
         for (const include of this.includes.where(o => o.isEmbedded)) {
             joins = joins.union(include.child.resolvedJoins);
         }
@@ -356,7 +356,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     /**
      * All entities used in this select expression.
      */
-    public get allJoinedEntities(): Iterable<IEntityExpression> {
+    public get allJoinedEntities(): IEnumerable<IEntityExpression> {
         return [this.entity].union(this.joins.selectMany(o => o.child.allJoinedEntities));
     }
     public toString(): string {

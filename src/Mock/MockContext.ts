@@ -3,9 +3,10 @@ import { DeferredQuery } from "../Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";
 import { PooledConnection } from "../Connection/PooledConnection";
 import { IConnection } from "../Connection/IConnection";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 export interface IMockedContext {
-    oriExecuteDeferred?(deferredQueries: Iterable<DeferredQuery>): Promise<void>;
+    oriExecuteDeferred?(deferredQueries: IEnumerable<DeferredQuery>): Promise<void>;
     oriGetConnection?(writable?: boolean): Promise<IConnection>;
 }
 export const mockContext = function (context: DbContext & IMockedContext) {
@@ -23,7 +24,7 @@ export const mockContext = function (context: DbContext & IMockedContext) {
         return connection;
     };
     context.oriExecuteDeferred = context.executeDeferred;
-    context.executeDeferred = async function (deferredQueries?: Iterable<DeferredQuery>) {
+    context.executeDeferred = async function (deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) deferredQueries = context.deferredQueries.splice(0);
         this.connection = await this.getConnection();
         const mockConnection: MockConnection = this.connection instanceof PooledConnection ? this.connection.connection as any : this.connection as any;

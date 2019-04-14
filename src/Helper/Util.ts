@@ -8,7 +8,6 @@ import { Uuid } from "../Data/Uuid";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
-import { Enumerable } from "../Enumerable/Enumerable";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
@@ -43,7 +42,7 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
             mapReplaceExp(replaceMap, selectExp1.key, selectExp2.key);
             mapReplaceExp(replaceMap, selectExp1.itemSelect, selectExp2.itemSelect);
         }
-        const projectedCol = Enumerable.from(selectExp2.projectedColumns);
+        const projectedCol = selectExp2.projectedColumns;
         for (const col of selectExp1.projectedColumns) {
             const tCol = projectedCol.first(o => o.propertyName === col.propertyName);
             if (tCol) replaceMap.set(col, tCol);

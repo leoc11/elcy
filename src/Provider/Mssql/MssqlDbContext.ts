@@ -12,12 +12,12 @@ import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpressi
 import { InsertExpression, insertEntryExp } from "../../Queryable/QueryExpression/InsertExpression";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { QueryType } from "../../Common/Type";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { IQueryResult } from "../../Query/IQueryResult";
 import { IQuery } from "../../Query/IQuery";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { RelationQueryVisitor } from "../Relation/RelationQueryVisitor";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     protected queryBuilderType = MssqlQueryBuilder;
@@ -32,12 +32,11 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
     constructor(factory: () => IConnectionManager | IDriver<"mssql">) {
         super(factory);
     }
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: Iterable<EntityEntry<T>>, visitor?: IQueryVisitor): DeferredQuery<IQueryResult>[] {
-        let entryEnumerable = Enumerable.from(entries);
+    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor): DeferredQuery<IQueryResult>[] {
         if (!visitor) visitor = this.queryVisitor;
         const results: DeferredQuery[] = [];
 
-        if (!entryEnumerable.any()) return results;
+        if (!entries.any()) return results;
 
         const entityExp = new EntityExpression<T>(entityMetaData.type, visitor.newAlias());
         const relations = entityMetaData.relations
@@ -48,18 +47,18 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
 
         const insertExp = new InsertExpression(entityExp, []);
         const queryParameters: IQueryParameterMap = new Map();
-        entryEnumerable.each(entry => {
+        for (const entry of entries) {
             insertEntryExp(insertExp, entry, columns, relations, queryParameters);
-        });
+        }
 
         const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (results, commands: IQuery[]) => {
-            let rows: any[] = [];
+            let rows: IEnumerable = [];
             let effectedRows = 0;
             for (let index = 0, len = commands.length; index < len; index++) {
                 const command = commands[index];
                 const result = results[index];
                 if ((command.type & QueryType.DQL) && result.rows) {
-                    rows = rows.concat(Enumerable.from(result.rows).toArray());
+                    rows = rows.union(result.rows);
                 }
                 if (command.type & QueryType.DML) {
                     effectedRows += result.effectedRows;

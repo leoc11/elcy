@@ -14,6 +14,7 @@ import { EntityState } from "../../Data/EntityState";
 import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IQueryOption } from "../../Query/IQueryOption";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 export class InsertExpression<T = any> implements IQueryExpression<void> {
     public option: IQueryOption;
     public paramExps: SqlParameterExpression[] = [];
@@ -68,7 +69,7 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
     }
 }
 
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: Iterable<IColumnMetaData<T>>, relations: Iterable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
+export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
     const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
     for (const col of columns) {
         let value = entry.entity[col.propertyName];

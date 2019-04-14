@@ -4,12 +4,12 @@ import { GroupByExpression } from "./GroupByExpression";
 import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { JoinType } from "../../Common/Type";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 
 export class GroupedExpression<T = any> extends SelectExpression<T> {
     public key: IExpression;
@@ -38,7 +38,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                     }
                     else {
                         visitExpression(parentRel.relation, (exp: IExpression): boolean | void => {
-                            if ((exp as IColumnExpression).entity && Enumerable.from(parentRel.parent.projectedColumns).contains(exp as any)) {
+                            if ((exp as IColumnExpression).entity && parentRel.parent.projectedColumns.contains(exp as any)) {
                                 this._groupBy.add(exp as any);
                                 return false;
                             }
@@ -61,8 +61,8 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
     }
-    public get projectedColumns(): Iterable<IColumnExpression<T>> {
-        return Enumerable.from(super.projectedColumns).union(this.groupBy);
+    public get projectedColumns(): IEnumerable<IColumnExpression<T>> {
+        return super.projectedColumns.union(this.groupBy);
     }
     constructor();
     constructor(select: SelectExpression<T>, key: IExpression);

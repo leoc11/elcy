@@ -9,9 +9,8 @@ import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
-import { Enumerable } from "../../Enumerable/Enumerable";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
+import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 
 export class SqliteSchemaBuilder extends RelationSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType>([
@@ -66,7 +65,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                 type: QueryType.DQL
             });
 
-            for (const columnSchema of columnSchemas[0].rows) {
+            for (const columnSchema of columnSchemas.first().rows) {
                 const defaultExpression: string = columnSchema["dflt_value"];
                 const column: IColumnMetaData = {
                     columnName: columnSchema["name"],
@@ -95,7 +94,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
             });
 
             // index
-            for (const indexSchema of Enumerable.from(indexSchemas[0].rows).where(o => o["origin"] === "c")) {
+            for (const indexSchema of indexSchemas.first().rows.where(o => o["origin"] === "c")) {
                 const indexName = indexSchema["name"];
                 const index: IIndexMetaData = {
                     name: indexName,
@@ -109,14 +108,14 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     type: QueryType.DQL
                 });
 
-                index.columns = Enumerable.from(indexInfos[0].rows).orderBy([o => o["seqno"]])
+                index.columns = indexInfos.first().rows.orderBy([o => o["seqno"]])
                     .select(o => entity.columns.first(c => c.columnName === o["name"]))
                     .where(o => !!o)
                     .toArray();
             }
 
             // unique constraint
-            for (const constaintSchema of Enumerable.from(indexSchemas[0].rows).where(o => o["origin"] === "u")) {
+            for (const constaintSchema of indexSchemas.first().rows.where(o => o["origin"] === "u")) {
                 const constaintName = constaintSchema["name"];
                 const constraintMeta: IConstraintMetaData = {
                     name: constaintName,
@@ -129,7 +128,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     type: QueryType.DQL
                 });
 
-                constraintMeta.columns = Enumerable.from(indexInfos[0].rows).orderBy([o => o["seqno"]])
+                constraintMeta.columns = indexInfos.first().rows.orderBy([o => o["seqno"]])
                     .select(o => entity.columns.first(c => c.columnName === o["name"]))
                     .where(o => !!o)
                     .toArray();
@@ -182,7 +181,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                 query: `PRAGMA FOREIGN_KEY_LIST("${entityName}")`,
                 type: QueryType.DQL
             });
-            for (const relationSchema of Enumerable.from(foreignKeySchemas[0].rows).orderBy([o => o["table"]], [o => o["seq"]]).groupBy(o => o["table"])) {
+            for (const relationSchema of foreignKeySchemas[0].rows.orderBy([o => o["table"]], [o => o["seq"]]).groupBy(o => o["table"])) {
                 const source = result[entityName]; // orderdetail
                 const target = result[relationSchema.key]; // order
                 const relationName = `${entityName}_${relationSchema.key}`;

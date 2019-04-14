@@ -1,7 +1,6 @@
 import { IConnection } from "../Connection/IConnection";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryResult } from "../Query/IQueryResult";
-import { Enumerable } from "../Enumerable/Enumerable";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { QueryType, IsolationLevel, ColumnGeneration } from "../Common/Type";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
@@ -26,13 +25,14 @@ import { InsertIntoExpression } from "../Queryable/QueryExpression/InsertIntoExp
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
-    public deferredQueries: Iterable<DeferredQuery>;
+    public deferredQueries: IEnumerable<DeferredQuery>;
     private _results: IQueryResult[];
     private _generatedResults: IQueryResult[];
-    public setQueries(deferredQueries: Iterable<DeferredQuery>) {
+    public setQueries(deferredQueries: IEnumerable<DeferredQuery>) {
         this.deferredQueries = deferredQueries;
         this._generatedResults = null;
     }
@@ -49,7 +49,7 @@ export class MockConnection implements IConnection {
         this._results = value;
     }
     public generateQueryResult() {
-        return Enumerable.from(this.deferredQueries)
+        return this.deferredQueries
             .selectMany(o => {
                 const command = o.command;
                 const tvps = command.paramExps.where(o => o instanceof SqlTableValueParameterExpression).toArray();
@@ -84,7 +84,7 @@ export class MockConnection implements IConnection {
                         map.set(select, rows);
                         if (select.parentRelation) {
                             const parentInclude = select.parentRelation as IncludeRelation;
-                            const relMap = Enumerable.from(parentInclude.relationMap()).toArray();
+                            const relMap = Array.from(parentInclude.relationMap());
 
                             let parent = parentInclude.parent;
                             while (parent.parentRelation && parent.parentRelation.isEmbedded) {
@@ -94,7 +94,7 @@ export class MockConnection implements IConnection {
 
                             const maxRowCount = this.getMaxCount(select, o, 3);
 
-                            Enumerable.from(parentRows).each(parent => {
+                            for (const parent of parentRows) {
                                 const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
@@ -107,7 +107,7 @@ export class MockConnection implements IConnection {
                                         item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
                                     }
                                 }
-                            });
+                            }
                         }
                         else {
                             const maxRowCount = this.getMaxCount(select, o, 10);
@@ -122,7 +122,7 @@ export class MockConnection implements IConnection {
                         }
                     }
 
-                    const generatedResults = Enumerable.from(map.values()).toArray();
+                    const generatedResults = Array.from(map.values());
                     let i = 0;
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -275,7 +275,7 @@ export class MockConnection implements IConnection {
         const results = [selectExp];
         for (let i = 0; i < results.length; i++) {
             const select = results[i];
-            const addition = Enumerable.from(select.resolvedIncludes).select(o => o.child).toArray().reverse();
+            const addition = select.resolvedIncludes.select(o => o.child).toArray().reverse();
             results.splice(i + 1, 0, ...addition);
         }
         return results;

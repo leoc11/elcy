@@ -6,7 +6,6 @@ import { visitExpression, resolveClone } from "../../Helper/Util";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { ISelectRelation } from "./ISelectRelation";
 
 export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T, TChild> {
@@ -39,10 +38,10 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
                 else if (this.parent.entity === colExp.entity) {
                     this._parentColumns.push(colExp);
                 }
-                else if (Enumerable.from(this.child.allJoinedEntities).contains(colExp.entity)) {
+                else if (this.child.allJoinedEntities.contains(colExp.entity)) {
                     this._childColumns.push(colExp);
                 }
-                else if (Enumerable.from(this.parent.allJoinedEntities).contains(colExp.entity)) {
+                else if (this.parent.allJoinedEntities.contains(colExp.entity)) {
                     this._parentColumns.push(colExp);
                 }
             }

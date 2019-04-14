@@ -22,7 +22,6 @@ import { ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
-import { Enumerable } from "../../Enumerable/Enumerable";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
@@ -62,7 +61,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
         })).first().rows;
-        const defaultSchema = Enumerable.from(defSchemaResult).first()["SCHEMA"];
+        const defaultSchema = defSchemaResult.first()["SCHEMA"];
 
         const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
