@@ -24,6 +24,7 @@ import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -54,8 +55,8 @@ export class DbSet<T> extends Queryable<T> {
     public hashCode() {
         return hashCode(this.type.name!);
     }
-    public get local(): Enumerable<T> {
-        return (Enumerable.from(this.dictionary.values())).select(o => o.entity);
+    public get local(): IEnumerable<T> {
+        return Enumerable.from(this.dictionary).select(o => o[1].entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
     public async find(id: ValueType | { [key in keyof T]: T[key] & ValueType }, forceReload?: boolean) {

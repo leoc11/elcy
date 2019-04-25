@@ -5,22 +5,24 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        const result: T[] = [];
-        for (const value of this.parent) {
-            if (this.isUnionAll || !result.any(o => keyComparer(o, value))) {
-                result.push(value);
-                yield value;
-            }
+        if (this.isUnionAll) {
+            for (const value of this.parent) yield value;
+            for (const value of this.parent2) yield value;
         }
-        for (const value of this.parent2) {
-            if (this.isUnionAll || !result.any(o => keyComparer(o, value))) {
-                result.push(value);
-                yield value;
+        else {
+            let result: T[] = [];
+            for (const value of this.parent) {
+                if (!result.any(o => keyComparer(o, value))) {
+                    yield value;
+                    result.push(value);
+                }
             }
-        }
-        if (this.enableCache) {
-            this.result = result;
-            this.isResultComplete = true;
+            for (const value of this.parent2) {
+                if (!result.any(o => keyComparer(o, value))) {
+                    yield value;
+                    result.push(value);
+                }
+            }
         }
     }
 }

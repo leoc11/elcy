@@ -26,7 +26,7 @@ declare global {
         avg(fn?: (item: T) => number): number;
         max(fn?: (item: T) => number): number;
         min(fn?: (item: T) => number): number;
-        groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
+        groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
         distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
         innerJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
         leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
@@ -110,7 +110,7 @@ Array.prototype.min = function <T>(this: T[], selector?: (item: T) => number) {
 Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().count(predicate) : this.length;
 };
-Array.prototype.groupBy = function <T, TKey>(this: T[], keySelector: (item: T) => TKey): Enumerable<GroupedEnumerable<T, TKey>> {
+Array.prototype.groupBy = function <T, K>(this: T[], keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>> {
     return this.asEnumerable().groupBy(keySelector);
 };
 Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {

@@ -37,7 +37,7 @@ declare module "./Queryable" {
         orderBy(...selectors: IOrderQueryDefinition<T>[]): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>>;
+        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<K, T>>;
         distinct(): Queryable<T>;
         project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
         include(...includes: Array<(item: T) => any>): Queryable<T>;
@@ -84,7 +84,7 @@ Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Query
 Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Queryable<T> {
     return new TakeQueryable(this, take);
 };
-Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<T, K>> {
+Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: (item: T) => K): Queryable<GroupedEnumerable<K, T>> {
     return new GroupByQueryable(this, keySelector);
 };
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {

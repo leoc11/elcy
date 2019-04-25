@@ -5,19 +5,10 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
         super();
     }
     protected *generator() {
-        let result: T[];
-        if (this.enableCache) result = [];
         let index = 0;
         for (const value of this.parent) {
-            if (index++ < this.skipCount)
-                continue;
-
-            if (this.enableCache) result.push(value);
+            if (index++ < this.skipCount) continue;
             yield value;
-        }
-        if (this.enableCache) {
-            this.result = result;
-            this.isResultComplete = true;
         }
     }
 }

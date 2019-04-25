@@ -9,13 +9,9 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
         for (const value of this.parent) {
             const key = this.selector ? this.selector(value) : value;
             if (!result.any(o => keyComparer(key, o))) {
-                result.push(value);
                 yield value;
+                result.push(value);
             }
-        }
-        if (this.enableCache) {
-            this.result = result;
-            this.isResultComplete = true;
         }
     }
 }

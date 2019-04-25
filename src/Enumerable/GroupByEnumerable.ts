@@ -1,41 +1,48 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupedEnumerable } from "./GroupedEnumerable";
 
-export class GroupByEnumerable<T, K> extends Enumerable<GroupedEnumerable<T, K>> {
+export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>> {
+    public get enableCache() { return true; }
+    public set enableCache(value) { }
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
         super(parent as any);
     }
-    public isResultComplete: boolean;
-    protected *generator(): IterableIterator<GroupedEnumerable<T, K>> {
-        const iterator = this.parent[Symbol.iterator]();
-        const result = this.result;
+    public [Symbol.iterator](): IterableIterator<GroupedEnumerable<K, T>> {
+        return this.generator();
+    }
+    protected *generator(): IterableIterator<GroupedEnumerable<K, T>> {
+        if (!this.cache.iterator) {
+            this.cache.iterator = this.parent[Symbol.iterator]();
+        }
+        if (!this.cache.result) {
+            this.cache.result = [];
+        }
 
-        let iteratorResult: IteratorResult<T>;
         let index = 0;
-        do {
-            while (result.length > index) {
-                yield result[index++];
+        for (; ;) {
+            const isDone = this.cache.isDone;
+            while (this.cache.result.length > index)
+                yield this.cache.result[index++];
+            if (isDone) break;
+
+            const a = this.cache.iterator.next();
+            if (!a.done) {
+                const key = this.keySelector(a.value);
+                this.addValue(key, a.value);
             }
-
-            if (iteratorResult && iteratorResult.done)
-                break;
-
-            iteratorResult = iterator.next();
-            if (!iteratorResult.done) {
-                const key = this.keySelector(iteratorResult.value);
-                let prev = result.first((o) => keyComparer(key, o.key));
-                if (!prev) {
-                    const value = new GroupedEnumerable<T, K>(this, key, iterator, result);
-                    value.addResult(iteratorResult.value);
-                    result.push(value);
-                }
-                else {
-                    prev.addResult(iteratorResult.value);
-                }
+            else if (!this.cache.isDone) {
+                this.cache.isDone = true;
+                if (this.cache.iterator.return)
+                    this.cache.iterator.return();
             }
-        } while (true);
-
-        if (result === this.result)
-            this.isResultComplete = true;
+        }
+    }
+    public addValue(key: K, value: T) {
+        let group = this.cache.result.first((o) => keyComparer(o.key, key));
+        if (!group) {
+            group = new GroupedEnumerable(this, key, this.cache);
+            this.cache.result.push(group);
+        }
+        group.addResult(value);
     }
 }

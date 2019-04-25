@@ -29,7 +29,7 @@ declare module "./Enumerable" {
         orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
         skip(skip: number): Enumerable<T>;
         take(take: number): Enumerable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<T, K>>;
+        groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
         distinct(selector?: (item: T) => any): Enumerable<T>;
         innerJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
         leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
@@ -70,7 +70,7 @@ Enumerable.prototype.skip = function <T>(this: Enumerable<T>, skip: number): Enu
 Enumerable.prototype.take = function <T>(this: Enumerable<T>, take: number): Enumerable<T> {
     return new TakeEnumerable(this, take);
 };
-Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector: (item: T) => K): Enumerable<GroupedEnumerable<T, K>> {
+Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector: (item: T) => K): GroupByEnumerable<K, T> {
     return new GroupByEnumerable(this, keySelector);
 };
 Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {

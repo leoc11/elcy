@@ -9,7 +9,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 
-export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
+export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression;
     protected get keySelector() {
@@ -27,7 +27,7 @@ export class GroupByQueryable<T, K> extends Queryable<GroupedEnumerable<T, K>> {
         else
             this.keySelectorFn = keySelector;
     }
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<T, K>> {
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<K, T>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

@@ -29,44 +29,74 @@ export class Enumerable<T = any> implements Iterable<T> {
             }
         }());
     }
-    public enableCache: boolean;
-    protected isResultComplete: boolean;
-    protected result: T[] = [];
     protected parent: Iterable<any>;
+    protected cache: IEnumerableCache<T>;
+    public set enableCache(value) {
+        if (this.parent) {
+            this.cache.enabled = value;
+            if (!value) this.cache.result = undefined;
+        }
+    }
+    public get enableCache() {
+        return !this.parent || this.cache.enabled;
+    }
     constructor(source?: Iterable<T>) {
+        this.cache = {};
         if (source) {
             if (Array.isArray(source)) {
-                this.parent = this.result = source;
-                this.isResultComplete = true;
+                this.cache.result = source;
+                this.cache.enabled = true;
+                this.cache.isDone = true;
+            }
+            if ((source as IterableIterator<any>).next) {
+                this.cache.iterator = source as IterableIterator<any>;
+                this.enableCache = true;
             }
             else {
-                this.parent = source as Iterable<T>;
-                if ((source as IterableIterator<T>).next) {
-                    this.enableCache = true;
-                }
+                this.parent = source as Iterable<any>;
             }
         }
     }
     public [Symbol.iterator](): IterableIterator<T> {
-        if (this.isResultComplete)
-            return this.result[Symbol.iterator]();
+        if (this.enableCache) {
+            return this.cachedGenerator();
+        }
         return this.generator();
     }
+    private *cachedGenerator() {
+        if (!this.cache.iterator && this.parent) {
+            this.cache.iterator = this.generator();
+        }
+        if (!this.cache.result) {
+            this.cache.result = [];
+        }
+
+        let index = 0;
+        for (; ;) {
+            const isDone = this.cache.isDone;
+            while (this.cache.result.length > index)
+                yield this.cache.result[index++];
+            if (isDone) break;
+
+            const a = this.cache.iterator.next();
+            if (!a.done) {
+                this.cache.result.push(a.value);
+            }
+            else if (!this.cache.isDone) {
+                this.cache.isDone = true;
+                if (this.cache.iterator.return)
+                    this.cache.iterator.return();
+            }
+        }
+    }
     protected *generator() {
-        let result: T[];
-        if (this.enableCache) result = [];
         for (const value of this.parent) {
             yield value;
-            if (this.enableCache) result.push(value);
-        }
-        if (this.enableCache) {
-            this.result = result;
-            this.isResultComplete = true;
         }
     }
     public toArray(): T[] {
-        if (this.isResultComplete) {
-            return this.result.slice(0);
+        if (this.enableCache && this.cache.isDone) {
+            return this.cache.result.slice(0);
         }
 
         const arr = [];
@@ -187,3 +217,4 @@ export class Enumerable<T = any> implements Iterable<T> {
 import "./Enumerable.partial";
 import "../Extensions/EnumerableExtension";
 import "../Extensions/ArrayExtension";
+import { IEnumerableCache } from "./IEnumerableCache";

@@ -1,56 +1,46 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
-export class GroupedEnumerable<T, K> extends Enumerable<T> {
-    public get source() {
-        return this.parent.parent;
-    }
+import { IEnumerableCache } from "./IEnumerableCache";
+export class GroupedEnumerable<K, T> extends Enumerable<T> {
+    public get enableCache() { return true; }
+    public set enableCache(value) { }
     public get keySelector() {
         return this.parent.keySelector;
     }
-    protected get isResultComplete(){
-        return this.parent.isResultComplete;
-    }
-    protected set isResultComplete(value){
-        this.parent.isResultComplete = value;
-    }
-    protected iterator: Iterator<any>;
-    constructor(protected readonly parent: GroupByEnumerable<T, K>, public readonly key: K, iterator: Iterator<T>, protected parentResult: GroupedEnumerable<T, K>[]) {
+    constructor(protected readonly parent: GroupByEnumerable<K, T>, public readonly key: K, protected cache: IEnumerableCache) {
         super();
-        this.iterator = iterator;
     }
+    private _cacheResult = [];
     public addResult(value: T) {
-        this.result.push(value);
+        this._cacheResult.push(value);
     }
-    protected *generator() {
+    protected *generator(): IterableIterator<T> {
+        if (!this.cache.result) {
+            this.cache.result = [];
+        }
+
         let index = 0;
-        const iterator = this.iterator;
-        const result = this.result;
-        const parentResult = this.parentResult;
-        let iteratorResult: IteratorResult<T>;
-        do {
-            while (result.length > index) {
-                yield result[index++];
-            }
+        for (; ;) {
+            const isDone = this.cache.isDone;
+            while (this._cacheResult.length > index)
+                yield this._cacheResult[index++];
+            if (isDone) break;
 
-            if (iteratorResult && iteratorResult.done)
-                break;
-
-            iteratorResult = iterator.next();
-            if (!iteratorResult.done) {
-                const key = this.keySelector(iteratorResult.value);
+            const a = this.cache.iterator.next();
+            if (!a.done) {
+                const key = this.keySelector(a.value);
                 if (keyComparer(this.key, key)) {
-                    result.push(iteratorResult.value);
+                    this.addResult(a.value);
                 }
                 else {
-                    let group = parentResult.first((o) => keyComparer(o.key, key));
-                    if (!group) {
-                        group = new GroupedEnumerable(this.parent, key, iterator, this.parentResult);
-                        parentResult.push(group);
-                    }
-                    group.addResult(iteratorResult.value);
+                    this.parent.addValue(key, a.value);
                 }
             }
-        } while (true);
-        this.isResultComplete = true;
+            else if (!this.cache.isDone) {
+                this.cache.isDone = true;
+                if (this.cache.iterator.return)
+                    this.cache.iterator.return();
+            }
+        }
     }
 }

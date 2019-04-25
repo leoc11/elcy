@@ -46,8 +46,6 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
     }
     protected *generator() {
         let index = 0;
-        let result: T[];
-        if (this.enableCache) result = [];
         const array = this.parent.toArray();
         const stack: IRange[] = [];
 
@@ -56,9 +54,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
             while (stack.length > 0) {
                 const currentRange = stack.pop() as IRange;
                 if (currentRange.last - currentRange.first === 0) {
-                    const value = array[index++];
-                    if (this.enableCache) result.push(value);
-                    yield value;
+                    yield array[index++];
                 }
                 else {
                     const pivotIndex = partition(array, currentRange.first, currentRange.last, this.selectors);
@@ -66,10 +62,6 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
                     stack.push({ first: currentRange.first, last: pivotIndex });
                 }
             }
-        }
-        if (this.enableCache) {
-            this.result = result;
-            this.isResultComplete = true;
         }
     }
 }
