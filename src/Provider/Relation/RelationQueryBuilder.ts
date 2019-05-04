@@ -775,9 +775,10 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
     }
     protected getParameter(param: IQueryBuilderParameter) {
         const paramObj = new Map<string, any>();
-        param.queryExpression.paramExps.select(o => param.parameters.get(o)).where(o => !!o).each(o => {
+        const qparams = param.queryExpression.paramExps.select(o => param.parameters.get(o)).where(o => !!o);
+        for (const o of qparams) {
             paramObj.set(o.name, o.value);
-        });
+        }
         return paramObj;
     }
 

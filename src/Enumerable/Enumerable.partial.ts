@@ -16,8 +16,9 @@ import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 import { IOrderDefinition } from "./Interface/IOrderDefinition";
-import { IObjectType, ValueType } from "../Common/Type";
+import { IObjectType, ValueType, Pivot } from "../Common/Type";
 import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
+import { IEnumerable } from "./IEnumerable";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
@@ -31,15 +32,15 @@ declare module "./Enumerable" {
         take(take: number): Enumerable<T>;
         groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
         distinct(selector?: (item: T) => any): Enumerable<T>;
-        innerJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        leftJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
-        rightJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
-        fullJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        groupJoin<T2, TResult>(array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
-        union(array2: Iterable<T>, isUnionAll?: boolean): Enumerable<T>;
-        intersect(array2: Iterable<T>): Enumerable<T>;
-        except(array2: Iterable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metrics: TM): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        union(array2: IEnumerable<T>, isUnionAll?: boolean): Enumerable<T>;
+        intersect(array2: IEnumerable<T>): Enumerable<T>;
+        except(array2: IEnumerable<T>): Enumerable<T>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
     }
 }
 Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
@@ -76,42 +77,42 @@ Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector:
 Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {
     return new DistinctEnumerable(this, selector);
 };
-Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
     return new InnerJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
-Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
     return new LeftJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
-Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
     return new RightJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
-Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
     return new FullJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
-Enumerable.prototype.groupJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: Iterable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn): Enumerable<TResult> {
+Enumerable.prototype.groupJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn): Enumerable<TResult> {
     return new GroupJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
 };
-Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: Iterable<T>, isUnionAll: boolean = false): Enumerable<T> {
+Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: IEnumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
     return new UnionEnumerable(this, Enumerable.from(array2), isUnionAll);
 };
-Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: Iterable<T>): Enumerable<T> {
+Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: IEnumerable<T>): Enumerable<T> {
     return new IntersectEnumerable(this, Enumerable.from(array2));
 };
-Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: Iterable<T>): Enumerable<T> {
+Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: IEnumerable<T>): Enumerable<T> {
     return new ExceptEnumerable(this, Enumerable.from(array2));
 };
-Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<TResult> {
+Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>> {
     return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
-        const dimensionKey: TResult = {} as any;
+        const dimensionKey = {} as Pivot<T, TD, TM>;
         for (const key in dimensions) {
             if (dimensions[key] instanceof Function)
-                dimensionKey[key] = dimensions[key](o) as TResult[keyof TD];
+                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[keyof TD];
         }
         return dimensionKey;
     }), (o) => {
         for (const key in metrics) {
             if (o.key)
-                o.key[key] = metrics[key](o.toArray()) as TResult[keyof TM];
+                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[keyof TD];
         }
         return o.key;
     });

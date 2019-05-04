@@ -232,11 +232,6 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
             type = relationMeta.relationType;
-
-            // this.addInclude(name, child, relation, type);
-            // TODO: REMOVE COZ NO LONGER NEED. INCLUDE WILL ALWAYS UNIQUE PER RECORDS
-            // if it many-* relation, set distinct to avoid duplicate records
-            // child.distinct = relationMeta.reverseRelation.relationType === "many";
         }
         else if (relationMetaOrRelations instanceof EmbeddedRelationMetaData) {
             type = relationMetaOrRelations.relationType;
@@ -245,25 +240,6 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         }
         else {
             relation = relationMetaOrRelations as any;
-            // TODO: REMOVE.
-            // if (!relation) {
-            //     relation = new StrictEqualExpression(new ValueExpression(true), new ValueExpression(true));
-            // }
-
-            // visitExpression(relation, (exp: IExpression): void | boolean => {
-            //     const colExp = exp as IColumnExpression;
-            //     if (colExp.entity && !colExp.isPrimary) {
-            //         if (this.entity.columns.contains(colExp)) {
-            //             this.relationColumns.add(colExp);
-            //         }
-            //         if (child.entity.columns.contains(colExp)) {
-            //             child.relationColumns.add(colExp);
-            //         }
-            //         return false;
-            //     }
-            // });
-            // // always distinct to avoid getting duplicate entry
-            // child.distinct = true;
         }
 
         const includeRel = new IncludeRelation(this, child, name, type, relation);

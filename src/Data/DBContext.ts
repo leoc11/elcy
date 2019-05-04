@@ -511,12 +511,12 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             deleteQueries.set(entityMeta, this.getDeleteQueries(entityMeta, deleteEntries, visitor, deleteMode));
         }
 
-        const identityInsertQueries = insertQueries.asEnumerable().where(o => o[0].hasIncrementPrimary);
-        const nonIdentityInsertQueries = insertQueries.asEnumerable().where(o => !o[0].hasIncrementPrimary);
+        const identityInsertQueries = Enumerable.from(insertQueries).where(o => o[0].hasIncrementPrimary);
+        const nonIdentityInsertQueries = Enumerable.from(insertQueries).where(o => !o[0].hasIncrementPrimary);
 
         // execute all in transaction;
         await this.transaction(async () => {
-            const allQueries = identityInsertQueries.union(nonIdentityInsertQueries, true).union(relationAddQueries.asEnumerable().select(o => [o[0].source, o[1]] as [IEntityMetaData, DeferredQuery[]]), true);
+            const allQueries = identityInsertQueries.union(nonIdentityInsertQueries, true).union(Enumerable.from(relationAddQueries).select(o => [o[0].source, o[1]] as [IEntityMetaData, DeferredQuery[]]), true);
             allQueries.enableCache = true;
             // execute all identity insert queries
             let i = 0;
@@ -526,18 +526,18 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 i++;
                 const values = queries.selectMany(o => o.value.rows).toArray();
                 const transformer = new ExpressionExecutor(values);
-                allQueries.skip(i).selectMany(o => o[1]).each(dQ => {
-                    Enumerable.from(dQ.parameters).where(([, p]) => p.name === entityMeta.name).each(([k, p]) => {
+                for (const dQ of allQueries.skip(i).selectMany(o => o[1])) {
+                    for (const [k, p] of Enumerable.from(dQ.parameters).where(([, p]) => p.name === entityMeta.name)) {
                         p.value = transformer.execute(k.valueExp);
-                    });
-                });
+            }
+                }
             }
 
             const queries = nonIdentityInsertQueries.selectMany(o => o[1])
-                .union(updateQueries.asEnumerable().selectMany(o => o[1]), true)
-                .union(relationAddQueries.asEnumerable().selectMany(o => o[1]), true)
-                .union(relationDeleteQueries.asEnumerable().selectMany(o => o[1]), true)
-                .union(deleteQueries.asEnumerable().selectMany(o => o[1]), true);
+                .union(Enumerable.from(updateQueries).selectMany(o => o[1]), true)
+                .union(Enumerable.from(relationAddQueries).selectMany(o => o[1]), true)
+                .union(Enumerable.from(relationDeleteQueries).selectMany(o => o[1]), true)
+                .union(Enumerable.from(deleteQueries).selectMany(o => o[1]), true);
 
             await this.executeDeferred(queries);
 
@@ -565,8 +565,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
             // update all relation changes
             // Note: toArray coz acceptChanges will modify source array.
-            const savedRelations = Enumerable.from(orderedRelationAdd.values())
-                .union(orderedRelationDelete.values())
+            const savedRelations = Enumerable.from(() => orderedRelationAdd.values())
+                .union(Enumerable.from(() => orderedRelationDelete.values()))
                 .selectMany(o => o)
                 .where(o => o.masterEntry.state !== EntityState.Detached && o.slaveEntry.state !== EntityState.Detached)
                 .toArray();
@@ -576,7 +576,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             }
 
             // accept update changes.
-            updateQueries.asEnumerable().each(([entityMeta, queries]) => {
+            for (const [entityMeta, queries] of updateQueries) {
                 const eventEmitter = getEventEmitter(entityMeta, this);
                 const dbSet = this.set(entityMeta.type);
                 const updateData = queries.selectMany(o => o.value.rows).toMap(o => dbSet.getKey(o), o => o);
@@ -592,10 +592,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     entityEntry.acceptChanges();
                     eventEmitter.emitAfterSaveEvent({ type: "update" }, entityEntry);
                 }
-            });
+            }
 
             // accept delete changes.
-            deleteQueries.asEnumerable().each(([entityMeta]) => {
+            for (const [entityMeta] of deleteQueries) {
                 const eventEmitter = getEventEmitter(entityMeta, this);
                 const entityEntries = orderedEntityDelete.get(entityMeta);
                 const deleteParam: IDeleteEventParam = {
@@ -605,14 +605,14 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                     entry.acceptChanges();
                     eventEmitter.emitAfterDeleteEvent(deleteParam, entry);
                 }
-            });
+            }
         });
 
-        const allQueries = Enumerable.from(insertQueries.values())
-            .union(updateQueries.values(), true)
-            .union(relationAddQueries.values(), true)
-            .union(relationDeleteQueries.values(), true)
-            .union(deleteQueries.values(), true);
+        const allQueries = Enumerable.from(() => insertQueries.values())
+            .union(Enumerable.from(() => updateQueries.values()), true)
+            .union(Enumerable.from(() => relationAddQueries.values()), true)
+            .union(Enumerable.from(() => relationDeleteQueries.values()), true)
+            .union(Enumerable.from(() => deleteQueries.values()), true);
 
         return allQueries.selectMany(o => o).sum(o => o.value.effectedRows);
     }

@@ -1,4 +1,4 @@
-import { GenericType, ValueType, IObjectType } from "../Common/Type";
+import { GenericType, ValueType, IObjectType, Pivot } from "../Common/Type";
 import { Queryable } from "../Queryable/Queryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
@@ -49,7 +49,7 @@ declare module "./Queryable" {
         leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metrics: TM): Queryable<TResult>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
     }
 }
 
@@ -114,7 +114,7 @@ Queryable.prototype.intersect = function <T>(this: Queryable<T>, array2: Queryab
 Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
     return new ExceptQueryable(this, array2);
 };
-Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<TResult> {
+Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(this: Queryable<T>, dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);
 };
 Queryable.prototype.include = function <T>(this: Queryable<T>, ...includes: Array<(item: T) => any>): Queryable<T> {

@@ -221,9 +221,9 @@ export class RelationQueryVisitor implements IQueryVisitor {
         return result;
     }
     public visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter) {
-        const i = 0;
+        let i = 0;
         for (const paramExp of exp.params) {
-            this.scopeParameters.add(paramExp.name, parameters[i]);
+            this.scopeParameters.add(paramExp.name, parameters[i++]);
         }
         const result = this.visit(exp.body, param);
         for (const paramExp of exp.params) {

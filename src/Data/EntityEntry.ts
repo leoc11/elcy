@@ -213,43 +213,40 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     }
                 }
                 else {
-                    acceptedProperties = this.originalValues.asEnumerable().select(o => o[0]).toArray();
+                    acceptedProperties = Array.from(this.originalValues.keys());
                     this.originalValues.clear();
                 }
 
-                acceptedProperties.intersect(this.metaData.primaryKeys.select(o => o.propertyName))
-                    .each(prop => {
-                        // reflect update option
-                        this.metaData.relations
-                            .where(o => o.isMaster && o.relationColumns.any(o => o.propertyName === prop)
-                                && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT")
-                                && this.relationMap[o.fullName] !== undefined
-                            )
-                            .each(o => {
-                                const col = o.relationColumns.first(o => o.propertyName === prop);
-                                const rCol = o.relationMaps.get(col);
-                                const relationData = this.relationMap[o.fullName];
-                                if (relationData) {
-                                    relationData.asEnumerable().select(o => o[1])
-                                        .each(relEntry => {
-                                            switch (o.updateOption) {
-                                                case "CASCADE": {
-                                                    relEntry.slaveEntry[rCol.propertyName] = this.entity[prop as keyof T];
-                                                    break;
-                                                }
-                                                case "SET NULL": {
-                                                    relEntry.slaveEntry[rCol.propertyName] = null;
-                                                    break;
-                                                }
-                                                case "SET DEFAULT": {
-                                                    relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
-                                                    break;
-                                                }
-                                            }
-                                        });
+                for (const prop of acceptedProperties.intersect(this.metaData.primaryKeys.select(o => o.propertyName))) {
+                    // reflect update option
+                    const relations = this.metaData.relations
+                        .where(o => o.isMaster && o.relationColumns.any(o => o.propertyName === prop)
+                            && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT")
+                            && this.relationMap[o.fullName] !== undefined);
+                    for (const o of relations) {
+                        const col = o.relationColumns.first(o => o.propertyName === prop);
+                        const rCol = o.relationMaps.get(col);
+                        const relationData = this.relationMap[o.fullName];
+                        if (relationData) {
+                            for (const relEntry of relationData.values()) {
+                                switch (o.updateOption) {
+                                    case "CASCADE": {
+                                        relEntry.slaveEntry[rCol.propertyName] = this.entity[prop as keyof T];
+                                        break;
+                                    }
+                                    case "SET NULL": {
+                                        relEntry.slaveEntry[rCol.propertyName] = null;
+                                        break;
+                                    }
+                                    case "SET DEFAULT": {
+                                        relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                        break;
+                                    }
                                 }
-                            });
-                    });
+                            }
+                        }
+                    }
+                }
 
                 if (this.originalValues.size <= 0) {
                     this.state = EntityState.Unchanged;
@@ -274,41 +271,40 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     }
 
                     // apply delete option
-                    this.metaData.relations
+                    const relations = this.metaData.relations
                         .where(o => o.isMaster && this.relationMap[o.fullName] !== undefined
-                            && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT")
-                        )
-                        .each(o => {
-                            const relEntryMap = this.relationMap[o.fullName];
-                            if (relEntryMap) {
-                                relEntryMap.asEnumerable().select(o => o[1])
-                                    .each(relEntry => {
-                                        switch (o.updateOption) {
-                                            case "CASCADE": {
-                                                relEntry.slaveEntry.state = EntityState.Deleted;
-                                                (relEntry.slaveEntry as EntityEntry).acceptChanges();
-                                                break;
-                                            }
-                                            case "SET NULL": {
-                                                (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
-                                                    relEntry.slaveEntry[rCol.propertyName] = null;
-                                                    (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
-                                                });
-                                                break;
-                                            }
-                                            case "SET DEFAULT": {
-                                                (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns.each(rCol => {
-                                                    if (rCol.default) {
-                                                        relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
-                                                        (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
-                                                    }
-                                                });
-                                                break;
+                            && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT"));
+
+                    for (const o of relations) {
+                        const relEntryMap = this.relationMap[o.fullName];
+                        if (relEntryMap) {
+                            for (const relEntry of relEntryMap.values()) {
+                                switch (o.updateOption) {
+                                    case "CASCADE": {
+                                        relEntry.slaveEntry.state = EntityState.Deleted;
+                                        (relEntry.slaveEntry as EntityEntry).acceptChanges();
+                                        break;
+                                    }
+                                    case "SET NULL": {
+                                        for (const rCol of (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns) {
+                                            relEntry.slaveEntry[rCol.propertyName] = null;
+                                            (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
+                                        }
+                                        break;
+                                    }
+                                    case "SET DEFAULT": {
+                                        for (const rCol of (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns) {
+                                            if (rCol.default) {
+                                                relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                                (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                             }
                                         }
-                                    });
+                                        break;
+                                    }
+                                }
                             }
-                        });
+                        }
+                    }
                 }
                 break;
             }

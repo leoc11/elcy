@@ -69,13 +69,13 @@ const globalObjectMaps = new Map<string, any>([
 const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap(o => o.identifier);
 const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap(o => o.identifier);
 export class SyntacticAnalyzer {
-    public static parse(tokens: IterableIterator<ILexicalToken>, userParameters: { [key: string]: any } = {}) {
+    public static parse(tokens: ILexicalToken[], userParameters: { [key: string]: any } = {}) {
         const param: SyntaticParameter = {
             index: 0,
             scopedParameters: new Map(),
             userParameters: userParameters
         };
-        const result = createExpression(param, Array.from(tokens));
+        const result = createExpression(param, tokens);
         return result;
     }
 }

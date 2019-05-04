@@ -3,7 +3,6 @@
 interface Array<T> {
     add(...items: T[]): void;
     delete(...items: T[]): void;
-    toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
 }
 
 Array.prototype.add = function <T>(this: T[], ...items: T[]) {
@@ -19,11 +18,4 @@ Array.prototype.delete = function <T>(this: T[], ...items: T[]) {
             this.splice(index, 1);
         }
     }
-};
-Array.prototype.toMap = function <T, K, V>(this: T[], keySelector: (item: T) => K, valueSelector?: (item: T) => V) {
-    const result = new Map();
-    for (const item of this) {
-        result.set(keySelector(item), valueSelector ? valueSelector(item) : item);
-    }
-    return result;
 };

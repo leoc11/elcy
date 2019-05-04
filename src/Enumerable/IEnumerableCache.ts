@@ -2,5 +2,5 @@ export interface IEnumerableCache<T = any> {
     enabled?: boolean;
     isDone?: boolean;
     result?: T[];
-    iterator?: Iterator<any>;
+    iterator?: IterableIterator<any>;
 }

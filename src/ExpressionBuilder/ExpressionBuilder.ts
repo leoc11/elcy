@@ -8,6 +8,6 @@ export class ExpressionBuilder {
     public static parse<T = any>(fn: string, userParameters?: { [key: string]: any }): IExpression<T>;
     public static parse<T = any>(fn: ((...items: any[]) => T) | string | Function, userParameters?: { [key: string]: any }) {
         const tokens = LexicalAnalyzer.parse(fn.toString());
-        return SyntacticAnalyzer.parse(tokens, userParameters);
+        return SyntacticAnalyzer.parse(Array.from(tokens), userParameters);
     }
 }

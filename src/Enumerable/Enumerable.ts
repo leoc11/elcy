@@ -18,7 +18,7 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     return result;
 };
 export class Enumerable<T = any> implements Iterable<T> {
-    public static from<T>(source: Iterable<T>): Enumerable<T> {
+    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
         return source instanceof Enumerable ? source : new Enumerable(source);
     }
     public static range(start: number, end: number, step: number = 1) {
@@ -27,7 +27,7 @@ export class Enumerable<T = any> implements Iterable<T> {
                 yield start;
                 start += step;
             }
-        }());
+        });
     }
     protected parent: Iterable<any>;
     protected cache: IEnumerableCache<T>;
@@ -40,7 +40,7 @@ export class Enumerable<T = any> implements Iterable<T> {
     public get enableCache() {
         return !this.parent || this.cache.enabled;
     }
-    constructor(source?: Iterable<T>) {
+    constructor(source?: Iterable<any> | (() => IterableIterator<T>)) {
         this.cache = {};
         if (source) {
             if (Array.isArray(source)) {
@@ -51,6 +51,9 @@ export class Enumerable<T = any> implements Iterable<T> {
             if ((source as IterableIterator<any>).next) {
                 this.cache.iterator = source as IterableIterator<any>;
                 this.enableCache = true;
+            }
+            else if (source instanceof Function) {
+                this.generator = source;
             }
             else {
                 this.parent = source as Iterable<any>;
@@ -63,29 +66,47 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return this.generator();
     }
-    private *cachedGenerator() {
-        if (!this.cache.iterator && this.parent) {
-            this.cache.iterator = this.generator();
+    private *cachedGenerator(): IterableIterator<T> {
+        if (this.cache.isDone) {
+            yield* this.cache.result;
+            return;
         }
-        if (!this.cache.result) {
+
+        if (!this.cache.iterator) {
+            this.cache.iterator = this.generator();
             this.cache.result = [];
         }
+        else if (!this.cache.result) {
+            this.cache.result = [];
+        }
+        const iterator = this.cache.iterator as (IterableIterator<any> & { _accessCount: number });
+        if (iterator && !iterator._accessCount) iterator._accessCount = 0;
+        iterator._accessCount++;
 
-        let index = 0;
-        for (; ;) {
-            const isDone = this.cache.isDone;
-            while (this.cache.result.length > index)
-                yield this.cache.result[index++];
-            if (isDone) break;
+        try {
+            let index = 0;
+            for (; ;) {
+                const isDone = this.cache.isDone;
+                const len = this.cache.result.length;
+                while (len > index)
+                    yield this.cache.result[index++];
+                if (isDone) break;
 
-            const a = this.cache.iterator.next();
-            if (!a.done) {
-                this.cache.result.push(a.value);
+                const a = iterator.next();
+                if (!a.done) {
+                    this.cache.result.push(a.value);
+                }
+                else if (!this.cache.isDone) {
+                    this.cache.isDone = true;
+                }
             }
-            else if (!this.cache.isDone) {
-                this.cache.isDone = true;
-                if (this.cache.iterator.return)
-                    this.cache.iterator.return();
+        }
+        finally {
+            iterator._accessCount--;
+            if (iterator.return && iterator._accessCount <= 0) {
+                iterator.return();
+                if (this.cache.iterator === iterator)
+                    this.cache.iterator = null;
             }
         }
     }
@@ -185,6 +206,9 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return false;
     }
+    public ofType<T>(type: GenericType<T>): Enumerable<T> {
+        return this.where(o => o instanceof (type as any)) as any;
+    }
 
     // Helper extension
     public each(executor: (item: T, index: number) => void): void {
@@ -192,9 +216,6 @@ export class Enumerable<T = any> implements Iterable<T> {
         for (const item of this) {
             executor(item, index++);
         }
-    }
-    public ofType<T>(type: GenericType<T>): Enumerable<T> {
-        return this.where(o => o instanceof (type as any)) as any;
     }
     public reduce<R>(func: (accumulated: R, item: T) => R): R;
     public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;

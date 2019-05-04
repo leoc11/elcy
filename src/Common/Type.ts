@@ -3,6 +3,7 @@ import { Uuid } from "../Data/Uuid";
 export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
+export type Pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }> = { [key in keyof TD]: ReturnType<TD[key]> } & { [key in keyof TM]: ReturnType<TM[key]> };
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
 export type PropertySelector<TE> = keyof TE | ((source: TE) => ValueType);
 export type ValueType = number | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView;

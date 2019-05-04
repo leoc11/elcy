@@ -94,7 +94,8 @@ export class LexicalAnalyzer {
     }
 }
 
-const keywordOperators = operators.where(o => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select(o => o.identifier).toArray();
+const keywordOperators = operators.where(o => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select(o => o.identifier);
+keywordOperators.enableCache = true;
 const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with"];
 
 function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILexicalToken {

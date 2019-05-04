@@ -225,9 +225,9 @@ export const hashCodeAdd = (hash: number, add: number) => {
 export const toJSON = function <T>(this: T) {
     const proto = this.constructor.prototype;
     const jsonObj: any = {};
-    Object.keys(this).union(Object.keys(proto)).each((o: keyof T) => {
+    for (const o of Object.keys(this).union(Object.keys(proto))) {
         jsonObj[o] = this[o];
-    });
+    }
     return jsonObj;
 };
 
