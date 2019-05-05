@@ -12,7 +12,7 @@ export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implem
     }
 
     public toString(): string {
-        return "(" + this.leftOperand.toString() + " >> " + this.rightOperand.toString() + ")";
+        return "(" + this.leftOperand.toString() + " >>> " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
@@ -23,6 +23,6 @@ export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implem
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode(">>", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+        return hashCodeAdd(hashCode(">>>", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

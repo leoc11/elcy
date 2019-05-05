@@ -205,7 +205,10 @@ function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexic
         if (["=", ".", "+", "-", "*", "&", "|", ">", "<"].indexOf(char) >= 0) {
             char = input[++pointer.index];
             if (["=", ">", "."].indexOf(char) >= 0) {
-                pointer.index++;
+                char = input[++pointer.index];
+                if (char === "=") {
+                    pointer.index++;
+                }
             }
         }
     }

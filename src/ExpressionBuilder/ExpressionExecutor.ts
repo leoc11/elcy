@@ -308,11 +308,14 @@ export class ExpressionExecutor {
     public executeFunction<T>(expression: FunctionExpression<T>, parameters: any[]) {
         let i = 0;
         for (const param of expression.params) {
-            this.scopeParameters.add(param.name, parameters[i++]);
+            if (parameters.length > i)
+                this.scopeParameters.add(param.name, parameters[i++]);
         }
         const result = this.execute(expression.body);
+        i = 0;
         for (const param of expression.params) {
-            this.scopeParameters.remove(param.name);
+            if (parameters.length > i++)
+                this.scopeParameters.remove(param.name);
         }
         return result;
     }
