@@ -1,12 +1,11 @@
 language: node_js
 node_js:
   - 10
-  - 8
 
 
 before_install:
   - npm install -g typescript@3.3.4000
-  - npm install nyc -g
+  - npm install -g nyc@13.3.0
 
 script:
   - tsc

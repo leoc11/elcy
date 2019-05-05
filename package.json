@@ -1,7 +1,7 @@
 {
   "name": "elcy",
   "private": true,
-  "version": "0.1.0-alpha",
+  "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js"
@@ -9,10 +9,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/leoc11/elcy.git"
-  },
-  "nyc": {
-    "include": "build/src",
-    "exclude": "build/test" 
   },
   "tags": [
     "orm",
