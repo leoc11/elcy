@@ -18,7 +18,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     public async gets(...keys: string[]): Promise<IQueryResult[][]> {
         return keys.select(key => {
             const item = this._keyMap.get(key);
-            if (item.slidingExpiration) {
+            if (item && item.slidingExpiration) {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;

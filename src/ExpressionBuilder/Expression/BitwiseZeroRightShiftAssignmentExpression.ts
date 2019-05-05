@@ -6,7 +6,7 @@ export class BitwiseZeroRightShiftAssignmentExpression implements IBinaryOperato
     public type = Number;
     constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
     public toString(): string {
-        return "(" + this.leftOperand.toString() + " <<= " + this.rightOperand.toString() + ")";
+        return "(" + this.leftOperand.toString() + " >>= " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) replaceMap = new Map();
@@ -17,6 +17,6 @@ export class BitwiseZeroRightShiftAssignmentExpression implements IBinaryOperato
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("<<=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+        return hashCodeAdd(hashCode(">>=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 }

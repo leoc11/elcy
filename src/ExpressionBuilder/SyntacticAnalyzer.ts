@@ -11,6 +11,8 @@ import { FunctionExpression } from "./Expression/FunctionExpression";
 import { IOperator, Associativity, operators, OperatorType, IUnaryOperator, UnaryPosition, IOperatorPrecedence } from "./IOperator";
 import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
 import { MethodCallExpression } from "./Expression/MethodCallExpression";
+import { DbFunction } from "../Query/DbFunction";
+import { StringTemplateExpression } from "./Expression/StringTemplateExpression";
 interface SyntaticParameter {
     index: number;
     scopedParameters: Map<string, ParameterExpression[]>;
@@ -65,6 +67,9 @@ const globalObjectMaps = new Map<string, any>([
     ["null", null],
     ["true", true],
     ["false", false],
+
+    // Helper
+    ["DbFunction", DbFunction]
 ]);
 const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap(o => o.identifier);
 const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap(o => o.identifier);
@@ -215,10 +220,15 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 param.index++;
                 break;
             }
+            case LexicalTokenType.StringTemplate: {
+                expression = new StringTemplateExpression(token.data as string);
+                param.index++;
+                break;
+            }
             case LexicalTokenType.Regexp: {
                 const dataStr = token.data as string;
                 const last = dataStr.lastIndexOf("/");
-                expression = new ValueExpression(new RegExp(dataStr.substring(1, last), dataStr.substring(last + 1)));
+                expression = new ValueExpression(new RegExp(dataStr.substring(1, last), dataStr.substring(last + 1)), dataStr);
                 param.index++;
                 break;
             }

@@ -3,7 +3,6 @@ import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode
 import { DbSet } from "./DbSet";
 import { IQueryResultParser } from "../Query/IQueryResultParser";
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
-import { DefaultQueryCacheManager } from "../Cache/DefaultQueryCacheManager";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { IDriver } from "../Connection/IDriver";
@@ -59,6 +58,7 @@ import { IEnumerable } from "../Enumerable/IEnumerable";
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
 const queryCacheManagerKey = Symbol("queryCacheManagerKey");
+const resultCacheManagerKey = Symbol("resultCacheManagerKey");
 
 export abstract class DbContext<T extends DbType = any> implements IDBEventListener<any> {
     public abstract readonly entityTypes: Array<IObjectType<any>>;
@@ -69,7 +69,8 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     protected abstract readonly namingStrategy: NamingStrategy;
     protected abstract readonly translator: QueryTranslator;
     public abstract readonly dbType: T;
-    protected readonly queryCacheManagerType?: IObjectType<IQueryCacheManager>;
+    protected readonly queryCacheManagerFactory?: () => IQueryCacheManager;
+    protected readonly resultCacheManagerFactory?: () => IResultCacheManager;
     public get queryBuilder(): IQueryBuilder {
         const queryBuilder = new this.queryBuilderType();
         queryBuilder.namingStrategy = this.namingStrategy;
@@ -87,17 +88,28 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
     public deferredQueries: DeferredQuery[] = [];
     private _queryCacheManager: IQueryCacheManager;
     public get queryCacheManager() {
-        if (!this._queryCacheManager) {
+        if (!this._queryCacheManager && this.queryCacheManagerFactory) {
             this._queryCacheManager = Reflect.getOwnMetadata(queryCacheManagerKey, this.constructor);
             if (!this._queryCacheManager) {
-                this._queryCacheManager = this.queryCacheManagerType ? new this.queryCacheManagerType(this.constructor) : new DefaultQueryCacheManager(this.constructor as IObjectType);
+                this._queryCacheManager = this.queryCacheManagerFactory();
                 Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
             }
         }
 
         return this._queryCacheManager;
     }
-    public resultCacheManager: IResultCacheManager;
+    private _resultCacheManager: IResultCacheManager;
+    public get resultCacheManager() {
+        if (!this._resultCacheManager && this.resultCacheManagerFactory) {
+            this._resultCacheManager = Reflect.getOwnMetadata(resultCacheManagerKey, this.constructor);
+            if (!this._resultCacheManager) {
+                this._resultCacheManager = this.resultCacheManagerFactory();
+                Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
+            }
+        }
+
+        return this._resultCacheManager;
+    }
     private _connectionManager: IConnectionManager;
     public get connectionManager() {
         if (!this._connectionManager) {
@@ -305,6 +317,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         // check cached
         if (this.resultCacheManager) {
+            deferredQueries = deferredQueries.toArray();
             const cacheQueries = deferredQueries.where(o => o.command instanceof SelectExpression && o.option.resultCache !== "none");
             const cachedResults = await this.resultCacheManager.gets(...cacheQueries.select(o => o.hashCode().toString()).toArray());
             let index = 0;
@@ -313,7 +326,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
                 if (res) {
                     cacheQuery.buildQuery(queryBuilder);
                     cacheQuery.resolve(res);
-                    deferredQueries = deferredQueries.where(o => o !== cacheQuery);
+                    deferredQueries.delete(cacheQuery);
                 }
             }
         }
@@ -335,6 +348,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
 
         const queries = deferredQueries.selectMany(o => o.buildQuery(queryBuilder));
         const mergedQueries = queryBuilder.mergeQueries(queries);
+        if (!mergedQueries.any())
+            return;
+
         const queryResult: IQueryResult[] = await this.executeQueries(...mergedQueries);
 
         for (const deferredQuery of deferredQueries) {

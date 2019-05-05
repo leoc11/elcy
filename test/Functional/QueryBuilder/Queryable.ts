@@ -1202,15 +1202,6 @@ describe("QUERYABLE", async () => {
             for (const o of results)
                 o.should.be.an.instanceof(Order);
         });
-        it("should use same query cache for diff value", async () => {
-            // build string with it's query cache
-            db.orders.take(10).skip(4).toString();
-            const take = db.orders.take(1).skip(2);
-            const cache = db.queryCacheManager.get(take.hashCode());
-
-            chai.expect(cache).not.null;
-            chai.expect(cache).not.undefined;
-        });
         it("should work in include", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 

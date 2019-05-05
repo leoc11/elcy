@@ -6,6 +6,7 @@ interface ILexicalPointer {
 export enum LexicalTokenType {
     Identifier,
     String,
+    StringTemplate,
     Number,
     Regexp,
     Keyword,
@@ -109,23 +110,8 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
         (char >= "0" && char <= "9") || char === "_" || char === "$");
 
     const data = input.slice(start, pointer.index);
-    let type;
-
-    for (const keyword of keywordOperators) {
-        if (keyword === data) {
-            type = LexicalTokenType.Operator;
-            break;
-        }
-    }
-    if (!type) {
-        for (const keyword of keywords) {
-            if (keyword === data) {
-                type = LexicalTokenType.Keyword;
-                break;
-            }
-        }
-    }
-    if (!type) type = LexicalTokenType.Identifier;
+    let type = keywordOperators.contains(data) ? LexicalTokenType.Operator :
+        keywords.contains(data) ? LexicalTokenType.Keyword : LexicalTokenType.Identifier;
 
     return {
         data: data,
@@ -133,23 +119,29 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
     };
 }
 function analyzeLexicalString(pointer: ILexicalPointer, input: string): ILexicalToken {
-    const start = pointer.index;
-    const stopper = input[start];
-    let char: string;
-    do {
-        char = input[++pointer.index];
-        if (char === "\\")
-            pointer.index++;
-    } while (char !== stopper);
-    const data = input.slice(start + 1, pointer.index);
-    pointer.index++;
+    const stopper = input[pointer.index++];
+    let data = "";
+    for (; ;) {
+        const char = input[pointer.index++];
+        if (char === "\\") {
+            data += input[pointer.index++];
+        }
+        else if (char === stopper) {
+            break;
+        }
+        else {
+            data += char;
+        }
+    }
     return {
         data: data,
         type: LexicalTokenType.String
     };
 }
 function analyzeLexicalTemplateLiteral(pointer: ILexicalPointer, input: string): ILexicalToken {
-    return analyzeLexicalString(pointer, input);
+    const res = analyzeLexicalString(pointer, input);
+    res.type = LexicalTokenType.StringTemplate;
+    return res;
 }
 function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexicalToken {
     const start = pointer.index;
@@ -182,18 +174,18 @@ function analyzeRegexp(pointer: ILexicalPointer, input: string): ILexicalToken {
     };
 }
 function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock = false) {
-    pointer.index++;
+    pointer.index += 2;
     let char: string;
     do {
         char = input[pointer.index++];
         if (isBlock) {
             if (char === "*") {
-                char = input[++pointer.index];
+                char = input[pointer.index++];
                 if (char === "/")
                     break;
             }
         }
-        if (char === "\n")
+        else if (char === "\n")
             break;
     } while (true);
 }

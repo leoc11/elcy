@@ -3,11 +3,15 @@ import { Order, OrderDetail, Product, OrderDetailProperty, Collection, Collectio
 import { DbSet } from "../../src/Data/DbSet";
 import { IDriver } from "../../src/Connection/IDriver";
 import { MockDriver } from "../../src/Mock/MockDriver";
+import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
+import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 
 export class MyDb extends MssqlDbContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
         super(factory);
     }
+    public queryCacheManagerFactory?: () => IQueryCacheManager;
+    public resultCacheManagerFactory?: () => IResultCacheManager;
     public entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
         Collection, AutoParent, AutoDetail
     ];

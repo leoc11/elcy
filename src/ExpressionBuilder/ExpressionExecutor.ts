@@ -56,6 +56,8 @@ import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
 import { OrExpression } from "./Expression/OrExpression";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { StringTemplateExpression } from "./Expression/StringTemplateExpression";
+import { ExpressionBuilder } from "./ExpressionBuilder";
 
 export class ExpressionExecutor {
     constructor(params?: { [key: string]: any }) {
@@ -189,6 +191,8 @@ export class ExpressionExecutor {
                 return this.executeTypeof(expression as any) as any;
             case ValueExpression:
                 return this.executeValue(expression as ValueExpression<T>);
+            case StringTemplateExpression:
+                return this.executeStringTemplate(expression as any) as any;
             default:
                 throw new Error(`expression "${expression.toString()}" not supported`);
         }
@@ -445,5 +449,30 @@ export class ExpressionExecutor {
     }
     protected executeValue<T>(expression: ValueExpression<T>): T {
         return expression.value;
+    }
+    protected executeStringTemplate(expression: StringTemplateExpression): string {
+        let result = "";
+        let isPolymorph = false;
+        let polymorphString = "";
+        for (let i = 0, len = expression.template.length; i < len; i++) {
+            const char = expression.template[i];
+            if (isPolymorph) {
+                if (char === "}") {
+                    const exp = ExpressionBuilder.parse(polymorphString);
+                    result += this.execute(exp);
+                    isPolymorph = false;
+                }
+                polymorphString += char;
+            }
+            else if (char === "$" && expression.template[i + 1] === "{") {
+                isPolymorph = true;
+                i++;
+                polymorphString = "";
+            }
+            else {
+                result += char;
+            }
+        }
+        return result;
     }
 }

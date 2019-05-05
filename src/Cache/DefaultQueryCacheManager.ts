@@ -1,11 +1,9 @@
 import { IQueryCache } from "./IQueryCache";
 import { IQueryCacheManager } from "./IQueryCacheManager";
-import { IObjectType } from "../Common/Type";
-import { DbContext } from "../Data/DBContext";
 
 export class DefaultQueryCacheManager implements IQueryCacheManager {
     private _cache: Map<number, IQueryCache> = new Map();
-    constructor(protected type: IObjectType<DbContext>) { }
+    constructor() { }
     public get(key: number) {
         return this._cache.get(key);
     }
