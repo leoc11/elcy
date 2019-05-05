@@ -1,6 +1,5 @@
 {
     "all": true,
-    "check-coverage": true,
     "include": ["build/src/*"],
     "exclude": ["build/test/*"],
     "sourceMap": true,
