@@ -66,10 +66,10 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
     }
-    public addOrder(orders: IOrderExpression[]): void;
-    public addOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public addOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.addOrder(expression as any, direction);
+    public setOrder(orders: IOrderExpression[]): void;
+    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
+        this.select.setOrder(expression as any, direction);
     }
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): JoinRelation<T, any>;

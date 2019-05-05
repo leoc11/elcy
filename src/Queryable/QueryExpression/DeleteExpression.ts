@@ -68,10 +68,10 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
     }
-    public addOrder(orders: IOrderExpression[]): void;
-    public addOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public addOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.addOrder(expression as any, direction);
+    public setOrder(orders: IOrderExpression[]): void;
+    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
+        this.select.setOrder(expression as any, direction);
     }
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;

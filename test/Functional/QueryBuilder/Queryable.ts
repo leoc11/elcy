@@ -1202,6 +1202,24 @@ describe("QUERYABLE", async () => {
             for (const o of results)
                 o.should.be.an.instanceof(Order);
         });
+        it("order.take.order.take", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+
+            const take = db.orders.orderBy([o => o.OrderDate, "DESC"]).take(10)
+                .orderBy([o => o.TotalAmount, "DESC"]).take(5);
+            const results = await take.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT TOP 5 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT TOP 10 [entity1].[OrderId]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[OrderDate] DESC\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.a("array");
+            for (const o of results)
+                o.should.be.an.instanceof(Order);
+        });
         it("should work in include", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");
 
@@ -1217,6 +1235,29 @@ describe("QUERYABLE", async () => {
 
             results.should.be.a("array").and.not.empty;
             const any = results.any(o => o.OrderDetails.count() > 1);
+            any.should.be.a("boolean").and.equal(false);
+        });
+        it("should work in include 2 (consider orderBy after take)", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+
+            const take = db.orders.
+                include(o => o.OrderDetails
+                    .orderBy([o => o.quantity, "DESC"])
+                    .take(5).skip(1)
+                    .orderBy([o => o.name])
+                    .take(3)
+                ).take(10);
+            const results = await take.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity4].[OrderDetailId]\n\tFROM [OrderDetails] AS [entity4]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t[entity3].[OrderId],\n\t\t\t\t[entity3].[Quantity]\n\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t) AS [entity3]\n\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderDetailId]\n\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t) AS [entity2]\n\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity4].[isDeleted]=0)\n) AS [entity4]\n\tON ([entity1].[OrderDetailId]=[entity4].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity5].[OrderDetailId],\n\t\tCOUNT([entity5].[OrderDetailId]) AS [column1]\n\tFROM [OrderDetails] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t) AS [entity3]\n\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t) AS [entity2]\n\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity5].[OrderDetailId]=[entity4].[OrderDetailId])\n\tINNER JOIN (\n\t\tSELECT [entity6].[OrderDetailId],\n\t\t\t[entity6].[OrderId],\n\t\t\t[entity6].[ProductName]\n\t\tFROM [OrderDetails] AS [entity6]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\t\tINNER JOIN (\n\t\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t\t) AS [entity3]\n\t\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t\t) AS [entity2]\n\t\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity6].[OrderDetailId]=[entity4].[OrderDetailId])\n\t) AS [entity6]\n\t\tON (([entity6].[OrderId]=[entity5].[OrderId]) AND (([entity6].[ProductName]>[entity5].[ProductName]) OR (([entity6].[ProductName]=[entity5].[ProductName]) AND ([entity6].[OrderDetailId]>=[entity5].[OrderDetailId]))))\n\tGROUP BY [entity5].[OrderDetailId]\n\tHAVING (COUNT([entity5].[OrderDetailId])<=3)\n) AS [entity5]\n\tON ([entity1].[OrderDetailId]=[entity5].[OrderDetailId])\nINNER JOIN (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity1].[ProductName] ASC;\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.a("array").and.not.empty;
+            const any = results.any(o => o.OrderDetails.count() > 3);
             any.should.be.a("boolean").and.equal(false);
         });
     });

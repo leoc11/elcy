@@ -170,18 +170,17 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
         this.where = this.where ? new AndExpression(this.where, expression) : expression;
     }
-    public addOrder(orders: IOrderExpression[]): void;
-    public addOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public addOrder(expression: IExpression<any> | IOrderExpression[], direction?: OrderDirection) {
-        if (Array.isArray(expression)) {
-            this.orders = this.orders.concat(expression);
-        }
-        else {
-            this.orders.push({
+    public setOrder(orders: IOrderExpression[]): void;
+    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
+    public setOrder(expression: IExpression<any> | IOrderExpression[], direction?: OrderDirection) {
+        if (!Array.isArray(expression)) {
+            expression = [{
                 column: expression,
                 direction: direction
-            });
+            }];
         }
+
+        this.orders = expression;
     }
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>): IncludeRelation<T, TChild>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relations: IExpression<boolean>, type: RelationshipType, isEmbedded?: boolean): IncludeRelation<T, TChild>;

@@ -1,7 +1,7 @@
 import { JoinType, OrderDirection, RelationshipType, GenericType } from "../../Common/Type";
 import { relationMetaKey, columnMetaKey } from "../../Decorator/DecoratorKey";
 import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
-import { isValueType, isNativeFunction, isValue, replaceExpression, mapKeepExp, mapReplaceExp, isEntityExp, isColumnExp, resolveClone, isNotNull } from "../../Helper/Util";
+import { isValueType, isNativeFunction, isValue, mapKeepExp, mapReplaceExp, isEntityExp, isColumnExp, resolveClone, isNotNull } from "../../Helper/Util";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
 import { IColumnExpression } from "../../Queryable/QueryExpression/IColumnExpression";
@@ -654,6 +654,35 @@ export class RelationQueryVisitor implements IQueryVisitor {
                     return objectOperand;
                 }
                 case "orderBy": {
+                    let pagingJoin: PagingJoinRelation;
+                    if (param.scope !== "queryable") {
+                        pagingJoin = objectOperand.joins.ofType(PagingJoinRelation).first();
+                    }
+                    const hasPaging = pagingJoin || objectOperand.paging.take || objectOperand.paging.skip;
+                    if (hasPaging) {
+                        const cloneMap = new Map();
+                        const includes = selectOperand.includes;
+                        selectOperand.includes = [];
+
+                        const newSelect = selectOperand.clone(cloneMap);
+                        newSelect.entity.alias = this.newAlias();
+                        newSelect.selects = [];
+                        selectOperand.includes = includes;
+                        selectOperand.where = null;
+
+                        let relationExp: IExpression<boolean> = null;
+                        for (const col of selectOperand.primaryKeys) {
+                            const cloneCol = resolveClone(col, cloneMap);
+                            const logicalExp = new StrictEqualExpression(col, cloneCol);
+                            relationExp = relationExp ? new AndExpression(relationExp, logicalExp) : logicalExp;
+                        }
+                        selectOperand.addJoin(newSelect, relationExp, "INNER");
+                        selectOperand.paging = {};
+                        if (pagingJoin) {
+                            selectOperand.joins.delete(pagingJoin);
+                        }
+                    }
+
                     const selectors = exp.params as ArrayValueExpression[];
                     const orders: IOrderExpression[] = [];
                     for (const selector of selectors) {
@@ -670,50 +699,9 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             direction: direction.value
                         });
                     }
+
                     if (orders.length > 0) {
-                        objectOperand.orders = [];
-                        objectOperand.addOrder(orders);
-                    }
-
-                    if (param.scope !== "queryable") {
-                        let takeJoinRel = objectOperand.joins.ofType(PagingJoinRelation).first();
-                        if (takeJoinRel) {
-                            // relation with paging
-                            const orderJoinRel = takeJoinRel.child.joins[takeJoinRel.child.joins.length - 1];
-
-                            let orderExp: IExpression<boolean>;
-                            const entitExp = objectOperand.entity;
-                            for (let i = 0, len = entitExp.primaryColumns.length; i < len; i++) {
-                                const sortCol = orderJoinRel.child.entity.primaryColumns[i];
-                                const filterCol = takeJoinRel.child.entity.primaryColumns[i];
-                                const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
-                                orderExp = orderExp ? new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp)) : orderCompExp;
-                            }
-
-                            // clone to support complex orderBy
-                            const sortMap = new Map();
-                            const filterMap = new Map();
-                            for (const col of entitExp.columns) {
-                                sortMap.set(col, orderJoinRel.child.entity.columns.first(c => c.propertyName === col.propertyName));
-                                filterMap.set(col, takeJoinRel.child.entity.columns.first(c => c.propertyName === col.propertyName));
-                            }
-
-                            for (let i = 0, len = objectOperand.orders.length; i < len; i++) {
-                                const order = objectOperand.orders[i];
-                                const sortCol = sortMap.has(order.column) ? sortMap.get(order.column) : order.column.clone(sortMap);
-                                const filterCol = filterMap.has(order.column) ? filterMap.get(order.column) : order.column.clone(filterMap);
-                                const orderCompExp = order.direction === "DESC" ? new LessThanExpression(sortCol, filterCol) : new GreaterThanExpression(sortCol, filterCol);
-                                orderExp = new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp));
-                            }
-
-                            // replace to new order
-                            const oriOrderExp = takeJoinRel.order;
-                            replaceExpression(orderJoinRel.relation, (exp) => {
-                                if (exp === oriOrderExp)
-                                    return orderExp;
-                                return exp;
-                            });
-                        }
+                        objectOperand.setOrder(orders);
                     }
                     return objectOperand;
                 }
@@ -1179,7 +1167,6 @@ export class RelationQueryVisitor implements IQueryVisitor {
                             takeJoinRel = new PagingJoinRelation(objectOperand, groupExp, joinRelation, "INNER");
                             objectOperand.joins.push(takeJoinRel);
                             groupExp.parentRelation = takeJoinRel;
-                            takeJoinRel.order = orderExp;
                         }
 
                         const groupExp = takeJoinRel.child as GroupByExpression;

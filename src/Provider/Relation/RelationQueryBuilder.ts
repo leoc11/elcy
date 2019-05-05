@@ -263,7 +263,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
             }
         }
 
-        if ((!(selectExp.parentRelation instanceof JoinRelation) || skip > 0) && selectExp.orders.length > 0)
+        if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation)))
             selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.select((c) => this.toString(c.column, param) + " " + c.direction).toArray().join(", ");
 
         if (skip > 0) {
