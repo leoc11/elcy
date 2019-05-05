@@ -24,6 +24,7 @@ import { GroupJoinQueryable } from "./GroupJoinQueryable";
 import { OptionQueryable } from "./OptionQueryable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IQueryOption } from "../Query/IQueryOption";
+import { CrossJoinQueryable } from "./CrossJoinQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -49,6 +50,7 @@ declare module "./Queryable" {
         leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
+        crossJoin<T2, TResult>(array2: Queryable<T2>, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
         pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
     }
 }
@@ -104,6 +106,9 @@ Queryable.prototype.rightJoin = function <T, T2, TResult>(this: Queryable<T>, ar
 };
 Queryable.prototype.fullJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult> {
     return new FullJoinQueryable(this, array2, relation, resultSelector);
+};
+Queryable.prototype.crossJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult> {
+    return new CrossJoinQueryable(this, array2, resultSelector);
 };
 Queryable.prototype.union = function <T>(this: Queryable<T>, array2: Queryable<T>, isUnionAll: boolean = false): Queryable<T> {
     return new UnionQueryable(this, array2, isUnionAll);

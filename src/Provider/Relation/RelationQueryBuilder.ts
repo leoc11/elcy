@@ -63,6 +63,7 @@ import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { SqlTableValueParameterExpression } from "../../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
 
 export abstract class RelationQueryBuilder implements IQueryBuilder {
     public abstract queryLimit: IQueryLimit;
@@ -505,7 +506,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                 const deleteOption = !isManyToMany ? o.reverseRelation.deleteOption : o.relationData.deleteOption;
                 const relationColumns = !isManyToMany ? o.reverseRelation.relationColumns : o.relationData.source === entityMeta ? o.relationData.sourceRelationColumns : o.relationData.targetRelationColumns;
                 let child = new SelectExpression(new EntityExpression(target.type, target.type.name));
-                child.addJoin(deleteExp.select, o.reverseRelation);
+                child.addJoin(deleteExp.select, o.reverseRelation, "INNER");
                 switch (deleteOption) {
                     case "CASCADE": {
                         const childDelete = new DeleteExpression(child, deleteExp.deleteMode);
@@ -686,10 +687,14 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
             result += joins.select(o => {
                 let childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, param)
                     : "(" + this.newLine(1) + this.getSelectQueryString(o.child, param, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
-                const joinString = this.toString(o.relation, param);
 
-                return `${o.type} JOIN ${childString}`
-                    + this.newLine(1, false) + `ON ${joinString}`;
+                let result = `${o.type} JOIN ${childString}`;
+                if (o.relation) {
+                    const joinString = this.toString(o.relation, param);
+                    result += this.newLine(1, false) + `ON ${joinString}`;
+                }
+
+                return result;
             }).toArray().join(this.newLine());
         }
         return result;
@@ -728,14 +733,15 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                     if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.contains(column))) {
                         return this.toOperandString(column.expression, param);
                     }
-                    return this.enclose(column.entity.alias) + "." + this.enclose(param.state === "column-declared" ? column.dataPropertyName : column.columnName);
+                    return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
                 }
                 else {
-                    let childSelect = commandExp.resolvedJoins.select(o => o.child).first(o => o.allJoinedEntities.any(o => o.alias === column.entity.alias));
+                    let childSelect = commandExp.resolvedJoins.select(o => o.child).first(o => o.allSelects.any(o => o.entity.alias === column.entity.alias));
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
-                    return this.enclose(childSelect.entity.alias) + "." + this.enclose(column.dataPropertyName);
+                    const useAlias = !commandExp.selects.contains(column);
+                    return this.enclose(childSelect.entity.alias) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
             return this.enclose(column.entity.alias) + "." + this.enclose(column.dataPropertyName);
@@ -819,7 +825,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                 break;
             default: {
                 if (expression instanceof SelectExpression) {
-                    return this.getSelectQueryString(expression, param) + (expression.isSubSelect ? "" : ";");
+                    return this.getSelectQueryString(expression, param) /*+ (expression.isSubSelect ? "" : ";")*/;
                 }
                 else if (isColumnExp(expression)) {
                     return this.getColumnQueryString(expression, param);
@@ -989,8 +995,9 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         if (exp.objectOperand instanceof SelectExpression) {
             translator = this.resolveTranslator(SelectExpression.prototype, exp.methodName as any);
         }
-        else if (exp.objectOperand instanceof ValueExpression) {
-            translator = this.resolveTranslator(exp.objectOperand.value, exp.methodName);
+        else if (exp.objectOperand instanceof SqlParameterExpression || exp.objectOperand instanceof ParameterExpression || exp.objectOperand instanceof ValueExpression) {
+            const value = this.extractValue(exp.objectOperand, param);
+            translator = this.resolveTranslator(value, exp.methodName);
         }
 
         if (!translator) {

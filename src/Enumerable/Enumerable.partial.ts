@@ -19,6 +19,7 @@ import { IOrderDefinition } from "./Interface/IOrderDefinition";
 import { IObjectType, ValueType, Pivot } from "../Common/Type";
 import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
 import { IEnumerable } from "./IEnumerable";
+import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
@@ -36,6 +37,7 @@ declare module "./Enumerable" {
         leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
         groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
         union(array2: IEnumerable<T>, isUnionAll?: boolean): Enumerable<T>;
         intersect(array2: IEnumerable<T>): Enumerable<T>;
@@ -91,6 +93,9 @@ Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, a
 };
 Enumerable.prototype.groupJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn): Enumerable<TResult> {
     return new GroupJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.crossJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new CrossJoinEnumerable(this, Enumerable.from(array2), resultSelector);
 };
 Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: IEnumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
     return new UnionEnumerable(this, Enumerable.from(array2), isUnionAll);

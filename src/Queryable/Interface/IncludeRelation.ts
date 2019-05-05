@@ -38,10 +38,10 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
                 else if (this.parent.entity === colExp.entity) {
                     this._parentColumns.push(colExp);
                 }
-                else if (this.child.allJoinedEntities.contains(colExp.entity)) {
+                else if (this.child.allSelects.select(o => o.entity).contains(colExp.entity)) {
                     this._childColumns.push(colExp);
                 }
-                else if (this.parent.allJoinedEntities.contains(colExp.entity)) {
+                else if (this.parent.allSelects.select(o => o.entity).contains(colExp.entity)) {
                     this._parentColumns.push(colExp);
                 }
             }
@@ -51,7 +51,10 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         });
 
         if (!this._isManyManyRelation) {
-            this._isManyManyRelation = this._childColumns.any(o => !this.child.primaryKeys.contains(o)) && this._parentColumns.any(o => !this.parent.primaryKeys.contains(o));
+            const childPks = this.child.allSelects.selectMany(o => o.primaryKeys);
+            const parentPks = this.parent.allSelects.selectMany(o => o.primaryKeys);
+            childPks.enableCache = parentPks.enableCache = true;
+            this._isManyManyRelation = this._childColumns.any(o => !childPks.contains(o)) && this._parentColumns.any(o => !parentPks.contains(o));
         }
     }
     //#endregion

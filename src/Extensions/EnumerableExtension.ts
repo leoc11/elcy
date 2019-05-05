@@ -1,7 +1,8 @@
 import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
-import { IObjectType, ValueType, GenericType } from "../Common/Type";
+import { IObjectType, ValueType, GenericType, Pivot } from "../Common/Type";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -33,6 +34,7 @@ declare global {
         rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
         groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
         union(array2: IEnumerable<T>, all?: boolean): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
@@ -130,6 +132,9 @@ Array.prototype.fullJoin = function <T, T2, TResult>(this: T[], array2: IEnumera
 Array.prototype.groupJoin = function <T, T2, TResult>(this: T[], array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult) {
     return this.asEnumerable().groupJoin(array2, relation, resultSelector);
 };
+Array.prototype.crossJoin = function <T, T2, TResult>(this: T[], array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult> {
+    return this.asEnumerable().crossJoin(array2, resultSelector);
+};
 Array.prototype.union = function <T>(this: T[], array2: IEnumerable<T>, isUnionAll: boolean = false) {
     return this.asEnumerable().union(array2, isUnionAll);
 };
@@ -139,7 +144,7 @@ Array.prototype.intersect = function <T>(this: T[], array2: IEnumerable<T>) {
 Array.prototype.except = function <T>(this: T[], array2: IEnumerable<T>) {
     return this.asEnumerable().except(array2);
 };
-Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(this: T[], dimensions: TD, metrics: TM): Enumerable<TResult> {
+Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(this: T[], dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>> {
     return this.asEnumerable().pivot(dimensions, metrics);
 };
 Array.prototype.toMap = function <T, K, V>(this: T[], keySelector: (item: T) => K, valueSelector?: (item: T) => V) {

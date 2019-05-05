@@ -7,6 +7,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected readonly relationFn: (item: T, item2: T2) => boolean;
@@ -48,7 +49,10 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
         const type = this.joinType.toLowerCase() + "Join";
-        const methodExpression = new MethodCallExpression(objectOperand, type as any, [childOperand, this.relation.clone(), this.resultSelector.clone()]);
+        const params: IExpression[] = [childOperand];
+        if (this.joinType !== "CROSS") params.push(this.relation.clone());
+        params.push(this.resultSelector.clone());
+        const methodExpression = new MethodCallExpression(objectOperand, type as any, params);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }

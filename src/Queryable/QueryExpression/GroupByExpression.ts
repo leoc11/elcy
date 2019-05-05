@@ -90,7 +90,7 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
     }
     public get resolvedGroupBy() {
         if (isEntityExp(this.key)) {
-            const keyEntities = Array.from(this.key.select.allJoinedEntities);
+            const keyEntities = Array.from(this.key.select.allSelects.select(o => o.entity));
             let groupBy = this.groupBy.slice();
             for (const column of this.selects.ofType(ComputedColumnExpression).where(o => !groupBy.any(g => g.dataPropertyName === o.dataPropertyName))) {
                 visitExpression(column.expression, (exp: IColumnExpression<any>) => {

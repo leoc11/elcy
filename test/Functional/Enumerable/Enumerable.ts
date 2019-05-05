@@ -53,6 +53,22 @@ describe("ENUMERABLE", () => {
             array.should.deep.equals([2, 6, 6, 10, 4, 8, 0, 0, 0, 2, 6, 8, 6, 10, 6, 10, 10, 14, 0, 2, 6, 4, 8, 8, 12]);
         });
     });
+    describe("CROSSJOIN", () => {
+        it("should work", () => {
+            const distincts = [1, 2, 3, 4, 5].crossJoin([1, 5], (o1, o2) => o1 + o2);
+            let index1 = 0;
+            for (const { } of distincts) { index1++; }
+            let index2 = 0;
+            for (const { } of distincts) { index2++; }
+            const array = distincts.toArray();
+
+            should();
+            index1.should.equal(index2);
+            array.should.be.a("array");
+            array.should.has.lengthOf(index1);
+            array.should.deep.equals([2, 6, 3, 7, 4, 8, 5, 9, 6, 10]);
+        });
+    });
     describe("GROUPBY", () => {
         it("should work", () => {
             const distincts = items.groupBy(o => o % 2);

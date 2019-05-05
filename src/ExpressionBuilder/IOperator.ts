@@ -46,6 +46,7 @@ import { LeftIncrementExpression } from "./Expression/LeftIncrementExpression";
 import { LeftDecrementExpression } from "./Expression/LeftDecrementExpression";
 import { TypeofExpression } from "./Expression/TypeofExpression";
 import { ParameterExpression } from "./Expression/ParameterExpression";
+import { SpreadExpression } from "./Expression/SpreadExpression";
 
 export enum Associativity {
     None = 0x0,
@@ -77,6 +78,7 @@ export interface IUnaryOperator extends IOperator {
 export const operators: IOperator[] = [
     <IUnaryOperator>{ identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
     <IUnaryOperator>{ identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
+    <IUnaryOperator>{ identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op) => new SpreadExpression(op) },
     { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: (objectExp: IExpression, memberName: string) => new MemberAccessExpression(objectExp, memberName) },
     { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
     <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } },

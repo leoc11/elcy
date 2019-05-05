@@ -1,7 +1,7 @@
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { GroupByExpression } from "./GroupByExpression";
-import { hashCode, resolveClone, visitExpression, isEntityExp, mapReplaceExp } from "../../Helper/Util";
+import { hashCode, resolveClone, isEntityExp, mapReplaceExp } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { JoinRelation } from "../Interface/JoinRelation";
@@ -37,12 +37,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                         this._groupBy = childSelects.toArray();
                     }
                     else {
-                        visitExpression(parentRel.relation, (exp: IExpression): boolean | void => {
-                            if ((exp as IColumnExpression).entity && parentRel.parent.projectedColumns.contains(exp as any)) {
-                                this._groupBy.add(exp as any);
-                                return false;
-                            }
-                        });
+                        this._groupBy = parentRel.parentColumns.slice();
                     }
                 }
             }

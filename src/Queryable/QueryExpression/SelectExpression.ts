@@ -31,9 +31,6 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
             if (entity instanceof ProjectionEntityExpression) {
                 this.selects = entity.columns.slice(0);
-                // TODO:
-                // this.selects = entity.selectedColumns.slice(0);
-                // this.relationColumns = entity.relationColumns.slice(0);
             }
             else
                 this.selects = entity.columns.where(o => o.columnMeta && o.columnMeta.isProjected).toArray();
@@ -248,7 +245,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         this.includes.push(includeRel);
         return includeRel;
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
         const existingRelation = this.joins.first((o) => o.child === child);
@@ -301,7 +298,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
-            type = relType === "one" ? type ? type : "INNER" : "LEFT";
+            type = relType === "one" && type ? type : "LEFT";
         }
         else if (relationMetaOrRelations instanceof EmbeddedRelationMetaData) {
             type = "INNER";
@@ -330,10 +327,10 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             .distinct().toArray();
     }
     /**
-     * All entities used in this select expression.
+     * All select expressions used.
      */
-    public get allJoinedEntities(): IEnumerable<IEntityExpression> {
-        return [this.entity].union(this.joins.selectMany(o => o.child.allJoinedEntities));
+    public get allSelects(): IEnumerable<SelectExpression> {
+        return [this as SelectExpression].union(this.joins.selectMany(o => o.child.allSelects));
     }
     public toString(): string {
         return `Select({

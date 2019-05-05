@@ -28,7 +28,7 @@ interface IResolvedRelationData<T = any, TData = any> {
 }
 interface IResolveData<T = any> {
     primaryColumns?: IEnumerable<IColumnExpression<T>>;
-    columns?: IColumnExpression<T>[];
+    columns?: IEnumerable<IColumnExpression<T>>;
     isValueType: boolean;
     dbSet?: DbSet<T>;
     column?: IColumnExpression<T>;
@@ -112,12 +112,17 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             }
             else {
                 let primaryColumns = select.entity.primaryColumns.where(o => o.columnName !== "__index");
-                if (resolveCache.dbSet) {
-                    primaryColumns = primaryColumns.union(select.resolvedSelects.where(o => resolveCache.dbSet.primaryKeys.any(c => c.propertyName === o.propertyName)));
-                }
-                primaryColumns.enableCache = true;
                 resolveCache.primaryColumns = primaryColumns;
                 resolveCache.columns = select.selects;
+
+                if (resolveCache.dbSet) {
+                    resolveCache.primaryColumns = primaryColumns = primaryColumns.union(select.resolvedSelects.where(o => resolveCache.dbSet.primaryKeys.any(c => c.propertyName === o.propertyName)));
+                    primaryColumns.enableCache = true;
+
+                    const columns = select.selects.union(select.relationColumns);
+                    columns.enableCache = true;
+                    resolveCache.columns = columns;
+                }
 
                 if (select.entity instanceof EntityExpression && select.entity.metaData) {
                     const metaData = select.entity.metaData;

@@ -4,11 +4,11 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { ColumnExpression } from "./ColumnExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { hashCode, hashCodeAdd } from "../../Helper/Util";
 import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 
-export class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
+export abstract class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
     public columns: IColumnExpression[];
     public select?: SelectExpression<T>;
@@ -49,22 +49,7 @@ export class ProjectionEntityExpression<T = any> implements IEntityExpression<T>
     public toString(): string {
         return `ProjectionEntity(${this.subSelect.toString()})`;
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
-        const select = resolveClone(this.subSelect, replaceMap);
-        const clone = new ProjectionEntityExpression(select, this.type);
-        clone.alias = this.alias;
-        clone.defaultOrders = this.defaultOrders.slice();
-        clone.name = this.name;
-        clone.columns = this.columns.select(o => {
-            let cloneCol = clone.columns.first(c => c.propertyName === o.propertyName);
-            if (!cloneCol) cloneCol = resolveClone(o, replaceMap);
-            replaceMap.set(o, cloneCol);
-            return cloneCol;
-        }).toArray();
-        replaceMap.set(this, clone);
-        return clone;
-    }
+    public abstract clone(replaceMap?: Map<IExpression, IExpression>): ProjectionEntityExpression<T>;
     public hashCode() {
         return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.sum(o => o.hashCode()));
     }
