@@ -659,13 +659,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                 this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof UnionExpression) {
-            let isUnionAll = false;
-            if (entity.isUnionAll) {
-                const isUnionAllValue = param.parameters.get(entity.isUnionAll as SqlParameterExpression);
-                if (isUnionAllValue) {
-                    isUnionAll = isUnionAllValue.value;
-                }
-            }
+            let isUnionAll = this.extractValue(entity.isUnionAll, param) || false;
             return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
                 this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
                 this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
@@ -1142,27 +1136,4 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         return result;
     }
     //#endregion
-
-
-    // public getCreateTableQueries<TE>(entity: IEntityExpression<TE>, param?: IQueryBuilderParameter): IQuery[] {
-    //     const columnDefinitions = entity.columns.select(column => {
-    //         let columnType = this.valueTypeMap.get(column.type);
-    //         if (!columnType) columnType = this.columnTypeMap.get("defaultString");
-    //         return `${this.enclose(column.columnName)} ${this.getColumnType(columnType)}`;
-    //     }).toArray().join("," + this.newLine(1, false));
-    //     let query = `CREATE TABLE ${entity.name}` +
-    //         `${this.newLine()}(` +
-    //         `${this.newLine(1, false)}${columnDefinitions}` +
-    //         `${this.newLine()})`;
-    //     return [{
-    //         query,
-    //         type: QueryType.DDL
-    //     }];
-    // }
-    // protected columnDefinition(column: IColumnExpression, param?: IQueryBuilderParameter): string {
-    //     if (column instanceof ComputedColumnExpression) {
-    //         return this.toOperandString(column.expression, param);
-    //     }
-    //     return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
-    // }
 }

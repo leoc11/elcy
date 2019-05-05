@@ -1,4 +1,4 @@
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, GenericType } from "../../Common/Type";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -6,9 +6,10 @@ import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
 export class UnionExpression<T> extends ProjectionEntityExpression {
     public readonly entityTypes: IObjectType[];
-    constructor(public readonly subSelect: SelectExpression<T>, public readonly subSelect2: SelectExpression, public isUnionAll: IExpression<boolean>, public readonly type: IObjectType<T> = Object as any) {
+    constructor(public readonly subSelect: SelectExpression<T>, public readonly subSelect2: SelectExpression, public isUnionAll: IExpression<boolean>, type?: GenericType<T>) {
         super(subSelect, type);
         this.subSelect2.isSubSelect = true;
+        this.paramExps = this.paramExps.concat(subSelect2.paramExps);
         this.entityTypes = this.subSelect.entity.entityTypes.concat(this.subSelect2.entity.entityTypes).distinct().toArray();
     }
     public toString(): string {

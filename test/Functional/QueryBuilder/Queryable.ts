@@ -2205,6 +2205,84 @@ describe("QUERYABLE", async () => {
             }
         });
     });
+    describe("COMBINATORIAL", async () => {
+        it("should union 2 records", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(5);
+            const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
+            const join = greatest.union(worst).where(o => o.OrderDetails.count() > 1);
+            const results = await join.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM (\n\tSELECT TOP 5 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] DESC\n\tUNION\n\tSELECT TOP 5 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] ASC\n) AS [entity1]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity1].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[column0]>1)",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.instanceOf(Order);
+            }
+        });
+        it("should union all 2 records", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
+            const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
+            const join = greatest.union(worst, true);
+            const results = await join.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] DESC\n\tUNION ALL\n\tSELECT TOP 5 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] ASC\n) AS [entity1]",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.instanceOf(Order);
+            }
+        });
+        it("should intersect 2 records", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
+            const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(10);
+            const join = greatest.intersect(worst).take(5);
+            const results = await join.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT TOP 5 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tINTERSECT\n\tSELECT TOP 10 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.instanceOf(Order);
+            }
+        });
+        it("should except records", async () => {
+            const spy = sinon.spy(db.connection, "executeQuery");
+            const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
+            const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
+            const join = greatest.except(worst).orderBy([o => o.TotalAmount, "DESC"]);
+            const results = await join.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tEXCEPT\n\tSELECT TOP 5 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]\nORDER BY [entity0].[TotalAmount] DESC",
+                type: QueryType.DQL,
+                parameters: {}
+            } as IQuery);
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.instanceOf(Order);
+            }
+        });
+    });
     describe("PIVOT", async () => {
         it("should work", async () => {
             const spy = sinon.spy(db.connection, "executeQuery");

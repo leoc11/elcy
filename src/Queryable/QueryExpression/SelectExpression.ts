@@ -31,6 +31,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
             if (entity instanceof ProjectionEntityExpression) {
                 this.selects = entity.columns.slice(0);
+                this.paramExps = entity.paramExps.slice(0);
             }
             else
                 this.selects = entity.columns.where(o => o.columnMeta && o.columnMeta.isProjected).toArray();

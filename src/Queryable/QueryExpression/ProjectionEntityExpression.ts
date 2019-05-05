@@ -7,11 +7,13 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd } from "../../Helper/Util";
 import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export abstract class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
     public name: string = "";
     public columns: IColumnExpression[];
     public select?: SelectExpression<T>;
+    public paramExps: SqlParameterExpression[] = [];
     public get primaryColumns(): IColumnExpression[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
@@ -37,6 +39,7 @@ export abstract class ProjectionEntityExpression<T = any> implements IEntityExpr
         // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
         this.type = type ? type : subSelect.itemType;
+        this.paramExps = subSelect.paramExps;
     }
     public get selectedColumns() {
         if (!this._selectedColumns)

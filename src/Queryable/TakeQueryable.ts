@@ -11,11 +11,17 @@ import { IQueryVisitor } from "../Query/IQueryVisitor";
 export class TakeQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
     constructor(parent: Queryable<T>, protected readonly quantity: number) {
-        super(parent.type, new ParameterQueryable(parent, { take: quantity }));
+        super(parent.type, new ParameterQueryable(parent, {}));
+        const param = {};
+        param[this.parameterName] = quantity;
+        this.parent.parameter(param);
+    }
+    public get parameterName() {
+        return "take" + Math.abs(this.hashCode());
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);
+        const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression(this.parameterName, Number)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }

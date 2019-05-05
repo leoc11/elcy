@@ -1205,8 +1205,8 @@ export class RelationQueryVisitor implements IQueryVisitor {
                     let entityExp: IEntityExpression;
                     switch (exp.methodName) {
                         case "union":
-                            const isUnionAll = this.visit(exp.params[1], param);
-                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAll);
+                            const isUnionAllExp = this.visit(exp.params[1] as ParameterExpression<boolean>, param);
+                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAllExp);
                             break;
                         case "intersect":
                             entityExp = new IntersectExpression(selectOperand, childSelectOperand);
