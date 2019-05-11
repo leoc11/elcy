@@ -92,7 +92,7 @@ export class DbSet<T> extends Queryable<T> {
         }
         return entry;
     }
-    public new(primaryValue: ValueType | { [key in keyof T]?: T[key] }) {
+    public new(primaryValue: ValueType | ObjectLike<T>) {
         const entity = new this.type();
         if (isValue(primaryValue)) {
             if (this.primaryKeys.length !== 1) {
@@ -151,11 +151,11 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary.set(entry.key, entry);
     }
 
-    public async insert(...items: Array<{ [key in keyof T]?: T[key] }>) {
+    public async insert(...items: Array<ObjectLike<T>>) {
         const query = this.deferredInsert(...items);
         return await query.execute();
     }
-    public deferredInsert(...items: Array<{ [key in keyof T]?: T[key] }>) {
+    public deferredInsert(...items: Array<ObjectLike<T>>) {
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 
@@ -219,9 +219,9 @@ export class DbSet<T> extends Queryable<T> {
     }
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(key: { [key in keyof T]?: T[key] }, mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrKeyOrPredicate?: { [key in keyof T]?: T[key] } | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
             return super.deferredDelete(modeOrKeyOrPredicate as () => boolean, mode);
         }
