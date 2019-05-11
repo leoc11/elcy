@@ -32,7 +32,7 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
 
         if (defaultOrders) {
             entityMetadata.defaultOrders = defaultOrders.select(o => ({
-                0: ExpressionBuilder.parse(o[0]),
+                0: ExpressionBuilder.parse(o[0], [type]),
                 1: o[1]
             })).toArray();
         }

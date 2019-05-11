@@ -14,7 +14,7 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     private _keySelector: FunctionExpression;
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn)
-            this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, this.flatParameterStacks);
+            this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, [this.parent.type], this.parameters);
         return this._keySelector;
     }
     protected set keySelector(value) {

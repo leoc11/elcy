@@ -30,7 +30,7 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public name: string;
     public get insertGeneratedColumns() {
         return this.columns.where(o => {
-            return !isNotNull(o.default) || (o.generation & ColumnGeneration.Insert) as any;
+            return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
         }).toArray();
     }
     public get updateGeneratedColumns() {

@@ -1,12 +1,14 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { Queryable } from "../../Queryable/Queryable";
+import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
     public methodName: K;
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
-        this.type = type;
+        this._type = type;
         if (typeof method === "function") {
             this.methodName = method.name as any;
         }
@@ -18,8 +20,8 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
-                const objectType = this.objectOperand.type as IObjectType<TE>;
-                if ((objectType as any) === Array) {
+                const objectType = this.objectOperand.type as any;
+                if (Array === objectType || Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":

@@ -14,7 +14,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected _selector: FunctionExpression<T[] | Queryable<T>>;
     protected get selector() {
         if (!this._selector && this.selectorFn)
-            this._selector = ExpressionBuilder.parse<T[] | Queryable<T>>(this.selectorFn);
+            this._selector = ExpressionBuilder.parse<T[] | Queryable<T>>(this.selectorFn, [this.parent.type], this.parameters);
         return this._selector;
     }
     protected set selector(value) {

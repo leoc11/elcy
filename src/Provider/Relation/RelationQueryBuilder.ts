@@ -526,8 +526,8 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                     case "SET DEFAULT": {
                         const setOption: { [key: string]: IExpression<any> } = {};
                         for (const col of o.reverseRelation.relationColumns) {
-                            if (col.default)
-                                setOption[col.columnName] = col.default.body;
+                            if (col.defaultExp)
+                                setOption[col.columnName] = col.defaultExp.body;
                             else
                                 setOption[col.columnName] = new ValueExpression(null);
                         }

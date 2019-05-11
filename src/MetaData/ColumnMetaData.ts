@@ -4,13 +4,28 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { IColumnOption } from "../Decorator/Option/IColumnOption";
 
 export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {
     public entity: IEntityMetaData<TE>;
     public propertyName?: keyof TE;
     public columnName: string;
     public nullable: boolean;
-    public default?: FunctionExpression<T>;
+    public _defaultExp?: FunctionExpression<T>;
+    public get defaultExp() {
+        if (!this._defaultExp && this.default) {
+            this._defaultExp = ExpressionBuilder.parse(this.default);
+        }
+        return this._defaultExp;
+    }
+    private _default?: () => T;
+    public get default() {
+        return this._default;
+    }
+    public set default(value) {
+        this._default = value;
+        this._defaultExp = null;
+    }
     public description: string;
     public columnType: ColumnType;
     public type: GenericType<T>;
@@ -28,11 +43,11 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
         if (entityMeta)
             this.entity = entityMeta;
     }
-    public applyOption(columnMeta: IColumnMetaData<TE, T>) {
+    public applyOption(columnMeta: IColumnOption<T> | IColumnMetaData<TE, T>) {
         if (!this.type && typeof columnMeta.type !== "undefined")
             this.type = columnMeta.type;
-        if (typeof columnMeta.propertyName !== "undefined")
-            this.propertyName = columnMeta.propertyName;
+        if (typeof (columnMeta as IColumnMetaData<TE>).propertyName !== "undefined")
+            this.propertyName = (columnMeta as IColumnMetaData<TE>).propertyName;
         if (typeof columnMeta.columnName !== "undefined")
             this.columnName = columnMeta.columnName;
         if (columnMeta.description)
@@ -49,15 +64,8 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
             this.isProjected = columnMeta.isProjected;
         if (typeof columnMeta.isReadOnly !== "undefined")
             this.isReadOnly = columnMeta.isReadOnly;
-        if (typeof columnMeta.default !== "undefined") {
-            if (columnMeta.default instanceof FunctionExpression) {
-                if (columnMeta.default.type === this.type)
-                    this.default = columnMeta.default;
-            }
-            // NOTE: Column decorator default support Function declaration
-            else if (columnMeta.default as any instanceof Function) {
-                this.default = ExpressionBuilder.parse(columnMeta.default as any);
-            }
+        if (typeof (columnMeta as IColumnOption).default !== "undefined") {
+            this.default = (columnMeta as IColumnOption).default;
         }
     }
 }

@@ -9,7 +9,6 @@ import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData
 import { BinaryColumnMetaData } from "../../../src/MetaData/BinaryColumnMetaData";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { IConnection } from "../../../src/Connection/IConnection";
-import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
 import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaData";
 import { ColumnIndex } from "../../../src/Decorator/ColumnIndex";
 import { CheckConstraintMetaData } from "../../../src/MetaData/CheckConstraintMetaData";
@@ -97,7 +96,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
             const columnMeta = entityMetaData.columns.first(o => o.columnName === "binary") as BinaryColumnMetaData;
 
-            columnMeta.default = ExpressionBuilder.parse(() => new Uint8Array([0, 12, 40, 12, 0]));
+            columnMeta.default = () => new Uint8Array([0, 12, 40, 12, 0]);
             columnMeta.columnType = "varbinary";
             columnMeta.nullable = true;
             columnMeta.size = 10;

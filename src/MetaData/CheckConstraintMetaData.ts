@@ -25,7 +25,7 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
     private _definition: IExpression<boolean> | string;
     public get definition(): IExpression<boolean> | string {
         if (!this._definition) {
-            let fnExp = ExpressionBuilder.parse(this.checkFn);
+            let fnExp = ExpressionBuilder.parse(this.checkFn, [this.entity.type]);
             this._definition = this.toDefinitionExpression(fnExp);
             this.checkFn = null;
         }

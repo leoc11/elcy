@@ -68,7 +68,7 @@ describe("EXPRESSION BUILDER", () => {
 
         const paramObj = { a: 10, b: "string", obj: { member: 10, method: function (a: number) { return this.member + a; } } };
         for (const fn of bitFns) {
-            const exp = ExpressionBuilder.parse(fn, paramObj);
+            const exp = ExpressionBuilder.parse(fn, [], paramObj);
             expect(fn.toString().replace(/[() ]/g, "")).to.equal(exp.toString().replace(/[() ]/g, ""));
 
             const clone = exp.clone();
@@ -92,7 +92,7 @@ describe("EXPRESSION BUILDER", () => {
 
         const paramObj = { a: 10 };
         for (const [fn, fnString] of bitFns) {
-            const exp = ExpressionBuilder.parse(fn, paramObj);
+            const exp = ExpressionBuilder.parse(fn, [], paramObj);
             expect(fnString).to.equal(exp.toString());
 
             const executor = new ExpressionExecutor(paramObj);

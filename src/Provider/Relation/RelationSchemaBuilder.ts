@@ -221,7 +221,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
 
                 const body = new ValueExpression(undefined, defaultExpression);
                 const defaultExp = new FunctionExpression(body, []);
-                column.default = defaultExp;
+                column.defaultExp = defaultExp;
             }
             const typeMap = this.columnType(column);
             switch (typeMap.group) {
@@ -546,7 +546,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             else if (o.columnSchema)
                 return this.addColumn(o.columnSchema);
             // TODO: add option to always drop column
-            else if (o.oldColumnSchema && !o.oldColumnSchema.default && !o.oldColumnSchema.nullable)
+            else if (o.oldColumnSchema && !o.oldColumnSchema.defaultExp && !o.oldColumnSchema.nullable)
                 return this.dropColumn(o.oldColumnSchema);
 
             return undefined;
@@ -620,9 +620,9 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const isColumnChange = isNullableChange
             || this.queryBuilder.columnTypeString(this.columnType(columnSchema)) !== this.queryBuilder.columnTypeString(this.columnType(oldColumnSchema))
             || (columnSchema.collation && oldColumnSchema.collation && columnSchema.collation !== oldColumnSchema.collation);
-        let isDefaultChange = isColumnChange || (columnSchema.default ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.default ? this.defaultValue(oldColumnSchema) : null);
+        let isDefaultChange = isColumnChange || (columnSchema.defaultExp ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.defaultExp ? this.defaultValue(oldColumnSchema) : null);
 
-        if (isDefaultChange && oldColumnSchema.default) {
+        if (isDefaultChange && oldColumnSchema.defaultExp) {
             result = result.concat(this.dropDefaultContraint(oldColumnSchema));
         }
         if (isNullableChange) {
@@ -672,7 +672,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         else if (isColumnChange) {
             result = result.concat(this.alterColumn(columnSchema));
         }
-        if (isDefaultChange && columnSchema.default) {
+        if (isDefaultChange && columnSchema.defaultExp) {
             result = result.concat(this.addDefaultContraint(columnSchema));
         }
 
@@ -680,7 +680,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
     }
     protected columnDeclaration(columnMeta: IColumnMetaData, type: "alter" | "create" | "add" = "alter") {
         let result = `${this.queryBuilder.enclose(columnMeta.columnName)} ${this.queryBuilder.columnTypeString(this.columnType(columnMeta))}`;
-        if (type !== "alter" && columnMeta.default) {
+        if (type !== "alter" && columnMeta.defaultExp) {
             result += ` DEFAULT ${this.defaultValue(columnMeta)}`;
         }
         if (columnMeta.collation)
@@ -758,13 +758,13 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         if (columnType.option) {
             switch (columnType.group) {
                 case "Binary": {
-                    const size = (column as BinaryColumnMetaData).size;
+                    const size = (column as unknown as BinaryColumnMetaData).size;
                     if (isNotNull(size))
                         columnType.option.size = size;
                     break;
                 }
                 case "String": {
-                    const length = (column as StringColumnMetaData).length;
+                    const length = (column as unknown as StringColumnMetaData).length;
                     if (isNotNull(length))
                         columnType.option.length = length;
                     break;
@@ -777,8 +777,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                     break;
                 }
                 case "Decimal": {
-                    const scale = (column as DecimalColumnMetaData).scale;
-                    const precision = (column as DecimalColumnMetaData).precision;
+                    const scale = (column as unknown as DecimalColumnMetaData).scale;
+                    const precision = (column as unknown as DecimalColumnMetaData).precision;
                     if (isNotNull(scale))
                         columnType.option.scale = scale;
                     if (isNotNull(precision))
@@ -787,7 +787,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                 }
                 case "Integer":
                 case "Real": {
-                    const size = (column as BinaryColumnMetaData).size;
+                    const size = (column as unknown as BinaryColumnMetaData).size;
                     if (isNotNull(size))
                         columnType.option.size = size;
                     break;
@@ -817,8 +817,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         return result;
     }
     protected defaultValue(columnMeta: IColumnMetaData) {
-        if (columnMeta.default) {
-            return this.queryBuilder.toString(columnMeta.default.body);
+        if (columnMeta.defaultExp) {
+            return this.queryBuilder.toString(columnMeta.defaultExp.body);
         }
         let groupType: ColumnTypeGroup;
         if (!(columnMeta instanceof ColumnMetaData)) {

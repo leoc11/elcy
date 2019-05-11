@@ -31,7 +31,7 @@ export class PivotQueryable<T,
             if (value instanceof FunctionExpression)
                 fnExpression = value;
             else
-                fnExpression = ExpressionBuilder.parse(value as (item: T) => any, this.flatParameterStacks);
+                fnExpression = ExpressionBuilder.parse(value as (item: T) => any, [this.parent.type], this.parameters);
             if (fnExpression.params.length > 0) {
                 (fnExpression.params[0] as any).name = paramName;
             }

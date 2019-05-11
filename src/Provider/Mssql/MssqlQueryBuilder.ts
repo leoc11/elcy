@@ -60,7 +60,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         };
         const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
         let output = insertExp.entity.columns.where(o => isNotNull(o.columnMeta))
-            .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.default)
+            .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
             .select(o => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
         if (output) {
             output = " OUTPUT " + output;

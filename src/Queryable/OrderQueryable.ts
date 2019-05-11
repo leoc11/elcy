@@ -22,7 +22,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: IExpression[] = [];
-                itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, this.flatParameterStacks));
+                itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, [this.parent.type], this.parameters));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
             }).toArray();

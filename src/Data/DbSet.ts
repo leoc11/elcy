@@ -102,7 +102,7 @@ export class DbSet<T> extends Queryable<T> {
             entity[this.primaryKeys.first().propertyName] = primaryValue as unknown as T[keyof T];
         }
         else {
-            if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.default && !primaryValue[o.propertyName])) {
+            if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
                 throw new Error(`Primary keys is required`);
             }
 

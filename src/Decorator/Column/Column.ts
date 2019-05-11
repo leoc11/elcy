@@ -61,7 +61,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                 entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
         }
         else if (metadata instanceof IntegerColumnMetaData) {
-            if (metadata.autoIncrement && metadata.default)
+            if (metadata.autoIncrement && metadata.defaultExp)
                 console.warn("Auto increment cannot has default value");
         }
 

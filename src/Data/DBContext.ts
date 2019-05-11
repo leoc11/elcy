@@ -766,7 +766,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             .union(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
-        let generatedColumns = entityMeta.insertGeneratedColumns.union(entityMeta.columns.where(o => !!o.default));
+        let generatedColumns = entityMeta.insertGeneratedColumns.union(entityMeta.columns.where(o => !!o.defaultExp));
         const hasGeneratedColumn = generatedColumns.any();
         if (hasGeneratedColumn) {
             generatedColumns = entityMeta.primaryKeys.union(generatedColumns);

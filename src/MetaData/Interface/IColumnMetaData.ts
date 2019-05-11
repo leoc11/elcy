@@ -10,7 +10,7 @@ export interface IColumnMetaData<TE = any, T = any> {
     propertyName?: keyof TE;
     indexed?: boolean;
     nullable?: boolean;
-    default?: FunctionExpression<T>;
+    defaultExp?: FunctionExpression<T>;
     type?: GenericType<T>;
     description?: string;
     columnType?: ColumnType;

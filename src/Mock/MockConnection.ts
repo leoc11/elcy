@@ -145,7 +145,7 @@ export class MockConnection implements IConnection {
                 else if (command instanceof InsertExpression) {
                     let i = 0;
                     const generatedColumns = command.entity.columns.where(o => isNotNull(o.columnMeta))
-                        .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.default).toArray();
+                        .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp).toArray();
 
                     return o.queries.select(query => {
                         const result: IQueryResult = {
@@ -281,8 +281,8 @@ export class MockConnection implements IConnection {
     public generateValue(column: IColumnExpression) {
         if (column.columnMeta) {
             const columnMeta = column.columnMeta;
-            if (columnMeta.default)
-                return ExpressionExecutor.execute(columnMeta.default.body);
+            if (columnMeta.defaultExp)
+                return ExpressionExecutor.execute(columnMeta.defaultExp.body);
         }
 
         switch (column.type) {

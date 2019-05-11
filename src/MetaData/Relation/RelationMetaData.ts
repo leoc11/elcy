@@ -87,7 +87,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
                     throw new Error(`Relation ${this.reverseRelation.name} option is "SET NULL" but relation is not nullable`);
             }
             if (this.reverseRelation.deleteOption === "SET DEFAULT" || this.reverseRelation.updateOption === "SET DEFAULT") {
-                if (this.reverseRelation.relationColumns.any(o => !o.default && !o.nullable))
+                if (this.reverseRelation.relationColumns.any(o => !o.defaultExp && !o.nullable))
                     throw new Error(`Relation ${this.name} option is "SET DEFAULT" but has column without default and not nullable`);
             }
 

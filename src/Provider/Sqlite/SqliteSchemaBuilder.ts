@@ -11,6 +11,7 @@ import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 
 export class SqliteSchemaBuilder extends RelationSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType>([
@@ -76,10 +77,10 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     // collation: columnSchema["COLLATION_NAME"]
                 };
                 if (defaultExpression) {
-                    const defaultExp = new FunctionExpression(null, []);
                     const defaultString = defaultExpression.substring(1, defaultExpression.length - 1);
-                    defaultExp.toString = () => defaultString;
-                    column.default = defaultExp;
+                    const body = new ValueExpression(undefined, defaultString);
+                    const defaultExp = new FunctionExpression(body, []);
+                    column.defaultExp = defaultExp;
                 }
                 column.entity = entity;
                 entity.columns.push(column);

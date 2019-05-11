@@ -1,5 +1,5 @@
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
-import { NullConstructor } from "../Common/Type";
+import { NullConstructor, GenericType } from "../Common/Type";
 import { ParameterExpression } from "./Expression/ParameterExpression";
 import { IExpression } from "./Expression/IExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
@@ -17,6 +17,7 @@ interface SyntaticParameter {
     index: number;
     scopedParameters: Map<string, ParameterExpression[]>;
     userParameters: { [key: string]: any };
+    paramTypes: GenericType[];
 }
 const globalObjectMaps = new Map<string, any>([
     // Global Function
@@ -74,11 +75,15 @@ const globalObjectMaps = new Map<string, any>([
 const prefixOperators = operators.where(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap(o => o.identifier);
 const postfixOperators = operators.where(o => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap(o => o.identifier);
 export class SyntacticAnalyzer {
-    public static parse(tokens: ILexicalToken[], userParameters: { [key: string]: any } = {}) {
+    public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: any }) {
+        if (!userParameters) userParameters = {};
+        if (!paramTypes) paramTypes = [];
+
         const param: SyntaticParameter = {
             index: 0,
             scopedParameters: new Map(),
-            userParameters: userParameters
+            userParameters: userParameters,
+            paramTypes: paramTypes
         };
         const result = createExpression(param, tokens);
         return result;
@@ -294,16 +299,20 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
         return new ValueExpression(data, token.data as string);
     }
 
-    return new ParameterExpression(token.data as string);
+    const type = param.paramTypes.shift();
+    return new ParameterExpression(token.data as string, type);
 }
 function getConstructor(data: any) {
-    let constructor = data.constructor;
-    if (constructor === Object) {
-        constructor = function Object() { };
-        Object.setPrototypeOf(constructor, Object);
-        constructor.prototype = data;
+    if (data) {
+        let constructor = data.constructor;
+        if (constructor === Object) {
+            constructor = function Object() { };
+            Object.setPrototypeOf(constructor, Object);
+            constructor.prototype = data;
+        }
+        return constructor;
     }
-    return constructor ? constructor : NullConstructor;
+    return NullConstructor;
 }
 function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken, tokens: ILexicalToken[]): IExpression {
     throw new Error(`keyword ${token.data} not supported`);

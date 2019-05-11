@@ -15,7 +15,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     private _relation: FunctionExpression<boolean>;
     protected get relation() {
         if (!this._relation && this.relationFn)
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, this.flatParameterStacks);
+            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
         return this._relation;
     }
     protected set relation(value) {
@@ -24,7 +24,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     private _resultSelector: FunctionExpression<R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn)
-            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, this.flatParameterStacks);
+            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.parameters);
         return this._resultSelector;
     }
     protected set resultSelector(value) {

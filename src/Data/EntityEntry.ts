@@ -239,7 +239,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                         break;
                                     }
                                     case "SET DEFAULT": {
-                                        relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                        relEntry.slaveEntry[rCol.propertyName] = rCol ? ExpressionExecutor.execute(rCol.defaultExp) : null;
                                         break;
                                     }
                                 }
@@ -294,8 +294,8 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                                     }
                                     case "SET DEFAULT": {
                                         for (const rCol of (relEntry.slaveRelation as IRelationMetaData<any, T>).mappedRelationColumns) {
-                                            if (rCol.default) {
-                                                relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.default);
+                                            if (rCol.defaultExp) {
+                                                relEntry.slaveEntry[rCol.propertyName] = ExpressionExecutor.execute(rCol.defaultExp);
                                                 (relEntry.slaveEntry as EntityEntry).acceptChanges(rCol.propertyName);
                                             }
                                         }
