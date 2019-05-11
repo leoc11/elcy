@@ -1,4 +1,4 @@
-import { IObjectType, ValueType, DeleteMode, ColumnGeneration } from "../Common/Type";
+import { IObjectType, ValueType, DeleteMode, ColumnGeneration, FlatObjectLike, ObjectLike } from "../Common/Type";
 import { DbContext } from "./DBContext";
 import { Queryable } from "../Queryable/Queryable";
 import { hashCode, isValue, clone, isNotNull } from "../Helper/Util";
@@ -59,19 +59,19 @@ export class DbSet<T> extends Queryable<T> {
         return Enumerable.from(this.dictionary).select(o => o[1].entity);
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
-    public async find(id: ValueType | { [key in keyof T]: T[key] & ValueType }, forceReload?: boolean) {
+    public async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean) {
         let entity = forceReload ? null : this.findLocal(id);
         if (!entity) {
             entity = await super.find(id);
         }
         return entity;
     }
-    public findLocal(id: ValueType | { [key in keyof T]: T[key] & ValueType }): T {
+    public findLocal(id: ValueType | FlatObjectLike<T>): T {
         let key = this.getKey(id);
         const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
-    public entry(entity: T | { [key in keyof T]: T[key] & ValueType }) {
+    public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);
         let entry = this.dictionary.get(key);
         if (entry) {
@@ -116,7 +116,7 @@ export class DbSet<T> extends Queryable<T> {
     public clear() {
         this.dictionary = new Map();
     }
-    public getKey(id: ValueType | { [key in keyof T]: T[key] }): string {
+    public getKey(id: ValueType | ObjectLike<T>): string {
         if (!isNotNull(id))
             throw new Error("Parameter cannot be null");
         if (isValue(id))
@@ -186,18 +186,27 @@ export class DbSet<T> extends Queryable<T> {
     // simple update.
     public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
         let pkFilter: IExpression<boolean> = null;
-        const setterObj = Object.assign({}, setter);
+        const setterObj: { [key in keyof T]?: T[key] | ((item: T) => ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
-        for (const primaryCol of this.metaData.primaryKeys) {
-            const val = setter[primaryCol.propertyName];
-            if (!val || !isValue(val)) {
-                pkFilter = null;
-                break;
+        for (const prop in setter) {
+            const primaryCol = this.metaData.primaryKeys.first(o => o.propertyName === prop);
+            if (primaryCol) {
+                const val = setter[primaryCol.propertyName];
+                if (!val) {
+                    continue;
+                }
+                if (!isValue(val)) {
+                    setterObj[prop] = setter[prop];
+                    continue;
+                }
+
+                const valExp = new ValueExpression(val as T[keyof T]);
+                const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
+                pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
             }
-            const valExp = new ValueExpression(val as T[keyof T]);
-            const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
-            pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
-            setterObj[primaryCol.propertyName] = undefined;
+            else {
+                setterObj[prop] = setter[prop];
+            }
         }
 
         let query: Queryable<T> = this;
@@ -239,11 +248,11 @@ export class DbSet<T> extends Queryable<T> {
         }
     }
 
-    public async upsert(item: { [key in keyof T]: T[key] }) {
+    public async upsert(item: ObjectLike<T>) {
         const query = this.deferredUpsert(item);
         return await query.execute();
     }
-    public deferredUpsert(item: { [key in keyof T]: T[key] }) {
+    public deferredUpsert(item: ObjectLike<T>) {
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
             throw new Error(`Only entity supported`);
 

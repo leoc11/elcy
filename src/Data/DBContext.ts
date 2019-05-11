@@ -1,5 +1,5 @@
 import "../Extensions/ArrayItemTypeExtension";
-import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration } from "../Common/Type";
+import { IObjectType, GenericType, DbType, IsolationLevel, QueryType, DeleteMode, ColumnGeneration, FlatObjectLike } from "../Common/Type";
 import { DbSet } from "./DbSet";
 import { IQueryResultParser } from "../Query/IQueryResultParser";
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
@@ -83,7 +83,10 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         return visitor;
     }
     public getQueryResultParser(command: IQueryExpression, queryBuilder: IQueryBuilder): IQueryResultParser {
-        return new this.queryResultParserType(command, queryBuilder);
+        const queryParser = new this.queryResultParserType();
+        queryParser.queryBuilder = queryBuilder;
+        queryParser.queryExpression = command;
+        return queryParser;
     }
     public deferredQueries: DeferredQuery[] = [];
     private _queryCacheManager: IQueryCacheManager;
@@ -115,12 +118,12 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         if (!this._connectionManager) {
             this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
             if (!this._connectionManager) {
-                const val = this.factory();
-                if ((val as IConnectionManager).getAllConnections) {
-                    this._connectionManager = val as IConnectionManager;
+                const conManagerOrDriver = this.factory();
+                if ((conManagerOrDriver as IConnectionManager).getAllConnections) {
+                    this._connectionManager = conManagerOrDriver as IConnectionManager;
                 }
                 else {
-                    const driver = val as IDriver<T>;
+                    const driver = conManagerOrDriver as IDriver<T>;
                     this._connectionManager = new DefaultConnectionManager(driver);
                 }
                 Reflect.defineMetadata(connectionManagerKey, this._connectionManager, this.constructor);
@@ -145,7 +148,9 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
     }
     private _cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
-    constructor(protected readonly factory: () => IConnectionManager | IDriver<T>) {
+    protected readonly factory: () => IConnectionManager | IDriver<T>;
+    constructor(factory?: () => IConnectionManager | IDriver<T>) {
+        if (factory) this.factory = factory;
         this.relationEntries = {
             add: new Map(),
             delete: new Map()
@@ -222,7 +227,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
         }
         return entry;
     }
-    public update<T>(entity: T, originalValues?: { [key in keyof T]: T[key] }) {
+    public update<T>(entity: T, originalValues?: FlatObjectLike<T>) {
         const entry = this.attach(entity);
         if (entry) {
             if (originalValues instanceof Object)
@@ -267,7 +272,7 @@ export abstract class DbContext<T extends DbType = any> implements IDBEventListe
             for (const query of queries) {
                 timer && timer.start();
                 if (Diagnostic.enabled) Diagnostic.debug(con, `Execute Query.`, query);
-                const res = await con.executeQuery(query);
+                const res = await con.query(query);
                 if (Diagnostic.enabled) {
                     Diagnostic.debug(con, `Query Result.`, res);
                     Diagnostic.trace(con, `Execute Query time: ${timer.time()}ms`);

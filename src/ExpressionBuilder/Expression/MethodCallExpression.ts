@@ -2,8 +2,6 @@ import { GenericType, IObjectType } from "../../Common/Type";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-import { Queryable } from "../../Queryable/Queryable";
-import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
     public methodName: K;
@@ -21,7 +19,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if (!this._type && this.objectOperand.type) {
             try {
                 const objectType = this.objectOperand.type as IObjectType<TE>;
-                if (Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
+                if ((objectType as any) === Array) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
@@ -37,7 +35,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
                             break;
                         }
                         case "first": {
-                            this._type = Object;
+                            this._type = this.objectOperand.itemType;
                             break;
                         }
                         default: {
@@ -60,6 +58,12 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
             }
         }
         return this._type;
+    }
+    public get itemType() {
+        if ((this.type as any) === Array) {
+            return this.objectOperand.itemType;
+        }
+        return undefined;
     }
     public set type(value) {
         this._type = value;

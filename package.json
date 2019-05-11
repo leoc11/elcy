@@ -38,15 +38,12 @@
     "@types/node": "^10.5.2",
     "@types/redis": "^2.8.6",
     "@types/sinon": "^5.0.2",
-    "@types/sqlite3": "^3.1.3",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "ioredis": "^4.2.0",
     "mocha": "^5.0.5",
     "redis": "^2.8.0",
     "sinon": "^6.3.4",
-    "sinon-chai": "^3.2.0",
-    "sqlite3": "^4.0.2",
-    "tedious": "^2.6.3"
+    "sinon-chai": "^3.2.0"
   }
 }

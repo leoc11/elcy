@@ -1,6 +1,6 @@
 import { IQueryResult } from "../Query/IQueryResult";
 import { IEventHandler } from "../Event/IEventHandler";
-import { IsolationLevel } from "../Common/Type";
+import { IsolationLevel, QueryType } from "../Common/Type";
 import { IQuery } from "../Query/IQuery";
 
 export interface IConnection {
@@ -14,7 +14,9 @@ export interface IConnection {
     startTransaction(isolationLevel?: IsolationLevel): Promise<void>;
     commitTransaction(): Promise<void>;
     rollbackTransaction(): Promise<void>;
-    executeQuery(command: IQuery): Promise<IQueryResult[]>;
+    query(command: IQuery): Promise<IQueryResult[]>;
+    query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
+    query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
     setIsolationLevel(isolationLevel: IsolationLevel): Promise<void>;
     errorEvent: IEventHandler<IConnection, Error>;
 }

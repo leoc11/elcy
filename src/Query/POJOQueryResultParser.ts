@@ -38,6 +38,8 @@ interface IResolveData<T = any> {
 interface IResolveMap extends Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>> { }
 
 export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
+    public queryExpression: SelectExpression<T>;
+    public queryBuilder: IQueryBuilder;
     private _orderedSelects: SelectExpression[];
     private _cache = new Map<SelectExpression, IResolveData>();
     public get orderedSelects() {
@@ -51,8 +53,6 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             }
         }
         return this._orderedSelects;
-    }
-    constructor(public readonly queryExpression: SelectExpression<T>, public readonly queryBuilder: IQueryBuilder) {
     }
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext);

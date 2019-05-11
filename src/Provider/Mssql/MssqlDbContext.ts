@@ -27,9 +27,7 @@ export abstract class MssqlDbContext extends DbContext<"mssql"> {
     protected namingStrategy = new NamingStrategy();
     public dbType: "mssql" = "mssql";
     protected translator = mssqlQueryTranslator;
-    constructor(driverFactory: () => IDriver<"mssql">);
-    constructor(connectionManagerFactory: () => IConnectionManager);
-    constructor(factory: () => IConnectionManager | IDriver<"mssql">) {
+    constructor(factory?: () => IConnectionManager | IDriver<"mssql">) {
         super(factory);
     }
     protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor): DeferredQuery<IQueryResult>[] {

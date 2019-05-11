@@ -11,6 +11,7 @@ export interface IMockedContext {
 }
 export const mockContext = function (context: DbContext & IMockedContext) {
     context.oriGetConnection = context.getConnection;
+    context.oriExecuteDeferred = context.executeDeferred;
     context.getConnection = async function (writable?: boolean) {
         let connection = await this.oriGetConnection(writable);
         if (connection instanceof PooledConnection) {
@@ -23,7 +24,6 @@ export const mockContext = function (context: DbContext & IMockedContext) {
         }
         return connection;
     };
-    context.oriExecuteDeferred = context.executeDeferred;
     context.executeDeferred = async function (deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) deferredQueries = context.deferredQueries.splice(0);
         this.connection = await this.getConnection();

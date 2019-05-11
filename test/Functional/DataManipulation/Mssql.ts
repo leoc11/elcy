@@ -37,7 +37,7 @@ const getConnection = (con: IConnection) => (con instanceof PooledConnection ? c
 describe("DATA MANIPULATION", () => {
     describe("INSERT", () => {
         it("should insert new entity 1", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const productId = Uuid.new();
             const effected = await db.products.insert({
@@ -54,7 +54,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should insert new entity 2", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const product = new Product();
             product.ProductId = Uuid.new();
@@ -71,7 +71,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should insert new entity 3", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const product = db.products.new({
                 ProductId: Uuid.new(),
@@ -89,7 +89,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should insert new entity and update all insert generated column (createdDate, default)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const data = db.autoParents.new({
                 name: "Insert 1",
@@ -112,7 +112,7 @@ describe("DATA MANIPULATION", () => {
             data.should.has.property("id").that.is.a("number").and.greaterThan(0);
         });
         it("should insert entity with it relation correctly", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const data = db.autoParents.new({
                 name: "Insert 1",
@@ -181,7 +181,7 @@ describe("DATA MANIPULATION", () => {
             spy.should.be.calledBefore(spy2);
         });
         it("should bulk insert", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const effected = await db.autoParents.where(o => o.details.count() <= 0).select(AutoDetail, o => ({
                 description: "Detail of parent " + o.id
@@ -198,7 +198,7 @@ describe("DATA MANIPULATION", () => {
     });
     describe("UPDATE", () => {
         it("should update entity 1", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -219,7 +219,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should bulk update entity", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.where(o => o.id === 1).update({
                 name: "Updated",
                 isDefault: o => !o.isDefault
@@ -237,7 +237,7 @@ describe("DATA MANIPULATION", () => {
             const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
             entityMeta.concurrencyMode = "OPTIMISTIC DIRTY";
 
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -258,7 +258,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should update with VERSION concurrency check", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const parent = new AutoDetail();
             parent.id = 1;
@@ -284,7 +284,7 @@ describe("DATA MANIPULATION", () => {
             const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
             entityMeta.concurrencyMode = "OPTIMISTIC VERSION";
 
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -310,7 +310,7 @@ describe("DATA MANIPULATION", () => {
             const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
             entityMeta.concurrencyMode = "NONE";
 
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -348,7 +348,7 @@ describe("DATA MANIPULATION", () => {
             promise.should.eventually.be.rejectedWith("Concurrency Error");
         });
         it("should update ModifiedDate", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -366,7 +366,7 @@ describe("DATA MANIPULATION", () => {
             } as IQuery);
         });
         it("should not update Readonly Column, ex: CreatedDate", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -411,7 +411,7 @@ describe("DATA MANIPULATION", () => {
     });
     describe("DELETE", () => {
         it("should delete entity (soft delete) + should update modifiedDate", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -430,7 +430,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should delete entity (hard delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
@@ -451,7 +451,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should bulk delete with include (soft delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.include(o => o.details).delete(o => o.id === 1);
 
             chai.should();
@@ -463,7 +463,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.be.greaterThan(0);
         });
         it("should bulk delete with include (hard delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.include(o => o.details)
                 .where(o => o.id === 1)
                 .delete("hard");
@@ -486,7 +486,7 @@ describe("DATA MANIPULATION", () => {
         // it("should fail hard delete when relation still exist", () => {
         // });
         it("should cascade delete entity + relation (soft delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
             relationMeta.deleteOption = "CASCADE";
 
@@ -505,7 +505,7 @@ describe("DATA MANIPULATION", () => {
             relationMeta.deleteOption = "NO ACTION";
         });
         it("should delete with SET NULL option (soft delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
             relationMeta.deleteOption = "SET NULL";
 
@@ -524,7 +524,7 @@ describe("DATA MANIPULATION", () => {
             relationMeta.deleteOption = "NO ACTION";
         });
         it("should delete with SET DEFAULT option (soft delete)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
             relationMeta.deleteOption = "SET DEFAULT";
 
@@ -564,7 +564,7 @@ describe("DATA MANIPULATION", () => {
 
         });
         it("should add one-many relation", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
             db.attach(parent);

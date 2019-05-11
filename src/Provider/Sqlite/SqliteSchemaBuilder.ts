@@ -38,7 +38,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
         const checkDefReg = /CHECK\s*\((.*)\)/i;
 
         const tableNames = entities.select(o => `'${o.name}'`).toArray().join(",");
-        const schemaDatas = await this.connection.executeQuery({
+        const schemaDatas = await this.connection.query({
             query: `SELECT * FROM "sqlite_master" WHERE type='table' AND tbl_name IN (${tableNames})`,
             type: QueryType.DQL
         });
@@ -60,7 +60,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
             };
             result[entity.name] = entity;
 
-            const columnSchemas = await this.connection.executeQuery({
+            const columnSchemas = await this.connection.query({
                 query: `PRAGMA TABLE_INFO("${entity.name}")`,
                 type: QueryType.DQL
             });
@@ -88,7 +88,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     entity.primaryKeys.push(column);
             }
 
-            const indexSchemas = await this.connection.executeQuery({
+            const indexSchemas = await this.connection.query({
                 query: `PRAGMA INDEX_LIST("${entity.name}")`,
                 type: QueryType.DQL
             });
@@ -103,7 +103,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     unique: (indexSchema["unique"] || "").toString() === "1"
                 };
                 entity.indices.push(index);
-                const indexInfos = await this.connection.executeQuery({
+                const indexInfos = await this.connection.query({
                     query: `PRAGMA INDEX_INFO("${indexName}")`,
                     type: QueryType.DQL
                 });
@@ -123,7 +123,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     columns: []
                 };
                 entity.constraints.push(constraintMeta);
-                const indexInfos = await this.connection.executeQuery({
+                const indexInfos = await this.connection.query({
                     query: `PRAGMA INDEX_INFO("${constaintName}")`,
                     type: QueryType.DQL
                 });
@@ -177,7 +177,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
 
         // foreign keys
         for (const entityName in result) {
-            const foreignKeySchemas = await this.connection.executeQuery({
+            const foreignKeySchemas = await this.connection.query({
                 query: `PRAGMA FOREIGN_KEY_LIST("${entityName}")`,
                 type: QueryType.DQL
             });

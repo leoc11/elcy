@@ -10,23 +10,25 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { mockContext } from "../../../src/Mock/MockContext";
-import { MssqlDriver } from "../../../src/Provider/Mssql/MssqlDriver";
+// import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
 chai.use(sinonChai);
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
 const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
 
-let db = new MyDb(() => new MssqlDriver({
-    host: "localhost\\SQLEXPRESS",
-    database: "Database",
-    port: 1433,
-    user: "sa",
-    password: "password",
-    // options: {
-    //     trustedConnection: true
-    // }
-}));
+let db = new MyDb(
+// () => new MssqlDriver({
+//     server: "localhost",
+//     userName: "sa",
+//     password: "password",
+//     options: {
+//         database: "Database",
+//         instanceName: "SQLEXPRESS",
+//         port: 1433
+//     }
+// })
+);
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
@@ -39,7 +41,7 @@ afterEach(() => {
 describe("QUERYABLE", async () => {
     describe("INCLUDE", async () => {
         it("should eager load list navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const include = db.orders.include(o => o.OrderDetails);
             const results = await include.toArray();
@@ -67,7 +69,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support nested include", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const include = db.orders.include(o => o.OrderDetails.include(od => od.Product));
             const results = await include.toArray();
@@ -88,7 +90,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should eager load scalar navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const include = db.orderDetails.include(o => o.Order);
             const results = await include.toArray();
@@ -106,7 +108,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should eager load 2 navigation properties at once", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const include = db.orderDetails.include(o => o.Order, o => o.Product);
             const results = await include.toArray();
@@ -126,7 +128,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should load many-many relation", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const include = db.collections.include(o => o.Products);
             const results = await include.toArray();
@@ -149,7 +151,7 @@ describe("QUERYABLE", async () => {
     });
     describe("PROJECT", async () => {
         it("should project specific property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const projection = db.orders.project(o => o.TotalAmount);
             const results = await projection.toArray();
@@ -170,7 +172,7 @@ describe("QUERYABLE", async () => {
     });
     describe("SELECT", async () => {
         it("should return specific property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => o.OrderDate);
             const results = await select.toArray();
@@ -187,7 +189,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("date");
         });
         it("should return an object", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 date: o.OrderDate,
@@ -209,7 +211,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should return a value from scalar navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orderDetails.select(o => ({
                 date: o.Order.OrderDate
@@ -229,7 +231,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should return an object with list navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 ods: o.OrderDetails
@@ -251,7 +253,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should return an object with scalar navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orderDetails.select(o => ({
                 prod: o.Product
@@ -270,7 +272,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("prod").that.is.an.instanceof(Product);
         });
         it("should return an value from list navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 simpleOrderDetails: o.OrderDetails.select(od => ({
@@ -294,7 +296,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should return a scalar navigation property of list navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 simpleOrderDetails: o.OrderDetails.select(od => ({
@@ -318,7 +320,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support self select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 simpleOrderDetails: o.OrderDetails.select(od => ({
@@ -346,7 +348,7 @@ describe("QUERYABLE", async () => {
         });
         it("should select array", async () => {
             // TODO: could be improve with groupBy
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => o.OrderDetails);
             const results = await select.toArray();
@@ -366,7 +368,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should select array with where in property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orders.select(o => ({
                 sum: o.OrderDetails.where(p => p.quantity > 2).sum(o => o.quantity),
@@ -393,7 +395,7 @@ describe("QUERYABLE", async () => {
             isAllEmpty.should.not.true;
         });
         it("should work in chain", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const select = db.orderDetails.select(o => ({
                 test: o.Order.TotalAmount
@@ -417,7 +419,7 @@ describe("QUERYABLE", async () => {
     });
     describe("SELECT MANY", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.selectMany(o => o.OrderDetails);
             const results = await order.toArray();
@@ -434,7 +436,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("select many with nested select to entity", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.Product));
             const results = await order.toArray();
@@ -451,7 +453,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Product);
         });
         it("select many with nested select to related entity property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.selectMany(o => o.OrderDetails.select(o => o.Product.Price));
             const results = await order.toArray();
@@ -468,7 +470,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("select many with nested select to many relation", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.where(o => o.TotalAmount > 10000).selectMany(o => o.OrderDetails.select(o => o.OrderDetailProperties));
             const results = await order.toArray();
@@ -489,7 +491,7 @@ describe("QUERYABLE", async () => {
             isAllEmpty.should.not.true;
         });
         it("should worked in chain", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.selectMany(o => o.OrderDetails).selectMany(o => o.OrderDetailProperties);
             const results = await order.toArray();
@@ -507,7 +509,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("nested selectMany", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.selectMany(o => o.OrderDetails.selectMany(o => o.OrderDetailProperties));
             const results = await order.toArray();
@@ -527,7 +529,7 @@ describe("QUERYABLE", async () => {
     });
     describe("WHERE", async () => {
         it("should add where clause", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const where = db.orders.where(o => o.TotalAmount <= 10000);
             const results = await where.toArray();
@@ -544,7 +546,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order).and.have.property("TotalAmount").that.is.lte(10000);
         });
         it("should filter included list", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const where = db.orders.include(o => o.OrderDetails.where(od => od.Product.Price <= 15000));
             const results = await where.toArray();
@@ -565,7 +567,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should be supported in select statement", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const where = db.orders.select(o => ({
                 ods: o.OrderDetails.where(od => od.Product.Price <= 15000)
@@ -587,7 +589,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used more than once in chain", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const where = db.orderDetails.where(o => o.Product.Price <= 15000).where(o => o.name.like("%a%"));
             const results = await where.toArray();
@@ -604,7 +606,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("should work with groupBy", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             let where = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate)
                 .where(o => o.count() >= 1)
@@ -623,7 +625,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("date");
         });
         it("should filter with navigation property", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const where = db.orderDetailProperties.where(o => o.OrderDetail.Order.TotalAmount > 10000);
             const results = await where.toArray();
@@ -642,7 +644,7 @@ describe("QUERYABLE", async () => {
     });
     describe("ORDER BY", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.orderBy([o => o.TotalAmount, "DESC"]);
             const results = await order.toArray();
@@ -659,7 +661,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("by related entity", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orderDetails.orderBy([o => o.Product.Price, "DESC"]);
             const results = await order.toArray();
@@ -676,7 +678,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("by computed column", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orderDetails.orderBy([o => o.quantity * o.Product.Price, "DESC"]);
             const results = await order.toArray();
@@ -693,7 +695,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("should be ordered by multiple column", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orderDetails.orderBy([o => o.quantity], [o => o.Product.Price, "DESC"]);
             const results = await order.toArray();
@@ -710,7 +712,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("should used last defined order", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             // Note: thought Product no longer used, it still exist in join statement.
             const order = db.orderDetails.orderBy([o => o.Product.Price, "DESC"]).orderBy([o => o.quantity]);
@@ -728,7 +730,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(OrderDetail);
         });
         it("could be used in include", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.include(o => o.OrderDetails.orderBy([od => od.Product.Price, "DESC"]));
             const results = await order.toArray();
@@ -748,7 +750,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const order = db.orders.select(o => ({
                 ods: o.OrderDetails.orderBy([o => o.quantity])
@@ -772,7 +774,7 @@ describe("QUERYABLE", async () => {
     });
     describe("ANY", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.any();
 
@@ -786,7 +788,7 @@ describe("QUERYABLE", async () => {
             result.should.equal(true);
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const any = db.orders.select(o => ({
                 order: o,
@@ -808,7 +810,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const any = db.orders.where(o => o.OrderDetails.any());
             const results = await any.toArray();
@@ -827,7 +829,7 @@ describe("QUERYABLE", async () => {
     });
     describe("ALL", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.all(o => o.TotalAmount <= 20000);
 
@@ -841,7 +843,7 @@ describe("QUERYABLE", async () => {
             result.should.equal(false);
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const all = db.orders.select(o => ({
                 order: o,
@@ -863,7 +865,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const all = db.orders.where(o => o.OrderDetails.all(od => od.Product.Price <= 20000));
             const results = await all.toArray();
@@ -883,7 +885,7 @@ describe("QUERYABLE", async () => {
     });
     describe("MAX", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.max(o => o.TotalAmount);
 
@@ -896,7 +898,7 @@ describe("QUERYABLE", async () => {
             result.should.be.a("number");
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const max = db.orders.select(o => ({
                 order: o,
@@ -918,7 +920,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const max = db.orders.where(o => o.OrderDetails.max(od => od.Product.Price) > 20000);
             const results = await max.toArray();
@@ -938,7 +940,7 @@ describe("QUERYABLE", async () => {
     });
     describe("MIN", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.min(o => o.TotalAmount);
 
@@ -952,7 +954,7 @@ describe("QUERYABLE", async () => {
             result.should.be.a("number");
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const min = db.orders.select(o => ({
                 order: o,
@@ -974,7 +976,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const min = db.orders.where(o => o.OrderDetails.min(od => od.Product.Price) > 20000);
             const results = await min.toArray();
@@ -993,7 +995,7 @@ describe("QUERYABLE", async () => {
     });
     describe("AVG", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.avg(o => o.TotalAmount);
 
@@ -1007,7 +1009,7 @@ describe("QUERYABLE", async () => {
             result.should.be.a("number");
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const avg = db.orders.select(o => ({
                 order: o,
@@ -1029,7 +1031,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const avg = db.orders.where(o => o.OrderDetails.avg(od => od.Product.Price) > 20000);
             const results = await avg.toArray();
@@ -1049,7 +1051,7 @@ describe("QUERYABLE", async () => {
     });
     describe("SUM", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.sum(o => o.TotalAmount);
 
@@ -1063,7 +1065,7 @@ describe("QUERYABLE", async () => {
             result.should.be.a("number");
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const sum = db.orders.select(o => ({
                 order: o,
@@ -1085,7 +1087,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const sum = db.orders.where(o => o.OrderDetails.sum(od => od.quantity) > 3);
             const results = await sum.toArray();
@@ -1105,7 +1107,7 @@ describe("QUERYABLE", async () => {
     });
     describe("COUNT", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const count = db.orders.where(o => o.OrderDetails.sum(od => od.quantity) > 3);
             const result = await count.count();
@@ -1120,7 +1122,7 @@ describe("QUERYABLE", async () => {
             result.should.be.a("number");
         });
         it("could be used in select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const count = db.orders.select(o => ({
                 order: o,
@@ -1142,7 +1144,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const count = db.orders.where(o => o.OrderDetails.count() > 3);
             const results = await count.toArray();
@@ -1160,7 +1162,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("could be used in select with different filter", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const count = db.orders.groupBy(o => ({ month: o.OrderDate.getMonth() })).select(o => ({
                 qty: o.selectMany(o => o.OrderDetails).select(o => o.quantity).sum(),
@@ -1186,7 +1188,7 @@ describe("QUERYABLE", async () => {
     });
     describe("TAKE SKIP", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const take = db.orders.take(10).skip(4).take(2).skip(1);
             const results = await take.toArray();
@@ -1203,7 +1205,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("order.take.order.take", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const take = db.orders.orderBy([o => o.OrderDate, "DESC"]).take(10)
                 .orderBy([o => o.TotalAmount, "DESC"]).take(5);
@@ -1221,7 +1223,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in include", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const take = db.orders.include(o => o.OrderDetails.orderBy([o => o.quantity]).take(10).skip(1).take(2).skip(1));
             const results = await take.toArray();
@@ -1238,7 +1240,7 @@ describe("QUERYABLE", async () => {
             any.should.be.a("boolean").and.equal(false);
         });
         it("should work in include 2 (consider orderBy after take)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const take = db.orders.
                 include(o => o.OrderDetails
@@ -1263,7 +1265,7 @@ describe("QUERYABLE", async () => {
     });
     describe("FIRST", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.first();
 
@@ -1278,7 +1280,7 @@ describe("QUERYABLE", async () => {
             db.orders.local.count().should.be.equal(1);
         });
         it("should work with where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const result = await db.orders.where(o => o.OrderDate < new Date()).first(o => o.TotalAmount > 20000);
 
@@ -1293,7 +1295,7 @@ describe("QUERYABLE", async () => {
             db.orders.local.count().should.equal(1);
         });
         it("should work with select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const first = db.orders.select(o => ({
                 order: o,
@@ -1317,7 +1319,7 @@ describe("QUERYABLE", async () => {
     });
     describe("DISTINCT", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const distinct = db.orders.select(o => o.TotalAmount).distinct();
             const results = await distinct.toArray();
@@ -1336,7 +1338,7 @@ describe("QUERYABLE", async () => {
             results.should.has.lengthOf(results.distinct().count());
         });
         it("should work with select", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const distinct = db.orders.select(o => ({
                 order: o,
@@ -1364,7 +1366,7 @@ describe("QUERYABLE", async () => {
     });
     describe("GROUP BY", async () => {
         it("groupBy.(o => o.column).select(o => o.key)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate).select(o => o.key);
             const results = await groupBy.toArray();
@@ -1381,7 +1383,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("date");
         });
         it("groupBy.(o => o.column).select(o => o.key.method())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate).select(o => o.key.getDate());
             const results = await groupBy.toArray();
@@ -1398,7 +1400,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy.(o => o.column).select(o => o.count())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate).select(o => o.count());
             const results = await groupBy.toArray();
@@ -1415,7 +1417,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy.(o => o.column + o.column).select(o => o.key)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate.getDate() + o.OrderDate.getFullYear()).select(o => o.key);
             const results = await groupBy.toArray();
@@ -1432,7 +1434,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy.(o => o.column + o.column).select(o => {column: o.key, count: o.count(), sum: o.sum()})", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate.getDate() + o.OrderDate.getFullYear()).select(o => ({
                 dateYear: o.key,
@@ -1456,7 +1458,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy computed column", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => o.GrossSales);
             const results = await groupBy.toArray();
@@ -1477,7 +1479,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy computed column complex 1", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.take(100).where(o => o.GrossSales > 10000).select(o => o.Order).groupBy(o => o.OrderDate.getFullYear()).select(o => ({
                 dateYear: o.key,
@@ -1501,7 +1503,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => o.column.method()).select(o => o.toArray())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate.getDate()).select(o => o.toArray());
             const results = await groupBy.toArray();
@@ -1522,7 +1524,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => o.column.method()).select(o => ({items: o}))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.groupBy(o => o.OrderDate.getDate()).select(o => ({
                 details: o.toArray()
@@ -1544,7 +1546,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.key)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.where(o => o.quantity > 1).groupBy(o => o.Order).select(o => o.key);
             const results = await groupBy.toArray();
@@ -1562,7 +1564,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.key.column.method())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => o.Order).select(o => o.key.OrderDate.getDate());
             const results = await groupBy.toArray();
@@ -1579,7 +1581,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.count())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => o.Order).select(o => o.count());
             const results = await groupBy.toArray();
@@ -1596,7 +1598,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy.(o => o.toOneRelation.toOneRelation).select(o => o.key.column)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => o.key.OrderDate);
             const results = await groupBy.toArray();
@@ -1613,7 +1615,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("date");
         });
         it("groupBy.(o => o.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => o.Order).select(o => ({
                 order: o.key,
@@ -1637,7 +1639,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 obj: {
@@ -1662,7 +1664,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 obj: {
@@ -1685,7 +1687,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj.prop)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 obj: {
@@ -1708,7 +1710,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => o.toOneRelation.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => o.OrderDetail.Order).select(o => ({
                 order: o.key,
@@ -1732,7 +1734,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => o.toOneRelation).select(o => o.key.toOneRelation)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => o.OrderDetail).select(o => o.key.Order);
             const results = await groupBy.toArray();
@@ -1749,7 +1751,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 productid: o.ProductId,
@@ -1771,7 +1773,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.count())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 productid: o.ProductId,
@@ -1791,7 +1793,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key.col)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 productid: o.ProductId,
@@ -1811,7 +1813,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("number");
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => ({ col: { col: col }}))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 productid: o.ProductId,
@@ -1842,7 +1844,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column })).select(o => ({ col: { col: col }}))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 date: o.Order.OrderDate.getDate(),
@@ -1873,7 +1875,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => ({col: o.toOneRelation })).select(o => o.key).select(o => o.col.name)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => ({
                 od: o.OrderDetail
@@ -1892,7 +1894,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.a("string");
         });
         it("groupBy.(o => o.column.method())", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orders.where(o => o.TotalAmount > 20000).groupBy(o => o.OrderDate.getDate())
                 .where(o => o.count() > 3);
@@ -1913,7 +1915,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => o.toOneRelation.toOneRelation)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => o.OrderDetail.Order);
             const results = await groupBy.toArray();
@@ -1933,7 +1935,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column }))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 date: o.Order.OrderDate.getDate(),
@@ -1956,7 +1958,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} }))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy(o => ({
                 obj: {
@@ -1985,7 +1987,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("groupBy.(o => ({col: o.toOneRelation }))", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy(o => ({
                 od: o.OrderDetail
@@ -2009,7 +2011,7 @@ describe("QUERYABLE", async () => {
     });
     describe("TOMAP", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const results = await db.orders.toMap(o => o.OrderId, o => o.OrderDate);
 
             chai.should();
@@ -2026,7 +2028,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support self select and keep defined includes", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const results = await db.orders.include(o => o.OrderDetails).toMap(o => o.OrderId, o => o);
 
             chai.should();
@@ -2048,7 +2050,7 @@ describe("QUERYABLE", async () => {
     });
     describe("JOIN", async () => {
         it("should support inner join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.innerJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
@@ -2073,7 +2075,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support left join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.leftJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
@@ -2103,7 +2105,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support right join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.rightJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
@@ -2128,7 +2130,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support full join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.fullJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
@@ -2153,7 +2155,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support group join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.groupJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.sum(d => d.quantity),
                 names: o2.select(d => d.name).toArray(),
@@ -2180,7 +2182,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support cross join", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const join = db.orders.crossJoin(db.orderDetails, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
@@ -2207,7 +2209,7 @@ describe("QUERYABLE", async () => {
     });
     describe("COMBINATORIAL", async () => {
         it("should union 2 records", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(5);
             const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
             const join = greatest.union(worst).where(o => o.OrderDetails.count() > 1);
@@ -2226,7 +2228,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should union all 2 records", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
             const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
             const join = greatest.union(worst, true);
@@ -2245,7 +2247,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should intersect 2 records", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
             const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(10);
             const join = greatest.intersect(worst).take(5);
@@ -2264,7 +2266,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should except records", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
             const greatest = db.orders.orderBy([o => o.TotalAmount, "DESC"]).take(10);
             const worst = db.orders.orderBy([o => o.TotalAmount, "ASC"]).take(5);
             const join = greatest.except(worst).orderBy([o => o.TotalAmount, "DESC"]);
@@ -2285,7 +2287,7 @@ describe("QUERYABLE", async () => {
     });
     describe("PIVOT", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const pivot = db.orders.pivot(
                 {
@@ -2312,7 +2314,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("support where", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const pivot = db.orders.pivot(
                 {
@@ -2340,7 +2342,7 @@ describe("QUERYABLE", async () => {
     });
     describe("PARAMETERS", async () => {
         it("should work", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const paramObj = { now: (new Date()).addYears(-1) };
             const parameter = db.orders.parameter({ paramObj }).where(o => o.OrderDate < paramObj.now);
@@ -2359,7 +2361,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should be computed in application", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const paramObj = { now: new Date() };
             const parameter = db.orders.parameter({ paramObj }).where(o => o.OrderDate.getDate() !== paramObj.now.getDate());
@@ -2378,7 +2380,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should be computed in query", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const parameter = db.orders.where(o => o.OrderDate < new Date());
             const results = await parameter.toArray();
@@ -2396,7 +2398,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should pass function to query", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const fn = (o: Order) => o.TotalAmount / o.OrderDetails.count();
             const parameter = await db.orders.parameter({ fn }).select(o => fn(o));
@@ -2414,7 +2416,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("number");
         });
         it("should pass function with parameter", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const multi = 10;
             const fn = (o: Order) => o.TotalAmount * multi / o.OrderDetails.count();
@@ -2439,7 +2441,7 @@ describe("QUERYABLE", async () => {
                 const where = await db.orders.parameter({ fn })
                     .select(o => fn(o.TotalAmount));
                 db.connection = await db.getConnection();
-                const spy = sinon.spy(db.connection, "executeQuery");
+                const spy = sinon.spy(db.connection, "query");
 
                 await where.toArray();
                 if (i % 2 === 0) {
@@ -2461,7 +2463,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should support null value parameter", async () => {
-            let spy = sinon.spy(db.connection, "executeQuery");
+            let spy = sinon.spy(db.connection, "query");
 
             let dd = new Date();
             let avg = db.orders.parameter({ dd }).where(o => o.OrderDate === dd);
@@ -2481,7 +2483,7 @@ describe("QUERYABLE", async () => {
 
             sinon.restore();
             db.connection = await db.getConnection();
-            spy = sinon.spy(db.connection, "executeQuery");
+            spy = sinon.spy(db.connection, "query");
 
             dd = null;
             avg = db.orders.parameter({ dd }).where(o => o.OrderDate === dd);
@@ -2503,7 +2505,7 @@ describe("QUERYABLE", async () => {
     describe("SUBQUERY", () => {
         // possible used CTE
         it("should work in where (CONTAINS)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.where(o => o.quantity > 5).asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => ad.select(od => od.OrderId).contains(o.OrderId));
@@ -2521,7 +2523,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in where (Aggregate comparation)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.where(o => o.quantity > 5).asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => ad.where(od => od.OrderId === o.OrderId).max(o => o.quantity) > 10);
@@ -2539,7 +2541,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in where (ANY)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.where(o => o.quantity > 5).asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => ad.any(od => od.OrderId === o.OrderId));
@@ -2557,7 +2559,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should determine whether where filter goes to join expression or not", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => ad.where(od => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
@@ -2575,7 +2577,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in select (Relation/Array)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => o.TotalAmount <= 20000).select(o => ({
@@ -2598,7 +2600,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Aggregate)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
             const subQuery = db.orders.parameter({ ad }).where(o => o.TotalAmount <= 20000).select(o => ({
@@ -2619,7 +2621,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Count SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
             const ads = ad.asSubquery();
@@ -2643,7 +2645,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Sum SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.OrderDate, "DESC"]);
             const ads = ad.asSubquery();
@@ -2669,7 +2671,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Any SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
             const ads = ad.asSubquery();
@@ -2693,7 +2695,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (All SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "DESC"]);
             const ads = ad.asSubquery();
@@ -2719,7 +2721,7 @@ describe("QUERYABLE", async () => {
     });
     describe("ARRAY PARAMETER", () => {
         it("should work in where (CONTAINS)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "648F644D-EB4A-4200-91AD-13694EEF1CAB", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E58", "name": "Product 1", "quantity": 1, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2744,7 +2746,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in where (Aggregate comparation)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "648F644D-EB4A-4200-91AD-13694EEF1CAB", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E58", "name": "Product 1", "quantity": 1, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2764,7 +2766,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in where (ANY)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "648F644D-EB4A-4200-91AD-13694EEF1CAB", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E58", "name": "Product 1", "quantity": 1, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2784,7 +2786,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should determine whether where filter goes to join expression or not", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "648F644D-EB4A-4200-91AD-13694EEF1CAB", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E58", "name": "Product 1", "quantity": 1, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2804,7 +2806,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order);
         });
         it("should work in select (Relation/Array)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E59", "name": "Product 2", "quantity": 2, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2829,7 +2831,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Aggregate)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad: OrderDetail[] = [
                 new OrderDetail({ "OrderDetailId": "E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6", "OrderId": "C7438661-DD97-4099-A370-053A72F4C706", "ProductId": "BE019609-99E0-4EF5-85BB-AD90DC302E59", "name": "Product 2", "quantity": 2, "CreatedDate": "2017-02-22T23:03:39.737Z", "isDeleted": false })
@@ -2851,7 +2853,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("orderDetails").that.is.an("number");
         });
         it("should work in select (Count SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
             const ads = [
@@ -2878,7 +2880,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Sum SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.OrderDate, "DESC"]);
             const ads = [
@@ -2907,7 +2909,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (Any SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "ASC"]);
             const ads = [
@@ -2934,7 +2936,7 @@ describe("QUERYABLE", async () => {
             }
         });
         it("should work in select (All SubQuery)", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const ad = db.orders.orderBy([o => o.TotalAmount, "DESC"]);
             const ads = [
@@ -2963,7 +2965,7 @@ describe("QUERYABLE", async () => {
     });
     describe("QUERY OPTION", () => {
         it("should show soft deleted", async () => {
-            const spy = sinon.spy(db.connection, "executeQuery");
+            const spy = sinon.spy(db.connection, "query");
 
             const softDeleteQuery = db.orderDetails.option({ includeSoftDeleted: true });
             let results = await softDeleteQuery.toArray();
@@ -2989,49 +2991,49 @@ describe("QUERYABLE", async () => {
     // describe("TERNARY OPERATOR", () => {
     //     // TODO
     //     it("test 1", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orders.select(o => ({
     //             item: o.TotalAmount > 20000 ? 20000 : o.TotalAmount
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 2", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orderDetails.select(o => ({
     //             item: o.quantity === 1 ? o.Order : null
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 3", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orderDetails.select(o => ({
     //             item: o.quantity === 1 ? o.Order : { OrderId: o.OrderId }
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 4", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orders.select(o => ({
     //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails : null
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 5", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orders.select(o => ({
     //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails.first() : o.OrderDate
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 6", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orderDetails.select(o => ({
     //             item: o.quantity === 1 ? o.OrderDetailProperties : o.Product
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 7", async () => {
-    //         const spy = sinon.spy(db.connection, "executeQuery");
+    //         const spy = sinon.spy(db.connection, "query");
     //         const ternary = db.orders.select(o => ({
     //             item: o.OrderDetails
     //         })).select(o => o.item.count());

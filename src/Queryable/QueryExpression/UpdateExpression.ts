@@ -1,4 +1,4 @@
-import { OrderDirection, JoinType, IObjectType } from "../../Common/Type";
+import { OrderDirection, JoinType, IObjectType, FlatObjectLike } from "../../Common/Type";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -47,9 +47,9 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> });
-    constructor(select: SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> });
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => { [key in keyof T]: T[key] }) | { [key in keyof T]?: IExpression<T[key]> }) {
+    constructor(entity: IEntityExpression<T>, setter: (() => FlatObjectLike<T>) | { [key in keyof T]?: IExpression<T[key]> });
+    constructor(select: SelectExpression<T>, setter: (() => FlatObjectLike<T>) | { [key in keyof T]?: IExpression<T[key]> });
+    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => FlatObjectLike<T>) | { [key in keyof T]?: IExpression<T[key]> }) {
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
         } else {
@@ -59,7 +59,7 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         this.select.includes = [];
         if (setter instanceof Function) {
             const setterFn = ExpressionBuilder.parse(setter);
-            setter = (setterFn.body as ObjectValueExpression<T>).object;
+            setter = (setterFn.body as ObjectValueExpression<FlatObjectLike<T>>).object;
         }
         this.setter = setter;
     }

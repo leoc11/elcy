@@ -54,7 +54,7 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             if (param.oldValue === this.entity) {
                 const parentChangeHandler: IEventHandler<TP, IChangeEventParam> = this.parentEntry.entity[propertyChangeHandlerMetaKey];
                 if (parentChangeHandler) {
-                    parentChangeHandler.remove(this.onParentPropertyChange);
+                    parentChangeHandler.delete(this.onParentPropertyChange);
                 }
                 this.state = EntityState.Detached;
             }

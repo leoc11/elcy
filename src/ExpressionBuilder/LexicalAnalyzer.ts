@@ -1,4 +1,5 @@
 import { operators } from "./IOperator";
+import "../Extensions/EnumerableExtension";
 
 interface ILexicalPointer {
     index: number;

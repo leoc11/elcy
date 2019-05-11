@@ -1,13 +1,11 @@
 import { SqliteDbContext } from "../../src/Provider/Sqlite/SqliteDbContext";
 import { Order, OrderDetail, Product, OrderDetailProperty, Collection, CollectionProductData, AutoParent, AutoDetail } from "./Model";
 import { DbSet } from "../../src/Data/DbSet";
-import { SqliteDriver } from "../../src/Provider/Sqlite/SqliteDriver";
+import { MockDriver } from "../../src/Mock/MockDriver";
 
 export class SqliteDb extends SqliteDbContext {
     constructor() {
-        super(() => new SqliteDriver({
-            database: "./build/test.db"
-        }));
+        super(() => new MockDriver());
     }
     public entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
         Collection, AutoParent, AutoDetail

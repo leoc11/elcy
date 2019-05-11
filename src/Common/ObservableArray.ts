@@ -1,12 +1,12 @@
 export type ArrayChangeType = "add" | "del";
 export class ObservableArray<T> extends Array<T> {
     private _observers: Array<(eventType: ArrayChangeType, items: T[]) => void> = [];
-    public constructor(items: T[]) {
+    public constructor(...items: T[]) {
         super(...items);
-        Object.setPrototypeOf(this, ObservableArray.prototype);
+        // Object.setPrototypeOf(this, ObservableArray.prototype);
     }
     static from<T>(items: T[]): ObservableArray<T> {
-        return new ObservableArray(items);
+        return new ObservableArray(...items);
     }
     static observe<T>(items: T[]): ObservableArray<T> {
         Object.setPrototypeOf(items, ObservableArray.prototype);

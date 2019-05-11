@@ -57,7 +57,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         let commitQueries: IQuery[] = [];
         let rollbackQueries: IQuery[] = [];
 
-        const defSchemaResult = (await this.connection.executeQuery({
+        const defSchemaResult = (await this.connection.query({
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
         })).first().rows;
@@ -180,7 +180,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             type: QueryType.DQL
         });
 
-        const schemaDatas = await this.connection.executeQuery(batchedQuery);
+        const schemaDatas = await this.connection.query(batchedQuery);
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[3];

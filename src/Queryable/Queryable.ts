@@ -1,4 +1,4 @@
-import { GenericType, DeleteMode, QueryType, ValueType, IObjectType } from "../Common/Type";
+import { GenericType, DeleteMode, QueryType, ValueType, IObjectType, ObjectLike } from "../Common/Type";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { InsertIntoExpression } from "./QueryExpression/InsertIntoExpression";
 import { DbContext } from "../Data/DBContext";
@@ -146,7 +146,7 @@ export abstract class Queryable<T = any> {
         const query = this.deferredAny(predicate);
         return await query.execute();
     }
-    public async find(id: ValueType | { [key in keyof T]: T[key] }) {
+    public async find(id: ValueType | ObjectLike<T>) {
         const query = this.deferredFind(id);
         return await query.execute();
     }
@@ -594,7 +594,7 @@ export abstract class Queryable<T = any> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredFind(id: ValueType | { [key in keyof T]: T[key] }) {
+    public deferredFind(id: ValueType | ObjectLike<T>) {
         const isValueType = isValue(id);
         const dbSet = this.dbContext.set(this.type as any);
         if (!dbSet) {
