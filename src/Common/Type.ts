@@ -5,8 +5,8 @@ export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type Pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }> = { [key in keyof TD]: ReturnType<TD[key]> } & { [key in keyof TM]: ReturnType<TM[key]> };
 export type GenericType<T = any> = IObjectType<T> | ((...value: any[]) => T);
-export type ObjectLike<T> = { [key in keyof T]: T[key] };
-export type FlatObjectLike<T> = { [key in keyof T]: T[key] & ValueType };
+export type ObjectLike<T> = { [key in keyof T]?: T[key] };
+export type FlatObjectLike<T> = { [key in keyof T]?: T[key] & ValueType };
 export type PropertySelector<TE> = keyof TE | ((source: TE) => ValueType);
 export type ValueType = number | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView;
 export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
