@@ -4,9 +4,9 @@ node_js:
 
 cache:
   directories:
-    - node_modules
+    - $HOME/.npm
 
-before_install:
+install:
   - npm install typescript@3.3.4000
   - npm install nyc@13.3.0
 
