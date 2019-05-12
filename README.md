@@ -1,6 +1,7 @@
 # Elcy
 [![codecov](https://codecov.io/gh/leoc11/elcy/branch/master/graph/badge.svg)](https://codecov.io/gh/leoc11/elcy)
 [![Build Status](https://travis-ci.org/leoc11/elcy.svg?branch=master)](https://travis-ci.org/leoc11/elcy)
+[![CLA assistant](https://cla-assistant.io/readme/badge/leoc11/elcy)](https://cla-assistant.io/leoc11/elcy)
 
 Elcy is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 
 for typescript and javascript. Elcy is highly influenced by [Entity Framework](https://www.asp.net/entity-framework) and [NHibernate](http://nhibernate.info/).
