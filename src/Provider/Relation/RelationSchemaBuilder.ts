@@ -17,7 +17,7 @@ import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaDat
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
-import { DataSerializationColumnMetaData } from "../../MetaData/DataSerializationColumnMetaData";
+import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
 import { ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
@@ -743,8 +743,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         else if (column instanceof DateTimeColumnMetaData) {
             columnType = this.columnTypeMap.get("defaultDateTime");
         }
-        else if (column instanceof DataSerializationColumnMetaData) {
-            columnType = this.columnTypeMap.get("defaultDataSerialization");
+        else if (column instanceof SerializeColumnMetaData) {
+            columnType = this.columnTypeMap.get("defaultSerialize");
         }
         else if (column instanceof BinaryColumnMetaData) {
             columnType = this.columnTypeMap.get("defaultBinary");
@@ -835,8 +835,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             return this.queryBuilder.toString(ExpressionBuilder.parse(() => Uuid.new()).body);
         }
         if (columnMeta instanceof StringColumnMetaData
-            || columnMeta instanceof DataSerializationColumnMetaData
-            || groupType === "String" || groupType === "DataSerialization") {
+            || columnMeta instanceof SerializeColumnMetaData
+            || groupType === "String" || groupType === "Serialize") {
             return this.queryBuilder.valueString("");
         }
         if (columnMeta instanceof DateColumnMetaData
@@ -872,50 +872,4 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             .union(schema.indices.selectMany(o => this.addIndex(o)))
             .toArray();
     }
-
-
-    // protected rebuildEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
-    //     const columnMetas = schema.columns.select(o => ({
-    //         columnSchema: o,
-    //         oldColumnSchema: oldSchema.columns.first(c => c.columnName === o.columnName)
-    //     }));
-
-    //     let result: IQuery[] = [];
-
-    //     const cloneSchema = Object.assign({}, schema);
-    //     cloneSchema.name = "TEMP_" + this.queryBuilder.newAlias();
-
-    //     result = result.concat(this.createEntitySchema(cloneSchema));
-
-    //     // turn on identity insert coz rebuild schema most likely called because identity insert issue.
-    //     result.push({
-    //         query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} ON`,
-    //         type: QueryType.DCL
-    //     });
-
-    //     // copy value
-    //     const newColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.columnSchema.columnName)).toArray().join(",");
-    //     const copyColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
-    //     result.push({
-    //         query: `INSERT INTO ${this.entityName(cloneSchema)} (${newColumns}) SELECT ${copyColumns} FROM ${this.entityName(oldSchema)} WITH (HOLDLOCK TABLOCKX)`,
-    //         type: QueryType.DML
-    //     });
-
-    //     // turn of identity insert
-    //     result.push({
-    //         query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} OFF`,
-    //         type: QueryType.DCL
-    //     });
-
-    //     // remove all foreignkey reference to current table
-    //     result = result.concat(this.dropAllMasterRelations(oldSchema));
-
-    //     // rename temp table
-    //     result = result.concat(this.renameTable(cloneSchema, this.entityName(schema)));
-
-    //     // re-add all foreignkey reference to table
-    //     result = result.concat(this.addAllMasterRelations(schema));
-
-    //     return result;
-    // }
 }

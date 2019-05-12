@@ -11,6 +11,7 @@ import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { SqliteColumnType } from "./SqliteColumnType";
 
 export class SqliteQueryBuilder extends RelationQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -18,12 +19,12 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         maxParameters: 999,
         maxQueryLength: 1000000
     };
-    public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType>([
+    public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<SqliteColumnType>>([
         [TimeSpan, () => ({ columnType: "text" })],
         [Date, () => ({ columnType: "text" })],
         [String, () => ({ columnType: "text" })],
         [Number, () => ({ columnType: "numeric" })],
-        [Boolean, () => ({ columnType: "numeric" })],
+        [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
     public translator = sqliteQueryTranslator;

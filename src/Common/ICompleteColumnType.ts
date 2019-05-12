@@ -1,8 +1,8 @@
-import { ColumnType, ColumnTypeGroup } from "./ColumnType";
+import { ColumnTypeGroup } from "./ColumnType";
 import { IColumnTypeDefaults } from "./IColumnTypeDefaults";
 
-export interface ICompleteColumnType {
-    columnType: ColumnType;
+export interface ICompleteColumnType<T = string> {
+    columnType: T;
     group?: ColumnTypeGroup;
     option?: IColumnTypeDefaults;
 }

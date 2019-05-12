@@ -1,11 +1,10 @@
-import { DataSerializationColumnType } from "../Common/ColumnType";
+import { SerializeColumnType } from "../Common/ColumnType";
 import { GenericType } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-// TODO: parser for xml
-export class DataSerializationColumnMetaData<TE, T> extends ColumnMetaData<TE, T> {
-    public columnType: DataSerializationColumnType = "json";
+export class SerializeColumnMetaData<TE, T> extends ColumnMetaData<TE, T> {
+    public columnType: SerializeColumnType = "json";
     public type: GenericType<T>;
     constructor(type: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
@@ -16,7 +15,7 @@ export class DataSerializationColumnMetaData<TE, T> extends ColumnMetaData<TE, T
     public deserialize(data: T): string {
         return JSON.stringify(data);
     }
-    public applyOption(columnMeta: DataSerializationColumnMetaData<TE, T>) {
+    public applyOption(columnMeta: SerializeColumnMetaData<TE, T>) {
         super.applyOption(columnMeta);
         if (typeof columnMeta.type !== "undefined") this.type = columnMeta.type;
     }

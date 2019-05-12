@@ -12,9 +12,10 @@ import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { SqliteColumnType } from "./SqliteColumnType";
 
 export class SqliteSchemaBuilder extends RelationSchemaBuilder {
-    public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType>([
+    public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<SqliteColumnType>>([
         ["integer", { columnType: "integer", group: "Integer" }],
         ["numeric", { columnType: "numeric", group: "Decimal" }],
         ["text", { columnType: "text", group: "String" }],
@@ -22,7 +23,7 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
         ["real", { columnType: "real", group: "Real" }],
         ["defaultBoolean", { columnType: "numeric" }],
         ["defaultBinary", { columnType: "blob" }],
-        ["defaultDataSerialization", { columnType: "text" }],
+        ["defaultSerialize", { columnType: "text" }],
         ["defaultDate", { columnType: "text" }],
         ["defaultDateTime", { columnType: "text" }],
         ["defaultTime", { columnType: "text" }],

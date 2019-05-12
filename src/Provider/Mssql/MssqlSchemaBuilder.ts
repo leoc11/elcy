@@ -10,9 +10,10 @@ import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { isNotNull } from "../../Helper/Util";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
+import { MssqlColumnType } from "./MssqlColumnType";
 
 export class MssqlSchemaBuilder extends RelationSchemaBuilder {
-    public columnTypeMap: Map<ColumnTypeMapKey, ICompleteColumnType> = new Map<ColumnTypeMapKey, ICompleteColumnType>([
+    public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<MssqlColumnType>>([
         ["bigint", { columnType: "bigint", group: "Integer" }],
         ["binary", { columnType: "binary", group: "Binary", option: { size: 50 } }],
         ["bit", { columnType: "bit", group: "Boolean" }],
@@ -46,10 +47,10 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         ["uniqueidentifier", { columnType: "uniqueidentifier", group: "Identifier" }],
         ["varchar", { columnType: "varchar", group: "String", option: { length: 50 } }],
         ["varbinary", { columnType: "varbinary", group: "Binary", option: { size: 100 } }],
-        ["xml", { columnType: "xml", group: "DataSerialization" }],
+        ["xml", { columnType: "xml", group: "Serialize" }],
         ["defaultBoolean", { columnType: "bit" }],
         ["defaultBinary", { columnType: "binary", option: { size: 50 } }],
-        ["defaultDataSerialization", { columnType: "xml" }],
+        ["defaultSerialize", { columnType: "xml" }],
         ["defaultDate", { columnType: "date" }],
         ["defaultDateTime", { columnType: "datetime" }],
         ["defaultTime", { columnType: "time", option: { precision: 7 } }],

@@ -124,7 +124,7 @@ export type IdentifierColumnType = "uuid" // postgres
 /**
  * column type with string data format
  */
-export type DataSerializationColumnType = "xml" // mssql, postgres
+export type SerializeColumnType = "xml" // mssql, postgres
     | "json" // mysql, postgres
     | "jsonb"; // postgres
 
@@ -165,13 +165,14 @@ export type ColumnType = IntColumnType
     | BooleanColumnType
     | GeometricColumnType
     | IdentifierColumnType
-    | DataSerializationColumnType
+    | SerializeColumnType
     | EnumColumnType
     | OtherColumnType;
 
-export type ColumnTypeMapKey = ColumnType | "defaultString" | "defaultInteger"
-    | "defaultDecimal" | "defaultReal" | "defaultBoolean" | "defaultBinary" | "defaultDataSerialization"
-    | "defaultDate" | "defaultDateTime" | "defaultTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
+export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" 
+    | "Serialize" | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";
+export type DefaultColumnTypeMapKey = "defaultString" | "defaultBoolean" | "defaultInteger"
+| "defaultDecimal" | "defaultReal" | "defaultBinary" | "defaultSerialize"
+| "defaultDate" | "defaultTime" | "defaultDateTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
-export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" | "DataSerialization"
-    | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";
+export type ColumnTypeMapKey = ColumnType | DefaultColumnTypeMapKey;

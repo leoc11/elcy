@@ -19,13 +19,14 @@ import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { Uuid } from "../../Data/Uuid";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
+import { MssqlColumnType } from "./MssqlColumnType";
 
 export class MssqlQueryBuilder extends RelationQueryBuilder {
     public queryLimit: IQueryLimit = {
         maxParameters: 2100,
         maxQueryLength: 67108864
     };
-    public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType>([
+    public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<MssqlColumnType>>([
         [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
         [Date, () => ({ columnType: "datetime", group: "DateTime" })],
