@@ -1,8 +1,8 @@
 import "reflect-metadata";
-import { Column } from "./Column";
 import { GenericType } from "../../Common/Type";
-import { ISerializeColumnOption } from "../Option/ISerializateColumnOption";
 import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
+import { ISerializeColumnOption } from "../Option/ISerializateColumnOption";
+import { Column } from "./Column";
 
 export function SerializeColumn<T>(option?: ISerializeColumnOption<T>): PropertyDecorator;
 export function SerializeColumn<T>(optionOrType?: GenericType<T> | ISerializeColumnOption<T>, name?: string, defaultValue?: () => T): PropertyDecorator {
@@ -12,12 +12,15 @@ export function SerializeColumn<T>(optionOrType?: GenericType<T> | ISerializeCol
     }
     else {
         option = {};
-        if (typeof optionOrType !== "undefined")
+        if (typeof optionOrType !== "undefined") {
             option.type = optionOrType as GenericType<T>;
-        if (typeof name !== "undefined")
+        }
+        if (typeof name !== "undefined") {
             option.columnName = name;
-        if (typeof defaultValue !== "undefined")
+        }
+        if (typeof defaultValue !== "undefined") {
             option.default = defaultValue;
+        }
     }
     return Column<any, T>(SerializeColumnMetaData, option);
 }

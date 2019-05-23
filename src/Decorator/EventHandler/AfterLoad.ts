@@ -15,10 +15,12 @@ export function AfterLoad<T = any>(handler?: (this: T) => void): MethodDecorator
             entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         }
 
-        if (!handler && descriptor && typeof descriptor.value === "function")
+        if (!handler && descriptor && typeof descriptor.value === "function") {
             handler = descriptor.value;
+        }
 
-        if (handler)
+        if (handler) {
             entityMetaData.afterLoad = handler;
+        }
     };
 }

@@ -1,5 +1,5 @@
-import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
 import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
+import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
 
 export interface IDBEventListener<T = any> {
     beforeSave?: (entity: T, param: ISaveEventParam) => boolean;

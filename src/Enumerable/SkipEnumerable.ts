@@ -7,7 +7,7 @@ export class SkipEnumerable<T = any> extends Enumerable<T> {
     protected *generator() {
         let index = 0;
         for (const value of this.parent) {
-            if (index++ < this.skipCount) continue;
+            if (index++ < this.skipCount) { continue; }
             yield value;
         }
     }

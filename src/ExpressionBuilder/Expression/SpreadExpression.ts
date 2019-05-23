@@ -1,15 +1,15 @@
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 import { ParameterExpression } from "./ParameterExpression";
-export class SpreadExpression<T = any> implements IUnaryOperatorExpression<Array<T>> {
+export class SpreadExpression<T = any> implements IUnaryOperatorExpression<T[]> {
     public type = Array;
-    constructor(public readonly operand: ParameterExpression<Array<T>>) { }
+    constructor(public readonly operand: ParameterExpression<T[]>) { }
     public toString(): string {
         return "..." + this.operand.toString();
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const operand = resolveClone(this.operand, replaceMap);
         const clone = new SpreadExpression(operand);
         replaceMap.set(this, clone);

@@ -1,20 +1,19 @@
-import { DbSet } from "./DbSet";
-import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
-import { EntityState } from "./EntityState";
-import { IEntityEntryOption } from "./Interface/IEntityEntry";
-import { RelationEntry } from "./RelationEntry";
-import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey, relationChangeDispatherMetaKey, relationChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
-import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey, relationChangeHandlerMetaKey, relationChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
+import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { DbSet } from "./DbSet";
+import { EntityState } from "./EntityState";
+import { IEntityEntryOption } from "./Interface/IEntityEntry";
+import { RelationEntry } from "./RelationEntry";
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
-    private _state: EntityState;
     public get state() {
         return this._state;
     }
@@ -24,20 +23,23 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             switch (this.state) {
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
-                    if (typedAddEntries)
+                    if (typedAddEntries) {
                         typedAddEntries.delete(this);
+                    }
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
-                    if (typedEntries)
+                    if (typedEntries) {
                         typedEntries.delete(this);
+                    }
                     break;
                 }
                 case EntityState.Modified: {
                     const typedEntries = dbContext.entityEntries.update.get(this.metaData);
-                    if (typedEntries)
+                    if (typedEntries) {
                         typedEntries.delete(this);
+                    }
                     break;
                 }
             }
@@ -73,24 +75,20 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             this._state = value;
         }
     }
-
-    //#region change state
-
-    public delete() {
-        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
+    public get metaData(): IEntityMetaData<T> {
+        return this.dbSet.metaData;
     }
-
-    public add() {
-        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+    public get isCompletelyLoaded() {
+        return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
     }
 
     //#endregion
 
     public enableTrackChanges = true;
-    public get metaData(): IEntityMetaData<T> {
-        return this.dbSet.metaData;
-    }
     public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
+    // TODO: private
+    public originalValues: Map<keyof T, any> = new Map();
+    private _state: EntityState;
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
 
@@ -112,46 +110,26 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         }
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }
-    public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all(o => this.entity[o.propertyName] !== undefined);
+
+    //#region change state
+
+    public delete() {
+        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
     }
-    // TODO: private
-    public originalValues: Map<keyof T, any> = new Map();
+
+    public add() {
+        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+    }
     public isPropertyModified(prop: keyof T) {
         return this.originalValues.has(prop);
     }
     public getOriginalValue(prop: keyof T) {
         return this.originalValues.get(prop);
     }
-    protected onRelationChanged(entity: T, param: IRelationChangeEventParam) {
-        for (const item of param.entities) {
-            const entry = this.dbSet.dbContext.entry(item);
-            const relationEntry = this.getRelation(param.relation.fullName, entry);
-
-            if (this.enableTrackChanges) {
-                switch (param.type) {
-                    case "add": {
-                        if (relationEntry.state === EntityState.Detached) {
-                            relationEntry.add();
-                        }
-                        break;
-                    }
-                    case "del":
-                        if (relationEntry.state !== EntityState.Detached) {
-                            relationEntry.delete();
-                        }
-                        break;
-                }
-            }
-            else {
-                relationEntry.state = EntityState.Unchanged;
-            }
-        }
-    }
 
     //#region Relations
     public getRelation(relationName: string, relatedEntry: EntityEntry): RelationEntry {
-        const relationMeta = this.metaData.relations.first(o => o.fullName === relationName);
+        const relationMeta = this.metaData.relations.first((o) => o.fullName === relationName);
         let relGroup = this.relationMap[relationName];
         if (!relGroup) {
             relGroup = new Map();
@@ -173,7 +151,7 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
 
     public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
         const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry);
-        let relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
+        const relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
         if (relGroup) {
             relGroup.delete(key);
         }
@@ -187,20 +165,23 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     public resetChanges(...properties: Array<keyof T>) {
         if (properties) {
             for (const prop of properties) {
-                if (this.originalValues.has(prop))
+                if (this.originalValues.has(prop)) {
                     this.entity[prop] = this.originalValues.get(prop);
+                }
             }
         }
         else {
             for (const [prop, value] of this.originalValues) {
-                if (!properties || properties.contains(prop))
+                if (!properties || properties.contains(prop)) {
                     this.entity[prop] = value;
+                }
             }
         }
     }
     public acceptChanges(...properties: Array<keyof T>) {
-        if (properties && this.state !== EntityState.Modified)
+        if (properties && this.state !== EntityState.Modified) {
             return;
+        }
 
         switch (this.state) {
             case EntityState.Modified: {
@@ -208,8 +189,9 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 if (properties) {
                     for (const prop of properties) {
                         const isDeleted = this.originalValues.delete(prop);
-                        if (isDeleted)
+                        if (isDeleted) {
                             acceptedProperties.push(prop);
+                        }
                     }
                 }
                 else {
@@ -217,19 +199,19 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                     this.originalValues.clear();
                 }
 
-                for (const prop of acceptedProperties.intersect(this.metaData.primaryKeys.select(o => o.propertyName))) {
+                for (const prop of acceptedProperties.intersect(this.metaData.primaryKeys.select((o) => o.propertyName))) {
                     // reflect update option
                     const relations = this.metaData.relations
-                        .where(o => o.isMaster && o.relationColumns.any(o => o.propertyName === prop)
-                            && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT")
-                            && this.relationMap[o.fullName] !== undefined);
-                    for (const o of relations) {
-                        const col = o.relationColumns.first(o => o.propertyName === prop);
-                        const rCol = o.relationMaps.get(col);
-                        const relationData = this.relationMap[o.fullName];
+                        .where((rel) => rel.isMaster && rel.relationColumns.any((o) => o.propertyName === prop)
+                            && (rel.updateOption === "CASCADE" || rel.updateOption === "SET NULL" || rel.updateOption === "SET DEFAULT")
+                            && this.relationMap[rel.fullName] !== undefined);
+                    for (const rel of relations) {
+                        const col = rel.relationColumns.first((o) => o.propertyName === prop);
+                        const rCol = rel.relationMaps.get(col);
+                        const relationData = this.relationMap[rel.fullName];
                         if (relationData) {
                             for (const relEntry of relationData.values()) {
-                                switch (o.updateOption) {
+                                switch (rel.updateOption) {
                                     case "CASCADE": {
                                         relEntry.slaveEntry[rCol.propertyName] = this.entity[prop as keyof T];
                                         break;
@@ -259,20 +241,22 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
                 for (const relMeta of this.dbSet.metaData.relations) {
                     let relEntities: any[] = [];
                     const relProp = this.entity[relMeta.propertyName];
-                    if (Array.isArray(relProp))
+                    if (Array.isArray(relProp)) {
                         relEntities = relEntities.concat(this.entity[relMeta.propertyName]);
-                    else if (relProp)
+                    }
+                    else if (relProp) {
                         relEntities = [relProp];
+ }
                     if (relMeta.reverseRelation.relationType === "one") {
-                        relEntities.forEach(o => o[relMeta.reverseRelation.propertyName] = null);
+                        relEntities.forEach((o) => o[relMeta.reverseRelation.propertyName] = null);
                     }
                     else {
-                        relEntities.forEach(o => o[relMeta.reverseRelation.propertyName].delete(this.entity));
+                        relEntities.forEach((o) => o[relMeta.reverseRelation.propertyName].delete(this.entity));
                     }
 
                     // apply delete option
                     const relations = this.metaData.relations
-                        .where(o => o.isMaster && this.relationMap[o.fullName] !== undefined
+                        .where((o) => o.isMaster && this.relationMap[o.fullName] !== undefined
                             && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT"));
 
                     for (const o of relations) {
@@ -321,10 +305,12 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         this.state = this.originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
     }
     public setOriginalValue(property: keyof T, value: any) {
-        if (!(property in this.entity))
+        if (!(property in this.entity)) {
             return;
-        if (this.entity[property] === value)
+        }
+        if (this.entity[property] === value) {
             this.originalValues.delete(property);
+        }
         else if (this.isPropertyModified(property)) {
             this.originalValues.set(property, value);
         }
@@ -359,10 +345,35 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelation(...relations: ((entity: T) => any)[]) {
+    public async loadRelation(...relations: Array<(entity: T) => any>) {
         const paramExp = new ParameterExpression("o", this.dbSet.type);
-        const projected = this.dbSet.primaryKeys.select(o => new FunctionExpression(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
+        const projected = this.dbSet.primaryKeys.select((o) => new FunctionExpression(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
         await this.dbSet.project(...(projected as any[])).include(...relations).find(this.getPrimaryValues());
+    }
+    protected onRelationChanged(entity: T, param: IRelationChangeEventParam) {
+        for (const item of param.entities) {
+            const entry = this.dbSet.dbContext.entry(item);
+            const relationEntry = this.getRelation(param.relation.fullName, entry);
+
+            if (this.enableTrackChanges) {
+                switch (param.type) {
+                    case "add": {
+                        if (relationEntry.state === EntityState.Detached) {
+                            relationEntry.add();
+                        }
+                        break;
+                    }
+                    case "del":
+                        if (relationEntry.state !== EntityState.Detached) {
+                            relationEntry.delete();
+                        }
+                        break;
+                }
+            }
+            else {
+                relationEntry.state = EntityState.Unchanged;
+            }
+        }
     }
 
     //#endregion

@@ -1,19 +1,20 @@
-import { Queryable } from "./Queryable";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { Queryable } from "./Queryable";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
     protected _predicate: FunctionExpression<boolean>;
     protected get predicate() {
-        if (!this._predicate && this.predicateFn)
+        if (!this._predicate && this.predicateFn) {
             this._predicate = ExpressionBuilder.parse(this.predicateFn, [this.parent.type], this.parameters);
+        }
         return this._predicate;
     }
     protected set predicate(value) {
@@ -21,10 +22,12 @@ export class WhereQueryable<T> extends Queryable<T> {
     }
     constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<boolean> | ((item: T) => boolean)) {
         super(parent.type, parent);
-        if (predicate instanceof FunctionExpression)
+        if (predicate instanceof FunctionExpression) {
             this.predicate = predicate;
-        else
+        }
+        else {
             this.predicateFn = predicate;
+        }
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;

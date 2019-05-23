@@ -1,6 +1,6 @@
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class MultiplicationExpression implements IBinaryOperatorExpression<number> {
     public type = Number;
     constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
@@ -8,7 +8,7 @@ export class MultiplicationExpression implements IBinaryOperatorExpression<numbe
         return "(" + this.leftOperand.toString() + " * " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new MultiplicationExpression(left, right);

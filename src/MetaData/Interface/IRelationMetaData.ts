@@ -1,9 +1,9 @@
-import { RelationshipType, ReferenceOption, CompleteRelationshipType } from "../../Common/Type";
-import { IEntityMetaData } from "./IEntityMetaData";
-import { IColumnMetaData } from "./IColumnMetaData";
-import { IRelationDataMetaData } from "./IRelationDataMetaData";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
+import { IColumnMetaData } from "./IColumnMetaData";
+import { IEntityMetaData } from "./IEntityMetaData";
+import { IRelationDataMetaData } from "./IRelationDataMetaData";
 
 export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRelationMetaData<TSource, TTarget> {
     name?: string;
@@ -19,7 +19,6 @@ export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRe
     updateOption?: ReferenceOption;
     deleteOption?: ReferenceOption;
     nullable?: boolean;
-    completeRelation?(reverseRelation: IRelationMetaData<TTarget, TSource>): void;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
     completeRelationType?: CompleteRelationshipType;
 
@@ -28,4 +27,5 @@ export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRe
      * Column used in relation that has been mapped to an entity's property.
      */
     mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource>>;
+    completeRelation?(reverseRelation: IRelationMetaData<TTarget, TSource>): void;
 }

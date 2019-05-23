@@ -1,18 +1,18 @@
 import "reflect-metadata";
-import { IObjectType, RelationshipType, PropertySelector } from "../../Common/Type";
-import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { entityMetaKey, relationMetaKey, relationChangeDispatherMetaKey } from "../DecoratorKey";
-import { IRelationOption, IAdditionalRelationOption } from "../Option/IRelationOption";
-import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
-import { IEventDispacher } from "../../Event/IEventHandler";
 import { ObservableArray } from "../../Common/ObservableArray";
+import { IObjectType, PropertySelector, RelationshipType } from "../../Common/Type";
+import { IEventDispacher } from "../../Event/IEventHandler";
+import { EntityMetaData } from "../../MetaData/EntityMetaData";
+import { IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
+import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { entityMetaKey, relationChangeDispatherMetaKey, relationMetaKey } from "../DecoratorKey";
+import { IAdditionalRelationOption, IRelationOption } from "../Option/IRelationOption";
 
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, direction: "by", type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "one?" | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType | "one?", relationKeysOrTargetType: Array<PropertySelector<S>> | IObjectType<T> | string, relationKey?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator {
-    let relationOption: IRelationOption<S, T> = {
+    const relationOption: IRelationOption<S, T> = {
         name
     } as any;
     let targetName: string;
@@ -29,8 +29,9 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             targetName = relationOption.targetType.name;
         }
         relationOption.relationKeys = relationKey as any;
-        if (options)
+        if (options) {
             Object.assign(relationOption, options);
+        }
     }
     else {
         // master relation.
@@ -47,8 +48,9 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
     // TODO: FOR SQL TO-ONE relation target must be a unique or primarykeys
     // TODO: Foreignkey for SQL DB
     return (target: S, propertyKey: any) => {
-        if (!relationOption.sourceType)
+        if (!relationOption.sourceType) {
             relationOption.sourceType = target.constructor as any;
+        }
         relationOption.propertyName = propertyKey as any;
         const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType!);
 
@@ -62,7 +64,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
 
         if (relationOption.targetType) {
             const targetMetaData: EntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
-            const reverseRelation = targetMetaData.relations.first(o => o.fullName === relationName);
+            const reverseRelation = targetMetaData.relations.first((o) => o.fullName === relationName);
 
             if (reverseRelation) {
                 relationMeta.completeRelation(reverseRelation);
@@ -72,7 +74,8 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
         // changes detection here
         const privatePropertySymbol = Symbol(propertyKey);
         let descriptor: PropertyDescriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
-        let oldGet: any, oldSet: any;
+        let oldGet: any;
+        let oldSet: any;
         if (descriptor) {
             if (descriptor.get) {
                 oldGet = descriptor.get;
@@ -82,56 +85,62 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
             }
         }
         descriptor = {
-            set: function (this: any, value: any) {
+            configurable: true,
+            enumerable: true,
+            get: function(this: any) {
+                if (oldGet) {
+                    return oldGet.apply(this);
+                }
+                return this[privatePropertySymbol];
+            },
+            set: function(this: any, value: any) {
                 if (!oldGet && !this.hasOwnProperty(privatePropertySymbol)) {
                     Object.defineProperty(this, privatePropertySymbol, {
-                        value: undefined,
+                        configurable: true,
                         enumerable: false,
-                        writable: true,
-                        configurable: true
+                        value: undefined,
+                        writable: true
                     });
                 }
                 const oldValue = this[propertyKey];
                 // tslint:disable-next-line:triple-equals
                 if (oldValue != value) {
+                    const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                     if (relationMeta.relationType === "many") {
                         const observed = ObservableArray.observe(value || []);
                         observed.register((type, items) => {
-                            const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                             if (changeListener) {
-                                changeListener({ type, relation: relationMeta, entities: items });
+                                changeListener({ relation: relationMeta, type, entities: items });
                             }
                         });
                         value = observed;
                     }
-                    if (oldSet)
+                    if (oldSet) {
                         oldSet.apply(this, value);
-                    else
+                    }
+                    else {
                         this[privatePropertySymbol] = value;
-                    const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
+                    }
                     if (changeListener) {
                         if (relationMeta.relationType === "many") {
-                            if (oldValue && Array.isArray(oldValue) && oldValue.length > 0)
+                            if (oldValue && Array.isArray(oldValue) && oldValue.length > 0) {
                                 changeListener({ relation: relationMeta, type: "del", entities: oldValue });
-                            if (value && Array.isArray(value) && value.length > 0)
+                            }
+                            if (value && Array.isArray(value) && value.length > 0) {
                                 changeListener({ relation: relationMeta, type: "add", entities: value });
+                            }
                         }
                         else {
-                            if (oldValue)
+                            if (oldValue) {
                                 changeListener({ relation: relationMeta, type: "del", entities: [oldValue] });
-                            if (value)
+                            }
+                            if (value) {
                                 changeListener({ relation: relationMeta, type: "add", entities: [value] });
+                            }
                         }
                     }
                 }
-            },
-            get: function (this: any) {
-                if (oldGet)
-                    return oldGet.apply(this);
-                return this[privatePropertySymbol];
-            },
-            configurable: true,
-            enumerable: true
+            }
         };
 
         Object.defineProperty(target, propertyKey, descriptor);

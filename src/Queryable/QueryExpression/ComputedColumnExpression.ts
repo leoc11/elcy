@@ -1,8 +1,8 @@
 import { GenericType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get type(): GenericType<T> {
@@ -24,10 +24,10 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
         }
-        if (!this.alias) this.alias = this.propertyName;
+        if (!this.alias) { this.alias = this.propertyName; }
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const entity = resolveClone(this.entity, replaceMap);
         const exp = resolveClone(this.expression, replaceMap);
         const clone = new ComputedColumnExpression(entity, exp, this.propertyName, this.alias);

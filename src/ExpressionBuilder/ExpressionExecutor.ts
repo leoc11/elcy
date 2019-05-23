@@ -1,12 +1,5 @@
-import { TransformerParameter } from "./TransformerParameter";
-import { IExpression } from "./Expression/IExpression";
-import { ParameterExpression } from "./Expression/ParameterExpression";
-import { EqualExpression } from "./Expression/EqualExpression";
-import { ExponentiationAssignmentExpression } from "./Expression/ExponentiationAssignmentExpression";
-import { ExponentiationExpression } from "./Expression/ExponentiationExpression";
-import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
-import { FunctionExpression } from "./Expression/FunctionExpression";
-import { GreaterEqualExpression } from "./Expression/GreaterEqualExpression";
+import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
+import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { AdditionAssignmentExpression } from "./Expression/AdditionAssignmentExpression";
 import { AdditionExpression } from "./Expression/AdditionExpression";
 import { AndExpression } from "./Expression/AndExpression";
@@ -16,6 +9,7 @@ import { BitwiseAndAssignmentExpression } from "./Expression/BitwiseAndAssignmen
 import { BitwiseAndExpression } from "./Expression/BitwiseAndExpression";
 import { BitwiseNotExpression } from "./Expression/BitwiseNotExpression";
 import { BitwiseOrAssignmentExpression } from "./Expression/BitwiseOrAssignmentExpression";
+import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
 import { BitwiseSignedRightShiftAssignmentExpression } from "./Expression/BitwiseSignedRightShiftAssignmentExpression";
 import { BitwiseSignedRightShiftExpression } from "./Expression/BitwiseSignedRightShiftExpression";
 import { BitwiseXorAssignmentExpression } from "./Expression/BitwiseXorAssignmentExpression";
@@ -26,7 +20,14 @@ import { BitwiseZeroRightShiftAssignmentExpression } from "./Expression/BitwiseZ
 import { BitwiseZeroRightShiftExpression } from "./Expression/BitwiseZeroRightShiftExpression";
 import { DivisionAssignmentExpression } from "./Expression/DivisionAssignmentExpression";
 import { DivisionExpression } from "./Expression/DivisionExpression";
+import { EqualExpression } from "./Expression/EqualExpression";
+import { ExponentiationAssignmentExpression } from "./Expression/ExponentiationAssignmentExpression";
+import { ExponentiationExpression } from "./Expression/ExponentiationExpression";
+import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
+import { FunctionExpression } from "./Expression/FunctionExpression";
+import { GreaterEqualExpression } from "./Expression/GreaterEqualExpression";
 import { GreaterThanExpression } from "./Expression/GreaterThanExpression";
+import { IExpression } from "./Expression/IExpression";
 import { InstanceofExpression } from "./Expression/InstanceofExpression";
 import { InstantiationExpression } from "./Expression/InstantiationExpression";
 import { LeftDecrementExpression } from "./Expression/LeftDecrementExpression";
@@ -43,29 +44,31 @@ import { NegationExpression } from "./Expression/NegationExpression";
 import { NotEqualExpression } from "./Expression/NotEqualExpression";
 import { NotExpression } from "./Expression/NotExpression";
 import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
-import { RightIncrementExpression } from "./Expression/RightIncrementExpression";
+import { OrExpression } from "./Expression/OrExpression";
+import { ParameterExpression } from "./Expression/ParameterExpression";
 import { RightDecrementExpression } from "./Expression/RightDecrementExpression";
+import { RightIncrementExpression } from "./Expression/RightIncrementExpression";
 import { StrictEqualExpression } from "./Expression/StrictEqualExpression";
 import { StrictNotEqualExpression } from "./Expression/StrictNotEqualExpression";
+import { StringTemplateExpression } from "./Expression/StringTemplateExpression";
 import { SubstractionAssignmentExpression } from "./Expression/SubstractionAssignmentExpression";
 import { SubstractionExpression } from "./Expression/SubstractionExpression";
 import { TernaryExpression } from "./Expression/TernaryExpression";
 import { TypeofExpression } from "./Expression/TypeofExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
-import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
-import { OrExpression } from "./Expression/OrExpression";
-import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
-import { StringTemplateExpression } from "./Expression/StringTemplateExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
+import { TransformerParameter } from "./TransformerParameter";
 
 export class ExpressionExecutor {
+    public static execute<T = unknown>(expression: IExpression<T>): T {
+        return new ExpressionExecutor().execute(expression);
+    }
+    public scopeParameters = new TransformerParameter();
     constructor(params?: { [key: string]: any }) {
         if (params) {
             this.setParameters(params);
         }
     }
-    public scopeParameters = new TransformerParameter();
     public setParameters(params: { [key: string]: any }) {
         for (const key in params) {
             this.scopeParameters.add(key.toString(), params[key]);
@@ -73,9 +76,6 @@ export class ExpressionExecutor {
     }
     public toString(expression: IExpression) {
         return expression.toString();
-    }
-    public static execute<T = unknown>(expression: IExpression<T>): T {
-        return new ExpressionExecutor().execute(expression);
     }
     // TODO: SQLParameterExpression
     public execute<T = unknown>(expression: IExpression<T>): T {
@@ -197,6 +197,22 @@ export class ExpressionExecutor {
                 throw new Error(`expression "${expression.toString()}" not supported`);
         }
     }
+    public executeFunction<T>(expression: FunctionExpression<T>, parameters: any[]) {
+        let i = 0;
+        for (const param of expression.params) {
+            if (parameters.length > i) {
+                this.scopeParameters.add(param.name, parameters[i++]);
+            }
+        }
+        const result = this.execute(expression.body);
+        i = 0;
+        for (const param of expression.params) {
+            if (parameters.length > i++) {
+                this.scopeParameters.remove(param.name);
+            }
+        }
+        return result;
+    }
 
     protected executeAdditionAssignment<T extends string | number>(expression: AdditionAssignmentExpression<T>): T {
         const value = this.scopeParameters.get(expression.leftOperand.name) + this.execute(expression.rightOperand);
@@ -304,24 +320,11 @@ export class ExpressionExecutor {
     }
     protected executeFunctionCall<T>(expression: FunctionCallExpression<T>): T {
         const params = [];
-        for (const param of expression.params)
+        for (const param of expression.params) {
             params.push(this.execute(param));
+        }
         const fn = this.execute(expression.fnExpression);
         return fn.apply(null, params);
-    }
-    public executeFunction<T>(expression: FunctionExpression<T>, parameters: any[]) {
-        let i = 0;
-        for (const param of expression.params) {
-            if (parameters.length > i)
-                this.scopeParameters.add(param.name, parameters[i++]);
-        }
-        const result = this.execute(expression.body);
-        i = 0;
-        for (const param of expression.params) {
-            if (parameters.length > i++)
-                this.scopeParameters.remove(param.name);
-        }
-        return result;
     }
     protected executeGreaterEqual(expression: GreaterEqualExpression) {
         return this.execute(expression.leftOperand) >= this.execute(expression.rightOperand);
@@ -334,19 +337,20 @@ export class ExpressionExecutor {
     }
     protected executeInstantiation<T>(expression: InstantiationExpression<T>): T {
         const params = [];
-        for (const param of expression.params)
+        for (const param of expression.params) {
             params.push(this.execute(param));
+        }
         const type = this.execute(expression.typeOperand);
         return new type(...params);
     }
     protected executeLeftDecrement(expression: LeftDecrementExpression) {
-        let value = this.executeParameter(expression.operand) - 1;
+        const value = this.executeParameter(expression.operand) - 1;
         this.scopeParameters.remove(expression.operand.name);
         this.scopeParameters.add(expression.operand.name, value);
         return value;
     }
     protected executeLeftIncrement(expression: LeftIncrementExpression) {
-        let value = this.executeParameter(expression.operand) + 1;
+        const value = this.executeParameter(expression.operand) + 1;
         this.scopeParameters.remove(expression.operand.name);
         this.scopeParameters.add(expression.operand.name, value);
         return value;
@@ -415,13 +419,13 @@ export class ExpressionExecutor {
         return this.scopeParameters.get(expression.name);
     }
     protected executeRightDecrement(expression: RightDecrementExpression) {
-        let value = this.executeParameter(expression.operand);
+        const value = this.executeParameter(expression.operand);
         this.scopeParameters.remove(expression.operand.name);
         this.scopeParameters.add(expression.operand.name, value - 1);
         return value;
     }
     protected executeRightIncrement(expression: RightIncrementExpression) {
-        let value = this.executeParameter(expression.operand);
+        const value = this.executeParameter(expression.operand);
         this.scopeParameters.remove(expression.operand.name);
         this.scopeParameters.add(expression.operand.name, value + 1);
         return value;

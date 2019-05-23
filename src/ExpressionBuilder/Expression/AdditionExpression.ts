@@ -1,8 +1,8 @@
+import { GenericType } from "../../Common/Type";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
-import { GenericType } from "../../Common/Type";
 
 export class AdditionExpression<T extends number | string = any> implements IBinaryOperatorExpression<T> {
     public leftOperand: IExpression<T>;
@@ -31,7 +31,7 @@ export class AdditionExpression<T extends number | string = any> implements IBin
         return "(" + this.leftOperand.toString() + " + " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new AdditionExpression<T>(left, right);

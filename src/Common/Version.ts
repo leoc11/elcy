@@ -15,9 +15,10 @@ export class Version {
     public toJSON() {
         return this.toString();
     }
-    [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
-        if (hint === "number")
+    public [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
+        if (hint === "number") {
             return this.valueOf();
+        }
         return this.toString();
     }
     public valueOf() {

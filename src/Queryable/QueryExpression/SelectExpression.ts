@@ -1,58 +1,34 @@
-import { GenericType, OrderDirection, JoinType, RelationshipType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, JoinType, OrderDirection, RelationshipType } from "../../Common/Type";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { hashCode, hashCodeAdd, isColumnExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
+import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
+import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { IncludeRelation } from "../Interface/IncludeRelation";
+import { ISelectRelation } from "../Interface/ISelectRelation";
+import { JoinRelation } from "../Interface/JoinRelation";
+import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryExpression } from "./IQueryExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
-import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IPagingExpression } from "./IPagingExpression";
-import { EntityExpression } from "./EntityExpression";
+import { IQueryExpression } from "./IQueryExpression";
+import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, hashCodeAdd, resolveClone, visitExpression, mapReplaceExp, isColumnExp } from "../../Helper/Util";
-import { ISelectRelation } from "../Interface/ISelectRelation";
-import { IncludeRelation } from "../Interface/IncludeRelation";
-import { JoinRelation } from "../Interface/JoinRelation";
-import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
-import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
 
 export class SelectExpression<T = any> implements IQueryExpression<T> {
-    constructor(entity?: IEntityExpression<T>) {
-        if (entity) {
-            this.entity = entity;
-            this.itemExpression = entity;
-
-            if (entity instanceof ProjectionEntityExpression) {
-                this.selects = entity.columns.slice(0);
-                this.paramExps = entity.paramExps.slice(0);
-            }
-            else
-                this.selects = entity.columns.where(o => o.columnMeta && o.columnMeta.isProjected).toArray();
-            entity.select = this;
-        }
-    }
-
-    //#region Properties
-    public entity: IEntityExpression<T>;
-    public type = Array;
-    public option: IQueryOption;
     public get itemType(): GenericType<any> {
         return this.itemExpression.type;
     }
-    public itemExpression: IExpression;
-
-    public selects: IColumnExpression[] = [];
-    // TODO: remove this workaround for insertInto Expression
-    public isSelectOnly = false;
     public get projectedColumns(): IEnumerable<IColumnExpression<T>> {
-        if (this.isSelectOnly) return this.selects;
+        if (this.isSelectOnly) { return this.selects; }
 
         if (this.distinct) {
             return this.relationColumns.union(this.resolvedSelects);
@@ -72,20 +48,10 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public get primaryKeys() {
         return this.entity.primaryColumns;
     }
-    public distinct: boolean;
-    public where: IExpression<boolean>;
-    public orders: IOrderExpression[] = [];
-    public paging: IPagingExpression = {};
-
-    public parentRelation: ISelectRelation<any, T>;
-    public includes: IncludeRelation<T, any>[] = [];
-    public joins: JoinRelation<T, any>[] = [];
-    public isSubSelect: boolean;
-    public paramExps: SqlParameterExpression[] = [];
 
     public get relationColumns(): IEnumerable<IColumnExpression> {
         // Include Relation Columns are used later for hydration
-        let relations = this.includes.where(o => !o.isEmbedded).selectMany(o => o.parentColumns);
+        let relations = this.includes.where((o) => !o.isEmbedded).selectMany((o) => o.parentColumns);
         if (this.parentRelation) {
             // relation column might cames from child join columns
             relations = relations.union(this.parentRelation.childColumns);
@@ -99,9 +65,9 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
                 const cloneMap = new Map();
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in emdedded relation
-                const childSelects = include.child.resolvedSelects.select(o => {
-                    let curCol = this.entity.columns.first(c => c.propertyName === o.propertyName);
-                    if (!curCol) curCol = o.clone(cloneMap);
+                const childSelects = include.child.resolvedSelects.select((o) => {
+                    let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
+                    if (!curCol) { curCol = o.clone(cloneMap); }
                     return curCol;
                 });
                 selects = selects.union(childSelects);
@@ -118,27 +84,69 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             const child = join.child;
             columns = child.entity.columns.union(child.resolvedSelects);
         }
-        for (const include of this.includes.where(o => o.isEmbedded)) {
+        for (const include of this.includes.where((o) => o.isEmbedded)) {
             const child = include.child;
             columns = child.entity.columns.union(child.resolvedSelects);
         }
         return columns;
     }
     public get resolvedIncludes(): IEnumerable<IncludeRelation<T>> {
-        return this.includes.selectMany(o => {
+        return this.includes.selectMany((o) => {
             if (o.isEmbedded) {
                 return o.child.resolvedIncludes;
             }
-            else
+            else {
                 return [o];
+            }
         });
     }
     public get resolvedJoins(): IEnumerable<JoinRelation<T>> {
         let joins: IEnumerable<JoinRelation<T>> = this.joins;
-        for (const include of this.includes.where(o => o.isEmbedded)) {
+        for (const include of this.includes.where((o) => o.isEmbedded)) {
             joins = joins.union(include.child.resolvedJoins);
         }
         return joins;
+    }
+    /**
+     * All select expressions used.
+     */
+    public get allSelects(): IEnumerable<SelectExpression> {
+        return [this as SelectExpression].union(this.joins.selectMany((o) => o.child.allSelects));
+    }
+
+    //#region Properties
+    public entity: IEntityExpression<T>;
+    public type = Array;
+    public option: IQueryOption;
+    public itemExpression: IExpression;
+
+    public selects: IColumnExpression[] = [];
+    // TODO: remove this workaround for insertInto Expression
+    public isSelectOnly = false;
+    public distinct: boolean;
+    public where: IExpression<boolean>;
+    public orders: IOrderExpression[] = [];
+    public paging: IPagingExpression = {};
+
+    public parentRelation: ISelectRelation<any, T>;
+    public includes: Array<IncludeRelation<T, any>> = [];
+    public joins: Array<JoinRelation<T, any>> = [];
+    public isSubSelect: boolean;
+    public paramExps: SqlParameterExpression[] = [];
+    constructor(entity?: IEntityExpression<T>) {
+        if (entity) {
+            this.entity = entity;
+            this.itemExpression = entity;
+
+            if (entity instanceof ProjectionEntityExpression) {
+                this.selects = entity.columns.slice(0);
+                this.paramExps = entity.paramExps.slice(0);
+            }
+            else {
+                this.selects = entity.columns.where((o) => o.columnMeta && o.columnMeta.isProjected).toArray();
+            }
+            entity.select = this;
+        }
     }
 
     //#endregion
@@ -192,7 +200,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // add bridge (a.k.a relation data) and include child select to it.
                 const relDataEntityExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                let relDataExp = new SelectExpression(relDataEntityExp);
+                const relDataExp = new SelectExpression(relDataEntityExp);
 
                 // predicate that identify relation between bridge and child.
                 let bridgeRelation: IExpression<boolean>;
@@ -249,8 +257,9 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
         const existingRelation = this.joins.first((o) => o.child === child);
-        if (existingRelation)
+        if (existingRelation) {
             return existingRelation;
+        }
 
         let relation: IExpression<boolean>;
         if (relationMetaOrRelations instanceof RelationMetaData) {
@@ -258,7 +267,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             if (relationMeta.completeRelationType === "many-many") {
                 // add bridge (a.k.a relation data) and join child select to it.
                 const relDataEntityExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                let relDataExp = new SelectExpression(relDataEntityExp);
+                const relDataExp = new SelectExpression(relDataEntityExp);
                 relDataExp.distinct = true;
 
                 // predicate that identify relation between bridge and child.
@@ -316,68 +325,63 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         return joinRel;
     }
     public getItemExpression(): IExpression {
-        if (isColumnExp(this.itemExpression))
+        if (isColumnExp(this.itemExpression)) {
             return this.itemExpression;
+        }
         return this.entity;
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes
-            .union(this.joins.selectMany(o => o.child.getEffectedEntities()))
-            .union(this.includes.selectMany(o => o.child.getEffectedEntities()))
+            .union(this.joins.selectMany((o) => o.child.getEffectedEntities()))
+            .union(this.includes.selectMany((o) => o.child.getEffectedEntities()))
             .distinct().toArray();
-    }
-    /**
-     * All select expressions used.
-     */
-    public get allSelects(): IEnumerable<SelectExpression> {
-        return [this as SelectExpression].union(this.joins.selectMany(o => o.child.allSelects));
     }
     public toString(): string {
         return `Select({
 Entity:${this.entity.toString()},
-Select:${this.selects.select(o => o.toString()).toArray().join(",")},
+Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
 Where:${this.where ? this.where.toString() : ""},
-Join:${this.joins.select(o => o.child.toString()).toArray().join(",")},
-Include:${this.includes.select(o => o.child.toString()).toArray().join(",")}
+Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
 })`;
     }
     public hashCode() {
         let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
-        code = hashCodeAdd(code, this.selects.select(o => o.hashCode()).sum());
-        if (this.where) code = hashCodeAdd(this.where.hashCode(), code);
-        code = hashCodeAdd(code, this.joins.sum(o => o.child.hashCode()));
-        code = hashCodeAdd(code, this.includes.sum(o => o.child.hashCode()));
+        code = hashCodeAdd(code, this.selects.select((o) => o.hashCode()).sum());
+        if (this.where) { code = hashCodeAdd(this.where.hashCode(), code); }
+        code = hashCodeAdd(code, this.joins.sum((o) => o.child.hashCode()));
+        code = hashCodeAdd(code, this.includes.sum((o) => o.child.hashCode()));
         return code;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SelectExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const entity = resolveClone(this.entity, replaceMap);
         const clone = new SelectExpression(entity);
         replaceMap.set(this, clone);
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
-        clone.selects = this.selects.select(o => resolveClone(o, replaceMap)).toArray();
-        clone.orders = this.orders.select(o => ({
+        clone.selects = this.selects.select((o) => resolveClone(o, replaceMap)).toArray();
+        clone.orders = this.orders.select((o) => ({
             column: resolveClone(o.column, replaceMap),
             direction: o.direction
         })).toArray();
 
-        clone.joins = this.joins.select(o => {
+        clone.joins = this.joins.select((o) => {
             return o.clone(replaceMap);
         }).toArray();
 
-        clone.includes = this.includes.select(o => {
+        clone.includes = this.includes.select((o) => {
             return o.clone(replaceMap);
         }).toArray();
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
-        clone.paramExps = this.paramExps.select(o => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
+        clone.paramExps = this.paramExps.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public addSqlParameter<T>(valueExp: IExpression<T[]>, colExp?: IEntityExpression<T>): SqlTableValueParameterExpression<T>;
-    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData): SqlParameterExpression<T>;
-    public addSqlParameter<T>(valueExp: IExpression<T>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<T> | SqlTableValueParameterExpression<T> {
+    public addSqlParameter<Tval>(valueExp: IExpression<Tval[]>, colExp?: IEntityExpression<Tval>): SqlTableValueParameterExpression<Tval>;
+    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData): SqlParameterExpression<Tval>;
+    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Tval> {
         let paramExp: SqlParameterExpression;
         if ((valueExp.type as any) === Array) {
             paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<any>, colExp as IEntityExpression);

@@ -1,6 +1,6 @@
-import { IExpression } from "./IExpression";
 import { GenericType, NullConstructor } from "../../Common/Type";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { IExpression } from "./IExpression";
 export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T2> {
     public get type(): GenericType<T1 | T2> {
         if (this.trueOperand.type as any === this.falseOperand.type) {
@@ -21,7 +21,7 @@ export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T
         return "(" + this.logicalOperand.toString() + " ? " + this.trueOperand.toString() + " : " + this.falseOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const logicalOperand = resolveClone(this.logicalOperand, replaceMap);
         const trueResultOperand = resolveClone(this.trueOperand, replaceMap);
         const falseResultOperand = resolveClone(this.falseOperand, replaceMap);

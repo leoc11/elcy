@@ -2,12 +2,16 @@ import { Enumerable } from "./Enumerable";
 
 export const defaultResultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R => {
     const result = {} as any;
-    if (item2)
-        for (const prop in item2)
+    if (item2) {
+        for (const prop in item2) {
             result[prop] = item2[prop];
-    if (item1)
-        for (const prop in item1)
+        }
+    }
+    if (item1) {
+        for (const prop in item1) {
             result[prop] = item1[prop];
+        }
+    }
     return result;
 };
 export class InnerJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<R> {

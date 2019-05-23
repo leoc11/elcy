@@ -1,7 +1,7 @@
-import { QueryTranslator } from "../../Query/QueryTranslator";
-import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";
+import { QueryTranslator } from "../../Query/QueryTranslator";
+import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -11,7 +11,6 @@ sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 sqliteQueryTranslator.registerFn(isNaN, null);
 
 //#endregion
-
 
 //#region Member Access
 
@@ -31,15 +30,13 @@ sqliteQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param
 
 //#endregion
 
-
 //#region Method Call
 
 /**
  * DbFunction
  */
 sqliteQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `LAST_INSERT_ROWID()`, () => true);
-sqliteQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `COALESCE(${exp.params.select(o => qb.toString(o, param)).toArray().join(", ")})`);
-
+sqliteQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `COALESCE(${exp.params.select((o) => qb.toString(o, param)).toArray().join(", ")})`);
 
 /**
  * Math
@@ -50,8 +47,8 @@ sqliteQueryTranslator.registerMethod(Math, "floor", (qb, exp, param) => `CAST(${
 sqliteQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CAST(ROUND(${qb.toString(exp.params[0], param)} + 0.5) AS INT)`);
 sqliteQueryTranslator.registerMethod(Math, "random", () => "ABS(RANDOM()/9223372036854789000)");
 sqliteQueryTranslator.registerMethod(Math, "round", (qb, exp, param) => `ROUND(${qb.toString(exp.params[0], param)}, 0)`);
-sqliteQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => `MAX(${exp.params.select(o => qb.toString(o, param)).toArray().join(",")})`);
-sqliteQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => `MIN(${exp.params.select(o => qb.toString(o, param)).toArray().join(",")})`);
+sqliteQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => `MAX(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`);
+sqliteQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => `MIN(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`);
 
 sqliteQueryTranslator.registerMethod(Math, "acos", null);
 sqliteQueryTranslator.registerMethod(Math, "asin", null);
@@ -84,14 +81,15 @@ sqliteQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param
 sqliteQueryTranslator.registerMethod(String.prototype, "endsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE (${qb.valueString("%")} || ${qb.toString(exp.params[0], param)}))`);
 sqliteQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, param) => {
     if (exp.params.length > 1) {
-        `CASE WHEN INSTR(SUBSTR(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[1], param)} + 1),${qb.toString(exp.params[0], param)}) = 0 THEN ${qb.valueString(-1)} ELSE (INSTR(SUBSTR(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[1], param)} + 1),${qb.toString(exp.params[0], param)}) + ${qb.toString(exp.params[1], param)} - 1) END`;
+        return `CASE WHEN INSTR(SUBSTR(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[1], param)} + 1),${qb.toString(exp.params[0], param)}) = 0 THEN ${qb.valueString(-1)} ELSE (INSTR(SUBSTR(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[1], param)} + 1),${qb.toString(exp.params[0], param)}) + ${qb.toString(exp.params[1], param)} - 1) END`;
     }
     return `(INSTR(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)}) - 1)`;
 });
 sqliteQueryTranslator.registerMethod(String.prototype, "like", (qb, exp, param) => {
     let escape = qb.valueString("\\");
-    if (exp.params.length > 1)
+    if (exp.params.length > 1) {
         escape = qb.toString(exp.params[1], param);
+    }
 
     return `(${qb.toString(exp.objectOperand, param)} LIKE ${qb.toString(exp.params[0], param)} ESCAPE ${escape})`;
 });
@@ -109,7 +107,7 @@ sqliteQueryTranslator.registerMethod(String.prototype, "split", null);
 
 /**
  * Date
- * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
+ * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
  */
 sqliteQueryTranslator.registerMethod(Date, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
 sqliteQueryTranslator.registerMethod(Date, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
@@ -144,7 +142,6 @@ sqliteQueryTranslator.registerMethod(Date.prototype, "toDateString", null);
 sqliteQueryTranslator.registerMethod(RegExp.prototype, "test", null);
 
 //#endregion
-
 
 //#region Operator
 

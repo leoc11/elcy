@@ -1,16 +1,15 @@
-import { Queryable } from "./Queryable";
-import { hashCode } from "../Helper/Util";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { hashCode } from "../Helper/Util";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { ParameterQueryable } from "./ParameterQueryable";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class SkipQueryable<T> extends Queryable<T> {
     constructor(parent: Queryable<T>, protected readonly quantity: number) {
-        super(parent.type, new ParameterQueryable(parent, { skip: quantity }));
+        super(parent.type, parent.parameter({ skip: quantity}));
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;

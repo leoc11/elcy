@@ -10,10 +10,12 @@ export class DecimalColumnMetaData<TE = any> extends ColumnMetaData<TE, number> 
     }
 
     public applyOption(columnMeta: DecimalColumnMetaData<TE>) {
-        if (typeof columnMeta.scale !== "undefined")
+        if (typeof columnMeta.scale !== "undefined") {
             this.scale = columnMeta.scale;
-        if (typeof columnMeta.precision !== "undefined")
+        }
+        if (typeof columnMeta.precision !== "undefined") {
             this.precision = columnMeta.precision;
+        }
         super.applyOption(columnMeta);
     }
 }

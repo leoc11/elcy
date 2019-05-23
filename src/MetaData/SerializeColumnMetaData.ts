@@ -17,6 +17,6 @@ export class SerializeColumnMetaData<TE, T> extends ColumnMetaData<TE, T> {
     }
     public applyOption(columnMeta: SerializeColumnMetaData<TE, T>) {
         super.applyOption(columnMeta);
-        if (typeof columnMeta.type !== "undefined") this.type = columnMeta.type;
+        if (typeof columnMeta.type !== "undefined") { this.type = columnMeta.type; }
     }
 }

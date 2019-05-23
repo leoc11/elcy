@@ -11,10 +11,12 @@ export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defa
     }
     else {
         option = {};
-        if (typeof optionOrName !== "undefined")
+        if (typeof optionOrName !== "undefined") {
             option.columnName = optionOrName as string;
-        if (typeof defaultValue !== "undefined")
+        }
+        if (typeof defaultValue !== "undefined") {
             option.default = defaultValue;
+        }
     }
     return Column<any, boolean>(BooleanColumnMetaData, option);
 }

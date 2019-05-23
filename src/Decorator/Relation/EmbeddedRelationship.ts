@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { IObjectType } from "../../Common/Type";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
-import { IEmbeddedRelationOption } from "../Option/IEmbeddedRelationOption";
 import { relationMetaKey } from "../DecoratorKey";
+import { IEmbeddedRelationOption } from "../Option/IEmbeddedRelationOption";
 
 export function EmbeddedRelationship<S = any, T = any>(option: IEmbeddedRelationOption<S, T>): PropertyDecorator;
 export function EmbeddedRelationship<S = any, T = any>(type: IObjectType<T>, prefix?: string, nullable?: boolean): PropertyDecorator;

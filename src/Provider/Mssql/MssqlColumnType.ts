@@ -12,6 +12,6 @@ export type MssqlSpacial = "geometry" | "geography";
 export type MssqlIdentifier = "uniqueidentifier";
 export type MssqlSerialize = "xml";
 type MssqlOther = "cursor" | "hierarchyid" | "sql_variant" | "table";
-export type MssqlColumnType = MssqlInt | MssqlDecimal | MssqlReal | MssqlDate 
+export type MssqlColumnType = MssqlInt | MssqlDecimal | MssqlReal | MssqlDate
     | MssqlDateTime | MssqlTime | MssqlRowVersion | MssqlBinary | MssqlString
     | MssqlBoolean | MssqlSpacial | MssqlIdentifier | MssqlSerialize | MssqlOther;

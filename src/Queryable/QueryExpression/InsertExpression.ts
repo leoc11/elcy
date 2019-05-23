@@ -1,32 +1,32 @@
-import { IQueryExpression } from "./IQueryExpression";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
-import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IObjectType } from "../../Common/Type";
+import { EntityEntry } from "../../Data/EntityEntry";
+import { EntityState } from "../../Data/EntityState";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
+import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
+import { hashCode, resolveClone } from "../../Helper/Util";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IObjectType } from "../../Common/Type";
-import { hashCode, resolveClone } from "../../Helper/Util";
 import { IEntityExpression } from "./IEntityExpression";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { EntityState } from "../../Data/EntityState";
-import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { IQueryExpression } from "./IQueryExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 export class InsertExpression<T = any> implements IQueryExpression<void> {
     public option: IQueryOption;
     public paramExps: SqlParameterExpression[] = [];
-    private _columns: IColumnExpression<T>[];
-    public get columns(): IColumnExpression<T>[] {
+    private _columns: Array<IColumnExpression<T>>;
+    public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = this.entity.metaData.relations
-                .where(o => !o.nullable && !o.isMaster && o.relationType === "one")
-                .selectMany(o => o.relationColumns)
+                .where((o) => !o.nullable && !o.isMaster && o.relationType === "one")
+                .selectMany((o) => o.relationColumns)
                 .union(this.entity.metaData.columns)
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .select(o => this.entity.columns.first(c => c.propertyName === o.propertyName)).toArray();
+                .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
         }
         return this._columns;
     }
@@ -34,14 +34,14 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
     public get type() {
         return undefined as any;
     }
-    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: IColumnExpression<T>[]) {
-        if (columns) this._columns = columns;
+    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: Array<IColumnExpression<T>>) {
+        if (columns) { this._columns = columns; }
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const entity = resolveClone(this.entity, replaceMap);
-        const columns = this.columns.select(o => resolveClone(o, replaceMap)).toArray();
-        const values = this.values.select(o => {
+        const columns = this.columns.select((o) => resolveClone(o, replaceMap)).toArray();
+        const values = this.values.select((o) => {
             const item: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in o) {
                 item[prop] = resolveClone(o[prop], replaceMap);
@@ -56,7 +56,7 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         return `Insert(${this.entity.toString()})`;
     }
     public hashCode() {
-        return hashCode("INSERT", hashCode(this.entity.name, this.values.select(o => {
+        return hashCode("INSERT", hashCode(this.entity.name, this.values.select((o) => {
             let hash = 0;
             for (const prop in o) {
                 hash += hashCode(prop, o[prop].hashCode());
@@ -72,9 +72,9 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
 export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
     const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
     for (const col of columns) {
-        let value = entry.entity[col.propertyName];
+        const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            let param = new SqlParameterExpression(new ParameterExpression("", col.type), col);
+            const param = new SqlParameterExpression(new ParameterExpression("", col.type), col);
             queryParameters.set(param, { value: value });
             itemExp[col.propertyName] = param;
             insertExp.paramExps.push(param);
@@ -94,7 +94,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {
-                    let value = parentEntity[parentCol.propertyName];
+                    const value = parentEntity[parentCol.propertyName];
                     queryParameters.set(paramExp, { value: value });
                 }
 

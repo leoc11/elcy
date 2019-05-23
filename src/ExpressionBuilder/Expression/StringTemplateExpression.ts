@@ -1,5 +1,5 @@
-import { IExpression } from "./IExpression";
 import { hashCode } from "../../Helper/Util";
+import { IExpression } from "./IExpression";
 
 export class StringTemplateExpression implements IExpression<string> {
     public type = String;

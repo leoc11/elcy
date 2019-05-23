@@ -1,8 +1,8 @@
+import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
-import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
-import { IObjectType, ValueType, GenericType, Pivot } from "../Common/Type";
 import { IEnumerable } from "../Enumerable/IEnumerable";
+import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -17,7 +17,7 @@ declare global {
         contains(item: T): boolean;
         first(fn?: (item: T) => boolean): T;
         where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
         any(fn?: (item: T) => boolean): boolean;
         all(fn: (item: T) => boolean): boolean;
         skip(n: number): Enumerable<T>;
@@ -77,13 +77,13 @@ Array.prototype.contains = function <T>(this: T[], item: T) {
 Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean) {
     return this.asEnumerable().where(predicate);
 };
-Array.prototype.orderBy = function <T>(this: T[], ...selectors: IOrderDefinition<T>[]) {
+Array.prototype.orderBy = function <T>(this: T[], ...selectors: Array<IOrderDefinition<T>>) {
     return this.asEnumerable().orderBy(...selectors);
 };
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];
 };
-Array.prototype.any = function <T>(this: T[], predicate: (item: T) => boolean = o => true) {
+Array.prototype.any = function <T>(this: T[], predicate: (item: T) => boolean = (o) => true) {
     return this.some(predicate);
 };
 Array.prototype.all = function <T>(this: T[], predicate: (item: T) => boolean) {

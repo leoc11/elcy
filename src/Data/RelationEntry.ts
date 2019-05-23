@@ -1,6 +1,6 @@
-import { EntityState } from "./EntityState";
-import { EntityEntry } from "./EntityEntry";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
+import { EntityEntry } from "./EntityEntry";
+import { EntityState } from "./EntityState";
 
 export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
     private _state: EntityState;
@@ -14,14 +14,16 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             switch (this.state) {
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation);
-                    if (typedAddEntries)
+                    if (typedAddEntries) {
                         typedAddEntries.delete(this);
+                    }
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
-                    if (typedEntries)
+                    if (typedEntries) {
                         typedEntries.delete(this);
+                    }
                     break;
                 }
                 case EntityState.Detached: {
@@ -94,8 +96,9 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         }
 
         // apply slave relation property
-        if (this.slaveRelation.relationType === "one")
+        if (this.slaveRelation.relationType === "one") {
             this.slaveEntry.entity[this.slaveRelation.propertyName] = this.masterEntry.entity as any;
+        }
         else {
             let relationVal: any[] = this.slaveEntry.entity[this.slaveRelation.propertyName] as any;
             if (!Array.isArray(relationVal)) {
@@ -107,8 +110,9 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
 
         // apply master relation property
         const masterRelation = this.slaveRelation.reverseRelation;
-        if (masterRelation.relationType === "one")
+        if (masterRelation.relationType === "one") {
             this.masterEntry.entity[masterRelation.propertyName] = this.slaveEntry.entity as unknown as TE2[keyof TE2];
+        }
         else {
             let relationVal = this.masterEntry.entity[masterRelation.propertyName] as unknown as TE1[];
             if (!Array.isArray(relationVal)) {
@@ -119,7 +123,7 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         }
 
         if (this.slaveRelation.completeRelationType !== "many-many") {
-            const cols = this.slaveRelation.mappedRelationColumns.where(o => !!o.propertyName);
+            const cols = this.slaveRelation.mappedRelationColumns.where((o) => !!o.propertyName);
             for (const col of cols) {
                 const reverseProperty = this.slaveRelation.relationMaps.get(col).propertyName as keyof TE2;
                 if (reverseProperty) {
@@ -136,10 +140,11 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         }
 
         // detach slave relation property
-        if (this.slaveRelation.relationType === "one")
+        if (this.slaveRelation.relationType === "one") {
             this.slaveEntry.entity[this.slaveRelation.propertyName] = null;
+        }
         else {
-            let relationVal: any[] = this.slaveEntry.entity[this.slaveRelation.propertyName] as any;
+            const relationVal: any[] = this.slaveEntry.entity[this.slaveRelation.propertyName] as any;
             if (Array.isArray(relationVal)) {
                 relationVal.delete(this.masterEntry.entity);
             }
@@ -147,16 +152,17 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
 
         // detach master relation property
         const masterRelation = this.slaveRelation.reverseRelation;
-        if (masterRelation.relationType === "one")
+        if (masterRelation.relationType === "one") {
             this.masterEntry.entity[masterRelation.propertyName] = null;
+        }
         else {
-            let relationVal: any[] = this.masterEntry.entity[masterRelation.propertyName] as any;
+            const relationVal: any[] = this.masterEntry.entity[masterRelation.propertyName] as any;
             if (Array.isArray(relationVal)) {
                 relationVal.delete(this.slaveEntry.entity);
             }
         }
 
-        const cols = this.slaveRelation.mappedRelationColumns.where(o => !!o.propertyName);
+        const cols = this.slaveRelation.mappedRelationColumns.where((o) => !!o.propertyName);
         for (const col of cols) {
             this.slaveEntry.entity[col.propertyName] = null;
         }

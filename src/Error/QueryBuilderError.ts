@@ -2,7 +2,7 @@ import { CodedError } from "./CodedError";
 
 export enum QueryBuilderErrorCode {
     UsageIssue = 0,
-    NotSupported = 1,
+    NotSupported = 1
 }
 /**
  * Error throwed by Driver goes here. (all query related error)

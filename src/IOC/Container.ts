@@ -30,17 +30,20 @@ class Container {
         const item = this[containerKey].get(key);
         let res: T = null;
         if (item) {
-            if (item.instance)
+            if (item.instance) {
                 res = item.instance;
+            }
             if (item.factory) {
                 res = item.factory(...args);
-                if (item.isLifeTime)
+                if (item.isLifeTime) {
                     item.instance = res;
+                }
             }
             if (item.type) {
                 res = new item.type(...args);
-                if (item.isLifeTime)
+                if (item.isLifeTime) {
                     item.instance = res;
+                }
             }
         }
         return res;

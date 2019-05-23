@@ -1,10 +1,10 @@
+import { ColumnType } from "../../Common/ColumnType";
 import { GenericType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { hashCode, resolveClone } from "../../Helper/Util";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { ColumnType } from "../../Common/ColumnType";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { hashCode, resolveClone } from "../../Helper/Util";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public type: GenericType<T>;
@@ -42,7 +42,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         return `Column(${this.propertyName})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const entity = resolveClone(this.entity, replaceMap);
         const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.isNullable);
         clone.columnMeta = this.columnMeta;

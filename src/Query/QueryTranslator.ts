@@ -1,16 +1,17 @@
-import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
+import { GenericType, IObjectType } from "../Common/Type";
 import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
-import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
-import { IQueryBuilder } from "./IQueryBuilder";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { IObjectType, GenericType } from "../Common/Type";
+import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
+import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
+import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 
 export class QueryTranslator {
+    protected fallbacks: QueryTranslator[] = [];
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
     constructor(public key: symbol) { }
     public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: any[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
@@ -19,7 +20,7 @@ export class QueryTranslator {
             map = {};
             this._map.set(fn, map);
         }
-        let translateItem: IQueryTranslatorItem = {
+        const translateItem: IQueryTranslatorItem = {
             translate: translate,
             isTranslate: isTranslate
         };
@@ -31,7 +32,7 @@ export class QueryTranslator {
             map = {};
             this._map.set(type, map);
         }
-        let translateItem: IQueryTranslatorItem = {
+        const translateItem: IQueryTranslatorItem = {
             translate: translate,
             isTranslate: isTranslate
         };
@@ -43,7 +44,7 @@ export class QueryTranslator {
             map = {};
             this._map.set(operator, map);
         }
-        let translateItem: IQueryTranslatorItem = {
+        const translateItem: IQueryTranslatorItem = {
             translate: translate,
             isTranslate: isTranslate
         };
@@ -55,7 +56,7 @@ export class QueryTranslator {
             map = {};
             this._map.set(object, map);
         }
-        let translateItem: IQueryTranslatorItem = {
+        const translateItem: IQueryTranslatorItem = {
             translate: translate,
             isTranslate: isTranslate
         };
@@ -67,7 +68,7 @@ export class QueryTranslator {
             map = {};
             this._map.set(object, map);
         }
-        let translateItem: IQueryTranslatorItem = {
+        const translateItem: IQueryTranslatorItem = {
             translate: translate,
             isTranslate: isTranslate
         };
@@ -75,18 +76,18 @@ export class QueryTranslator {
     }
 
     public resolve(object: any, memberName?: string) {
-        let map = this._map.get(object);
+        const map = this._map.get(object);
         let item = map && map[memberName || ""];
         if (item === undefined) {
             for (const fallback of this.fallbacks) {
                 item = fallback.resolve(object, memberName);
-                if (item)
+                if (item) {
                     break;
+                }
             }
         }
         return item;
     }
-    protected fallbacks: QueryTranslator[] = [];
     public registerFallbacks(...fallbacks: QueryTranslator[]) {
         this.fallbacks = this.fallbacks.concat(fallbacks);
     }

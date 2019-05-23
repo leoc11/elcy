@@ -10,16 +10,16 @@ export abstract class Diagnostic {
         return !!Diagnostic.logger;
     }
     public static timer(autoStart = true): Timer | undefined {
-        if (!Diagnostic.enabled) return undefined;
+        if (!Diagnostic.enabled) { return undefined; }
 
         const res = new Timer();
-        if (autoStart) res.start();
+        if (autoStart) { res.start(); }
         return res;
     }
     public static trace(source: any, message: string, ...args: any[]): void;
     public static trace(source: any, message: string, error?: Error, ...args: any[]): void;
     public static trace(source: any, message: string, error?: Error | any, ...args: any[]): void {
-        if (!Diagnostic.enabled) return;
+        if (!Diagnostic.enabled) { return; }
 
         if (error && !(error instanceof Error)) {
             args.unshift(error);
@@ -30,7 +30,7 @@ export abstract class Diagnostic {
 
     public static debug(source: any, message: string, ...args: any[]): void;
     public static debug(source: any, message: string, error?: Error, ...args: any[]): void {
-        if (!Diagnostic.enabled) return;
+        if (!Diagnostic.enabled) { return; }
 
         if (error && !(error instanceof Error)) {
             args.unshift(error);
@@ -41,7 +41,7 @@ export abstract class Diagnostic {
 
     public static info(source: any, message: string, ...args: any[]): void;
     public static info(source: any, message: string, error?: Error, ...args: any[]): void {
-        if (!Diagnostic.enabled) return;
+        if (!Diagnostic.enabled) { return; }
 
         if (error && !(error instanceof Error)) {
             args.unshift(error);
@@ -52,7 +52,7 @@ export abstract class Diagnostic {
 
     public static warn(source: any, message: string, ...args: any[]): void;
     public static warn(source: any, message: string, error?: Error, ...args: any[]): void {
-        if (!Diagnostic.enabled) return;
+        if (!Diagnostic.enabled) { return; }
 
         if (error && !(error instanceof Error)) {
             args.unshift(error);
@@ -64,7 +64,7 @@ export abstract class Diagnostic {
     public static error(source: any, message: string, error?: Error, ...args: any[]): void;
     public static error(source: any, message: string, ...args: any[]): void;
     public static error(source: any, message: string, error?: Error, ...args: any[]): void {
-        if (!Diagnostic.enabled) return;
+        if (!Diagnostic.enabled) { return; }
 
         if (error && !(error instanceof Error)) {
             args.unshift(error);

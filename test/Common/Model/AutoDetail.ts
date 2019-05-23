@@ -1,10 +1,10 @@
-import { Entity } from "../../../src/Decorator/Entity/Entity";
-import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
-import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
-import { AutoParent } from "./AutoParent";
-import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { RowVersionColumn } from "../../../src/Decorator/Column/RowVersionColumn";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { AutoParent } from "./AutoParent";
 
 @Entity("AutoDetail")
 export class AutoDetail {

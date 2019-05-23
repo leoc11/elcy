@@ -1,28 +1,28 @@
-import { BooleanColumn } from "../../../../src/Decorator/Column/BooleanColumn";
-import { CreatedDateColumn } from "../../../../src/Decorator/Column/CreatedDateColumn";
-import { Uuid } from "../../../../src/Data/Uuid";
-import { ComputedColumn } from "../../../../src/Decorator/Column/ComputedColumn";
-import { IntegerColumn } from "../../../../src/Decorator/Column/IntegerColumn";
-import { PrimaryKey } from "../../../../src/Decorator/Column/PrimaryKey";
 import { TimeSpan } from "../../../../src/Data/TimeSpan";
-import { TimeColumn } from "../../../../src/Decorator/Column/TimeColumn";
-import { StringColumn } from "../../../../src/Decorator/Column/StringColumn";
-import { RowVersionColumn } from "../../../../src/Decorator/Column/RowVersionColumn";
-import { RealColumn } from "../../../../src/Decorator/Column/RealColumn";
-import { ModifiedDateColumn } from "../../../../src/Decorator/Column/ModifiedDateColumn";
-import { IdentifierColumn } from "../../../../src/Decorator/Column/IdentifierColumn";
-import { EnumColumn } from "../../../../src/Decorator/Column/EnumColumn";
-import { DeletedColumn } from "../../../../src/Decorator/Column/DeletedColumn";
-import { DecimalColumn } from "../../../../src/Decorator/Column/DecimalColumn";
+import { Uuid } from "../../../../src/Data/Uuid";
+import { CheckContraint } from "../../../../src/Decorator/CheckConstraint";
+import { BooleanColumn } from "../../../../src/Decorator/Column/BooleanColumn";
+import { ComputedColumn } from "../../../../src/Decorator/Column/ComputedColumn";
+import { CreatedDateColumn } from "../../../../src/Decorator/Column/CreatedDateColumn";
 import { DateColumn } from "../../../../src/Decorator/Column/DateColumn";
 import { DateTimeColumn } from "../../../../src/Decorator/Column/DateTimeColumn";
+import { DecimalColumn } from "../../../../src/Decorator/Column/DecimalColumn";
+import { DeletedColumn } from "../../../../src/Decorator/Column/DeletedColumn";
+import { EnumColumn } from "../../../../src/Decorator/Column/EnumColumn";
+import { IdentifierColumn } from "../../../../src/Decorator/Column/IdentifierColumn";
+import { IntegerColumn } from "../../../../src/Decorator/Column/IntegerColumn";
+import { ModifiedDateColumn } from "../../../../src/Decorator/Column/ModifiedDateColumn";
 import { NullableColumn } from "../../../../src/Decorator/Column/NullableColumn";
-import { CheckContraint } from "../../../../src/Decorator/CheckConstraint";
+import { PrimaryKey } from "../../../../src/Decorator/Column/PrimaryKey";
+import { RealColumn } from "../../../../src/Decorator/Column/RealColumn";
+import { RowVersionColumn } from "../../../../src/Decorator/Column/RowVersionColumn";
+import { StringColumn } from "../../../../src/Decorator/Column/StringColumn";
+import { TimeColumn } from "../../../../src/Decorator/Column/TimeColumn";
 import { ColumnIndex } from "../../../../src/Decorator/ColumnIndex";
-import { UniqueConstraint } from "../../../../src/Decorator/UniqueConstraint";
 import { Entity } from "../../../../src/Decorator/Entity/Entity";
-import { SubSchema } from "./SubSchema";
 import { Relationship } from "../../../../src/Decorator/Relation/Relationship";
+import { UniqueConstraint } from "../../../../src/Decorator/UniqueConstraint";
+import { SubSchema } from "./SubSchema";
 
 enum EnumList {
     first = 1,
@@ -31,7 +31,7 @@ enum EnumList {
 
 @CheckContraint({ name: "Schema_entity_check", check: (entity: Schema) => entity.decimal > entity.integer })
 @UniqueConstraint<Schema>({ name: "Schema_entity_unique", properties: ["decimal", "real"] })
-@Entity<Schema>("Schema", [[o => o.createdDate, "DESC"]])
+@Entity<Schema>("Schema", [[(o) => o.createdDate, "DESC"]])
 export class Schema {
     @PrimaryKey()
     @IntegerColumn({ autoIncrement: true })
@@ -95,6 +95,6 @@ export class Schema {
     @DeletedColumn()
     public deleted: boolean;
 
-    @Relationship<Schema>("own", "one", SubSchema || "SubSchema", [o => o.identifier])
+    @Relationship<Schema>("own", "one", SubSchema || "SubSchema", [(o) => o.identifier])
     public subSchema: SubSchema;
 }

@@ -1,15 +1,23 @@
-import { GenericType, ValueType, IObjectType, Pivot } from "../Common/Type";
+import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
+import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
+import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "../Queryable/Queryable";
+import { CrossJoinQueryable } from "./CrossJoinQueryable";
 import { DistinctQueryable } from "./DistinctQueryable";
 import { ExceptQueryable } from "./ExceptQueryable";
 import { FullJoinQueryable } from "./FullJoinQueryable";
 import { GroupByQueryable } from "./GroupByQueryable";
+import { GroupJoinQueryable } from "./GroupJoinQueryable";
 import { IncludeQueryable } from "./IncludeQueryable";
 import { InnerJoinQueryable } from "./InnerJoinQueryable";
+import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
 import { IntersectQueryable } from "./IntersectQueryable";
 import { LeftJoinQueryable } from "./LeftJoinQueryable";
+import { OptionQueryable } from "./OptionQueryable";
 import { OrderQueryable } from "./OrderQueryable";
+import { ParameterQueryable } from "./ParameterQueryable";
 import { PivotQueryable } from "./PivotQueryable";
+import { ProjectQueryable } from "./ProjectQueryable";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
 import { SelectQueryable } from "./SelectQueryable";
@@ -17,14 +25,6 @@ import { SkipQueryable } from "./SkipQueryable";
 import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
-import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
-import { ParameterQueryable } from "./ParameterQueryable";
-import { ProjectQueryable } from "./ProjectQueryable";
-import { GroupJoinQueryable } from "./GroupJoinQueryable";
-import { OptionQueryable } from "./OptionQueryable";
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
-import { IQueryOption } from "../Query/IQueryOption";
-import { CrossJoinQueryable } from "./CrossJoinQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -35,7 +35,7 @@ declare module "./Queryable" {
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;
         where(predicate: (item: T) => boolean): Queryable<T>;
-        orderBy(...selectors: IOrderQueryDefinition<T>[]): Queryable<T>;
+        orderBy(...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<K, T>>;
@@ -77,7 +77,7 @@ Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selec
 Queryable.prototype.where = function <T>(this: Queryable<T>, predicate: (item: T) => boolean): Queryable<T> {
     return new WhereQueryable(this, predicate);
 };
-Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: IOrderQueryDefinition<T>[]): Queryable<T> {
+Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T> {
     return new OrderQueryable(this, ...selectors);
 };
 Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Queryable<T> {

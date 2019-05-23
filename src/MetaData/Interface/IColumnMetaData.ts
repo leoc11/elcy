@@ -1,17 +1,17 @@
 
 import { ColumnType } from "../../Common/ColumnType";
-import { GenericType, ColumnGeneration } from "../../Common/Type";
-import { IEntityMetaData } from "./IEntityMetaData";
+import { ColumnGeneration, GenericType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
+import { IEntityMetaData } from "./IEntityMetaData";
 export interface IColumnMetaData<TE = any, T = any> {
     entity?: IEntityMetaData<TE>;
     columnName?: string;
     propertyName?: keyof TE;
+    type?: GenericType<T>;
     indexed?: boolean;
     nullable?: boolean;
     defaultExp?: FunctionExpression<T>;
-    type?: GenericType<T>;
     description?: string;
     columnType?: ColumnType;
     collation?: string;
@@ -19,6 +19,6 @@ export interface IColumnMetaData<TE = any, T = any> {
     isReadOnly?: boolean;
     isPrimaryColumn?: boolean;
     isProjected?: boolean;
-    applyOption?(option: IColumnMetaData | IColumnOption): void;
     generation?: ColumnGeneration;
+    applyOption?(option: IColumnMetaData | IColumnOption): void;
 }

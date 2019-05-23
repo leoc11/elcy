@@ -1,18 +1,46 @@
 {
+    "extends": "tslint:recommended",
     "rules": {
         "class-name": true,
+        "max-line-length": [
+            false,
+            110
+        ],
+        "trailing-comma": [
+            true,
+            {
+                "multiline": "never",
+                "singleline": "never"
+            }
+        ],
+        "no-bitwise": false,
+        "unified-signatures": false,
+        "object-literal-sort-keys": [
+            true,
+            "ignore-case",
+            "match-declaration-order",
+            "shorthand-first"
+        ],
+        "only-arrow-functions": false,
+        "forin": false,
+        "ban-types": false,
+        "interface-name": false,
         "comment-format": [
             true,
             "check-space"
         ],
         "indent": [
             true,
-            "spaces"
+            "spaces",
+            4
         ],
         "no-console": [
             false
         ],
-        "no-unused-variable": true,
+        "no-empty": [
+            true,
+            "allow-empty-catch"
+        ],
         "no-duplicate-variable": true,
         "no-eval": true,
         "no-internal-module": true,

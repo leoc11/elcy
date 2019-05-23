@@ -1,52 +1,52 @@
-import { NotExpression } from "./Expression/NotExpression";
-import { ExponentiationExpression } from "./Expression/ExponentiationExpression";
-import { ModulusExpression } from "./Expression/ModulusExpression";
-import { AssignmentExpression } from "./Expression/AssignmentExpression";
 import { AdditionAssignmentExpression } from "./Expression/AdditionAssignmentExpression";
-import { SubstractionAssignmentExpression } from "./Expression/SubstractionAssignmentExpression";
-import { ExponentiationAssignmentExpression } from "./Expression/ExponentiationAssignmentExpression";
-import { MultiplicationAssignmentExpression } from "./Expression/MultiplicationAssignmentExpression";
-import { DivisionAssignmentExpression } from "./Expression/DivisionAssignmentExpression";
-import { ModulusAssignmentExpression } from "./Expression/ModulusAssignmentExpression";
-import { BitwiseZeroLeftShiftAssignmentExpression } from "./Expression/BitwiseZeroLeftShiftAssignmentExpression";
-import { BitwiseZeroRightShiftAssignmentExpression } from "./Expression/BitwiseZeroRightShiftAssignmentExpression";
-import { BitwiseSignedRightShiftAssignmentExpression } from "./Expression/BitwiseSignedRightShiftAssignmentExpression";
-import { BitwiseAndAssignmentExpression } from "./Expression/BitwiseAndAssignmentExpression";
-import { BitwiseXorAssignmentExpression } from "./Expression/BitwiseXorAssignmentExpression";
-import { BitwiseOrAssignmentExpression } from "./Expression/BitwiseOrAssignmentExpression";
-import { IExpression } from "./Expression/IExpression";
-import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
-import { RightIncrementExpression } from "./Expression/RightIncrementExpression";
-import { RightDecrementExpression } from "./Expression/RightDecrementExpression";
-import { BitwiseNotExpression } from "./Expression/BitwiseNotExpression";
-import { NegationExpression } from "./Expression/NegationExpression";
-import { MultiplicationExpression } from "./Expression/MultiplicationExpression";
-import { DivisionExpression } from "./Expression/DivisionExpression";
 import { AdditionExpression } from "./Expression/AdditionExpression";
-import { SubstractionExpression } from "./Expression/SubstractionExpression";
-import { BitwiseZeroLeftShiftExpression } from "./Expression/BitwiseZeroLeftShiftExpression";
-import { BitwiseZeroRightShiftExpression } from "./Expression/BitwiseZeroRightShiftExpression";
+import { AndExpression } from "./Expression/AndExpression";
+import { AssignmentExpression } from "./Expression/AssignmentExpression";
+import { BitwiseAndAssignmentExpression } from "./Expression/BitwiseAndAssignmentExpression";
+import { BitwiseAndExpression } from "./Expression/BitwiseAndExpression";
+import { BitwiseNotExpression } from "./Expression/BitwiseNotExpression";
+import { BitwiseOrAssignmentExpression } from "./Expression/BitwiseOrAssignmentExpression";
+import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
+import { BitwiseSignedRightShiftAssignmentExpression } from "./Expression/BitwiseSignedRightShiftAssignmentExpression";
 import { BitwiseSignedRightShiftExpression } from "./Expression/BitwiseSignedRightShiftExpression";
-import { LessThanExpression } from "./Expression/LessThanExpression";
-import { LessEqualExpression } from "./Expression/LessEqualExpression";
-import { GreaterThanExpression } from "./Expression/GreaterThanExpression";
-import { GreaterEqualExpression } from "./Expression/GreaterEqualExpression";
+import { BitwiseXorAssignmentExpression } from "./Expression/BitwiseXorAssignmentExpression";
+import { BitwiseXorExpression } from "./Expression/BitwiseXorExpression";
+import { BitwiseZeroLeftShiftAssignmentExpression } from "./Expression/BitwiseZeroLeftShiftAssignmentExpression";
+import { BitwiseZeroLeftShiftExpression } from "./Expression/BitwiseZeroLeftShiftExpression";
+import { BitwiseZeroRightShiftAssignmentExpression } from "./Expression/BitwiseZeroRightShiftAssignmentExpression";
+import { BitwiseZeroRightShiftExpression } from "./Expression/BitwiseZeroRightShiftExpression";
+import { DivisionAssignmentExpression } from "./Expression/DivisionAssignmentExpression";
+import { DivisionExpression } from "./Expression/DivisionExpression";
 import { EqualExpression } from "./Expression/EqualExpression";
-import { NotEqualExpression } from "./Expression/NotEqualExpression";
+import { ExponentiationAssignmentExpression } from "./Expression/ExponentiationAssignmentExpression";
+import { ExponentiationExpression } from "./Expression/ExponentiationExpression";
+import { GreaterEqualExpression } from "./Expression/GreaterEqualExpression";
+import { GreaterThanExpression } from "./Expression/GreaterThanExpression";
+import { IExpression } from "./Expression/IExpression";
 import { InstanceofExpression } from "./Expression/InstanceofExpression";
+import { LeftDecrementExpression } from "./Expression/LeftDecrementExpression";
+import { LeftIncrementExpression } from "./Expression/LeftIncrementExpression";
+import { LessEqualExpression } from "./Expression/LessEqualExpression";
+import { LessThanExpression } from "./Expression/LessThanExpression";
+import { MemberAccessExpression } from "./Expression/MemberAccessExpression";
+import { ModulusAssignmentExpression } from "./Expression/ModulusAssignmentExpression";
+import { ModulusExpression } from "./Expression/ModulusExpression";
+import { MultiplicationAssignmentExpression } from "./Expression/MultiplicationAssignmentExpression";
+import { MultiplicationExpression } from "./Expression/MultiplicationExpression";
+import { NegationExpression } from "./Expression/NegationExpression";
+import { NotEqualExpression } from "./Expression/NotEqualExpression";
+import { NotExpression } from "./Expression/NotExpression";
+import { OrExpression } from "./Expression/OrExpression";
+import { ParameterExpression } from "./Expression/ParameterExpression";
+import { RightDecrementExpression } from "./Expression/RightDecrementExpression";
+import { RightIncrementExpression } from "./Expression/RightIncrementExpression";
+import { SpreadExpression } from "./Expression/SpreadExpression";
 import { StrictEqualExpression } from "./Expression/StrictEqualExpression";
 import { StrictNotEqualExpression } from "./Expression/StrictNotEqualExpression";
-import { BitwiseAndExpression } from "./Expression/BitwiseAndExpression";
-import { BitwiseXorExpression } from "./Expression/BitwiseXorExpression";
-import { BitwiseOrExpression } from "./Expression/BitwiseOrExpression";
-import { AndExpression } from "./Expression/AndExpression";
-import { OrExpression } from "./Expression/OrExpression";
+import { SubstractionAssignmentExpression } from "./Expression/SubstractionAssignmentExpression";
+import { SubstractionExpression } from "./Expression/SubstractionExpression";
 import { TernaryExpression } from "./Expression/TernaryExpression";
-import { LeftIncrementExpression } from "./Expression/LeftIncrementExpression";
-import { LeftDecrementExpression } from "./Expression/LeftDecrementExpression";
 import { TypeofExpression } from "./Expression/TypeofExpression";
-import { ParameterExpression } from "./Expression/ParameterExpression";
-import { SpreadExpression } from "./Expression/SpreadExpression";
 
 export enum Associativity {
     None = 0x0,
@@ -76,24 +76,24 @@ export interface IUnaryOperator extends IOperator {
     position: UnaryPosition;
 }
 export const operators: IOperator[] = [
-    <IUnaryOperator>{ identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
-    <IUnaryOperator>{ identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } },
-    <IUnaryOperator>{ identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op) => new SpreadExpression(op) },
+    { identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
+    { identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
+    { identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op) => new SpreadExpression(op) } as IUnaryOperator,
     { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: (objectExp: IExpression, memberName: string) => new MemberAccessExpression(objectExp, memberName) },
     { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
-    <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } },
+    { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } },
     // <IUnaryOperator>{ identifier: "function", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.Left } },
     // <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 18, associativity: Associativity.Right } },
-    <IUnaryOperator>{ identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op) => new RightIncrementExpression(op) },
-    <IUnaryOperator>{ identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op) => new RightDecrementExpression(op) },
-    <IUnaryOperator>{ identifier: "!", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new NotExpression(op) },
-    <IUnaryOperator>{ identifier: "~", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new BitwiseNotExpression(op) },
-    <IUnaryOperator>{ identifier: "+", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (exp) => exp },
-    <IUnaryOperator>{ identifier: "-", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new NegationExpression(op) },
-    <IUnaryOperator>{ identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new LeftIncrementExpression(op) },
-    <IUnaryOperator>{ identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new LeftDecrementExpression(op) },
-    <IUnaryOperator>{ identifier: "typeof", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new TypeofExpression(op) },
+    { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op) => new RightIncrementExpression(op) } as IUnaryOperator,
+    { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op) => new RightDecrementExpression(op) } as IUnaryOperator,
+    { identifier: "!", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new NotExpression(op) } as IUnaryOperator,
+    { identifier: "~", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new BitwiseNotExpression(op) } as IUnaryOperator,
+    { identifier: "+", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (exp) => exp } as IUnaryOperator,
+    { identifier: "-", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new NegationExpression(op) } as IUnaryOperator,
+    { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new LeftIncrementExpression(op) } as IUnaryOperator,
+    { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new LeftDecrementExpression(op) } as IUnaryOperator,
+    { identifier: "typeof", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op) => new TypeofExpression(op) } as IUnaryOperator,
     // <IUnaryOperator>{ identifier: "void", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
     // <IUnaryOperator>{ identifier: "delete", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
     // <IUnaryOperator>{ identifier: "await", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
@@ -134,7 +134,7 @@ export const operators: IOperator[] = [
     { identifier: ">>>=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new BitwiseSignedRightShiftAssignmentExpression(op1, op2) },
     { identifier: "&=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new BitwiseAndAssignmentExpression(op1, op2) },
     { identifier: "^=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new BitwiseXorAssignmentExpression(op1, op2) },
-    { identifier: "|=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new BitwiseOrAssignmentExpression(op1, op2) },
+    { identifier: "|=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new BitwiseOrAssignmentExpression(op1, op2) }
     // <IUnaryOperator>{ identifier: "yield*", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } },
     // <IUnaryOperator>{ identifier: "yield", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } },
     // coma used as a breaker

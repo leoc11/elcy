@@ -1,13 +1,13 @@
-import { MyDb } from "../../Common/MyDb";
-import { Order } from "../../Common/Model";
+import * as chai from "chai";
+import * as sinon from "sinon";
+import * as sinonChai from "sinon-chai";
+import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
+import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
 import { EntityState } from "../../../src/Data/EntityState";
 import { Uuid } from "../../../src/Data/Uuid";
 import { mockContext } from "../../../src/Mock/MockContext";
-import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
-import * as sinon from "sinon";
-import * as chai from "chai";
-import * as sinonChai from "sinon-chai";
-import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
+import { Order } from "../../Common/Model";
+import { MyDb } from "../../Common/MyDb";
 
 chai.use(sinonChai);
 
@@ -63,10 +63,10 @@ describe("DBCONTEXT", () => {
     describe("QUERY CACHE", () => {
         db.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
         it("should cached query", () => {
-            const groupBy = db.orderDetails.take(100).where(o => o.GrossSales > 10000).select(o => o.Order).groupBy(o => o.OrderDate.getFullYear()).select(o => ({
+            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where(o => o.TotalAmount < 10000).sum(o => o.TotalAmount)
+                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             groupBy.toString();
             const queryCache = db.queryCacheManager.get(groupBy.hashCode());
@@ -82,10 +82,10 @@ describe("DBCONTEXT", () => {
             chai.expect(cache).not.undefined;
         });
         it("should used cached query for same query", () => {
-            const groupBy = db.orderDetails.take(100).where(o => o.GrossSales > 10000).select(o => o.Order).groupBy(o => o.OrderDate.getFullYear()).select(o => ({
+            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where(o => o.TotalAmount < 10000).sum(o => o.TotalAmount)
+                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const spy = sinon.spy(groupBy, "buildQuery");
             groupBy.toString();
@@ -96,10 +96,10 @@ describe("DBCONTEXT", () => {
     describe("RESULT CACHE", async () => {
         db.resultCacheManagerFactory = () => new DefaultResultCacheManager();
         it("should cached result", async () => {
-            const groupBy = db.orderDetails.take(100).where(o => o.GrossSales > 10000).select(o => o.Order).groupBy(o => o.OrderDate.getFullYear()).select(o => ({
+            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where(o => o.TotalAmount < 10000).sum(o => o.TotalAmount)
+                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const deferredQuery = groupBy.deferredToArray();
             await deferredQuery.execute();
@@ -107,10 +107,10 @@ describe("DBCONTEXT", () => {
             chai.expect(resultCache).not.equal(null);
         });
         it("should used cached result for same query", async () => {
-            const groupBy = db.orderDetails.take(100).where(o => o.GrossSales > 10000).select(o => o.Order).groupBy(o => o.OrderDate.getFullYear()).select(o => ({
+            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where(o => o.TotalAmount < 10000).sum(o => o.TotalAmount)
+                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const spy = sinon.spy(db, "executeQueries");
             await groupBy.toArray();

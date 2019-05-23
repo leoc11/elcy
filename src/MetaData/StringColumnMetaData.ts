@@ -8,8 +8,9 @@ export class StringColumnMetaData<TE = any> extends ColumnMetaData<TE, string> {
         super(String);
     }
     public applyOption(columnMeta: StringColumnMetaData<TE>) {
-        if (typeof columnMeta.length !== "undefined")
+        if (typeof columnMeta.length !== "undefined") {
             this.length = columnMeta.length;
+        }
         super.applyOption(columnMeta);
     }
 }

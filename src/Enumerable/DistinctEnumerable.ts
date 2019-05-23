@@ -8,7 +8,7 @@ export class DistinctEnumerable<T = any> extends Enumerable<T> {
         const result: T[] = [];
         for (const value of this.parent) {
             const key = this.selector ? this.selector(value) : value;
-            if (!result.any(o => keyComparer(key, o))) {
+            if (!result.any((o) => keyComparer(key, o))) {
                 yield value;
                 result.push(value);
             }

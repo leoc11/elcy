@@ -1,14 +1,14 @@
-import { IConnection } from "../Connection/IConnection";
-import { IQueryBuilder } from "./IQueryBuilder";
 import { IObjectType } from "../Common/Type";
+import { IConnection } from "../Connection/IConnection";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
-import { ISchemaQuery } from "./ISchemaQuery";
+import { IQueryBuilder } from "./IQueryBuilder";
 import { ISchemaBuilderOption } from "./ISchemaBuilderOption";
+import { ISchemaQuery } from "./ISchemaQuery";
 
 export interface ISchemaBuilder {
     connection: IConnection;
     queryBuilder: IQueryBuilder;
     option: ISchemaBuilderOption;
     getSchemaQuery(entityTypes: IObjectType[]): Promise<ISchemaQuery>;
-    loadSchemas(entities: IEntityMetaData<any>[]): Promise<IEntityMetaData[]>;
+    loadSchemas(entities: Array<IEntityMetaData<any>>): Promise<IEntityMetaData[]>;
 }

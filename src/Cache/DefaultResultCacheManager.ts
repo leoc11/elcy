@@ -1,9 +1,8 @@
-import "../Extensions/DateExtension";
-import { IResultCacheManager } from "./IResultCacheManager";
-import { IQueryResult } from "../Query/IQueryResult";
-import { ICacheOption } from "./ICacheOption";
-import { ICacheItem } from "./ICacheItem";
 import { QueuedTimeout } from "../Common/QueuedTimeout";
+import { IQueryResult } from "../Query/IQueryResult";
+import { ICacheItem } from "./ICacheItem";
+import { ICacheOption } from "./ICacheOption";
+import { IResultCacheManager } from "./IResultCacheManager";
 
 export class DefaultResultCacheManager implements IResultCacheManager {
     private _keyMap = new Map<string, ICacheItem>();
@@ -16,7 +15,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
         return res.first();
     }
     public async gets(...keys: string[]): Promise<IQueryResult[][]> {
-        return keys.select(key => {
+        return keys.select((key) => {
             const item = this._keyMap.get(key);
             if (item && item.slidingExpiration) {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
@@ -32,7 +31,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     }
     public async set(key: string, cache: IQueryResult[], option?: ICacheOption): Promise<void> {
         const item = {} as ICacheItem<IQueryResult[]>;
-        if (option) Object.assign(item, option);
+        if (option) { Object.assign(item, option); }
         item.data = cache;
         item.key = key;
         this._keyMap.set(key, item);

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
-import { Column } from "./Column";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
+import { Column } from "./Column";
 // TODO: casecade soft delete.
 export function DeletedColumn(option: IBooleanColumnOption): PropertyDecorator;
 export function DeletedColumn(name?: string): PropertyDecorator;
@@ -10,7 +10,7 @@ export function DeletedColumn(optionOrName?: IBooleanColumnOption | string): Pro
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
     }
-    else if (optionOrName) option = optionOrName;
+    else if (optionOrName) { option = optionOrName; }
 
     option.isDeletedColumn = true;
     /* istanbul ignore next */

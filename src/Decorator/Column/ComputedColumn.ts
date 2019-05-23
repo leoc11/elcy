@@ -1,8 +1,8 @@
 import "reflect-metadata";
+import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
-import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
-import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 
 // TODO: types: Persisted, Virtual, Query
 export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecorator {
@@ -18,28 +18,28 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
 
         const privatePropertySymbol = Symbol(propertyKey);
         const descriptor: PropertyDescriptor = {
-            set: function (this: any, value: R) {
-                if (!this.hasOwnProperty(privatePropertySymbol)) {
-                    Object.defineProperty(this, privatePropertySymbol, {
-                        value: undefined,
-                        enumerable: false,
-                        writable: true,
-                        configurable: true
-                    });
-                }
-                (this as any)[privatePropertySymbol] = value;
-            },
-            get: function (this: T) {
+            configurable: true,
+            enumerable: true,
+            get: function(this: T) {
                 const value = (this as any)[privatePropertySymbol];
                 if (typeof value === "undefined") {
                     try {
                         return fn(this);
                     } catch (e) { }
                 }
-                return (this as any)[privatePropertySymbol];
+                return value;
             },
-            configurable: true,
-            enumerable: true,
+            set: function(this: any, value: R) {
+                if (!this.hasOwnProperty(privatePropertySymbol)) {
+                    Object.defineProperty(this, privatePropertySymbol, {
+                        configurable: true,
+                        enumerable: false,
+                        value: undefined,
+                        writable: true
+                    });
+                }
+                (this as any)[privatePropertySymbol] = value;
+            }
         };
         Object.defineProperty(target, propertyKey, descriptor);
     };

@@ -1,6 +1,6 @@
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
-import { IIndexMetaData } from "./Interface/IIndexMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
+import { IIndexMetaData } from "./Interface/IIndexMetaData";
 
 export class IndexMetaData<TE = any> implements IIndexMetaData<TE> {
     public columns: Array<IColumnMetaData<TE>> = [];
@@ -12,12 +12,14 @@ export class IndexMetaData<TE = any> implements IIndexMetaData<TE> {
      * Apply index option
      */
     public apply(indexOption: IIndexMetaData) {
-        if (typeof indexOption.name !== "undefined")
+        if (typeof indexOption.name !== "undefined") {
             this.name = indexOption.name;
+        }
         if (typeof indexOption.columns !== "undefined") {
             this.columns = indexOption.columns;
         }
-        if (typeof indexOption.unique !== "undefined")
+        if (typeof indexOption.unique !== "undefined") {
             this.unique = indexOption.unique;
+        }
     }
 }

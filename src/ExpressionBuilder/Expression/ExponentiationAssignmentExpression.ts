@@ -1,7 +1,7 @@
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { ParameterExpression } from "./ParameterExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class ExponentiationAssignmentExpression implements IBinaryOperatorExpression<number> {
     public type = Number;
     constructor(public leftOperand: ParameterExpression<number>, public rightOperand: IExpression<number>) { }
@@ -9,7 +9,7 @@ export class ExponentiationAssignmentExpression implements IBinaryOperatorExpres
         return "(" + this.leftOperand.toString() + " **= " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new ExponentiationAssignmentExpression(left, right);

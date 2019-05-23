@@ -6,7 +6,6 @@ export type AliasType = "entity" | "column" | "param";
 export class NamingStrategy {
     public enableEscape: boolean = true;
     public aliasPrefix: { [key in AliasType]?: string } = {};
-
     public getAlias(type: AliasType) {
         return this.aliasPrefix[type] || type;
     }

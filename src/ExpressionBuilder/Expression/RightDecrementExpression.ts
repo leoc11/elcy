@@ -1,6 +1,6 @@
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
-import { resolveClone, hashCode } from "../../Helper/Util";
 import { ParameterExpression } from "./ParameterExpression";
 export class RightDecrementExpression implements IUnaryOperatorExpression<number> {
     public type = Number;
@@ -9,7 +9,7 @@ export class RightDecrementExpression implements IUnaryOperatorExpression<number
         return this.operand.toString() + "--";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const operand = resolveClone(this.operand, replaceMap);
         const clone = new RightDecrementExpression(operand);
         replaceMap.set(this, clone);

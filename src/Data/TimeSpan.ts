@@ -1,6 +1,15 @@
 import { fillZero } from "../Helper/Util";
 
 export class TimeSpan {
+    public static parse(timeSpan: string) {
+        const times = timeSpan.split(":");
+        const secondmilis = times[2].split(".");
+        const hours = parseInt(times[0], 10);
+        const minutes = parseInt(times[1], 10);
+        const seconds = parseInt(secondmilis[0], 10);
+        const milliSeconds = secondmilis.length > 1 ? parseInt(secondmilis[1], 10) : 0;
+        return new TimeSpan(hours, minutes, seconds, milliSeconds);
+    }
     private epochMilliSeconds: number;
     constructor(date: Date);
     constructor(timeString: string);
@@ -22,13 +31,14 @@ export class TimeSpan {
         }
 
         this.epochMilliSeconds = hours * 3600000;
-        if (minutes) this.epochMilliSeconds += minutes * 60000;
-        if (seconds) this.epochMilliSeconds += seconds * 1000;
-        if (milliSeconds) this.epochMilliSeconds += milliSeconds;
+        if (minutes) { this.epochMilliSeconds += minutes * 60000; }
+        if (seconds) { this.epochMilliSeconds += seconds * 1000; }
+        if (milliSeconds) { this.epochMilliSeconds += milliSeconds; }
     }
-    [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
-        if (hint === "number")
+    public [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
+        if (hint === "number") {
             return this.epochMilliSeconds;
+        }
         return this.toString();
     }
     public valueOf() {
@@ -91,14 +101,5 @@ export class TimeSpan {
     }
     public toJSON() {
         return this.toString();
-    }
-    public static parse(timeSpan: string) {
-        const times = timeSpan.split(":");
-        const secondmilis = times[2].split(".");
-        const hours = parseInt(times[0]);
-        const minutes = parseInt(times[1]);
-        const seconds = parseInt(secondmilis[0]);
-        const milliSeconds = secondmilis.length > 1 ? parseInt(secondmilis[1]) : 0;
-        return new TimeSpan(hours, minutes, seconds, milliSeconds);
     }
 }

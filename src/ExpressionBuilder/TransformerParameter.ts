@@ -2,8 +2,9 @@ export class TransformerParameter {
     private parameters: { [key: string]: any[] } = {};
     public add(key: string, value: any) {
         let vales = this.parameters[key];
-        if (!vales)
+        if (!vales) {
             vales = this.parameters[key] = [];
+        }
         vales.unshift(value);
     }
     public get(key: string) {

@@ -1,9 +1,9 @@
-import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { Product } from ".";
-import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
-import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 
 @Entity("Collections")
 export class Collection {

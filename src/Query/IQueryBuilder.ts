@@ -1,25 +1,25 @@
+import { ICompleteColumnType } from "../Common/ICompleteColumnType";
+import { ValueType } from "../Common/Type";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
-import { IQuery } from "./IQuery";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IEnumerable } from "../Enumerable/IEnumerable";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IQuery } from "./IQuery";
+import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
+import { IQueryOption } from "./IQueryOption";
 import { IQueryParameterMap } from "./IQueryParameter";
 import { NamingStrategy } from "./NamingStrategy";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
-import { ValueType } from "../Common/Type";
-import { IQueryOption } from "./IQueryOption";
-import { ICompleteColumnType } from "../Common/ICompleteColumnType";
-import { IEnumerable } from "../Enumerable/IEnumerable";
 
 export interface IQueryBuilder {
     queryLimit: IQueryLimit;
     namingStrategy: NamingStrategy;
+    lastInsertIdQuery: string;
     toQuery<T>(queryExp: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[];
     toString<T = any>(exp: IExpression<T>, param: IQueryBuilderParameter): string;
     toOperandString(exp: IExpression, param: IQueryBuilderParameter): string;
     toLogicalString(exp: IExpression<boolean>, param: IQueryBuilderParameter): string;
     valueString(value: ValueType): string;
-    lastInsertIdQuery: string;
     columnTypeString(columnType: ICompleteColumnType): string;
 
     // TODO: Remove

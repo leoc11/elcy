@@ -1,9 +1,9 @@
+import { GenericType } from "../../Common/Type";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-import { ParameterExpression } from "./ParameterExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-import { GenericType } from "../../Common/Type";
+import { ParameterExpression } from "./ParameterExpression";
 export class AdditionAssignmentExpression<T extends number | string = number | string> implements IBinaryOperatorExpression<T> {
     public type: GenericType<T>;
     public itemType: GenericType<any>;
@@ -13,17 +13,11 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
             this.rightOperand = this.convertToStringOperand(rightOperand) as any;
         }
     }
-    protected convertToStringOperand(operand: IExpression): IExpression<string> {
-        if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", [], String);
-        }
-        return operand;
-    }
     public toString(): string {
         return "(" + this.leftOperand.toString() + " += " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new AdditionAssignmentExpression<T>(left, right);
@@ -32,5 +26,11 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
     }
     public hashCode() {
         return hashCodeAdd(hashCode("+=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+    }
+    protected convertToStringOperand(operand: IExpression): IExpression<string> {
+        if (operand.type !== String) {
+            operand = new MethodCallExpression(operand, "toString", [], String);
+        }
+        return operand;
     }
 }

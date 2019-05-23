@@ -1,23 +1,23 @@
-import { MyDb } from "../../Common/MyDb";
-import { mockContext } from "../../../src/Mock/MockContext";
-import { Product, AutoParent, AutoDetail } from "../../Common/Model";
-import { Uuid } from "../../../src/Data/Uuid";
+import * as chai from "chai";
+import * as chaiPromise from "chai-as-promised";
 import "mocha";
 import * as sinon from "sinon";
-import * as chai from "chai";
 import * as sinonChai from "sinon-chai";
-import * as chaiPromise from "chai-as-promised";
 import { QueryType } from "../../../src/Common/Type";
-import { IQuery } from "../../../src/Query/IQuery";
-import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
-import { entityMetaKey, relationMetaKey } from "../../../src/Decorator/DecoratorKey";
-import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
-import { EntityState } from "../../../src/Data/EntityState";
-import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
-import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
+import { EntityState } from "../../../src/Data/EntityState";
+import { Uuid } from "../../../src/Data/Uuid";
+import { entityMetaKey, relationMetaKey } from "../../../src/Decorator/DecoratorKey";
+import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
+import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
+import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
+import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
 import { MockConnection } from "../../../src/Mock/MockConnection";
+import { mockContext } from "../../../src/Mock/MockContext";
+import { IQuery } from "../../../src/Query/IQuery";
+import { AutoDetail, AutoParent, Product } from "../../Common/Model";
+import { MyDb } from "../../Common/MyDb";
 
 chai.use(sinonChai);
 chai.use(chaiPromise);
@@ -183,7 +183,7 @@ describe("DATA MANIPULATION", () => {
         it("should bulk insert", async () => {
             const spy = sinon.spy(db.connection, "query");
 
-            const effected = await db.autoParents.where(o => o.details.count() <= 0).select(AutoDetail, o => ({
+            const effected = await db.autoParents.where((o) => o.details.count() <= 0).select(AutoDetail, (o) => ({
                 description: "Detail of parent " + o.id
             })).insertInto(AutoDetail);
 
@@ -220,9 +220,9 @@ describe("DATA MANIPULATION", () => {
         });
         it("should bulk update entity", async () => {
             const spy = sinon.spy(db.connection, "query");
-            const effected = await db.autoParents.where(o => o.id === 1).update({
+            const effected = await db.autoParents.where((o) => o.id === 1).update({
                 name: "Updated",
-                isDefault: o => !o.isDefault
+                isDefault: (o) => !o.isDefault
             });
 
             chai.should();
@@ -452,7 +452,7 @@ describe("DATA MANIPULATION", () => {
         });
         it("should bulk delete with include (soft delete)", async () => {
             const spy = sinon.spy(db.connection, "query");
-            const effected = await db.autoParents.include(o => o.details).delete(o => o.id === 1);
+            const effected = await db.autoParents.include((o) => o.details).delete((o) => o.id === 1);
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
@@ -464,8 +464,8 @@ describe("DATA MANIPULATION", () => {
         });
         it("should bulk delete with include (hard delete)", async () => {
             const spy = sinon.spy(db.connection, "query");
-            const effected = await db.autoParents.include(o => o.details)
-                .where(o => o.id === 1)
+            const effected = await db.autoParents.include((o) => o.details)
+                .where((o) => o.id === 1)
                 .delete("hard");
 
             chai.should();
@@ -477,8 +477,8 @@ describe("DATA MANIPULATION", () => {
             effected.should.be.greaterThan(0);
         });
         it("should fail soft delete for not supported entity", () => {
-            const promise = db.autoParents.include(o => o.details)
-                .where(o => o.id === 1)
+            const promise = db.autoParents.include((o) => o.details)
+                .where((o) => o.id === 1)
                 .delete("soft");
 
             promise.should.eventually.be.rejectedWith("'AutoDetail' did not support 'Soft' delete");

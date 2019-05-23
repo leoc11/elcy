@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import { Column } from "./Column";
 import { DateTimeColumnType } from "../../Common/ColumnType";
-import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { TimeZoneHandling } from "../../Common/Type";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { Column } from "./Column";
 
 export function DateTimeColumn(option?: IDateTimeColumnOption): PropertyDecorator;
 export function DateTimeColumn(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator;
@@ -11,9 +11,9 @@ export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, db
     let option: IDateTimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
-        if (defaultValue !== undefined) option.default = defaultValue;
-        if (dbtype !== undefined) option.columnType = dbtype;
-        if (timeZoneHanding !== undefined) option.timeZoneHandling = timeZoneHanding;
+        if (defaultValue !== undefined) { option.default = defaultValue; }
+        if (dbtype !== undefined) { option.columnType = dbtype; }
+        if (timeZoneHanding !== undefined) { option.timeZoneHandling = timeZoneHanding; }
     }
     else if (optionOrName) {
         option = optionOrName;

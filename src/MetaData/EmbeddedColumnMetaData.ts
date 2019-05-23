@@ -1,8 +1,8 @@
-import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { IBaseRelationMetaData } from "./Interface/IBaseRelationMetaData";
-import { IEmbeddedRelationOption } from "../Decorator/Option/IEmbeddedRelationOption";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { RelationshipType } from "../Common/Type";
+import { entityMetaKey } from "../Decorator/DecoratorKey";
+import { IEmbeddedRelationOption } from "../Decorator/Option/IEmbeddedRelationOption";
+import { IBaseRelationMetaData } from "./Interface/IBaseRelationMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class EmbeddedRelationMetaData<TS = any, TT = any> implements IBaseRelationMetaData<TS, TT> {
     public propertyName: keyof TS;

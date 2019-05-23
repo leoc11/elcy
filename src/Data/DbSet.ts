@@ -1,30 +1,30 @@
-import { IObjectType, ValueType, DeleteMode, ColumnGeneration, FlatObjectLike, ObjectLike } from "../Common/Type";
-import { DbContext } from "./DBContext";
-import { Queryable } from "../Queryable/Queryable";
-import { hashCode, isValue, clone, isNotNull } from "../Helper/Util";
+import { ColumnGeneration, DeleteMode, FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { EntityEntry } from "./EntityEntry";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
-import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
-import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
-import { IQueryOption } from "../Query/IQueryOption";
-import { Diagnostic } from "../Logger/Diagnostic";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
-import { DeferredQuery } from "../Query/DeferredQuery";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
-import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
-import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IEnumerable } from "../Enumerable/IEnumerable";
+import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
+import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
+import { clone, hashCode, isNotNull, isValue } from "../Helper/Util";
+import { Diagnostic } from "../Logger/Diagnostic";
+import { EntityMetaData } from "../MetaData/EntityMetaData";
+import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { DeferredQuery } from "../Query/DeferredQuery";
+import { IQueryOption } from "../Query/IQueryOption";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { Queryable } from "../Queryable/Queryable";
+import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
+import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
+import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { WhereQueryable } from "../Queryable/WhereQueryable";
+import { DbContext } from "./DBContext";
+import { EntityEntry } from "./EntityEntry";
 
 export class DbSet<T> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -34,13 +34,18 @@ export class DbSet<T> extends Queryable<T> {
         return {};
     }
     public get metaData() {
-        if (!this._metaData)
+        if (!this._metaData) {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
+        }
         return this._metaData;
     }
-    public get primaryKeys(): IColumnMetaData<T>[] {
+    public get primaryKeys(): Array<IColumnMetaData<T>> {
         return this.metaData.primaryKeys;
     }
+    public get local(): IEnumerable<T> {
+        return Enumerable.from(this.dictionary).select((o) => o[1].entity);
+    }
+    protected dictionary: Map<string, EntityEntry<T>> = new Map();
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<T>;
     constructor(public readonly type: IObjectType<T>, dbContext: DbContext) {
@@ -55,10 +60,6 @@ export class DbSet<T> extends Queryable<T> {
     public hashCode() {
         return hashCode(this.type.name!);
     }
-    public get local(): IEnumerable<T> {
-        return Enumerable.from(this.dictionary).select(o => o[1].entity);
-    }
-    protected dictionary: Map<string, EntityEntry<T>> = new Map();
     public async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean) {
         let entity = forceReload ? null : this.findLocal(id);
         if (!entity) {
@@ -67,7 +68,7 @@ export class DbSet<T> extends Queryable<T> {
         return entity;
     }
     public findLocal(id: ValueType | FlatObjectLike<T>): T {
-        let key = this.getKey(id);
+        const key = this.getKey(id);
         const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
@@ -102,7 +103,7 @@ export class DbSet<T> extends Queryable<T> {
             entity[this.primaryKeys.first().propertyName] = primaryValue as unknown as T[keyof T];
         }
         else {
-            if (this.primaryKeys.any(o => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
+            if (this.primaryKeys.any((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
                 throw new Error(`Primary keys is required`);
             }
 
@@ -117,10 +118,12 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary = new Map();
     }
     public getKey(id: ValueType | ObjectLike<T>): string {
-        if (!isNotNull(id))
+        if (!isNotNull(id)) {
             throw new Error("Parameter cannot be null");
-        if (isValue(id))
+        }
+        if (isValue(id)) {
             return id.toString();
+        }
 
         let keyString = "";
         let useReference = false;
@@ -156,8 +159,9 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredInsert(...items: Array<ObjectLike<T>>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
+        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
             throw new Error(`Only entity supported`);
+        }
 
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
@@ -167,19 +171,21 @@ export class DbSet<T> extends Queryable<T> {
             const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
             for (const prop in item) {
                 const propValue = item[prop];
-                if (propValue !== undefined && !(propValue instanceof Function))
+                if (propValue !== undefined && !(propValue instanceof Function)) {
                     itemExp[prop] = new ValueExpression(propValue);
+                }
             }
             valueExp.push(itemExp);
         }
-        let insertExp = new InsertExpression(entityExp, valueExp);
+        const insertExp = new InsertExpression(entityExp, valueExp);
         insertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = this.buildParameter(insertExp, this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
+        const flatParams = this.flatQueryParameter({ index: 0 });
+        const params = this.buildParameter(insertExp, flatParams);
+        if (Diagnostic.enabled) { Diagnostic.trace(this, `build params time: ${timer.time()}ms`); }
 
-        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -189,7 +195,7 @@ export class DbSet<T> extends Queryable<T> {
         const setterObj: { [key in keyof T]?: T[key] | ((item: T) => ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
         for (const prop in setter) {
-            const primaryCol = this.metaData.primaryKeys.first(o => o.propertyName === prop);
+            const primaryCol = this.metaData.primaryKeys.first((o) => o.propertyName === prop);
             if (primaryCol) {
                 const val = setter[primaryCol.propertyName];
                 if (!val) {
@@ -253,8 +259,9 @@ export class DbSet<T> extends Queryable<T> {
         return await query.execute();
     }
     public deferredUpsert(item: ObjectLike<T>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type))
+        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
             throw new Error(`Only entity supported`);
+        }
 
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
@@ -263,14 +270,15 @@ export class DbSet<T> extends Queryable<T> {
         for (const prop in item) {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
-        let upsertExp = new UpsertExpression(entityExp, setterExp);
+        const upsertExp = new UpsertExpression(entityExp, setterExp);
         upsertExp.option = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
-        const params = this.buildParameter(upsertExp, this.flatParameterStacks);
-        if (Diagnostic.enabled) Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
+        const flatParams = this.flatQueryParameter({ index: 0 });
+        const params = this.buildParameter(upsertExp, flatParams);
+        if (Diagnostic.enabled) { Diagnostic.trace(this, `build params time: ${timer.time()}ms`); }
 
-        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum(o => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }

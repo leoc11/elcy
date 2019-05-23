@@ -1,5 +1,4 @@
 import { operators } from "./IOperator";
-import "../Extensions/EnumerableExtension";
 
 interface ILexicalPointer {
     index: number;
@@ -40,7 +39,8 @@ export class LexicalAnalyzer {
                 lastToken = analyzeLexicalIdentifier(pointer, input);
                 yield lastToken;
             }
-            else if (char === "(" || char === "[" || char === "%" || (char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
+            else if (char === "(" || char === "[" || char === "%"
+                || (char !== "," && char >= "*" && char < "/") || (char >= "<" && char <= "?")
                 || char === "&" || char === "|" || char === "~" || char === "^" || char === "!") {
                 lastToken = analyzeLexicalOperator(pointer, input);
                 yield lastToken;
@@ -96,7 +96,7 @@ export class LexicalAnalyzer {
     }
 }
 
-const keywordOperators = operators.where(o => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select(o => o.identifier);
+const keywordOperators = operators.where((o) => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select((o) => o.identifier);
 keywordOperators.enableCache = true;
 const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with"];
 
@@ -111,7 +111,7 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
         (char >= "0" && char <= "9") || char === "_" || char === "$");
 
     const data = input.slice(start, pointer.index);
-    let type = keywordOperators.contains(data) ? LexicalTokenType.Operator :
+    const type = keywordOperators.contains(data) ? LexicalTokenType.Operator :
         keywords.contains(data) ? LexicalTokenType.Keyword : LexicalTokenType.Identifier;
 
     return {
@@ -162,12 +162,17 @@ function analyzeRegexp(pointer: ILexicalPointer, input: string): ILexicalToken {
     let isFoundEnd = false;
     let char: string;
     do {
-        if (!isFoundEnd)
+        if (!isFoundEnd) {
             isFoundEnd = char === "/";
+        }
         char = input[++pointer.index];
-        if (char === "\\")
+        if (char === "\\") {
             char = input[pointer.index += 2];
-    } while (!isFoundEnd || char === "i" || char === "g" || char === "m" || char === "u" || char === "y");
+        }
+    } while (
+        !isFoundEnd || char === "i" || char === "g"
+        || char === "m" || char === "u" || char === "y"
+    );
     const data = input.slice(start, pointer.index);
     return {
         data: data,
@@ -182,12 +187,14 @@ function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock 
         if (isBlock) {
             if (char === "*") {
                 char = input[pointer.index++];
-                if (char === "/")
+                if (char === "/") {
                     break;
+                }
             }
         }
-        else if (char === "\n")
+        else if (char === "\n") {
             break;
+        }
     } while (true);
 }
 function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
@@ -207,7 +214,7 @@ function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexic
     }
     const data = input.slice(start, pointer.index);
     return {
-        data: data,
-        type: LexicalTokenType.Operator
+        type: LexicalTokenType.Operator,
+        data: data
     };
 }

@@ -1,7 +1,6 @@
-import { EntityEntry } from "./EntityEntry";
-import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
-import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";
+import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
+import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
 
 declare module "./EntityEntry" {
@@ -20,8 +19,9 @@ EntityEntry.prototype.onPropertyChanged = function <T>(this: EntityEntry<T>, ent
         // update all relation refer to this entity.
         for (const prop in this.relationMap) {
             const relationGroup = this.relationMap[prop];
-            if (!relationGroup)
+            if (!relationGroup) {
                 continue;
+            }
 
             for (const [, relation] of relationGroup) {
                 const entry = relation.masterEntry === this ? relation.slaveEntry : relation.masterEntry;
@@ -51,3 +51,5 @@ EntityEntry.prototype.onPropertyChanged = function <T>(this: EntityEntry<T>, ent
         }
     }
 };
+
+import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";

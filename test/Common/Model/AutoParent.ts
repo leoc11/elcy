@@ -1,18 +1,18 @@
-import { Entity } from "../../../src/Decorator/Entity/Entity";
-import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
-import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
-import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
-import { AutoDetail } from "./AutoDetail";
-import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 import { BooleanColumn } from "../../../src/Decorator/Column/BooleanColumn";
-import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
 import { CreatedDateColumn } from "../../../src/Decorator/Column/CreatedDateColumn";
+import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
+import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { ModifiedDateColumn } from "../../../src/Decorator/Column/ModifiedDateColumn";
-import { BeforeSave } from "../../../src/Decorator/EventHandler/BeforeSave";
-import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { AfterDelete } from "../../../src/Decorator/EventHandler/AfterDelete";
 import { AfterSave } from "../../../src/Decorator/EventHandler/AfterSave";
 import { BeforeDelete } from "../../../src/Decorator/EventHandler/BeforeDelete";
-import { AfterDelete } from "../../../src/Decorator/EventHandler/AfterDelete";
+import { BeforeSave } from "../../../src/Decorator/EventHandler/BeforeSave";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
+import { AutoDetail } from "./AutoDetail";
 
 @Entity("AutoParent")
 export class AutoParent {

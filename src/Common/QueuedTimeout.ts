@@ -6,17 +6,17 @@ interface IQueuedTimeoutItem<T = any> {
 }
 
 export class QueuedTimeout<T> {
-    constructor(public readonly action: (item: T) => any) { }
     public readonly queue = SortedArray.create((a: IQueuedTimeoutItem<T>, b: IQueuedTimeoutItem<T>) => {
         return a.timeOut < b.timeOut ? -1 : a.timeOut > b.timeOut ? 1 : 0;
     });
     private _timeout: any;
+    constructor(public readonly action: (item: T) => any) { }
     public setTimeout(): void;
     public setTimeout(item: T, timeOut?: Date): void;
     public setTimeout(item?: T, timeOut?: Date) {
         let timeoutItem: IQueuedTimeoutItem<T>;
         if (item) {
-            if (!this.queue.any(o => o.item === item)) {
+            if (!this.queue.any((o) => o.item === item)) {
                 timeoutItem = { item: item, timeOut: timeOut ? timeOut.getTime() : Infinity };
                 this.queue.push(timeoutItem);
             }
@@ -26,15 +26,7 @@ export class QueuedTimeout<T> {
         }
 
         if (!this._timeout && timeoutItem && timeoutItem.timeOut !== Infinity) {
-            this._timeout = setTimeout(() => {
-                const item = this.queue.shift();
-                this._timeout = null;
-                if (item)
-                    this.action(item.item);
-
-                if (this.queue.length)
-                    this.setTimeout();
-            }, Date.now() - timeoutItem.timeOut);
+            this._timeout = setTimeout(() => this.execute(), Date.now() - timeoutItem.timeOut);
         }
     }
     public clearTimeout(item?: T) {
@@ -42,7 +34,7 @@ export class QueuedTimeout<T> {
             if (item) {
                 const timeoutItem = this.queue[0];
                 if (timeoutItem.item !== item) {
-                    const existing = this.queue.where(o => o.item === item).first();
+                    const existing = this.queue.where((o) => o.item === item).first();
                     if (existing) {
                         this.queue.delete(existing);
                     }
@@ -52,8 +44,9 @@ export class QueuedTimeout<T> {
 
             clearTimeout(this._timeout);
             this._timeout = null;
-            if (this.queue.length > 0)
+            if (this.queue.length > 0) {
                 this.setTimeout();
+            }
         }
     }
     public reset(): void {
@@ -65,8 +58,9 @@ export class QueuedTimeout<T> {
     }
     public pop() {
         const item = this.queue.pop();
-        if (this.queue.length === 0)
+        if (this.queue.length === 0) {
             this.clearTimeout();
+        }
         return item ? item.item : undefined;
     }
     public shift() {
@@ -74,12 +68,25 @@ export class QueuedTimeout<T> {
         this.clearTimeout();
         return item ? item.item : undefined;
     }
-    public forceTimeoutFirst(count: number) {
-        if (count < 0)
+    public forceExecute(count: number) {
+        if (count < 0) {
             count = 0;
+        }
         const items = this.queue.splice(0, count);
         this.clearTimeout();
-        for (const item of items)
+        for (const item of items) {
             this.action(item.item);
+        }
+    }
+    private execute() {
+        const item = this.queue.shift();
+        this._timeout = null;
+        if (item) {
+            this.action(item.item);
+        }
+
+        if (this.queue.length) {
+            this.setTimeout();
+        }
     }
 }

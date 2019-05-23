@@ -1,7 +1,7 @@
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { resolveClone } from "../../Helper/Util";
 import { GenericType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { resolveClone } from "../../Helper/Util";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 export class SqlParameterExpression<T = any> implements IExpression<T> {
     public type: GenericType<T>;
@@ -13,7 +13,7 @@ export class SqlParameterExpression<T = any> implements IExpression<T> {
         return this.valueExp.hashCode();
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const valueGetter = resolveClone(this.valueExp, replaceMap);
         const clone = new SqlParameterExpression(valueGetter, this.column);
         replaceMap.set(this, clone);

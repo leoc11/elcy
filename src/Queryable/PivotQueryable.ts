@@ -1,72 +1,59 @@
+import { Pivot } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { Queryable } from "./Queryable";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { Pivot } from "../Common/Type";
 
+type TExpObject<T> = FunctionExpression<{ [key in keyof T]?: IExpression<T[key]> }>;
 export class PivotQueryable<T,
-    TDF extends FunctionExpression,
-    TMF extends FunctionExpression,
     TD extends { [key: string]: (o: T) => any } = any,
-    TM extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any> 
+    TM extends { [key: string]: (o: T[] | Enumerable<T>) => any } = any>
     extends Queryable<Pivot<T, TD, TM>> {
-    protected readonly dimensionFn: TD;
-    protected readonly metricFn: TM;
-    private _dimensions: TDF;
-    protected toObjectValueExpression<T, K, KE extends { [key in keyof K]: FunctionExpression | ((item: T) => any) }>(objectFn: KE, paramName: string): FunctionExpression<{ [key in keyof KE]?: IExpression }> {
-        const param = new ParameterExpression(paramName, this.parent.type);
-        const objectValue: { [key in keyof KE]?: IExpression } = {};
-        for (const prop in objectFn) {
-            const value = objectFn[prop];
-            let fnExpression: FunctionExpression;
-            if (value instanceof FunctionExpression)
-                fnExpression = value;
-            else
-                fnExpression = ExpressionBuilder.parse(value as (item: T) => any, [this.parent.type], this.parameters);
-            if (fnExpression.params.length > 0) {
-                (fnExpression.params[0] as any).name = paramName;
-            }
-            objectValue[prop] = fnExpression.body;
-        }
-        const objExpression = new ObjectValueExpression(objectValue);
-        return new FunctionExpression(objExpression, [param]) as any;
-    }
     protected get dimensions() {
-        if (!this._dimensions && this.dimensionFn)
-            this._dimensions = this.toObjectValueExpression(this.dimensionFn, "d") as any;
+        if (!this._dimensions && this.dimensionFn) {
+            this._dimensions = this.toObjectValueExpression(this.dimensionFn, "d");
+        }
         return this._dimensions;
     }
     protected set dimensions(value) {
         this._dimensions = value;
     }
-    private _metrics: TMF;
     protected get metrics() {
-        if (!this._metrics && this.metricFn)
-            this._metrics = this.toObjectValueExpression(this.metricFn, "m") as any;
+        if (!this._metrics && this.metricFn) {
+            this._metrics = this.toObjectValueExpression(this.metricFn, "m");
+        }
         return this._metrics;
     }
     protected set metrics(value) {
         this._metrics = value;
     }
-    constructor(public readonly parent: Queryable<T>, dimensions: TD | TDF, metrics: TM | TMF) {
+    protected readonly dimensionFn: TD;
+    protected readonly metricFn: TM;
+    private _dimensions: TExpObject<TD>;
+    private _metrics: TExpObject<TM>;
+    constructor(public readonly parent: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>) {
         super(Object, parent);
-        if (dimensions instanceof FunctionExpression)
+        if (dimensions instanceof FunctionExpression) {
             this.dimensions = dimensions;
-        else
+        }
+        else {
             this.dimensionFn = dimensions;
-        if (metrics instanceof FunctionExpression)
+        }
+        if (metrics instanceof FunctionExpression) {
             this.metrics = metrics;
-        else
+        }
+        else {
             this.metricFn = metrics;
+        }
     }
     public buildQuery(queryVisitor: IQueryVisitor) {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
@@ -78,5 +65,25 @@ export class PivotQueryable<T,
         let code = this.dimensions.hashCode();
         code += this.metrics.hashCode();
         return hashCodeAdd(hashCode("PIVOT", this.parent.hashCode()), code);
+    }
+    protected toObjectValueExpression<K, KE extends { [key in keyof K]: FunctionExpression | ((item: T) => any) }>(objectFn: KE, paramName: string): TExpObject<KE> {
+        const param = new ParameterExpression(paramName, this.parent.type);
+        const objectValue: { [key in keyof KE]?: IExpression } = {};
+        for (const prop in objectFn) {
+            const value = objectFn[prop];
+            let fnExpression: FunctionExpression;
+            if (value instanceof FunctionExpression) {
+                fnExpression = value;
+            }
+            else {
+                fnExpression = ExpressionBuilder.parse(value as (item: T) => any, [this.parent.type], this.parameters);
+            }
+            if (fnExpression.params.length > 0) {
+                (fnExpression.params[0] as any).name = paramName;
+            }
+            objectValue[prop] = fnExpression.body;
+        }
+        const objExpression = new ObjectValueExpression(objectValue);
+        return new FunctionExpression(objExpression, [param]) as any;
     }
 }

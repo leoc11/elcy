@@ -1,8 +1,8 @@
 import { GenericType } from "../../Common/Type";
-import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
-import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
+import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
+import { IEntityMetaData } from "../Interface/IEntityMetaData";
 
 export class InheritedComputedColumnMetaData<TE extends TP, TP, T = any> extends ComputedColumnMetaData<TE, T> {
     public get propertyName(): keyof TE {

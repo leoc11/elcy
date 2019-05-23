@@ -1,10 +1,10 @@
-import { Entity } from "../../../src/Decorator/Entity/Entity";
-import { OrderDetail, Collection } from ".";
-import { Relationship } from "../../../src/Decorator/Relation/Relationship";
-import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
-import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
-import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
+import { Collection, OrderDetail } from ".";
 import { Uuid } from "../../../src/Data/Uuid";
+import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
+import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
+import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
 
 @Entity("Products")
 export class Product {

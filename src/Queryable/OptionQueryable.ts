@@ -1,21 +1,26 @@
+import { clone } from "../Helper/Util";
+import { IQueryOption } from "../Query/IQueryOption";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryOption } from "../Query/IQueryOption";
 
 export class OptionQueryable<T> extends Queryable<T> {
-    constructor(public readonly parent: Queryable<T>, option: IQueryOption) {
+    private _queryOption: IQueryOption;
+    public get queryOption() {
+        return this._queryOption;
+    }
+    constructor(parent: Queryable<T>, option: IQueryOption) {
         super(parent.type, parent);
-        this.option(this.parent.queryOption);
+        this._queryOption = clone(this.parent.queryOption);
         this.option(option);
     }
-    public queryOption: IQueryOption = {};
     public option(option: IQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {
-                if (!(this.queryOption as any)[prop])
+                if (!(this.queryOption as any)[prop]) {
                     (this.queryOption as any)[prop] = {};
+                }
                 Object.assign((this.queryOption as any)[prop], value);
             }
             else {

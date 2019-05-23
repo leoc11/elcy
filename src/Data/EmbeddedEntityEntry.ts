@@ -1,11 +1,11 @@
-import { DbSet } from "./DbSet";
-import { EntityEntry } from "./EntityEntry";
-import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
-import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
-import { EntityState } from "./EntityState";
+import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
-import { propertyChangeHandlerMetaKey, propertyChangeDispatherMetaKey } from "../Decorator/DecoratorKey";
+import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
+import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
+import { DbSet } from "./DbSet";
+import { EntityEntry } from "./EntityEntry";
+import { EntityState } from "./EntityState";
 
 export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
     public column: EmbeddedRelationMetaData<TP, T>;
@@ -20,7 +20,7 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
         }
         propertyChangeHandler.add(this.onPropertyChanged);
 
-        let parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
+        const parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
         if (!parentPropertyChangeHandler) {
             parentPropertyChangeHandler.add(this.onParentPropertyChange);
         }
@@ -36,8 +36,9 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             const isUnchanged = !(this.state === EntityState.Detached || this.state === EntityState.Unchanged) && (value === EntityState.Detached || value === EntityState.Unchanged);
             if (isUnchanged) {
                 const embeddedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);
-                if (embeddedEntries)
+                if (embeddedEntries) {
                     embeddedEntries.delete(this);
+                }
             }
             else if (isModified) {
                 let typedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);

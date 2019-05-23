@@ -7,8 +7,9 @@ interface Array<T> {
 
 Array.prototype.add = function <T>(this: T[], ...items: T[]) {
     for (const item of items) {
-        if (!this.contains(item))
+        if (!this.contains(item)) {
             this.push(item);
+        }
     }
 };
 Array.prototype.delete = function <T>(this: T[], ...items: T[]) {

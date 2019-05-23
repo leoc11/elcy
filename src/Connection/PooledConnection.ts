@@ -1,7 +1,7 @@
-import { IConnection } from "./IConnection";
+import { IsolationLevel, QueryType } from "../Common/Type";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
-import { IsolationLevel, QueryType } from "../Common/Type";
+import { IConnection } from "./IConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 
 export class PooledConnection implements IConnection {

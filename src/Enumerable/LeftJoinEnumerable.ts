@@ -14,7 +14,7 @@ export class LeftJoinEnumerable<T = any, T2 = any, R = any> extends Enumerable<R
                     yield this.resultSelector(value1, value2);
                 }
             }
-            if (!hasMatch) yield this.resultSelector(value1, null);
+            if (!hasMatch) { yield this.resultSelector(value1, null); }
         }
     }
 }

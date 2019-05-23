@@ -1,17 +1,17 @@
-import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
+import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, QueryType } from "../../Common/Type";
+import { Version } from "../../Common/Version";
+import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
-import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { IQuery } from "../../Query/IQuery";
-import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
-import { Version } from "../../Common/Version";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
-import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
+import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
+import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 
 export class SqliteQueryBuilder extends RelationQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -39,19 +39,19 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
             return this.getUpsertQueryOlder(upsertExp, option, parameters);
         }
 
-        const colString = upsertExp.insertColumns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const valueString = upsertExp.insertColumns.select(o => {
+        const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const valueString = upsertExp.insertColumns.select((o) => {
             const valueExp = upsertExp.setter[o.propertyName];
             return valueExp ? this.toString(valueExp, param) : "DEFAULT";
         }).toArray().join(",");
-        const primaryColString = upsertExp.entity.primaryColumns.select(o => this.enclose(o.columnName)).toArray().join(",");
-        const updateString = upsertExp.updateColumns.select(column => {
+        const primaryColString = upsertExp.entity.primaryColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) return undefined;
+            if (!valueExp) { return undefined; }
             return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
-        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+        }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
-        let queryCommand: IQuery = {
+        const queryCommand: IQuery = {
             query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine()
                 + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
             parameters: this.getParameter(param),
@@ -66,14 +66,14 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
             queryExpression: upsertExp
         };
 
-        const colString = upsertExp.insertColumns.select(o => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.insertColumns.select(o => {
+            `VALUES (${upsertExp.insertColumns.select((o) => {
                 const valueExp = upsertExp.setter[o.propertyName];
                 return valueExp ? this.toString(valueExp, param) : "DEFAULT";
             }).toArray().join(",")})`;
 
-        let queryCommand: IQuery = {
+        const queryCommand: IQuery = {
             query: insertQuery,
             parameters: this.getParameter(param),
             type: QueryType.DML
@@ -81,12 +81,12 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
 
         const result: IQuery[] = [queryCommand];
 
-        const updateString = upsertExp.updateColumns.select(column => {
+        const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) return undefined;
+            if (!valueExp) { return undefined; }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
-        }).where(o => !!o).toArray().join(`,${this.newLine(1)}`);
+        }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const updateCommand: IQuery = {
             query: `UPDATE ${this.getEntityQueryString(upsertExp.entity, param)} SET ${updateString} WHERE ${this.toLogicalString(upsertExp.where, param)}`,

@@ -1,6 +1,6 @@
 
 import { ColumnType } from "../../Common/ColumnType";
-import { GenericType, ColumnGeneration } from "../../Common/Type";
+import { ColumnGeneration, GenericType } from "../../Common/Type";
 export interface IColumnFormatter<T, TD = any> {
     from: (source: T) => TD;
     to: (source: TD) => T;

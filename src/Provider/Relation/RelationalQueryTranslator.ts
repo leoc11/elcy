@@ -1,50 +1,50 @@
-import { QueryTranslator } from "../../Query/QueryTranslator";
-import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
-import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { AssignmentExpression } from "../../ExpressionBuilder/Expression/AssignmentExpression";
+import { Enumerable } from "../../Enumerable/Enumerable";
 import { AdditionAssignmentExpression } from "../../ExpressionBuilder/Expression/AdditionAssignmentExpression";
-import { SubstractionAssignmentExpression } from "../../ExpressionBuilder/Expression/SubstractionAssignmentExpression";
-import { MultiplicationAssignmentExpression } from "../../ExpressionBuilder/Expression/MultiplicationAssignmentExpression";
-import { DivisionAssignmentExpression } from "../../ExpressionBuilder/Expression/DivisionAssignmentExpression";
-import { ExponentiationAssignmentExpression } from "../../ExpressionBuilder/Expression/ExponentiationAssignmentExpression";
-import { ModulusAssignmentExpression } from "../../ExpressionBuilder/Expression/ModulusAssignmentExpression";
-import { BitwiseAndAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseAndAssignmentExpression";
-import { BitwiseXorAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseXorAssignmentExpression";
-import { BitwiseOrAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseOrAssignmentExpression";
-import { BitwiseZeroLeftShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseZeroLeftShiftAssignmentExpression";
-import { BitwiseZeroRightShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseZeroRightShiftAssignmentExpression";
-import { BitwiseSignedRightShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseSignedRightShiftAssignmentExpression";
-import { LeftIncrementExpression } from "../../ExpressionBuilder/Expression/LeftIncrementExpression";
-import { LeftDecrementExpression } from "../../ExpressionBuilder/Expression/LeftDecrementExpression";
-import { RightIncrementExpression } from "../../ExpressionBuilder/Expression/RightIncrementExpression";
-import { RightDecrementExpression } from "../../ExpressionBuilder/Expression/RightDecrementExpression";
-import { GreaterEqualExpression } from "../../ExpressionBuilder/Expression/GreaterEqualExpression";
-import { GreaterThanExpression } from "../../ExpressionBuilder/Expression/GreaterThanExpression";
-import { LessEqualExpression } from "../../ExpressionBuilder/Expression/LessEqualExpression";
-import { LessThanExpression } from "../../ExpressionBuilder/Expression/LessThanExpression";
-import { NotEqualExpression } from "../../ExpressionBuilder/Expression/NotEqualExpression";
-import { OrExpression } from "../../ExpressionBuilder/Expression/OrExpression";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { StrictNotEqualExpression } from "../../ExpressionBuilder/Expression/StrictNotEqualExpression";
-import { SubstractionExpression } from "../../ExpressionBuilder/Expression/SubstractionExpression";
-import { MultiplicationExpression } from "../../ExpressionBuilder/Expression/MultiplicationExpression";
-import { BitwiseNotExpression } from "../../ExpressionBuilder/Expression/BitwiseNotExpression";
-import { NotExpression } from "../../ExpressionBuilder/Expression/NotExpression";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { AssignmentExpression } from "../../ExpressionBuilder/Expression/AssignmentExpression";
+import { BitwiseAndAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseAndAssignmentExpression";
 import { BitwiseAndExpression } from "../../ExpressionBuilder/Expression/BitwiseAndExpression";
+import { BitwiseNotExpression } from "../../ExpressionBuilder/Expression/BitwiseNotExpression";
+import { BitwiseOrAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseOrAssignmentExpression";
 import { BitwiseOrExpression } from "../../ExpressionBuilder/Expression/BitwiseOrExpression";
+import { BitwiseSignedRightShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseSignedRightShiftAssignmentExpression";
+import { BitwiseXorAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseXorAssignmentExpression";
 import { BitwiseXorExpression } from "../../ExpressionBuilder/Expression/BitwiseXorExpression";
+import { BitwiseZeroLeftShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseZeroLeftShiftAssignmentExpression";
+import { BitwiseZeroRightShiftAssignmentExpression } from "../../ExpressionBuilder/Expression/BitwiseZeroRightShiftAssignmentExpression";
+import { DivisionAssignmentExpression } from "../../ExpressionBuilder/Expression/DivisionAssignmentExpression";
 import { DivisionExpression } from "../../ExpressionBuilder/Expression/DivisionExpression";
-import { ModulusExpression } from "../../ExpressionBuilder/Expression/ModulusExpression";
-import { IUnaryOperatorExpression } from "../../ExpressionBuilder/Expression/IUnaryOperatorExpression";
-import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { ExponentiationAssignmentExpression } from "../../ExpressionBuilder/Expression/ExponentiationAssignmentExpression";
+import { GreaterEqualExpression } from "../../ExpressionBuilder/Expression/GreaterEqualExpression";
+import { GreaterThanExpression } from "../../ExpressionBuilder/Expression/GreaterThanExpression";
+import { IBinaryOperatorExpression } from "../../ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { IUnaryOperatorExpression } from "../../ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { LeftDecrementExpression } from "../../ExpressionBuilder/Expression/LeftDecrementExpression";
+import { LeftIncrementExpression } from "../../ExpressionBuilder/Expression/LeftIncrementExpression";
+import { LessEqualExpression } from "../../ExpressionBuilder/Expression/LessEqualExpression";
+import { LessThanExpression } from "../../ExpressionBuilder/Expression/LessThanExpression";
+import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
+import { ModulusAssignmentExpression } from "../../ExpressionBuilder/Expression/ModulusAssignmentExpression";
+import { ModulusExpression } from "../../ExpressionBuilder/Expression/ModulusExpression";
+import { MultiplicationAssignmentExpression } from "../../ExpressionBuilder/Expression/MultiplicationAssignmentExpression";
+import { MultiplicationExpression } from "../../ExpressionBuilder/Expression/MultiplicationExpression";
+import { NotEqualExpression } from "../../ExpressionBuilder/Expression/NotEqualExpression";
+import { NotExpression } from "../../ExpressionBuilder/Expression/NotExpression";
+import { OrExpression } from "../../ExpressionBuilder/Expression/OrExpression";
+import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
+import { RightDecrementExpression } from "../../ExpressionBuilder/Expression/RightDecrementExpression";
+import { RightIncrementExpression } from "../../ExpressionBuilder/Expression/RightIncrementExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { StrictNotEqualExpression } from "../../ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { SubstractionAssignmentExpression } from "../../ExpressionBuilder/Expression/SubstractionAssignmentExpression";
+import { SubstractionExpression } from "../../ExpressionBuilder/Expression/SubstractionExpression";
+import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { IQueryBuilder } from "../../Query/IQueryBuilder";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { QueryTranslator } from "../../Query/QueryTranslator";
+import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
 
@@ -87,7 +87,6 @@ relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, p
 
 //#endregion
 
-
 //#region Method Call
 
 /**
@@ -104,7 +103,6 @@ relationalQueryTranslator.registerMethod(SelectExpression.prototype, "max" as an
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "avg" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "contains" as any, (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
 
-
 /**
  * Array
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
@@ -116,7 +114,6 @@ relationalQueryTranslator.registerMethod(Array.prototype, "contains", (qb, exp, 
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
 relationalQueryTranslator.registerMethod(Enumerable.prototype, "contains", (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
-
 
 /**
  * Math
@@ -150,12 +147,12 @@ relationalQueryTranslator.registerMethod(Math, "cosh", (qb, exp, param) => `((EX
 relationalQueryTranslator.registerMethod(Math, "tanh", (qb, exp, param) => `((EXP(2 * ${qb.toString(exp.params[0], param)}) - 1) / (EXP(2 * ${qb.toString(exp.params[0], param)}) + 1))`);
 relationalQueryTranslator.registerMethod(Math, "trunc", (qb, exp, param) => `(${qb.toString(exp.params[0], param)} | 0)`);
 relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
-    if (exp.params.length <= 0) throw new Error(`${exp.toString()} require at least one parameter`);
-    return `GREATEST(${exp.params.select(o => qb.toString(o, param)).toArray().join(",")})`;
+    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    return `GREATEST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
 });
 relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
-    if (exp.params.length <= 0) throw new Error(`${exp.toString()} require at least one parameter`);
-    return `LEAST(${exp.params.select(o => qb.toString(o, param)).toArray().join(",")})`;
+    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    return `LEAST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
 });
 /**
  * String
@@ -173,8 +170,9 @@ relationalQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, 
 relationalQueryTranslator.registerMethod(String.prototype, "lastIndexOf", (qb, exp, param) => `(LEN(${qb.toString(exp.objectOperand, param)}) - CHARINDEX(${qb.toString(exp.params[0], param)}, REVERSE(${qb.toString(exp.objectOperand, param)})${(exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "like", (qb, exp, param) => {
     let escape = "";
-    if (exp.params.length > 1)
+    if (exp.params.length > 1) {
         escape = ` ESCAPE ${qb.toString(exp.params[1], param)}`;
+    }
 
     return `(${qb.toString(exp.objectOperand, param)} LIKE ${qb.toString(exp.params[0], param)}${escape})`;
 });
@@ -209,13 +207,13 @@ relationalQueryTranslator.registerMethod(Number.prototype, "valueOf", (qb, exp, 
 
 /**
  * Boolean
- * TODO: 
+ * TODO:
  */
 relationalQueryTranslator.registerMethod(Boolean.prototype, "toString" as any, (qb, exp, param) => `(CASE WHEN (${qb.toString(exp.objectOperand, param)}) THEN ${qb.valueString("true")} ELSE ${qb.valueString("false")} END)`);
 
 /**
  * Date
- * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString 
+ * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
  */
 relationalQueryTranslator.registerMethod(Date, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
 relationalQueryTranslator.registerMethod(Date, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
@@ -293,7 +291,6 @@ relationalQueryTranslator.registerOperator(LeftDecrementExpression, (qb, exp, pa
 relationalQueryTranslator.registerOperator(RightIncrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "+", param)}) - 1`);
 relationalQueryTranslator.registerOperator(RightDecrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "-", param)}) + 1`);
 
-
 const binaryTranslator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, param: IQueryBuilderParameter) => `${qb.toOperandString(exp.leftOperand, param)}${operator}${qb.toOperandString(exp.rightOperand, param)}`;
 relationalQueryTranslator.registerOperator(AssignmentExpression, (qb, exp, param) => binaryTranslator(qb, exp, "=", param));
 relationalQueryTranslator.registerOperator(GreaterEqualExpression, (qb, exp, param) => binaryTranslator(qb, exp, ">=", param));
@@ -305,8 +302,9 @@ relationalQueryTranslator.registerOperator(SubstractionExpression, (qb, exp, par
 relationalQueryTranslator.registerOperator(MultiplicationExpression, (qb, exp, param) => binaryTranslator(qb, exp, "*", param));
 relationalQueryTranslator.registerOperator(DivisionExpression, (qb, exp, param) => binaryTranslator(qb, exp, "/", param));
 relationalQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => {
-    if (exp.type === String)
+    if (exp.type === String) {
         return `CONCAT(${qb.toOperandString(exp.leftOperand, param)}, ${qb.toOperandString(exp.rightOperand, param)})`;
+    }
 
     return `${qb.toOperandString(exp.leftOperand, param)}+${qb.toOperandString(exp.rightOperand, param)}`;
 });
@@ -317,10 +315,12 @@ relationalQueryTranslator.registerOperator(BitwiseXorExpression, (qb, exp, param
 const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, param: IQueryBuilderParameter) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
-    if (leftExpString === "NULL")
+    if (leftExpString === "NULL") {
         return `${rightExpString} IS NOT ${leftExpString}`;
-    else if (rightExpString === "NULL")
+    }
+    else if (rightExpString === "NULL") {
         return `${leftExpString} IS NOT ${rightExpString}`;
+ }
     return `${leftExpString}<>${rightExpString}`;
 };
 relationalQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
@@ -329,10 +329,12 @@ relationalQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTra
 const equalTransalator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, param: IQueryBuilderParameter) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
-    if (leftExpString === "NULL")
+    if (leftExpString === "NULL") {
         return `${rightExpString} IS ${leftExpString}`;
-    else if (rightExpString === "NULL")
+    }
+    else if (rightExpString === "NULL") {
         return `${leftExpString} IS ${rightExpString}`;
+ }
     return `${leftExpString}=${rightExpString}`;
 };
 relationalQueryTranslator.registerOperator(EqualExpression, equalTransalator);

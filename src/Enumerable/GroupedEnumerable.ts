@@ -3,14 +3,13 @@ import { GroupByEnumerable } from "./GroupByEnumerable";
 import { IEnumerableCache } from "./IEnumerableCache";
 export class GroupedEnumerable<K, T> extends Enumerable<T> {
     public get enableCache() { return true; }
-    public set enableCache(value) { }
     public get keySelector() {
         return this.parent.keySelector;
     }
+    private _cacheResult = [];
     constructor(protected readonly parent: GroupByEnumerable<K, T>, public readonly key: K, protected cache: IEnumerableCache) {
         super();
     }
-    private _cacheResult = [];
     public addResult(value: T) {
         this._cacheResult.push(value);
     }
@@ -22,9 +21,10 @@ export class GroupedEnumerable<K, T> extends Enumerable<T> {
         let index = 0;
         for (; ;) {
             const isDone = this.cache.isDone;
-            while (this._cacheResult.length > index)
+            while (this._cacheResult.length > index) {
                 yield this._cacheResult[index++];
-            if (isDone) break;
+            }
+            if (isDone) { break; }
 
             const a = this.cache.iterator.next();
             if (!a.done) {
@@ -38,8 +38,9 @@ export class GroupedEnumerable<K, T> extends Enumerable<T> {
             }
             else if (!this.cache.isDone) {
                 this.cache.isDone = true;
-                if (this.cache.iterator.return)
+                if (this.cache.iterator.return) {
                     this.cache.iterator.return();
+                }
             }
         }
     }

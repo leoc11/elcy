@@ -1,8 +1,8 @@
+import { GenericType, IObjectType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { IObjectType, GenericType } from "../../Common/Type";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 
 export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
     public readonly entityTypes: IObjectType[];
@@ -16,7 +16,7 @@ export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
         return `Except(${this.subSelect.toString()}, ${this.subSelect2.toString()})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const select = resolveClone(this.subSelect, replaceMap);
         const select2 = resolveClone(this.subSelect2, replaceMap);
         const clone = new ExceptExpression(select, select2, this.type);

@@ -1,19 +1,20 @@
-import { Queryable } from "./Queryable";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
+import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { IQueryVisitor } from "../Query/IQueryVisitor";
+import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
 
 export class DistinctQueryable<T> extends Queryable<T> {
     protected readonly selectorFn?: (item: T) => any;
     private _selector?: FunctionExpression;
     protected get selector() {
-        if (!this._selector && this.selectorFn)
+        if (!this._selector && this.selectorFn) {
             this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type], this.parameters);
+        }
         return this._selector;
     }
     protected set selector(value) {
@@ -25,8 +26,9 @@ export class DistinctQueryable<T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodParams = [];
-        if (this.selector)
+        if (this.selector) {
             methodParams.push(this.selector.clone());
+        }
 
         const methodExpression = new MethodCallExpression(objectOperand, "distinct", methodParams);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

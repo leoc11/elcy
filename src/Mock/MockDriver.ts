@@ -1,6 +1,6 @@
-import { IDriver } from "../Connection/IDriver";
-import { IConnection } from "../Connection/IConnection";
 import { DbType } from "../Common/Type";
+import { IConnection } from "../Connection/IConnection";
+import { IDriver } from "../Connection/IDriver";
 import { MockConnection } from "./MockConnection";
 
 export interface IMockDriverOption<T> {
@@ -13,6 +13,8 @@ export interface IMockDriverOption<T> {
 export class MockDriver<T extends DbType = any> implements IDriver<T> {
     public dbType: any;
     public allowPooling = true;
+    public database: string;
+    public schema?: string;
     constructor(option?: IMockDriverOption<T>) {
         if (option) {
             this.database = option.database;
@@ -24,6 +26,4 @@ export class MockDriver<T extends DbType = any> implements IDriver<T> {
     public async getConnection(): Promise<IConnection> {
         return new MockConnection(this.database);
     }
-    public database: string;
-    public schema?: string;
 }

@@ -6,7 +6,7 @@ export class ExceptEnumerable<T = any> extends Enumerable<T> {
     }
     protected *generator() {
         for (const value of this.parent) {
-            if (!this.parent2.any(o => keyComparer(o, value))) {
+            if (!this.parent2.any((o) => keyComparer(o, value))) {
                 yield value;
             }
         }

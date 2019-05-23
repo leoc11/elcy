@@ -1,45 +1,45 @@
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { RelationQueryBuilder } from "./RelationQueryBuilder";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
+import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { IObjectType, QueryType, ReferenceOption } from "../../Common/Type";
+import { IConnection } from "../../Connection/IConnection";
+import { Uuid } from "../../Data/Uuid";
+import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
+import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
+import { clone, isNotNull } from "../../Helper/Util";
+import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
+import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
+import { CheckConstraintMetaData } from "../../MetaData/CheckConstraintMetaData";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
+import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
+import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { DecimalColumnMetaData } from "../../MetaData/DecimalColumnMetaData";
+import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
+import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../../MetaData/Interface/IConstraintMetaData";
-import { IQuery } from "../../Query/IQuery";
-import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
-import { IConnection } from "../../Connection/IConnection";
-import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
-import { DecimalColumnMetaData } from "../../MetaData/DecimalColumnMetaData";
-import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
-import { ICheckConstraintMetaData } from "../../MetaData/Interface/ICheckConstraintMetaData";
-import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
-import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
-import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
-import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
-import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
-import { ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
-import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
-import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
-import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
-import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
-import { BatchedQuery } from "../../Query/BatchedQuery";
-import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { CheckConstraintMetaData } from "../../MetaData/CheckConstraintMetaData";
-import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
-import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
-import { ISchemaQuery } from "../../Query/ISchemaQuery";
-import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
-import { Uuid } from "../../Data/Uuid";
-import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { clone, isNotNull } from "../../Helper/Util";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
+import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
+import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
+import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
+import { BatchedQuery } from "../../Query/BatchedQuery";
+import { IQuery } from "../../Query/IQuery";
+import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
+import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
+import { ISchemaQuery } from "../../Query/ISchemaQuery";
+import { RelationQueryBuilder } from "./RelationQueryBuilder";
 
 const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
-    return cols1.length === cols2.length && cols1.all(o => cols2.any(p => p.columnName === o.columnName));
+    return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
 };
 const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
     return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
@@ -50,9 +50,6 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
     public connection: IConnection;
     public option: ISchemaBuilderOption = {};
     public readonly queryBuilder: RelationQueryBuilder;
-    constructor() {
-    }
-
     public async getSchemaQuery(entityTypes: IObjectType[]): Promise<ISchemaQuery> {
         let commitQueries: IQuery[] = [];
         let rollbackQueries: IQuery[] = [];
@@ -61,13 +58,14 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
         })).first().rows;
-        const defaultSchema = defSchemaResult.first()["SCHEMA"];
+        const defaultSchema = defSchemaResult.first().SCHEMA;
 
-        const schemas = entityTypes.select(o => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
+        const schemas = entityTypes.select((o) => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData<any>).toArray();
 
         for (const schema of schemas) {
-            if (!schema.schema)
+            if (!schema.schema) {
                 schema.schema = defaultSchema;
+            }
         }
 
         const oldSchemas = await this.loadSchemas(schemas);
@@ -95,19 +93,19 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                 postRollbackQueries = postRollbackQueries.concat(this.addAllNewRelations(oldSchema, schema));
             }
             else if (!oldSchema) {
-                preRollbackQueries = preRollbackQueries.concat(schema.relations.where(o => !o.isMaster).selectMany(o => this.dropForeignKey(o)).toArray());
+                preRollbackQueries = preRollbackQueries.concat(schema.relations.where((o) => !o.isMaster).selectMany((o) => this.dropForeignKey(o)).toArray());
                 rollbackQueries = rollbackQueries.concat(this.dropTable(schema));
 
                 commitQueries = commitQueries.concat(this.createEntitySchema(schema));
-                postCommitQueries = postCommitQueries.concat(schema.relations.where(o => !o.isMaster).selectMany(o => this.addForeignKey(o)).toArray());
+                postCommitQueries = postCommitQueries.concat(schema.relations.where((o) => !o.isMaster).selectMany((o) => this.addForeignKey(o)).toArray());
             }
             else {
                 if (this.option.removeUnmappedEntites) {
-                    preRollbackQueries = preRollbackQueries.concat(oldSchema.relations.where(o => !o.isMaster).selectMany(o => this.dropForeignKey(o)).toArray());
+                    preRollbackQueries = preRollbackQueries.concat(oldSchema.relations.where((o) => !o.isMaster).selectMany((o) => this.dropForeignKey(o)).toArray());
                     rollbackQueries = rollbackQueries.concat(this.dropTable(oldSchema));
 
                     commitQueries = commitQueries.concat(this.createEntitySchema(oldSchema));
-                    postCommitQueries = postCommitQueries.concat(oldSchema.relations.where(o => !o.isMaster).selectMany(o => this.addForeignKey(o)).toArray());
+                    postCommitQueries = postCommitQueries.concat(oldSchema.relations.where((o) => !o.isMaster).selectMany((o) => this.addForeignKey(o)).toArray());
                 }
             }
         }
@@ -117,9 +115,9 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             rollback: preRollbackQueries.concat(rollbackQueries, postRollbackQueries)
         };
     }
-    public async loadSchemas(entities: IEntityMetaData<any>[]) {
-        const schemaGroups = entities.groupBy(o => o.schema).toArray();
-        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select(o => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select(p => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
+    public async loadSchemas(entities: Array<IEntityMetaData<any>>) {
+        const schemaGroups = entities.groupBy((o) => o.schema).toArray();
+        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select((o) => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
 
         const batchedQuery = new BatchedQuery();
         // table schema
@@ -175,7 +173,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
                 ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
-                ` and (${schemaGroups.select(o => `s.name = '${o.key}' AND t.name IN (${o.select(p => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
+                ` and (${schemaGroups.select((o) => `s.name = '${o.key}' AND t.name IN (${o.select((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
                 ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`,
             type: QueryType.DQL
         });
@@ -193,8 +191,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const constraints: { [name: string]: { meta: IConstraintMetaData, type: string } } = {};
         for (const tableSchema of tableSchemas.rows) {
             const entity: IEntityMetaData<any> = {
-                schema: tableSchema["TABLE_SCHEMA"],
-                name: tableSchema["TABLE_NAME"],
+                schema: tableSchema.TABLE_SCHEMA,
+                name: tableSchema.TABLE_NAME,
                 primaryKeys: [],
                 columns: [],
                 indices: [],
@@ -207,17 +205,18 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             result[entity.schema + "." + entity.name] = entity;
         }
         for (const columnSchema of columnSchemas.rows) {
-            let defaultExpression: string = columnSchema["COLUMN_DEFAULT"];
+            let defaultExpression: string = columnSchema.COLUMN_DEFAULT;
             const column: IColumnMetaData = {
-                columnName: columnSchema["COLUMN_NAME"],
-                nullable: columnSchema["IS_NULLABLE"] === "YES",
-                columnType: columnSchema["DATA_TYPE"],
-                charset: columnSchema["CHARACTER_SET_NAME"],
-                collation: columnSchema["COLLATION_NAME"]
+                columnName: columnSchema.COLUMN_NAME,
+                nullable: columnSchema.IS_NULLABLE === "YES",
+                columnType: columnSchema.DATA_TYPE,
+                charset: columnSchema.CHARACTER_SET_NAME,
+                collation: columnSchema.COLLATION_NAME
             };
             if (defaultExpression) {
-                while (defaultExpression[0] === "(" && defaultExpression[defaultExpression.length - 1] === ")")
+                while (defaultExpression[0] === "(" && defaultExpression[defaultExpression.length - 1] === ")") {
                     defaultExpression = defaultExpression.substring(1, defaultExpression.length - 1);
+                }
 
                 const body = new ValueExpression(undefined, defaultExpression);
                 const defaultExp = new FunctionExpression(body, []);
@@ -226,37 +225,37 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             const typeMap = this.columnType(column);
             switch (typeMap.group) {
                 case "Binary":
-                    (column as BinaryColumnMetaData).size = columnSchema["CHARACTER_MAXIMUM_LENGTH"];
+                    (column as BinaryColumnMetaData).size = columnSchema.CHARACTER_MAXIMUM_LENGTH;
                     break;
                 case "String":
-                    (column as StringColumnMetaData).length = columnSchema["CHARACTER_MAXIMUM_LENGTH"];
+                    (column as StringColumnMetaData).length = columnSchema.CHARACTER_MAXIMUM_LENGTH;
                     break;
                 case "DateTime":
                 case "Time":
-                    (column as DateTimeColumnMetaData).precision = columnSchema["DATETIME_PRECISION"];
+                    (column as DateTimeColumnMetaData).precision = columnSchema.DATETIME_PRECISION;
                     break;
                 case "Decimal":
-                    (column as DecimalColumnMetaData).scale = columnSchema["NUMERIC_SCALE"];
-                    (column as DecimalColumnMetaData).precision = columnSchema["NUMERIC_PRECISION"];
+                    (column as DecimalColumnMetaData).scale = columnSchema.NUMERIC_SCALE;
+                    (column as DecimalColumnMetaData).precision = columnSchema.NUMERIC_PRECISION;
                     break;
                 case "Real":
-                    (column as RealColumnMetaData).size = columnSchema["NUMERIC_PRECISION"];
+                    (column as RealColumnMetaData).size = columnSchema.NUMERIC_PRECISION;
                     break;
                 case "Integer":
                     // NOTE: work around coz information schema did not contain int storage size (bytes)
-                    (column as IntegerColumnMetaData).size = Math.round(columnSchema["NUMERIC_PRECISION"] / 2.5);
-                    (column as IntegerColumnMetaData).autoIncrement = columnSchema["IS_IDENTITY"];
+                    (column as IntegerColumnMetaData).size = Math.round(columnSchema.NUMERIC_PRECISION / 2.5);
+                    (column as IntegerColumnMetaData).autoIncrement = columnSchema.IS_IDENTITY;
                     break;
             }
 
-            const entity = result[columnSchema["TABLE_SCHEMA"] + "." + columnSchema["TABLE_NAME"]];
+            const entity = result[columnSchema.TABLE_SCHEMA + "." + columnSchema.TABLE_NAME];
             column.entity = entity;
             entity.columns.push(column);
         }
         for (const constraint of constriantSchemas.rows) {
-            const entity = result[constraint["TABLE_SCHEMA"] + "." + constraint["TABLE_NAME"]];
-            const name = constraint["CONSTRAINT_NAME"];
-            const type = constraint["CONSTRAINT_TYPE"];
+            const entity = result[constraint.TABLE_SCHEMA + "." + constraint.TABLE_NAME];
+            const name = constraint.CONSTRAINT_NAME;
+            const type = constraint.CONSTRAINT_TYPE;
             const columns: IColumnMetaData[] = [];
 
             let constraintMeta: IConstraintMetaData = {
@@ -266,7 +265,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             };
 
             if (type === "CHECK") {
-                let checkDefinition: string = constraint["CHECK_CLAUSE"];
+                const checkDefinition: string = constraint.CHECK_CLAUSE;
                 const checkExp = new ValueExpression(undefined, checkDefinition);
                 constraintMeta = new CheckConstraintMetaData(name, entity, checkExp);
                 constraintMeta.columns = columns;
@@ -277,12 +276,12 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             };
         }
         for (const constraint of constraintColumnSchemas.rows) {
-            const entity = result[constraint["TABLE_SCHEMA"] + "." + constraint["TABLE_NAME"]];
-            const name = constraint["CONSTRAINT_NAME"];
-            const column = constraint["COLUMN_NAME"];
+            const entity = result[constraint.TABLE_SCHEMA + "." + constraint.TABLE_NAME];
+            const name = constraint.CONSTRAINT_NAME;
+            const column = constraint.COLUMN_NAME;
 
             const constraintData = constraints[name];
-            const columnMeta = entity.columns.first(o => o.columnName === column);
+            const columnMeta = entity.columns.first((o) => o.columnName === column);
             constraintData.meta.columns.push(columnMeta);
             switch (constraintData.type) {
                 case "PRIMARY KEY":
@@ -295,13 +294,13 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             }
         }
         for (const relationSchema of foreignKeySchemas.rows) {
-            const relationName = relationSchema["CONSTRAINT_NAME"];
+            const relationName = relationSchema.CONSTRAINT_NAME;
             const foreignKey = constraints[relationName];
-            const targetConstraint = constraints[relationSchema["UNIQUE_CONSTRAINT_NAME"]];
-            const relationType = foreignKey.meta.columns.all(o => foreignKey.meta.entity.primaryKeys.contains(o)) ? "one" : "many";
+            const targetConstraint = constraints[relationSchema.UNIQUE_CONSTRAINT_NAME];
+            const relationType = foreignKey.meta.columns.all((o) => foreignKey.meta.entity.primaryKeys.contains(o)) ? "one" : "many";
 
-            const updateOption: ReferenceOption = relationSchema["UPDATE_RULE"];
-            const deleteOption: ReferenceOption = relationSchema["DELETE_RULE"];
+            const updateOption: ReferenceOption = relationSchema.UPDATE_RULE;
+            const deleteOption: ReferenceOption = relationSchema.DELETE_RULE;
             const fkRelation: IRelationMetaData = {
                 source: foreignKey.meta.entity,
                 target: null,
@@ -339,31 +338,28 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             }
         }
         for (const indexSchema of indexSchemas.rows) {
-            const entity = result[indexSchema["TABLE_SCHEMA"] + "." + indexSchema["TABLE_NAME"]];
-            const indexName = indexSchema["INDEX_NAME"];
-            let index = entity.indices.first(o => o.name === indexName);
+            const entity = result[indexSchema.TABLE_SCHEMA + "." + indexSchema.TABLE_NAME];
+            const indexName = indexSchema.INDEX_NAME;
+            let index = entity.indices.first((o) => o.name === indexName);
             if (!index) {
                 index = {
                     name: indexName,
                     columns: [],
                     entity: entity,
-                    unique: indexSchema["IS_UNIQUE"],
+                    unique: indexSchema.IS_UNIQUE
                     // type: indexSchema["TYPE"]
                 };
                 entity.indices.push(index);
             }
-            const column = entity.columns.first(o => o.columnName === indexSchema["COLUMN_NAME"]);
-            if (column) index.columns.push(column);
+            const column = entity.columns.first((o) => o.columnName === indexSchema.COLUMN_NAME);
+            if (column) { index.columns.push(column); }
         }
 
-        return Object.keys(result).select(o => result[o]).toArray();
-    }
-    protected entityName(entityMeta: IEntityMetaData<any>) {
-        return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(entityMeta.name)}`;
+        return Object.keys(result).select((o) => result[o]).toArray();
     }
     public createTable<TE>(entityMetaData: IEntityMetaData<TE>, name?: string): IQuery[] {
-        const columnDefinitions = entityMetaData.columns.where(o => !!o.columnName).select(o => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
-        const constraints = (entityMetaData.constraints || []).select(o => this.constraintDeclaration(o)).toArray().join("," + this.queryBuilder.newLine(1, false));
+        const columnDefinitions = entityMetaData.columns.where((o) => !!o.columnName).select((o) => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
+        const constraints = (entityMetaData.constraints || []).select((o) => this.constraintDeclaration(o)).toArray().join("," + this.queryBuilder.newLine(1, false));
         let tableName = this.entityName(entityMetaData);
         if (name) {
             const oldName = entityMetaData.name;
@@ -371,7 +367,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             tableName = this.entityName(entityMetaData);
             entityMetaData.name = oldName;
         }
-        let query = `CREATE TABLE ${tableName}` +
+        const query = `CREATE TABLE ${tableName}` +
             `${this.queryBuilder.newLine()}(` +
             `${this.queryBuilder.newLine(1, false)}${columnDefinitions}` +
             `,${this.queryBuilder.newLine(1, false)}${this.primaryKeyDeclaration(entityMetaData)}` +
@@ -383,7 +379,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
-        let query = `EXEC sp_rename '${this.entityName(entityMetaData)}', '${this.queryBuilder.enclose(newName)}', 'OBJECT'`;
+        const query = `EXEC sp_rename '${this.entityName(entityMetaData)}', '${this.queryBuilder.enclose(newName)}', 'OBJECT'`;
         return [{
             query,
             type: QueryType.DDL
@@ -398,28 +394,28 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public addColumn(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
         return [{
             query,
             type: QueryType.DDL
         }];
     }
     public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
-        let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
+        const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{
             query,
             type: QueryType.DDL
         }];
     }
     public alterColumn(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.columnDeclaration(columnMeta, "alter")}`;
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.columnDeclaration(columnMeta, "alter")}`;
         return [{
             query,
             type: QueryType.DDL
         }];
     }
     public dropColumn(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} DROP COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}`;
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} DROP COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}`;
         return [{
             query,
             type: QueryType.DDL,
@@ -427,7 +423,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}` +
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}` +
             ` SET DEFAULT ${this.defaultValue(columnMeta)}`;
         return [{
             query,
@@ -435,7 +431,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}` +
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}` +
             ` DROP DEFAULT`;
         return [{
             query,
@@ -461,7 +457,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         return result;
     }
     public addConstraint(constraintMeta: IConstraintMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(constraintMeta.entity)}` +
+        const query = `ALTER TABLE ${this.entityName(constraintMeta.entity)}` +
             ` ADD CONSTRAINT ${this.constraintDeclaration(constraintMeta)}`;
         return [{
             query,
@@ -491,7 +487,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public addIndex(indexMeta: IIndexMetaData): IQuery[] {
-        const columns = indexMeta.columns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+        const columns = indexMeta.columns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
         const query = `CREATE${indexMeta.unique ? " UNIQUE" : ""} INDEX ${indexMeta.name} ON ${this.entityName(indexMeta.entity)} (${columns})`;
         return [{
             query,
@@ -505,6 +501,9 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             type: QueryType.DDL
         }];
     }
+    protected entityName(entityMeta: IEntityMetaData<any>) {
+        return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(entityMeta.name)}`;
+    }
 
     protected dropAllOldRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
         const isRelationData = schema instanceof RelationDataMetaData || oldSchema instanceof RelationDataMetaData;
@@ -513,41 +512,44 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             return [];
         }
         else {
-            const relations = schema.relations.where(o => !o.isMaster).toArray();
-            return oldSchema.relations.where(o => !o.isMaster)
-                .where(o => !relations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
-                .selectMany(o => this.dropForeignKey(o)).toArray();
+            const relations = schema.relations.where((o) => !o.isMaster).toArray();
+            return oldSchema.relations.where((o) => !o.isMaster)
+                .where((o) => !relations.any((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+                .selectMany((o) => this.dropForeignKey(o)).toArray();
         }
     }
     protected addAllNewRelations<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>): IQuery[] {
-        const oldRelations = oldSchema.relations.where(o => !o.isMaster).toArray();
-        return schema.relations.where(o => !o.isMaster && !!o.reverseRelation)
-            .where(o => !oldRelations.any(or => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
-            .selectMany(o => this.addForeignKey(o)).toArray();
+        const oldRelations = oldSchema.relations.where((o) => !o.isMaster).toArray();
+        return schema.relations.where((o) => !o.isMaster && !!o.reverseRelation)
+            .where((o) => !oldRelations.any((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+            .selectMany((o) => this.addForeignKey(o)).toArray();
     }
     protected updateEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
-        const oldColumns = oldSchema.columns.where(o => !!o.columnName).toArray();
-        let columnMetas = schema.columns.where(o => !!o.columnName).select(o => {
-            const oldCol = oldColumns.first(c => c.columnName.toLowerCase() === o.columnName.toLowerCase());
+        const oldColumns = oldSchema.columns.where((o) => !!o.columnName).toArray();
+        let columnMetas = schema.columns.where((o) => !!o.columnName).select((o) => {
+            const oldCol = oldColumns.first((c) => c.columnName.toLowerCase() === o.columnName.toLowerCase());
             oldColumns.delete(oldCol);
             return {
                 columnSchema: o,
                 oldColumnSchema: oldCol
             };
         });
-        columnMetas = columnMetas.union(oldColumns.select(o => ({
+        columnMetas = columnMetas.union(oldColumns.select((o) => ({
             columnSchema: null,
             oldColumnSchema: o
         })));
 
-        let result = columnMetas.selectMany(o => {
-            if (o.columnSchema && o.oldColumnSchema)
+        let result = columnMetas.selectMany((o) => {
+            if (o.columnSchema && o.oldColumnSchema) {
                 return this.getColumnChanges(o.columnSchema, o.oldColumnSchema);
-            else if (o.columnSchema)
+            }
+            else if (o.columnSchema) {
                 return this.addColumn(o.columnSchema);
+ }
             // TODO: add option to always drop column
-            else if (o.oldColumnSchema && !o.oldColumnSchema.defaultExp && !o.oldColumnSchema.nullable)
+            else if (o.oldColumnSchema && !o.oldColumnSchema.defaultExp && !o.oldColumnSchema.nullable) {
                 return this.dropColumn(o.oldColumnSchema);
+ }
 
             return undefined;
         });
@@ -570,30 +572,31 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             return isColumnsEquals(cons1.columns, cons2.columns);
         };
         // remove old constraint
-        result = result.union(oldSchema.constraints.where(o => !schema.constraints.any(or => isConstraintEquals(o, or)))
-            .selectMany(o => this.dropConstraint(o)));
+        result = result.union(oldSchema.constraints.where((o) => !schema.constraints.any((or) => isConstraintEquals(o, or)))
+            .selectMany((o) => this.dropConstraint(o)));
         // add new constraint
-        result = result.union(schema.constraints.where(o => !oldSchema.constraints.any(or => isConstraintEquals(o, or)))
-            .selectMany(o => this.addConstraint(o)));
+        result = result.union(schema.constraints.where((o) => !oldSchema.constraints.any((or) => isConstraintEquals(o, or)))
+            .selectMany((o) => this.addConstraint(o)));
 
         // index
         const oldIndices = oldSchema.indices.slice(0);
-        let indexMap = schema.indices.select(o => {
-            const oldIndex = oldIndices.first(c => c.name === o.name);
+        let indexMap = schema.indices.select((o) => {
+            const oldIndex = oldIndices.first((c) => c.name === o.name);
             oldIndices.delete(oldIndex);
             return ({
                 index: o,
                 oldIndex: oldIndex
             });
         });
-        indexMap = indexMap.union(oldIndices.select(o => ({
+        indexMap = indexMap.union(oldIndices.select((o) => ({
             index: null,
             oldIndex: o
         })));
-        const indicesResults = indexMap.selectMany(o => {
+        const indicesResults = indexMap.selectMany((o) => {
             if (o.index && o.oldIndex) {
-                if (!isIndexEquals(o.index, o.oldIndex))
+                if (!isIndexEquals(o.index, o.oldIndex)) {
                     return this.dropIndex(o.oldIndex).union(this.addIndex(o.index));
+                }
             }
             else if (o.index) {
                 return this.addIndex(o.index);
@@ -620,7 +623,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         const isColumnChange = isNullableChange
             || this.queryBuilder.columnTypeString(this.columnType(columnSchema)) !== this.queryBuilder.columnTypeString(this.columnType(oldColumnSchema))
             || (columnSchema.collation && oldColumnSchema.collation && columnSchema.collation !== oldColumnSchema.collation);
-        let isDefaultChange = isColumnChange || (columnSchema.defaultExp ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.defaultExp ? this.defaultValue(oldColumnSchema) : null);
+        const isDefaultChange = isColumnChange || (columnSchema.defaultExp ? this.defaultValue(columnSchema) : null) !== (oldColumnSchema.defaultExp ? this.defaultValue(oldColumnSchema) : null);
 
         if (isDefaultChange && oldColumnSchema.defaultExp) {
             result = result.concat(this.dropDefaultContraint(oldColumnSchema));
@@ -683,10 +686,12 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         if (type !== "alter" && columnMeta.defaultExp) {
             result += ` DEFAULT ${this.defaultValue(columnMeta)}`;
         }
-        if (columnMeta.collation)
+        if (columnMeta.collation) {
             result += " COLLATE " + columnMeta.collation;
-        if (columnMeta.nullable !== true)
+        }
+        if (columnMeta.nullable !== true) {
             result += " NOT NULL";
+        }
         if (type !== "alter" && (columnMeta as IntegerColumnMetaData).autoIncrement) {
             result += " IDENTITY(1,1)";
         }
@@ -703,7 +708,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             result = `CONSTRAINT ${this.queryBuilder.enclose(constraintMeta.name)} CHECK (${definition})`;
         }
         else {
-            const columns = constraintMeta.columns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+            const columns = constraintMeta.columns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
             result = `CONSTRAINT ${this.queryBuilder.enclose(constraintMeta.name)} UNIQUE (${columns})`;
         }
         return result;
@@ -759,37 +764,43 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
             switch (columnType.group) {
                 case "Binary": {
                     const size = (column as unknown as BinaryColumnMetaData).size;
-                    if (isNotNull(size))
+                    if (isNotNull(size)) {
                         columnType.option.size = size;
+                    }
                     break;
                 }
                 case "String": {
                     const length = (column as unknown as StringColumnMetaData).length;
-                    if (isNotNull(length))
+                    if (isNotNull(length)) {
                         columnType.option.length = length;
+                    }
                     break;
                 }
                 case "DateTime":
                 case "Time": {
                     const precision = (column as unknown as TimeColumnMetaData).precision;
-                    if (isNotNull(precision))
+                    if (isNotNull(precision)) {
                         columnType.option.precision = precision;
+                    }
                     break;
                 }
                 case "Decimal": {
                     const scale = (column as unknown as DecimalColumnMetaData).scale;
                     const precision = (column as unknown as DecimalColumnMetaData).precision;
-                    if (isNotNull(scale))
+                    if (isNotNull(scale)) {
                         columnType.option.scale = scale;
-                    if (isNotNull(precision))
+                    }
+                    if (isNotNull(precision)) {
                         columnType.option.precision = precision;
+                    }
                     break;
                 }
                 case "Integer":
                 case "Real": {
                     const size = (column as unknown as BinaryColumnMetaData).size;
-                    if (isNotNull(size))
+                    if (isNotNull(size)) {
                         columnType.option.size = size;
+                    }
                     break;
                 }
             }
@@ -799,20 +810,22 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
     }
     protected primaryKeyDeclaration(entityMeta: IEntityMetaData) {
         const pkName = "PK_" + entityMeta.name;
-        const columnQuery = entityMeta.primaryKeys.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+        const columnQuery = entityMeta.primaryKeys.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
 
         return `CONSTRAINT ${this.queryBuilder.enclose(pkName)} PRIMARY KEY (${columnQuery})`;
     }
     protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
-        const columns = relationMeta.relationColumns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        const referenceColumns = relationMeta.reverseRelation.relationColumns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
-        if (relationMeta.updateOption && relationMeta.updateOption !== "NO ACTION")
+        if (relationMeta.updateOption && relationMeta.updateOption !== "NO ACTION") {
             result += ` ON UPDATE ${relationMeta.updateOption}`;
-        if (relationMeta.deleteOption && relationMeta.deleteOption !== "NO ACTION")
+        }
+        if (relationMeta.deleteOption && relationMeta.deleteOption !== "NO ACTION") {
             result += ` ON DELETE ${relationMeta.deleteOption}`;
+        }
 
         return result;
     }
@@ -822,8 +835,8 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         }
         let groupType: ColumnTypeGroup;
         if (!(columnMeta instanceof ColumnMetaData)) {
-            let columnTypeMap = this.columnTypeMap.get(columnMeta.columnType);
-            if (columnTypeMap) groupType = columnTypeMap.group;
+            const columnTypeMap = this.columnTypeMap.get(columnMeta.columnType);
+            if (columnTypeMap) { groupType = columnTypeMap.group; }
         }
         if (columnMeta instanceof IntegerColumnMetaData
             || columnMeta instanceof DecimalColumnMetaData
@@ -860,16 +873,51 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
         throw new Error(`${columnMeta.columnType} not supported`);
     }
     protected dropAllMasterRelations(entityMeta: IEntityMetaData): IQuery[] {
-        return entityMeta.relations.where(o => o.isMaster)
-            .selectMany(o => this.dropForeignKey(o.reverseRelation)).toArray();
+        return entityMeta.relations.where((o) => o.isMaster)
+            .selectMany((o) => this.dropForeignKey(o.reverseRelation)).toArray();
     }
     protected addAllMasterRelations(entityMeta: IEntityMetaData): IQuery[] {
-        return entityMeta.relations.where(o => o.isMaster)
-            .selectMany(o => this.addForeignKey(o.reverseRelation)).toArray();
+        return entityMeta.relations.where((o) => o.isMaster)
+            .selectMany((o) => this.addForeignKey(o.reverseRelation)).toArray();
     }
     protected createEntitySchema<T>(schema: IEntityMetaData<T>): IQuery[] {
         return this.createTable(schema)
-            .union(schema.indices.selectMany(o => this.addIndex(o)))
+            .union(schema.indices.selectMany((o) => this.addIndex(o)))
             .toArray();
     }
+
+    // protected rebuildEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
+    //     const columnMetas = schema.columns.select(o => ({
+    //         columnSchema: o,
+    //         oldColumnSchema: oldSchema.columns.first(c => c.columnName === o.columnName)
+    //     }));
+    //     let result: IQuery[] = [];
+    //     const cloneSchema = Object.assign({}, schema);
+    //     cloneSchema.name = "TEMP_" + this.queryBuilder.newAlias();
+    //     result = result.concat(this.createEntitySchema(cloneSchema));
+    //     // turn on identity insert coz rebuild schema most likely called because identity insert issue.
+    //     result.push({
+    //         query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} ON`,
+    //         type: QueryType.DCL
+    //     });
+    //     // copy value
+    //     const newColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.columnSchema.columnName)).toArray().join(",");
+    //     const copyColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
+    //     result.push({
+    //         query: `INSERT INTO ${this.entityName(cloneSchema)} (${newColumns}) SELECT ${copyColumns} FROM ${this.entityName(oldSchema)} WITH (HOLDLOCK TABLOCKX)`,
+    //         type: QueryType.DML
+    //     });
+    //     // turn of identity insert
+    //     result.push({
+    //         query: `SET IDENTITY_INSERT ${this.entityName(cloneSchema)} OFF`,
+    //         type: QueryType.DCL
+    //     });
+    //     // remove all foreignkey reference to current table
+    //     result = result.concat(this.dropAllMasterRelations(oldSchema));
+    //     // rename temp table
+    //     result = result.concat(this.renameTable(cloneSchema, this.entityName(schema)));
+    //     // re-add all foreignkey reference to table
+    //     result = result.concat(this.addAllMasterRelations(schema));
+    //     return result;
+    // }
 }

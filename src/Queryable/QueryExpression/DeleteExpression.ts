@@ -1,17 +1,17 @@
-import { OrderDirection, JoinType, DeleteMode, IObjectType } from "../../Common/Type";
-import { IQueryExpression } from "./IQueryExpression";
+import { DeleteMode, IObjectType, JoinType, OrderDirection } from "../../Common/Type";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { JoinRelation } from "../Interface/JoinRelation";
+import { EntityExpression } from "./EntityExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
-import { hashCode, resolveClone, hashCodeAdd } from "../../Helper/Util";
-import { EntityExpression } from "./EntityExpression";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { JoinRelation } from "../Interface/JoinRelation";
-import { IQueryOption } from "../../Query/IQueryOption";
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryExpression<T>;
@@ -20,7 +20,7 @@ export interface IDeleteIncludeRelation<T = any, TChild = any> {
 export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public option: IQueryOption;
     public deleteMode?: IExpression<DeleteMode>;
-    public includes: IDeleteIncludeRelation<T, any>[] = [];
+    public includes: Array<IDeleteIncludeRelation<T, any>> = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
     public select: SelectExpression<T>;
     public get paramExps() {
@@ -82,8 +82,8 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
             if (relationMeta.completeRelationType === "many-many") {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                let relationDatExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                let relationDelete = new DeleteExpression(relationDatExp, this.deleteMode);
+                const relationDatExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
+                const relationDelete = new DeleteExpression(relationDatExp, this.deleteMode);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
@@ -140,7 +140,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const select = resolveClone(this.select, replaceMap);
         const clone = new DeleteExpression(select, this.deleteMode);
         replaceMap.set(this, clone);
@@ -160,9 +160,9 @@ Mode:${this.deleteMode}
         return this.entity.entityTypes
             .union(
                 this.entity.metaData.relations
-                    .where(o => o.isMaster && (o.reverseRelation.deleteOption !== "NO ACTION" && o.reverseRelation.deleteOption !== "RESTRICT"))
-                    .select(o => o.target.type)
+                    .where((o) => o.isMaster && (o.reverseRelation.deleteOption !== "NO ACTION" && o.reverseRelation.deleteOption !== "RESTRICT"))
+                    .select((o) => o.target.type)
             )
-            .union(this.includes.selectMany(o => o.child.getEffectedEntities())).distinct().toArray();
+            .union(this.includes.selectMany((o) => o.child.getEffectedEntities())).distinct().toArray();
     }
 }

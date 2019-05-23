@@ -1,6 +1,6 @@
 import { GenericType } from "../../Common/Type";
-import { IExpression } from "./IExpression";
 import { hashCode } from "../../Helper/Util";
+import { IExpression } from "./IExpression";
 
 export class ParameterExpression<T = any> implements IExpression<T> {
     public type: GenericType<T>;

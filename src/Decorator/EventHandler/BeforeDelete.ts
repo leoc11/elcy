@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import { IObjectType } from "../../Common/Type";
-import { entityMetaKey } from "../DecoratorKey";
-import { AbstractEntity } from "../Entity/AbstractEntity";
 import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { entityMetaKey } from "../DecoratorKey";
+import { AbstractEntity } from "../Entity/AbstractEntity";
 /**
  * Register before save event. only for concrete entity
  */
@@ -16,10 +16,12 @@ export function BeforeDelete<TE = any>(handler?: (this: TE, param?: IDeleteEvent
             entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
         }
 
-        if (!handler && descriptor && typeof descriptor.value === "function")
+        if (!handler && descriptor && typeof descriptor.value === "function") {
             handler = descriptor.value;
+        }
 
-        if (handler)
+        if (handler) {
             entityMetaData.beforeDelete = handler;
+        }
     };
 }

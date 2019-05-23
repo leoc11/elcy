@@ -1,62 +1,65 @@
-import { IObjectType, } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { hashCode, resolveClone } from "../../Helper/Util";
+import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
+import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone, hashCode } from "../../Helper/Util";
-import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
-import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 
 export class EntityExpression<T = any> implements IEntityExpression<T> {
-    public name: string;
-    public select?: SelectExpression<T>;
     public get metaData() {
-        if (!this._metaData)
+        if (!this._metaData) {
             this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
+        }
         return this._metaData;
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first(o => o.propertyName === this.metaData.deletedColumn.propertyName);
+            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.deletedColumn.propertyName);
         }
         return this._deleteColumn;
     }
     public get versionColumn() {
         if (typeof this._versionColumn === "undefined") {
-            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first(o => o.propertyName === this.metaData.versionColumn.propertyName);
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.versionColumn.propertyName);
         }
         return this._versionColumn;
     }
     public get modifiedColumn() {
         if (typeof this._modifiedColumn === "undefined") {
-            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first(o => o.propertyName === this.metaData.modifiedDateColumn.propertyName);
+            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName);
         }
         return this._modifiedColumn;
     }
-    public get columns(): IColumnExpression<T>[] {
+    public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns) {
-            if (this.metaData)
+            if (this.metaData) {
                 this._columns = this.metaData.columns
-                    .where(o => !(o instanceof ComputedColumnMetaData))
+                    .where((o) => !(o instanceof ComputedColumnMetaData))
                     .select((o) => new ColumnExpression<T>(this, o, this.metaData.primaryKeys.contains(o)))
                     .toArray();
-            else
+            }
+            else {
                 this._columns = [];
+            }
         }
         return this._columns;
     }
     public set columns(value) {
         this._columns = value;
     }
-    public get primaryColumns(): IColumnExpression<T>[] {
+    public get primaryColumns(): Array<IColumnExpression<T>> {
         if (!this._primaryColumns) {
-            if (this.metaData)
+            if (this.metaData) {
                 this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
-            else
+            }
+            else {
                 this._primaryColumns = [];
+            }
         }
         return this._primaryColumns;
     }
@@ -74,14 +77,16 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._defaultOrders;
     }
+    public name: string;
+    public select?: SelectExpression<T>;
+    public readonly entityTypes: IObjectType[];
     private _metaData: EntityMetaData<T>;
-    private _columns: IColumnExpression<T>[];
+    private _columns: Array<IColumnExpression<T>>;
     private _primaryColumns: IColumnExpression[];
     private _defaultOrders: IOrderQueryDefinition[];
     private _versionColumn: IColumnExpression<T>;
     private _deleteColumn: IColumnExpression<T>;
     private _modifiedColumn: IColumnExpression<T>;
-    public readonly entityTypes: IObjectType[];
     constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
         if (this.metaData) {
             this.name = this.metaData.name;
@@ -95,12 +100,12 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         return `Entity(${this.name})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const clone = new EntityExpression(this.type, this.alias);
         replaceMap.set(this, clone);
-        clone.columns = this.columns.select(o => {
-            let cloneCol = clone.columns.first(c => c.propertyName === o.propertyName);
-            if (!cloneCol) cloneCol = resolveClone(o, replaceMap);
+        clone.columns = this.columns.select((o) => {
+            let cloneCol = clone.columns.first((c) => c.propertyName === o.propertyName);
+            if (!cloneCol) { cloneCol = resolveClone(o, replaceMap); }
             replaceMap.set(o, cloneCol);
             return cloneCol;
         }).toArray();

@@ -1,13 +1,13 @@
-import { RelationshipType, CompleteRelationshipType, ReferenceOption } from "../../Common/Type";
-import { entityMetaKey, columnMetaKey } from "../../Decorator/DecoratorKey";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationOption } from "../../Decorator/Option/IRelationOption";
+import { Enumerable } from "../../Enumerable/Enumerable";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
-import { RelationDataMetaData } from "./RelationDataMetaData";
-import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { ColumnMetaData } from "../ColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
-import { Enumerable } from "../../Enumerable/Enumerable";
-import { ColumnMetaData } from "../ColumnMetaData";
+import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { RelationDataMetaData } from "./RelationDataMetaData";
 
 export class RelationMetaData<TSource = any, TTarget = any> implements IRelationMetaData<TSource, TTarget> {
     public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
@@ -44,11 +44,12 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
 
         this.source = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
 
-        if (relationOption.targetType)
+        if (relationOption.targetType) {
             this.target = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
+        }
 
-        this.relationColumns = relationOption.relationKeys.select(o => typeof o === "string" ? o : FunctionHelper.propertyName(o))
-            .select(o => {
+        this.relationColumns = relationOption.relationKeys.select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+            .select((o) => {
                 let col = Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>;
                 if (!col) {
                     // either column will be defined later or column is not mapped.
@@ -75,20 +76,22 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
 
             // validate nullable
             if (typeof this.reverseRelation.nullable !== "boolean") {
-                this.reverseRelation.nullable = this.reverseRelation.relationColumns.all(o => o.nullable);
+                this.reverseRelation.nullable = this.reverseRelation.relationColumns.all((o) => o.nullable);
             }
-            else if (this.reverseRelation.nullable && this.reverseRelation.relationColumns.any(o => !o.nullable)) {
+            else if (this.reverseRelation.nullable && this.reverseRelation.relationColumns.any((o) => !o.nullable)) {
                 throw new Error(`Relation ${this.name} is nullable but it's dependent column is not nullable`);
             }
 
             // Validate relation option.
             if (this.reverseRelation.deleteOption === "SET NULL" || this.reverseRelation.updateOption === "SET NULL") {
-                if (!this.reverseRelation.nullable)
+                if (!this.reverseRelation.nullable) {
                     throw new Error(`Relation ${this.reverseRelation.name} option is "SET NULL" but relation is not nullable`);
+                }
             }
             if (this.reverseRelation.deleteOption === "SET DEFAULT" || this.reverseRelation.updateOption === "SET DEFAULT") {
-                if (this.reverseRelation.relationColumns.any(o => !o.defaultExp && !o.nullable))
+                if (this.reverseRelation.relationColumns.any((o) => !o.defaultExp && !o.nullable)) {
                     throw new Error(`Relation ${this.name} option is "SET DEFAULT" but has column without default and not nullable`);
+                }
             }
 
             if (this.completeRelationType !== "many-many") {

@@ -8,8 +8,9 @@ export class RealColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
         super(Number, entityMeta);
     }
     public applyOption(columnMeta: RealColumnMetaData<TE>) {
-        if (typeof columnMeta.size !== "undefined")
+        if (typeof columnMeta.size !== "undefined") {
             this.size = columnMeta.size;
+        }
         super.applyOption(columnMeta);
     }
 }

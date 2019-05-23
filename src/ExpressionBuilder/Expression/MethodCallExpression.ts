@@ -1,22 +1,11 @@
 import { GenericType } from "../../Common/Type";
+import { Enumerable } from "../../Enumerable/Enumerable";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { Queryable } from "../../Queryable/Queryable";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
-import { Queryable } from "../../Queryable/Queryable";
-import { Enumerable } from "../../Enumerable/Enumerable";
 
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
-    public methodName: K;
-    constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
-        this._type = type;
-        if (typeof method === "function") {
-            this.methodName = method.name as any;
-        }
-        else {
-            this.methodName = method;
-        }
-    }
-    private _type: GenericType<T>;
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
@@ -61,25 +50,37 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         }
         return this._type;
     }
+    public set type(value) {
+        this._type = value;
+    }
     public get itemType() {
         if ((this.type as any) === Array) {
             return this.objectOperand.itemType;
         }
         return undefined;
     }
-    public set type(value) {
-        this._type = value;
+    public methodName: K;
+    private _type: GenericType<T>;
+    constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
+        this._type = type;
+        if (typeof method === "function") {
+            this.methodName = method.name as any;
+        }
+        else {
+            this.methodName = method;
+        }
     }
     public toString(): string {
         const paramStr = [];
-        for (const param of this.params)
+        for (const param of this.params) {
             paramStr.push(param.toString());
+        }
         return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
-        const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
         const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
         replaceMap.set(this, clone);
         return clone;

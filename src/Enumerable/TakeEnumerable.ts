@@ -8,8 +8,9 @@ export class TakeEnumerable<T = any> extends Enumerable<T> {
         let index = 0;
         for (const value of this.parent) {
             yield value;
-            if (++index >= this.takeCount)
+            if (++index >= this.takeCount) {
                 break;
+            }
         }
     }
 }

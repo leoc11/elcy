@@ -10,10 +10,12 @@ export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defa
         option = optionOrName;
     }
     else {
-        if (typeof optionOrName !== "undefined")
+        if (typeof optionOrName !== "undefined") {
             option.columnName = optionOrName as string;
-        if (typeof defaultValue !== "undefined")
+        }
+        if (typeof defaultValue !== "undefined") {
             option.default = defaultValue;
+        }
     }
     return Column<any, number>(DecimalColumnMetaData, option);
 }

@@ -1,11 +1,11 @@
-import "mocha";
 import { expect } from "chai";
+import "mocha";
 import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";
 
 describe("EXPRESSION BUILDER", () => {
     it("should build correct expression", () => {
-        type testType = { member: number, method: (a: number) => number };
+        interface testType { member: number; method: (a: number) => number; }
         const bitFns: Array<(a: any) => any> = [
             (a: number) => a & 2,
             (a: number) => a | 2,
@@ -66,7 +66,7 @@ describe("EXPRESSION BUILDER", () => {
             (a: number) => a ^= 2
         ];
 
-        const paramObj = { a: 10, b: "string", obj: { member: 10, method: function (a: number) { return this.member + a; } } };
+        const paramObj = { a: 10, b: "string", obj: { member: 10, method: function(a: number) { return this.member + a; } } };
         for (const fn of bitFns) {
             const exp = ExpressionBuilder.parse(fn, [], paramObj);
             expect(fn.toString().replace(/[() ]/g, "")).to.equal(exp.toString().replace(/[() ]/g, ""));

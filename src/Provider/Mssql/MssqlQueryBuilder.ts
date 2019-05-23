@@ -1,25 +1,25 @@
-import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
-import { QueryType, ColumnGeneration, IObjectType, GenericType } from "../../Common/Type";
-import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
-import { IQuery } from "../../Query/IQuery";
+import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { ColumnGeneration, GenericType, IObjectType, QueryType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
-import { isNotNull } from "../../Helper/Util";
-import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
-import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
+import { TimeSpan } from "../../Data/TimeSpan";
+import { Uuid } from "../../Data/Uuid";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { isNotNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
+import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { IQuery } from "../../Query/IQuery";
+import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
-import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { Uuid } from "../../Data/Uuid";
-import { TimeSpan } from "../../Data/TimeSpan";
+import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
+import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
+import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
+import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
+import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
+import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
 export class MssqlQueryBuilder extends RelationQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -35,34 +35,28 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         [Boolean, () => ({ columnType: "bit", group: "Boolean" })]
     ]);
     public translator = mssqlQueryTranslator;
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
-        let result = "";
-        if (select.orders.length <= 0)
-            result += "ORDER BY (SELECT NULL)" + this.newLine();
-        result += "OFFSET " + skip + " ROWS";
-        if (take > 0)
-            result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
-        return result;
-    }
     public enclose(identity: string) {
-        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#")
+        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#") {
             return "[" + identity + "]";
-        else
+        }
+        else {
             return identity;
+        }
     }
     public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
-        if (insertExp.values.length <= 0)
+        if (insertExp.values.length <= 0) {
             return [];
+        }
 
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
             queryExpression: insertExp
         };
-        const colString = insertExp.columns.select(o => this.enclose(o.columnName)).toArray().join(", ");
-        let output = insertExp.entity.columns.where(o => isNotNull(o.columnMeta))
-            .where(o => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
-            .select(o => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
+        const colString = insertExp.columns.select((o) => this.enclose(o.columnName)).toArray().join(", ");
+        let output = insertExp.entity.columns.where((o) => isNotNull(o.columnMeta))
+            .where((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
+            .select((o) => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
         if (output) {
             output = " OUTPUT " + output;
         }
@@ -73,7 +67,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             parameters: new Map(),
             type: QueryType.DML
         };
-        if (output) queryCommand.type |= QueryType.DQL;
+        if (output) { queryCommand.type |= QueryType.DQL; }
 
         const result: IQuery[] = [queryCommand];
         let count = 0;
@@ -117,7 +111,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
 
     //#region Update
     public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
-        let result: IQuery[] = [];
+        const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
@@ -127,7 +121,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         const setQuery = Object.keys(updateExp.setter).select((o: keyof T) => {
             const value = updateExp.setter[o];
             const valueStr = this.toOperandString(value, param);
-            const column = updateExp.entity.columns.first(c => c.propertyName === o);
+            const column = updateExp.entity.columns.first((c) => c.propertyName === o);
             return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
         }).toArray();
 
@@ -154,8 +148,9 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             this.newLine() + `SET ${setQuery.join(", ")}` +
             this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)} ` +
             this.getJoinQueryString(updateExp.joins, param);
-        if (updateExp.where)
+        if (updateExp.where) {
             updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, param);
+        }
 
         result.push({
             query: updateQuery,
@@ -180,5 +175,16 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             return new Uint8Array(input.buffer ? input.buffer : input);
         }
         return super.toParameterValue(input, column);
+    }
+    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+        let result = "";
+        if (select.orders.length <= 0) {
+            result += "ORDER BY (SELECT NULL)" + this.newLine();
+        }
+        result += "OFFSET " + skip + " ROWS";
+        if (take > 0) {
+            result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
+        }
+        return result;
     }
 }

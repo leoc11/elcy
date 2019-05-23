@@ -13,8 +13,9 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
     }
     else {
         option.options = options as IEnumType<any> | T[];
-        if (defaultValue)
+        if (defaultValue) {
             option.default = defaultValue;
+        }
     }
 
     let valueOptions: T[] = [];
@@ -22,18 +23,21 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
         if (Array.isArray(option.options)) {
             valueOptions = option.options;
             if (option.options.length > 0) {
-                if (typeof option.options[0] === "number")
+                if (typeof option.options[0] === "number") {
                     option.type = Number as any;
+                }
             }
-            else
+            else {
                 throw new Error("enum empty");
+            }
         }
         else {
             const optionKeys = Object.keys(option.options);
             if (optionKeys.length > 0) {
                 valueOptions = optionKeys.map((item) => (option.options as IEnumType<T>)[item]);
-                if (typeof option.options[optionKeys[0]] === "number")
+                if (typeof option.options[optionKeys[0]] === "number") {
                     option.type = Number as any;
+                }
             }
             else {
                 throw new Error("enum empty");

@@ -1,5 +1,5 @@
-import "mocha";
 import { should } from "chai";
+import "mocha";
 
 describe("ENUMERABLE", () => {
     const items = [1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7];
@@ -71,7 +71,7 @@ describe("ENUMERABLE", () => {
     });
     describe("GROUPBY", () => {
         it("should work", () => {
-            const distincts = items.groupBy(o => o % 2);
+            const distincts = items.groupBy((o) => o % 2);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -136,7 +136,7 @@ describe("ENUMERABLE", () => {
     });
     describe("ORDER", () => {
         it("should sort by asc", () => {
-            const distincts = items.orderBy([o => o]);
+            const distincts = items.orderBy([(o) => o]);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -150,7 +150,7 @@ describe("ENUMERABLE", () => {
             array.should.deep.equals([0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9]);
         });
         it("should sort by desc", () => {
-            const distincts = items.orderBy([o => o, "DESC"]);
+            const distincts = items.orderBy([(o) => o, "DESC"]);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -164,7 +164,7 @@ describe("ENUMERABLE", () => {
             array.should.deep.equals([9, 8, 8, 7, 6, 5, 5, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0]);
         });
         it("should sort by position asc, value desc", () => {
-            const distincts = objArray.orderBy([o => o.position], [o => o.value, "DESC"]);
+            const distincts = objArray.orderBy([(o) => o.position], [(o) => o.value, "DESC"]);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -196,7 +196,7 @@ describe("ENUMERABLE", () => {
     });
     describe("SELECT", () => {
         it("should work", () => {
-            const distincts = items.select(o => o % 2);
+            const distincts = items.select((o) => o % 2);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -212,7 +212,7 @@ describe("ENUMERABLE", () => {
     });
     describe("SELECTMANY", () => {
         it("should work", () => {
-            const distincts = items2.selectMany(o => o);
+            const distincts = items2.selectMany((o) => o);
             let index1 = 0;
             for (const { } of distincts) { index1++; }
             let index2 = 0;
@@ -262,7 +262,7 @@ describe("ENUMERABLE", () => {
     });
     describe("WHERE", () => {
         it("should work", () => {
-            const where = items.where(o => o % 2 === 0);
+            const where = items.where((o) => o % 2 === 0);
             let index1 = 0;
             for (const { } of where) { index1++; }
             let index2 = 0;
@@ -275,7 +275,7 @@ describe("ENUMERABLE", () => {
             array.should.has.lengthOf(index1);
         });
         it("should apply multiple filter", () => {
-            const where = items.where(o => o % 2 === 0).where(o => o <= 2);
+            const where = items.where((o) => o % 2 === 0).where((o) => o <= 2);
             let index1 = 0;
             for (const { } of where) { index1++; }
             let index2 = 0;

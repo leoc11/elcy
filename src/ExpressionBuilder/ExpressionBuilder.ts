@@ -1,8 +1,8 @@
+import { GenericType } from "../Common/Type";
 import { FunctionExpression } from "./Expression/FunctionExpression";
+import { IExpression } from "./Expression/IExpression";
 import { LexicalAnalyzer } from "./LexicalAnalyzer";
 import { SyntacticAnalyzer } from "./SyntacticAnalyzer";
-import { IExpression } from "./Expression/IExpression";
-import { GenericType } from "../Common/Type";
 
 export class ExpressionBuilder {
     public static parse<T = any>(fn: (...items: any[]) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: any }): FunctionExpression<T>;

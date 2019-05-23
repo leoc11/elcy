@@ -1,24 +1,8 @@
+import { GenericType } from "../../Common/Type";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-import { GenericType } from "../../Common/Type";
-import { resolveClone, hashCodeAdd, hashCode } from "../../Helper/Util";
 export class FunctionCallExpression<T = any> implements IExpression<T> {
-    constructor(fnExpression: IExpression<(...params: any[]) => T> | ((...params: any[]) => T), params: IExpression[], functionName?: string) {
-        if (fnExpression instanceof Function) {
-            functionName = fnExpression.name;
-            fnExpression = new ValueExpression(fnExpression);
-        }
-        else {
-            functionName = fnExpression.toString();
-        }
-        this.fnExpression = fnExpression;
-        this.params = params;
-        this.functionName = functionName;
-    }
-    public fnExpression: IExpression<(...params: any[]) => T>;
-    public params: IExpression[];
-    public functionName: string;
-    private _type: GenericType<T>;
     public get type() {
         if (!this._type) {
             if (this.fnExpression instanceof ValueExpression) {
@@ -54,16 +38,33 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
 
         return this._type;
     }
+    public fnExpression: IExpression<(...params: any[]) => T>;
+    public params: IExpression[];
+    public functionName: string;
+    private _type: GenericType<T>;
+    constructor(fnExpression: IExpression<(...params: any[]) => T> | ((...params: any[]) => T), params: IExpression[], functionName?: string) {
+        if (fnExpression instanceof Function) {
+            functionName = fnExpression.name;
+            fnExpression = new ValueExpression(fnExpression);
+        }
+        else {
+            functionName = fnExpression.toString();
+        }
+        this.fnExpression = fnExpression;
+        this.params = params;
+        this.functionName = functionName;
+    }
     public toString(): string {
         const paramStr = [];
-        for (const param of this.params)
+        for (const param of this.params) {
             paramStr.push(param.toString());
+        }
         return this.functionName + "(" + paramStr.join(", ") + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const fnExpression = resolveClone(this.fnExpression, replaceMap);
-        const params = this.params.select(o => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
         const clone = new FunctionCallExpression(fnExpression, params);
         replaceMap.set(this, clone);
         return clone;

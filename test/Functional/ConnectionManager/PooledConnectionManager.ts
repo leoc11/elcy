@@ -1,10 +1,11 @@
-import "mocha";
-import * as chaiPromise from "chai-as-promised";
-import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { expect, use } from "chai";
-import { ConnectionError } from "../../../src/Error/ConnectionError";
+import * as chaiPromise from "chai-as-promised";
+import "mocha";
+import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
+import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { MockDriver } from "../../../src/Mock/MockDriver";
+import "../../../src/Startup";
 
 describe("POOLED CONNECTION MANAGER", () => {
     use(chaiPromise);

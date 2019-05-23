@@ -1,9 +1,8 @@
-import "../../Extensions/DateExtension";
-import { TimeZoneHandling } from "../../Common/Type";
-import { Column } from "./Column";
 import { DateTimeColumnType } from "../../Common/ColumnType";
-import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { TimeZoneHandling } from "../../Common/Type";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { Column } from "./Column";
 
 export function CreatedDateColumn(option?: IDateTimeColumnOption): PropertyDecorator;
 export function CreatedDateColumn(name: string, dbtype: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator;
@@ -12,19 +11,21 @@ export function CreatedDateColumn(optionOrName?: IDateTimeColumnOption | string,
     if (optionOrName) {
         if (typeof optionOrName === "string") {
             option.columnName = optionOrName;
-            if (timeZoneHandling !== undefined) option.timeZoneHandling = timeZoneHandling;
-            if (dbtype !== undefined) option.columnType = dbtype;
+            if (timeZoneHandling !== undefined) { option.timeZoneHandling = timeZoneHandling; }
+            if (dbtype !== undefined) { option.columnType = dbtype; }
         }
         else {
             option = optionOrName;
         }
     }
     option.isCreatedDate = true;
-    if (option.timeZoneHandling === "none")
+    if (option.timeZoneHandling === "none") {
         /* istanbul ignore next */
         option.default = () => Date.timestamp();
-    else
+    }
+    else {
         /* istanbul ignore next */
         option.default = () => Date.utcTimestamp();
+    }
     return Column<any, Date>(DateTimeColumnMetaData, option);
 }

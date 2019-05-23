@@ -11,13 +11,14 @@ const comparers = (a: any, b: any, selectors: IOrderDefinition[]) => {
         const aVal = selector[0](a);
         const bVal = selector[0](b);
         // tslint:disable-next-line:triple-equals
-        if (aVal == bVal)
+        if (aVal == bVal) {
             continue;
+        }
         return (aVal > bVal ? 1 : -1) * (selector[1] === "DESC" ? -1 : 1);
     }
     return 0;
 };
-export const partition = <T>(source: T[], first: number, last: number, selectors: IOrderDefinition<T>[]) => {
+export const partition = <T>(source: T[], first: number, last: number, selectors: Array<IOrderDefinition<T>>) => {
     let left = first - 1;
     let right = last + 1;
     while (true) {
@@ -39,8 +40,8 @@ export const partition = <T>(source: T[], first: number, last: number, selectors
     }
 };
 export class OrderEnumerable<T = any> extends Enumerable<T> {
-    protected readonly selectors: IOrderDefinition<T>[];
-    constructor(protected readonly parent: Enumerable<T>, ...selectors: IOrderDefinition<T>[]) {
+    protected readonly selectors: Array<IOrderDefinition<T>>;
+    constructor(protected readonly parent: Enumerable<T>, ...selectors: Array<IOrderDefinition<T>>) {
         super();
         this.selectors = selectors;
     }

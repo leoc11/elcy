@@ -1,4 +1,4 @@
-import { IEventHandler, IEventDispacher } from "./IEventHandler";
+import { IEventDispacher, IEventHandler } from "./IEventHandler";
 
 export const EventHandlerFactory = <TSource, TArgs = any>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
     const handlers: any[] = [];
@@ -10,9 +10,9 @@ export const EventHandlerFactory = <TSource, TArgs = any>(source: TSource, stopO
             handlers.delete(handler);
         }
     };
-    const eventDispacher = function (args: TArgs) {
+    const eventDispacher = function(args: TArgs) {
         for (const handler of handlers) {
-            if (handler(source, args) === false && stopOnFalse) break;
+            if (handler(source, args) === false && stopOnFalse) { break; }
         }
     };
 

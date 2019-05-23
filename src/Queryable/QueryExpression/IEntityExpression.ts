@@ -1,19 +1,19 @@
 import { GenericType, IObjectType } from "../../Common/Type";
-import { IColumnExpression } from "./IColumnExpression";
-import { SelectExpression } from "./SelectExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
+import { IColumnExpression } from "./IColumnExpression";
+import { SelectExpression } from "./SelectExpression";
 
 export interface IEntityExpression<T = any> extends IExpression<T> {
     type: GenericType<T>;
     alias: string;
-    columns: IColumnExpression<T>[];
+    columns: Array<IColumnExpression<T>>;
     name: string;
     select?: SelectExpression<T>;
-    primaryColumns: IColumnExpression<T>[];
-    defaultOrders: IOrderQueryDefinition<T>[];
+    primaryColumns: Array<IColumnExpression<T>>;
+    defaultOrders: Array<IOrderQueryDefinition<T>>;
     deleteColumn?: IColumnExpression<T>;
-    clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
     entityTypes: IObjectType[];
     isRelationData?: boolean;
+    clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
 }

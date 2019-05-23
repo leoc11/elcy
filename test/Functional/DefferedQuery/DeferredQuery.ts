@@ -1,8 +1,8 @@
+import { expect, should } from "chai";
 import "mocha";
-import { MyDb } from "../../Common/MyDb";
-import { Collection, Order } from "../../Common/Model";
-import { should, expect } from "chai";
 import { mockContext } from "../../../src/Mock/MockContext";
+import { Collection, Order } from "../../Common/Model";
+import { MyDb } from "../../Common/MyDb";
 
 const db = new MyDb();
 mockContext(db);
@@ -10,7 +10,7 @@ mockContext(db);
 describe("DEFERRED QUERY", () => {
     describe("TO ARRAY", async () => {
         it("should work", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
             // do something here.
             const a = await deferred.execute();
 
@@ -20,7 +20,7 @@ describe("DEFERRED QUERY", () => {
             a[0].should.be.instanceof(Order);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
             await db.orders.count();
             const a = deferred.value;
             should();
@@ -29,7 +29,7 @@ describe("DEFERRED QUERY", () => {
             a[0].should.be.instanceof(Order);
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
             // emulate the resolved value.
             deferred.value = [];
             const a = await deferred.execute();
@@ -40,7 +40,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("COUNT", async () => {
         it("should work", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredCount();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
             // do something here.
             const a = await deferred.execute();
 
@@ -48,14 +48,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredCount();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.include(o => o.OrderDetails).deferredCount();
+            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -65,7 +65,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("SUM", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredSum(o => o.TotalAmount);
+            const deferred = db.orders.deferredSum((o) => o.TotalAmount);
             // do something here.
             const a = await deferred.execute();
 
@@ -73,14 +73,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredSum(o => o.TotalAmount);
+            const deferred = db.orders.deferredSum((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredSum(o => o.TotalAmount);
+            const deferred = db.orders.deferredSum((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -90,7 +90,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("MAX", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredMax(o => o.TotalAmount);
+            const deferred = db.orders.deferredMax((o) => o.TotalAmount);
             // do something here.
             const a = await deferred.execute();
 
@@ -98,14 +98,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredMax(o => o.TotalAmount);
+            const deferred = db.orders.deferredMax((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredMax(o => o.TotalAmount);
+            const deferred = db.orders.deferredMax((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -115,7 +115,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("MIN", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredMin(o => o.TotalAmount);
+            const deferred = db.orders.deferredMin((o) => o.TotalAmount);
             // do something here.
             const a = await deferred.execute();
 
@@ -123,14 +123,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredMin(o => o.TotalAmount);
+            const deferred = db.orders.deferredMin((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredMin(o => o.TotalAmount);
+            const deferred = db.orders.deferredMin((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -140,7 +140,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("AVG", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredAvg(o => o.TotalAmount);
+            const deferred = db.orders.deferredAvg((o) => o.TotalAmount);
             // do something here.
             const a = await deferred.execute();
 
@@ -148,14 +148,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredAvg(o => o.TotalAmount);
+            const deferred = db.orders.deferredAvg((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredAvg(o => o.TotalAmount);
+            const deferred = db.orders.deferredAvg((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -165,7 +165,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("ALL", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredAll(o => o.TotalAmount < 1000000000);
+            const deferred = db.orders.deferredAll((o) => o.TotalAmount < 1000000000);
             // do something here.
             const a = await deferred.execute();
 
@@ -173,14 +173,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("boolean");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredAll(o => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredAll(o => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
@@ -190,7 +190,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("ANY", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredAny(o => o.TotalAmount < 1000000000);
+            const deferred = db.orders.deferredAny((o) => o.TotalAmount < 1000000000);
             // do something here.
             const a = await deferred.execute();
 
@@ -198,14 +198,14 @@ describe("DEFERRED QUERY", () => {
             a.should.be.equal(true);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredAny(o => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredAny((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
             should();
             a.should.be.a("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredAny(o => o.TotalAmount < 0);
+            const deferred = db.orders.deferredAny((o) => o.TotalAmount < 0);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
@@ -240,7 +240,7 @@ describe("DEFERRED QUERY", () => {
     });
     describe("CONTAINS", async () => {
         it("should work", async () => {
-            const deferred = db.orders.select(o => o.TotalAmount).deferredContains(10000);
+            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(10000);
             // do something here.
             const a = await deferred.execute();
 
@@ -248,7 +248,7 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("boolean");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.select(o => o.TotalAmount).deferredContains(10000);
+            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(10000);
             await db.orders.count();
             const a = deferred.value;
 
@@ -256,7 +256,7 @@ describe("DEFERRED QUERY", () => {
             a.should.be.an("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.select(o => o.TotalAmount).deferredContains(-20);
+            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(-20);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
@@ -268,7 +268,7 @@ describe("DEFERRED QUERY", () => {
         it("should wait for result if it being executed", async () => {
             const db2 = new MyDb();
             mockContext(db2);
-            const collection = db.collections.include(o => o.Products).deferredToArray();
+            const collection = db.collections.include((o) => o.Products).deferredToArray();
             // remove deferred query from context to emulate it state as waiting for execution to complete
             db2.deferredQueries = db.deferredQueries.splice(0);
             const c = db2.orders.deferredCount();
@@ -282,9 +282,9 @@ describe("DEFERRED QUERY", () => {
             c.value.should.be.an("number");
         });
         it("should execute several query in batch", async () => {
-            const sum = db.orders.select(o => o.TotalAmount).deferredSum();
-            const any = db.orders.deferredAny(o => o.TotalAmount < 1000000000);
-            const array = db.orders.include(o => o.OrderDetails).deferredToArray();
+            const sum = db.orders.select((o) => o.TotalAmount).deferredSum();
+            const any = db.orders.deferredAny((o) => o.TotalAmount < 1000000000);
+            const array = db.orders.include((o) => o.OrderDetails).deferredToArray();
             // do something here.
             await any.execute();
 
@@ -296,10 +296,10 @@ describe("DEFERRED QUERY", () => {
         });
         it("should not have overlaping parameter issue", async () => {
             let value = 10000;
-            const any1 = db.orders.parameter({ value }).where(o => o.TotalAmount < value).deferredToArray();
+            const any1 = db.orders.parameter({ value }).where((o) => o.TotalAmount < value).deferredToArray();
 
             value = 10;
-            const any2 = db.orders.parameter({ value }).where(o => o.TotalAmount < value).deferredToArray();
+            const any2 = db.orders.parameter({ value }).where((o) => o.TotalAmount < value).deferredToArray();
 
             await any2.execute();
 

@@ -1,10 +1,15 @@
+import { IObjectType, Pivot, ValueType } from "../Common/Type";
+import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
 import { DistinctEnumerable } from "./DistinctEnumerable";
 import { Enumerable } from "./Enumerable";
 import { ExceptEnumerable } from "./ExceptEnumerable";
 import { FullJoinEnumerable } from "./FullJoinEnumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
 import { GroupedEnumerable } from "./GroupedEnumerable";
+import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
+import { IEnumerable } from "./IEnumerable";
 import { defaultResultFn, InnerJoinEnumerable } from "./InnerJoinEnumerable";
+import { IOrderDefinition } from "./Interface/IOrderDefinition";
 import { IntersectEnumerable } from "./IntersectEnumerable";
 import { LeftJoinEnumerable } from "./LeftJoinEnumerable";
 import { OrderEnumerable } from "./OrderEnumerable";
@@ -15,11 +20,6 @@ import { SkipEnumerable } from "./SkipEnumerable";
 import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
-import { IOrderDefinition } from "./Interface/IOrderDefinition";
-import { IObjectType, ValueType, Pivot } from "../Common/Type";
-import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
-import { IEnumerable } from "./IEnumerable";
-import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
@@ -28,7 +28,7 @@ declare module "./Enumerable" {
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
         where(predicate: (item: T) => boolean): Enumerable<T>;
-        orderBy(...selectors: IOrderDefinition<T>[]): Enumerable<T>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
         skip(skip: number): Enumerable<T>;
         take(take: number): Enumerable<T>;
         groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
@@ -64,7 +64,7 @@ Enumerable.prototype.selectMany = function <T, TReturn>(this: Enumerable<T>, sel
 Enumerable.prototype.where = function <T>(this: Enumerable<T>, predicate: (item: T) => boolean): Enumerable<T> {
     return new WhereEnumerable(this, predicate);
 };
-Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, ...selectors: IOrderDefinition<T>[]): Enumerable<T> {
+Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, ...selectors: Array<IOrderDefinition<T>>): Enumerable<T> {
     return new OrderEnumerable(this, ...selectors);
 };
 Enumerable.prototype.skip = function <T>(this: Enumerable<T>, skip: number): Enumerable<T> {
@@ -110,14 +110,16 @@ Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) 
     return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
         const dimensionKey = {} as Pivot<T, TD, TM>;
         for (const key in dimensions) {
-            if (dimensions[key] instanceof Function)
+            if (dimensions[key] instanceof Function) {
                 dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[keyof TD];
+            }
         }
         return dimensionKey;
     }), (o) => {
         for (const key in metrics) {
-            if (o.key)
+            if (o.key) {
                 o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[keyof TD];
+            }
         }
         return o.key;
     });

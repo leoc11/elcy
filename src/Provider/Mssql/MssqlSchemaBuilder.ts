@@ -1,15 +1,15 @@
-import { RelationSchemaBuilder } from "../Relation/RelationSchemaBuilder";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { ReferenceOption, QueryType } from "../../Common/Type";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IQuery } from "../../Query/IQuery";
-import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { QueryType, ReferenceOption } from "../../Common/Type";
 import { isNotNull } from "../../Helper/Util";
+import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
+import { IQuery } from "../../Query/IQuery";
+import { RelationSchemaBuilder } from "../Relation/RelationSchemaBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 
 export class MssqlSchemaBuilder extends RelationSchemaBuilder {
@@ -61,33 +61,12 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         ["defaultString", { columnType: "nvarchar", option: { length: 255 } }],
         ["defaultRowVersion", { columnType: "rowversion" }]
     ]);
-    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
-        const columns = relationMeta.relationColumns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        const referenceColumns = relationMeta.reverseRelation.relationColumns.select(o => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
-            ` FOREIGN KEY (${columns})` +
-            ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
-
-        const updateOption = this.referenceOption(relationMeta.updateOption);
-        const deleteOption = this.referenceOption(relationMeta.deleteOption);
-        if (updateOption && updateOption !== "NO ACTION")
-            result += ` ON UPDATE ${updateOption}`;
-        if (deleteOption && deleteOption !== "NO ACTION")
-            result += ` ON DELETE ${deleteOption}`;
-
-        return result;
-    }
-    protected referenceOption(option: ReferenceOption) {
-        if (option === "RESTRICT")
-            return "NO ACTION";
-        return option;
-    }
     public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
-        let query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
+        const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{ query, type: QueryType.DDL }];
     }
     public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
-        let query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
+        const query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.queryBuilder.enclose(columnMeta.columnName)}`;
         return [{ query, type: QueryType.DDL }];
     }
@@ -129,20 +108,48 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         });
         return result;
     }
+    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
+        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
+            ` FOREIGN KEY (${columns})` +
+            ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
+
+        const updateOption = this.referenceOption(relationMeta.updateOption);
+        const deleteOption = this.referenceOption(relationMeta.deleteOption);
+        if (updateOption && updateOption !== "NO ACTION") {
+            result += ` ON UPDATE ${updateOption}`;
+        }
+        if (deleteOption && deleteOption !== "NO ACTION") {
+            result += ` ON DELETE ${deleteOption}`;
+        }
+
+        return result;
+    }
+    protected referenceOption(option: ReferenceOption) {
+        if (option === "RESTRICT") {
+            return "NO ACTION";
+        }
+        return option;
+    }
     protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
         const columnType = super.columnType(column);
         switch (columnType.group) {
             case "Integer": {
                 const size = (column as unknown as IntegerColumnMetaData).size;
                 if (isNotNull(size)) {
-                    if (size > 4)
+                    if (size > 4) {
                         columnType.columnType = "bigint";
-                    else if (size > 2)
+                    }
+                    else if (size > 2) {
                         columnType.columnType = "int";
-                    else if (size > 1)
+ }
+                    else if (size > 1) {
                         columnType.columnType = "smallint";
-                    else
+ }
+                    else {
                         columnType.columnType = "tinyint";
+ }
                 }
                 break;
             }

@@ -1,25 +1,23 @@
-import { IQueryExpression } from "./IQueryExpression";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
-import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IObjectType } from "../../Common/Type";
+import { EntityEntry } from "../../Data/EntityEntry";
+import { EntityState } from "../../Data/EntityState";
+import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
+import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
+import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
+import { hashCode, resolveClone } from "../../Helper/Util";
+import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { IQueryOption } from "../../Query/IQueryOption";
+import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IObjectType } from "../../Common/Type";
-import { hashCode, resolveClone } from "../../Helper/Util";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
-import { EntityState } from "../../Data/EntityState";
-import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
-import { IQueryOption } from "../../Query/IQueryOption";
+import { IQueryExpression } from "./IQueryExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 export class UpsertExpression<T = any> implements IQueryExpression<void> {
-    public option: IQueryOption;
-    private _updateColumns: IColumnExpression<T>[];
-    public get updateColumns(): IColumnExpression<T>[] {
+    public get updateColumns(): Array<IColumnExpression<T>> {
         if (!this._updateColumns) {
-            this._updateColumns = this.insertColumns.where(o => !o.isPrimary).toArray();
+            this._updateColumns = this.insertColumns.where((o) => !o.isPrimary).toArray();
         }
 
         return this._updateColumns;
@@ -27,30 +25,27 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
     public set updateColumns(value) {
         this._updateColumns = value;
     }
-    public paramExps: SqlParameterExpression[];
-    private _insertColumns: IColumnExpression<T>[];
-    public get insertColumns(): IColumnExpression<T>[] {
+    public get insertColumns(): Array<IColumnExpression<T>> {
         if (!this._insertColumns) {
             this._insertColumns = this.relations
-            .selectMany(o => o.relationColumns)
+            .selectMany((o) => o.relationColumns)
             .union(this.entity.metaData.columns)
             .except(this.entity.metaData.insertGeneratedColumns)
-            .select(o => this.entity.columns.first(c => c.propertyName === o.propertyName)).toArray();
+            .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
         }
 
         return this._insertColumns;
     }
-    private _relations: IRelationMetaData<T>[];
-    public get relations(): IRelationMetaData<T>[] {
+    public get relations(): Array<IRelationMetaData<T>> {
         if (!this._relations) {
             this._relations = this.entity.metaData.relations
-                .where(o => !o.nullable && !o.isMaster && o.relationType === "one").toArray();
+                .where((o) => !o.nullable && !o.isMaster && o.relationType === "one").toArray();
         }
         return this._relations;
     }
 
     public get where(): IExpression<boolean> {
-        return this.entity.primaryColumns.select(o => {
+        return this.entity.primaryColumns.select((o) => {
             const valueExp = this.setter[o.propertyName];
             return new StrictEqualExpression(o, valueExp);
         }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item);
@@ -58,10 +53,15 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
     public get type() {
         return undefined as any;
     }
+    public option: IQueryOption;
+    public paramExps: SqlParameterExpression[];
+    private _updateColumns: Array<IColumnExpression<T>>;
+    private _insertColumns: Array<IColumnExpression<T>>;
+    private _relations: Array<IRelationMetaData<T>>;
     constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression<T[key]> }) {
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const entity = resolveClone(this.entity, replaceMap);
         const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.setter) {
@@ -93,9 +93,9 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
 
 export const upsertEntryExp = <T>(upsertExp: UpsertExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     for (const col of upsertExp.insertColumns) {
-        let value = entry.entity[col.propertyName];
+        const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            let paramExp = new SqlParameterExpression(new ParameterExpression("", col.type), col.columnMeta);
+            const paramExp = new SqlParameterExpression(new ParameterExpression("", col.type), col.columnMeta);
             queryParameters.set(paramExp, { value: value });
             upsertExp.setter[col.propertyName] = paramExp;
         }
@@ -114,7 +114,7 @@ export const upsertEntryExp = <T>(upsertExp: UpsertExpression<T>, entry: EntityE
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {
-                    let value = parentEntity[parentCol.propertyName];
+                    const value = parentEntity[parentCol.propertyName];
                     queryParameters.set(paramExp, { value: value });
                 }
 

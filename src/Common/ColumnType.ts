@@ -169,7 +169,7 @@ export type ColumnType = IntColumnType
     | EnumColumnType
     | OtherColumnType;
 
-export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary" 
+export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary"
     | "Serialize" | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";
 export type DefaultColumnTypeMapKey = "defaultString" | "defaultBoolean" | "defaultInteger"
 | "defaultDecimal" | "defaultReal" | "defaultBinary" | "defaultSerialize"

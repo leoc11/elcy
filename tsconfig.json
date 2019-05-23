@@ -11,8 +11,12 @@
         "noUnusedParameters": false,
         "sourceMap": true,
         "target": "es6",
-        "lib": [ "es6" ],
-        "types":[ "node" ],
+        "lib": [
+            "es6"
+        ],
+        "types": [
+            "node"
+        ],
         "outDir": "build",
         "rootDir": "",
         "emitDecoratorMetadata": false,

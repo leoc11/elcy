@@ -1,5 +1,5 @@
-import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
+import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class UniqueConstraintMetaData<TE = any> implements IConstraintMetaData<TE> {

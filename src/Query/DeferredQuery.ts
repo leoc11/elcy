@@ -1,13 +1,13 @@
 import { DbContext } from "../Data/DBContext";
-import { IQueryResult } from "./IQueryResult";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
-import { IQueryParameterMap } from "./IQueryParameter";
-import { IQuery } from "./IQuery";
-import { Diagnostic } from "../Logger/Diagnostic";
+import { Enumerable } from "../Enumerable/Enumerable";
 import { hashCode } from "../Helper/Util";
+import { Diagnostic } from "../Logger/Diagnostic";
+import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IQuery } from "./IQuery";
 import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryOption } from "./IQueryOption";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { IQueryParameterMap } from "./IQueryParameter";
+import { IQueryResult } from "./IQueryResult";
 
 export class DeferredQuery<T = any> {
     public value: T;
@@ -56,9 +56,9 @@ export class DeferredQuery<T = any> {
         return this._queries;
     }
     public toString() {
-        return this.buildQuery(this.dbContext.queryBuilder).select(o => o.query).toArray().join(";\n\n");
+        return this.buildQuery(this.dbContext.queryBuilder).select((o) => o.query).toArray().join(";\n\n");
     }
     public hashCode() {
-        return this.command.hashCode() + Enumerable.from(this.parameters).select(o => hashCode((o[1].value || "NULL").toString())).sum();
+        return this.command.hashCode() + Enumerable.from(this.parameters).select((o) => hashCode((o[1].value || "NULL").toString())).sum();
     }
 }

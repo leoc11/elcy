@@ -1,8 +1,8 @@
-import { IObjectType, GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 
 export class UnionExpression<T> extends ProjectionEntityExpression {
     public readonly entityTypes: IObjectType[];
@@ -16,7 +16,7 @@ export class UnionExpression<T> extends ProjectionEntityExpression {
         return `Union(${this.subSelect.toString()}, ${this.subSelect2.toString()})`;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const select = resolveClone(this.subSelect, replaceMap);
         const select2 = resolveClone(this.subSelect2, replaceMap);
         const clone = new UnionExpression(select, select2, this.isUnionAll, this.type);

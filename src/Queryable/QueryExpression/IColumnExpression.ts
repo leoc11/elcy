@@ -1,7 +1,7 @@
 import { GenericType } from "../../Common/Type";
-import { IEntityExpression } from "./IEntityExpression";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { IEntityExpression } from "./IEntityExpression";
 
 export interface IColumnExpression<TE = any, T = any> extends IExpression<T> {
     type: GenericType<T>;

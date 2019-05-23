@@ -1,11 +1,11 @@
-import { OrderDetail } from "./OrderDetail";
+import { Uuid } from "../../../src/Data/Uuid";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
-import { Relationship } from "../../../src/Decorator/Relation/Relationship";
-import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
-import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
-import { Uuid } from "../../../src/Data/Uuid";
+import { Entity } from "../../../src/Decorator/Entity/Entity";
+import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { OrderDetail } from "./OrderDetail";
 
 @Entity("OrderDetailProperties")
 export class OrderDetailProperty {

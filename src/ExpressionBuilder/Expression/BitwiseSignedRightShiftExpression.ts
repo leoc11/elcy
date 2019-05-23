@@ -1,7 +1,7 @@
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-import { resolveClone, hashCode, hashCodeAdd } from "../../Helper/Util";
 export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implements IBinaryOperatorExpression<number> {
     public leftOperand: IExpression<number>;
     public rightOperand: IExpression<number>;
@@ -15,7 +15,7 @@ export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implem
         return "(" + this.leftOperand.toString() + " >>> " + this.rightOperand.toString() + ")";
     }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) replaceMap = new Map();
+        if (!replaceMap) { replaceMap = new Map(); }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new BitwiseSignedRightShiftExpression(left, right);
