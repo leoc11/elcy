@@ -830,7 +830,7 @@ export abstract class RelationSchemaBuilder implements ISchemaBuilder {
                 return this.dropColumn(o.oldColumnSchema);
             }
 
-            return undefined;
+            return null;
         });
 
         // primary key changes

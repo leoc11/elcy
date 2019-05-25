@@ -1007,7 +1007,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         const updateString = upsertExp.updateColumns.select((column) => {
             const value = upsertExp.setter[column.propertyName];
             if (!value) {
-                return undefined;
+                return null;
             }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(value, param)}`;

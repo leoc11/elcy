@@ -51,7 +51,7 @@ export abstract class Diagnostic {
     }
     public static timer(autoStart = true): Timer | undefined {
         if (!Diagnostic.enabled) {
-            return undefined;
+            return null;
         }
 
         const res = new Timer();

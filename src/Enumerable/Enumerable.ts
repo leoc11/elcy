@@ -19,7 +19,7 @@ export class Enumerable<T = any> implements Iterable<T> {
         if (this.parent) {
             this.cache.enabled = value;
             if (!value) {
-                this.cache.result = undefined;
+                this.cache.result = null;
             }
         }
     }

@@ -10,7 +10,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if ((this.type as any) === Array) {
             return this.objectOperand.itemType;
         }
-        return undefined;
+        return null;
     }
     public get type() {
         if (!this._type && this.objectOperand.type) {

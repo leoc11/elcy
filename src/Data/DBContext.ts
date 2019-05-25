@@ -268,7 +268,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         if (set) {
             return set.entry(entity);
         }
-        return undefined;
+        return null;
     }
     public async executeDeferred(deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) {

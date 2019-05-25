@@ -48,7 +48,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
             if (!valueExp) {
-                return undefined;
+                return null;
             }
             return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
         }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
@@ -86,7 +86,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
             if (!valueExp) {
-                return undefined;
+                return null;
             }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
