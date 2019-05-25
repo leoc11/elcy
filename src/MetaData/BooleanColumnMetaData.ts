@@ -4,11 +4,11 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 // tslint:disable-next-line:ban-types
 export class BooleanColumnMetaData<TE = any> extends ColumnMetaData<TE, boolean> {
-    public columnType: BooleanColumnType = "boolean";
-    public isDeleteColumn?: boolean;
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Boolean, entityMeta);
     }
+    public columnType: BooleanColumnType = "boolean";
+    public isDeleteColumn?: boolean;
 
     public applyOption(columnMeta: BooleanColumnMetaData<TE>) {
         if (typeof columnMeta.isDeleteColumn !== "undefined") {

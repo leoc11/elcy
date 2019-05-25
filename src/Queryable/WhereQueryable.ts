@@ -9,8 +9,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class WhereQueryable<T> extends Queryable<T> {
-    protected readonly predicateFn: (item: T) => boolean;
-    protected _predicate: FunctionExpression<boolean>;
     protected get predicate() {
         if (!this._predicate && this.predicateFn) {
             this._predicate = ExpressionBuilder.parse(this.predicateFn, [this.parent.type], this.parameters);
@@ -29,6 +27,8 @@ export class WhereQueryable<T> extends Queryable<T> {
             this.predicateFn = predicate;
         }
     }
+    protected _predicate: FunctionExpression<boolean>;
+    protected readonly predicateFn: (item: T) => boolean;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate.clone()]);

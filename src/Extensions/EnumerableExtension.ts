@@ -7,46 +7,46 @@ import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
-        toArray(): T[];
-        cast<TReturn>(): TReturn[];
-        asEnumerable(): Enumerable<T>;
-        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
-        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
-        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
-        selectMany<TReturn>(fn: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
-        contains(item: T): boolean;
-        first(fn?: (item: T) => boolean): T;
-        where(fn: (item: T) => boolean): Enumerable<T>;
-        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
-        any(fn?: (item: T) => boolean): boolean;
         all(fn: (item: T) => boolean): boolean;
-        skip(n: number): Enumerable<T>;
-        take(n: number): Enumerable<T>;
-        sum(fn?: (item: T) => number): number;
-        count(): number;
+        any(fn?: (item: T) => boolean): boolean;
+        asEnumerable(): Enumerable<T>;
         avg(fn?: (item: T) => number): number;
-        max(fn?: (item: T) => number): number;
-        min(fn?: (item: T) => number): number;
-        groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
-        distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
-        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
-        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
-        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        cast<TReturn>(): TReturn[];
+        contains(item: T): boolean;
+        count(): number;
         crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        union(array2: IEnumerable<T>, all?: boolean): Enumerable<T>;
-        /**
-         * Return array of item exist in both source array and array2.
-         */
-        intersect(array2: IEnumerable<T>): Enumerable<T>;
+        distinct<TKey>(fn?: (item: T) => TKey): Enumerable<T>;
         /**
          * Return array of item exist in both source array and array2.
          */
         except(array2: IEnumerable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        first(fn?: (item: T) => boolean): T;
+        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        groupBy<K>(fn: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
+        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        /**
+         * Return array of item exist in both source array and array2.
+         */
+        intersect(array2: IEnumerable<T>): Enumerable<T>;
+        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        max(fn?: (item: T) => number): number;
+        min(fn?: (item: T) => number): number;
         ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
+        selectMany<TReturn>(fn: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
+        skip(n: number): Enumerable<T>;
+        sum(fn?: (item: T) => number): number;
+        take(n: number): Enumerable<T>;
+        toArray(): T[];
         toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V>;
+        union(array2: IEnumerable<T>, all?: boolean): Enumerable<T>;
+        where(fn: (item: T) => boolean): Enumerable<T>;
     }
     interface Map<K, V> {
         asEnumerable(): Enumerable<[K, V]>;

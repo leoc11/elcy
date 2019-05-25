@@ -38,10 +38,6 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
 
         return this._type;
     }
-    public fnExpression: IExpression<(...params: any[]) => T>;
-    public params: IExpression[];
-    public functionName: string;
-    private _type: GenericType<T>;
     constructor(fnExpression: IExpression<(...params: any[]) => T> | ((...params: any[]) => T), params: IExpression[], functionName?: string) {
         if (fnExpression instanceof Function) {
             functionName = fnExpression.name;
@@ -54,15 +50,14 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
         this.params = params;
         this.functionName = functionName;
     }
-    public toString(): string {
-        const paramStr = [];
-        for (const param of this.params) {
-            paramStr.push(param.toString());
-        }
-        return this.functionName + "(" + paramStr.join(", ") + ")";
-    }
+    public fnExpression: IExpression<(...params: any[]) => T>;
+    public functionName: string;
+    public params: IExpression[];
+    private _type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const fnExpression = resolveClone(this.fnExpression, replaceMap);
         const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
         const clone = new FunctionCallExpression(fnExpression, params);
@@ -73,5 +68,12 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
         let hash = hashCode(this.functionName);
         this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
+    }
+    public toString(): string {
+        const paramStr = [];
+        for (const param of this.params) {
+            paramStr.push(param.toString());
+        }
+        return this.functionName + "(" + paramStr.join(", ") + ")";
     }
 }

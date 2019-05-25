@@ -1,7 +1,7 @@
 import { CodedError } from "../Error/CodedError";
 
 export const DbFunction = {
-    lastInsertedId: function(): any {
+    lastInsertedId: function (): any {
         throw new CodedError(1, "Unsupported operation");
     },
     coalesce: function <T>(...items: T[]): T {

@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
@@ -9,8 +9,9 @@ export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implement
     public get type() {
         if (!this._type) {
             if (this.objectOperand.type) {
-                const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, this.objectOperand.type, this.memberName);
-                const relationMeta: RelationMetaData<TE, any> = Reflect.getOwnMetadata(relationMetaKey, this.objectOperand.type, this.memberName);
+                const objectType = this.objectOperand.type as IObjectType;
+                const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, objectType, this.memberName);
+                const relationMeta: RelationMetaData<TE, any> = Reflect.getOwnMetadata(relationMetaKey, objectType, this.memberName);
                 if (columnMeta) {
                     this._type = columnMeta.type;
                 }
@@ -24,25 +25,33 @@ export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implement
                     }
                 }
                 else {
-                    const val = this.objectOperand.type.prototype[this.memberName];
-                    if (val) {
-                        this._type = val.constructor;
+                    let memberValue = objectType.prototype[this.memberName];
+                    if (!memberValue) {
+                        try {
+                            const objectInstance = new objectType();
+                            memberValue = objectInstance[this.memberName];
+                        } catch (e) { }
+                    }
+                    if (memberValue) {
+                        this._type = memberValue.constructor;
                     }
                 }
             }
         }
         return this._type;
     }
+    public set type(value) {
+        this._type = value;
+    }
+    constructor(public objectOperand: IExpression<TE>, public memberName: K, type?: GenericType<T>) {
+        this._type = type;
+    }
     public itemType?: GenericType;
     private _type: GenericType<T>;
-    constructor(public objectOperand: IExpression<TE>, public memberName: K) { }
-    public toString(): string {
-        let result = this.objectOperand.toString();
-        result += "." + this.memberName;
-        return result;
-    }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const clone = new MemberAccessExpression<TE, K, T>(objectOperand, this.memberName);
         replaceMap.set(this, clone);
@@ -50,5 +59,10 @@ export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implement
     }
     public hashCode() {
         return hashCode("." + this.memberName, this.objectOperand.hashCode());
+    }
+    public toString(): string {
+        let result = this.objectOperand.toString();
+        result += "." + this.memberName;
+        return result;
     }
 }

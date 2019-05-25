@@ -1,8 +1,8 @@
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 
 export interface IQueryParameter<T = any> {
-    value?: T;
     name?: string;
+    value?: T;
 }
 
 export type IQueryParameterMap = Map<SqlParameterExpression, IQueryParameter>;

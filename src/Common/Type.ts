@@ -1,6 +1,6 @@
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
-export interface IObjectType<T = any> { name?: string; new(...values: any[]): T; }
+export interface IObjectType<T = any> { new(...values: any[]): T; name?: string; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export const NullConstructor: () => null = () => null;
 export type Pivot<T,

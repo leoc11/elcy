@@ -15,8 +15,8 @@ export enum LexicalTokenType {
     Breaker
 }
 export interface ILexicalToken {
-    type: LexicalTokenType;
     data: string | number;
+    type: LexicalTokenType;
 }
 export class LexicalAnalyzer {
     public static *parse(input: string): IterableIterator<ILexicalToken> {

@@ -3,6 +3,10 @@ export class ObservableArray<T> extends Array<T> {
     public set length(value: number) {
         this.splice(value);
     }
+    public constructor(...items: T[]) {
+        super(...items);
+        // Object.setPrototypeOf(this, ObservableArray.prototype);
+    }
     public static from<T>(items: T[]): ObservableArray<T> {
         return new ObservableArray(...items);
     }
@@ -13,15 +17,12 @@ export class ObservableArray<T> extends Array<T> {
         return observable;
     }
     private _observers: Array<(eventType: ArrayChangeType, items: T[]) => void> = [];
-    public constructor(...items: T[]) {
-        super(...items);
-        // Object.setPrototypeOf(this, ObservableArray.prototype);
-    }
-    public register(observer: (eventType: ArrayChangeType, items: T[]) => void) {
-        this._observers.push(observer);
-    }
-    public unobserve() {
-        this._observers = [];
+    public pop() {
+        const result = super.pop();
+        if (result) {
+            this.raiseEvents("del", [result]);
+        }
+        return result;
     }
     public push(...items: T[]) {
         const result = super.push(...items);
@@ -30,12 +31,8 @@ export class ObservableArray<T> extends Array<T> {
         }
         return result;
     }
-    public pop() {
-        const result = super.pop();
-        if (result) {
-            this.raiseEvents("del", [result]);
-        }
-        return result;
+    public register(observer: (eventType: ArrayChangeType, items: T[]) => void) {
+        this._observers.push(observer);
     }
     public shift() {
         const result = super.shift();
@@ -44,18 +41,21 @@ export class ObservableArray<T> extends Array<T> {
         }
         return result;
     }
-    public unshift(...items: T[]) {
-        const result = super.unshift();
-        if (items && items.length > 0) {
-            this.raiseEvents("add", items);
-        }
-        return result;
-    }
     public splice(start: number, deleteCount?: number, ...items: T[]) {
         const result = super.splice(start, deleteCount, ...items);
         if (result.length > 0) {
             this.raiseEvents("del", result);
         }
+        if (items && items.length > 0) {
+            this.raiseEvents("add", items);
+        }
+        return result;
+    }
+    public unobserve() {
+        this._observers = [];
+    }
+    public unshift(...items: T[]) {
+        const result = super.unshift();
         if (items && items.length > 0) {
             this.raiseEvents("add", items);
         }

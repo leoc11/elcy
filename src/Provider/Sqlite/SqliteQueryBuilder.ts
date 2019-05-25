@@ -19,6 +19,7 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         maxParameters: 999,
         maxQueryLength: 1000000
     };
+    public translator = sqliteQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<SqliteColumnType>>([
         [TimeSpan, () => ({ columnType: "text" })],
         [Date, () => ({ columnType: "text" })],
@@ -27,7 +28,6 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
-    public translator = sqliteQueryTranslator;
     public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
@@ -47,7 +47,9 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         const primaryColString = upsertExp.entity.primaryColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
         const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) { return undefined; }
+            if (!valueExp) {
+                return undefined;
+            }
             return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
         }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
@@ -83,7 +85,9 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
 
         const updateString = upsertExp.updateColumns.select((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) { return undefined; }
+            if (!valueExp) {
+                return undefined;
+            }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
         }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);

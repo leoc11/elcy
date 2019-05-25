@@ -4,7 +4,6 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 
 export class ParameterQueryable<T> extends Queryable<T> {
-    private _parameters: { [key: string]: any };
     public get parameters() {
         return this._parameters;
     }
@@ -13,12 +12,7 @@ export class ParameterQueryable<T> extends Queryable<T> {
         this._parameters = clone(parent.parameters);
         this.parameter(parameters);
     }
-    public parameter(params: { [key: string]: any }) {
-        for (const prop in params) {
-            this._parameters[prop] = params[prop];
-        }
-        return this;
-    }
+    private _parameters: { [key: string]: any };
     public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
         if (typeof visitor.parameterIndex !== "number") {
             visitor.parameterIndex = 0;
@@ -26,9 +20,6 @@ export class ParameterQueryable<T> extends Queryable<T> {
         const command = this.parent.buildQuery(visitor);
         visitor.parameterIndex++;
         return command;
-    }
-    public hashCode() {
-        return this.parent.hashCode();
     }
     public flatQueryParameter(param?: { index: number }) {
         const flatParam = this.parent.flatQueryParameter(param);
@@ -38,5 +29,14 @@ export class ParameterQueryable<T> extends Queryable<T> {
         }
 
         return flatParam;
+    }
+    public hashCode() {
+        return this.parent.hashCode();
+    }
+    public parameter(params: { [key: string]: any }) {
+        for (const prop in params) {
+            this._parameters[prop] = params[prop];
+        }
+        return this;
     }
 }

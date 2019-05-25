@@ -3,25 +3,19 @@ import { hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
 export class ArrayValueExpression<T = any> implements IExpression<T[]> {
-    public type = Array;
-    public itemType?: GenericType<T>;
-    public items: Array<IExpression<T>>;
     constructor(...items: Array<IExpression<T>>) {
         this.items = items;
         if (items.length > 0) {
             this.itemType = items.first().type;
         }
     }
-
-    public toString(): string {
-        const itemString = [];
-        for (const item of this.items) {
-            itemString.push(item.toString());
-        }
-        return "[" + itemString.join(", ") + "]";
-    }
+    public items: Array<IExpression<T>>;
+    public itemType?: GenericType<T>;
+    public type = Array;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const items = this.items.select((o) => resolveClone(o, replaceMap)).toArray();
         const clone = new ArrayValueExpression(...items);
         replaceMap.set(this, clone);
@@ -33,5 +27,13 @@ export class ArrayValueExpression<T = any> implements IExpression<T[]> {
             hash += hashCodeAdd(index, o.hashCode());
         });
         return hash;
+    }
+
+    public toString(): string {
+        const itemString = [];
+        for (const item of this.items) {
+            itemString.push(item.toString());
+        }
+        return "[" + itemString.join(", ") + "]";
     }
 }

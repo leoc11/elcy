@@ -18,15 +18,6 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
-    public get priority(): number {
-        let priority = 1;
-        for (const relation of this.relations) {
-            if (!relation.isMaster && !relation.nullable) {
-                priority += relation.target.priority + 1;
-            }
-        }
-        return priority;
-    }
     public get hasIncrementPrimary(): boolean {
         return this.primaryKeys.any((o) => (o as any as IntegerColumnMetaData).autoIncrement);
     }
@@ -36,33 +27,20 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             return (o.generation & ColumnGeneration.Insert) as any;
         }).toArray();
     }
+    public get priority(): number {
+        let priority = 1;
+        for (const relation of this.relations) {
+            if (!relation.isMaster && !relation.nullable) {
+                priority += relation.target.priority + 1;
+            }
+        }
+        return priority;
+    }
     public get updateGeneratedColumns() {
         return this.columns.where((o) => {
             return (o.generation & ColumnGeneration.Update) as any;
         }).toArray();
     }
-    public schema: string = "dbo";
-    public name: string;
-    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
-    public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deletedColumn: BooleanColumnMetaData<TE>;
-    public createDateColumn: DateTimeColumnMetaData<TE>;
-    public modifiedDateColumn: DateTimeColumnMetaData<TE>;
-    public versionColumn?: RowVersionColumnMetaData<TE>;
-    public columns: Array<IColumnMetaData<TE>> = [];
-    public indices: Array<IIndexMetaData<TE>> = [];
-    public constraints: Array<IConstraintMetaData<TE>> = [];
-    public relations: Array<IRelationMetaData<TE, any>> = [];
-    public embeds: Array<EmbeddedRelationMetaData<TE>> = [];
-    public concurrencyMode: ConcurrencyModel;
-    // inheritance
-    public descriminatorMember = "__type__";
-    public inheritance: InheritanceMetaData<TParent>;
-    public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
-    public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
-    public afterLoad?: (entity: TE) => void;
-    public afterSave?: (entity: TE, param: ISaveEventParam) => void;
-    public afterDelete?: (entity: TE, param: IDeleteEventParam) => void;
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData(this);
         if (typeof name !== "undefined") {
@@ -72,6 +50,28 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
             this.name = type.name!;
         }
     }
+    public afterDelete?: (entity: TE, param: IDeleteEventParam) => void;
+    public afterLoad?: (entity: TE) => void;
+    public afterSave?: (entity: TE, param: ISaveEventParam) => void;
+    public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
+    public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
+    public columns: Array<IColumnMetaData<TE>> = [];
+    public concurrencyMode: ConcurrencyModel;
+    public constraints: Array<IConstraintMetaData<TE>> = [];
+    public createDateColumn: DateTimeColumnMetaData<TE>;
+    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    public deletedColumn: BooleanColumnMetaData<TE>;
+    // inheritance
+    public descriminatorMember = "__type__";
+    public embeds: Array<EmbeddedRelationMetaData<TE>> = [];
+    public indices: Array<IIndexMetaData<TE>> = [];
+    public inheritance: InheritanceMetaData<TParent>;
+    public modifiedDateColumn: DateTimeColumnMetaData<TE>;
+    public name: string;
+    public primaryKeys: Array<IColumnMetaData<TE>> = [];
+    public relations: Array<IRelationMetaData<TE, any>> = [];
+    public schema: string = "dbo";
+    public versionColumn?: RowVersionColumnMetaData<TE>;
 
     public applyOption(entityMeta: IEntityMetaData<TE>) {
         if (typeof entityMeta.columns !== "undefined") {

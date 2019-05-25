@@ -11,38 +11,17 @@ import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 
 export class QueryTranslator {
+    constructor(public key: symbol) { }
     protected fallbacks: QueryTranslator[] = [];
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
-    constructor(public key: symbol) { }
+    public registerFallbacks(...fallbacks: QueryTranslator[]) {
+        this.fallbacks = this.fallbacks.concat(fallbacks);
+    }
     public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: any[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(fn);
         if (!map) {
             map = {};
             this._map.set(fn, map);
-        }
-        const translateItem: IQueryTranslatorItem = {
-            translate: translate,
-            isTranslate: isTranslate
-        };
-        map[""] = translateItem;
-    }
-    public registerType<T, TExp extends IExpression<GenericType<T>>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
-        let map = this._map.get(type);
-        if (!map) {
-            map = {};
-            this._map.set(type, map);
-        }
-        const translateItem: IQueryTranslatorItem = {
-            translate: translate,
-            isTranslate: isTranslate
-        };
-        map[""] = translateItem;
-    }
-    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
-        let map = this._map.get(operator);
-        if (!map) {
-            map = {};
-            this._map.set(operator, map);
         }
         const translateItem: IQueryTranslatorItem = {
             translate: translate,
@@ -74,6 +53,30 @@ export class QueryTranslator {
         };
         map[methodName] = translateItem;
     }
+    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+        let map = this._map.get(operator);
+        if (!map) {
+            map = {};
+            this._map.set(operator, map);
+        }
+        const translateItem: IQueryTranslatorItem = {
+            translate: translate,
+            isTranslate: isTranslate
+        };
+        map[""] = translateItem;
+    }
+    public registerType<T, TExp extends IExpression<GenericType<T>>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+        let map = this._map.get(type);
+        if (!map) {
+            map = {};
+            this._map.set(type, map);
+        }
+        const translateItem: IQueryTranslatorItem = {
+            translate: translate,
+            isTranslate: isTranslate
+        };
+        map[""] = translateItem;
+    }
 
     public resolve(object: any, memberName?: string) {
         const map = this._map.get(object);
@@ -87,8 +90,5 @@ export class QueryTranslator {
             }
         }
         return item;
-    }
-    public registerFallbacks(...fallbacks: QueryTranslator[]) {
-        this.fallbacks = this.fallbacks.concat(fallbacks);
     }
 }

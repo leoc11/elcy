@@ -14,6 +14,12 @@ import { IEntityEntryOption } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
 
 export class EntityEntry<T = any> implements IEntityEntryOption<T> {
+    public get isCompletelyLoaded() {
+        return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
+    }
+    public get metaData(): IEntityMetaData<T> {
+        return this.dbSet.metaData;
+    }
     public get state() {
         return this._state;
     }
@@ -75,20 +81,6 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             this._state = value;
         }
     }
-    public get metaData(): IEntityMetaData<T> {
-        return this.dbSet.metaData;
-    }
-    public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
-    }
-
-    //#endregion
-
-    public enableTrackChanges = true;
-    public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
-    // TODO: private
-    public originalValues: Map<keyof T, any> = new Map();
-    private _state: EntityState;
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
 
@@ -111,73 +103,13 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(source, args));
     }
 
-    //#region change state
-
-    public delete() {
-        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
-    }
-
-    public add() {
-        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
-    }
-    public isPropertyModified(prop: keyof T) {
-        return this.originalValues.has(prop);
-    }
-    public getOriginalValue(prop: keyof T) {
-        return this.originalValues.get(prop);
-    }
-
-    //#region Relations
-    public getRelation(relationName: string, relatedEntry: EntityEntry): RelationEntry {
-        const relationMeta = this.metaData.relations.first((o) => o.fullName === relationName);
-        let relGroup = this.relationMap[relationName];
-        if (!relGroup) {
-            relGroup = new Map();
-            this.relationMap[relationName] = relGroup;
-        }
-        let relEntry = relGroup.get(relatedEntry);
-        if (!relEntry) {
-            if (relationMeta.isMaster) {
-                relEntry = relatedEntry.getRelation(relationName, this);
-            }
-            else {
-                relEntry = new RelationEntry(this, relatedEntry, relationMeta);
-            }
-            relGroup.set(relatedEntry, relEntry);
-        }
-        return relEntry;
-    }
     //#endregion
 
-    public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
-        const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry);
-        const relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
-        if (relGroup) {
-            relGroup.delete(key);
-        }
-    }
-    // TODO: protected
-    public updateRelationKey(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>, oldEntityKey: string) {
-        const oldKey = relationEntry.slaveRelation.fullName + ":" + oldEntityKey;
-        this.relationMap[oldKey] = undefined;
-        relationEntry.join();
-    }
-    public resetChanges(...properties: Array<keyof T>) {
-        if (properties) {
-            for (const prop of properties) {
-                if (this.originalValues.has(prop)) {
-                    this.entity[prop] = this.originalValues.get(prop);
-                }
-            }
-        }
-        else {
-            for (const [prop, value] of this.originalValues) {
-                if (!properties || properties.contains(prop)) {
-                    this.entity[prop] = value;
-                }
-            }
-        }
-    }
+    public enableTrackChanges = true;
+    // TODO: private
+    public originalValues: Map<keyof T, any> = new Map();
+    public relationMap: { [relationName: string]: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
+    private _state: EntityState;
     public acceptChanges(...properties: Array<keyof T>) {
         if (properties && this.state !== EntityState.Modified) {
             return;
@@ -297,12 +229,97 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             }
         }
     }
-    public setOriginalValues(originalValues: { [key: string]: any }) {
-        for (const prop in originalValues) {
-            const value = originalValues[prop];
-            this.setOriginalValue(prop as any, value);
+
+    public add() {
+        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+    }
+
+    //#region change state
+
+    public delete() {
+        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
+    }
+    public getModifiedProperties() {
+        return Array.from(this.originalValues.keys());
+    }
+    public getOriginalValue(prop: keyof T) {
+        return this.originalValues.get(prop);
+    }
+
+    public getPrimaryValues() {
+        const res: any = {};
+        for (const o of this.dbSet.primaryKeys) {
+            res[o.propertyName] = this.entity[o.propertyName];
         }
-        this.state = this.originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
+        return res;
+    }
+
+    //#region Relations
+    public getRelation(relationName: string, relatedEntry: EntityEntry): RelationEntry {
+        const relationMeta = this.metaData.relations.first((o) => o.fullName === relationName);
+        let relGroup = this.relationMap[relationName];
+        if (!relGroup) {
+            relGroup = new Map();
+            this.relationMap[relationName] = relGroup;
+        }
+        let relEntry = relGroup.get(relatedEntry);
+        if (!relEntry) {
+            if (relationMeta.isMaster) {
+                relEntry = relatedEntry.getRelation(relationName, this);
+            }
+            else {
+                relEntry = new RelationEntry(this, relatedEntry, relationMeta);
+            }
+            relGroup.set(relatedEntry, relEntry);
+        }
+        return relEntry;
+    }
+    public isPropertyModified(prop: keyof T) {
+        return this.originalValues.has(prop);
+    }
+    /**
+     * Load relation to this entity.
+     */
+    public async loadRelation(...relations: Array<(entity: T) => any>) {
+        const paramExp = new ParameterExpression("o", this.dbSet.type);
+        const projected = this.dbSet.primaryKeys.select((o) => new FunctionExpression(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
+        await this.dbSet.project(...(projected as any[])).include(...relations).find(this.getPrimaryValues());
+    }
+
+    //#region asd
+
+    /**
+     * Reloads the entity from the database overwriting any property values with values from the database.
+     * For modified properties, then the original value will be overwrite with vallue from the database.
+     * Note: To clean entity from database, call resetChanges after reload.
+     */
+    public async reload() {
+        await this.dbSet.find(this.getPrimaryValues(), true);
+    }
+    //#endregion
+
+    public removeRelation(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>) {
+        const key = (relationEntry.masterEntry === this ? relationEntry.slaveEntry : relationEntry.masterEntry);
+        const relGroup = this.relationMap[relationEntry.slaveRelation.fullName];
+        if (relGroup) {
+            relGroup.delete(key);
+        }
+    }
+    public resetChanges(...properties: Array<keyof T>) {
+        if (properties) {
+            for (const prop of properties) {
+                if (this.originalValues.has(prop)) {
+                    this.entity[prop] = this.originalValues.get(prop);
+                }
+            }
+        }
+        else {
+            for (const [prop, value] of this.originalValues) {
+                if (!properties || properties.contains(prop)) {
+                    this.entity[prop] = value;
+                }
+            }
+        }
     }
     public setOriginalValue(property: keyof T, value: any) {
         if (!(property in this.entity)) {
@@ -320,35 +337,18 @@ export class EntityEntry<T = any> implements IEntityEntryOption<T> {
             this.enableTrackChanges = true;
         }
     }
-    public getModifiedProperties() {
-        return Array.from(this.originalValues.keys());
-    }
-
-    public getPrimaryValues() {
-        const res: any = {};
-        for (const o of this.dbSet.primaryKeys) {
-            res[o.propertyName] = this.entity[o.propertyName];
+    public setOriginalValues(originalValues: { [key: string]: any }) {
+        for (const prop in originalValues) {
+            const value = originalValues[prop];
+            this.setOriginalValue(prop as any, value);
         }
-        return res;
+        this.state = this.originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
     }
-
-    //#region asd
-
-    /**
-     * Reloads the entity from the database overwriting any property values with values from the database.
-     * For modified properties, then the original value will be overwrite with vallue from the database.
-     * Note: To clean entity from database, call resetChanges after reload.
-     */
-    public async reload() {
-        await this.dbSet.find(this.getPrimaryValues(), true);
-    }
-    /**
-     * Load relation to this entity.
-     */
-    public async loadRelation(...relations: Array<(entity: T) => any>) {
-        const paramExp = new ParameterExpression("o", this.dbSet.type);
-        const projected = this.dbSet.primaryKeys.select((o) => new FunctionExpression(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
-        await this.dbSet.project(...(projected as any[])).include(...relations).find(this.getPrimaryValues());
+    // TODO: protected
+    public updateRelationKey(relationEntry: RelationEntry<T, any> | RelationEntry<any, T>, oldEntityKey: string) {
+        const oldKey = relationEntry.slaveRelation.fullName + ":" + oldEntityKey;
+        this.relationMap[oldKey] = undefined;
+        relationEntry.join();
     }
     protected onRelationChanged(entity: T, param: IRelationChangeEventParam) {
         for (const item of param.entities) {

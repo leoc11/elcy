@@ -7,11 +7,11 @@ import { Schema } from "./Schema";
 import { SubSchema } from "./SubSchema";
 
 export class SchemaContext extends MssqlDbContext {
-    public entityTypes = [Schema, SubSchema];
-    public relationDataTypes: IObjectType[] = [];
-    public schemas = this.set(Schema);
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
         super(factory);
     }
+    public entityTypes = [Schema, SubSchema];
+    public relationDataTypes: IObjectType[] = [];
+    public schemas = this.set(Schema);
     public resultCacheManagerFactory = () => new DefaultResultCacheManager();
 }

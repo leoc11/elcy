@@ -26,6 +26,7 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         maxParameters: 2100,
         maxQueryLength: 67108864
     };
+    public translator = mssqlQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<MssqlColumnType>>([
         [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
@@ -34,7 +35,6 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
         [Number, () => ({ columnType: "decimal", group: "Decimal", option: { precision: 18, scale: 0 } })],
         [Boolean, () => ({ columnType: "bit", group: "Boolean" })]
     ]);
-    public translator = mssqlQueryTranslator;
     public enclose(identity: string) {
         if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#") {
             return "[" + identity + "]";
@@ -67,7 +67,9 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             parameters: new Map(),
             type: QueryType.DML
         };
-        if (output) { queryCommand.type |= QueryType.DQL; }
+        if (output) {
+            queryCommand.type |= QueryType.DQL;
+        }
 
         const result: IQuery[] = [queryCommand];
         let count = 0;
@@ -160,13 +162,6 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
 
         return result;
     }
-    //#endregion
-    public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
-        if (column instanceof RowVersionColumnMetaData) {
-            return new (column.type as IObjectType<T>)(input.buffer ? input.buffer : input);
-        }
-        return super.toPropertyValue(input, column);
-    }
     public toParameterValue(input: any, column: IColumnMetaData): any {
         if (!isNotNull(input)) {
             return null;
@@ -175,6 +170,13 @@ export class MssqlQueryBuilder extends RelationQueryBuilder {
             return new Uint8Array(input.buffer ? input.buffer : input);
         }
         return super.toParameterValue(input, column);
+    }
+    //#endregion
+    public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
+        if (column instanceof RowVersionColumnMetaData) {
+            return new (column.type as IObjectType<T>)(input.buffer ? input.buffer : input);
+        }
+        return super.toPropertyValue(input, column);
     }
     protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
         let result = "";

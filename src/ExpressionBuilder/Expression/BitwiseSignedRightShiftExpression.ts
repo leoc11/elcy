@@ -2,20 +2,18 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implements IBinaryOperatorExpression<number> {
-    public leftOperand: IExpression<number>;
-    public rightOperand: IExpression<number>;
+export class BitwiseSignedRightShiftExpression extends BitwiseExpression implements IBinaryOperatorExpression<number> {
     constructor(leftOperand: IExpression, rightOperand: IExpression) {
         super();
         this.leftOperand = this.convertOperand(leftOperand);
         this.rightOperand = this.convertOperand(rightOperand);
     }
-
-    public toString(): string {
-        return "(" + this.leftOperand.toString() + " >>> " + this.rightOperand.toString() + ")";
-    }
+    public leftOperand: IExpression<number>;
+    public rightOperand: IExpression<number>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new BitwiseSignedRightShiftExpression(left, right);
@@ -24,5 +22,9 @@ export class BitwiseSignedRightShiftExpression  extends BitwiseExpression implem
     }
     public hashCode() {
         return hashCodeAdd(hashCode(">>>", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+    }
+
+    public toString(): string {
+        return "(" + this.leftOperand.toString() + " >>> " + this.rightOperand.toString() + ")";
     }
 }

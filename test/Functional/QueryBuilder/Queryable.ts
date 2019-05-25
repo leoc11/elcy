@@ -17,7 +17,18 @@ chai.use(sinonChai);
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
 const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
 
-const db = new MyDb();
+const db = new MyDb(
+    // () => new MssqlDriver({
+    //     server: "localhost",
+    //     userName: "sa",
+    //     password: "password",
+    //     options: {
+    //         database: "Database",
+    //         instanceName: "SQLEXPRESS",
+    //         port: 1433
+    //     }
+    // })
+);
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
@@ -55,8 +66,8 @@ describe("QUERYABLE", async () => {
                     const odProps = orderDetailMeta.columns.select((o) => o.propertyName).toArray();
                     for (const prop of odProps) {
                         od.should.has.property(prop).that.is.not.null;
+                    }
                 }
-            }
             }
         });
         it("should support nested include", async () => {
@@ -78,7 +89,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("OrderDetails").that.is.an("array");
                 for (const od of o.OrderDetails) {
                     od.should.be.an.instanceof(OrderDetail).and.has.property("Product").that.is.an.instanceof(Product);
-            }
+                }
             }
         });
         it("should eager load scalar navigation property", async () => {
@@ -138,7 +149,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("Products").that.is.an("array");
                 for (const p of o.Products) {
                     p.should.be.an.instanceof(Product);
-            }
+                }
             }
         });
     });
@@ -244,7 +255,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("ods").that.is.an("array");
                 for (const od of o.ods) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("should return an object with scalar navigation property", async () => {
@@ -289,7 +300,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
                 for (const od of o.simpleOrderDetails) {
                     od.should.have.property("name").that.is.a("string");
-            }
+                }
             }
         });
         it("should return a scalar navigation property of list navigation property", async () => {
@@ -314,7 +325,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("simpleOrderDetails").that.is.an("array").and.not.empty;
                 for (const od of o.simpleOrderDetails) {
                     od.should.have.property("prod").that.is.an.instanceof(Product);
-            }
+                }
             }
         });
         it("should support self select", async () => {
@@ -363,7 +374,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("array").and.not.empty;
                 for (const od of o) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("should select array with where in property", async () => {
@@ -388,7 +399,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("ods").that.is.an("array");
                 for (const od of o.ods) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
 
             const isAllEmpty = results.all((o) => !o.ods.any());
@@ -590,7 +601,7 @@ describe("QUERYABLE", async () => {
                 o.should.has.property("ods").that.is.an("array");
                 for (const od of o.ods) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("could be used more than once in chain", async () => {
@@ -760,7 +771,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an.instanceof(Order).and.have.property("OrderDetails").that.is.an("array").and.not.empty;
                 for (const od of o.OrderDetails) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("could be used in select", async () => {
@@ -783,7 +794,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("ods").that.is.an("array").and.not.empty;
                 for (const od of o.ods) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
     });
@@ -1566,7 +1577,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("details").that.is.an("array");
                 for (const od of o.details) {
                     od.should.be.an.instanceof(Order);
-            }
+                }
             }
         });
         it("groupBy.(o => o.toOneRelation).select(o => o.key)", async () => {
@@ -1943,7 +1954,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("array").with.property("key").that.is.a("number");
                 for (const od of o) {
                     od.should.be.an.instanceof(Order);
-            }
+                }
             }
         });
         it("groupBy.(o => o.toOneRelation.toOneRelation)", async () => {
@@ -1964,7 +1975,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("array").with.property("key").that.is.an.instanceof(Order);
                 for (const od of o) {
                     od.should.be.an.instanceof(OrderDetailProperty);
-            }
+                }
             }
         });
         it("groupBy.(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column }))", async () => {
@@ -1988,7 +1999,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("array").with.property("key").that.have.property("price").that.is.a("number");
                 for (const od of o) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} }))", async () => {
@@ -2040,7 +2051,7 @@ describe("QUERYABLE", async () => {
                 o.should.be.an("array").with.property("key").that.have.property("od").that.is.an.instanceof(OrderDetail);
                 for (const od of o) {
                     od.should.be.an.instanceof(OrderDetailProperty);
-            }
+                }
             }
         });
     });
@@ -2214,7 +2225,7 @@ describe("QUERYABLE", async () => {
                 o.should.has.property("names").that.is.an("array");
                 for (const n of o.names) {
                     n.should.be.a("string");
-            }
+                }
             }
         });
         it("should support cross join", async () => {
@@ -2639,7 +2650,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("orderDetails").that.is.an("array").and.not.empty;
                 for (const od of o.orderDetails) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("should work in select (Aggregate)", async () => {
@@ -2772,8 +2783,8 @@ describe("QUERYABLE", async () => {
             // specify item type in case array did not have any item.
             const subQuery = db.orders.parameter({
                 ad, ad_itemtype: {
-                constructor: OrderDetail,
-                OrderId: Uuid
+                    constructor: OrderDetail,
+                    OrderId: Uuid
                 }
             }).where((o) => ad.select((od) => od.OrderId).contains(o.OrderId));
             const results = await subQuery.toArray();
@@ -2876,7 +2887,7 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("orderDetails").that.is.an("array");
                 for (const od of o.orderDetails) {
                     od.should.be.an.instanceof(OrderDetail);
-            }
+                }
             }
         });
         it("should work in select (Aggregate)", async () => {

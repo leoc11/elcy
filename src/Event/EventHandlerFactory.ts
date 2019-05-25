@@ -10,9 +10,11 @@ export const EventHandlerFactory = <TSource, TArgs = any>(source: TSource, stopO
             handlers.delete(handler);
         }
     };
-    const eventDispacher = function(args: TArgs) {
+    const eventDispacher = function (args: TArgs) {
         for (const handler of handlers) {
-            if (handler(source, args) === false && stopOnFalse) { break; }
+            if (handler(source, args) === false && stopOnFalse) {
+                break;
+            }
         }
     };
 

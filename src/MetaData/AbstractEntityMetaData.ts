@@ -13,21 +13,6 @@ import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
 export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
-    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
-    public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public deletedColumn?: BooleanColumnMetaData<TE>;
-    public relations: Array<IRelationMetaData<TE, any>> = [];
-    public createDateColumn?: DateTimeColumnMetaData<TE>;
-    public modifiedDateColumn?: DateTimeColumnMetaData<TE>;
-    public columns: Array<IColumnMetaData<TE>> = [];
-    public indices: Array<IndexMetaData<TE>> = [];
-    public constraints: Array<IConstraintMetaData<TE>> = [];
-
-    // inheritance
-    public parentType?: GenericType<TParent>;
-    public allowInheritance = false;
-    public inheritance: InheritanceMetaData<TParent>;
-    public name: string;
     public get insertGeneratedColumns() {
         return this.columns.where((o) => {
             return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
@@ -56,4 +41,19 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
             }
         }
     }
+    public allowInheritance = false;
+    public columns: Array<IColumnMetaData<TE>> = [];
+    public constraints: Array<IConstraintMetaData<TE>> = [];
+    public createDateColumn?: DateTimeColumnMetaData<TE>;
+    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    public deletedColumn?: BooleanColumnMetaData<TE>;
+    public indices: Array<IndexMetaData<TE>> = [];
+    public inheritance: InheritanceMetaData<TParent>;
+    public modifiedDateColumn?: DateTimeColumnMetaData<TE>;
+    public name: string;
+
+    // inheritance
+    public parentType?: GenericType<TParent>;
+    public primaryKeys: Array<IColumnMetaData<TE>> = [];
+    public relations: Array<IRelationMetaData<TE, any>> = [];
 }

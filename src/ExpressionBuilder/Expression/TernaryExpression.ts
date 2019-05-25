@@ -17,11 +17,10 @@ export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T
     }
 
     constructor(public logicalOperand: IExpression<boolean>, public trueOperand: IExpression<T1>, public falseOperand: IExpression<T2>) { }
-    public toString(): string {
-        return "(" + this.logicalOperand.toString() + " ? " + this.trueOperand.toString() + " : " + this.falseOperand.toString() + ")";
-    }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const logicalOperand = resolveClone(this.logicalOperand, replaceMap);
         const trueResultOperand = resolveClone(this.trueOperand, replaceMap);
         const falseResultOperand = resolveClone(this.falseOperand, replaceMap);
@@ -31,5 +30,8 @@ export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T
     }
     public hashCode() {
         return hashCodeAdd(hashCodeAdd(hashCode(":", hashCode("?", this.logicalOperand.hashCode())), this.trueOperand.hashCode()), this.falseOperand.hashCode());
+    }
+    public toString(): string {
+        return "(" + this.logicalOperand.toString() + " ? " + this.trueOperand.toString() + " : " + this.falseOperand.toString() + ")";
     }
 }

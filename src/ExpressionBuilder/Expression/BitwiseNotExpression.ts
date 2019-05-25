@@ -3,17 +3,15 @@ import { BitwiseExpression } from "./BitwiseExpression";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression<number> {
-    public operand: IExpression<number>;
     constructor(operand: IExpression) {
         super();
         this.operand = this.convertOperand(operand);
     }
-
-    public toString(): string {
-        return "~" + this.operand.toString();
-    }
+    public operand: IExpression<number>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const operand = resolveClone(this.operand, replaceMap);
         const clone = new BitwiseNotExpression(operand);
         replaceMap.set(this, clone);
@@ -21,5 +19,9 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
     }
     public hashCode() {
         return hashCode("~", this.operand.hashCode());
+    }
+
+    public toString(): string {
+        return "~" + this.operand.toString();
     }
 }

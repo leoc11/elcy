@@ -9,19 +9,6 @@ import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 
 export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, TChild> {
-    public get relation() {
-        return this._relations;
-    }
-    public set relation(value) {
-        this._relations = value;
-        this._childColumns = this._parentColumns = this._isManyManyRelation = null;
-    }
-    public get parentColumns() {
-        if (!this._parentColumns) {
-            this.analyzeRelation();
-        }
-        return this._parentColumns;
-    }
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -34,18 +21,19 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
         }
         return this._isManyManyRelation;
     }
-    //#endregion
-
-    //#region Properties
-    public parent: SelectExpression<T>;
-    public child: SelectExpression<TChild>;
-    public type: JoinType;
-    public isEmbedded: boolean;
-
-    private _parentColumns: IColumnExpression[];
-    private _relations: IExpression<boolean>;
-    private _childColumns: IColumnExpression[];
-    private _isManyManyRelation: boolean;
+    public get parentColumns() {
+        if (!this._parentColumns) {
+            this.analyzeRelation();
+        }
+        return this._parentColumns;
+    }
+    public get relation() {
+        return this._relations;
+    }
+    public set relation(value) {
+        this._relations = value;
+        this._childColumns = this._parentColumns = this._isManyManyRelation = null;
+    }
     constructor();
     constructor(parent: SelectExpression<T>, child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType);
     constructor(parent?: SelectExpression<T>, child?: SelectExpression<TChild>, relations?: IExpression<boolean>, type?: JoinType) {
@@ -56,6 +44,18 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
             this.type = type;
         }
     }
+    public child: SelectExpression<TChild>;
+    public isEmbedded: boolean;
+    //#endregion
+
+    //#region Properties
+    public parent: SelectExpression<T>;
+    public type: JoinType;
+    private _childColumns: IColumnExpression[];
+    private _isManyManyRelation: boolean;
+
+    private _parentColumns: IColumnExpression[];
+    private _relations: IExpression<boolean>;
     //#endregion
 
     //#region Methods
@@ -64,7 +64,9 @@ export class JoinRelation<T = any, TChild = any> implements ISelectRelation<T, T
         const parent = resolveClone(this.parent, replaceMap);
         const relation = this.relation ? resolveClone(this.relation, replaceMap) : null;
         const clone = new JoinRelation(parent, child, relation, this.type);
-        if (child !== this.child) { child.parentRelation = clone; }
+        if (child !== this.child) {
+            child.parentRelation = clone;
+        }
         clone.isEmbedded = this.isEmbedded;
         return clone;
     }

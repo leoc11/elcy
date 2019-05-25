@@ -1,5 +1,5 @@
 export interface IQueryLimit {
-    maxQueryLength?: number;
-    maxParameters?: number;
     maxBatchQuery?: number;
+    maxParameters?: number;
+    maxQueryLength?: number;
 }

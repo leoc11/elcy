@@ -15,23 +15,13 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 export class UpsertExpression<T = any> implements IQueryExpression<void> {
-    public get updateColumns(): Array<IColumnExpression<T>> {
-        if (!this._updateColumns) {
-            this._updateColumns = this.insertColumns.where((o) => !o.isPrimary).toArray();
-        }
-
-        return this._updateColumns;
-    }
-    public set updateColumns(value) {
-        this._updateColumns = value;
-    }
     public get insertColumns(): Array<IColumnExpression<T>> {
         if (!this._insertColumns) {
             this._insertColumns = this.relations
-            .selectMany((o) => o.relationColumns)
-            .union(this.entity.metaData.columns)
-            .except(this.entity.metaData.insertGeneratedColumns)
-            .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
+                .selectMany((o) => o.relationColumns)
+                .union(this.entity.metaData.columns)
+                .except(this.entity.metaData.insertGeneratedColumns)
+                .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
         }
 
         return this._insertColumns;
@@ -43,6 +33,19 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
         }
         return this._relations;
     }
+    public get type() {
+        return undefined as any;
+    }
+    public get updateColumns(): Array<IColumnExpression<T>> {
+        if (!this._updateColumns) {
+            this._updateColumns = this.insertColumns.where((o) => !o.isPrimary).toArray();
+        }
+
+        return this._updateColumns;
+    }
+    public set updateColumns(value) {
+        this._updateColumns = value;
+    }
 
     public get where(): IExpression<boolean> {
         return this.entity.primaryColumns.select((o) => {
@@ -50,18 +53,17 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
             return new StrictEqualExpression(o, valueExp);
         }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item);
     }
-    public get type() {
-        return undefined as any;
-    }
-    public option: IQueryOption;
-    public paramExps: SqlParameterExpression[];
-    private _updateColumns: Array<IColumnExpression<T>>;
-    private _insertColumns: Array<IColumnExpression<T>>;
-    private _relations: Array<IRelationMetaData<T>>;
     constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression<T[key]> }) {
     }
+    public paramExps: SqlParameterExpression[];
+    public queryOption: IQueryOption;
+    private _insertColumns: Array<IColumnExpression<T>>;
+    private _relations: Array<IRelationMetaData<T>>;
+    private _updateColumns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const entity = resolveClone(this.entity, replaceMap);
         const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.setter) {
@@ -71,13 +73,8 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
         replaceMap.set(this, clone);
         return clone;
     }
-    public toString(): string {
-        let setter = "";
-        for (const prop in this.setter) {
-            const val = this.setter[prop];
-            setter += `${prop}:${val.toString()},\n`;
-        }
-        return `Upsert(${this.entity.toString()}, {${setter}})`;
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes;
     }
     public hashCode() {
         let code = 0;
@@ -86,8 +83,13 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
         }
         return hashCode("UPSERT", hashCode(this.entity.name, code));
     }
-    public getEffectedEntities(): IObjectType[] {
-        return this.entity.entityTypes;
+    public toString(): string {
+        let setter = "";
+        for (const prop in this.setter) {
+            const val = this.setter[prop];
+            setter += `${prop}:${val.toString()},\n`;
+        }
+        return `Upsert(${this.entity.toString()}, {${setter}})`;
     }
 }
 

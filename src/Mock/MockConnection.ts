@@ -29,6 +29,9 @@ import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression"
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
+    public get inTransaction(): boolean {
+        return this._transactionCount > 0;
+    }
     public get results() {
         if (!this._results) {
             if (!this._generatedResults) {
@@ -42,27 +45,27 @@ export class MockConnection implements IConnection {
     public set results(value) {
         this._results = value;
     }
-    public get inTransaction(): boolean {
-        return this._transactionCount > 0;
-    }
-    public deferredQueries: IEnumerable<DeferredQuery>;
-
-    //#region Abstract Member
-    public isolationLevel: IsolationLevel;
-    public database: string;
-    public isOpen: boolean;
-    public errorEvent: IEventHandler<MockConnection, Error>;
-    protected onError: IEventDispacher<Error>;
-    private _results: IQueryResult[];
-    private _generatedResults: IQueryResult[];
-    private _transactionCount: number = 0;
     constructor(database?: string) {
         this.database = database || "database";
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
     }
-    public setQueries(deferredQueries: IEnumerable<DeferredQuery>) {
-        this.deferredQueries = deferredQueries;
-        this._generatedResults = null;
+    public database: string;
+    public deferredQueries: IEnumerable<DeferredQuery>;
+    public errorEvent: IEventHandler<MockConnection, Error>;
+
+    //#region Abstract Member
+    public isolationLevel: IsolationLevel;
+    public isOpen: boolean;
+    protected onError: IEventDispacher<Error>;
+    private _generatedResults: IQueryResult[];
+    private _results: IQueryResult[];
+    private _transactionCount: number = 0;
+    public close(): Promise<void> {
+        return Promise.resolve();
+    }
+    public commitTransaction(): Promise<void> {
+        this._transactionCount--;
+        return Promise.resolve();
     }
     public generateQueryResult() {
         return this.deferredQueries
@@ -321,6 +324,9 @@ export class MockConnection implements IConnection {
         }
         return null;
     }
+    public open(): Promise<void> {
+        return Promise.resolve();
+    }
     public async query(command: IQuery): Promise<IQueryResult[]>;
     public async query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
     public async query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
@@ -347,21 +353,7 @@ export class MockConnection implements IConnection {
         const count = (command as BatchedQuery).queryCount || 1;
         return this.results.splice(0, count);
     }
-    public close(): Promise<void> {
-        return Promise.resolve();
-    }
-    public open(): Promise<void> {
-        return Promise.resolve();
-    }
     public reset(): Promise<void> {
-        return Promise.resolve();
-    }
-    public startTransaction(): Promise<void> {
-        this._transactionCount++;
-        return Promise.resolve();
-    }
-    public commitTransaction(): Promise<void> {
-        this._transactionCount--;
         return Promise.resolve();
     }
     public rollbackTransaction(): Promise<void> {
@@ -371,24 +363,13 @@ export class MockConnection implements IConnection {
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return Promise.resolve();
     }
-
-    protected getMaxCount(select: SelectExpression, deferred: DeferredQuery, defaultValue = 10) {
-        if (select.paging && select.paging.take) {
-            defaultValue = this.extractValue(deferred, select.paging.take);
-        }
-        else {
-            const takeJoin = select.joins.first((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
-            if (takeJoin) {
-                if (takeJoin.end) {
-                    defaultValue = this.extractValue(deferred, takeJoin.end);
-                    if (takeJoin.start) {
-                        defaultValue -= this.extractValue(deferred, takeJoin.start);
-                    }
-                }
-            }
-        }
-
-        return defaultValue;
+    public setQueries(deferredQueries: IEnumerable<DeferredQuery>) {
+        this.deferredQueries = deferredQueries;
+        this._generatedResults = null;
+    }
+    public startTransaction(): Promise<void> {
+        this._transactionCount++;
+        return Promise.resolve();
     }
     protected extractValue(o: DeferredQuery, exp: IExpression) {
         if (exp instanceof ValueExpression) {
@@ -410,6 +391,25 @@ export class MockConnection implements IConnection {
             results.splice(i + 1, 0, ...addition);
         }
         return results;
+    }
+
+    protected getMaxCount(select: SelectExpression, deferred: DeferredQuery, defaultValue = 10) {
+        if (select.paging && select.paging.take) {
+            defaultValue = this.extractValue(deferred, select.paging.take);
+        }
+        else {
+            const takeJoin = select.joins.first((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
+            if (takeJoin) {
+                if (takeJoin.end) {
+                    defaultValue = this.extractValue(deferred, takeJoin.end);
+                    if (takeJoin.start) {
+                        defaultValue -= this.extractValue(deferred, takeJoin.start);
+                    }
+                }
+            }
+        }
+
+        return defaultValue;
     }
 
     //#endregion

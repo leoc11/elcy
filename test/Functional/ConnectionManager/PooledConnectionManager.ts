@@ -1,3 +1,5 @@
+import "../../../src/Startup";
+// tslint:disable-next-line: ordered-imports
 import { expect, use } from "chai";
 import * as chaiPromise from "chai-as-promised";
 import "mocha";
@@ -5,7 +7,6 @@ import { PooledConnectionManager } from "../../../src/Connection/PooledConnectio
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { MockDriver } from "../../../src/Mock/MockDriver";
-import "../../../src/Startup";
 
 describe("POOLED CONNECTION MANAGER", () => {
     use(chaiPromise);

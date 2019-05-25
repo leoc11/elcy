@@ -10,31 +10,17 @@ import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./InheritanceMetaData";
 
 export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataMetaData<TType, TSource, TTarget> {
-    public inheritance: InheritanceMetaData<TType>;
-    public relations: Array<IRelationMetaData<TType, any>> = [];
-    public indices: Array<IIndexMetaData<TType>> = [];
-    public constraints: Array<IConstraintMetaData<TType>> = [];
+    public get completeRelationType() {
+        return this.sourceRelationMeta.completeRelationType;
+    }
+    public get primaryKeys() {
+        return this.sourceRelationColumns.union(this.targetRelationColumns).toArray();
+    }
     public get source() {
         return this.sourceRelationMeta.source;
     }
     public get target() {
         return this.targetRelationMeta.source;
-    }
-    public get primaryKeys() {
-        return this.sourceRelationColumns.union(this.targetRelationColumns).toArray();
-    }
-    public sourceRelationColumns: Array<IColumnMetaData<TType>> = [];
-    public targetRelationColumns: Array<IColumnMetaData<TType>> = [];
-    public sourceRelationMeta: IRelationMetaData<TSource, TTarget>;
-    public targetRelationMeta: IRelationMetaData<TTarget, TSource>;
-    public columns: Array<IColumnMetaData<TType>> = [];
-    public relationName: string;
-    public name: string;
-    public type: IObjectType<TType>;
-    public sourceRelationMaps: Map<IColumnMetaData<TType>, IColumnMetaData<TSource>> = new Map();
-    public targetRelationMaps: Map<IColumnMetaData<TType>, IColumnMetaData<TTarget>> = new Map();
-    public get completeRelationType() {
-        return this.sourceRelationMeta.completeRelationType;
     }
     constructor(relationOption: IRelationDataOption<TType, TSource, TTarget>) {
         this.inheritance = new InheritanceMetaData(this);
@@ -45,6 +31,26 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.sourceRelationColumns = relationOption.sourceRelationKeys.select((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o)).toArray();
         this.targetRelationColumns = relationOption.targetRelationKeys.select((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o)).toArray();
         this.type = relationOption.type;
+    }
+    public columns: Array<IColumnMetaData<TType>> = [];
+    public constraints: Array<IConstraintMetaData<TType>> = [];
+    public indices: Array<IIndexMetaData<TType>> = [];
+    public inheritance: InheritanceMetaData<TType>;
+    public name: string;
+    public relationName: string;
+    public relations: Array<IRelationMetaData<TType, any>> = [];
+    public sourceRelationColumns: Array<IColumnMetaData<TType>> = [];
+    public sourceRelationMaps: Map<IColumnMetaData<TType>, IColumnMetaData<TSource>> = new Map();
+    public sourceRelationMeta: IRelationMetaData<TSource, TTarget>;
+    public targetRelationColumns: Array<IColumnMetaData<TType>> = [];
+    public targetRelationMaps: Map<IColumnMetaData<TType>, IColumnMetaData<TTarget>> = new Map();
+    public targetRelationMeta: IRelationMetaData<TTarget, TSource>;
+    public type: IObjectType<TType>;
+    public ApplyOption(entityMeta: IEntityMetaData<TType>) {
+        if (typeof entityMeta.columns !== "undefined") {
+            this.columns = entityMeta.columns;
+            this.columns.forEach((o) => o.entity = this);
+        }
     }
     public completeRelation(sourceRelation: IRelationMetaData<TSource, TTarget>, targetRelation: IRelationMetaData<TTarget, TSource>) {
         this.sourceRelationMeta = sourceRelation;
@@ -74,12 +80,6 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
             if (isManyToMany) {
                 this.targetRelationMeta.relationMaps.set(targetKey, dataKey);
             }
-        }
-    }
-    public ApplyOption(entityMeta: IEntityMetaData<TType>) {
-        if (typeof entityMeta.columns !== "undefined") {
-            this.columns = entityMeta.columns;
-            this.columns.forEach((o) => o.entity = this);
         }
     }
 }

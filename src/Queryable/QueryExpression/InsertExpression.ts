@@ -16,9 +16,6 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 export class InsertExpression<T = any> implements IQueryExpression<void> {
-    public option: IQueryOption;
-    public paramExps: SqlParameterExpression[] = [];
-    private _columns: Array<IColumnExpression<T>>;
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = this.entity.metaData.relations
@@ -35,10 +32,17 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         return undefined as any;
     }
     constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: Array<IColumnExpression<T>>) {
-        if (columns) { this._columns = columns; }
+        if (columns) {
+            this._columns = columns;
+        }
     }
+    public paramExps: SqlParameterExpression[] = [];
+    public queryOption: IQueryOption;
+    private _columns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const entity = resolveClone(this.entity, replaceMap);
         const columns = this.columns.select((o) => resolveClone(o, replaceMap)).toArray();
         const values = this.values.select((o) => {
@@ -52,8 +56,8 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         replaceMap.set(this, clone);
         return clone;
     }
-    public toString(): string {
-        return `Insert(${this.entity.toString()})`;
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes;
     }
     public hashCode() {
         return hashCode("INSERT", hashCode(this.entity.name, this.values.select((o) => {
@@ -64,8 +68,8 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
             return hash;
         }).sum()));
     }
-    public getEffectedEntities(): IObjectType[] {
-        return this.entity.entityTypes;
+    public toString(): string {
+        return `Insert(${this.entity.toString()})`;
     }
 }
 

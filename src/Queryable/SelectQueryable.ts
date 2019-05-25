@@ -12,8 +12,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class SelectQueryable<S, T> extends Queryable<T> {
-    protected readonly selectorFn: (item: S) => T;
-    protected _selector: FunctionExpression<T>;
     protected get selector() {
         if (!this._selector && this.selectorFn) {
             this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type], this.parameters);
@@ -32,10 +30,14 @@ export class SelectQueryable<S, T> extends Queryable<T> {
             this.selectorFn = selector;
         }
     }
+    protected _selector: FunctionExpression<T>;
+    protected readonly selectorFn: (item: S) => T;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const params: IExpression[] = [this.selector.clone()];
-        if (this.type !== Object) { params.unshift(new ValueExpression(this.type)); }
+        if (this.type !== Object) {
+            params.unshift(new ValueExpression(this.type));
+        }
         const methodExpression = new MethodCallExpression(objectOperand, "select", params);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;

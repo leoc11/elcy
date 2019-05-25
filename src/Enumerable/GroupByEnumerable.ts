@@ -2,7 +2,9 @@ import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupedEnumerable } from "./GroupedEnumerable";
 
 export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>> {
-    public get enableCache() { return true; }
+    public get enableCache() {
+        return true;
+    }
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
         super(parent as any);
     }
@@ -31,7 +33,9 @@ export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>>
             while (this.cache.result.length > index) {
                 yield this.cache.result[index++];
             }
-            if (isDone) { break; }
+            if (isDone) {
+                break;
+            }
 
             const a = this.cache.iterator.next();
             if (!a.done) {

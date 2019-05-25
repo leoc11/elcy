@@ -18,31 +18,26 @@ export interface IDeleteIncludeRelation<T = any, TChild = any> {
     relations: IExpression<boolean>;
 }
 export class DeleteExpression<T = any> implements IQueryExpression<void> {
-    public option: IQueryOption;
-    public deleteMode?: IExpression<DeleteMode>;
-    public includes: Array<IDeleteIncludeRelation<T, any>> = [];
-    public parentRelation: IDeleteIncludeRelation<any, T>;
-    public select: SelectExpression<T>;
+    public get entity() {
+        return this.select.entity as EntityExpression<T>;
+    }
+    public get joins() {
+        return this.select.joins;
+    }
+    public get orders() {
+        return this.select.orders;
+    }
+    public get paging() {
+        return this.select.paging;
+    }
     public get paramExps() {
         return this.select.paramExps;
     }
     public set paramExps(value) {
         this.select.paramExps = value;
     }
-    public get joins() {
-        return this.select.joins;
-    }
     public get type() {
         return undefined as any;
-    }
-    public get entity() {
-        return this.select.entity as EntityExpression<T>;
-    }
-    public get paging() {
-        return this.select.paging;
-    }
-    public get orders() {
-        return this.select.orders;
     }
     public get where() {
         return this.select.where;
@@ -50,7 +45,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
-        this.option = {};
+        this.queryOption = {};
         this.deleteMode = deleteMode;
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
@@ -65,14 +60,11 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         }
         this.select.includes = [];
     }
-    public addWhere(expression: IExpression<boolean>) {
-        this.select.addWhere(expression);
-    }
-    public setOrder(orders: IOrderExpression[]): void;
-    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.setOrder(expression as any, direction);
-    }
+    public deleteMode?: IExpression<DeleteMode>;
+    public includes: Array<IDeleteIncludeRelation<T, any>> = [];
+    public parentRelation: IDeleteIncludeRelation<any, T>;
+    public queryOption: IQueryOption;
+    public select: SelectExpression<T>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | IExpression<boolean>): IDeleteIncludeRelation<T, TChild> {
@@ -139,22 +131,17 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }
+    public addWhere(expression: IExpression<boolean>) {
+        this.select.addWhere(expression);
+    }
     public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const select = resolveClone(this.select, replaceMap);
         const clone = new DeleteExpression(select, this.deleteMode);
         replaceMap.set(this, clone);
         return clone;
-    }
-    public toString(): string {
-        return `Delete({
-Entity:${this.entity.toString()},
-Where:${this.where ? this.where.toString() : ""},
-Mode:${this.deleteMode}
-})`;
-    }
-    public hashCode() {
-        return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
     }
     public getEffectedEntities(): IObjectType[] {
         return this.entity.entityTypes
@@ -164,5 +151,20 @@ Mode:${this.deleteMode}
                     .select((o) => o.target.type)
             )
             .union(this.includes.selectMany((o) => o.child.getEffectedEntities())).distinct().toArray();
+    }
+    public hashCode() {
+        return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
+    }
+    public setOrder(orders: IOrderExpression[]): void;
+    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
+        this.select.setOrder(expression as any, direction);
+    }
+    public toString(): string {
+        return `Delete({
+Entity:${this.entity.toString()},
+Where:${this.where ? this.where.toString() : ""},
+Mode:${this.deleteMode}
+})`;
     }
 }

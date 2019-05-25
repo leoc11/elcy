@@ -16,25 +16,15 @@ export abstract class ProjectionEntityExpression<T = any> implements IEntityExpr
         }
         return this._primaryColumns;
     }
+    public get relationColumns(): IEnumerable<IColumnExpression> {
+        return this.subSelect.relationColumns.select((o) => this.columns.first((c) => c.columnName === o.columnName));
+    }
     public get selectedColumns() {
         if (!this._selectedColumns) {
             this._selectedColumns = this.subSelect.selects.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
         }
         return this._selectedColumns;
     }
-    public get relationColumns(): IEnumerable<IColumnExpression> {
-        return this.subSelect.relationColumns.select((o) => this.columns.first((c) => c.columnName === o.columnName));
-    }
-    public name: string = "";
-    public columns: IColumnExpression[];
-    public select?: SelectExpression<T>;
-    public paramExps: SqlParameterExpression[] = [];
-    public defaultOrders: IOrderQueryDefinition[] = [];
-    public alias: string;
-    public readonly entityTypes: IObjectType[];
-    public readonly type: GenericType<T>;
-    private _primaryColumns: IColumnExpression[];
-    private _selectedColumns: IColumnExpression[];
     constructor(public subSelect: SelectExpression<T>, type?: GenericType<T>) {
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
@@ -50,11 +40,21 @@ export abstract class ProjectionEntityExpression<T = any> implements IEntityExpr
         this.type = type ? type : subSelect.itemType;
         this.paramExps = subSelect.paramExps;
     }
-    public toString(): string {
-        return `ProjectionEntity(${this.subSelect.toString()})`;
-    }
+    public alias: string;
+    public columns: IColumnExpression[];
+    public defaultOrders: IOrderQueryDefinition[] = [];
+    public readonly entityTypes: IObjectType[];
+    public name: string = "";
+    public paramExps: SqlParameterExpression[] = [];
+    public select?: SelectExpression<T>;
+    public readonly type: GenericType<T>;
+    private _primaryColumns: IColumnExpression[];
+    private _selectedColumns: IColumnExpression[];
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): ProjectionEntityExpression<T>;
     public hashCode() {
         return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.sum((o) => o.hashCode()));
+    }
+    public toString(): string {
+        return `ProjectionEntity(${this.subSelect.toString()})`;
     }
 }

@@ -11,8 +11,12 @@ export function CreatedDateColumn(optionOrName?: IDateTimeColumnOption | string,
     if (optionOrName) {
         if (typeof optionOrName === "string") {
             option.columnName = optionOrName;
-            if (timeZoneHandling !== undefined) { option.timeZoneHandling = timeZoneHandling; }
-            if (dbtype !== undefined) { option.columnType = dbtype; }
+            if (timeZoneHandling !== undefined) {
+                option.timeZoneHandling = timeZoneHandling;
+            }
+            if (dbtype !== undefined) {
+                option.columnType = dbtype;
+            }
         }
         else {
             option = optionOrName;

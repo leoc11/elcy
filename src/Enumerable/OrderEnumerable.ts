@@ -40,11 +40,11 @@ export const partition = <T>(source: T[], first: number, last: number, selectors
     }
 };
 export class OrderEnumerable<T = any> extends Enumerable<T> {
-    protected readonly selectors: Array<IOrderDefinition<T>>;
     constructor(protected readonly parent: Enumerable<T>, ...selectors: Array<IOrderDefinition<T>>) {
         super();
         this.selectors = selectors;
     }
+    protected readonly selectors: Array<IOrderDefinition<T>>;
     protected *generator() {
         let index = 0;
         const array = this.parent.toArray();

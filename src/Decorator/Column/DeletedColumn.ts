@@ -10,7 +10,9 @@ export function DeletedColumn(optionOrName?: IBooleanColumnOption | string): Pro
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
     }
-    else if (optionOrName) { option = optionOrName; }
+    else if (optionOrName) {
+        option = optionOrName;
+    }
 
     option.isDeletedColumn = true;
     /* istanbul ignore next */

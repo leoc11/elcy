@@ -3,7 +3,6 @@ import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
 
 export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
-    private _state: EntityState;
     public get state() {
         return this._state;
     }
@@ -76,6 +75,28 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
     }
     constructor(public slaveEntry: EntityEntry<TE1>, public masterEntry: EntityEntry<TE2>, public slaveRelation: IRelationMetaData<TE1, TE2>, public relationData?: TRD) {
         this._state = EntityState.Detached;
+    }
+    private _state: EntityState;
+
+    public acceptChanges() {
+        switch (this.state) {
+            case EntityState.Added: {
+                this.state = EntityState.Unchanged;
+                break;
+            }
+            case EntityState.Deleted:
+            case EntityState.Detached: {
+                this.state = EntityState.Detached;
+                break;
+            }
+        }
+    }
+
+    public add() {
+        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+    }
+    public delete() {
+        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
     }
 
     public join(isAttach = false) {
@@ -166,26 +187,5 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         for (const col of cols) {
             this.slaveEntry.entity[col.propertyName] = null;
         }
-    }
-
-    public acceptChanges() {
-        switch (this.state) {
-            case EntityState.Added: {
-                this.state = EntityState.Unchanged;
-                break;
-            }
-            case EntityState.Deleted:
-            case EntityState.Detached: {
-                this.state = EntityState.Detached;
-                break;
-            }
-        }
-    }
-
-    public add() {
-        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
-    }
-    public delete() {
-        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
     }
 }

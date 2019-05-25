@@ -42,11 +42,15 @@ mssqlQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `$
 mssqlQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `scope_identity()`, () => true);
 mssqlQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `coalesce(${exp.params.select((o) => qb.toString(o, param)).toArray().join(", ")})`);
 relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
-    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    if (exp.params.length <= 0) {
+        throw new Error(`${exp.toString()} require at least one parameter`);
+    }
     return `(SELECT MAX(V) FROM (VALUES ${exp.params.select((o) => `(${qb.toString(o, param)})`).toArray().join(",")}) AS value(V))`;
 });
 relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
-    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    if (exp.params.length <= 0) {
+        throw new Error(`${exp.toString()} require at least one parameter`);
+    }
     return `(SELECT MIN(V) FROM (VALUES ${exp.params.select((o) => `(${qb.toString(o, param)})`).toArray().join(",")}) AS value(V))`;
 });
 

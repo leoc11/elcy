@@ -8,10 +8,10 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class TakeQueryable<T> extends Queryable<T> {
-    public expression: SelectExpression<T>;
     constructor(parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type, parent.parameter({ take: quantity }));
     }
+    public expression: SelectExpression<T>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);

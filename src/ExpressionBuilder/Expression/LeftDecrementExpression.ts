@@ -3,13 +3,12 @@ import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ParameterExpression } from "./ParameterExpression";
 export class LeftDecrementExpression implements IUnaryOperatorExpression<number> {
-    public type = Number;
     constructor(public operand: ParameterExpression<number>) { }
-    public toString(): string {
-        return "--" + this.operand.toString();
-    }
+    public type = Number;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const operand = resolveClone(this.operand, replaceMap);
         const clone = new LeftDecrementExpression(operand);
         replaceMap.set(this, clone);
@@ -17,5 +16,8 @@ export class LeftDecrementExpression implements IUnaryOperatorExpression<number>
     }
     public hashCode() {
         return hashCodeAdd(hashCode("--"), this.operand.hashCode());
+    }
+    public toString(): string {
+        return "--" + this.operand.toString();
     }
 }

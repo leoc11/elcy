@@ -1,10 +1,10 @@
 import { GenericType, IObjectType } from "../Common/Type";
 
 interface IContainerItem<T = any> {
-    instance?: T;
-    type?: IObjectType<T>;
     factory?: (...args: any[]) => T;
+    instance?: T;
     isLifeTime?: boolean;
+    type?: IObjectType<T>;
 }
 const containerKey = Symbol("container");
 class Container {

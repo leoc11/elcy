@@ -6,6 +6,12 @@ import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 
 export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
+    public get itemType() {
+        if ((this.type as any) === Array) {
+            return this.objectOperand.itemType;
+        }
+        return undefined;
+    }
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
@@ -53,14 +59,6 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     public set type(value) {
         this._type = value;
     }
-    public get itemType() {
-        if ((this.type as any) === Array) {
-            return this.objectOperand.itemType;
-        }
-        return undefined;
-    }
-    public methodName: K;
-    private _type: GenericType<T>;
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
         this._type = type;
         if (typeof method === "function") {
@@ -70,15 +68,12 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
             this.methodName = method;
         }
     }
-    public toString(): string {
-        const paramStr = [];
-        for (const param of this.params) {
-            paramStr.push(param.toString());
-        }
-        return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
-    }
+    public methodName: K;
+    private _type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
         const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
@@ -89,5 +84,12 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         let hash = hashCode("." + this.methodName, this.objectOperand.hashCode());
         this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
+    }
+    public toString(): string {
+        const paramStr = [];
+        for (const param of this.params) {
+            paramStr.push(param.toString());
+        }
+        return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
     }
 }

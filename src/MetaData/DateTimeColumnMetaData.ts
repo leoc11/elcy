@@ -3,14 +3,14 @@ import { ColumnGeneration, TimeZoneHandling } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 export class DateTimeColumnMetaData<TE = any> extends ColumnMetaData<TE, Date> {
-    public columnType: DateTimeColumnType = "datetime";
-    public precision?: number;
-    public timeZoneHandling: TimeZoneHandling = "utc";
-    public isCreatedDate?: boolean;
-    public isModifiedDate?: boolean;
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Date, entityMeta);
     }
+    public columnType: DateTimeColumnType = "datetime";
+    public isCreatedDate?: boolean;
+    public isModifiedDate?: boolean;
+    public precision?: number;
+    public timeZoneHandling: TimeZoneHandling = "utc";
     public applyOption(columnMeta: DateTimeColumnMetaData<TE>) {
         if (typeof columnMeta.isCreatedDate !== "undefined") {
             this.isCreatedDate = columnMeta.isCreatedDate;

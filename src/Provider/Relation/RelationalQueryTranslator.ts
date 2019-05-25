@@ -147,11 +147,15 @@ relationalQueryTranslator.registerMethod(Math, "cosh", (qb, exp, param) => `((EX
 relationalQueryTranslator.registerMethod(Math, "tanh", (qb, exp, param) => `((EXP(2 * ${qb.toString(exp.params[0], param)}) - 1) / (EXP(2 * ${qb.toString(exp.params[0], param)}) + 1))`);
 relationalQueryTranslator.registerMethod(Math, "trunc", (qb, exp, param) => `(${qb.toString(exp.params[0], param)} | 0)`);
 relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
-    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    if (exp.params.length <= 0) {
+        throw new Error(`${exp.toString()} require at least one parameter`);
+    }
     return `GREATEST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
 });
 relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
-    if (exp.params.length <= 0) { throw new Error(`${exp.toString()} require at least one parameter`); }
+    if (exp.params.length <= 0) {
+        throw new Error(`${exp.toString()} require at least one parameter`);
+    }
     return `LEAST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
 });
 /**
@@ -320,7 +324,7 @@ const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictN
     }
     else if (rightExpString === "NULL") {
         return `${leftExpString} IS NOT ${rightExpString}`;
- }
+    }
     return `${leftExpString}<>${rightExpString}`;
 };
 relationalQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
@@ -334,7 +338,7 @@ const equalTransalator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, par
     }
     else if (rightExpString === "NULL") {
         return `${leftExpString} IS ${rightExpString}`;
- }
+    }
     return `${leftExpString}=${rightExpString}`;
 };
 relationalQueryTranslator.registerOperator(EqualExpression, equalTransalator);

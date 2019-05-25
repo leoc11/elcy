@@ -5,11 +5,16 @@ import { ICacheOption } from "./ICacheOption";
 import { IResultCacheManager } from "./IResultCacheManager";
 
 export class DefaultResultCacheManager implements IResultCacheManager {
-    private _keyMap = new Map<string, ICacheItem>();
-    private _tagMap = new Map<string, string[]>();
     private _expiredQueue = new QueuedTimeout((item: ICacheItem) => {
         return this.remove(item.key);
     });
+    private _keyMap = new Map<string, ICacheItem>();
+    private _tagMap = new Map<string, string[]>();
+    public async clear(): Promise<void> {
+        this._keyMap.clear();
+        this._tagMap.clear();
+        this._expiredQueue.reset();
+    }
     public async get(key: string): Promise<IQueryResult[]> {
         const res = await this.gets(key);
         return res.first();
@@ -28,29 +33,6 @@ export class DefaultResultCacheManager implements IResultCacheManager {
 
             return item ? item.data : null;
         }).toArray();
-    }
-    public async set(key: string, cache: IQueryResult[], option?: ICacheOption): Promise<void> {
-        const item = {} as ICacheItem<IQueryResult[]>;
-        if (option) { Object.assign(item, option); }
-        item.data = cache;
-        item.key = key;
-        this._keyMap.set(key, item);
-        if (!item.expiredTime && item.slidingExpiration) {
-            item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
-        }
-        if (item.expiredTime) {
-            this._expiredQueue.setTimeout(item, item.expiredTime);
-        }
-        if (item.tags) {
-            for (const tag of item.tags) {
-                let tagList = this._tagMap.get(tag);
-                if (!tagList) {
-                    tagList = [];
-                    this._tagMap.set(tag, tagList);
-                }
-                tagList.push(key);
-            }
-        }
     }
     public async remove(...keys: string[]): Promise<void> {
         for (const key of keys) {
@@ -80,9 +62,29 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             }
         }
     }
-    public async clear(): Promise<void> {
-        this._keyMap.clear();
-        this._tagMap.clear();
-        this._expiredQueue.reset();
+    public async set(key: string, cache: IQueryResult[], option?: ICacheOption): Promise<void> {
+        const item = {} as ICacheItem<IQueryResult[]>;
+        if (option) {
+            Object.assign(item, option);
+        }
+        item.data = cache;
+        item.key = key;
+        this._keyMap.set(key, item);
+        if (!item.expiredTime && item.slidingExpiration) {
+            item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
+        }
+        if (item.expiredTime) {
+            this._expiredQueue.setTimeout(item, item.expiredTime);
+        }
+        if (item.tags) {
+            for (const tag of item.tags) {
+                let tagList = this._tagMap.get(tag);
+                if (!tagList) {
+                    tagList = [];
+                    this._tagMap.set(tag, tagList);
+                }
+                tagList.push(key);
+            }
+        }
     }
 }

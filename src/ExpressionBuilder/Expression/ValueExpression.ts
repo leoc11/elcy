@@ -10,16 +10,16 @@ export class ValueExpression<T = any> implements IExpression<T> {
         return this.value.constructor as any;
     }
     constructor(public readonly value: T, public expressionString: string = null) { }
-    public toString(): string {
-        if (!this.expressionString) {
-            this.expressionString = JSON.stringify(this.value);
-        }
-        return this.expressionString;
-    }
     public clone() {
         return this;
     }
     public hashCode() {
         return hashCode(this.expressionString ? this.expressionString : this.value ? this.value.toString() : "NULL");
+    }
+    public toString(): string {
+        if (!this.expressionString) {
+            this.expressionString = JSON.stringify(this.value);
+        }
+        return this.expressionString;
     }
 }

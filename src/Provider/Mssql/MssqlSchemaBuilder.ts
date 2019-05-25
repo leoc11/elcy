@@ -61,17 +61,9 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         ["defaultString", { columnType: "nvarchar", option: { length: 255 } }],
         ["defaultRowVersion", { columnType: "rowversion" }]
     ]);
-    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
-        const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
-        return [{ query, type: QueryType.DDL }];
-    }
     public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.queryBuilder.enclose(columnMeta.columnName)}`;
-        return [{ query, type: QueryType.DDL }];
-    }
-    public dropIndex(indexMeta: IIndexMetaData): IQuery[] {
-        const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
         return [{ query, type: QueryType.DDL }];
     }
     public dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
@@ -92,6 +84,10 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         });
         return result;
     }
+    public dropIndex(indexMeta: IIndexMetaData): IQuery[] {
+        const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
+        return [{ query, type: QueryType.DDL }];
+    }
     public dropPrimaryKey(entityMeta: IEntityMetaData): IQuery[] {
         const result: IQuery[] = [];
         const variableName = this.queryBuilder.newAlias("param");
@@ -108,29 +104,9 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         });
         return result;
     }
-    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
-        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
-            ` FOREIGN KEY (${columns})` +
-            ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
-
-        const updateOption = this.referenceOption(relationMeta.updateOption);
-        const deleteOption = this.referenceOption(relationMeta.deleteOption);
-        if (updateOption && updateOption !== "NO ACTION") {
-            result += ` ON UPDATE ${updateOption}`;
-        }
-        if (deleteOption && deleteOption !== "NO ACTION") {
-            result += ` ON DELETE ${deleteOption}`;
-        }
-
-        return result;
-    }
-    protected referenceOption(option: ReferenceOption) {
-        if (option === "RESTRICT") {
-            return "NO ACTION";
-        }
-        return option;
+    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
+        const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
+        return [{ query, type: QueryType.DDL }];
     }
     protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
         const columnType = super.columnType(column);
@@ -166,5 +142,29 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
             }
         }
         return columnType;
+    }
+    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
+        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
+            ` FOREIGN KEY (${columns})` +
+            ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
+
+        const updateOption = this.referenceOption(relationMeta.updateOption);
+        const deleteOption = this.referenceOption(relationMeta.deleteOption);
+        if (updateOption && updateOption !== "NO ACTION") {
+            result += ` ON UPDATE ${updateOption}`;
+        }
+        if (deleteOption && deleteOption !== "NO ACTION") {
+            result += ` ON DELETE ${deleteOption}`;
+        }
+
+        return result;
+    }
+    protected referenceOption(option: ReferenceOption) {
+        if (option === "RESTRICT") {
+            return "NO ACTION";
+        }
+        return option;
     }
 }

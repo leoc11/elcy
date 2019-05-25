@@ -2,13 +2,12 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class StrictEqualExpression<T = any> implements IBinaryOperatorExpression<boolean> {
-    public type = Boolean;
     constructor(public leftOperand: IExpression<T>, public rightOperand: IExpression<T>) { }
-    public toString(): string {
-        return "(" + this.leftOperand.toString() + " === " + this.rightOperand.toString() + ")";
-    }
+    public type = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const left = resolveClone(this.leftOperand, replaceMap);
         const right = resolveClone(this.rightOperand, replaceMap);
         const clone = new StrictEqualExpression(left, right);
@@ -17,5 +16,8 @@ export class StrictEqualExpression<T = any> implements IBinaryOperatorExpression
     }
     public hashCode() {
         return hashCodeAdd(hashCode("===", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+    }
+    public toString(): string {
+        return "(" + this.leftOperand.toString() + " === " + this.rightOperand.toString() + ")";
     }
 }

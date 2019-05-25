@@ -23,26 +23,26 @@ import { WhereEnumerable } from "./WhereEnumerable";
 declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
+        crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        distinct(selector?: (item: T) => any): Enumerable<T>;
+        except(array2: IEnumerable<T>): Enumerable<T>;
+        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
+        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        intersect(array2: IEnumerable<T>): Enumerable<T>;
+        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
+        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
-        where(predicate: (item: T) => boolean): Enumerable<T>;
-        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
         skip(skip: number): Enumerable<T>;
         take(take: number): Enumerable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>>;
-        distinct(selector?: (item: T) => any): Enumerable<T>;
-        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
-        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
-        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
-        crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
         union(array2: IEnumerable<T>, isUnionAll?: boolean): Enumerable<T>;
-        intersect(array2: IEnumerable<T>): Enumerable<T>;
-        except(array2: IEnumerable<T>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
+        where(predicate: (item: T) => boolean): Enumerable<T>;
     }
 }
 Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {

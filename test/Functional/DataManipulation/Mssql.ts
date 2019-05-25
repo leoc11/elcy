@@ -560,9 +560,8 @@ describe("DATA MANIPULATION", () => {
         });
     });
     describe("ADD RELATION", () => {
-        it("should add one-one relation", () => {
-
-        });
+        // it("should add one-one relation", () => {
+        // });
         it("should add one-many relation", async () => {
             const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
@@ -584,39 +583,29 @@ describe("DATA MANIPULATION", () => {
             } as IQuery);
             effected.should.equal(1);
         });
-        it("should add many-many relation", () => {
-
-        });
-        it("should add relation data", () => {
-
-        });
-        it("should update relation data", () => {
-
-        });
+        // it("should add many-many relation", () => {
+        // });
+        // it("should add relation data", () => {
+        // });
+        // it("should update relation data", () => {
+        // });
     });
-    describe("REMOVE RELATION", () => {
-        it("should remove one-one/one-many relation by SET NULL", () => {
-
-        });
-        it("should remove one-one/one-many relation by SET DEFAULT", () => {
-
-        });
-        it("should remove one-one/one-many relation by DELETE", () => {
-
-        });
-        it("should remove many-many relation", () => {
-
-        });
-        it("should remove relation data", () => {
-
-        });
-    });
-    describe("SAVE CHANGES", () => {
-        it("should bulk insert/update/delete entity and relation", () => {
-
-        });
-        it("should failed without changing context state", () => {
-
-        });
-    });
+    // describe("REMOVE RELATION", () => {
+    //     it("should remove one-one/one-many relation by SET NULL", () => {
+    //     });
+    //     it("should remove one-one/one-many relation by SET DEFAULT", () => {
+    //     });
+    //     it("should remove one-one/one-many relation by DELETE", () => {
+    //     });
+    //     it("should remove many-many relation", () => {
+    //     });
+    //     it("should remove relation data", () => {
+    //     });
+    // });
+    // describe("SAVE CHANGES", () => {
+    //     it("should bulk insert/update/delete entity and relation", () => {
+    //     });
+    //     it("should failed without changing context state", () => {
+    //     });
+    // });
 });

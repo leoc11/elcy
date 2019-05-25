@@ -27,21 +27,17 @@ interface IResolvedRelationData<T = any, TData = any> {
     entry?: EntityEntry<T>;
 }
 interface IResolveData<T = any> {
-    isValueType: boolean;
-    primaryColumns?: IEnumerable<IColumnExpression<T>>;
+    column?: IColumnExpression<T>;
     columns?: IEnumerable<IColumnExpression<T>>;
     dbSet?: DbSet<T>;
-    column?: IColumnExpression<T>;
+    isValueType: boolean;
+    primaryColumns?: IEnumerable<IColumnExpression<T>>;
     reverseRelationMap?: Map<any, any>;
 }
 
 interface IResolveMap extends Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>> { }
 
 export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
-    public queryExpression: SelectExpression<T>;
-    public queryBuilder: IQueryBuilder;
-    private _orderedSelects: SelectExpression[];
-    private _cache = new Map<SelectExpression, IResolveData>();
     public get orderedSelects() {
         if (!this._orderedSelects) {
             this._orderedSelects = [this.queryExpression];
@@ -54,51 +50,16 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
         return this._orderedSelects;
     }
+    public queryBuilder: IQueryBuilder;
+    public queryExpression: SelectExpression<T>;
+    private _cache = new Map<SelectExpression, IResolveData>();
+    private _orderedSelects: SelectExpression[];
     public parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext);
     }
-    private parseData<TType>(queryResults: IQueryResult[], dbContext: DbContext): TType[] {
-        const results: TType[] = [];
-        const resolveMap: IResolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
-        const loops = this.orderedSelects;
-
-        for (let i = 0, len = loops.length; i < len; i++) {
-            const queryResult = queryResults[i];
-            if (!queryResult.rows) { continue; }
-
-            const data = queryResult.rows;
-            if (!data.any()) { continue; }
-
-            let select = loops[i];
-            const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
-            resolveMap.set(select, itemMap);
-
-            let dbEventEmitter: DBEventEmitter<TType> = null;
-            const isGroup = select instanceof GroupByExpression && !select.isAggregate;
-            if (isGroup) {
-                select = (select as GroupByExpression).itemSelect;
-            }
-
-            const resolveCache = this.getResolveData(select, dbContext);
-            if (resolveCache.dbSet) {
-                dbEventEmitter = new DBEventEmitter<TType>(resolveCache.dbSet.metaData as IDBEventListener<TType>, dbContext);
-            }
-            const isResult = i === len - 1;
-            for (const row of queryResult.rows) {
-                const entity = this.parseEntity(select, row, resolveCache, resolveMap, dbContext, itemMap, dbEventEmitter);
-
-                if (isResult) {
-                    if (isGroup) {
-                        results.add(entity);
-                    }
-                    else {
-                        results.push(entity);
-                    }
-                }
-            }
-        }
-
-        return results;
+    private getColumnValue<TType>(column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
+        const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
+        return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta);
     }
     private getResolveData<TType>(select: SelectExpression<TType>, dbContext: DbContext) {
         let resolveCache = this._cache.get(select);
@@ -143,6 +104,53 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         return resolveCache;
     }
+    private parseData<TType>(queryResults: IQueryResult[], dbContext: DbContext): TType[] {
+        const results: TType[] = [];
+        const resolveMap: IResolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
+        const loops = this.orderedSelects;
+
+        for (let i = 0, len = loops.length; i < len; i++) {
+            const queryResult = queryResults[i];
+            if (!queryResult.rows) {
+                continue;
+            }
+
+            const data = queryResult.rows;
+            if (!data.any()) {
+                continue;
+            }
+
+            let select = loops[i];
+            const itemMap = new Map<number, IResolvedRelationData | IResolvedRelationData[]>();
+            resolveMap.set(select, itemMap);
+
+            let dbEventEmitter: DBEventEmitter<TType> = null;
+            const isGroup = select instanceof GroupByExpression && !select.isAggregate;
+            if (isGroup) {
+                select = (select as GroupByExpression).itemSelect;
+            }
+
+            const resolveCache = this.getResolveData(select, dbContext);
+            if (resolveCache.dbSet) {
+                dbEventEmitter = new DBEventEmitter<TType>(resolveCache.dbSet.metaData as IDBEventListener<TType>, dbContext);
+            }
+            const isResult = i === len - 1;
+            for (const row of queryResult.rows) {
+                const entity = this.parseEntity(select, row, resolveCache, resolveMap, dbContext, itemMap, dbEventEmitter);
+
+                if (isResult) {
+                    if (isGroup) {
+                        results.add(entity);
+                    }
+                    else {
+                        results.push(entity);
+                    }
+                }
+            }
+        }
+
+        return results;
+    }
     private parseEntity<TType>(select: SelectExpression<TType>, row: any, resolveCache: IResolveData<TType>, resolveMap: IResolveMap, dbContext?: DbContext, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbEventEmitter?: DBEventEmitter<TType>) {
         let entity: any;
         let entry: EntityEntry<TType>;
@@ -169,7 +177,9 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 else {
                     entity = entry.entity;
                 }
-                if (entry) { entry.enableTrackChanges = false; }
+                if (entry) {
+                    entry.enableTrackChanges = false;
+                }
             }
 
             for (const column of resolveCache.columns) {
@@ -260,10 +270,14 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 itemMap.set(key, relationData);
             }
         }
-        if (entry) { entry.enableTrackChanges = true; }
+        if (entry) {
+            entry.enableTrackChanges = true;
+        }
 
         // emit after load event
-        if (dbEventEmitter) { dbEventEmitter.emitAfterLoadEvent(entity); }
+        if (dbEventEmitter) {
+            dbEventEmitter.emitAfterLoadEvent(entity);
+        }
 
         if (select instanceof GroupedExpression && !select.groupByExp.isAggregate) {
             let groupMap = resolveMap.get(select.groupByExp);
@@ -335,13 +349,11 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         }
         else {
             const results: IResolvedRelationData[] = [];
-            if (relationValue) { results.push(relationValue as any); }
+            if (relationValue) {
+                results.push(relationValue as any);
+            }
             return results;
         }
-    }
-    private getColumnValue<TType>(column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
-        const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
-        return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta);
     }
     private setColumnValue<TType>(entryOrEntity: EntityEntry<TType> | TType, column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
         const value = this.getColumnValue(column, data, dbContext);

@@ -6,17 +6,17 @@ export interface ISelectCacheOption extends ICacheOption {
     disableEntityAsTag?: boolean;
 }
 export interface IQueryOption {
-    noQueryCache?: boolean;
-    includeSoftDeleted?: boolean;
-    supportTVP?: boolean;
-    version?: Version;
     concurrencyMode?: ConcurrencyModel;
-    // select
-    resultCache?: "none" | ISelectCacheOption;
-    // insert/update
-    useUpsert?: boolean;
     // delete
     forceHardDelete?: boolean;
+    includeSoftDeleted?: boolean;
+    noQueryCache?: boolean;
+    // select
+    resultCache?: "none" | ISelectCacheOption;
+    supportTVP?: boolean;
+    // insert/update
+    useUpsert?: boolean;
+    version?: Version;
 
     // noTracking?: boolean;
     // batchSize?: number;

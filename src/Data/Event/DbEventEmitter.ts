@@ -4,35 +4,20 @@ import { EntityEntry } from "../EntityEntry";
 import { IDBEventListener } from "./IDBEventListener";
 
 export class DBEventEmitter<T = any> {
-    public eventListeners: Array<IDBEventListener<T>>;
     constructor(...eventListeners: Array<IDBEventListener<T>>) {
         this.eventListeners = eventListeners;
     }
-    public emitBeforeSaveEvent(param: ISaveEventParam, ...entries: Array<EntityEntry<T>>) {
-        const beforeSaves: Array<(entity: T, param: ISaveEventParam) => void> = [];
+    public eventListeners: Array<IDBEventListener<T>>;
+    public emitAfterDeleteEvent(param: IDeleteEventParam, ...entries: Array<EntityEntry<T>>) {
+        const afterDeletes: Array<(entity: T, param: IDeleteEventParam) => void> = [];
         for (const eventl of this.eventListeners) {
-            if (eventl.beforeSave) {
-                beforeSaves.push(eventl.beforeSave);
+            if (eventl.afterDelete) {
+                afterDeletes.push(eventl.afterDelete);
             }
         }
-        if (beforeSaves.length > 0) {
+        if (afterDeletes.length > 0) {
             for (const entry of entries) {
-                for (const handler of beforeSaves) {
-                    handler(entry.entity, param);
-                }
-            }
-        }
-    }
-    public emitBeforeDeleteEvent(param: IDeleteEventParam, ...entries: Array<EntityEntry<T>>) {
-        const beforeDeletes: Array<(entity: T, param: IDeleteEventParam) => void> = [];
-        for (const eventl of this.eventListeners) {
-            if (eventl.beforeDelete) {
-                beforeDeletes.push(eventl.beforeDelete);
-            }
-        }
-        if (beforeDeletes.length > 0) {
-            for (const entry of entries) {
-                for (const handler of beforeDeletes) {
+                for (const handler of afterDeletes) {
                     handler(entry.entity, param);
                 }
             }
@@ -68,16 +53,31 @@ export class DBEventEmitter<T = any> {
             }
         }
     }
-    public emitAfterDeleteEvent(param: IDeleteEventParam, ...entries: Array<EntityEntry<T>>) {
-        const afterDeletes: Array<(entity: T, param: IDeleteEventParam) => void> = [];
+    public emitBeforeDeleteEvent(param: IDeleteEventParam, ...entries: Array<EntityEntry<T>>) {
+        const beforeDeletes: Array<(entity: T, param: IDeleteEventParam) => void> = [];
         for (const eventl of this.eventListeners) {
-            if (eventl.afterDelete) {
-                afterDeletes.push(eventl.afterDelete);
+            if (eventl.beforeDelete) {
+                beforeDeletes.push(eventl.beforeDelete);
             }
         }
-        if (afterDeletes.length > 0) {
+        if (beforeDeletes.length > 0) {
             for (const entry of entries) {
-                for (const handler of afterDeletes) {
+                for (const handler of beforeDeletes) {
+                    handler(entry.entity, param);
+                }
+            }
+        }
+    }
+    public emitBeforeSaveEvent(param: ISaveEventParam, ...entries: Array<EntityEntry<T>>) {
+        const beforeSaves: Array<(entity: T, param: ISaveEventParam) => void> = [];
+        for (const eventl of this.eventListeners) {
+            if (eventl.beforeSave) {
+                beforeSaves.push(eventl.beforeSave);
+            }
+        }
+        if (beforeSaves.length > 0) {
+            for (const entry of entries) {
+                for (const handler of beforeSaves) {
                     handler(entry.entity, param);
                 }
             }

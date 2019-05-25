@@ -36,10 +36,6 @@ export class PivotQueryable<T,
     protected set metrics(value) {
         this._metrics = value;
     }
-    protected readonly dimensionFn: TD;
-    protected readonly metricFn: TM;
-    private _dimensions: TExpObject<TD>;
-    private _metrics: TExpObject<TM>;
     constructor(public readonly parent: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>) {
         super(Object, parent);
         if (dimensions instanceof FunctionExpression) {
@@ -55,6 +51,10 @@ export class PivotQueryable<T,
             this.metricFn = metrics;
         }
     }
+    protected readonly dimensionFn: TD;
+    protected readonly metricFn: TM;
+    private _dimensions: TExpObject<TD>;
+    private _metrics: TExpObject<TM>;
     public buildQuery(queryVisitor: IQueryVisitor) {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions.clone(), this.metrics.clone()]);

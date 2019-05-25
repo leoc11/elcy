@@ -18,25 +18,14 @@ export class Enumerable<T = any> implements Iterable<T> {
     public set enableCache(value) {
         if (this.parent) {
             this.cache.enabled = value;
-            if (!value) { this.cache.result = undefined; }
+            if (!value) {
+                this.cache.result = undefined;
+            }
         }
     }
     public get enableCache() {
         return !this.parent || this.cache.enabled;
     }
-    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
-        return source instanceof Enumerable ? source : new Enumerable(source);
-    }
-    public static range(start: number, end: number, step: number = 1) {
-        return new Enumerable(function*() {
-            while (start <= end) {
-                yield start;
-                start += step;
-            }
-        });
-    }
-    protected parent: Iterable<any>;
-    protected cache: IEnumerableCache<T>;
     constructor(source?: Iterable<any> | (() => IterableIterator<T>)) {
         this.cache = {};
         if (source) {
@@ -57,29 +46,24 @@ export class Enumerable<T = any> implements Iterable<T> {
             }
         }
     }
+    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
+        return source instanceof Enumerable ? source : new Enumerable(source);
+    }
+    public static range(start: number, end: number, step: number = 1) {
+        return new Enumerable(function* () {
+            while (start <= end) {
+                yield start;
+                start += step;
+            }
+        });
+    }
+    protected cache: IEnumerableCache<T>;
+    protected parent: Iterable<any>;
     public [Symbol.iterator](): IterableIterator<T> {
         if (this.enableCache) {
             return this.cachedGenerator();
         }
         return this.generator();
-    }
-    public toArray(): T[] {
-        if (this.enableCache && this.cache.isDone) {
-            return this.cache.result.slice(0);
-        }
-
-        const arr = [];
-        for (const i of this) {
-            arr.push(i);
-        }
-        return arr;
-    }
-    public toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V> {
-        const rel = new Map<K, V>();
-        for (const i of this) {
-            rel.set(keySelector(i), valueSelector ? valueSelector(i) : i as any);
-        }
-        return rel;
     }
     public all(predicate: (item: T) => boolean): boolean {
         for (const item of this) {
@@ -97,13 +81,22 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return false;
     }
-    public first(predicate?: (item: T) => boolean): T | null {
+    public avg(selector?: (item: T) => number): number {
+        let sum = 0;
+        let count = 0;
         for (const item of this) {
-            if (!predicate || predicate(item)) {
-                return item;
+            sum += selector ? selector(item) : item as any;
+            count++;
+        }
+        return sum / count;
+    }
+    public contains(item: T): boolean {
+        for (const it of this) {
+            if (it === item) {
+                return true;
             }
         }
-        return null;
+        return false;
     }
     public count(predicate?: (item: T) => boolean): number {
         let count = 0;
@@ -114,21 +107,21 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return count;
     }
-    public sum(selector?: (item: T) => number): number {
-        let sum = 0;
+
+    // Helper extension
+    public each(executor: (item: T, index: number) => void): void {
+        let index = 0;
         for (const item of this) {
-            sum += selector ? selector(item) : item as any;
+            executor(item, index++);
         }
-        return sum;
     }
-    public avg(selector?: (item: T) => number): number {
-        let sum = 0;
-        let count = 0;
+    public first(predicate?: (item: T) => boolean): T | null {
         for (const item of this) {
-            sum += selector ? selector(item) : item as any;
-            count++;
+            if (!predicate || predicate(item)) {
+                return item;
+            }
         }
-        return sum / count;
+        return null;
     }
     public max(selector?: (item: T) => number): number {
         let max = -Infinity;
@@ -150,24 +143,8 @@ export class Enumerable<T = any> implements Iterable<T> {
         }
         return min;
     }
-    public contains(item: T): boolean {
-        for (const it of this) {
-            if (it === item) {
-                return true;
-            }
-        }
-        return false;
-    }
     public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
         return this.where((o) => o instanceof (type as any)) as any;
-    }
-
-    // Helper extension
-    public each(executor: (item: T, index: number) => void): void {
-        let index = 0;
-        for (const item of this) {
-            executor(item, index++);
-        }
     }
     public reduce<R>(func: (accumulated: R, item: T) => R): R;
     public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;
@@ -184,6 +161,31 @@ export class Enumerable<T = any> implements Iterable<T> {
             accumulated = func(accumulated, a);
         }
         return accumulated;
+    }
+    public sum(selector?: (item: T) => number): number {
+        let sum = 0;
+        for (const item of this) {
+            sum += selector ? selector(item) : item as any;
+        }
+        return sum;
+    }
+    public toArray(): T[] {
+        if (this.enableCache && this.cache.isDone) {
+            return this.cache.result.slice(0);
+        }
+
+        const arr = [];
+        for (const i of this) {
+            arr.push(i);
+        }
+        return arr;
+    }
+    public toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V> {
+        const rel = new Map<K, V>();
+        for (const i of this) {
+            rel.set(keySelector(i), valueSelector ? valueSelector(i) : i as any);
+        }
+        return rel;
     }
     protected *generator() {
         for (const value of this.parent) {
@@ -204,7 +206,9 @@ export class Enumerable<T = any> implements Iterable<T> {
             this.cache.result = [];
         }
         const iterator = this.cache.iterator as (IterableIterator<any> & { _accessCount: number });
-        if (iterator && !iterator._accessCount) { iterator._accessCount = 0; }
+        if (iterator && !iterator._accessCount) {
+            iterator._accessCount = 0;
+        }
         iterator._accessCount++;
 
         try {
@@ -215,7 +219,9 @@ export class Enumerable<T = any> implements Iterable<T> {
                 while (len > index) {
                     yield this.cache.result[index++];
                 }
-                if (isDone) { break; }
+                if (isDone) {
+                    break;
+                }
 
                 const a = iterator.next();
                 if (!a.done) {

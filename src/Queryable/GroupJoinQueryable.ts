@@ -10,9 +10,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
-    protected readonly relationFn: (item: T, item2: T2) => boolean;
-    protected readonly resultSelectorFn: (item1: T, item2: T2[]) => R;
-    private _relation: FunctionExpression<boolean>;
     protected get relation() {
         if (!this._relation && this.relationFn) {
             this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
@@ -22,7 +19,6 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     protected set relation(value) {
         this._relation = value;
     }
-    private _resultSelector: FunctionExpression<R>;
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn) {
             this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.parameters);
@@ -51,6 +47,10 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
             }
         }
     }
+    protected readonly relationFn: (item: T, item2: T2) => boolean;
+    protected readonly resultSelectorFn: (item1: T, item2: T2[]) => R;
+    private _relation: FunctionExpression<boolean>;
+    private _resultSelector: FunctionExpression<R>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;

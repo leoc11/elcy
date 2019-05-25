@@ -8,7 +8,9 @@ export class SqlTableValueParameterExpression<T = any> extends SqlParameterExpre
         super(valueExp);
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlTableValueParameterExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const valueGetter = resolveClone(this.valueExp, replaceMap);
         const entityExp = resolveClone(this.entityExp, replaceMap);
         const clone = new SqlTableValueParameterExpression(valueGetter, entityExp);

@@ -22,12 +22,16 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
             option.name = optionOrName;
             option.defaultOrders = defaultOrders || [];
             option.allowInheritance = allowInheritance;
-            if (option.allowInheritance === undefined) { option.allowInheritance = true; }
+            if (option.allowInheritance === undefined) {
+                option.allowInheritance = true;
+            }
         }
     }
 
     return (type: IObjectType<T>) => {
-        if (!option.name) { option.name = type.name; }
+        if (!option.name) {
+            option.name = type.name;
+        }
         const entityMetadata = new AbstractEntityMetaData(type, option.name);
 
         if (defaultOrders) {

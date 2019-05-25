@@ -15,12 +15,12 @@ export class UnionQueryable<T> extends Queryable<T> {
         }
         return this._parameters;
     }
-    protected readonly parent2: Queryable<T>;
-    private _parameters: { [key: string]: any };
     constructor(parent: Queryable<T>, parent2: Queryable<T>, public readonly isUnionAll = false) {
         super(parent.type, parent);
         this.parent2 = parent2.parameter({ union: isUnionAll });
     }
+    protected readonly parent2: Queryable<T>;
+    private _parameters: { [key: string]: any };
     public buildQuery(queryVisitor: IQueryVisitor) {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;

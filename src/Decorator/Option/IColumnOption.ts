@@ -6,17 +6,17 @@ export interface IColumnFormatter<T, TD = any> {
     to: (source: TD) => T;
 }
 export interface IColumnOption<T = any> {
-    columnName?: string;
-    indexed?: boolean;
-    nullable?: boolean;
-    default?: () => T;
-    formatter?: IColumnFormatter<T>;
-    type?: GenericType<T>;
-    description?: string;
-    columnType?: ColumnType;
-    collation?: string;
     charset?: string;
-    isReadOnly?: boolean;
-    isProjected?: boolean;
+    collation?: string;
+    columnName?: string;
+    columnType?: ColumnType;
+    default?: () => T;
+    description?: string;
+    formatter?: IColumnFormatter<T>;
     generation?: ColumnGeneration;
+    indexed?: boolean;
+    isProjected?: boolean;
+    isReadOnly?: boolean;
+    nullable?: boolean;
+    type?: GenericType<T>;
 }

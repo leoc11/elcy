@@ -12,10 +12,9 @@ import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export class GroupedExpression<T = any> extends SelectExpression<T> {
-    public key: IExpression;
-    public groupByExp: GroupByExpression<T>;
-
-    private _groupBy: Array<IColumnExpression<T>>;
+    public get allColumns() {
+        return this.groupBy.union(super.allColumns);
+    }
     public get groupBy() {
         if (!this._groupBy) {
             this._groupBy = [];
@@ -53,9 +52,6 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         }
         return this._groupBy;
     }
-    public get allColumns() {
-        return this.groupBy.union(super.allColumns);
-    }
     public get projectedColumns(): IEnumerable<IColumnExpression<T>> {
         return super.projectedColumns.union(this.groupBy);
     }
@@ -78,6 +74,10 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
             this.paramExps = select.paramExps.slice();
         }
     }
+    public groupByExp: GroupByExpression<T>;
+    public key: IExpression;
+
+    private _groupBy: Array<IColumnExpression<T>>;
 
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
@@ -86,17 +86,10 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         joinRel.parent = this.groupByExp;
         return joinRel;
     }
-    public toString() {
-        return `Grouped({
-Entity:${this.entity.toString()},
-Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
-Where:${this.where ? this.where.toString() : ""},
-Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
-Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
-})`;
-    }
     public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const entity = resolveClone(this.entity, replaceMap);
         const clone = new GroupedExpression();
         replaceMap.set(this, clone);
@@ -127,5 +120,14 @@ Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
     }
     public hashCode() {
         return hashCode("GROUPED", super.hashCode());
+    }
+    public toString() {
+        return `Grouped({
+Entity:${this.entity.toString()},
+Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
+Where:${this.where ? this.where.toString() : ""},
+Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
+Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
+})`;
     }
 }

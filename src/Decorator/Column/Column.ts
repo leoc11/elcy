@@ -84,7 +84,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             }
         }
         descriptor = {
-            set: function(this: any, value: any) {
+            set: function (this: any, value: any) {
                 if (!oldGet && !this.hasOwnProperty(privatePropertySymbol)) {
                     Object.defineProperty(this, privatePropertySymbol, {
                         value: undefined,
@@ -113,7 +113,7 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                     }
                 }
             },
-            get: function(this: any) {
+            get: function (this: any) {
                 if (oldGet) {
                     return oldGet.apply(this);
                 }

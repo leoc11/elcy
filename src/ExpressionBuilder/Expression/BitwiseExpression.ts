@@ -4,8 +4,8 @@ import { MethodCallExpression } from "./MethodCallExpression";
 import { ValueExpression } from "./ValueExpression";
 export abstract class BitwiseExpression implements IExpression<number> {
     public type = Number;
-    public abstract hashCode(): number;
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): BitwiseExpression;
+    public abstract hashCode(): number;
     protected convertOperand(operand: IExpression): IExpression<number> {
         if (operand.type === String) {
             operand = new FunctionCallExpression(new ValueExpression(parseInt), [operand], "parseInt");

@@ -63,14 +63,14 @@ export enum UnaryPosition {
     Postfix = 0x1
 }
 export interface IOperatorPrecedence {
-    precedence: number;
     associativity: Associativity;
+    precedence: number;
 }
 export interface IOperator {
-    precedence: IOperatorPrecedence;
-    identifier: string;
-    type: OperatorType;
     expressionFactory?: (...params: any[]) => IExpression;
+    identifier: string;
+    precedence: IOperatorPrecedence;
+    type: OperatorType;
 }
 export interface IUnaryOperator extends IOperator {
     position: UnaryPosition;

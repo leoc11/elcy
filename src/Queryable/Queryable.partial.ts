@@ -28,30 +28,30 @@ import { WhereQueryable } from "./WhereQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
-        parameter(params: { [key: string]: any }): Queryable<T>;
+        crossJoin<T2, TResult>(array2: Queryable<T2>, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
+        distinct(): Queryable<T>;
+        except(array2: Queryable<T>): Queryable<T>;
+        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
+        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<K, T>>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2[]) => TResult): Queryable<TResult>;
+        include(...includes: Array<(item: T) => any>): Queryable<T>;
+        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
+        intersect(array2: Queryable<T>): Queryable<T>;
+        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
         option(option: IQueryOption): Queryable<T>;
+        orderBy(...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T>;
+        parameter(params: { [key: string]: any }): Queryable<T>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
+        project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
+        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
         select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;
-        where(predicate: (item: T) => boolean): Queryable<T>;
-        orderBy(...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
-        groupBy<K>(keySelector: (item: T) => K): Queryable<GroupedEnumerable<K, T>>;
-        distinct(): Queryable<T>;
-        project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
-        include(...includes: Array<(item: T) => any>): Queryable<T>;
         union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
-        intersect(array2: Queryable<T>): Queryable<T>;
-        except(array2: Queryable<T>): Queryable<T>;
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2[]) => TResult): Queryable<TResult>;
-        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2) => TResult): Queryable<TResult>;
-        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T, item2: T2 | null) => TResult): Queryable<TResult>;
-        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
-        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        crossJoin<T2, TResult>(array2: Queryable<T2>, resultSelector?: (item1: T | null, item2: T2 | null) => TResult): Queryable<TResult>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
+        where(predicate: (item: T) => boolean): Queryable<T>;
     }
 }
 

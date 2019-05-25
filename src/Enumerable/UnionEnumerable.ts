@@ -6,8 +6,12 @@ export class UnionEnumerable<T = any> extends Enumerable<T> {
     }
     protected *generator() {
         if (this.isUnionAll) {
-            for (const value of this.parent) { yield value; }
-            for (const value of this.parent2) { yield value; }
+            for (const value of this.parent) {
+                yield value;
+            }
+            for (const value of this.parent2) {
+                yield value;
+            }
         }
         else {
             const result: T[] = [];

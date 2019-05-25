@@ -15,10 +15,10 @@ export class ExceptQueryable<T> extends Queryable<T> {
         }
         return this._parameters;
     }
-    private _parameters: { [key: string]: any };
     constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T>) {
         super(parent.type, parent);
     }
+    private _parameters: { [key: string]: any };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;

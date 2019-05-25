@@ -42,7 +42,7 @@ function toRegExp(pattern: string, escape: string = "\\") {
 
     return new RegExp(regexStr + "$");
 }
-String.prototype.like = function(this: string, pattern: string, escape = "\\") {
+String.prototype.like = function (this: string, pattern: string, escape = "\\") {
     const regex = toRegExp(pattern || "", escape);
     return regex.test(this);
 };

@@ -12,28 +12,28 @@ import { IIndexMetaData } from "./IIndexMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
 export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
-    name: string;
-    schema?: string;
-    defaultOrders?: Array<IOrderQueryDefinition<TE>>;
-    primaryKeys: Array<IColumnMetaData<TE>>;
-    versionColumn?: RowVersionColumnMetaData<TE>;
-    deletedColumn?: BooleanColumnMetaData<TE>;
-    createDateColumn?: DateTimeColumnMetaData<TE>;
-    modifiedDateColumn?: DateTimeColumnMetaData<TE>;
-    columns: Array<IColumnMetaData<TE>>;
-    indices?: Array<IIndexMetaData<TE>>;
-    constraints?: Array<IConstraintMetaData<TE>>;
-    type: IObjectType<TE>;
-    descriminatorMember?: string;
     allowInheritance?: boolean;
-    inheritance: InheritanceMetaData<TParent>;
-    relations?: Array<IRelationMetaData<TE>>;
-    embeds?: Array<EmbeddedRelationMetaData<TE>>;
-    priority?: number;
-    hasIncrementPrimary?: boolean;
-    isReadOnly?: boolean;
+    columns: Array<IColumnMetaData<TE>>;
     concurrencyMode?: ConcurrencyModel;
+    constraints?: Array<IConstraintMetaData<TE>>;
+    createDateColumn?: DateTimeColumnMetaData<TE>;
+    defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    deletedColumn?: BooleanColumnMetaData<TE>;
+    descriminatorMember?: string;
+    embeds?: Array<EmbeddedRelationMetaData<TE>>;
+    hasIncrementPrimary?: boolean;
+    indices?: Array<IIndexMetaData<TE>>;
+    inheritance: InheritanceMetaData<TParent>;
 
     insertGeneratedColumns?: Array<IColumnMetaData<TE>>;
+    isReadOnly?: boolean;
+    modifiedDateColumn?: DateTimeColumnMetaData<TE>;
+    name: string;
+    primaryKeys: Array<IColumnMetaData<TE>>;
+    priority?: number;
+    relations?: Array<IRelationMetaData<TE>>;
+    schema?: string;
+    type: IObjectType<TE>;
     updateGeneratedColumns?: Array<IColumnMetaData<TE>>;
+    versionColumn?: RowVersionColumnMetaData<TE>;
 }

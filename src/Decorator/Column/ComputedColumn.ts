@@ -20,7 +20,7 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
         const descriptor: PropertyDescriptor = {
             configurable: true,
             enumerable: true,
-            get: function(this: T) {
+            get: function (this: T) {
                 const value = (this as any)[privatePropertySymbol];
                 if (typeof value === "undefined") {
                     try {
@@ -29,7 +29,7 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
                 }
                 return value;
             },
-            set: function(this: any, value: R) {
+            set: function (this: any, value: R) {
                 if (!this.hasOwnProperty(privatePropertySymbol)) {
                     Object.defineProperty(this, privatePropertySymbol, {
                         configurable: true,

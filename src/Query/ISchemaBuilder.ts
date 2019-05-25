@@ -7,8 +7,8 @@ import { ISchemaQuery } from "./ISchemaQuery";
 
 export interface ISchemaBuilder {
     connection: IConnection;
-    queryBuilder: IQueryBuilder;
     option: ISchemaBuilderOption;
+    queryBuilder: IQueryBuilder;
     getSchemaQuery(entityTypes: IObjectType[]): Promise<ISchemaQuery>;
     loadSchemas(entities: Array<IEntityMetaData<any>>): Promise<IEntityMetaData[]>;
 }

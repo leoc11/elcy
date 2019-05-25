@@ -22,7 +22,9 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
             option.name = optionOrName;
             option.defaultOrders = defaultOrders || [];
             option.allowInheritance = allowInheritance;
-            if (option.allowInheritance === undefined) { option.allowInheritance = true; }
+            if (option.allowInheritance === undefined) {
+                option.allowInheritance = true;
+            }
         }
     }
 

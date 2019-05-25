@@ -7,17 +7,9 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
 export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
-    public type: GenericType<T>;
-    public propertyName: keyof TE;
-    public columnName: string;
-    public alias?: string;
     public get dataPropertyName() {
         return this.alias || this.columnName;
     }
-    public columnMeta: IColumnMetaData<TE, T>;
-    public entity: IEntityExpression<TE>;
-    public isPrimary: boolean;
-    public isNullable: boolean;
     constructor(entity: IEntityExpression<TE>, columnMeta: IColumnMetaData<TE, T>, isPrimary?: boolean);
     constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: keyof TE, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
     constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | keyof TE, columnName?: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType) {
@@ -38,11 +30,18 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
             this.isNullable = isNullable;
         }
     }
-    public toString(): string {
-        return `Column(${this.propertyName})`;
-    }
+    public alias?: string;
+    public columnMeta: IColumnMetaData<TE, T>;
+    public columnName: string;
+    public entity: IEntityExpression<TE>;
+    public isNullable: boolean;
+    public isPrimary: boolean;
+    public propertyName: keyof TE;
+    public type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const entity = resolveClone(this.entity, replaceMap);
         const clone = new ColumnExpression(entity, this.type, this.propertyName, this.columnName, this.isPrimary, this.isNullable);
         clone.columnMeta = this.columnMeta;
@@ -53,5 +52,8 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     }
     public hashCode() {
         return hashCode(this.propertyName, hashCode(this.columnName, this.entity.hashCode()));
+    }
+    public toString(): string {
+        return `Column(${this.propertyName})`;
     }
 }

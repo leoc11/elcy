@@ -14,8 +14,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
-    protected readonly selectorsFn: Array<IOrderQueryDefinition<T>>;
-    protected _selectors: Array<ArrayValueExpression<FunctionExpression | IExpression<OrderDirection>>>;
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select((o) => {
@@ -36,6 +34,8 @@ export class OrderQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
         this.selectorsFn = selectors;
     }
+    protected _selectors: Array<ArrayValueExpression<FunctionExpression | IExpression<OrderDirection>>>;
+    protected readonly selectorsFn: Array<IOrderQueryDefinition<T>>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const selectors = this.selectors.map((o) => o.clone());

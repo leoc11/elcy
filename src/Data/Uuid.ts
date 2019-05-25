@@ -3,6 +3,12 @@ const toHex = (u: number) => {
     return a.length < 2 ? "0" + a : a;
 };
 export class Uuid extends Uint8Array {
+    constructor(uuid?: string) {
+        super(16);
+        if (uuid) {
+            this.parse(uuid);
+        }
+    }
     public static readonly empty = new Uuid();
     public static new() {
         const res = new Uuid();
@@ -16,14 +22,10 @@ export class Uuid extends Uint8Array {
         res[8] |= 0x80;
         return res;
     }
-    constructor(uuid?: string) {
-        super(16);
-        if (uuid) { this.parse(uuid); }
-    }
     public [Symbol.toPrimitive]() {
         return this.toString();
     }
-    public valueOf() {
+    public toJSON() {
         return this.toString();
     }
     public toString() {
@@ -44,7 +46,7 @@ export class Uuid extends Uint8Array {
         }
         return res;
     }
-    public toJSON() {
+    public valueOf() {
         return this.toString();
     }
     protected parse(uuid: string) {

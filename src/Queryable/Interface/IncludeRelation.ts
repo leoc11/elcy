@@ -9,12 +9,6 @@ import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 
 export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T, TChild> {
-    public get parentColumns() {
-        if (!this._parentColumns) {
-            this.analyzeRelation();
-        }
-        return this._parentColumns;
-    }
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -27,19 +21,12 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         }
         return this._isManyManyRelation;
     }
-    //#endregion
-
-    //#region Properties
-    public parent: SelectExpression<T>;
-    public child: SelectExpression<TChild>;
-    public relation: IExpression<boolean>;
-    public type: RelationshipType;
-    public name: string;
-    public isEmbedded: boolean;
-
-    private _parentColumns: IColumnExpression[];
-    private _childColumns: IColumnExpression[];
-    private _isManyManyRelation: boolean;
+    public get parentColumns() {
+        if (!this._parentColumns) {
+            this.analyzeRelation();
+        }
+        return this._parentColumns;
+    }
     constructor();
     constructor(parent: SelectExpression<T>, child: SelectExpression<TChild>, name: string, type: RelationshipType, relations?: IExpression<boolean>);
     constructor(parent?: SelectExpression<T>, child?: SelectExpression<TChild>, name?: string, type?: RelationshipType, relations?: IExpression<boolean>) {
@@ -51,11 +38,19 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
             this.name = name;
         }
     }
-    public * relationMap() {
-        for (let i = 0, len = this.parentColumns.length; i < len; i++) {
-            yield [this.parentColumns[i], this.childColumns[i]];
-        }
-    }
+    public child: SelectExpression<TChild>;
+    public isEmbedded: boolean;
+    public name: string;
+    //#endregion
+
+    //#region Properties
+    public parent: SelectExpression<T>;
+    public relation: IExpression<boolean>;
+    public type: RelationshipType;
+    private _childColumns: IColumnExpression[];
+    private _isManyManyRelation: boolean;
+
+    private _parentColumns: IColumnExpression[];
     //#endregion
 
     //#region Methods
@@ -68,9 +63,16 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
         const parent = resolveClone(this.parent, replaceMap);
         const relation = resolveClone(this.relation, replaceMap);
         const clone = new IncludeRelation(parent, child, this.name, this.type, relation);
-        if (child !== this.child) { child.parentRelation = clone; }
+        if (child !== this.child) {
+            child.parentRelation = clone;
+        }
         clone.isEmbedded = this.isEmbedded;
         return clone;
+    }
+    public * relationMap() {
+        for (let i = 0, len = this.parentColumns.length; i < len; i++) {
+            yield [this.parentColumns[i], this.childColumns[i]];
+        }
     }
 
     private analyzeRelation() {

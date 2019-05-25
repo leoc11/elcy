@@ -10,8 +10,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class SelectManyQueryable<S, T> extends Queryable<T> {
-    protected readonly selectorFn: ((item: S) => T[] | Queryable<T>);
-    protected _selector: FunctionExpression<T[] | Queryable<T>>;
     protected get selector() {
         if (!this._selector && this.selectorFn) {
             this._selector = ExpressionBuilder.parse<T[] | Queryable<T>>(this.selectorFn, [this.parent.type], this.parameters);
@@ -30,6 +28,8 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
             this.selectorFn = selector;
         }
     }
+    protected _selector: FunctionExpression<T[] | Queryable<T>>;
+    protected readonly selectorFn: ((item: S) => T[] | Queryable<T>);
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
         const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector.clone()]);

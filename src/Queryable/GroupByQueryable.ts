@@ -10,8 +10,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
-    protected readonly keySelectorFn: (item: T) => K;
-    private _keySelector: FunctionExpression;
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn) {
             this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, [this.parent.type], this.parameters);
@@ -30,6 +28,8 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
             this.keySelectorFn = keySelector;
         }
     }
+    protected readonly keySelectorFn: (item: T) => K;
+    private _keySelector: FunctionExpression;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<K, T>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector.clone()]);

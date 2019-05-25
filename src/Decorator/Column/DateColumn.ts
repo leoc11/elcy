@@ -10,8 +10,12 @@ export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: D
     let option: IDateColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
-        if (defaultValue !== undefined) { option.default = defaultValue; }
-        if (dbtype !== undefined) { option.columnType = dbtype; }
+        if (defaultValue !== undefined) {
+            option.default = defaultValue;
+        }
+        if (dbtype !== undefined) {
+            option.columnType = dbtype;
+        }
     }
     else if (optionOrName) {
         option = optionOrName;

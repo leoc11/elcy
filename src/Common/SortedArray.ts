@@ -2,20 +2,14 @@ export class SortedArray<T> extends Array<T> {
     public set length(value: number) {
         this.splice(value);
     }
-    public static create<T>(compareFunction: (item1: T, item2: T) => number, ...items: T[]): SortedArray<T> {
-        return new SortedArray(compareFunction, ...items);
-    }
     public constructor(protected comparator: (item1: T, item2: T) => number, ...items: T[]) {
         super(...items);
         Object.setPrototypeOf(this, SortedArray.prototype);
     }
-    public push(...items: T[]) {
-        for (const o of items) {
-            this.addItem(o);
-        }
-        return this.length;
+    public static create<T>(compareFunction: (item1: T, item2: T) => number, ...items: T[]): SortedArray<T> {
+        return new SortedArray(compareFunction, ...items);
     }
-    public unshift(...items: T[]) {
+    public push(...items: T[]) {
         for (const o of items) {
             this.addItem(o);
         }
@@ -27,6 +21,12 @@ export class SortedArray<T> extends Array<T> {
             this.addItem(o);
         }
         return result;
+    }
+    public unshift(...items: T[]) {
+        for (const o of items) {
+            this.addItem(o);
+        }
+        return this.length;
     }
     protected addItem(item: T, start = 0, end = this.length - 1) {
         if (this.length <= 0) {

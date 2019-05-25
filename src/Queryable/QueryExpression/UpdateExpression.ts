@@ -20,29 +20,26 @@ import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 export class UpdateExpression<T = any> implements IQueryExpression<void> {
-    public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
-    public select: SelectExpression<T>;
-    public option: IQueryOption;
+    public get entity() {
+        return this.select.entity as EntityExpression<T>;
+    }
+    public get joins() {
+        return this.select.joins;
+    }
+    public get orders() {
+        return this.select.orders;
+    }
+    public get paging() {
+        return this.select.paging;
+    }
     public get paramExps() {
         return this.select.paramExps;
     }
     public set paramExps(value) {
         this.select.paramExps = value;
     }
-    public get joins() {
-        return this.select.joins;
-    }
     public get type() {
         return undefined as any;
-    }
-    public get entity() {
-        return this.select.entity as EntityExpression<T>;
-    }
-    public get paging() {
-        return this.select.paging;
-    }
-    public get orders() {
-        return this.select.orders;
     }
     public get where() {
         return this.select.where;
@@ -63,21 +60,21 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         }
         this.setter = setter;
     }
-    public addWhere(expression: IExpression<boolean>) {
-        this.select.addWhere(expression);
-    }
-    public setOrder(orders: IOrderExpression[]): void;
-    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.setOrder(expression as any, direction);
-    }
+    public queryOption: IQueryOption;
+    public select: SelectExpression<T>;
+    public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as any, type);
     }
+    public addWhere(expression: IExpression<boolean>) {
+        this.select.addWhere(expression);
+    }
     public clone(replaceMap?: Map<IExpression, IExpression>): UpdateExpression<T> {
-        if (!replaceMap) { replaceMap = new Map(); }
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
         const select = resolveClone(this.select, replaceMap);
         const setter: { [key in keyof T]?: IExpression<T[key]> } = {};
         for (const prop in this.setter) {
@@ -87,13 +84,8 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         replaceMap.set(this, clone);
         return clone;
     }
-    public toString(): string {
-        let setter = "";
-        for (const prop in this.setter) {
-            const val = this.setter[prop];
-            setter += `${prop}:${val.toString()},\n`;
-        }
-        return `Update(${this.entity.toString()}, {${setter}})`;
+    public getEffectedEntities(): IObjectType[] {
+        return this.entity.entityTypes;
     }
     public hashCode() {
         let code = 0;
@@ -102,8 +94,18 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         }
         return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
     }
-    public getEffectedEntities(): IObjectType[] {
-        return this.entity.entityTypes;
+    public setOrder(orders: IOrderExpression[]): void;
+    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
+        this.select.setOrder(expression as any, direction);
+    }
+    public toString(): string {
+        let setter = "";
+        for (const prop in this.setter) {
+            const val = this.setter[prop];
+            setter += `${prop}:${val.toString()},\n`;
+        }
+        return `Update(${this.entity.toString()}, {${setter}})`;
     }
 }
 
@@ -121,7 +123,9 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
     switch (entityMeta.concurrencyMode) {
         case "OPTIMISTIC VERSION": {
             const versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
-            if (!versionCol) { throw new Error(`${entityMeta.name} did not have version column`); }
+            if (!versionCol) {
+                throw new Error(`${entityMeta.name} did not have version column`);
+            }
 
             const parameter = new SqlParameterExpression(new ParameterExpression("", versionCol.type), versionCol);
             queryParameters.set(parameter, { value: entity[versionCol.propertyName] });

@@ -9,8 +9,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class DistinctQueryable<T> extends Queryable<T> {
-    protected readonly selectorFn?: (item: T) => any;
-    private _selector?: FunctionExpression;
     protected get selector() {
         if (!this._selector && this.selectorFn) {
             this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type], this.parameters);
@@ -23,6 +21,8 @@ export class DistinctQueryable<T> extends Queryable<T> {
     constructor(public readonly parent: Queryable<T>) {
         super(parent.type, parent);
     }
+    protected readonly selectorFn?: (item: T) => any;
+    private _selector?: FunctionExpression;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodParams = [];

@@ -5,7 +5,6 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 
 export class OptionQueryable<T> extends Queryable<T> {
-    private _queryOption: IQueryOption;
     public get queryOption() {
         return this._queryOption;
     }
@@ -13,6 +12,13 @@ export class OptionQueryable<T> extends Queryable<T> {
         super(parent.type, parent);
         this._queryOption = clone(this.parent.queryOption);
         this.option(option);
+    }
+    private _queryOption: IQueryOption;
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
+        return this.parent.buildQuery(queryVisitor);
+    }
+    public hashCode() {
+        return this.parent.hashCode();
     }
     public option(option: IQueryOption) {
         for (const prop in option) {
@@ -28,11 +34,5 @@ export class OptionQueryable<T> extends Queryable<T> {
             }
         }
         return this;
-    }
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        return this.parent.buildQuery(queryVisitor);
-    }
-    public hashCode() {
-        return this.parent.hashCode();
     }
 }

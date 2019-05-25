@@ -3,11 +3,11 @@ import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
 
 export class IndexMetaData<TE = any> implements IIndexMetaData<TE> {
-    public columns: Array<IColumnMetaData<TE>> = [];
-    public unique = false;
     constructor(public entity: IEntityMetaData<TE>, public name: string, ...members: Array<IColumnMetaData<TE>>) {
         this.columns = members;
     }
+    public columns: Array<IColumnMetaData<TE>> = [];
+    public unique = false;
     /**
      * Apply index option
      */

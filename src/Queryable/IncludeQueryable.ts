@@ -9,8 +9,6 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class IncludeQueryable<T> extends Queryable<T> {
-    protected readonly selectorsFn: Array<(item: T) => any>;
-    private _selectors: FunctionExpression[];
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
             this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters)).toArray();
@@ -30,6 +28,8 @@ export class IncludeQueryable<T> extends Queryable<T> {
             this.selectorsFn = selectors as any;
         }
     }
+    protected readonly selectorsFn: Array<(item: T) => any>;
+    private _selectors: FunctionExpression[];
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const selectors = this.selectors.map((o) => o.clone());

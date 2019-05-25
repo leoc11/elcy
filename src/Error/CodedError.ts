@@ -1,7 +1,4 @@
 export class CodedError extends Error {
-    public readonly code: number;
-    public readonly message: string;
-    public readonly innerError: Error;
     constructor(code: number, message: string);
     constructor(code: number, error: Error);
     constructor(code: number, messageOrError: string | Error) {
@@ -21,4 +18,7 @@ export class CodedError extends Error {
         this.stack = (new Error()).stack;
         this.innerError = error;
     }
+    public readonly code: number;
+    public readonly innerError: Error;
+    public readonly message: string;
 }

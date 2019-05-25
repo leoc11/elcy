@@ -10,20 +10,6 @@ import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { RelationDataMetaData } from "./RelationDataMetaData";
 
 export class RelationMetaData<TSource = any, TTarget = any> implements IRelationMetaData<TSource, TTarget> {
-    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
-    public propertyName: keyof TSource;
-    public reverseRelation: IRelationMetaData<TTarget, TSource>;
-    public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
-    public source: IEntityMetaData<TSource>;
-    public target: IEntityMetaData<TTarget>;
-    public name: string;
-    public fullName: string;
-    public relationType: RelationshipType;
-    public relationColumns: Array<IColumnMetaData<TSource>> = [];
-    public isMaster: boolean;
-    public updateOption?: ReferenceOption;
-    public deleteOption?: ReferenceOption;
-    public nullable?: boolean;
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
@@ -62,6 +48,20 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
                 return col;
             }).toArray();
     }
+    public deleteOption?: ReferenceOption;
+    public fullName: string;
+    public isMaster: boolean;
+    public name: string;
+    public nullable?: boolean;
+    public propertyName: keyof TSource;
+    public relationColumns: Array<IColumnMetaData<TSource>> = [];
+    public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
+    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    public relationType: RelationshipType;
+    public reverseRelation: IRelationMetaData<TTarget, TSource>;
+    public source: IEntityMetaData<TSource>;
+    public target: IEntityMetaData<TTarget>;
+    public updateOption?: ReferenceOption;
     public completeRelation(reverseRelation: IRelationMetaData<TTarget, TSource>) {
         if (this.isMaster) {
             this.relationMaps = new Map();

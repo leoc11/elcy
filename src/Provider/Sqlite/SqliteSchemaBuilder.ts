@@ -35,6 +35,26 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
         ["defaultString", { columnType: "text" }],
         ["defaultRowVersion", { columnType: "numeric" }]
     ]);
+    public addForeignKey(relationMeta: IRelationMetaData): IQuery[] {
+        return [];
+    }
+    public dropForeignKey(relationMeta: IRelationMetaData): IQuery[] {
+        return [];
+    }
+
+    public dropTable<TE>(entityMeta: IEntityMetaData<TE>): IQuery[] {
+        const result = super.dropTable(entityMeta);
+        result.unshift({
+            query: "PRAGMA foreign_keys = OFF",
+            type: QueryType.DCL
+        });
+        result.push({
+            query: "PRAGMA foreign_keys = ON",
+            type: QueryType.DCL
+        });
+
+        return result;
+    }
     public async loadSchemas(entities: Array<IEntityMetaData<any>>) {
         const nameReg = /CONSTRAINT "([^"]+)"/i;
         const checkDefReg = /CHECK\s*\((.*)\)/i;
@@ -156,7 +176,9 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
                     entity: entity,
                     columns: [],
                     definition: defStr,
-                    getDefinitionString: function() { return this.definition as string; }
+                    getDefinitionString: function () {
+                        return this.definition as string;
+                    }
                 };
                 entity.constraints.push(check);
             }
@@ -232,26 +254,6 @@ export class SqliteSchemaBuilder extends RelationSchemaBuilder {
         }
 
         return Object.keys(result).select((o) => result[o]).toArray();
-    }
-
-    public dropTable<TE>(entityMeta: IEntityMetaData<TE>): IQuery[] {
-        const result = super.dropTable(entityMeta);
-        result.unshift({
-            query: "PRAGMA foreign_keys = OFF",
-            type: QueryType.DCL
-        });
-        result.push({
-            query: "PRAGMA foreign_keys = ON",
-            type: QueryType.DCL
-        });
-
-        return result;
-    }
-    public dropForeignKey(relationMeta: IRelationMetaData): IQuery[] {
-        return [];
-    }
-    public addForeignKey(relationMeta: IRelationMetaData): IQuery[] {
-        return [];
     }
     public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(entityMetaData)} RENAME TO ${this.queryBuilder.enclose(newName)}`;

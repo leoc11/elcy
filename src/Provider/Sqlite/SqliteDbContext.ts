@@ -1,5 +1,3 @@
-import { IConnectionManager } from "../../Connection/IConnectionManager";
-import { IDriver } from "../../Connection/IDriver";
 import { DbContext } from "../../Data/DBContext";
 import { IQuery } from "../../Query/IQuery";
 import { NamingStrategy } from "../../Query/NamingStrategy";
@@ -9,20 +7,15 @@ import { RelationQueryVisitor } from "../Relation/RelationQueryVisitor";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
 const namingStrategy = new NamingStrategy();
-export abstract class SqliteDbContext extends DbContext {
-    public queryParser = POJOQueryResultParser;
+export abstract class SqliteDbContext extends DbContext<"sqlite"> {
+    public dbType: "sqlite" = "sqlite";
     public queryBuilderType = SqliteQueryBuilder;
+    public queryParser = POJOQueryResultParser;
     public schemaBuilderType = SqliteSchemaBuilder;
-    public dbType: any;
-    protected queryVisitorType = RelationQueryVisitor;
-    protected queryResultParserType = POJOQueryResultParser;
     protected namingStrategy = namingStrategy;
+    protected queryResultParserType = POJOQueryResultParser;
+    protected queryVisitorType = RelationQueryVisitor;
     protected translator = mssqlQueryTranslator;
-    constructor(driverFactory: () => IDriver<"sqlite">);
-    constructor(connectionManagerFactory: () => IConnectionManager);
-    constructor(factory: () => IConnectionManager | IDriver<"sqlite">) {
-        super(factory);
-    }
     public mergeQueryCommands(queries: IQuery[]): IQuery[] {
         return queries;
     }

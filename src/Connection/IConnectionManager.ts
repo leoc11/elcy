@@ -3,6 +3,6 @@ import { IDriver } from "./IDriver";
 
 export interface IConnectionManager {
     readonly driver: IDriver;
-    getConnection(writable?: boolean): Promise<IConnection>;
     getAllConnections(): Promise<IConnection[]>;
+    getConnection(writable?: boolean): Promise<IConnection>;
 }

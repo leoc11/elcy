@@ -21,9 +21,6 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
         }
         return this._definition;
     }
-    public columns: Array<IColumnMetaData<TE>>;
-    private checkFn: (entity: TE) => boolean;
-    private _definition: IExpression<boolean> | string;
     constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: ((entity: TE) => boolean) | IExpression<boolean>) {
         if (definition instanceof Function) {
             this.checkFn = definition;
@@ -32,6 +29,9 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
             this._definition = definition;
         }
     }
+    public columns: Array<IColumnMetaData<TE>>;
+    private _definition: IExpression<boolean> | string;
+    private checkFn: (entity: TE) => boolean;
     public getDefinitionString(queryBuilder: RelationQueryBuilder) {
         if (typeof this.definition === "string") {
             return this.definition;

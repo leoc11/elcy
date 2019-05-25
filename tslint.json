@@ -6,6 +6,11 @@
             false,
             110
         ],
+        "no-unused-expression": [
+            true,
+            "allow-fast-null-checks",
+            "allow-new"
+        ],
         "trailing-comma": [
             true,
             {
@@ -15,16 +20,48 @@
         ],
         "no-bitwise": false,
         "unified-signatures": false,
-        "object-literal-sort-keys": [
+        "object-literal-sort-keys": false,
+        "member-ordering": [
             true,
-            "ignore-case",
-            "match-declaration-order",
-            "shorthand-first"
+            {
+                "order": [
+                    "public-constructor",
+                    "protected-constructor",
+                    "private-constructor",
+                    "public-static-field",
+                    "protected-static-field",
+                    "private-static-field",
+                    "public-static-method",
+                    "protected-static-method",
+                    "private-static-method",
+                    "public-instance-field",
+                    "protected-instance-field",
+                    "private-instance-field",
+                    "public-instance-method",
+                    "protected-instance-method",
+                    "private-instance-method"
+                ],
+                "alphabetize": true
+            }
+        ],
+        "space-before-function-paren": [
+            true,
+            {
+                "method": "never",
+                "constructor": "never",
+                "named": "never",
+                "anonymous": "always",
+                "asyncArrow": "always"
+            }
         ],
         "only-arrow-functions": false,
         "forin": false,
         "ban-types": false,
         "interface-name": false,
+        "curly": [
+            true,
+            "ignore-same-line"
+        ],
         "comment-format": [
             true,
             "check-space"

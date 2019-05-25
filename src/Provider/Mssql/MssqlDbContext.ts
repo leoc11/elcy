@@ -1,6 +1,4 @@
 import { QueryType } from "../../Common/Type";
-import { IConnectionManager } from "../../Connection/IConnectionManager";
-import { IDriver } from "../../Connection/IDriver";
 import { DbContext } from "../../Data/DBContext";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
@@ -21,20 +19,21 @@ import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 
 export abstract class MssqlDbContext extends DbContext<"mssql"> {
     public dbType: "mssql" = "mssql";
-    protected queryBuilderType = MssqlQueryBuilder;
-    protected schemaBuilderType = MssqlSchemaBuilder;
-    protected queryVisitorType = RelationQueryVisitor;
-    protected queryResultParserType = POJOQueryResultParser;
     protected namingStrategy = new NamingStrategy();
+    protected queryBuilderType = MssqlQueryBuilder;
+    protected queryResultParserType = POJOQueryResultParser;
+    protected queryVisitorType = RelationQueryVisitor;
+    protected schemaBuilderType = MssqlSchemaBuilder;
     protected translator = mssqlQueryTranslator;
-    constructor(factory?: () => IConnectionManager | IDriver<"mssql">) {
-        super(factory);
-    }
     protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor): Array<DeferredQuery<IQueryResult>> {
-        if (!visitor) { visitor = this.queryVisitor; }
+        if (!visitor) {
+            visitor = this.queryVisitor;
+        }
         const results: DeferredQuery[] = [];
 
-        if (!entries.any()) { return results; }
+        if (!entries.any()) {
+            return results;
+        }
 
         const entityExp = new EntityExpression<T>(entityMetaData.type, visitor.newAlias());
         const relations = entityMetaData.relations

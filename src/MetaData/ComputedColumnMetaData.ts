@@ -5,14 +5,9 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {
-    public entity: IEntityMetaData<TE>;
-    public description: string;
-    public functionExpression: FunctionExpression<T>;
     public get type(): GenericType<T> {
         return this.functionExpression.type;
     }
-    public columnName = "";
-    public propertyName: keyof TE;
     constructor();
     constructor(entity: IEntityMetaData<TE>, fn: (item: TE) => T, propertyName: keyof TE)
     constructor(entity?: IEntityMetaData<TE>, fn?: (item: TE) => T, propertyName?: keyof TE) {
@@ -26,6 +21,11 @@ export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaDat
             this.propertyName = propertyName;
         }
     }
+    public columnName = "";
+    public description: string;
+    public entity: IEntityMetaData<TE>;
+    public functionExpression: FunctionExpression<T>;
+    public propertyName: keyof TE;
     public applyOption(option: ComputedColumnMetaData<TE>): void {
         if (typeof option.functionExpression !== "undefined") {
             this.functionExpression = option.functionExpression;

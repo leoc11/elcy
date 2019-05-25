@@ -8,23 +8,6 @@ import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
 
 export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
-    public column: EmbeddedRelationMetaData<TP, T>;
-    constructor(public dbSet: DbSet<T>, public entity: T, public parentEntry: EntityEntry<TP>) {
-        super(dbSet, entity, null);
-        let propertyChangeHandler: IEventHandler<T> = entity[propertyChangeHandlerMetaKey];
-        if (!propertyChangeHandler) {
-            let propertyChangeDispatcher: any;
-            [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
-            entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
-        }
-        propertyChangeHandler.add(this.onPropertyChanged);
-
-        const parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
-        if (!parentPropertyChangeHandler) {
-            parentPropertyChangeHandler.add(this.onParentPropertyChange);
-        }
-    }
 
     public get state() {
         return super.state;
@@ -50,6 +33,23 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             }
         }
     }
+    constructor(public dbSet: DbSet<T>, public entity: T, public parentEntry: EntityEntry<TP>) {
+        super(dbSet, entity, null);
+        let propertyChangeHandler: IEventHandler<T> = entity[propertyChangeHandlerMetaKey];
+        if (!propertyChangeHandler) {
+            let propertyChangeDispatcher: any;
+            [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
+            entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
+            entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
+        }
+        propertyChangeHandler.add(this.onPropertyChanged);
+
+        const parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
+        if (!parentPropertyChangeHandler) {
+            parentPropertyChangeHandler.add(this.onParentPropertyChange);
+        }
+    }
+    public column: EmbeddedRelationMetaData<TP, T>;
     private onParentPropertyChange(entity: TP, param: IChangeEventParam<TP, T>) {
         if (param.column === this.column) {
             if (param.oldValue === this.entity) {

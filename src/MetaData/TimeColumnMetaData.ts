@@ -3,12 +3,12 @@ import { TimeZoneHandling } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
 import { ColumnMetaData } from "./ColumnMetaData";
 export class TimeColumnMetaData extends ColumnMetaData<TimeSpan> {
-    public columnType: TimeColumnType = "time";
-    public precision?: number;
-    public timeZoneHandling: TimeZoneHandling = "utc";
     constructor() {
         super(TimeSpan);
     }
+    public columnType: TimeColumnType = "time";
+    public precision?: number;
+    public timeZoneHandling: TimeZoneHandling = "utc";
     public applyOption(columnMeta: TimeColumnMetaData) {
         super.applyOption(columnMeta);
         if (typeof columnMeta.timeZoneHandling !== "undefined") {

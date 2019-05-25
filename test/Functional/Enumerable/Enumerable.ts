@@ -9,9 +9,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.distinct();
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -25,9 +29,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.except([1, 5]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -41,9 +49,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.fullJoin([1, 5], (o, o2) => o % 2 === o2 % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -57,9 +69,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = [1, 2, 3, 4, 5].crossJoin([1, 5], (o1, o2) => o1 + o2);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -73,9 +89,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.groupBy((o) => o % 2);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -89,9 +109,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.innerJoin([0, 1], (o, o2) => o % 5 === o2 % 2, (o1, o2) => o1 + o2);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -105,9 +129,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.intersect([2, 11]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -122,9 +150,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.leftJoin([0, 1], (o, o2) => o % 2 === o2 % 2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -138,9 +170,13 @@ describe("ENUMERABLE", () => {
         it("should sort by asc", () => {
             const distincts = items.orderBy([(o) => o]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -152,9 +188,13 @@ describe("ENUMERABLE", () => {
         it("should sort by desc", () => {
             const distincts = items.orderBy([(o) => o, "DESC"]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -166,9 +206,13 @@ describe("ENUMERABLE", () => {
         it("should sort by position asc, value desc", () => {
             const distincts = objArray.orderBy([(o) => o.position], [(o) => o.value, "DESC"]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -182,9 +226,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.rightJoin([0, 12], (o, o2) => o % 2 === o2, (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0));
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -198,9 +246,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.select((o) => o % 2);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -214,9 +266,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items2.selectMany((o) => o);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -230,9 +286,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items.skip(10).take(2);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -247,9 +307,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const distincts = items2.union([[5, 6]]);
             let index1 = 0;
-            for (const { } of distincts) { index1++; }
+            for (const { } of distincts) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of distincts) { index2++; }
+            for (const { } of distincts) {
+                index2++;
+            }
             const array = distincts.toArray();
 
             should();
@@ -264,9 +328,13 @@ describe("ENUMERABLE", () => {
         it("should work", () => {
             const where = items.where((o) => o % 2 === 0);
             let index1 = 0;
-            for (const { } of where) { index1++; }
+            for (const { } of where) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of where) { index2++; }
+            for (const { } of where) {
+                index2++;
+            }
             const array = where.toArray();
 
             should();
@@ -277,9 +345,13 @@ describe("ENUMERABLE", () => {
         it("should apply multiple filter", () => {
             const where = items.where((o) => o % 2 === 0).where((o) => o <= 2);
             let index1 = 0;
-            for (const { } of where) { index1++; }
+            for (const { } of where) {
+                index1++;
+            }
             let index2 = 0;
-            for (const { } of where) { index2++; }
+            for (const { } of where) {
+                index2++;
+            }
             const array = where.toArray();
 
             should();

@@ -5,7 +5,7 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export interface IQueryExpression<T = any> extends IExpression<T[]> {
     paramExps: SqlParameterExpression[];
-    option?: IQueryOption;
+    queryOption?: IQueryOption;
     clone(replaceMap?: Map<IExpression, IExpression>): IQueryExpression<T>;
     getEffectedEntities(): IObjectType[];
 }

@@ -4,7 +4,9 @@
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js"
+    "test": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js",
+    "lint": "tslint ./src/**/*.ts --format verbose",
+    "lint-fix": "tslint --fix ./src/**/*.ts --format verbose"
   },
   "repository": {
     "type": "git",

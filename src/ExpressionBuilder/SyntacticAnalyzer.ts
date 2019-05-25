@@ -15,9 +15,9 @@ import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operator
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
 interface SyntaticParameter {
     index: number;
+    paramTypes: GenericType[];
     scopedParameters: Map<string, ParameterExpression[]>;
     userParameters: { [key: string]: any };
-    paramTypes: GenericType[];
 }
 const globalObjectMaps = new Map<string, any>([
     // Global Function
@@ -76,14 +76,18 @@ const prefixOperators = operators.where((o) => o.type === OperatorType.Unary && 
 const postfixOperators = operators.where((o) => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap((o) => o.identifier);
 export class SyntacticAnalyzer {
     public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: any }) {
-        if (!userParameters) { userParameters = {}; }
-        if (!paramTypes) { paramTypes = []; }
+        if (!userParameters) {
+            userParameters = {};
+        }
+        if (!paramTypes) {
+            paramTypes = [];
+        }
 
         const param: SyntaticParameter = {
             index: 0,
+            paramTypes: paramTypes,
             scopedParameters: new Map(),
-            userParameters: userParameters,
-            paramTypes: paramTypes
+            userParameters: userParameters
         };
         const result = createExpression(param, tokens);
         return result;
@@ -311,8 +315,8 @@ function getConstructor(data: any) {
     if (data) {
         let constructor = data.constructor;
         if (constructor === Object) {
-            constructor = function Object() { };
-            Object.setPrototypeOf(constructor, Object);
+            // tslint:disable-next-line: no-empty
+            constructor = function Object() {};
             constructor.prototype = data;
         }
         return constructor;

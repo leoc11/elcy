@@ -5,11 +5,6 @@ import { IBaseRelationMetaData } from "./Interface/IBaseRelationMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class EmbeddedRelationMetaData<TS = any, TT = any> implements IBaseRelationMetaData<TS, TT> {
-    public propertyName: keyof TS;
-    public prefix?: string;
-    public source: IEntityMetaData<TS>;
-    public target: IEntityMetaData<TT>;
-    public nullable?: boolean;
     public get relationType(): RelationshipType {
         return "one";
     }
@@ -20,4 +15,9 @@ export class EmbeddedRelationMetaData<TS = any, TT = any> implements IBaseRelati
         this.prefix = option.prefix;
         this.nullable = option.nullable;
     }
+    public nullable?: boolean;
+    public prefix?: string;
+    public propertyName: keyof TS;
+    public source: IEntityMetaData<TS>;
+    public target: IEntityMetaData<TT>;
 }

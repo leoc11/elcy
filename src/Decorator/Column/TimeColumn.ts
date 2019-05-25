@@ -12,9 +12,15 @@ export function TimeColumn(optionOrName?: ITimeColumnOption | string, dbtype?: T
     let option: ITimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
-        if (defaultValue !== undefined) { option.default = defaultValue; }
-        if (dbtype !== undefined) { option.columnType = dbtype; }
-        if (timeZoneHanding !== undefined) { option.timeZoneHandling = timeZoneHanding; }
+        if (defaultValue !== undefined) {
+            option.default = defaultValue;
+        }
+        if (dbtype !== undefined) {
+            option.columnType = dbtype;
+        }
+        if (timeZoneHanding !== undefined) {
+            option.timeZoneHandling = timeZoneHanding;
+        }
     }
     else if (optionOrName) {
         option = optionOrName;
