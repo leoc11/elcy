@@ -16,7 +16,7 @@ import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaDat
 import { MockConnection } from "../../../src/Mock/MockConnection";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
-import { AutoDetail, AutoParent, Product, Order, OrderDetail } from "../../Common/Model";
+import { AutoDetail, AutoParent, Order, OrderDetail, Product } from "../../Common/Model";
 import { AutoDetailDesc } from "../../Common/Model/AutoDetailDesc";
 import { MyDb } from "../../Common/MyDb";
 
@@ -713,10 +713,50 @@ describe("DATA MANIPULATION", () => {
         // it("should remove relation data", () => {
         // });
     });
-    // describe("SAVE CHANGES", () => {
-    //     it("should bulk insert/update/delete entity and relation", () => {
-    //     });
-    //     it("should failed without changing context state", () => {
-    //     });
-    // });
+    describe("SAVE CHANGES", () => {
+        it("should bulk insert/update/delete entity and relation", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const order = new Order({ OrderId: Uuid.new(), TotalAmount: 10000 });
+            const order2 = new Order({ OrderId: Uuid.new(), TotalAmount: 10000 });
+            const orderDetail = new OrderDetail({ OrderId: order.OrderId, OrderDetailId: Uuid.new(), name: "test1" });
+            const orderDetail2 = new OrderDetail({ OrderId: order.OrderId, OrderDetailId: Uuid.new(), name: "test2" });
+            const orderDetail3 = new OrderDetail({ OrderId: order2.OrderId, OrderDetailId: Uuid.new(), name: "test3" });
+            db.attach(order);
+            db.attach(order2);
+            db.attach(orderDetail);
+            db.attach(orderDetail2);
+            db.attach(orderDetail3);
+
+            // delete
+            db.delete(orderDetail);
+            // update
+            order.TotalAmount = 20000;
+            // insert
+            const newOd = db.orderDetails.new({ OrderDetailId: Uuid.new(), OrderId: order.OrderId, name: "test2", quantity: 1 });
+            // delete relation
+            db.relationDelete(order, "OrderDetails", orderDetail2);
+            // change relation (delete, add)
+            orderDetail3.Order = order;
+
+            const effected = await db.saveChanges();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                query: "INSERT INTO [OrderDetails]([OrderDetailId], [OrderId], [ProductId], [ProductName], [Quantity], [CreatedDate], [isDeleted]) OUTPUT INSERTED.[isDeleted] AS isDeleted VALUES\n\t(@param0,@param1,DEFAULT,@param2,@param3,DEFAULT,DEFAULT);\n\nUPDATE [entity1]\nSET [entity1].[TotalAmount] = @param4\nFROM [Orders] AS [entity1]\nWHERE ([entity1].[OrderId]=@param1);\n\nUPDATE [entity2]\nSET [entity2].[OrderId] = @param1\nFROM [OrderDetails] AS [entity2]\nWHERE ([entity2].[OrderDetailId]=@param5);\n\nUPDATE [entity0]\nSET [entity0].[OrderId] = NULL\nFROM [OrderDetails] AS [entity0]\nWHERE [entity0].[OrderDetailId] IN (@param6);\n\nUPDATE [entity3]\nSET [entity3].[isDeleted] = 1\nFROM [OrderDetails] AS [entity3]\nWHERE [entity3].[OrderDetailId] IN (@param7)",
+                type: QueryType.DML | QueryType.DQL,
+                parameters: new Map<string, any>([
+                    ["param0", newOd.OrderDetailId],
+                    ["param1", newOd.OrderId],
+                    ["param2", newOd.name],
+                    ["param3", newOd.quantity],
+                    ["param4", order.TotalAmount],
+                    ["param5", orderDetail3.OrderDetailId],
+                    ["param6", orderDetail2.OrderDetailId],
+                    ["param7", orderDetail.OrderDetailId]
+                ])
+            } as IQuery);
+            effected.should.equal(5);
+        });
+        // it("should failed without changing context state", async () => {});
+    });
 });
