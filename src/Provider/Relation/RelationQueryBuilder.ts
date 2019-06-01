@@ -534,7 +534,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
                 switch (deleteOption) {
                     case "CASCADE": {
                         const childDelete = new DeleteExpression(child, deleteExp.deleteMode);
-                        if (childDelete.entity.deleteColumn && !deleteExp.queryOption.includeSoftDeleted) {
+                        if (childDelete.entity.deleteColumn && !param.option.includeSoftDeleted) {
                             childDelete.addWhere(new StrictEqualExpression(childDelete.entity.deleteColumn, new ValueExpression(false)));
                         }
                         return this.getDeleteQuery(childDelete, param.option, param.parameters);
@@ -569,7 +569,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
         }
         else {
             let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias)}` +
-                this.newLine() + `FROM ${this.enclose(deleteExp.entity.name)} AS ${this.enclose(deleteExp.entity.alias)} ` +
+                this.newLine() + `FROM ${this.enclose(deleteExp.entity.name)} AS ${this.enclose(deleteExp.entity.alias)}` +
                 this.getJoinQueryString(deleteExp.joins, param);
             if (deleteExp.where) {
                 selectQuery += this.newLine() + "WHERE " + this.toLogicalString(deleteExp.where, param);
@@ -972,7 +972,7 @@ export abstract class RelationQueryBuilder implements IQueryBuilder {
 
         let updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias)}` +
             this.newLine() + `SET ${setQuery.join(", ")}` +
-            this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)} ` +
+            this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
             this.getJoinQueryString(updateExp.joins, param);
         if (updateExp.where) {
             updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, param);

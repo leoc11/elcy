@@ -1,6 +1,6 @@
 import { IQueryCache } from "../Cache/IQueryCache";
 import { DeleteMode, GenericType, IObjectType, ObjectLike, QueryType, ValueType } from "../Common/Type";
-import { DbContext } from "../Data/DBContext";
+import { DbContext } from "../Data/DbContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -793,7 +793,6 @@ export abstract class Queryable<T = any> {
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
             const commandQuery = this.buildQuery(visitor);
-            commandQuery.queryOption = visitor.queryOption;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
             }
@@ -1026,7 +1025,6 @@ export abstract class Queryable<T = any> {
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
             const commandQuery = this.buildQuery(visitor);
-            commandQuery.queryOption = visitor.queryOption;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
             }

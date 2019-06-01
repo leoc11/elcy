@@ -9,7 +9,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { clone, hashCode, isNotNull, isValue } from "../Helper/Util";
+import { hashCode, isNotNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
@@ -23,7 +23,7 @@ import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression"
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
 import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { DbContext } from "./DBContext";
+import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 
 export class DbSet<T> extends Queryable<T> {
@@ -110,7 +110,6 @@ export class DbSet<T> extends Queryable<T> {
             valueExp.push(itemExp);
         }
         const insertExp = new InsertExpression(entityExp, valueExp);
-        insertExp.queryOption = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
         const flatParams = this.flatQueryParameter({ index: 0 });
@@ -170,7 +169,6 @@ export class DbSet<T> extends Queryable<T> {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
         const upsertExp = new UpsertExpression(entityExp, setterExp);
-        upsertExp.queryOption = clone(this.queryOption, true);
 
         const timer = Diagnostic.timer();
         const flatParams = this.flatQueryParameter({ index: 0 });

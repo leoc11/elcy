@@ -42,20 +42,20 @@ export class EmbeddedEntityEntry<T = any, TP = any> extends EntityEntry<T> {
             entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
             entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
         }
-        propertyChangeHandler.add(this.onPropertyChanged);
+        propertyChangeHandler.add((source, arg) => this.onPropertyChanged(arg));
 
         const parentPropertyChangeHandler: IEventHandler<TP> = parentEntry.entity[propertyChangeHandlerMetaKey];
         if (!parentPropertyChangeHandler) {
-            parentPropertyChangeHandler.add(this.onParentPropertyChange);
+            parentPropertyChangeHandler.add((source, arg) => this.onParentPropertyChange(arg));
         }
     }
     public column: EmbeddedRelationMetaData<TP, T>;
-    private onParentPropertyChange(entity: TP, param: IChangeEventParam<TP, T>) {
+    private onParentPropertyChange(param: IChangeEventParam<TP, T>) {
         if (param.column === this.column) {
             if (param.oldValue === this.entity) {
                 const parentChangeHandler: IEventHandler<TP, IChangeEventParam> = this.parentEntry.entity[propertyChangeHandlerMetaKey];
                 if (parentChangeHandler) {
-                    parentChangeHandler.delete(this.onParentPropertyChange);
+                    parentChangeHandler.delete((source, arg) => this.onParentPropertyChange(arg));
                 }
                 this.state = EntityState.Detached;
             }

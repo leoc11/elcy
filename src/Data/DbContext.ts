@@ -1,6 +1,6 @@
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
-import { ColumnGeneration, DbType, DeleteMode, FlatObjectLike, GenericType, IObjectType, IsolationLevel, QueryType } from "../Common/Type";
+import { ColumnGeneration, DbType, DeleteMode, FlatObjectLike, GenericType, IObjectType, IsolationLevel, KeysExceptType, QueryType, TypeItem, ValueType } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
 import { IConnectionManager } from "../Connection/IConnectionManager";
@@ -53,6 +53,7 @@ import { EntityState } from "./EntityState";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import { IDBEventListener } from "./Event/IDBEventListener";
 import { RelationEntry } from "./RelationEntry";
+import { RelationState } from "./RelationState";
 
 export type IChangeEntryMap<T extends string, TKey, TValue> = { [K in T]: Map<TKey, TValue[]> };
 const connectionManagerKey = Symbol("connectionManagerKey");
@@ -153,12 +154,14 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
     private _connectionManager: IConnectionManager;
     private _queryCacheManager: IQueryCacheManager;
     private _resultCacheManager: IResultCacheManager;
-    public add<T>(entity: T) {
-        const entry = this.attach(entity);
-        if (entry) {
-            entry.add();
+
+    //#region Entry
+    public entry<T>(entity: T) {
+        const set = this.set<T>(entity.constructor as IObjectType<T>);
+        if (set) {
+            return set.entry(entity);
         }
-        return entry;
+        return null;
     }
     public attach<T>(entity: T, all = false) {
         const entry = this.entry(entity);
@@ -170,14 +173,14 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                     if (relEntity) {
                         if (relation.relationType === "one") {
                             const relEntry = this.attach(relEntity, true);
-                            const relationEntry = this.relationEntry(entry, relation.propertyName, relEntry);
-                            relationEntry.state = EntityState.Unchanged;
+                            const relationEntry = entry.getRelation(relation.propertyName, relEntry);
+                            relationEntry.state = RelationState.Unchanged;
                         }
                         else if (Array.isArray(relEntity)) {
                             for (const itemEntity of relEntity) {
                                 const relEntry = this.attach(itemEntity, true);
-                                const relationEntry = this.relationEntry(entry, relation.propertyName, relEntry);
-                                relationEntry.state = EntityState.Unchanged;
+                                const relationEntry = entry.getRelation(relation.propertyName, relEntry);
+                                relationEntry.state = RelationState.Unchanged;
                             }
                         }
                     }
@@ -196,6 +199,71 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
 
         return entry;
     }
+    public detach<T>(entity: T) {
+        const entry = this.entry(entity);
+        if (entry && entry.state !== EntityState.Detached) {
+            entry.state = EntityState.Detached;
+        }
+        return entry;
+    }
+    public add<T>(entity: T) {
+        const entry = this.attach(entity);
+        if (entry) {
+            entry.add();
+        }
+        return entry;
+    }
+    public update<T>(entity: T, originalValues?: FlatObjectLike<T>) {
+        const entry = this.attach(entity);
+        if (entry) {
+            if (originalValues instanceof Object) {
+                entry.setOriginalValues(originalValues);
+            }
+            entry.state = EntityState.Modified;
+        }
+        return entry;
+    }
+    public delete<T>(entity: T) {
+        const entry = this.attach(entity);
+        if (entry) {
+            entry.delete();
+        }
+        return entry;
+    }
+    public relationEntry<T, TKey extends KeysExceptType<T, ValueType>>(entity1: T, propertyName: TKey, entity2: TypeItem<T[TKey]>) {
+        const entry1 = this.entry(entity1);
+        const entry2 = this.entry(entity2);
+        return entry1.getRelation(propertyName, entry2);
+    }
+    public relationAttach<T, TKey extends KeysExceptType<T, ValueType>>(entity1: T, propertyName: TKey, entity2: TypeItem<T[TKey]>) {
+        const entry = this.relationEntry(entity1, propertyName, entity2);
+        if (entry && entry.state === RelationState.Detached) {
+            entry.state = RelationState.Unchanged;
+        }
+        return entry;
+    }
+    public relationDetach<T, TKey extends KeysExceptType<T, ValueType>>(entity1: T, propertyName: TKey, entity2: TypeItem<T[TKey]>) {
+        const entry = this.relationEntry(entity1, propertyName, entity2);
+        if (entry && entry.state !== RelationState.Detached) {
+            entry.state = RelationState.Detached;
+        }
+        return entry;
+    }
+    public relationAdd<T, TKey extends KeysExceptType<T, ValueType>>(entity1: T, propertyName: TKey, entity2: TypeItem<T[TKey]>) {
+        const entry = this.relationAttach(entity1, propertyName, entity2);
+        if (entry) {
+            entry.add();
+        }
+        return entry;
+    }
+    public relationDelete<T, TKey extends KeysExceptType<T, ValueType>>(entity1: T, propertyName: TKey, entity2: TypeItem<T[TKey]>) {
+        const entry = this.relationAttach(entity1, propertyName, entity2);
+        if (entry) {
+            entry.delete();
+        }
+        return entry;
+    }
+    //#endregion
     public clear() {
         this.modifiedEmbeddedEntries.clear();
         this.relationEntries.add.clear();
@@ -256,20 +324,6 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         }).toArray(), {});
         return query;
     }
-    public delete<T>(entity: T) {
-        const entry = this.attach(entity);
-        if (entry) {
-            entry.delete();
-        }
-        return entry;
-    }
-    public entry<T>(entity: T) {
-        const set = this.set<T>(entity.constructor as IObjectType<T>);
-        if (set) {
-            return set.entry(entity);
-        }
-        return null;
-    }
     public async executeDeferred(deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) {
             deferredQueries = this.deferredQueries.splice(0);
@@ -323,7 +377,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             // cache result
             if (this.resultCacheManager) {
                 if (deferredQuery.command instanceof SelectExpression) {
-                    const queryOption = deferredQuery.command.queryOption;
+                    const queryOption = deferredQuery.queryOption;
                     if (queryOption.resultCache !== "none") {
                         if (queryOption.resultCache && !queryOption.resultCache.disableEntityAsTag) {
                             queryOption.resultCache.tags = queryOption.resultCache.tags.union(deferredQuery.command.getEffectedEntities().select((o) => `entity:${o.name}`)).distinct().toArray();
@@ -392,18 +446,6 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         return await schemaBuilder.getSchemaQuery(entityTypes);
     }
 
-    public relationEntry(entry: EntityEntry, propertyName: string, childEntry: EntityEntry) {
-        if (!childEntry) {
-            throw new Error("Child Entry null");
-        }
-
-        const relationMeta = entry.metaData.relations.first((o) => o.propertyName === propertyName);
-        if (!relationMeta) {
-            throw new Error("Relation not exist");
-        }
-
-        return entry.getRelation(relationMeta.fullName, childEntry);
-    }
     //#endregion
 
     //#region Update
@@ -670,16 +712,6 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             }
             throw e;
         }
-    }
-    public update<T>(entity: T, originalValues?: FlatObjectLike<T>) {
-        const entry = this.attach(entity);
-        if (entry) {
-            if (originalValues instanceof Object) {
-                entry.setOriginalValues(originalValues);
-            }
-            entry.state = EntityState.Modified;
-        }
-        return entry;
     }
     protected getDeleteQueries<T>(entityMeta: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, deleteMode?: DeleteMode, option?: IQueryOption): Array<DeferredQuery<IQueryResult>> {
         const results: Array<DeferredQuery<IQueryResult>> = [];

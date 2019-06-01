@@ -5,10 +5,12 @@ import { Uuid } from "../Data/Uuid";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { isNotNull } from "../Helper/Util";
+import { isNotNull, visitExpression } from "../Helper/Util";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
 import { BatchedQuery } from "../Query/BatchedQuery";
@@ -17,6 +19,7 @@ import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { PagingJoinRelation } from "../Queryable/Interface/PagingJoinRelation";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
@@ -101,6 +104,40 @@ export class MockConnection implements IConnection {
                     for (const select of selects) {
                         const rows: any[] = [];
                         map.set(select, rows);
+
+                        const propValueMap = {};
+                        if (select.where) {
+                            visitExpression(select.where, (exp) => {
+                                if (exp instanceof EqualExpression || exp instanceof StrictEqualExpression) {
+                                    if (exp.leftOperand instanceof ColumnExpression && exp.leftOperand.entity.type === select.entity.type) {
+                                        let value = null;
+                                        if (exp.rightOperand instanceof ValueExpression) {
+                                            value = exp.rightOperand.value;
+                                        }
+                                        else if (exp.rightOperand instanceof SqlParameterExpression) {
+                                            value = deferred.parameters.get(exp.rightOperand).value;
+                                        }
+
+                                        if (value) {
+                                            propValueMap[exp.leftOperand.propertyName] = value;
+                                        }
+                                    }
+                                    else if (exp.rightOperand instanceof ColumnExpression && exp.rightOperand.entity.type === select.entity.type) {
+                                        let value = null;
+                                        if (exp.leftOperand instanceof ValueExpression) {
+                                            value = exp.leftOperand.value;
+                                        }
+                                        else if (exp.leftOperand instanceof SqlParameterExpression) {
+                                            value = deferred.parameters.get(exp.leftOperand).value;
+                                        }
+                                        if (value) {
+                                            propValueMap[exp.rightOperand.propertyName] = value;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
                         if (select.parentRelation) {
                             const parentInclude = select.parentRelation as IncludeRelation;
                             const relMap = Array.from(parentInclude.relationMap());
@@ -120,10 +157,13 @@ export class MockConnection implements IConnection {
                                     for (const o of select.projectedColumns) {
                                         item[o.dataPropertyName] = this.generateValue(o);
                                     }
+                                    for (const prop in propValueMap) {
+                                        item[prop] = propValueMap[prop];
+                                    }
                                     rows.push(item);
 
                                     for (const [parentCol, entityCol] of relMap) {
-                                        item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
+                                        item[entityCol.propertyName] = parent[parentCol.propertyName];
                                     }
                                 }
                             }
@@ -135,6 +175,9 @@ export class MockConnection implements IConnection {
                                 const item = {} as any;
                                 for (const o of select.projectedColumns) {
                                     item[o.dataPropertyName] = this.generateValue(o);
+                                }
+                                for (const prop in propValueMap) {
+                                    item[prop] = propValueMap[prop];
                                 }
                                 rows.push(item);
                             }

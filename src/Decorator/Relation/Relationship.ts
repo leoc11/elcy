@@ -9,7 +9,6 @@ import { entityMetaKey, relationChangeDispatherMetaKey, relationMetaKey } from "
 import { IAdditionalRelationOption, IRelationOption } from "../Option/IRelationOption";
 
 export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
-export function Relationship<S, T = any>(name: string, type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, direction: "by", type: RelationshipType | "one?", targetType: IObjectType<T> | string, relationKeys?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator;
 export function Relationship<S, T = any>(name: string, typeOrDirection: RelationshipType | "one?" | "by", targetTypeOrType: IObjectType<T> | string | RelationshipType | "one?", relationKeysOrTargetType: Array<PropertySelector<S>> | IObjectType<T> | string, relationKey?: Array<PropertySelector<S>>, options?: IAdditionalRelationOption): PropertyDecorator {
     const relationOption: IRelationOption<S, T> = {
@@ -103,8 +102,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                     });
                 }
                 const oldValue = this[propertyKey];
-                // tslint:disable-next-line:triple-equals
-                if (oldValue != value) {
+                if (oldValue !== value) {
                     const changeListener: IEventDispacher<IRelationChangeEventParam> = this[relationChangeDispatherMetaKey];
                     if (relationMeta.relationType === "many") {
                         const observed = ObservableArray.observe(value || []);
@@ -123,15 +121,17 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
                     }
                     if (changeListener) {
                         if (relationMeta.relationType === "many") {
-                            if (oldValue && Array.isArray(oldValue) && oldValue.length > 0) {
-                                changeListener({ relation: relationMeta, type: "del", entities: oldValue });
-                            }
+                            // NOTE: don't remove current relations,
+                            // coz there might be related entity that is not loaded yet.
+                            // so removing related entities could not be achived.
+                            // To remove current relation, used splice instead
                             if (value && Array.isArray(value) && value.length > 0) {
                                 changeListener({ relation: relationMeta, type: "add", entities: value });
                             }
                         }
                         else {
-                            if (oldValue) {
+                            // undefined mean current relation is unknown
+                            if (oldValue !== null) {
                                 changeListener({ relation: relationMeta, type: "del", entities: [oldValue] });
                             }
                             if (value) {

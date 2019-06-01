@@ -9,7 +9,6 @@ import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
@@ -60,7 +59,6 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         }
         this.setter = setter;
     }
-    public queryOption: IQueryOption;
     public select: SelectExpression<T>;
     public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;

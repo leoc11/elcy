@@ -1,6 +1,6 @@
 import { IConnection } from "../Connection/IConnection";
 import { PooledConnection } from "../Connection/PooledConnection";
-import { DbContext } from "../Data/DBContext";
+import { DbContext } from "../Data/DbContext";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";

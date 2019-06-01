@@ -1,3 +1,4 @@
+import { ValueType } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Data/Uuid";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
 import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
@@ -15,6 +16,14 @@ import { Product } from "./Product";
 
 @Entity("OrderDetails")
 export class OrderDetail {
+    constructor(defValues?: { [key in keyof OrderDetail]?: ValueType }) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = (defValues as any)[prop];
+                this[prop as keyof OrderDetail] = value;
+            }
+        }
+    }
     @PrimaryKey()
     @IdentifierColumn()
     public OrderDetailId: Uuid;
@@ -40,12 +49,4 @@ export class OrderDetail {
     public Product: Product;
     @Relationship<OrderDetail>("has", "many", OrderDetailProperty || "OrderDetailProperty", [(o) => o.OrderDetailId])
     public OrderDetailProperties: OrderDetailProperty[];
-    constructor(defValues?: { [key in keyof OrderDetail]?: any }) {
-        if (defValues) {
-            for (const prop in defValues) {
-                const value = (defValues as any)[prop];
-                this[prop as keyof OrderDetail] = value;
-            }
-        }
-    }
 }

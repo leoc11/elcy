@@ -7,8 +7,8 @@ export interface IChangeEventParam<TE = any, T = any> {
     oldValue: T;
 }
 export type RelationChangeType = "add" | "del";
-export interface IRelationChangeEventParam {
-    entities: any[];
-    relation: IRelationMetaData;
+export interface IRelationChangeEventParam<TM = any, TS = any> {
+    entities: TS[];
+    relation: IRelationMetaData<TM, TS>;
     type: RelationChangeType;
 }

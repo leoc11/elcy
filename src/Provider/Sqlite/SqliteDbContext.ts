@@ -1,4 +1,4 @@
-import { DbContext } from "../../Data/DBContext";
+import { DbContext } from "../../Data/DbContext";
 import { IQuery } from "../../Query/IQuery";
 import { NamingStrategy } from "../../Query/NamingStrategy";
 import { POJOQueryResultParser } from "../../Query/POJOQueryResultParser";

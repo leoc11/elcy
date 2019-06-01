@@ -11,7 +11,7 @@ export interface IRelationOption<TSource, TTarget> extends IAdditionalRelationOp
     targetType: IObjectType<TTarget>;
 }
 export interface IAdditionalRelationOption {
-    deleteOption?: ReferenceOption;
     nullable?: boolean;
+    deleteOption?: ReferenceOption;
     updateOption?: ReferenceOption;
 }

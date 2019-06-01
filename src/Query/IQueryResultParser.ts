@@ -1,4 +1,4 @@
-import { DbContext } from "../Data/DBContext";
+import { DbContext } from "../Data/DbContext";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryResult } from "./IQueryResult";

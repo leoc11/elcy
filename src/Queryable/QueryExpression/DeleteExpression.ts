@@ -5,7 +5,6 @@ import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/Strict
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -45,7 +44,6 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
-        this.queryOption = {};
         this.deleteMode = deleteMode;
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
@@ -63,7 +61,6 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public deleteMode?: IExpression<DeleteMode>;
     public includes: Array<IDeleteIncludeRelation<T, any>> = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
-    public queryOption: IQueryOption;
     public select: SelectExpression<T>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;

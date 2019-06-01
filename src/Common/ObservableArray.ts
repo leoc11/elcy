@@ -5,10 +5,6 @@ export class ObservableArray<T> extends Array<T> {
     }
     public constructor(...items: T[]) {
         super(...items);
-        // Object.setPrototypeOf(this, ObservableArray.prototype);
-    }
-    public static from<T>(items: T[]): ObservableArray<T> {
-        return new ObservableArray(...items);
     }
     public static observe<T>(items: T[]): ObservableArray<T> {
         Object.setPrototypeOf(items, ObservableArray.prototype);

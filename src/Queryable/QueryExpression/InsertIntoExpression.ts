@@ -1,7 +1,6 @@
 import { IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
@@ -19,7 +18,6 @@ export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
     constructor(public entity: EntityExpression<T>, public select: SelectExpression) {
         this.select.isSelectOnly = true;
     }
-    public queryOption: IQueryOption;
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();

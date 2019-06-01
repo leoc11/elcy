@@ -70,7 +70,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
             const sourceKey = this.sourceRelationMeta.relationColumns[i];
             this.sourceRelationMaps.set(dataKey, sourceKey);
             if (isManyToMany) {
-                this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey);
+                this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey as IColumnMetaData);
             }
         }
         for (let i = 0; i < len; i++) {
@@ -78,7 +78,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
             const targetKey = this.targetRelationMeta.relationColumns[i];
             this.targetRelationMaps.set(dataKey, targetKey);
             if (isManyToMany) {
-                this.targetRelationMeta.relationMaps.set(targetKey, dataKey);
+                this.targetRelationMeta.relationMaps.set(targetKey, dataKey as IColumnMetaData);
             }
         }
     }

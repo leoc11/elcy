@@ -8,7 +8,6 @@ import { ParameterExpression } from "../../ExpressionBuilder/Expression/Paramete
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
@@ -56,7 +55,6 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
     constructor(public readonly entity: EntityExpression<T>, public readonly setter: { [key in keyof T]?: IExpression<T[key]> }) {
     }
     public paramExps: SqlParameterExpression[];
-    public queryOption: IQueryOption;
     private _insertColumns: Array<IColumnExpression<T>>;
     private _relations: Array<IRelationMetaData<T>>;
     private _updateColumns: Array<IColumnExpression<T>>;

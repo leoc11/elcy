@@ -1,4 +1,4 @@
-import { DbContext } from "../Data/DBContext";
+import { DbContext } from "../Data/DbContext";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { hashCode } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";

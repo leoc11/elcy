@@ -45,6 +45,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
                     col.nullable = this.nullable || this.deleteOption === "SET NULL";
                     Reflect.defineMetadata(columnMetaKey, col, relationOption.sourceType, o);
                 }
+                col.isReadOnly = true;
                 return col;
             }).toArray();
     }

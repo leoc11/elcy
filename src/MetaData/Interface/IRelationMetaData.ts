@@ -21,7 +21,7 @@ export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRe
     propertyName?: keyof TSource;
     relationColumns: Array<IColumnMetaData<TSource>>;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
-    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     relationType: RelationshipType;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     source: IEntityMetaData<TSource>;

@@ -9,7 +9,6 @@ import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData"
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { ISelectRelation } from "../Interface/ISelectRelation";
 import { JoinRelation } from "../Interface/JoinRelation";
@@ -147,8 +146,6 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public paramExps: SqlParameterExpression[] = [];
 
     public parentRelation: ISelectRelation<any, T>;
-    public queryOption: IQueryOption;
-
     public selects: IColumnExpression[] = [];
     public type = Array;
     public where: IExpression<boolean>;

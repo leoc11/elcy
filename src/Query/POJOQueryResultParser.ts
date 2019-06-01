@@ -1,6 +1,6 @@
 import { IGroupArray } from "../Common/IGroupArray";
 import { IObjectType } from "../Common/Type";
-import { DbContext } from "../Data/DBContext";
+import { DbContext } from "../Data/DbContext";
 import { DbSet } from "../Data/DbSet";
 import { EntityEntry } from "../Data/EntityEntry";
 import { EntityState } from "../Data/EntityState";
@@ -205,13 +205,13 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                     }
 
                     let relationMeta: IRelationMetaData<TType>;
-                    if (include.child.entity.isRelationData) {
-                        relationMeta = dbSet ? dbSet.metaData.relations.first((o) => o.propertyName === include.name) : null;
+                    if (dbSet && include.child.entity.isRelationData) {
+                        relationMeta = dbSet.metaData.relations.first((o) => o.propertyName === include.name);
                     }
                     for (const data of relationValue) {
                         entity[include.name].push(data.entity);
                         if (relationMeta) {
-                            const relationEntry = entry.getRelation(relationMeta.fullName, data.entry);
+                            const relationEntry = entry.getRelation(relationMeta.propertyName, data.entry);
                             relationEntry.relationData = data.data.entity;
                         }
                     }

@@ -8,7 +8,6 @@ import { ParameterExpression } from "../../ExpressionBuilder/Expression/Paramete
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
@@ -37,7 +36,6 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         }
     }
     public paramExps: SqlParameterExpression[] = [];
-    public queryOption: IQueryOption;
     private _columns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
         if (!replaceMap) {

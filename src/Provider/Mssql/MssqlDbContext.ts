@@ -1,5 +1,5 @@
 import { QueryType } from "../../Common/Type";
-import { DbContext } from "../../Data/DBContext";
+import { DbContext } from "../../Data/DbContext";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
