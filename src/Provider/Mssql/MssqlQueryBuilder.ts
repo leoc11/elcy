@@ -17,11 +17,11 @@ import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpressi
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
-import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
+import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 
-export class MssqlQueryBuilder extends RelationQueryBuilder {
+export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
         maxParameters: 2100,
         maxQueryLength: 67108864

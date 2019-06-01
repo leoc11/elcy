@@ -36,7 +36,7 @@ import { IQuery } from "../../Query/IQuery";
 import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
 import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
-import { RelationQueryBuilder } from "./RelationQueryBuilder";
+import { RelationalQueryBuilder } from "./RelationalQueryBuilder";
 
 const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
     return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
@@ -45,11 +45,11 @@ const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
     return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
 };
 
-export abstract class RelationSchemaBuilder implements ISchemaBuilder {
+export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     public abstract columnTypeMap: Map<ColumnTypeMapKey, ICompleteColumnType>;
     public connection: IConnection;
     public option: ISchemaBuilderOption = {};
-    public readonly queryBuilder: RelationQueryBuilder;
+    public readonly queryBuilder: RelationalQueryBuilder;
     public addColumn(columnMeta: IColumnMetaData): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
         return [{

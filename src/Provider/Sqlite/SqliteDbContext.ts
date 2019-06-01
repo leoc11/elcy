@@ -1,20 +1,20 @@
-import { DbContext } from "../../Data/DbContext";
 import { IQuery } from "../../Query/IQuery";
 import { NamingStrategy } from "../../Query/NamingStrategy";
 import { POJOQueryResultParser } from "../../Query/POJOQueryResultParser";
 import { mssqlQueryTranslator } from "../Mssql/MssqlQueryTranslator";
-import { RelationQueryVisitor } from "../Relation/RelationQueryVisitor";
+import { RelationalDbContext } from "../Relational/RelationalDbContext";
+import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
 const namingStrategy = new NamingStrategy();
-export abstract class SqliteDbContext extends DbContext<"sqlite"> {
+export abstract class SqliteDbContext extends RelationalDbContext<"sqlite"> {
     public dbType: "sqlite" = "sqlite";
     public queryBuilderType = SqliteQueryBuilder;
     public queryParser = POJOQueryResultParser;
     public schemaBuilderType = SqliteSchemaBuilder;
     protected namingStrategy = namingStrategy;
     protected queryResultParserType = POJOQueryResultParser;
-    protected queryVisitorType = RelationQueryVisitor;
+    protected queryVisitorType = RelationalQueryVisitor;
     protected translator = mssqlQueryTranslator;
     public mergeQueryCommands(queries: IQuery[]): IQuery[] {
         return queries;

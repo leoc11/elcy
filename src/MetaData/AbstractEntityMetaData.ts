@@ -12,7 +12,7 @@ import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
-export class AbstractEntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
+export class AbstractEntityMetaData<TE extends TBase, TBase = any> implements IEntityMetaData<TE, TBase> {
     public get insertGeneratedColumns() {
         return this.columns.where((o) => {
             return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
@@ -25,7 +25,7 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     }
 
     constructor(public type: IObjectType<TE>, name?: string) {
-        this.inheritance = new InheritanceMetaData(this);
+        this.inheritance = new InheritanceMetaData();
         if (typeof name !== "undefined") {
             this.name = name;
         }
@@ -33,7 +33,7 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
             this.name = type.name;
         }
 
-        const parentType = Reflect.getPrototypeOf(this.type) as GenericType<TParent>;
+        const parentType = Reflect.getPrototypeOf(this.type) as GenericType<TBase>;
         if (parentType !== ClassBase) {
             const parentMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, parentType);
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance) {
@@ -48,12 +48,12 @@ export class AbstractEntityMetaData<TE extends TParent, TParent = any> implement
     public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
     public deletedColumn?: BooleanColumnMetaData<TE>;
     public indices: Array<IndexMetaData<TE>> = [];
-    public inheritance: InheritanceMetaData<TParent>;
+    public inheritance: InheritanceMetaData<TBase>;
     public modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     public name: string;
 
     // inheritance
-    public parentType?: GenericType<TParent>;
+    public parentType?: GenericType<TBase>;
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
     public relations: Array<IRelationMetaData<TE, any>> = [];
 }

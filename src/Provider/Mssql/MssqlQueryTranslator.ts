@@ -3,7 +3,7 @@ import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionE
 import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
-import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
+import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);

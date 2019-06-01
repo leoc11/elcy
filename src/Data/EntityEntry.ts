@@ -12,11 +12,11 @@ import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { DbSet } from "./DbSet";
 import { EntityState } from "./EntityState";
-import { IEntityEntryOption } from "./Interface/IEntityEntry";
+import { IEntityEntry } from "./Interface/IEntityEntry";
 import { RelationEntry } from "./RelationEntry";
 import { RelationState } from "./RelationState";
 
-export class EntityEntry<T = any> implements IEntityEntryOption<T> {
+export class EntityEntry<T = any> implements IEntityEntry<T> {
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
     }

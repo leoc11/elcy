@@ -9,11 +9,11 @@ import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
-import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
+import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 
-export class SqliteQueryBuilder extends RelationQueryBuilder {
+export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,
         maxParameters: 999,

@@ -9,10 +9,10 @@ import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
 import { IQuery } from "../../Query/IQuery";
-import { RelationSchemaBuilder } from "../Relation/RelationSchemaBuilder";
+import { RelationalSchemaBuilder } from "../Relational/RelationalSchemaBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 
-export class MssqlSchemaBuilder extends RelationSchemaBuilder {
+export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<MssqlColumnType>>([
         ["bigint", { columnType: "bigint", group: "Integer" }],
         ["binary", { columnType: "binary", group: "Binary", option: { size: 50 } }],

@@ -1,5 +1,4 @@
 import { QueryType } from "../../Common/Type";
-import { DbContext } from "../../Data/DbContext";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -12,17 +11,18 @@ import { NamingStrategy } from "../../Query/NamingStrategy";
 import { POJOQueryResultParser } from "../../Query/POJOQueryResultParser";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { insertEntryExp, InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
-import { RelationQueryVisitor } from "../Relation/RelationQueryVisitor";
+import { RelationalDbContext } from "../Relational/RelationalDbContext";
+import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 
-export abstract class MssqlDbContext extends DbContext<"mssql"> {
+export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
     public dbType: "mssql" = "mssql";
     protected namingStrategy = new NamingStrategy();
     protected queryBuilderType = MssqlQueryBuilder;
     protected queryResultParserType = POJOQueryResultParser;
-    protected queryVisitorType = RelationQueryVisitor;
+    protected queryVisitorType = RelationalQueryVisitor;
     protected schemaBuilderType = MssqlSchemaBuilder;
     protected translator = mssqlQueryTranslator;
     protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor): Array<DeferredQuery<IQueryResult>> {

@@ -263,6 +263,6 @@ export const toTimeString = function (time: TimeSpan) {
 export const toDateString = function (date: Date) {
     return date.getFullYear() + "-" + fillZero(date.getMonth() + 1) + "-" + fillZero(date.getDate());
 };
-export const hasFlag = function (value: number, flag: number): boolean {
+export const hasFlags = function (value: number, flag: number): boolean {
     return !!(value & flag);
 };

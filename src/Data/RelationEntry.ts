@@ -1,4 +1,5 @@
-import { isNotNull } from "../Helper/Util";
+import { Enumerable } from "../Enumerable/Enumerable";
+import { hasFlags, isNotNull } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
@@ -89,13 +90,13 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         }
     }
     constructor(public slaveEntry: EntityEntry<TE1>, public masterEntry: EntityEntry<TE2>, public slaveRelation: IRelationMetaData<TE1, TE2>, public relationData?: TRD) {
-        let isDetached = false;
-        for (const [col, masterCol] of slaveRelation.relationMaps) {
-            const oVal = slaveEntry.getOriginalValue(col.propertyName);
-            if (!isNotNull(oVal) || oVal !== masterEntry.getOriginalValue(masterCol.propertyName)) {
-                isDetached = true;
-                break;
-            }
+        let isDetached = true;
+        const state = slaveEntry.state | masterEntry.state;
+        if (!hasFlags(state, EntityState.Added | EntityState.Detached)) {
+            isDetached = Enumerable.from(slaveRelation.relationMaps).any(([col, masterCol]) => {
+                const oVal = slaveEntry.getOriginalValue(col.propertyName);
+                return !isNotNull(oVal) || oVal !== masterEntry.getOriginalValue(masterCol.propertyName);
+            });
         }
         this._state = isDetached ? RelationState.Detached : RelationState.Unchanged;
     }

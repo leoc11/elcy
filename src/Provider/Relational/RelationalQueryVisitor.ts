@@ -60,7 +60,7 @@ import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpressi
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression";
 
-export class RelationQueryVisitor implements IQueryVisitor {
+export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
         this.queryOption = {};
         this.valueTransformer = new ExpressionExecutor();

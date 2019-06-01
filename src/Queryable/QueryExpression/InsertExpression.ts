@@ -17,10 +17,7 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 export class InsertExpression<T = any> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
-            this._columns = this.entity.metaData.relations
-                .where((o) => !o.nullable && !o.isMaster && o.relationType === "one")
-                .selectMany((o) => o.relationColumns)
-                .union(this.entity.metaData.columns)
+            this._columns = this.entity.metaData.columns
                 .except(this.entity.metaData.insertGeneratedColumns)
                 .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
         }

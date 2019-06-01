@@ -23,7 +23,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         return this.targetRelationMeta.source;
     }
     constructor(relationOption: IRelationDataOption<TType, TSource, TTarget>) {
-        this.inheritance = new InheritanceMetaData(this);
+        this.inheritance = new InheritanceMetaData();
         this.name = relationOption.name;
         this.relationName = relationOption.relationName;
 
@@ -35,7 +35,7 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
     public columns: Array<IColumnMetaData<TType>> = [];
     public constraints: Array<IConstraintMetaData<TType>> = [];
     public indices: Array<IIndexMetaData<TType>> = [];
-    public inheritance: InheritanceMetaData<TType>;
+    public inheritance: InheritanceMetaData;
     public name: string;
     public relationName: string;
     public relations: Array<IRelationMetaData<TType, any>> = [];

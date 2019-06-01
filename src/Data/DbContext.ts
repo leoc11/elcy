@@ -504,10 +504,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
 
         // generate add relation here.
         for (const [relMetaData, addEntries] of orderedRelationAdd) {
-            // filter out add relation that has been set at insert query.
-            // NOTE: this only required for relation db.
-            const entries = addEntries.where((o) => !(o.slaveRelation.relationType === "one" && o.slaveEntry.state === EntityState.Added));
-            relationAddQueries.set(relMetaData, this.getRelationAddQueries(relMetaData, entries, visitor));
+            relationAddQueries.set(relMetaData, this.getRelationAddQueries(relMetaData, addEntries, visitor));
         }
 
         // generate remove relation here.

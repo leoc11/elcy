@@ -1,4 +1,4 @@
-import { GenericType } from "../Common/Type";
+import { ColumnGeneration, GenericType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
@@ -20,6 +20,9 @@ export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaDat
         if (propertyName) {
             this.propertyName = propertyName;
         }
+    }
+    public get generation() {
+        return ColumnGeneration.Insert | ColumnGeneration.Update;
     }
     public columnName = "";
     public description: string;

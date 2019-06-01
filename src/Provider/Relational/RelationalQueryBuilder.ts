@@ -65,7 +65,7 @@ import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpressi
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 
-export abstract class RelationQueryBuilder implements IQueryBuilder {
+export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
         if (!this._lastInsertedIdQuery) {
             this._lastInsertedIdQuery = this.toString(ExpressionBuilder.parse(() => DbFunction.lastInsertedId()).body);

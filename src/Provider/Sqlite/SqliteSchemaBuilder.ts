@@ -11,10 +11,10 @@ import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IQuery } from "../../Query/IQuery";
-import { RelationSchemaBuilder } from "../Relation/RelationSchemaBuilder";
+import { RelationalSchemaBuilder } from "../Relational/RelationalSchemaBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 
-export class SqliteSchemaBuilder extends RelationSchemaBuilder {
+export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<SqliteColumnType>>([
         ["integer", { columnType: "integer", group: "Integer" }],
         ["numeric", { columnType: "numeric", group: "Decimal" }],
