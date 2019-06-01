@@ -1,3 +1,4 @@
+import { DbType } from "../Common/Type";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
@@ -5,11 +6,11 @@ import { IDriver } from "./IDriver";
 import { PooledConnection } from "./PooledConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 
-export class ReplicationConnectionManager implements IConnectionManager {
+export class ReplicationConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
     public get driver() {
         return this.masterConnectionManager.driver;
     }
-    constructor(masterDriver: IDriver<any>, replicaDrivers: Array<IDriver<any>>, poolOption?: IConnectionPoolOption) {
+    constructor(masterDriver: IDriver<T>, replicaDrivers: Array<IDriver<T>>, poolOption?: IConnectionPoolOption) {
         if (!poolOption) {
             poolOption = {};
         }
@@ -36,8 +37,8 @@ export class ReplicationConnectionManager implements IConnectionManager {
 
         this.replicaConnectionManagers = replicaDrivers.select((o) => o === masterDriver ? this.masterConnectionManager : new PooledConnectionManager(o)).toArray();
     }
-    public readonly masterConnectionManager: PooledConnectionManager;
-    public readonly replicaConnectionManagers: PooledConnectionManager[];
+    public readonly masterConnectionManager: PooledConnectionManager<T>;
+    public readonly replicaConnectionManagers: Array<PooledConnectionManager<T>>;
     public async getAllConnections(): Promise<IConnection[]> {
         const res: IConnection[] = [await this.masterConnectionManager.getConnection(true)];
         for (const a of this.replicaConnectionManagers) {

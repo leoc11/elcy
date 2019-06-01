@@ -1,4 +1,5 @@
 import { QueuedTimeout } from "../Common/QueuedTimeout";
+import { DbType } from "../Common/Type";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { ConnectionError } from "../Error/ConnectionError";
 import { IConnection } from "./IConnection";
@@ -10,11 +11,11 @@ interface IResolver<T> {
     reject: (reason: any) => void;
     resolve: (item: T) => void;
 }
-export class PooledConnectionManager implements IConnectionManager {
+export class PooledConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
     public get poolSize() {
         return this.pools.queue.length;
     }
-    constructor(public readonly driver: IDriver<any>, public readonly poolOption?: IConnectionPoolOption) {
+    constructor(public readonly driver: IDriver<T>, public readonly poolOption?: IConnectionPoolOption) {
         if (!this.poolOption) {
             this.poolOption = {};
         }

@@ -66,8 +66,8 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor);
             if (!this._connectionManager) {
                 const conManagerOrDriver = this.factory();
-                if ((conManagerOrDriver as IConnectionManager).getAllConnections) {
-                    this._connectionManager = conManagerOrDriver as IConnectionManager;
+                if ((conManagerOrDriver as IConnectionManager<TDB>).getAllConnections) {
+                    this._connectionManager = conManagerOrDriver as IConnectionManager<TDB>;
                 }
                 else {
                     const driver = conManagerOrDriver as IDriver<TDB>;
@@ -112,7 +112,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
 
         return this._resultCacheManager;
     }
-    constructor(factory?: () => IConnectionManager | IDriver<TDB>, types: IObjectType[] = []) {
+    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types: IObjectType[] = []) {
         if (factory) {
             this.factory = factory;
         }
@@ -135,13 +135,12 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
     //#region DB Event Listener
     public beforeSave?: <T>(entity: T, param: ISaveEventParam) => boolean;
     public connection?: IConnection;
-    public abstract readonly dbType: TDB;
     public deferredQueries: DeferredQuery[] = [];
     public entityEntries: IChangeEntryMap<"add" | "update" | "delete", IEntityMetaData, EntityEntry>;
     public readonly entityTypes: Array<IObjectType<any>>;
     public modifiedEmbeddedEntries: Map<IEntityMetaData<any>, EmbeddedEntityEntry[]> = new Map();
     public relationEntries: IChangeEntryMap<"add" | "delete", IRelationMetaData, RelationEntry>;
-    protected readonly factory: () => IConnectionManager | IDriver<TDB>;
+    protected readonly factory: () => IConnectionManager<TDB> | IDriver<TDB>;
     protected abstract readonly namingStrategy: NamingStrategy;
     protected abstract readonly queryBuilderType: IObjectType<IQueryBuilder>;
     protected readonly queryCacheManagerFactory?: () => IQueryCacheManager;
@@ -151,7 +150,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
     protected abstract readonly schemaBuilderType: IObjectType<ISchemaBuilder>;
     protected abstract readonly translator: QueryTranslator;
     private _cachedDbSets: Map<IObjectType, DbSet<any>> = new Map();
-    private _connectionManager: IConnectionManager;
+    private _connectionManager: IConnectionManager<TDB>;
     private _queryCacheManager: IQueryCacheManager;
     private _resultCacheManager: IResultCacheManager;
 
@@ -570,7 +569,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                 const entityEntries = orderedEntityAdd.get(entityMeta);
                 for (const entityEntry of entityEntries) {
                     if (insertedData) {
-                        const data = insertedData.next().value as TDB;
+                        const data = insertedData.next().value;
                         for (const prop in data) {
                             const column = entityMeta.columns.first((o) => o.columnName === prop);
                             if (column) {

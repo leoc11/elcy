@@ -1,9 +1,10 @@
+import { DbType } from "../Common/Type";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "./IDriver";
 
-export class DefaultConnectionManager implements IConnectionManager {
-    constructor(public readonly driver: IDriver<any>) { }
+export class DefaultConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
+    constructor(public readonly driver: IDriver<T>) { }
     public async getAllConnections(): Promise<IConnection[]> {
         return [await this.driver.getConnection()];
     }

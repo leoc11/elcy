@@ -18,7 +18,6 @@ import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 
 export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
-    public dbType: "mssql" = "mssql";
     protected namingStrategy = new NamingStrategy();
     protected queryBuilderType = MssqlQueryBuilder;
     protected queryResultParserType = POJOQueryResultParser;
