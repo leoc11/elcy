@@ -1,6 +1,7 @@
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { QueryType, ReferenceOption } from "../../Common/Type";
+import { ReferenceOption } from "../../Common/StringType";
 import { isNotNull } from "../../Helper/Util";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";

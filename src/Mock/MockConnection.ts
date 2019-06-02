@@ -1,4 +1,5 @@
-import { ColumnGeneration, IsolationLevel, QueryType } from "../Common/Type";
+import { ColumnGeneration, QueryType } from "../Common/Enum";
+import { IsolationLevel } from "../Common/StringType";
 import { IConnection } from "../Connection/IConnection";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";

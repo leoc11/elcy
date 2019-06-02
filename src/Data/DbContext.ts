@@ -1,6 +1,8 @@
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
-import { ColumnGeneration, DbType, DeleteMode, FlatObjectLike, GenericType, IObjectType, IsolationLevel, KeysExceptType, QueryType, TypeItem, ValueType } from "../Common/Type";
+import { ColumnGeneration, QueryType } from "../Common/Enum";
+import { DbType, DeleteMode, IsolationLevel } from "../Common/StringType";
+import { FlatObjectLike, GenericType, IObjectType, KeysExceptType, TypeItem, ValueType } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import { IConnection } from "../Connection/IConnection";
 import { IConnectionManager } from "../Connection/IConnectionManager";

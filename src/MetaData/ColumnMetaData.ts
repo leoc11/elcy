@@ -1,5 +1,6 @@
 import { ColumnType } from "../Common/ColumnType";
-import { ColumnGeneration, GenericType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { GenericType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";

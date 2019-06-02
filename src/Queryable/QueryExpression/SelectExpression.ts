@@ -1,4 +1,5 @@
-import { GenericType, IObjectType, JoinType, OrderDirection, RelationshipType } from "../../Common/Type";
+import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";

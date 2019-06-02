@@ -1,4 +1,4 @@
-import { DbType } from "../../Common/Type";
+import { DbType } from "../../Common/StringType";
 import { DbContext } from "../../Data/DbContext";
 import { EntityState } from "../../Data/EntityState";
 import { RelationEntry } from "../../Data/RelationEntry";

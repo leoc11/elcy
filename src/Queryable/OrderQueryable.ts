@@ -1,4 +1,4 @@
-import { OrderDirection } from "../Common/Type";
+import { OrderDirection } from "../Common/StringType";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";

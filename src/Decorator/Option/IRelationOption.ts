@@ -1,4 +1,5 @@
-import { IObjectType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { ReferenceOption, RelationshipType } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 
 export interface IRelationOption<TSource, TTarget> extends IAdditionalRelationOption {
     name?: string;

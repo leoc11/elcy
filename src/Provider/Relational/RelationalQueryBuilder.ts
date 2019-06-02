@@ -1,6 +1,9 @@
 import "reflect-metadata";
+import { NullConstructor } from "../../Common/Constant";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { ArrayView, DeleteMode, GenericType, NullConstructor, QueryType, TimeZoneHandling, ValueType } from "../../Common/Type";
+import { DeleteMode, TimeZoneHandling } from "../../Common/StringType";
+import { ArrayView, GenericType, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";

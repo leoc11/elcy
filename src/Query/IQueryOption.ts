@@ -1,5 +1,5 @@
 import { ICacheOption } from "../Cache/ICacheOption";
-import { ConcurrencyModel } from "../Common/Type";
+import { ConcurrencyModel } from "../Common/StringType";
 import { Version } from "../Common/Version";
 
 export interface ISelectCacheOption extends ICacheOption {

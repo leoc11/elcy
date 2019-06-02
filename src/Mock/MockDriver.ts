@@ -1,4 +1,4 @@
-import { DbType } from "../Common/Type";
+import { DbType } from "../Common/StringType";
 import { IConnection } from "../Connection/IConnection";
 import { IDriver } from "../Connection/IDriver";
 import { MockConnection } from "./MockConnection";

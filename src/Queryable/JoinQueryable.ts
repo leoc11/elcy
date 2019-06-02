@@ -1,4 +1,5 @@
-import { IObjectType, JoinType } from "../Common/Type";
+import { JoinType } from "../Common/StringType";
+import { IObjectType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";

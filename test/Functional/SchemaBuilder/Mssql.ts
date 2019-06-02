@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import { QueryType } from "../../../src/Common/Type";
+import { QueryType } from "../../../src/Common/Enum";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { ColumnIndex } from "../../../src/Decorator/ColumnIndex";

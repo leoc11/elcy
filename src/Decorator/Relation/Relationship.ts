@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { ObservableArray } from "../../Common/ObservableArray";
-import { IObjectType, PropertySelector, RelationshipType } from "../../Common/Type";
+import { RelationshipType } from "../../Common/StringType";
+import { IObjectType, PropertySelector } from "../../Common/Type";
 import { IEventDispacher } from "../../Event/IEventHandler";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { IRelationChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";

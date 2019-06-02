@@ -1,4 +1,4 @@
-import { DbType } from "../Common/Type";
+import { DbType } from "../Common/StringType";
 import { IConnection } from "./IConnection";
 
 export interface IDriver<T extends DbType = any> {

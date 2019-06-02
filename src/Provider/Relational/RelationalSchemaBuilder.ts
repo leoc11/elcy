@@ -1,6 +1,8 @@
 import { ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { IObjectType, QueryType, ReferenceOption } from "../../Common/Type";
+import { ReferenceOption } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 import { IConnection } from "../../Connection/IConnection";
 import { Uuid } from "../../Data/Uuid";
 import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";

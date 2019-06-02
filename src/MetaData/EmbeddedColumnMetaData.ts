@@ -1,4 +1,4 @@
-import { RelationshipType } from "../Common/Type";
+import { RelationshipType } from "../Common/StringType";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { IEmbeddedRelationOption } from "../Decorator/Option/IEmbeddedRelationOption";
 import { IBaseRelationMetaData } from "./Interface/IBaseRelationMetaData";

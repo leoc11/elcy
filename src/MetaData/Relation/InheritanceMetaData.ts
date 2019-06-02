@@ -1,4 +1,4 @@
-import { InheritanceType } from "../../Common/Type";
+import { InheritanceType } from "../../Common/Enum";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 
 export class InheritanceMetaData<TBase = any> {

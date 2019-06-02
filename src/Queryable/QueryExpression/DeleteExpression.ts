@@ -1,4 +1,5 @@
-import { DeleteMode, IObjectType, JoinType, OrderDirection } from "../../Common/Type";
+import { DeleteMode, JoinType, OrderDirection } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
@@ -11,6 +12,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
+
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
     parent: IQueryExpression<T>;

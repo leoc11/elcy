@@ -1,5 +1,5 @@
 import { RowVersionColumnType } from "../Common/ColumnType";
-import { ColumnGeneration } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
 import { ColumnMetaData } from "./ColumnMetaData";
 
 export class RowVersionColumnMetaData<TE = any> extends ColumnMetaData<TE, Uint8Array> {

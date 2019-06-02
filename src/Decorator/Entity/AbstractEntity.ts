@@ -1,5 +1,7 @@
 import "reflect-metadata";
-import { ClassBase, InheritanceType, IObjectType } from "../../Common/Type";
+import { ClassBase } from "../../Common/Constant";
+import { InheritanceType } from "../../Common/Enum";
+import { IObjectType } from "../../Common/Type";
 import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { toJSON } from "../../Helper/Util";

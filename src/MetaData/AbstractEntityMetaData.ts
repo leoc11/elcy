@@ -1,4 +1,6 @@
-import { ClassBase, ColumnGeneration, GenericType, IObjectType } from "../Common/Type";
+import { ClassBase } from "../Common/Constant";
+import { ColumnGeneration } from "../Common/Enum";
+import { GenericType, IObjectType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { isNotNull } from "../Helper/Util";
 import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";

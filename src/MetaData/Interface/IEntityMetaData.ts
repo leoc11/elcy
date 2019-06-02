@@ -1,4 +1,5 @@
-import { ConcurrencyModel, IObjectType } from "../../Common/Type";
+import { ConcurrencyModel } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IOrderQueryDefinition } from "../../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";

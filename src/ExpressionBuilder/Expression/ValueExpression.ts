@@ -1,4 +1,5 @@
-import { GenericType, NullConstructor } from "../../Common/Type";
+import { NullConstructor } from "../../Common/Constant";
+import { GenericType } from "../../Common/Type";
 import { hashCode } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 

@@ -1,4 +1,4 @@
-import { RelationshipType } from "../../Common/Type";
+import { RelationshipType } from "../../Common/StringType";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";

@@ -1,4 +1,4 @@
-import { RelationshipType } from "../../Common/Type";
+import { RelationshipType } from "../../Common/StringType";
 import { IEntityMetaData } from "./IEntityMetaData";
 
 export interface IBaseRelationMetaData<TSource = any, TTarget = any> {

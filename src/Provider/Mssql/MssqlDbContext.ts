@@ -1,4 +1,4 @@
-import { QueryType } from "../../Common/Type";
+import { QueryType } from "../../Common/Enum";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";

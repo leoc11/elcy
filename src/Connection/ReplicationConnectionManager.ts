@@ -1,4 +1,4 @@
-import { DbType } from "../Common/Type";
+import { DbType } from "../Common/StringType";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";

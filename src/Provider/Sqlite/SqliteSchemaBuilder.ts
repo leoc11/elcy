@@ -1,6 +1,7 @@
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { QueryType, ReferenceOption } from "../../Common/Type";
+import { ReferenceOption } from "../../Common/StringType";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";

@@ -1,4 +1,4 @@
-import { QueryType } from "../Common/Type";
+import { QueryType } from "../Common/Enum";
 import { IQuery } from "./IQuery";
 
 export class BatchedQuery implements IQuery {

@@ -3,7 +3,6 @@ import "../../src/Startup";
 import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 import { IDriver } from "../../src/Connection/IDriver";
-import { DbSet } from "../../src/Data/DbSet";
 import { MockDriver } from "../../src/Mock/MockDriver";
 import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
 import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "./Model";

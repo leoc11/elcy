@@ -1,7 +1,9 @@
 import { DateTimeColumnType } from "../Common/ColumnType";
-import { ColumnGeneration, TimeZoneHandling } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { TimeZoneHandling } from "../Common/StringType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
+
 export class DateTimeColumnMetaData<TE = any> extends ColumnMetaData<TE, Date> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Date, entityMeta);

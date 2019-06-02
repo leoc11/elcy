@@ -1,4 +1,4 @@
-import { OrderDirection } from "../../Common/Type";
+import { OrderDirection } from "../../Common/StringType";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 
 export interface IOrderExpression {

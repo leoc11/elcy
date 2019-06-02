@@ -3,7 +3,7 @@ import * as chaiPromise from "chai-as-promised";
 import "mocha";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
-import { QueryType } from "../../../src/Common/Type";
+import { QueryType } from "../../../src/Common/Enum";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { EntityState } from "../../../src/Data/EntityState";

@@ -1,5 +1,5 @@
 import { DateTimeColumnType } from "../../Common/ColumnType";
-import { TimeZoneHandling } from "../../Common/Type";
+import { TimeZoneHandling } from "../../Common/StringType";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { Column } from "./Column";

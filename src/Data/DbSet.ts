@@ -1,4 +1,6 @@
-import { ColumnGeneration, DeleteMode, FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { DeleteMode } from "../Common/StringType";
+import { FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IEnumerable } from "../Enumerable/IEnumerable";

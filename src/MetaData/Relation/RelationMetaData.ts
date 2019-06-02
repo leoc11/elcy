@@ -1,4 +1,4 @@
-import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationOption } from "../../Decorator/Option/IRelationOption";
 import { Enumerable } from "../../Enumerable/Enumerable";

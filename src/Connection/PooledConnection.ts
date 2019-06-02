@@ -1,4 +1,5 @@
-import { IsolationLevel, QueryType } from "../Common/Type";
+import { QueryType } from "../Common/Enum";
+import { IsolationLevel } from "../Common/StringType";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IConnection } from "./IConnection";

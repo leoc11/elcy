@@ -1,4 +1,5 @@
-import { FlatObjectLike, IObjectType, JoinType, OrderDirection } from "../../Common/Type";
+import { JoinType, OrderDirection } from "../../Common/StringType";
+import { FlatObjectLike, IObjectType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";

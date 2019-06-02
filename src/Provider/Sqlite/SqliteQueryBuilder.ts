@@ -1,5 +1,6 @@
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, QueryType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";

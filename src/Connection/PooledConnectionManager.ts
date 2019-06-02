@@ -1,5 +1,5 @@
 import { QueuedTimeout } from "../Common/QueuedTimeout";
-import { DbType } from "../Common/Type";
+import { DbType } from "../Common/StringType";
 import { IConnectionPoolOption } from "../Data/Interface/IConnectionOption";
 import { ConnectionError } from "../Error/ConnectionError";
 import { IConnection } from "./IConnection";

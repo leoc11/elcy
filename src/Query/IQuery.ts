@@ -1,4 +1,4 @@
-import { QueryType } from "../Common/Type";
+import { QueryType } from "../Common/Enum";
 
 export interface IQuery {
     comment?: string;

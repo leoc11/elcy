@@ -1,4 +1,5 @@
-import { GenericType, JoinType, OrderDirection, RelationshipType } from "../../Common/Type";
+import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
+import { GenericType } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";

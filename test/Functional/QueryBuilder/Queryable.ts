@@ -2,7 +2,7 @@ import * as chai from "chai";
 import "mocha";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
-import { QueryType } from "../../../src/Common/Type";
+import { QueryType } from "../../../src/Common/Enum";
 import { Uuid } from "../../../src/Data/Uuid";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";

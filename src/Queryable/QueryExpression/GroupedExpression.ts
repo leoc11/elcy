@@ -1,4 +1,4 @@
-import { JoinType } from "../../Common/Type";
+import { JoinType } from "../../Common/StringType";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";

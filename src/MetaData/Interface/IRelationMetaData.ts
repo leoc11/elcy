@@ -1,4 +1,4 @@
-import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";

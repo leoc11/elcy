@@ -1,6 +1,7 @@
 import { DateTimeColumnType } from "../../Common/ColumnType";
-import { TimeZoneHandling } from "../../Common/Type";
+import { TimeZoneHandling } from "../../Common/StringType";
 import { IColumnOption } from "./IColumnOption";
+
 export interface IDateTimeColumnOption extends IColumnOption<Date> {
     columnType?: DateTimeColumnType;
     isCreatedDate?: boolean;

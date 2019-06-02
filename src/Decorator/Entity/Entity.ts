@@ -1,5 +1,7 @@
 import "reflect-metadata";
-import { ClassBase, GenericType, InheritanceType, IObjectType } from "../../Common/Type";
+import { ClassBase } from "../../Common/Constant";
+import { InheritanceType } from "../../Common/Enum";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { toJSON } from "../../Helper/Util";
@@ -13,6 +15,7 @@ import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumn
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
 import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { IEntityOption } from "../Option/IEntityOption";
+
 export function Entity<T extends TParent = any, TParent = any>(option: IEntityOption<T>): ClassDecorator;
 export function Entity<T extends TParent = any, TParent = any>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
 export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IEntityOption<T> | string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean) {

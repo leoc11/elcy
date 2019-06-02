@@ -1,4 +1,5 @@
-import { ColumnGeneration, GenericType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { GenericType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";

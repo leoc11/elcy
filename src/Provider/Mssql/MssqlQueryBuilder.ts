@@ -1,5 +1,6 @@
+import { ColumnGeneration, QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { ColumnGeneration, GenericType, IObjectType, QueryType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";

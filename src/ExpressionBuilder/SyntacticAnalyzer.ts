@@ -1,4 +1,5 @@
-import { GenericType, NullConstructor } from "../Common/Type";
+import { NullConstructor } from "../Common/Constant";
+import { GenericType } from "../Common/Type";
 import { DbFunction } from "../Query/DbFunction";
 import { ArrayValueExpression } from "./Expression/ArrayValueExpression";
 import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
@@ -13,6 +14,7 @@ import { StringTemplateExpression } from "./Expression/StringTemplateExpression"
 import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
+
 interface SyntaticParameter {
     index: number;
     paramTypes: GenericType[];
