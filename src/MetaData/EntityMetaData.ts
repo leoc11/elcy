@@ -1,4 +1,6 @@
-import { ColumnGeneration, ConcurrencyModel, IObjectType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { ConcurrencyModel } from "../Common/StringType";
+import { IObjectType } from "../Common/Type";
 import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";

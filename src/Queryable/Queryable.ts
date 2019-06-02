@@ -1,4 +1,7 @@
 import { IQueryCache } from "../Cache/IQueryCache";
+import { QueryType } from "../Common/Enum";
+import { DeleteMode } from "../Common/StringType";
+import { GenericType, IObjectType, ObjectLike, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
@@ -1070,7 +1073,4 @@ export abstract class Queryable<T = any> {
     //#endregion
 }
 
-import "./Queryable.partial";import { GenericType, ValueType, ObjectLike, IObjectType } from "../Common/Type";
-import { DeleteMode } from "../Common/StringType";
-import { QueryType } from "../Common/Enum";
-
+import "./Queryable.partial";
