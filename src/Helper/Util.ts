@@ -223,7 +223,11 @@ export const fillZero = (value: number, factor = 2): string => {
     if (isNegative) {
         value = Math.abs(value);
     }
-    return (isNegative ? "-" : "") + (("0").repeat(factor - 1) + value).slice(-factor);
+    let result = value + "";
+    if (result.length < factor) {
+        result = ("0").repeat(factor - result.length) + result;
+    }
+    return (isNegative ? "-" : "") + result;
 };
 /**
  *
