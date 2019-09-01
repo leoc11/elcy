@@ -2,6 +2,12 @@ const toHex = (u: number) => {
     const a = (u).toString(16);
     return a.length < 2 ? "0" + a : a;
 };
+export const RandomGenerator = (res: Uuid) => {
+    for (let i = 0, len = res.length; i < len; i++) {
+        res[i] = Math.floor(Math.random() * 256);
+    }
+};
+export const CryptoGenerator = (res: Uuid) => globalThis.crypto.getRandomValues(res);
 export class Uuid extends Uint8Array {
     constructor(uuid?: string) {
         super(16);
@@ -10,11 +16,11 @@ export class Uuid extends Uint8Array {
         }
     }
     public static readonly empty = new Uuid();
+    public static randomGenerator: (uuid: Uuid) => void;
     public static new() {
         const res = new Uuid();
-        for (let i = 0, len = res.length; i < len; i++) {
-            res[i] = Math.floor(Math.random() * 256);
-        }
+        this.randomGenerator(res);
+
         res[6] &= 0x0F;
         res[6] |= 0x40;
 
@@ -59,3 +65,5 @@ export class Uuid extends Uint8Array {
         }
     }
 }
+
+Uuid.randomGenerator = globalThis && globalThis.crypto && globalThis.crypto.getRandomValues ? CryptoGenerator : RandomGenerator;
