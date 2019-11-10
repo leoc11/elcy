@@ -586,6 +586,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         else if (entity instanceof ProjectionEntityExpression) {
             return this.getSelectQueryString(entity.subSelect, param) + " AS " + this.enclose(entity.alias);
         }
+        else if (entity instanceof RawSqlExpression) {
+            return "(" + this.newLine(+1) + entity.sqlStatement + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+        }
 
         return this.entityName(entity) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
