@@ -4,17 +4,17 @@ import { expect, use } from "chai";
 import * as chaiPromise from "chai-as-promised";
 import "mocha";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
-import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { MockDriver } from "../../../src/Mock/MockDriver";
+import { IPoolOption } from "../../../src/Pool/IPoolOption";
 
 describe("POOLED CONNECTION MANAGER", () => {
     use(chaiPromise);
-    const getManager = (option?: IConnectionPoolOption) => {
+    const getManager = (option?: IPoolOption) => {
         if (!option) {
             option = {};
         }
-        option = Object.assign({ maxConnection: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 }, option);
+        option = Object.assign({ maxResource: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 } as IPoolOption, option);
         const manager = new PooledConnectionManager(new MockDriver({ allowPooling: true }), option);
         return manager;
     };
@@ -102,7 +102,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         }, 2100);
     });
     it("should prioritize longest waiting client", async () => {
-        const connectionManager = getManager({ maxConnection: 2, acquireTimeout: Infinity });
+        const connectionManager = getManager({ maxResource: 2, acquireTimeout: Infinity });
         const con1 = await connectionManager.getConnection();
         const con2 = await connectionManager.getConnection();
         const con2Promise = connectionManager.getConnection();
