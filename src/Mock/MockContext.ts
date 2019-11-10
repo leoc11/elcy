@@ -56,8 +56,6 @@ export const mockContext = function (context: DbContext & IMockedContext) {
 };
 function mockDefer(defer: DeferredQuery) {
     const mock: DeferredQuery & IMockedDeferredQuery = defer as any;
-    // disabled query cache coz mock connection require the builded QueryExpression
-    mock.queryOption.noQueryCache = true;
     if (mock.buildQueries) {
         mock.queryExps = mock.buildQueries(mock.dbContext.queryVisitor);
     }
