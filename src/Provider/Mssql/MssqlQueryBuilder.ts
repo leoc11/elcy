@@ -193,10 +193,4 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
         return result;
     }
-    protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
-        if (entity instanceof EntityExpression && entity.metaData instanceof TempEntityMetaData) {
-            return this.enclose("#" + entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
-        }
-        return super.getEntityQueryString(entity, param);
-    }
 }
