@@ -179,11 +179,7 @@ export class Enumerable<T = any> implements Iterable<T> {
             return this.cache.result.slice(0);
         }
 
-        const arr = [];
-        for (const i of this) {
-            arr.push(i);
-        }
-        return arr;
+        return Array.from(this);
     }
     public toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V> {
         const rel = new Map<K, V>();
