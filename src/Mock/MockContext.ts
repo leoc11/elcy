@@ -3,6 +3,8 @@ import { IConnection } from "../Connection/IConnection";
 import { PooledConnection } from "../Connection/PooledConnection";
 import { DbContext } from "../Data/DbContext";
 import { IEnumerable } from "../Enumerable/IEnumerable";
+import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
+import { Diagnostic } from "../Logger/Diagnostic";
 import { DeferredQuery } from "../Query/DeferredQuery/DeferredQuery";
 import { IQuery } from "../Query/IQuery";
 import { IQueryTemplate } from "../Query/IQueryTemplate";
@@ -66,7 +68,46 @@ function mockDefer(defer: DeferredQuery) {
     mock.oriToQuery = mock.toQuery;
     mock.toQuery = function (template: IQueryTemplate, stackTree: INodeTree<ParameterStack>, tvpMap: Map<SqlTableValueParameterExpression, any[]>) {
         this.tvpMap = tvpMap;
-        return this.oriToQuery(template, stackTree, tvpMap);
+        const paramTree = template.parameterTree;
+        const timer = Diagnostic.timer();
+        const result: IQuery = {
+            comment: template.comment,
+            type: template.type,
+            query: template.query,
+            parameters: new Map()
+        };
+
+        const queryBuilder = this.dbContext.queryBuilder;
+        let paramTrees = [paramTree];
+        let stackTrees = [stackTree];
+        let i = 0;
+        while (paramTrees.length > i) {
+            const paramNode = paramTrees[i];
+            const stackNode = stackTrees[i++];
+            const valueTransformer = new ExpressionExecutor(stackNode.node);
+            for (const param of paramNode.node) {
+                const value = valueTransformer.execute(param);
+                if (!this.queryOption.supportTVP && param instanceof SqlTableValueParameterExpression) {
+                    tvpMap.set(param, value);
+                }
+                else if (param.isReplacer) {
+                    result.query = result.query.replace(queryBuilder.toString(param), value);
+                    // add to parameter so we could mock paging
+                    result.parameters.set(param.name, value);
+                }
+                else {
+                    result.parameters.set(param.name, value);
+                }
+            }
+            if (paramNode.childrens.any()) {
+                paramTrees = paramTrees.concat(paramNode.childrens);
+                stackTrees = stackTrees.concat(stackNode.childrens);
+            }
+        }
+        if (Diagnostic.enabled) {
+            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        }
+        return result;
     };
 
     return mock;

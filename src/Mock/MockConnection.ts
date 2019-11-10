@@ -55,13 +55,13 @@ export class MockConnection implements IConnection {
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
     }
     public database: string;
-    public deferredQueries: IEnumerable<DeferredQuery & IMockedDeferredQuery>;
     public errorEvent: IEventHandler<MockConnection, Error>;
 
     //#region Abstract Member
     public isolationLevel: IsolationLevel;
     public isOpen: boolean;
     protected onError: IEventDispacher<Error>;
+    private _deferredQueries: IEnumerable<DeferredQuery & IMockedDeferredQuery>;
     private _generatedResults: IQueryResult[];
     private _results: IQueryResult[];
     private _transactionCount: number = 0;
@@ -73,7 +73,7 @@ export class MockConnection implements IConnection {
         return Promise.resolve();
     }
     public generateQueryResult() {
-        return this.deferredQueries
+        return this._deferredQueries
             .selectMany((def) => def.queryExps.select((o) => [def, o]))
             .selectMany((o) => {
                 const deferred = o[0] as DeferredQuery & IMockedDeferredQuery;
@@ -102,9 +102,12 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof SelectExpression) {
+                    const queries = deferred.queries.skip(skipCount * 2).toArray();
                     const selects = this.flattenSelectExpression(command as any);
                     const map: Map<SelectExpression, any[]> = new Map();
+                    let qi = 0;
                     for (const select of selects) {
+                        const query = queries[qi++];
                         const rows: any[] = [];
                         map.set(select, rows);
 
@@ -118,10 +121,7 @@ export class MockConnection implements IConnection {
                                             value = exp.rightOperand.value;
                                         }
                                         else if (exp.rightOperand instanceof SqlParameterExpression) {
-                                            for (const query of deferred.queries) {
-                                                value = query.parameters.get(exp.rightOperand.name);
-                                                if (value) break;
-                                            }
+                                            value = query.parameters.get(exp.rightOperand.name);
                                         }
 
                                         if (value) {
@@ -134,10 +134,7 @@ export class MockConnection implements IConnection {
                                             value = exp.leftOperand.value;
                                         }
                                         else if (exp.leftOperand instanceof SqlParameterExpression) {
-                                            for (const query of deferred.queries) {
-                                                value = query.parameters.get(exp.leftOperand.name);
-                                                if (value) break;
-                                            }
+                                            value = query.parameters.get(exp.leftOperand.name);
                                         }
                                         if (value) {
                                             propValueMap[exp.rightOperand.propertyName] = value;
@@ -157,7 +154,7 @@ export class MockConnection implements IConnection {
                             }
                             const parentRows = map.get(parentExp);
 
-                            const maxRowCount = this.getMaxCount(select, deferred, 3);
+                            const maxRowCount = this.getMaxCount(select, query, 3);
 
                             for (const parent of parentRows) {
                                 const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
@@ -178,7 +175,7 @@ export class MockConnection implements IConnection {
                             }
                         }
                         else {
-                            const maxRowCount = this.getMaxCount(select, deferred, 10);
+                            const maxRowCount = this.getMaxCount(select, query, 10);
                             const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
                             for (let i = 0; i < numberOfRecord; i++) {
                                 const item = {} as any;
@@ -399,7 +396,7 @@ export class MockConnection implements IConnection {
         }
         const count = (command as BatchedQuery).queryCount || 1;
         // console.log(JSON.stringify(command.query));
-        console.log(command.query);
+        // console.log(command.query);
         return this.results.splice(0, count);
     }
     public reset(): Promise<void> {
@@ -413,27 +410,21 @@ export class MockConnection implements IConnection {
         return Promise.resolve();
     }
     public setQueries(deferredQueries: Array<DeferredQuery & IMockedDeferredQuery>) {
-        this.deferredQueries = deferredQueries;
+        this._deferredQueries = deferredQueries;
         this._generatedResults = null;
     }
     public startTransaction(): Promise<void> {
         this._transactionCount++;
         return Promise.resolve();
     }
-    protected extractValue(o: DeferredQuery, exp: IExpression) {
+    protected extractValue(query: IQuery, exp: IExpression) {
         if (exp instanceof ValueExpression) {
             return ExpressionExecutor.execute(exp);
         }
-        else if (exp instanceof SqlParameterExpression) {
-            for (const query of o.queries) {
-                if (!query.parameters) {
-                    continue;
-                }
-
-                const value = query.parameters.get(exp.name);
-                if (value !== undefined) {
-                    return value;
-                }
+        else if (query.parameters && exp instanceof SqlParameterExpression) {
+            const value = query.parameters.get(exp.name);
+            if (value !== undefined) {
+                return value;
             }
         }
         return null;
@@ -448,17 +439,17 @@ export class MockConnection implements IConnection {
         return results;
     }
 
-    protected getMaxCount(select: SelectExpression, deferred: DeferredQuery, defaultValue = 10) {
+    protected getMaxCount(select: SelectExpression, query: IQuery, defaultValue = 10) {
         if (select.paging && select.paging.take) {
-            defaultValue = this.extractValue(deferred, select.paging.take);
+            defaultValue = this.extractValue(query, select.paging.take);
         }
         else {
             const takeJoin = select.joins.first((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
             if (takeJoin) {
                 if (takeJoin.end) {
-                    defaultValue = this.extractValue(deferred, takeJoin.end);
+                    defaultValue = this.extractValue(query, takeJoin.end);
                     if (takeJoin.start) {
-                        defaultValue -= this.extractValue(deferred, takeJoin.start);
+                        defaultValue -= this.extractValue(query, takeJoin.start);
                     }
                 }
             }
