@@ -2,7 +2,7 @@ import { IObjectType, ResultSelector } from "../../Common/Type";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { toObjectFunctionExpression } from "../../Helper/toObjectFunctionExpression";
+import { toObjectFunctionExpression } from "../../Helper/ExpressionUtil";
 import { hashCode, hashCodeAdd } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
 import { QueryExpression } from "../../Queryable/QueryExpression/QueryExpression";

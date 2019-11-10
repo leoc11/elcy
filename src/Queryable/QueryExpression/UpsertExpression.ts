@@ -2,7 +2,7 @@ import { IObjectType } from "../../Common/Type";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { resolveTreeClone } from "../../Helper/toObjectFunctionExpression";
+import { resolveTreeClone } from "../../Helper/ExpressionUtil";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { EntityExpression } from "./EntityExpression";

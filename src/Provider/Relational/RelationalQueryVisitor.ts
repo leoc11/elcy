@@ -31,7 +31,7 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { toObjectFunctionExpression } from "../../Helper/toObjectFunctionExpression";
+import { toObjectFunctionExpression } from "../../Helper/ExpressionUtil";
 import { isColumnExp, isEntityExp, isExpression, isNativeFunction, isNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";

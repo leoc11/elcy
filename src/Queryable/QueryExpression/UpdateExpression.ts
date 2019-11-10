@@ -2,7 +2,7 @@ import { ColumnGeneration } from "../../Common/Enum";
 import { JoinType, OrderDirection } from "../../Common/StringType";
 import { IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveTreeClone } from "../../Helper/toObjectFunctionExpression";
+import { resolveTreeClone } from "../../Helper/ExpressionUtil";
 import { hasFlags, hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { JoinRelation } from "../Interface/JoinRelation";

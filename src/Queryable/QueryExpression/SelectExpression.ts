@@ -6,7 +6,7 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { resolveTreeClone } from "../../Helper/toObjectFunctionExpression";
+import { resolveTreeClone } from "../../Helper/ExpressionUtil";
 import { hashCode, hashCodeAdd, isColumnExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";

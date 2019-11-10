@@ -2,7 +2,7 @@ import { IObjectType, ObjectFunctionExpression, Pivot } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { toObjectFunctionExpression } from "../Helper/toObjectFunctionExpression";
+import { toObjectFunctionExpression } from "../Helper/ExpressionUtil";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
