@@ -21,8 +21,8 @@ export abstract class Pool<T extends PoolResource> {
         this.option.idleTimeout = this.option.idleTimeout || 30_000;
         this.option.acquireTimeout = this.option.acquireTimeout || 60_000;
     }
-    public readonly waitingQueues: Array<[Defer<T>, any]>;
-    public readonly idleQueues: Array<[T, any]>;
+    public readonly waitingQueues: Array<[Defer<T>, any]> = [];
+    public readonly idleQueues: Array<[T, any]> = [];
     private resourceCount = 0;
     private getIdleResourse: () => [T, any];
     public async acquireResource(): Promise<T> {
