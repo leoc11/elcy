@@ -1063,6 +1063,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return expression.sqlStatement;
     }
     protected toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderParameter): string {
+        if (expression.isReplacer) {
+            return `@@${expression.name}@@`;
+        }
         return "@" + expression.name;
     }
     protected toValueString(expression: ValueExpression<any>): string {
