@@ -39,15 +39,17 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
     }
     public readonly masterConnectionManager: PooledConnectionManager<T>;
     public readonly replicaConnectionManagers: Array<PooledConnectionManager<T>>;
-    public async getAllConnections(): Promise<IConnection[]> {
-        const res: IConnection[] = [await this.masterConnectionManager.getConnection(true)];
+    public getAllConnections(): Promise<IConnection[]> {
+        const resPromises: Promise<IConnection>[] = [];
+        resPromises.push(this.masterConnectionManager.getConnection(true));
         for (const a of this.replicaConnectionManagers) {
-            res.push(await a.getConnection(false));
+            resPromises.push(a.getConnection(false));
         }
-        return res;
+        return Promise.all(resPromises);
     }
+    private counter = 0;
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
-        const manager = writable ? this.masterConnectionManager : this.replicaConnectionManagers.orderBy([(o) => o.connectionCount]).first();
+        const manager = writable ? this.masterConnectionManager : this.replicaConnectionManagers[this.counter = ((this.counter + 1) % this.replicaConnectionManagers.length) - 1];
         return await manager.getConnection(writable);
     }
 }

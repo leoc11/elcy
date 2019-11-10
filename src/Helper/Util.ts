@@ -35,7 +35,7 @@ export const resolveClone = function <T extends IExpression>(exp: T, replaceMap:
 export const isEqual = function (a: any, b: any) {
     return a === b ||
         (
-            isNotNull(a) && isNotNull(b)
+            !isNull(a) && !isNull(b)
             && a.constructor === b.constructor && a.hasOwnProperty(Symbol.toPrimitive)
             && b.hasOwnProperty(Symbol.toPrimitive) && a[Symbol.toPrimitive] === b[Symbol.toPrimitive]
         );
@@ -109,7 +109,7 @@ export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpressi
         }
     }
 };
-export const visitExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => boolean | void) => {
+export const visitExpression = (source: IExpression, finder: (exp: IExpression) => boolean | void) => {
     if (finder(source) === false) {
         return;
     }
@@ -133,7 +133,7 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
         visitExpression(memberOperatorExp.objectOperand, finder);
     }
 };
-export const replaceExpression = <T extends IExpression>(source: IExpression, finder: (exp: IExpression) => IExpression) => {
+export const replaceExpression = (source: IExpression, finder: (exp: IExpression) => IExpression) => {
     const rsource = finder(source);
     if (rsource !== source) {
         return rsource;
@@ -163,7 +163,7 @@ export const isEntityExp = (data: IExpression): data is IEntityExpression => {
     return !!(data as IEntityExpression).entityTypes;
 };
 export const isExpression = (data: IExpression): data is IExpression => {
-    return !!(data.type && data.hashCode && data.clone);
+    return !!(data && data.type && data.hashCode && data.clone);
 };
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;
@@ -172,7 +172,7 @@ export const isColumnExp = (data: IExpression): data is IColumnExpression => {
     return !!(data as IColumnExpression).entity;
 };
 export const isValue = (data: any): data is ValueType => {
-    return isNotNull(data) && isValueType(data.constructor);
+    return !isNull(data) && isValueType(data.constructor);
 };
 export const isValueType = (type: GenericType) => {
     switch (type) {
@@ -199,8 +199,8 @@ export const isValueType = (type: GenericType) => {
             return false;
     }
 };
-export const isNotNull = (value: any) => {
-    return value !== null && value !== undefined;
+export const isNull = (value: any) => {
+    return value === null || value === undefined;
 };
 export const isNativeFunction = (fn: Function) => {
     return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);

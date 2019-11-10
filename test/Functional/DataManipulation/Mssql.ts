@@ -185,9 +185,9 @@ describe("DATA MANIPULATION", () => {
         it("should bulk insert", async () => {
             const spy = sinon.spy(db.connection, "query");
 
-            const effected = await db.autoParents.where((o) => o.details.count() <= 0).select(AutoDetail, (o) => ({
+            const effected = await db.autoParents.where((o) => o.details.count() <= 0).insertInto(AutoDetail, (o) => ({
                 description: "Detail of parent " + o.id
-            })).insertInto(AutoDetail);
+            }));
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
@@ -225,6 +225,10 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.autoParents.where((o) => o.id === 1).update({
                 name: "Updated",
                 isDefault: (o) => !o.isDefault
+            });
+
+            db.autoParents.where((o) => o.id === 1).update({
+                name: (o) => "update"
             });
 
             chai.should();
@@ -555,8 +559,8 @@ describe("DATA MANIPULATION", () => {
 
             chai.should();
             effected.should.equal(1);
-            spy.should.have.been.calledOnce.and.calledWithMatch(data, { type: "soft" } as IDeleteEventParam);
-            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { type: "soft" } as IDeleteEventParam);
+            spy.should.have.been.calledOnce.and.calledWithMatch(data, { mode: "soft" } as IDeleteEventParam);
+            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { mode: "soft" } as IDeleteEventParam);
             spy.should.be.calledBefore(spy2);
         });
     });

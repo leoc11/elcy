@@ -1,6 +1,7 @@
 {
   "name": "elcy",
   "private": true,
+  "type": "module",
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {

@@ -1,4 +1,5 @@
 import { NullConstructor } from "../Common/Constant";
+import { ParameterStack } from "../Common/ParameterStack";
 import { GenericType } from "../Common/Type";
 import { DbFunction } from "../Query/DbFunction";
 import { ArrayValueExpression } from "./Expression/ArrayValueExpression";
@@ -19,7 +20,7 @@ interface SyntaticParameter {
     index: number;
     paramTypes: GenericType[];
     scopedParameters: Map<string, ParameterExpression[]>;
-    userParameters: { [key: string]: any };
+    userParameters: ParameterStack;
 }
 const globalObjectMaps = new Map<string, any>([
     // Global Function
@@ -77,9 +78,9 @@ const globalObjectMaps = new Map<string, any>([
 const prefixOperators = operators.where((o) => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap((o) => o.identifier);
 const postfixOperators = operators.where((o) => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap((o) => o.identifier);
 export class SyntacticAnalyzer {
-    public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: any }) {
+    public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: ParameterStack) {
         if (!userParameters) {
-            userParameters = {};
+            userParameters = new ParameterStack();
         }
         if (!paramTypes) {
             paramTypes = [];
@@ -301,12 +302,13 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
             return params[0];
         }
     }
-    if (param.userParameters.hasOwnProperty(token.data)) {
-        const data = param.userParameters[token.data];
+
+    let data = param.userParameters.get(token.data as string);
+    if (data) {
         return new ParameterExpression(token.data as string, getConstructor(data));
     }
     else if (globalObjectMaps.has(token.data as string)) {
-        const data = globalObjectMaps.get(token.data as string);
+        data = globalObjectMaps.get(token.data as string);
         return new ValueExpression(data, token.data as string);
     }
 

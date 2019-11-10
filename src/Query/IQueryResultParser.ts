@@ -1,10 +1,10 @@
 import { DbContext } from "../Data/DbContext";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { QueryExpression } from "../Queryable/QueryExpression/QueryExpression";
 import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryResult } from "./IQueryResult";
 
 export interface IQueryResultParser<T = any> {
     queryBuilder: IQueryBuilder;
-    queryExpression: IQueryExpression<T>;
+    queryExpression: QueryExpression<T[]>;
     parse(queryResults: IQueryResult[], dbContext: DbContext): T[];
 }

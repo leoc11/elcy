@@ -1,3 +1,4 @@
+import { INodeTree } from "../../Common/ParameterStack";
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { GenericType, IObjectType } from "../../Common/Type";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
@@ -5,10 +6,10 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
+import { resolveTreeClone } from "../../Helper/toObjectFunctionExpression";
 import { hashCode, hashCodeAdd, isColumnExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { ISelectRelation } from "../Interface/ISelectRelation";
@@ -18,12 +19,11 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IPagingExpression } from "./IPagingExpression";
-import { IQueryExpression } from "./IQueryExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
+import { QueryExpression } from "./QueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 
-export class SelectExpression<T = any> implements IQueryExpression<T> {
+export class SelectExpression<T = any> extends QueryExpression<T[]> {
     public get allColumns(): IEnumerable<IColumnExpression<T>> {
         let columns = this.entity.columns.union(this.resolvedSelects);
         for (const join of this.joins) {
@@ -118,13 +118,13 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         return selects;
     }
     constructor(entity?: IEntityExpression<T>) {
+        super();
         if (entity) {
             this.entity = entity;
             this.itemExpression = entity;
 
             if (entity instanceof ProjectionEntityExpression) {
-                this.selects = entity.columns.slice(0);
-                this.paramExps = entity.paramExps.slice(0);
+                this.selects = entity.columns.slice();
             }
             else {
                 this.selects = entity.columns.where((o) => o.columnMeta && o.columnMeta.isProjected).toArray();
@@ -144,12 +144,13 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public joins: Array<JoinRelation<T, any>> = [];
     public orders: IOrderExpression[] = [];
     public paging: IPagingExpression = {};
-    public paramExps: SqlParameterExpression[] = [];
-
     public parentRelation: ISelectRelation<any, T>;
     public selects: IColumnExpression[] = [];
     public type = Array;
     public where: IExpression<boolean>;
+    //#endregion
+
+    public parameterTree: INodeTree<SqlParameterExpression[]>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>): IncludeRelation<T, TChild>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relations: IExpression<boolean>, type: RelationshipType, isEmbedded?: boolean): IncludeRelation<T, TChild>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: RelationshipType, isEmbedded?: boolean): IncludeRelation<T, TChild> {
@@ -283,20 +284,6 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         this.joins.push(joinRel);
         return joinRel;
     }
-    public addSqlParameter<Tval>(valueExp: IExpression<Tval[]>, colExp?: IEntityExpression<Tval>): SqlTableValueParameterExpression<Tval>;
-    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData): SqlParameterExpression<Tval>;
-    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Tval> {
-        let paramExp: SqlParameterExpression;
-        if ((valueExp.type as any) === Array) {
-            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<any>, colExp as IEntityExpression);
-        }
-        else {
-            paramExp = new SqlParameterExpression(valueExp, colExp as IColumnMetaData);
-        }
-        this.paramExps.push(paramExp);
-        return paramExp;
-    }
-
     //#endregion
 
     //#region Methods
@@ -351,7 +338,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
-        clone.paramExps = this.paramExps.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
+        clone.parameterTree = resolveTreeClone(this.parameterTree, replaceMap);
         Object.assign(clone.paging, this.paging);
         return clone;
     }
@@ -398,5 +385,4 @@ Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
 Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
 })`;
     }
-    //#endregion
 }

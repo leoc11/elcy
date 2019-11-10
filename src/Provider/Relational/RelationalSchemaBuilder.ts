@@ -10,7 +10,7 @@ import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { clone, isNotNull } from "../../Helper/Util";
+import { clone, isNull } from "../../Helper/Util";
 import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { CheckConstraintMetaData } from "../../MetaData/CheckConstraintMetaData";
@@ -32,6 +32,7 @@ import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaDa
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
+import { TempEntityMetaData } from "../../MetaData/TempEntityMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
 import { IQuery } from "../../Query/IQuery";
@@ -118,7 +119,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             tableName = this.entityName(entityMetaData);
             entityMetaData.name = oldName;
         }
-        const query = `CREATE TABLE ${tableName}` +
+        const tableModifier = entityMetaData instanceof TempEntityMetaData ? "TEMPORARY TABLE" : "TABLE";
+        const query = `CREATE ${tableModifier} ${tableName}` +
             `${this.queryBuilder.newLine()}(` +
             `${this.queryBuilder.newLine(1, false)}${columnDefinitions}` +
             `,${this.queryBuilder.newLine(1, false)}${this.primaryKeyDeclaration(entityMetaData)}` +
@@ -585,14 +587,14 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             switch (columnType.group) {
                 case "Binary": {
                     const size = (column as unknown as BinaryColumnMetaData).size;
-                    if (isNotNull(size)) {
+                    if (!isNull(size)) {
                         columnType.option.size = size;
                     }
                     break;
                 }
                 case "String": {
                     const length = (column as unknown as StringColumnMetaData).length;
-                    if (isNotNull(length)) {
+                    if (!isNull(length)) {
                         columnType.option.length = length;
                     }
                     break;
@@ -600,7 +602,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 case "DateTime":
                 case "Time": {
                     const precision = (column as unknown as TimeColumnMetaData).precision;
-                    if (isNotNull(precision)) {
+                    if (!isNull(precision)) {
                         columnType.option.precision = precision;
                     }
                     break;
@@ -608,10 +610,10 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 case "Decimal": {
                     const scale = (column as unknown as DecimalColumnMetaData).scale;
                     const precision = (column as unknown as DecimalColumnMetaData).precision;
-                    if (isNotNull(scale)) {
+                    if (!isNull(scale)) {
                         columnType.option.scale = scale;
                     }
-                    if (isNotNull(precision)) {
+                    if (!isNull(precision)) {
                         columnType.option.precision = precision;
                     }
                     break;
@@ -619,7 +621,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 case "Integer":
                 case "Real": {
                     const size = (column as unknown as BinaryColumnMetaData).size;
-                    if (isNotNull(size)) {
+                    if (!isNull(size)) {
                         columnType.option.size = size;
                     }
                     break;

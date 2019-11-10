@@ -77,7 +77,19 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
         }
         return this._versionColumn;
     }
-    constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
+    constructor(metaData: EntityMetaData<T>, alias: string, isRelationData?: boolean);
+    constructor(type: IObjectType<T>, alias: string, isRelationData?: boolean);
+    constructor(typeOrMeta: EntityMetaData<T> | IObjectType<T>, alias: string, isRelationData?: boolean) {
+        this.alias = alias;
+        this.isRelationData = isRelationData;
+        if (typeOrMeta instanceof EntityMetaData) {
+            this._metaData = typeOrMeta;
+            this.type = typeOrMeta.type;
+        }
+        else {
+            this.type = typeOrMeta;
+        }
+
         if (this.metaData) {
             this.name = this.metaData.name;
             this.entityTypes = [this.metaData.type];
@@ -86,6 +98,9 @@ export class EntityExpression<T = any> implements IEntityExpression<T> {
             this.entityTypes = [this.type];
         }
     }
+    public readonly type: IObjectType<T>;
+    public alias: string;
+    public isRelationData?: boolean;
     public readonly entityTypes: IObjectType[];
     public name: string;
     public select?: SelectExpression<T>;

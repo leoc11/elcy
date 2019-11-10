@@ -1,19 +1,18 @@
-import { QueuedTimeout } from "../Common/QueuedTimeout";
 import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheItem } from "./ICacheItem";
 import { ICacheOption } from "./ICacheOption";
 import { IResultCacheManager } from "./IResultCacheManager";
 
 export class DefaultResultCacheManager implements IResultCacheManager {
-    private _expiredQueue = new QueuedTimeout((item: ICacheItem) => {
-        return this.remove(item.key);
-    });
-    private _keyMap = new Map<string, ICacheItem>();
+    private _keyMap = new Map<string, [ICacheItem, any]>();
     private _tagMap = new Map<string, string[]>();
     public async clear(): Promise<void> {
+        const titems = Array.from(this._keyMap.values());
+        for (const titem of titems) {
+            clearTimeout(titem[1]);
+        }
         this._keyMap.clear();
         this._tagMap.clear();
-        this._expiredQueue.reset();
     }
     public async get(key: string): Promise<IQueryResult[]> {
         const res = await this.gets(key);
@@ -21,13 +20,16 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     }
     public async gets(...keys: string[]): Promise<IQueryResult[][]> {
         return keys.select((key) => {
-            const item = this._keyMap.get(key);
+            const titem = this._keyMap.get(key);
+            const item = titem[0];
             if (item && item.slidingExpiration) {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;
-                    this._expiredQueue.clearTimeout(item);
-                    this._expiredQueue.setTimeout(item, item.expiredTime);
+                    if (item.expiredTime) {
+                        clearTimeout(titem[1]);
+                        titem[1] = setTimeout(() => this.remove(item.key), Date.now() - item.expiredTime.getTime());
+                    }
                 }
             }
 
@@ -36,7 +38,8 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     }
     public async remove(...keys: string[]): Promise<void> {
         for (const key of keys) {
-            const item = this._keyMap.get(key);
+            const titem = this._keyMap.get(key);
+            const item = titem[0];
             this._keyMap.delete(key);
             if (item) {
                 if (item.tags) {
@@ -47,7 +50,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                         }
                     }
                 }
-                this._expiredQueue.clearTimeout(item);
+                clearTimeout(titem[1]);
             }
         }
     }
@@ -69,12 +72,13 @@ export class DefaultResultCacheManager implements IResultCacheManager {
         }
         item.data = cache;
         item.key = key;
-        this._keyMap.set(key, item);
+        const titem: [ICacheItem, any] = [item, null];
+        this._keyMap.set(key, titem);
         if (!item.expiredTime && item.slidingExpiration) {
             item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
         }
         if (item.expiredTime) {
-            this._expiredQueue.setTimeout(item, item.expiredTime);
+            titem[1] = setTimeout(() => this.remove(item.key), Date.now() - item.expiredTime.getTime());
         }
         if (item.tags) {
             for (const tag of item.tags) {

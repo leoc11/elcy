@@ -2,7 +2,7 @@ import { ClassBase } from "../Common/Constant";
 import { ColumnGeneration } from "../Common/Enum";
 import { GenericType, IObjectType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { isNotNull } from "../Helper/Util";
+import { isNull } from "../Helper/Util";
 import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
@@ -17,7 +17,7 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 export class AbstractEntityMetaData<TE extends TBase, TBase = any> implements IEntityMetaData<TE, TBase> {
     public get insertGeneratedColumns() {
         return this.columns.where((o) => {
-            return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
+            return isNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
         }).toArray();
     }
     public get updateGeneratedColumns() {

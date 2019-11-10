@@ -2,7 +2,7 @@ import { clone } from "../Helper/Util";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 
 export class OptionQueryable<T> extends Queryable<T> {
     public get queryOption() {
@@ -14,7 +14,7 @@ export class OptionQueryable<T> extends Queryable<T> {
         this.option(option);
     }
     private _queryOption: IQueryOption;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
+    public buildQuery(queryVisitor: IQueryVisitor): QueryExpression<T[]> {
         return this.parent.buildQuery(queryVisitor);
     }
     public hashCode() {

@@ -1,9 +1,8 @@
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { QueryExpression } from "../Queryable/QueryExpression/QueryExpression";
 import { IQueryOption } from "./IQueryOption";
-import { IQueryParameterMap } from "./IQueryParameter";
+
 export interface IQueryBuilderParameter {
     option?: IQueryOption;
-    parameters?: IQueryParameterMap;
-    queryExpression?: IQueryExpression;
+    queryExpression?: QueryExpression;
     state?: string;
 }

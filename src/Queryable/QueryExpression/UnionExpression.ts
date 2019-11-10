@@ -8,7 +8,6 @@ export class UnionExpression<T> extends ProjectionEntityExpression {
     constructor(public readonly subSelect: SelectExpression<T>, public readonly subSelect2: SelectExpression, public isUnionAll: IExpression<boolean>, type?: GenericType<T>) {
         super(subSelect, type);
         this.subSelect2.isSubSelect = true;
-        this.paramExps = this.paramExps.concat(subSelect2.paramExps);
         this.entityTypes = this.subSelect.entity.entityTypes.concat(this.subSelect2.entity.entityTypes).distinct().toArray();
     }
     public readonly entityTypes: IObjectType[];

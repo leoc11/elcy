@@ -1,4 +1,4 @@
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { BitwiseExpression } from "./BitwiseExpression";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
@@ -21,7 +21,7 @@ export class BitwiseXorExpression extends BitwiseExpression implements IBinaryOp
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("^", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+        return hashCode("^", this.leftOperand.hashCode()) + hashCode("^", this.rightOperand.hashCode());
     }
 
     public toString(): string {

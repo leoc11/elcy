@@ -10,7 +10,7 @@ import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class OrderQueryable<T> extends Queryable<T> {
@@ -20,7 +20,7 @@ export class OrderQueryable<T> extends Queryable<T> {
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: IExpression[] = [];
-                itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, [this.parent.type], this.parameters));
+                itemArray.push(selector instanceof FunctionExpression ? selector : ExpressionBuilder.parse(selector, [this.parent.type], this.stackTree.node));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
             }).toArray();
@@ -36,12 +36,12 @@ export class OrderQueryable<T> extends Queryable<T> {
     }
     protected _selectors: Array<ArrayValueExpression<FunctionExpression | IExpression<OrderDirection>>>;
     protected readonly selectorsFn: Array<IOrderQueryDefinition<T>>;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "orderBy", selectors);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("ORDERBY", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));

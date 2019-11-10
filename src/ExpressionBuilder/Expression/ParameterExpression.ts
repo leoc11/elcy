@@ -3,7 +3,7 @@ import { hashCode } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
 export class ParameterExpression<T = any> implements IExpression<T> {
-    constructor(public name: string, type?: GenericType<T>) {
+    constructor(public name: string, type?: GenericType<T>, public index?: number) {
         this.type = type;
     }
     public itemType?: GenericType;

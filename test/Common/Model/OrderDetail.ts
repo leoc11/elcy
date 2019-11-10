@@ -20,7 +20,7 @@ export class OrderDetail {
         if (defValues) {
             for (const prop in defValues) {
                 const value = (defValues as any)[prop];
-                this[prop as keyof OrderDetail] = value;
+                this[prop as any] = value;
             }
         }
     }

@@ -4,16 +4,19 @@ import { GenericType, IObjectType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { isNotNull } from "../../Helper/Util";
+import { isNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
-import { IQuery } from "../../Query/IQuery";
+import { TempEntityMetaData } from "../../MetaData/TempEntityMetaData";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
+import { IQueryTemplate } from "../../Query/IQueryTemplate";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
+import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
+import { IEntityExpression } from "../../Queryable/QueryExpression/IEntityExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
@@ -32,7 +35,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
         [Date, () => ({ columnType: "datetime", group: "DateTime" })],
-        [String, (val: string) => ({ columnType: "nvarchar", group: "String", option: { length: 255 } })],
+        [String, () => ({ columnType: "nvarchar", group: "String", option: { length: 255 } })],
         [Number, () => ({ columnType: "decimal", group: "Decimal", option: { precision: 18, scale: 0 } })],
         [Boolean, () => ({ columnType: "bit", group: "Boolean" })]
     ]);
@@ -44,35 +47,34 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             return identity;
         }
     }
-    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption): IQueryTemplate[] {
         if (insertExp.values.length <= 0) {
             return [];
         }
 
         const param: IQueryBuilderParameter = {
             option: option,
-            parameters: parameters,
             queryExpression: insertExp
         };
         const colString = insertExp.columns.select((o) => this.enclose(o.columnName)).toArray().join(", ");
-        let output = insertExp.entity.columns.where((o) => isNotNull(o.columnMeta))
+        let output = insertExp.entity.columns.where((o) => !isNull(o.columnMeta))
             .where((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
             .select((o) => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
         if (output) {
             output = " OUTPUT " + output;
         }
 
-        const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString})${output} VALUES`;
-        let queryCommand: IQuery = {
+        const insertQuery = `INSERT INTO ${this.entityName(insertExp.entity)}(${colString})${output} VALUES`;
+        let queryCommand: IQueryTemplate = {
             query: insertQuery,
-            parameters: new Map(),
+            parameterTree: insertExp.parameterTree,
             type: QueryType.DML
         };
         if (output) {
             queryCommand.type |= QueryType.DQL;
         }
 
-        const result: IQuery[] = [queryCommand];
+        const result: IQueryTemplate[] = [queryCommand];
         let count = 0;
         this.indent++;
         for (const itemExp of insertExp.values) {
@@ -81,7 +83,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 queryCommand.query = queryCommand.query.slice(0, -1);
                 queryCommand = {
                     query: insertQuery,
-                    parameters: new Map(),
+                    parameterTree: insertExp.parameterTree,
                     type: QueryType.DML
                 };
                 count = 0;
@@ -93,11 +95,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
                 if (valueExp) {
                     values.push(this.toString(valueExp, param));
-                    const paramExp = param.parameters.get(valueExp);
-                    if (paramExp) {
-                        queryCommand.parameters.set(paramExp.name, paramExp.value);
-                        count++;
-                    }
+                    count++;
                 }
                 else {
                     values.push("DEFAULT");
@@ -113,11 +111,10 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     }
 
     //#region Update
-    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
-        const result: IQuery[] = [];
+    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption): IQueryTemplate[] {
+        const result: IQueryTemplate[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
-            parameters: parameters,
             queryExpression: updateExp
         };
 
@@ -149,7 +146,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         let updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias)}` +
             this.newLine() + `SET ${setQuery.join(", ")}` +
-            this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
+            this.newLine() + `FROM ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
             this.getJoinQueryString(updateExp.joins, param);
         if (updateExp.where) {
             updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, param);
@@ -157,14 +154,14 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         result.push({
             query: updateQuery,
-            parameters: this.getParameter(param),
+            parameterTree: updateExp.parameterTree,
             type: QueryType.DML
         });
 
         return result;
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {
-        if (!isNotNull(input)) {
+        if (isNull(input)) {
             return null;
         }
         if (column instanceof ColumnExpression && column.columnMeta instanceof RowVersionColumnMetaData) {
@@ -179,15 +176,27 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
         return super.toPropertyValue(input, column);
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+    protected entityName(entityExp: IEntityExpression, param?: IQueryBuilderParameter) {
+        if (entityExp instanceof EntityExpression && entityExp.metaData instanceof TempEntityMetaData) {
+            return this.enclose("#" + entityExp.name);
+        }
+        return this.enclose(entityExp.name);
+    }
+    protected getPagingQueryString(select: SelectExpression, take: IExpression<number>, skip: IExpression<number>): string {
         let result = "";
         if (select.orders.length <= 0) {
             result += "ORDER BY (SELECT NULL)" + this.newLine();
         }
-        result += "OFFSET " + skip + " ROWS";
-        if (take > 0) {
-            result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
+        result += "OFFSET " + this.toString(skip) + " ROWS";
+        if (take) {
+            result += this.newLine() + "FETCH NEXT " + this.toString(take) + " ROWS ONLY";
         }
         return result;
+    }
+    protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
+        if (entity instanceof EntityExpression && entity.metaData instanceof TempEntityMetaData) {
+            return this.enclose("#" + entity.name) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
+        }
+        return super.getEntityQueryString(entity, param);
     }
 }

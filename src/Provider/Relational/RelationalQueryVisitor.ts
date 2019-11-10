@@ -1,11 +1,11 @@
+import { ParameterStack } from "../../Common/ParameterStack";
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
-import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { FunctionCallExpression } from "../../ExpressionBuilder/Expression/FunctionCallExpression";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { GreaterEqualExpression } from "../../ExpressionBuilder/Expression/GreaterEqualExpression";
@@ -31,11 +31,13 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
-import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { toObjectFunctionExpression } from "../../Helper/toObjectFunctionExpression";
+import { isColumnExp, isEntityExp, isExpression, isNativeFunction, isNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
+import { TempEntityMetaData } from "../../MetaData/TempEntityMetaData";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryTranslatorItem } from "../../Query/IQueryTranslatorItem";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
@@ -48,7 +50,6 @@ import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation
 import { Queryable } from "../../Queryable/Queryable";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
-import { CustomEntityExpression } from "../../Queryable/QueryExpression/CustomEntityExpression";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { ExceptExpression } from "../../Queryable/QueryExpression/ExceptExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -65,12 +66,11 @@ export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
         this.queryOption = {};
         this.valueTransformer = new ExpressionExecutor();
-        this.scopeParameters = new TransformerParameter();
+        this.stack = new ParameterStack();
     }
     public namingStrategy: NamingStrategy;
-    public parameterIndex: number;
     public queryOption: IQueryOption;
-    public scopeParameters: TransformerParameter;
+    public stack: ParameterStack;
     public translator: QueryTranslator;
     public valueTransformer: ExpressionExecutor;
     private aliasObj: { [key: string]: number } = {};
@@ -94,13 +94,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             this.visit(new MethodCallExpression(selectExp, "orderBy", orderParams), { selectExpression: selectExp, scope: "orderBy" });
         }
     }
-    public setParameter(flatParameterStacks: { [key: string]: any }) {
-        this.scopeParameters.clear();
-        this.valueTransformer.scopeParameters.clear();
-        if (flatParameterStacks) {
-            this.scopeParameters.set(flatParameterStacks);
-            this.valueTransformer.scopeParameters.set(flatParameterStacks);
-        }
+    public setStack(param: ParameterStack) {
+        param = param ? param.clone() : new ParameterStack();
+        this.stack = param;
+        this.valueTransformer.stack = param;
     }
 
     //#region visit parameter
@@ -151,11 +148,11 @@ export class RelationalQueryVisitor implements IQueryVisitor {
     public visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter) {
         let i = 0;
         for (const paramExp of exp.params) {
-            this.scopeParameters.add(paramExp.name, parameters[i++]);
+            this.stack.push(paramExp.name, parameters[i++]);
         }
         const result = this.visit(exp.body, param);
         for (const paramExp of exp.params) {
-            this.scopeParameters.remove(paramExp.name);
+            this.stack.pop(paramExp.name);
         }
         return result as IExpression<T>;
     }
@@ -173,17 +170,17 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.leftOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.leftOperand);
+                param.selectExpression.parameterTree.node.delete(exp.leftOperand);
                 exp.leftOperand = exp.leftOperand.valueExp;
                 hasParam = true;
             }
             if (exp.rightOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.rightOperand);
+                param.selectExpression.parameterTree.node.delete(exp.rightOperand);
                 exp.rightOperand = exp.rightOperand.valueExp;
                 hasParam = true;
             }
             if (hasParam) {
-                return param.selectExpression.addSqlParameter(exp);
+                return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
             }
 
             return new ValueExpression(this.valueTransformer.execute(exp));
@@ -228,7 +225,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             let hasParam = false;
             exp.params = exp.params.select((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(o);
+                    param.selectExpression.parameterTree.node.delete(o);
                     hasParam = true;
                     return o.valueExp;
                 }
@@ -236,7 +233,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }).toArray();
 
             if (hasParam) {
-                return param.selectExpression.addSqlParameter(exp);
+                param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
             }
 
             return new ValueExpression(this.valueTransformer.execute(exp));
@@ -263,13 +260,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             exp.params = exp.params.select((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(o);
+                    param.selectExpression.parameterTree.node.delete(o);
                     return o.valueExp;
                 }
                 return o;
             }).toArray();
 
-            const result = param.selectExpression.addSqlParameter(exp);
+            const result = param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
             return result;
         }
 
@@ -399,9 +396,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
         }
         else if (objectOperand instanceof SqlParameterExpression) {
-            param.selectExpression.paramExps.delete(objectOperand);
+            param.selectExpression.parameterTree.node.delete(objectOperand);
             exp.objectOperand = objectOperand.valueExp;
-            return param.selectExpression.addSqlParameter(exp);
+            return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
         }
         else {
             let translator;
@@ -424,9 +421,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             // Execute in app if all parameter is available.
             if (isExpressionSafe) {
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(exp.objectOperand);
+                    param.selectExpression.parameterTree.node.delete(exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
-                    return param.selectExpression.addSqlParameter(exp);
+                    return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
                 }
 
                 return new ValueExpression(this.valueTransformer.execute(exp));
@@ -497,7 +494,15 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const cloneObjectOperand = selectOperand instanceof GroupedExpression && param.scope !== "selectMany" && param.scope !== "select" && param.scope !== "queryable";
                     const oriJoinCount = selectOperand.joins.length;
 
-                    const selectorFn = (exp.params.length > 1 ? exp.params[1] : exp.params[0]) as FunctionExpression<R>;
+                    const selectorParam = (exp.params.length > 1 ? exp.params[1] : exp.params[0]);
+                    let selectorFn: FunctionExpression<R>;
+                    if (selectorParam instanceof FunctionExpression) {
+                        selectorFn = selectorParam;
+                    }
+                    else if (selectorParam instanceof ObjectValueExpression) {
+                        selectorFn = toObjectFunctionExpression<R, any>(selectorParam.object, selectOperand.itemType as IObjectType, "o", this.stack);
+                    }
+
                     const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
                     let selectExp = this.visitFunction(selectorFn, [selectOperand.getItemExpression()], visitParam);
 
@@ -601,7 +606,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                         if (!selectOperand.isSubSelect) {
                             // inherit all parameters
-                            selectOperand.paramExps = param.selectExpression.paramExps;
+                            // selectOperand.parameterTree = param.selectExpression.parameterTree;
                             param.selectExpression = selectOperand;
                         }
                     }
@@ -668,13 +673,21 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         return new MethodCallExpression(objectOperand, "contains", [item]);
                     }
                     else if (objectOperand.itemType === objectOperand.entity.type) {
-                        for (const primaryCol of objectOperand.entity.primaryColumns) {
-                            const d = new EqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
-                            andExp = andExp ? new AndExpression(andExp, d) : d;
+                        if (objectOperand.entity instanceof EntityExpression) {
+                            for (const primaryCol of objectOperand.entity.primaryColumns) {
+                                const d = new StrictEqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
+                                andExp = andExp ? new AndExpression(andExp, d) : d;
+                            }
+                        }
+                        else {
+                            for (const col of objectOperand.entity.columns) {
+                                const d = new StrictEqualExpression(col, new MemberAccessExpression(item, col.propertyName));
+                                andExp = andExp ? new AndExpression(andExp, d) : d;
+                            }
                         }
                     }
                     else {
-                        andExp = new EqualExpression(objectOperand.selects.first(), item);
+                        andExp = new StrictEqualExpression(objectOperand.selects.first(), item);
                     }
 
                     if (param.scope === "queryable") {
@@ -1257,7 +1270,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     let entityExp: IEntityExpression;
                     switch (exp.methodName) {
                         case "union":
-                            const isUnionAllExp = this.visit(exp.params[1] as ParameterExpression<boolean>, param);
+                            const isUnionAllExp = this.visit(exp.params[1], param);
                             entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAllExp);
                             break;
                         case "intersect":
@@ -1268,6 +1281,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             break;
                     }
                     selectOperand = new SelectExpression(entityExp);
+                    selectOperand.parameterTree = param.selectExpression.parameterTree;
                     this.setDefaultBehaviour(selectOperand);
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
@@ -1321,9 +1335,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const resultVisitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: "join" };
                     const resultSelector = exp.params[2] as FunctionExpression;
                     const paramExp = resultSelector.params.pop();
-                    this.scopeParameters.add(paramExp.name, exp.methodName === "groupJoin" ? childSelectOperand : childSelectOperand.getItemExpression());
+                    this.stack.push(paramExp.name, exp.methodName === "groupJoin" ? childSelectOperand : childSelectOperand.getItemExpression());
                     this.visit(new MethodCallExpression(selectOperand, "select", [resultSelector]), resultVisitParam);
-                    this.scopeParameters.remove(paramExp.name);
+                    this.stack.pop(paramExp.name);
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
@@ -1347,9 +1361,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const resultVisitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: "join" };
                     const resultSelector = exp.params[1] as FunctionExpression;
                     const paramExp = resultSelector.params.pop();
-                    this.scopeParameters.add(paramExp.name, childSelectOperand.getItemExpression());
+                    this.stack.push(paramExp.name, childSelectOperand.getItemExpression());
                     this.visit(new MethodCallExpression(selectOperand, "select", [new ValueExpression(Object), resultSelector]), resultVisitParam);
-                    this.scopeParameters.remove(paramExp.name);
+                    this.stack.pop(paramExp.name);
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
@@ -1387,12 +1401,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     // select
                     const selectorFn = new FunctionExpression(new ObjectValueExpression(dmObject), metrics.params);
-                    this.scopeParameters.add(dimensions.params[0].name, groupExp.key);
-                    this.scopeParameters.add(selectorFn.params[0].name, groupExp.getItemExpression());
+                    this.stack.push(dimensions.params[0].name, groupExp.key);
+                    this.stack.push(selectorFn.params[0].name, groupExp.getItemExpression());
                     visitParam = { selectExpression: groupExp, scope: exp.methodName };
                     const selectExpression: SelectExpression = this.visit(new MethodCallExpression(groupExp, "select", [selectorFn]), visitParam) as any;
-                    this.scopeParameters.remove(selectorFn.params[0].name);
-                    this.scopeParameters.remove(dimensions.params[0].name);
+                    this.stack.pop(selectorFn.params[0].name);
+                    this.stack.pop(dimensions.params[0].name);
                     param.selectExpression = visitParam.selectExpression;
                     selectOperand = selectExpression;
 
@@ -1450,7 +1464,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
 
             let translator: IQueryTranslatorItem;
-            if (isNotNull(objectOperandValue)) {
+            if (!isNull(objectOperandValue)) {
                 translator = this.translator.resolve(objectOperandValue, exp.methodName);
                 if (translator && (!isExpressionSafe || translator.isTranslate(exp))) {
                     return exp;
@@ -1467,13 +1481,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             if (isExpressionSafe) {
                 let hasParam = false;
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(exp.objectOperand);
+                    param.selectExpression.parameterTree.node.delete(exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
                     hasParam = true;
                 }
                 exp.params = exp.params.select((o) => {
                     if (o instanceof SqlParameterExpression) {
-                        param.selectExpression.paramExps.delete(o);
+                        param.selectExpression.parameterTree.node.delete(o);
                         hasParam = true;
                         return o.valueExp;
                     }
@@ -1481,7 +1495,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }).toArray();
 
                 if (hasParam) {
-                    return param.selectExpression.addSqlParameter(exp);
+                    return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
                 }
 
                 return new ValueExpression(this.valueTransformer.execute(exp));
@@ -1547,11 +1561,11 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
             const oldParam = selectExp.getItemExpression();
             const embeddedParam = embeddedSelect.getItemExpression();
-            for (const key of this.scopeParameters.keys) {
-                const val = this.scopeParameters.get(key);
+            for (const [key] of this.stack) {
+                const val = this.stack.get(key);
                 if (val === oldParam) {
                     possibleKeys.push(key);
-                    this.scopeParameters.add(key, embeddedParam);
+                    this.stack.push(key, embeddedParam);
                 }
             }
         }
@@ -1656,7 +1670,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
         if (requireCopy) {
             for (const key of possibleKeys) {
-                this.scopeParameters.remove(key);
+                this.stack.pop(key);
             }
             let relations: IExpression<boolean>;
             for (const pCol of selectExp.primaryKeys) {
@@ -1670,68 +1684,77 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         return embeddedSelect.entity;
     }
     protected visitParameter<T>(exp: ParameterExpression<T>, param: IQueryVisitParameter) {
-        let result = this.scopeParameters.get(exp.name);
-        if (!result) {
-            const value = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}`);
-            if (value instanceof Queryable) {
-                const selectExp = value.buildQuery(this) as SelectExpression;
-                selectExp.isSubSelect = true;
-                param.selectExpression.addJoin(selectExp, null, "LEFT");
-                return selectExp;
+        const item = this.stack.getItem(exp.name);
+        const result = item[0];
+        if (result instanceof Queryable) {
+            const selectExp = result.buildQuery(this) as SelectExpression;
+            selectExp.isSubSelect = true;
+            param.selectExpression.addJoin(selectExp, null, "LEFT");
+            return selectExp;
+        }
+        else if (result instanceof Function) {
+            return new ValueExpression(result, exp.name);
+        }
+        else if (result instanceof Array) {
+            const arrayParamExp = new ParameterExpression(exp.name, Array as GenericType<T[]>, item[1]);
+            arrayParamExp.itemType = exp.itemType;
+            const arrayValue = result as any[];
+
+            let arrayItemType = this.stack.get(`${exp.name}_itemtype`);
+            const isTypeSpecified = !!arrayItemType;
+            if (!arrayItemType) {
+                arrayItemType = arrayValue.where((o) => !!o).first();
             }
-            else if (value instanceof Function) {
-                return new ValueExpression(value, exp.name);
-            }
-            else if (value instanceof Array) {
-                const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<T[]>);
-                arrayParamExp.itemType = exp.itemType;
-                const arrayValue = value as any[];
+            const itemType = arrayItemType ? arrayItemType.constructor : Object;
 
-                let arrayItemType = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
-                const isTypeSpecified = !!arrayItemType;
-                if (!arrayItemType) {
-                    arrayItemType = arrayValue.where((o) => !!o).first();
-                }
-                const itemType = arrayItemType ? arrayItemType.constructor : Object;
+            // Temporary table
+            const tempEntityMeta = new TempEntityMetaData(itemType, `${exp.name}_${item[1]}`);
+            const indexCol = new ColumnMetaData(Number, tempEntityMeta);
+            indexCol.propertyName = indexCol.columnName = "__index";
+            indexCol.nullable = false;
+            // indexCol.columnType = "";
+            tempEntityMeta.columns.push(indexCol);
+            tempEntityMeta.primaryKeys.push(indexCol);
 
-                const entityExp = new CustomEntityExpression("#" + exp.name + this.parameterIndex, [], itemType, this.newAlias());
-                entityExp.columns.push(new ColumnExpression(entityExp, Number, "__index", "__index", true));
-
-                if (arrayItemType && !isValueType(itemType)) {
-                    if (isTypeSpecified) {
-                        for (const prop in arrayItemType) {
-                            const propValue = arrayItemType[prop];
-                            if (isValueType(propValue)) {
-                                entityExp.columns.push(new ColumnExpression(entityExp, propValue, prop, prop, false));
-                            }
+            if (arrayItemType && !isValueType(itemType)) {
+                if (isTypeSpecified) {
+                    for (const prop in arrayItemType) {
+                        const colType = arrayItemType[prop];
+                        if (isValueType(colType)) {
+                            const col = new ColumnMetaData(colType, tempEntityMeta);
+                            col.propertyName = col.columnName = prop;
+                            col.nullable = true;
+                            tempEntityMeta.columns.push(col);
                         }
                     }
-                    else {
-                        for (const prop in arrayItemType) {
-                            const propValue = arrayItemType[prop];
-                            if (propValue === null || (propValue !== undefined && isValue(propValue))) {
-                                entityExp.columns.push(new ColumnExpression(entityExp, propValue ? propValue.constructor : String, prop, prop, false));
-                            }
+                }
+                else {
+                    for (const prop in arrayItemType) {
+                        const propValue = arrayItemType[prop];
+                        if (propValue === null || (propValue !== undefined && isValue(propValue))) {
+                            const colType = !isNull(propValue) ? propValue.constructor : String;
+                            const col = new ColumnMetaData(colType, tempEntityMeta);
+                            col.propertyName = col.columnName = prop;
+                            col.nullable = true;
+                            tempEntityMeta.columns.push(col);
                         }
                     }
                 }
-
-                if (entityExp.columns.length === 1) {
-                    entityExp.columns.push(new ColumnExpression(entityExp, itemType, "__value", "__value", false));
-                }
-
-                const selectExp = new SelectExpression(entityExp);
-                selectExp.selects = entityExp.columns.where((o) => !o.isPrimary).toArray();
-                selectExp.isSubSelect = true;
-                param.selectExpression.addJoin(selectExp, null, "LEFT");
-
-                param.selectExpression.addSqlParameter(arrayParamExp, entityExp);
-                return selectExp;
+            }
+            else {
+                const valueCol = new ColumnMetaData(itemType, tempEntityMeta);
+                valueCol.propertyName = valueCol.columnName = "__value";
+                valueCol.nullable = true;
+                tempEntityMeta.columns.push(valueCol);
             }
 
-            const paramExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, exp.type);
-            paramExp.itemType = exp.itemType;
-            return param.selectExpression.addSqlParameter(paramExp);
+            const selectExp = new SelectExpression(new EntityExpression(tempEntityMeta, this.newAlias()));
+            selectExp.selects = selectExp.entity.columns.where((o) => !o.isPrimary).toArray();
+            selectExp.isSubSelect = true;
+            param.selectExpression.addJoin(selectExp, null, "LEFT");
+
+            param.selectExpression.addSqlParameter(this.newAlias("entity"), arrayParamExp, tempEntityMeta);
+            return selectExp;
         }
         else if (result instanceof SelectExpression && !(result instanceof GroupedExpression)) {
             // assumpt all selectExpression parameter come from groupJoin
@@ -1748,9 +1771,16 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
             const relations = rel.relation.clone(replaceMap);
             param.selectExpression.addJoin(clone, relations, rel.type);
-            result = clone;
+            return clone;
         }
-        return result;
+        else if (isExpression(result)) {
+            return result;
+        }
+        else {
+            const paramExp = new ParameterExpression(exp.name, exp.type, item[1]);
+            paramExp.itemType = exp.itemType;
+            return param.selectExpression.addSqlParameter(this.newAlias("param"), paramExp);
+        }
     }
     protected visitTernaryOperator(exp: TernaryExpression<any>, param: IQueryVisitParameter): IExpression {
         exp.logicalOperand = this.visit(exp.logicalOperand, param);
@@ -1761,22 +1791,22 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.logicalOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.logicalOperand);
+                param.selectExpression.parameterTree.node.delete(exp.logicalOperand);
                 exp.logicalOperand = exp.logicalOperand.valueExp;
                 hasParam = true;
             }
             if (exp.trueOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.trueOperand);
+                param.selectExpression.parameterTree.node.delete(exp.trueOperand);
                 exp.trueOperand = exp.trueOperand.valueExp;
                 hasParam = true;
             }
             if (exp.falseOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.falseOperand);
+                param.selectExpression.parameterTree.node.delete(exp.falseOperand);
                 exp.falseOperand = exp.falseOperand.valueExp;
                 hasParam = true;
             }
             if (hasParam) {
-                return param.selectExpression.addSqlParameter(exp);
+                return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
             }
             return new ValueExpression(this.valueTransformer.execute(exp));
         }
@@ -1788,9 +1818,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         const isExpressionSafe = this.isSafe(exp.operand);
         if (isExpressionSafe) {
             if (exp.operand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.operand);
+                param.selectExpression.parameterTree.node.delete(exp.operand);
                 exp.operand = exp.operand.valueExp;
-                return param.selectExpression.addSqlParameter(exp);
+                return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
             }
             return new ValueExpression(this.valueTransformer.execute(exp));
         }

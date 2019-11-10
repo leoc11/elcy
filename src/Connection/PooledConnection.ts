@@ -3,9 +3,12 @@ import { IsolationLevel } from "../Common/StringType";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IConnection } from "./IConnection";
-import { PooledConnectionManager } from "./PooledConnectionManager";
+import { PoolResource } from "../Pool/PoolResource";
 
-export class PooledConnection implements IConnection {
+export class PooledConnection extends PoolResource implements IConnection {
+    public destroy(): void {
+        this.connection.close();
+    }
     public get database() {
         return this.connection.database;
     }
@@ -33,9 +36,11 @@ export class PooledConnection implements IConnection {
     public set isOpen(value) {
         this.connection.isOpen = value;
     }
-    constructor(public connection: IConnection, private manager: PooledConnectionManager) { }
-    public close(): Promise<void> {
-        return this.manager.release(this);
+    constructor(public connection: IConnection) { 
+        super();
+    }
+    public async close(): Promise<void> {
+        this.onReleased();
     }
     public commitTransaction(): Promise<void> {
         return this.connection.commitTransaction();

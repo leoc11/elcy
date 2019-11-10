@@ -80,12 +80,12 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
             this.itemSelect.paging = value;
         }
     }
-    public get paramExps() {
-        return this.itemSelect.paramExps;
+    public get parameterTree() {
+        return this.itemSelect.parameterTree;
     }
-    public set paramExps(value) {
+    public set parameterTree(value) {
         if (this.itemSelect) {
-            this.itemSelect.paramExps = value;
+            this.itemSelect.parameterTree = value;
         }
     }
     public get parentRelation() {

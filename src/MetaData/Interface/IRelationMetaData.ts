@@ -5,7 +5,7 @@ import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
 
-export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRelationMetaData<TSource, TTarget> {
+export interface IRelationMetaData<TSource = any, TTarget = any>  extends IBaseRelationMetaData<TSource, TTarget> {
     completeRelationType?: CompleteRelationshipType;
     deleteOption?: ReferenceOption;
     fullName: string;

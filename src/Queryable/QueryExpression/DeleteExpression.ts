@@ -3,22 +3,23 @@ import { IObjectType } from "../../Common/Type";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveTreeClone } from "../../Helper/toObjectFunctionExpression";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQueryExpression } from "./IQueryExpression";
+import { QueryExpression } from "./QueryExpression";
 import { SelectExpression } from "./SelectExpression";
 
 export interface IDeleteIncludeRelation<T = any, TChild = any> {
     child: DeleteExpression<TChild>;
-    parent: IQueryExpression<T>;
+    parent: QueryExpression<T>;
     relations: IExpression<boolean>;
 }
-export class DeleteExpression<T = any> implements IQueryExpression<void> {
+export class DeleteExpression<T = any> extends QueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
     }
@@ -31,22 +32,16 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
     public get paging() {
         return this.select.paging;
     }
-    public get paramExps() {
-        return this.select.paramExps;
-    }
-    public set paramExps(value) {
-        this.select.paramExps = value;
-    }
     public get type() {
         return undefined as any;
     }
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
-    constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
-        this.deleteMode = deleteMode;
+    constructor(entity: IEntityExpression<T>, mode: DeleteMode);
+    constructor(select: SelectExpression<T>, mode: DeleteMode);
+    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, public readonly mode: DeleteMode) {
+        super();
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
         } else {
@@ -54,13 +49,12 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         }
         this.select = selectOrEntity;
         for (const o of this.select.includes) {
-            const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
-            childDeleteExp.paramExps = childDeleteExp.paramExps.concat(this.paramExps);
+            const childDeleteExp = new DeleteExpression(o.child, this.mode);
             this.addInclude(childDeleteExp, o.relation);
         }
         this.select.includes = [];
+        this.parameterTree = this.select.parameterTree;
     }
-    public deleteMode?: IExpression<DeleteMode>;
     public includes: Array<IDeleteIncludeRelation<T, any>> = [];
     public parentRelation: IDeleteIncludeRelation<any, T>;
     public select: SelectExpression<T>;
@@ -74,7 +68,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
                 // include to relationSelect
                 let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
                 const relationDatExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                const relationDelete = new DeleteExpression(relationDatExp, this.deleteMode);
+                const relationDelete = new DeleteExpression(relationDatExp, this.mode);
                 for (const [relColMeta, parentColMeta] of relMap) {
                     const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
                     const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
@@ -138,7 +132,8 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
             replaceMap = new Map();
         }
         const select = resolveClone(this.select, replaceMap);
-        const clone = new DeleteExpression(select, this.deleteMode);
+        const clone = new DeleteExpression(select, this.mode);
+        clone.parameterTree = resolveTreeClone(this.parameterTree, replaceMap);
         replaceMap.set(this, clone);
         return clone;
     }
@@ -152,7 +147,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
             .union(this.includes.selectMany((o) => o.child.getEffectedEntities())).distinct().toArray();
     }
     public hashCode() {
-        return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
+        return hashCode("DELETE", hashCode(this.mode, this.select.hashCode()));
     }
     public setOrder(orders: IOrderExpression[]): void;
     public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
@@ -163,7 +158,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         return `Delete({
 Entity:${this.entity.toString()},
 Where:${this.where ? this.where.toString() : ""},
-Mode:${this.deleteMode}
+Mode:${this.mode}
 })`;
     }
 }

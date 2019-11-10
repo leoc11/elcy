@@ -1,10 +1,10 @@
 import { GenericType } from "../Common/Type";
-import { isNotNull } from "../Helper/Util";
+import { isNull } from "../Helper/Util";
 import { IEnumerableCache } from "./IEnumerableCache";
 
 export const keyComparer = <T = any>(a: T, b: T) => {
     let result = a === b;
-    if (!result && isNotNull(a) && isNotNull(b) && a instanceof Object && b instanceof Object) {
+    if (!result && !isNull(a) && !isNull(b) && a instanceof Object && b instanceof Object) {
         const aKeys = Object.keys(a) as Array<keyof T>;
         const bKeys = Object.keys(b) as Array<keyof T>;
         result = aKeys.length === bKeys.length;
@@ -26,7 +26,7 @@ export class Enumerable<T = any> implements Iterable<T> {
     public get enableCache() {
         return !this.parent || this.cache.enabled;
     }
-    constructor(source?: Iterable<any> | (() => IterableIterator<T>)) {
+    constructor(source?: Iterable<any> | (() => Generator<T> | IterableIterator<T>)) {
         this.cache = {};
         if (source) {
             if (Array.isArray(source)) {
@@ -34,19 +34,24 @@ export class Enumerable<T = any> implements Iterable<T> {
                 this.cache.enabled = true;
                 this.cache.isDone = true;
             }
-            if ((source as IterableIterator<any>).next) {
-                this.cache.iterator = source as IterableIterator<any>;
-                this.enableCache = true;
-            }
-            else if (source instanceof Function) {
-                this.generator = source;
-            }
             else {
-                this.parent = source as Iterable<any>;
+                let iterable: Iterable<any> = null;
+                if (source[Symbol.iterator]) {
+                    iterable = source as Iterable<any>;
+                }
+                else {
+                    iterable = {
+                        [Symbol.iterator]() {
+                            return (source as Function)();
+                        }
+                    };
+                }
+
+                this.parent = iterable;
             }
         }
     }
-    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
+    public static from<T>(source: Iterable<T> | (() => Generator<T> | IterableIterator<T>)): Enumerable<T> {
         return source instanceof Enumerable ? source : new Enumerable(source);
     }
     public static range(start: number, end: number, step: number = 1) {

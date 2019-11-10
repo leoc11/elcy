@@ -19,7 +19,7 @@ export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>>
         }
         group.addResult(value);
     }
-    protected *generator(): IterableIterator<GroupedEnumerable<K, T>> {
+    protected *generator() {
         if (!this.cache.iterator) {
             this.cache.iterator = this.parent[Symbol.iterator]();
         }

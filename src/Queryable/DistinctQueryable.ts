@@ -5,13 +5,13 @@ import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class DistinctQueryable<T> extends Queryable<T> {
     protected get selector() {
         if (!this._selector && this.selectorFn) {
-            this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type], this.parameters);
+            this._selector = ExpressionBuilder.parse(this.selectorFn, [this.parent.type], this.stackTree.node);
         }
         return this._selector;
     }
@@ -23,16 +23,15 @@ export class DistinctQueryable<T> extends Queryable<T> {
     }
     protected readonly selectorFn?: (item: T) => any;
     private _selector?: FunctionExpression;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodParams = [];
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
+        const params = [];
         if (this.selector) {
-            methodParams.push(this.selector.clone());
+            params.push(this.selector.clone());
         }
-
-        const methodExpression = new MethodCallExpression(objectOperand, "distinct", methodParams);
+        const methodExpression = new MethodCallExpression(objectOperand, "distinct", params);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("DISTINCT", this.parent.hashCode()), this.selector ? this.selector.hashCode() : 0);

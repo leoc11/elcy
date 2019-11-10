@@ -4,7 +4,7 @@ import { hashCode } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class TakeQueryable<T> extends Queryable<T> {
@@ -12,11 +12,11 @@ export class TakeQueryable<T> extends Queryable<T> {
         super(parent.type, parent.parameter({ take: quantity }));
     }
     public expression: SelectExpression<T>;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCode("TAKE", this.parent.hashCode());

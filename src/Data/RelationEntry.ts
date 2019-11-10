@@ -1,5 +1,5 @@
 import { Enumerable } from "../Enumerable/Enumerable";
-import { hasFlags, isNotNull } from "../Helper/Util";
+import { hasFlags, isNull } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
@@ -95,7 +95,7 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
         if (!hasFlags(state, EntityState.Added | EntityState.Detached)) {
             isDetached = Enumerable.from(slaveRelation.relationMaps).any(([col, masterCol]) => {
                 const oVal = slaveEntry.getOriginalValue(col.propertyName);
-                return !isNotNull(oVal) || oVal !== masterEntry.getOriginalValue(masterCol.propertyName);
+                return isNull(oVal) || oVal !== masterEntry.getOriginalValue(masterCol.propertyName);
             });
         }
         this._state = isDetached ? RelationState.Detached : RelationState.Unchanged;
@@ -186,7 +186,7 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             }
         }
 
-        // NOTE: POSSIBLE REMOVED
+        // NOTE: MAYBE CAN BE REMOVED?
         if (this.slaveRelation.relationType === "one") {
             const cols = this.slaveRelation.mappedRelationColumns.where((o) => !o.isPrimaryColumn && !!o.propertyName);
             for (const col of cols) {

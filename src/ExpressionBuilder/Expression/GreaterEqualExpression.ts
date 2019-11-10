@@ -15,7 +15,7 @@ export class GreaterEqualExpression implements IBinaryOperatorExpression<boolean
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode(">=", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+        return hashCodeAdd(hashCode("<", this.rightOperand.hashCode()), this.leftOperand.hashCode());
     }
     public toString(): string {
         return "(" + this.leftOperand.toString() + " >= " + this.rightOperand.toString() + ")";

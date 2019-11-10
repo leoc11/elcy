@@ -1,4 +1,4 @@
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class OrExpression implements IBinaryOperatorExpression<boolean> {
@@ -15,7 +15,7 @@ export class OrExpression implements IBinaryOperatorExpression<boolean> {
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("||", this.leftOperand.hashCode()), this.rightOperand.hashCode());
+        return this.leftOperand.hashCode() + hashCode("||") + this.rightOperand.hashCode();
     }
     public toString(): string {
         return "(" + this.leftOperand.toString() + " || " + this.rightOperand.toString() + ")";

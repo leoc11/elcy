@@ -88,6 +88,9 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
             this._state = value;
         }
     }
+    public get originalValues(): Readonly<Map<keyof T, any>> {
+        return this._originalValues;
+    }
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
 
@@ -109,8 +112,6 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
         }
         relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(args));
     }
-
-    //#endregion
 
     public enableTrackChanges = true;
     public relationMap: { [relationName in keyof T]?: Map<EntityEntry, RelationEntry<T, any> | RelationEntry<any, T>> } = {};
@@ -236,8 +237,6 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
             }
         }
     }
-
-    //#region change state
 
     public add() {
         this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
@@ -448,7 +447,6 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
             }
         }
     }
-    //#endregion
 }
 
 import { EmbeddedEntityEntry } from "./EmbeddedEntityEntry";

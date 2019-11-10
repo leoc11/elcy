@@ -38,6 +38,9 @@ export class AdditionExpression<T extends number | string = any> implements IBin
         return operand as any;
     }
     public hashCode() {
+        if (this.type as GenericType === Number) {
+            return hashCode("+", this.leftOperand.hashCode()) + hashCode("+", this.rightOperand.hashCode());
+        }
         return hashCodeAdd(hashCode("+", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
     public toString(): string {

@@ -1,7 +1,9 @@
-import { IQueryResultParser } from "../Query/IQueryResultParser";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { IObjectType } from "../Common/Type";
+import { IQueryResultsParser } from "../Query/IQueryResultsParser";
+import { IQueryTemplate } from "../Query/IQueryTemplate";
 
 export interface IQueryCache<T = any> {
-    commandQuery: IQueryExpression<T>;
-    resultParser?: IQueryResultParser<T>;
+    queryTemplates?: IQueryTemplate[];
+    resultParser?: IQueryResultsParser<T>;
+    entities?: IObjectType[];
 }

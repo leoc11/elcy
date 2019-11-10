@@ -3,19 +3,20 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
-import { IQueryExpression } from "./IQueryExpression";
+import { QueryExpression } from "./QueryExpression";
 import { SelectExpression } from "./SelectExpression";
-export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
+export class InsertIntoExpression<T = any> extends QueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         return this.select.selects;
     }
-    public get paramExps() {
-        return this.select.paramExps;
+    public get parameterTree() {
+        return this.select.parameterTree;
     }
     public get type() {
         return undefined as any;
     }
     constructor(public entity: EntityExpression<T>, public select: SelectExpression) {
+        super();
         this.select.isSelectOnly = true;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<T> {

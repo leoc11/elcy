@@ -320,29 +320,35 @@ const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictN
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
     if (leftExpString === "NULL") {
-        return `${rightExpString} IS NOT ${leftExpString}`;
+        return `${rightExpString} IS NOT NULL`;
     }
     else if (rightExpString === "NULL") {
-        return `${leftExpString} IS NOT ${rightExpString}`;
+        return `${leftExpString} IS NOT NULL`;
+    }
+    else if (exp.leftOperand instanceof ParameterExpression || exp.rightOperand instanceof ParameterExpression) {
+        return `${leftExpString}<>${rightExpString} AND (${leftExpString} IS NOT NULL OR ${rightExpString} IS NOT NULL)`;
     }
     return `${leftExpString}<>${rightExpString}`;
 };
 relationalQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
 relationalQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
 
-const equalTransalator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, param: IQueryBuilderParameter) => {
+const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, param: IQueryBuilderParameter) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
     if (leftExpString === "NULL") {
-        return `${rightExpString} IS ${leftExpString}`;
+        return `${rightExpString} IS NULL`;
     }
     else if (rightExpString === "NULL") {
-        return `${leftExpString} IS ${rightExpString}`;
+        return `${leftExpString} IS NULL`;
+    }
+    else if (exp.leftOperand instanceof ParameterExpression || exp.rightOperand instanceof ParameterExpression) {
+        return `${leftExpString}=${rightExpString} OR (${leftExpString} IS NULL AND ${rightExpString} IS NULL)`;
     }
     return `${leftExpString}=${rightExpString}`;
 };
-relationalQueryTranslator.registerOperator(EqualExpression, equalTransalator);
-relationalQueryTranslator.registerOperator(StrictEqualExpression, equalTransalator);
+relationalQueryTranslator.registerOperator(EqualExpression, equalTranslator);
+relationalQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
 
 relationalQueryTranslator.registerOperator(OrExpression, (qb, exp, param) => `${qb.toLogicalString(exp.leftOperand, param)} OR ${qb.toLogicalString(exp.rightOperand, param)}`);
 relationalQueryTranslator.registerOperator(AndExpression, (qb, exp, param) => `${qb.toLogicalString(exp.leftOperand, param)} AND ${qb.toLogicalString(exp.rightOperand, param)}`);
