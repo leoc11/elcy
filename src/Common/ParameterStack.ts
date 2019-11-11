@@ -21,8 +21,15 @@ export class ParameterStack {
         }
         return res;
     }
-    public get<T = any>(key: string, index: number = 0) {
-        const vals = this._data.get(key) || [];
+    public get<T = any>(key: string, index?: number) {
+        const vals = this._data.get(key);
+        if (!vals) {
+            return null;
+        }
+
+        if (typeof index !== "number") {
+            index = vals.length - 1;
+        }
         return vals[index] as T;
     }
     public getAll(key: string) {

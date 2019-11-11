@@ -225,7 +225,7 @@ export class ExpressionExecutor {
     }
 
     protected executeAdditionAssignment<T extends string | number>(expression: AdditionAssignmentExpression<T>): T {
-        const value = this.stack.get(expression.leftOperand.name) + this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) as any + this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -250,7 +250,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
     }
     protected executeBitwiseAndAssignment(expression: BitwiseAndAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) & this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -262,7 +262,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
     }
     protected executeBitwiseOrAssignment(expression: BitwiseOrAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) | this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -271,7 +271,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
     }
     protected executeBitwiseSignedRightShiftAssignment(expression: BitwiseSignedRightShiftAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) >>> this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -280,7 +280,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
     }
     protected executeBitwiseXorAssignment(expression: BitwiseXorAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) ^ this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -289,7 +289,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroLeftShiftAssignment(expression: BitwiseZeroLeftShiftAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) << this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -298,7 +298,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroRightShiftAssignment(expression: BitwiseZeroRightShiftAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) >> this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -307,7 +307,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
     }
     protected executeDivisionAssignment(expression: DivisionAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) / this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -320,7 +320,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) ** this.execute(expression.rightOperand);
     }
     protected executeExponentialAssignment(expression: ExponentiationAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) ** this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) ** this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -385,7 +385,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) % this.execute(expression.rightOperand);
     }
     protected executeModulusAssignment(expression: ModulusAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) % this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) % this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -394,7 +394,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) * this.execute(expression.rightOperand);
     }
     protected executeMultiplicationAssignment(expression: MultiplicationAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) * this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) * this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
@@ -420,7 +420,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
     }
     protected executeParameter<T>(expression: ParameterExpression<T>): T {
-        return this.stack.get(expression.name, expression.index || 0);
+        return this.stack.get(expression.name, expression.index);
     }
     protected executeRightDecrement(expression: RightDecrementExpression) {
         const value = this.executeParameter(expression.operand);
@@ -472,7 +472,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
     }
     protected executeSubstractionAssignment(expression: SubstractionAssignmentExpression) {
-        const value = this.stack.get(expression.leftOperand.name) - this.execute(expression.rightOperand);
+        const value = this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
         this.stack.pop(expression.leftOperand.name);
         this.stack.push(expression.leftOperand.name, value);
         return value;
