@@ -420,7 +420,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
     }
     protected executeParameter<T>(expression: ParameterExpression<T>): T {
-        return this.stack.get(expression.name);
+        return this.stack.get(expression.name, expression.index || 0);
     }
     protected executeRightDecrement(expression: RightDecrementExpression) {
         const value = this.executeParameter(expression.operand);

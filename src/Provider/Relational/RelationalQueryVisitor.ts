@@ -1684,8 +1684,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         return embeddedSelect.entity;
     }
     protected visitParameter<T>(exp: ParameterExpression<T>, param: IQueryVisitParameter) {
-        const item = this.stack.getItem(exp.name);
-        const result = item[0];
+        const items = this.stack.getAll(exp.name);
+        const result = items.pop();
         if (result instanceof Queryable) {
             const selectExp = result.buildQuery(this) as SelectExpression;
             selectExp.isSubSelect = true;
@@ -1777,7 +1777,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             return result;
         }
         else {
-            exp.index = item[1];
+            exp.index = items.length;
             return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
         }
     }
