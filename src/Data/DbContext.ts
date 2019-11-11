@@ -365,6 +365,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         }
         return results;
     }
+    // Parameter placeholder: ${paramname}
     public query<T>(type: GenericType<T>, sql: string, parameters?: { [key: string]: any }): Queryable<T> {
         return new RawQueryable(this, type, sql, parameters);
     }

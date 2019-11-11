@@ -60,6 +60,7 @@ import { InsertIntoExpression } from "../../Queryable/QueryExpression/InsertInto
 import { IntersectExpression } from "../../Queryable/QueryExpression/IntersectExpression";
 import { ProjectionEntityExpression } from "../../Queryable/QueryExpression/ProjectionEntityExpression";
 import { QueryExpression } from "../../Queryable/QueryExpression/QueryExpression";
+import { RawEntityExpression } from "../../Queryable/QueryExpression/RawEntityExpression";
 import { RawSqlExpression } from "../../Queryable/QueryExpression/RawSqlExpression";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
@@ -586,8 +587,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         else if (entity instanceof ProjectionEntityExpression) {
             return this.getSelectQueryString(entity.subSelect, param) + " AS " + this.enclose(entity.alias);
         }
-        else if (entity instanceof RawSqlExpression) {
-            return "(" + this.newLine(+1) + entity.sqlStatement + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+        else if (entity instanceof RawEntityExpression) {
+            return "(" + this.newLine(+1) + entity.definingQuery + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
 
         return this.entityName(entity) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
