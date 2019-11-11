@@ -1696,7 +1696,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             return new ValueExpression(result, exp.name);
         }
         else if (result instanceof Array) {
-            const arrayParamExp = new ParameterExpression(exp.name, Array as GenericType<T[]>, item[1]);
+            const arrayParamExp = new ParameterExpression(exp.name, Array as GenericType<T[]>, items.length);
             arrayParamExp.itemType = exp.itemType;
             const arrayValue = result as any[];
 
@@ -1708,7 +1708,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             const itemType = arrayItemType ? arrayItemType.constructor : Object;
 
             // Temporary table
-            const tempEntityMeta = new TempEntityMetaData(itemType, `${exp.name}_${item[1]}`);
+            const tempEntityMeta = new TempEntityMetaData(itemType, `${exp.name}_${items.length}`);
             const indexCol = new ColumnMetaData(Number, tempEntityMeta);
             indexCol.propertyName = indexCol.columnName = "__index";
             indexCol.nullable = false;
