@@ -2,7 +2,7 @@ import { INodeTree, ParameterStack } from "../Common/ParameterStack";
 import { GenericType, IObjectType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { hashCode } from "../Helper/Util";
+import { hashCode, isNull } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "./Queryable";
 import { QueryExpression } from "./QueryExpression/QueryExpression";
@@ -36,8 +36,9 @@ export class RawQueryable<T> extends Queryable<T> {
         const queryBuilder = this.dbContext.queryBuilder;
         let definingQuery = this.definingQuery;
         const parameterExps: SqlParameterExpression[] = [];
-        for (const [key] of this._param.node) {
-            const parameterExp = new SqlParameterExpression(visitor.newAlias("param"), new ParameterExpression(key));
+        for (const [key, vals] of this._param.node) {
+            const paramType = isNull(vals[0]) ? String : vals[0].constructor;
+            const parameterExp = new SqlParameterExpression(visitor.newAlias("param"), new ParameterExpression(key, paramType, 0));
             parameterExps.push(parameterExp);
             definingQuery = definingQuery.replace(new RegExp("\\$\\{" + key + "\\}", "g"), queryBuilder.toString(parameterExp));
         }

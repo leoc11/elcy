@@ -1777,9 +1777,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             return result;
         }
         else {
-            const paramExp = new ParameterExpression(exp.name, exp.type, item[1]);
-            paramExp.itemType = exp.itemType;
-            return param.selectExpression.addSqlParameter(this.newAlias("param"), paramExp);
+            exp.index = item[1];
+            return param.selectExpression.addSqlParameter(this.newAlias("param"), exp);
         }
     }
     protected visitTernaryOperator(exp: TernaryExpression<any>, param: IQueryVisitParameter): IExpression {
