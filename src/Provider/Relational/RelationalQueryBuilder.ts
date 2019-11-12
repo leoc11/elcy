@@ -100,7 +100,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return type;
     }
     public enclose(identity: string) {
-        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#") {
+        if (this.namingStrategy.enableEscape && identity && identity[0] !== "@" && identity[0] !== "#") {
             return "\"" + identity + "\"";
         }
         else {
@@ -1068,7 +1068,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderParameter): string {
         if (expression.isReplacer) {
-            return `@@${expression.name}@@`;
+            return "${" + expression.name + "}";
         }
         return "@" + expression.name;
     }
