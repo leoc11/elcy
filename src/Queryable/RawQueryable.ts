@@ -15,10 +15,11 @@ export class RawQueryable<T> extends Queryable<T> {
         return this._param;
     }
     constructor(dbContext: DbContext,
-                type: GenericType<T>,
+                protected readonly schema: { [K in keyof T]: GenericType<T[K]> },
                 public readonly definingQuery: string,
-                parameters?: { [key: string]: any }) {
-        super(type);
+                parameters?: { [key: string]: any },
+                type?: GenericType<T>) {
+        super(type || Object);
         this._param = {
             node: new ParameterStack(),
             childrens: []
@@ -42,8 +43,9 @@ export class RawQueryable<T> extends Queryable<T> {
             parameterExps.push(parameterExp);
             definingQuery = definingQuery.replace(new RegExp("\\$\\{" + key + "\\}", "g"), queryBuilder.toString(parameterExp));
         }
-        const rawEntity = new RawEntityExpression(this.type as IObjectType, definingQuery, visitor.newAlias());
+        const rawEntity = new RawEntityExpression(this.type as IObjectType, this.schema, definingQuery, visitor.newAlias());
         const result = new SelectExpression(rawEntity);
+        result.selects = rawEntity.columns.toArray();
         result.parameterTree = {
             node: parameterExps,
             childrens: []

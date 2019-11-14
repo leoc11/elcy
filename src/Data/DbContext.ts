@@ -366,8 +366,8 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         return results;
     }
     // Parameter placeholder: ${paramname}
-    public query<T>(type: GenericType<T>, sql: string, parameters?: { [key: string]: any }): Queryable<T> {
-        return new RawQueryable(this, type, sql, parameters);
+    public query<T = any>(schema: { [K in keyof T]: GenericType<T[K]> }, sql: string, parameters?: { [key: string]: any }, type?: GenericType<T>): Queryable<T> {
+        return new RawQueryable(this, schema, sql, parameters, type);
     }
     public execute(sql: string, parameters?: { [key: string]: any }) {
         const query = this.deferredExecute(sql, parameters);

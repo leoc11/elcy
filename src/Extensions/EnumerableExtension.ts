@@ -57,7 +57,7 @@ Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
     return Enumerable.from(this);
 };
 Array.prototype.toArray = function <T>(this: T[]) {
-    return this as T[];
+    return Array.from(this);
 };
 Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
     return this as TTarget[];
