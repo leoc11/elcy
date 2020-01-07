@@ -22,7 +22,6 @@ export class ExecuteDeferredQuery extends DeferredQuery<number> {
     }
     public get sql() {
         if (!this._sql) {
-            // TODO: ParameterExpression not yet supported
             this._sql = this.rawSql.replace(/\$\{([a-z][a-z0-9])\}/ig, this.dbContext.queryBuilder.toString(new ParameterExpression("$1")));
         }
         return this._sql;

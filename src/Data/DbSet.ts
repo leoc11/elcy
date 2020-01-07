@@ -79,7 +79,7 @@ export class DbSet<T> extends Queryable<T> {
         }
     }
     public deferredInsert(...items: Array<ObjectLike<T>>) {
-        if (items.any()) {
+        if (!items.any()) {
             throw new Error("empty items");
         }
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
@@ -88,7 +88,7 @@ export class DbSet<T> extends Queryable<T> {
 
         const defers: Array<DMLDeferredQuery<any>> = [];
         for (const item of items) {
-            const entry = this.dbContext.entry(item);
+            const entry = this.entry(item as any);
             defers.push(this.dbContext.getInsertQuery(entry));
         }
         return new BulkDeferredQuery(this.dbContext, defers);

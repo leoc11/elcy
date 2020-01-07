@@ -15,6 +15,7 @@ import { isNull, visitExpression } from "../Helper/Util";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
 import { BatchedQuery } from "../Query/BatchedQuery";
+import { BulkDeferredQuery } from "../Query/DeferredQuery/BulkDeferredQuery";
 import { DeferredQuery } from "../Query/DeferredQuery/DeferredQuery";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
@@ -74,7 +75,15 @@ export class MockConnection implements IConnection {
     }
     public generateQueryResult() {
         return this._deferredQueries
-            .selectMany((def) => def.queryExps.select((o) => [def, o]))
+            .selectMany((def) => {
+                if (def instanceof BulkDeferredQuery) {
+                    return def.defers.cast<IMockedDeferredQuery>()
+                        .selectMany((def1) => def1.queryExps.select((o) => [def1, o]));
+                }
+                else {
+                    return def.queryExps.select((o) => [def, o]);
+                }
+            })
             .selectMany((o) => {
                 const deferred = o[0] as DeferredQuery & IMockedDeferredQuery;
                 const command = o[1] as QueryExpression;
@@ -395,7 +404,7 @@ export class MockConnection implements IConnection {
             command = commandOrQuery;
         }
         const count = (command as BatchedQuery).queryCount || 1;
-        // console.log(JSON.stringify(command.query));
+        console.log(JSON.stringify(command));
         // console.log(command.query);
         return this.results.splice(0, count);
     }

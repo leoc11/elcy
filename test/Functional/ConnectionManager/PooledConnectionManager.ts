@@ -45,6 +45,10 @@ describe("POOLED CONNECTION MANAGER", () => {
         const connectionManager = getManager();
         const con1 = await connectionManager.getConnection();
         await con1.close();
+        const con11 = await connectionManager.getConnection();
+        await con11.close();
+        expect(con1).equal(con11);
+
         await new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
@@ -70,13 +74,20 @@ describe("POOLED CONNECTION MANAGER", () => {
     it("should used minimum queued idle connection", async () => {
         const connectionManager = getManager({ min: 1 });
         const con1 = await connectionManager.getConnection();
-        await con1.close();
         const con2 = await connectionManager.getConnection();
+        await con1.close();
         await con2.close();
         expect(con1).not.equal(con2);
         const con3 = await connectionManager.getConnection();
         await con3.close();
         expect(con3).to.be.oneOf([con1, con2]);
+
+        await new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 101);
+        });
+        expect(connectionManager.poolSize).to.equal(1);
     });
     it("should used lifo queue type", async () => {
         const connectionManager = getManager({ max: 2, queueType: "lifo" });

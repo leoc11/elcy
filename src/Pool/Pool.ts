@@ -39,13 +39,13 @@ export abstract class Pool<T extends PoolResource> {
             this.resourceCount++;
             resource.releaseEvent.add(() => {
                 if (this.waitingQueues.length > 0) {
-                    const waitQ = this.waitingQueues.pop();
+                    const waitQ = this.waitingQueues.shift();
                     if (waitQ[1] !== null) clearTimeout(waitQ[1]);
                     waitQ[0].resolve(resource);
                     return;
                 }
 
-                if (this.idleQueues.length > this.option.max) {
+                if (this.idleQueues.length >= this.option.max) {
                     this.resourceCount--;
                     resource.destroy();
                     return;
@@ -78,7 +78,7 @@ export abstract class Pool<T extends PoolResource> {
                     this.idleQueues.delete(queue);
                 }
 
-                if (this.idleQueues.length > this.option.min) {
+                if (this.idleQueues.length >= this.option.min) {
                     this.resourceCount--;
                     queue[0].destroy();
                 }

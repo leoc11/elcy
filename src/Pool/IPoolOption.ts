@@ -16,7 +16,7 @@ export interface IPoolOption {
      */
     maxResource?: number;
     /**
-     * Minimum number of idle resources to keep in pool. (default: max)
+     * Minimum number of idle resources to keep in pool. (default: 0)
      */
     min?: number;
     /**

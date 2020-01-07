@@ -40,8 +40,9 @@ export abstract class RelationalDbContext<TDB extends DbType> extends DbContext<
             for (const [meta, entries] of addEntries) {
                 const insertDefers: Array<UpsertDeferredQuery<any> | InsertDeferredQuery<any>> = [];
                 for (const entry of entries) {
-                    const nd = options && options.useUpsert
-                        ? this.getUpsertQuery(entry) : this.getInsertQuery(entry);
+                    const nd = options && options.useUpsert ? this.getUpsertQuery(entry) : this.getInsertQuery(entry);
+                    // Don't finalize result here. coz it will be used later for update/insert related entities
+                    nd.autoFinalize = false;
                     insertDefers.push(nd);
                     defers.push(nd);
                     if (entryMap.has(entry)) {

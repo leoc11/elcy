@@ -1,14 +1,11 @@
 import { QueryType } from "../Common/Enum";
 import { IsolationLevel } from "../Common/StringType";
+import { PoolResource } from "../Pool/PoolResource";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IConnection } from "./IConnection";
-import { PoolResource } from "../Pool/PoolResource";
 
 export class PooledConnection extends PoolResource implements IConnection {
-    public destroy(): void {
-        this.connection.close();
-    }
     public get database() {
         return this.connection.database;
     }
@@ -36,8 +33,11 @@ export class PooledConnection extends PoolResource implements IConnection {
     public set isOpen(value) {
         this.connection.isOpen = value;
     }
-    constructor(public connection: IConnection) { 
+    constructor(public connection: IConnection) {
         super();
+    }
+    public destroy(): void {
+        this.connection.close();
     }
     public async close(): Promise<void> {
         this.onReleased();

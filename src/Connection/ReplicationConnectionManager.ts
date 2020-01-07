@@ -36,7 +36,7 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
             return this.masterConnectionManager.getConnection(true);
         }
 
-        this.counter = ((this.counter + 1) % this.replicaConnectionManagers.length) - 1;
+        this.counter = (this.counter + 1) % this.replicaConnectionManagers.length;
         const manager = this.nextReplicaManager;
         this.nextReplicaManager = this.replicaConnectionManagers[this.counter];
         const connection = await manager.getConnection();

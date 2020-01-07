@@ -138,7 +138,7 @@ export class InsertDeferredQuery<T> extends DMLDeferredQuery<T> {
                         for (const prop in data) {
                             const column = this.entry.metaData.columns.first((o) => o.columnName === prop);
                             if (column) {
-                                this.data[column.propertyName] = queryBuilder.toPropertyValue(this.data[prop], column);
+                                this.data[column.propertyName] = queryBuilder.toPropertyValue(data[prop], column);
                             }
                         }
                     }
