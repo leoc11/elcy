@@ -15,11 +15,11 @@ export abstract class Pool<T extends PoolResource> {
     constructor(public readonly option: IPoolOption) {
         this.option.min = this.option.min || 0;
         this.option.max = this.option.max || 10;
-        this.option.maxResource = this.option.maxResource || this.option.max || Infinity;
+        this.option.maxResource = this.option.maxResource || this.option.max * 1.5;
         this.option.queueType = this.option.queueType || "fifo";
-        this.getIdleResourse = this.option.queueType === "lifo" ? () => this.idleQueues.pop() : () => this.idleQueues.shift();
         this.option.idleTimeout = this.option.idleTimeout || 30_000;
         this.option.acquireTimeout = this.option.acquireTimeout || 60_000;
+        this.getIdleResourse = this.option.queueType === "lifo" ? () => this.idleQueues.pop() : () => this.idleQueues.shift();
     }
     public readonly waitingQueues: Array<[Defer<T>, any]> = [];
     public readonly idleQueues: Array<[T, any]> = [];
@@ -61,7 +61,7 @@ export abstract class Pool<T extends PoolResource> {
         const waitDefer = new Defer<T>();
         const waitQueue: [Defer<T>, any] = [waitDefer, null];
         this.waitingQueues.push(waitQueue);
-        if (this.option.acquireTimeout !== Infinity) {
+        if (this.option.acquireTimeout !== Infinity && this.option.acquireTimeout >= 0) {
             waitQueue[1] = setTimeout(() => waitDefer.reject(new Error("Acquire Timeout")), this.option.acquireTimeout);
         }
         return waitDefer;

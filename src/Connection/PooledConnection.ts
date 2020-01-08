@@ -8,17 +8,11 @@ export class PooledConnection extends PoolResource implements IConnection {
     public get database() {
         return this.connection.database;
     }
-    public set database(value) {
-        this.connection.database = value;
-    }
     public get errorEvent() {
         return this.connection.errorEvent;
     }
     public get inTransaction() {
         return this.connection.inTransaction;
-    }
-    public set inTransaction(value) {
-        this.connection.inTransaction = value;
     }
     public get isolationLevel() {
         return this.connection.isolationLevel;
@@ -28,9 +22,6 @@ export class PooledConnection extends PoolResource implements IConnection {
     }
     public get isOpen() {
         return this.connection.isOpen;
-    }
-    public set isOpen(value) {
-        this.connection.isOpen = value;
     }
     constructor(public connection: IConnection) {
         super();

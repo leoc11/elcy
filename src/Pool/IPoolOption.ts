@@ -12,7 +12,7 @@ export interface IPoolOption {
      */
     max?: number;
     /**
-     *  Maximum number of active resources created at any given time. (default: max or Infinity)
+     *  Maximum number of active resources created at any given time. (default: max * 1.5)
      */
     maxResource?: number;
     /**
