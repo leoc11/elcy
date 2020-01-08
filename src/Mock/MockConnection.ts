@@ -380,31 +380,9 @@ export class MockConnection implements IConnection {
     public open(): Promise<void> {
         return Promise.resolve();
     }
-    public async query(command: IQuery): Promise<IQueryResult[]>;
-    public async query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public async query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public async query(commandOrQuery: IQuery | string, parametersOrType?: Map<string, any> | QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]> {
-        let command: IQuery;
-        if (typeof commandOrQuery === "string") {
-            let type: QueryType;
-            if (parametersOrType instanceof Map) {
-                parameters = parametersOrType;
-                type = QueryType.DQL;
-            }
-            else {
-                type = parametersOrType;
-            }
-            command = {
-                query: commandOrQuery,
-                type: type,
-                parameters: parameters
-            };
-        }
-        else {
-            command = commandOrQuery;
-        }
+    public async query(command: IQuery): Promise<IQueryResult[]> {
         const count = (command as BatchedQuery).queryCount || 1;
-        console.log(JSON.stringify(command));
+        // console.log(JSON.stringify(command));
         // console.log(command.query);
         return this.results.splice(0, count);
     }

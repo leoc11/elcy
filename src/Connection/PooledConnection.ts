@@ -1,4 +1,3 @@
-import { QueryType } from "../Common/Enum";
 import { IsolationLevel } from "../Common/StringType";
 import { PoolResource } from "../Pool/PoolResource";
 import { IQuery } from "../Query/IQuery";
@@ -48,11 +47,8 @@ export class PooledConnection extends PoolResource implements IConnection {
     public open(): Promise<void> {
         return this.connection.open();
     }
-    public query(command: IQuery): Promise<IQueryResult[]>;
-    public query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public query(queryOrCommand: string | IQuery, parametersOrType?: Map<string, any> | QueryType, typeOrParameters?: QueryType | Map<string, any>): Promise<IQueryResult[]> {
-        return this.connection.query(queryOrCommand as any, parametersOrType as any, typeOrParameters as any);
+    public query(command: IQuery): Promise<IQueryResult[]> {
+        return this.connection.query(command);
     }
     public reset(): Promise<void> {
         return this.connection.reset();
