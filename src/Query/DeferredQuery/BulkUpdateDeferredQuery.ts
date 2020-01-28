@@ -1,4 +1,4 @@
-import { IObjectType, ResultSelector } from "../../Common/Type";
+import { IObjectType, ObjectFunctionExpression, ResultSelector } from "../../Common/Type";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
@@ -16,11 +16,11 @@ export class BulkUpdateDeferredQuery<T> extends DMLDeferredQuery<T> {
     protected get setter() {
         if (!this._setter && this._setterFn) {
             if (this._setterFn instanceof Function) {
-                this._setter = ExpressionBuilder.parse(this._setterFn, [this.queryable.type], this.queryable.stackTree.node).body as ObjectValueExpression<T>;
+                this._setter = ExpressionBuilder.parse(this._setterFn, [this.queryable.type], this.queryable.stackTree.node);
             }
             else {
                 this._setter = toObjectFunctionExpression(this._setterFn as any, this.queryable.type as IObjectType<T>, "o",
-                    this.queryable.stackTree.node, this.queryable.type as IObjectType<T>).body as ObjectValueExpression<T>;
+                    this.queryable.stackTree.node, this.queryable.type as IObjectType<T>);
             }
         }
         return this._setter;
@@ -28,7 +28,7 @@ export class BulkUpdateDeferredQuery<T> extends DMLDeferredQuery<T> {
     constructor(queryable: Queryable<T>, setter: ResultSelector<T, T>) {
         super(queryable);
         if (setter instanceof FunctionExpression) {
-            this._setter = setter.body as ObjectValueExpression<T>;
+            this._setter = setter as ObjectFunctionExpression<T>;
         }
         else {
             this._setterFn = setter;
@@ -36,10 +36,11 @@ export class BulkUpdateDeferredQuery<T> extends DMLDeferredQuery<T> {
     }
 
     private readonly _setterFn: ResultSelector<T, T>;
-    private _setter: ObjectValueExpression<T>;
+    private _setter: ObjectFunctionExpression<T>;
     protected buildQueries(visitor: IQueryVisitor): Array<QueryExpression<T>> {
         const commandQuery = this.queryable.buildQuery(visitor) as SelectExpression<T>;
-        return [new UpdateExpression(commandQuery, this.setter.object)];
+        const obj = visitor.visitFunction(this.setter, [commandQuery.entity], {selectExpression: commandQuery}) as ObjectValueExpression<T>;
+        return [new UpdateExpression(commandQuery, obj.object)];
     }
     protected getQueryCacheKey() {
         return hashCodeAdd(hashCode("UPDATE", super.getQueryCacheKey()), this.setter.hashCode());

@@ -16,12 +16,6 @@ import { IQueryOption } from "../../Query/IQueryOption";
 
 export abstract class RelationalDbContext<TDB extends DbType> extends DbContext<TDB> {
     public async saveChanges(options?: IQueryOption): Promise<number> {
-        // Before delete even and generate query
-        let deleteMode: DeleteMode;
-        if (options && options.forceHardDelete) {
-            deleteMode = "hard";
-        }
-
         const addEntries = this.entityEntries.add.asEnumerable().orderBy([(o) => o[0].hasIncrementPrimary, "DESC"], [(o) => o[0].priority, "ASC"]);
         const updateEntries = this.entityEntries.update.asEnumerable().orderBy([(o) => o[0].priority, "ASC"]);
         const deleteEntries = this.entityEntries.delete.asEnumerable().orderBy([(o) => o[0].priority, "DESC"]);
@@ -114,7 +108,9 @@ export abstract class RelationalDbContext<TDB extends DbType> extends DbContext<
                     defers.push(nd);
                 }
             }
-            for (const [, entries] of deleteEntries) {
+            for (const [entityMeta, entries] of deleteEntries) {
+                const deleteMode: DeleteMode = options && options.forceHardDelete || !entityMeta.deletedColumn ? "hard" : "soft";
+
                 for (const entry of entries) {
                     const nd = this.getDeleteQuery(entry, deleteMode);
                     defers.push(nd);

@@ -20,6 +20,7 @@ export class MssqlInsertDeferredQuery<T> extends InsertDeferredQuery<T> {
     }
     protected buildQueries(visitor: IQueryVisitor): Array<QueryExpression<T>> {
         const results = [];
+        this.queryable.parameter({ relationId: this.relationId });
         const queryExp = this.queryable.buildQuery(visitor) as SelectExpression<T>;
         const value: { [K in keyof T]?: IExpression } = {};
         const entityExp = new MemberAccessExpression(new ParameterExpression<EntityEntry<T>>("entry", EntityEntry), "entity");

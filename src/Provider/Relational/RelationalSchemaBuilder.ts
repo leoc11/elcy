@@ -34,7 +34,6 @@ import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData"
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 import { TempEntityMetaData } from "../../MetaData/TempEntityMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
-import { BatchedQuery } from "../../Query/BatchedQuery";
 import { IQuery } from "../../Query/IQuery";
 import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
 import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
@@ -253,20 +252,20 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         const schemaGroups = entities.groupBy((o) => o.schema).toArray();
         const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select((o) => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
 
-        const batchedQuery = new BatchedQuery();
+        const batchedQuery = [];
         // table schema
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLES WHERE ${tableFilters};`,
             type: QueryType.DQL
         });
 
         // column schema
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT *, CAST(COLUMNPROPERTY(object_id(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)), COLUMN_NAME, 'IsIdentity') AS BIT) [IS_IDENTITY] FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.COLUMNS WHERE ${tableFilters}`,
             type: QueryType.DQL
         });
 
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT a.*, b.CHECK_CLAUSE INTO #tempConstraint FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS a` +
                 ` LEFT JOIN  ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CHECK_CONSTRAINTS b` +
                 ` on a.CONSTRAINT_NAME = b.CONSTRAINT_NAME` +
@@ -275,31 +274,31 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         });
 
         // all table constrains
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT * FROM #tempConstraint`,
             type: QueryType.DQL
         });
 
         // relation constraint for FK
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT a.* FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS a` +
                 ` JOIN #tempConstraint b ON a.CONSTRAINT_NAME = b.CONSTRAINT_NAME WHERE ${tableFilters}`,
             type: QueryType.DQL
         });
 
-        batchedQuery.add({
+        batchedQuery.push({
             query: `DROP TABLE #tempConstraint`,
             type: QueryType.DDL
         });
 
         // map constrain to column
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT * FROM ${this.queryBuilder.enclose(this.connection.database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE ${tableFilters}`,
             type: QueryType.DQL
         });
 
         // all table index
-        batchedQuery.add({
+        batchedQuery.push({
             query: `SELECT s.name [TABLE_SCHEMA], t.name [TABLE_NAME], i.name [INDEX_NAME], i.is_unique [IS_UNIQUE], i.type_desc [TYPE], c.name [COLUMN_NAME]` +
                 ` from ${this.queryBuilder.enclose(this.connection.database)}.sys.index_columns ic` +
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id` +
@@ -312,7 +311,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             type: QueryType.DQL
         });
 
-        const schemaDatas = await this.connection.query(batchedQuery);
+        const schemaDatas = await this.connection.query(...batchedQuery);
         const tableSchemas = schemaDatas[0];
         const columnSchemas = schemaDatas[1];
         const constriantSchemas = schemaDatas[3];

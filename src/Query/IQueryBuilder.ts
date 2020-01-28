@@ -1,11 +1,9 @@
 import { ICompleteColumnType } from "../Common/ICompleteColumnType";
 import { ValueType } from "../Common/Type";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
-import { IEnumerable } from "../Enumerable/IEnumerable";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { QueryExpression } from "../Queryable/QueryExpression/QueryExpression";
-import { IQuery } from "./IQuery";
 import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
 import { IQueryOption } from "./IQueryOption";
 import { IQueryTemplate } from "./IQueryTemplate";
@@ -16,8 +14,6 @@ export interface IQueryBuilder {
     namingStrategy: NamingStrategy;
     queryLimit: IQueryLimit;
     columnTypeString(columnType: ICompleteColumnType): string;
-    mergeQueries(queries: IEnumerable<IQuery>): IQuery[];
-
     // TODO: Remove
     newLine(indent?: number, isAdd?: boolean): string;
     toLogicalString(exp: IExpression<boolean>, param?: IQueryBuilderParameter): string;

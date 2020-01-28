@@ -121,7 +121,7 @@ export abstract class Queryable<T = any> {
     }
     public deferredFind(id: ValueType | ObjectLike<T>) {
         const isValueType = isValue(id);
-        const dbSet = this.dbContext.set(this.type as any);
+        const dbSet = this.dbContext.set(this.type as IObjectType<T>);
         if (!dbSet) {
             throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "Find only support entity queryable");
         }

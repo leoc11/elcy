@@ -25,10 +25,10 @@ export class FirstDeferredQuery<T> extends DQLDeferredQuery<T> {
     }
     protected buildQuery(visitor: IQueryVisitor): QueryExpression {
         const objectOperand = this.queryable.buildQuery(visitor) as unknown as SelectExpression<T>;
-        objectOperand.includes = [];
         const methodExpression = new MethodCallExpression(objectOperand, "first", []);
         const param: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return visitor.visit(methodExpression, param) as any;
+        visitor.visit(methodExpression, param);
+        return param.selectExpression;
     }
     protected getQueryCacheKey() {
         return hashCode("FIRST", super.getQueryCacheKey());

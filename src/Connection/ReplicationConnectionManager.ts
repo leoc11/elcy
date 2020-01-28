@@ -27,7 +27,7 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
         const resPromises: Array<Promise<IConnection>> = [];
         resPromises.push(this.masterConnectionManager.getConnection(true));
         for (const a of this.replicaConnectionManagers) {
-            resPromises.push(a.getConnection(false));
+            resPromises.push(a.getConnection());
         }
         return Promise.all(resPromises);
     }

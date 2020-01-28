@@ -38,8 +38,8 @@ export class PooledConnection extends PoolResource implements IConnection {
     public open(): Promise<void> {
         return this.connection.open();
     }
-    public query(command: IQuery): Promise<IQueryResult[]> {
-        return this.connection.query(command);
+    public query(...command: IQuery[]): Promise<IQueryResult[]> {
+        return this.connection.query(...command);
     }
     public reset(): Promise<void> {
         return this.connection.reset();

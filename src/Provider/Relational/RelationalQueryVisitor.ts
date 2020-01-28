@@ -1526,7 +1526,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 break;
             }
             default: {
-                throw new Error("Operation not supported");
+                for (const prop in expression.object) {
+                    expression.object[prop] = this.visit(expression.object[prop], param);
+                }
+                return expression;
             }
         }
 

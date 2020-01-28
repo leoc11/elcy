@@ -4,7 +4,6 @@ import { expect, use } from "chai";
 import * as chaiPromise from "chai-as-promised";
 import "mocha";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
-import { ConnectionError } from "../../../src/Error/ConnectionError";
 import { MockDriver } from "../../../src/Mock/MockDriver";
 import { IPoolOption } from "../../../src/Pool/IPoolOption";
 
@@ -14,11 +13,10 @@ describe("POOLED CONNECTION MANAGER", () => {
         if (!option) {
             option = {};
         }
-        option = Object.assign({ maxResource: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 } as IPoolOption, option);
+        option = Object.assign({ maxResource: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 100 } as IPoolOption, option);
         const manager = new PooledConnectionManager(new MockDriver({ allowPooling: true }), option);
         return manager;
     };
-
     it("should used pooled connection", async () => {
         const connectionManager = getManager();
         const con = await connectionManager.getConnection();
@@ -27,19 +25,6 @@ describe("POOLED CONNECTION MANAGER", () => {
         await con2.close();
 
         expect(con2).equal(con);
-    });
-    it("should check maximum allowed connection", async () => {
-        const connectionManager = getManager();
-        const con1 = await connectionManager.getConnection();
-        const con2 = await connectionManager.getConnection();
-        const con3 = await connectionManager.getConnection();
-
-        const promise = connectionManager.getConnection();
-        expect(promise).to.eventually.be.rejectedWith(ConnectionError).then(async () => {
-            await con1.close();
-            await con2.close();
-            await con3.close();
-        });
     });
     it("should release idle connection after exceed idle timeout", async () => {
         const connectionManager = getManager();
@@ -74,20 +59,13 @@ describe("POOLED CONNECTION MANAGER", () => {
     it("should used minimum queued idle connection", async () => {
         const connectionManager = getManager({ min: 1 });
         const con1 = await connectionManager.getConnection();
-        const con2 = await connectionManager.getConnection();
-        await con1.close();
-        await con2.close();
-        expect(con1).not.equal(con2);
-        const con3 = await connectionManager.getConnection();
-        await con3.close();
-        expect(con3).to.be.oneOf([con1, con2]);
-
-        await new Promise((resolve) => {
+        await new Promise((r, j) => {
             setTimeout(() => {
-                resolve();
-            }, 101);
+                r();
+            }, 50);
         });
         expect(connectionManager.poolSize).to.equal(1);
+        await con1.close();
     });
     it("should used lifo queue type", async () => {
         const connectionManager = getManager({ max: 2, queueType: "lifo" });
@@ -105,12 +83,12 @@ describe("POOLED CONNECTION MANAGER", () => {
         const con1 = await connectionManager.getConnection();
         const con2 = await connectionManager.getConnection();
         const con3 = await connectionManager.getConnection();
-        expect(connectionManager.getConnection()).to.be.eventually.rejectedWith(ConnectionError);
+        expect(connectionManager.getConnection()).to.be.eventually.rejectedWith("Acquire Timeout");
         setTimeout(async () => {
             await con1.close();
             await con2.close();
             await con3.close();
-        }, 2100);
+        }, 101);
     });
     it("should prioritize longest waiting client", async () => {
         const connectionManager = getManager({ maxResource: 2, acquireTimeout: Infinity });
@@ -122,10 +100,10 @@ describe("POOLED CONNECTION MANAGER", () => {
         const aquires: string[] = [];
         con2Promise.then(() => {
             aquires.push("2");
-        }, () => { rejectedCount++; });
+        }, (a) => { rejectedCount++; });
         con3Promise.then(() => {
             aquires.push("3");
-        }, () => { rejectedCount++; });
+        }, (a) => { rejectedCount++; });
         await con1.close();
         expect(connectionManager.poolSize).to.equal(0);
         await con2.close();

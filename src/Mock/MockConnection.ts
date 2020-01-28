@@ -8,13 +8,13 @@ import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { isNull, visitExpression } from "../Helper/Util";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
-import { BatchedQuery } from "../Query/BatchedQuery";
 import { BulkDeferredQuery } from "../Query/DeferredQuery/BulkDeferredQuery";
 import { DeferredQuery } from "../Query/DeferredQuery/DeferredQuery";
 import { IQuery } from "../Query/IQuery";
@@ -206,9 +206,11 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         if (query.type & QueryType.DML) {
-                            const paramValue = tvps[index][1];
-                            if (Array.isArray(paramValue)) {
-                                result.effectedRows = paramValue.length;
+                            if (tvps[index]) {
+                                const paramValue = tvps[index][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
+                                }
                             }
                         }
                         else if (query.type & QueryType.DQL) {
@@ -229,10 +231,12 @@ export class MockConnection implements IConnection {
                         };
                         i++;
                         if (query.type & QueryType.DQL) {
-                            const rows = command.values.select(() => {
+                            const rows = command.values.select((v) => {
                                 const val: { [key in any]: any } = {};
                                 for (const col of generatedColumns) {
-                                    val[col.dataPropertyName] = this.generateValue(col);
+                                    const paramExp = v[col.dataPropertyName] as SqlParameterExpression;
+                                    val[col.dataPropertyName] = paramExp ? query.parameters.get(paramExp.name)
+                                        : this.generateValue(col);
                                 }
                                 return val;
                             }).toArray();
@@ -380,10 +384,9 @@ export class MockConnection implements IConnection {
     public open(): Promise<void> {
         return Promise.resolve();
     }
-    public async query(command: IQuery): Promise<IQueryResult[]> {
-        const count = (command as BatchedQuery).queryCount || 1;
-        // console.log(JSON.stringify(command));
-        // console.log(command.query);
+    public async query(...commands: IQuery[]): Promise<IQueryResult[]> {
+        const count = commands.length || 1;
+        console.log(JSON.stringify(commands));
         return this.results.splice(0, count);
     }
     public reset(): Promise<void> {

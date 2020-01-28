@@ -34,7 +34,6 @@ export class InsertDeferredQuery<T> extends DMLDeferredQuery<T> {
     constructor(public readonly entry: EntityEntry<T>, public autoFinalize: boolean = true) {
         super(entry.dbSet.parameter({ entry: entry }));
         this.relationId = {};
-        this.queryable.parameter({ relationId: this.relationId });
         if (this.queryOption.beforeSave) {
             this.queryOption.beforeSave(this.entry.entity, { type: "insert" });
         }
@@ -45,8 +44,8 @@ export class InsertDeferredQuery<T> extends DMLDeferredQuery<T> {
             this.dbContext.beforeSave(this.entry.entity, { type: "insert" });
         }
     }
-    public relationId: { [K in keyof T]?: any };
     public data: { [K in keyof T]?: any };
+    public relationId: { [K in keyof T]?: any };
     protected finalizeable: boolean;
     private _insertProperties: Array<IColumnMetaData<T>>;
     public finalize() {
@@ -73,6 +72,7 @@ export class InsertDeferredQuery<T> extends DMLDeferredQuery<T> {
     }
     protected buildQueries(visitor: IQueryVisitor): Array<QueryExpression<T>> {
         const results = [];
+        this.queryable.parameter({ relationId: this.relationId });
         const queryExp = this.queryable.buildQuery(visitor) as SelectExpression<T>;
         const value: { [K in keyof T]?: IExpression } = {};
         const entityExp = new MemberAccessExpression(new ParameterExpression<EntityEntry<T>>("entry", EntityEntry), "entity");

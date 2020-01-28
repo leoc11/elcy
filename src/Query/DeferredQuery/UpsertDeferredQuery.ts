@@ -32,7 +32,6 @@ export class UpsertDeferredQuery<T> extends DMLDeferredQuery<T> {
     constructor(public readonly entry: EntityEntry<T>, public autoFinalize: boolean = true) {
         super(entry.dbSet.parameter({ entity: entry.entity }));
         this.relationId = {};
-        this.queryable.parameter({ relationId: this.relationId });
         this.eventType = this.entry.state === EntityState.Added ? "insert" : "update";
         if (this.queryOption.beforeSave) {
             this.queryOption.beforeSave(this.entry.entity, { type: this.eventType });
@@ -44,8 +43,8 @@ export class UpsertDeferredQuery<T> extends DMLDeferredQuery<T> {
             this.dbContext.beforeSave(this.entry.entity, { type: this.eventType });
         }
     }
-    public relationId: { [K in keyof T]?: any };
     public data: { [K in keyof T]?: any };
+    public relationId: { [K in keyof T]?: any };
     protected eventType: "insert" | "update";
     private _insertProperties: Array<keyof T>;
     private _finalizeable: boolean;
@@ -77,6 +76,7 @@ export class UpsertDeferredQuery<T> extends DMLDeferredQuery<T> {
     }
     protected buildQueries(visitor: IQueryVisitor): Array<QueryExpression<T[]>> {
         const results: Array<QueryExpression<T[]>> = [];
+        this.queryable.parameter({ relationId: this.relationId });
         const queryExp = this.queryable.buildQuery(visitor) as SelectExpression<T>;
         for (const colExp of queryExp.entity.primaryColumns) {
             const parameter = queryExp.addSqlParameter(visitor.newAlias("param"), new MemberAccessExpression(new MemberAccessExpression(new ParameterExpression<EntityEntry<T>>("entry", EntityEntry), "entity"), colExp.propertyName, colExp.type), colExp.columnMeta);

@@ -4,11 +4,11 @@ import * as sinonChai from "sinon-chai";
 import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
 import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
 import { EntityState } from "../../../src/Data/EntityState";
+import { RelationState } from "../../../src/Data/RelationState";
 import { Uuid } from "../../../src/Data/Uuid";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { Order, OrderDetail, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
-import { RelationState } from "../../../src/Data/RelationState";
 
 chai.use(sinonChai);
 
@@ -140,7 +140,6 @@ describe("DBCONTEXT", () => {
             for (const o of entity.OrderDetails) {
                 chai.expect(o).to.be.an.instanceof(OrderDetail);
                 chai.expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
-
             }
         });
     });

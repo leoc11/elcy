@@ -12,7 +12,7 @@ export interface IConnection {
     close(): Promise<void>;
     commitTransaction(): Promise<void>;
     open(): Promise<void>;
-    query(command: IQuery): Promise<IQueryResult[]>;
+    query(...commands: IQuery[]): Promise<IQueryResult[]>;
     reset(): Promise<void>;
     rollbackTransaction(): Promise<void>;
     setIsolationLevel(isolationLevel: IsolationLevel): Promise<void>;

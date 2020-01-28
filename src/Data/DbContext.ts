@@ -277,8 +277,6 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             deferredQueries = this.deferredQueries.splice(0);
         }
 
-        const queryBuilder = this.queryBuilder;
-
         // check cached
         if (this.resultCacheManager) {
             deferredQueries = deferredQueries.toArray();
@@ -294,28 +292,12 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             }
         }
 
-        // // analyze parameters
-        // // db has parameter size limit and query size limit.
-        // const paramPrefix = queryBuilder.namingStrategy.getAlias("param");
-        // let i = 0;
-        // const paramNameMap = new Map<any, string>();
-        // for (const [key, p] of deferredQueries.selectMany((o) => o.parameters)) {
-        //     let alias = paramNameMap.get(p.value);
-        //     if (!alias) {
-        //         alias = paramPrefix + i++;
-        //         paramNameMap.set(p.value, alias);
-        //     }
-        //     p.name = alias;
-        //     p.value = queryBuilder.toParameterValue(p.value, key.column);
-        // }
-
         const queries = deferredQueries.selectMany((o) => o.queries);
-        const mergedQueries = queryBuilder.mergeQueries(queries);
-        if (!mergedQueries.any()) {
+        if (!queries.any()) {
             return;
         }
 
-        const queryResult: IQueryResult[] = await this.executeQueries(...mergedQueries);
+        const queryResult: IQueryResult[] = await this.executeQueries(...queries);
 
         for (const deferredQuery of deferredQueries) {
             const results = queryResult.splice(0, deferredQuery.queries.length);
@@ -349,19 +331,17 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                 await con.open();
             }
             const timer = Diagnostic.timer(false);
-            for (const query of queries) {
-                timer && timer.start();
-                if (Diagnostic.enabled) {
-                    Diagnostic.debug(con, `Execute Query.`, query);
-                }
-                const res = await con.query(query);
-                if (Diagnostic.enabled) {
-                    Diagnostic.debug(con, `Query Result.`, res);
-                    Diagnostic.trace(con, `Execute Query time: ${timer.time()}ms`);
-                }
-                results = results.concat(res);
+            timer && timer.start();
+            if (Diagnostic.enabled) {
+                Diagnostic.debug(con, `Execute Query.`, queries);
             }
-            await this.closeConnection(con);
+            results = await con.query(...queries);
+            if (Diagnostic.enabled) {
+                Diagnostic.debug(con, `Query Result.`, results);
+                Diagnostic.trace(con, `Execute Query time: ${timer.time()}ms`);
+            }
+            // No need to wait connection close
+            this.closeConnection(con);
         }
         return results;
     }
@@ -424,7 +404,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
     }
     public async syncSchema() {
         const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
-        const commands = this.queryBuilder.mergeQueries(schemaQuery.commit);
+        const commands = schemaQuery.commit;
 
         // must be executed to all connection in case connection manager handle replication
         const serverConnections = await this.connectionManager.getAllConnections();

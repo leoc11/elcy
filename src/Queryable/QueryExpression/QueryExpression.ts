@@ -7,14 +7,20 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 
 export abstract class QueryExpression<T = any> implements IExpression<T> {
-    constructor() {
-        this.parameterTree = {
-            node: [],
-            childrens: []
-        };
+    public get parameterTree() {
+        if (!this._parameterTree) {
+            this._parameterTree = {
+                node: [],
+                childrens: []
+            };
+        }
+        return this._parameterTree;
     }
-    public parameterTree: INodeTree<SqlParameterExpression[]>;
+    public set parameterTree(value) {
+        this._parameterTree = value;
+    }
     public type: GenericType<T>;
+    private _parameterTree: INodeTree<SqlParameterExpression[]>;
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): QueryExpression<T>;
     public abstract getEffectedEntities(): IObjectType[];
     public abstract hashCode(): number;

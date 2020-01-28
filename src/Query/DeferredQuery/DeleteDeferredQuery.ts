@@ -14,6 +14,7 @@ import { DMLDeferredQuery } from "./DMLDeferredQuery";
 export class DeleteDeferredQuery<T> extends DMLDeferredQuery<T> {
     constructor(protected readonly entry: EntityEntry<T>, protected readonly mode: DeleteMode, public autoFinalize: boolean = true) {
         super(entry.dbSet.parameter({ entry: entry }));
+
         if (this.queryOption.beforeDelete) {
             this.queryOption.beforeDelete(this.entry.entity, { mode: this.mode });
         }

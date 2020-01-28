@@ -6,7 +6,7 @@ import { MockDriver } from "../../../src/Mock/MockDriver";
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MockDriver({ database: "Master" });
     const driver2 = new MockDriver({ database: "Replica" });
-    const connectionManager = new ReplicationConnectionManager(driver, [driver2]);
+    const connectionManager = new ReplicationConnectionManager(driver, [driver2], { idleTimeout: 10 });
 
     it("should return master connection", async () => {
         const con = await connectionManager.getConnection(true);
