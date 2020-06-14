@@ -1,6 +1,10 @@
 import "../src/Startup";
 // tslint:disable-next-line: ordered-imports
+import { DefaultLogger } from "../src/Logger/DefaultLogger";
+import { Diagnostic } from "../src/Logger/Diagnostic";
 // import "./test.debug";
+
+Diagnostic.logger = new DefaultLogger();
 
 describe("Core", () => {
     require("./Core/ConnectionManager/PooledConnectionManager");

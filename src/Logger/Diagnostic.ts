@@ -1,4 +1,3 @@
-import { container } from "../IOC/Container";
 import { ILogger } from "./ILogger";
 import { Timer } from "./Timer";
 
@@ -6,9 +5,7 @@ export abstract class Diagnostic {
     public static get enabled() {
         return !!Diagnostic.logger;
     }
-    private static get logger() {
-        return container.resolve<ILogger>("logger");
-    }
+    public static logger: ILogger;
 
     public static debug(source: any, message: string, ...args: any[]): void;
     public static debug(source: any, message: string, error?: Error, ...args: any[]): void {
