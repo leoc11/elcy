@@ -7,7 +7,7 @@ cache:
     - $HOME/.npm
 
 install:
-  - npm install typescript@3.9.4000
+  - npm install typescript@3.9.4
   - npm install nyc@13.3.0
   - npm install tslint
 
