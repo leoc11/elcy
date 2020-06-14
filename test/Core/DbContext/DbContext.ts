@@ -129,7 +129,7 @@ describe("DBCONTEXT", () => {
             await entry.loadRelation((o) => o.OrderDetails);
             chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
             for (const o of entity.OrderDetails) {
-                o.should.be.an.instanceof(OrderDetail);
+                chai.expect(o).to.be.an.instanceof(OrderDetail);
             }
         });
         it("should load multiple relations", async () => {
@@ -182,10 +182,10 @@ describe("DBCONTEXT", () => {
         });
     });
     describe("RESULT CACHE", async () => {
-        before(async () => {
+        before(() => {
             db.resultCacheManagerFactory = () => new DefaultResultCacheManager();
         });
-        after(async () => {
+        after(() => {
             db.resultCacheManagerFactory = null;
         });
         it("should cached result", async () => {

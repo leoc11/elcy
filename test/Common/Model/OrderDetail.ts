@@ -1,7 +1,7 @@
 import { ValueType } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Data/Uuid";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
-import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
+import { CreatedDateColumn } from "../../../src/Decorator/Column/CreatedDateColumn";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
@@ -36,7 +36,7 @@ export class OrderDetail {
     public name: string;
     @DecimalColumn({ columnType: "decimal", columnName: "Quantity" })
     public quantity: number;
-    @DateColumn()
+    @CreatedDateColumn()
     public CreatedDate: Date;
     @ComputedColumn<OrderDetail>((o) => o.quantity * o.Product.Price)
     public GrossSales: number;

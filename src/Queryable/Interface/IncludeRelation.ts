@@ -38,6 +38,7 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
             this.name = name;
         }
     }
+    public RelationData: any;
     public child: SelectExpression<TChild>;
     public isEmbedded: boolean;
     public name: string;

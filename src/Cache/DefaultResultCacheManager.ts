@@ -21,8 +21,16 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     public async gets(...keys: string[]): Promise<IQueryResult[][]> {
         return keys.select((key) => {
             const titem = this._keyMap.get(key);
+            if (!titem) {
+                return null;
+            }
+
             const item = titem[0];
-            if (item && item.slidingExpiration) {
+            if (!item) {
+                return null;
+            }
+
+            if (item.slidingExpiration) {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;
@@ -33,7 +41,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 }
             }
 
-            return item ? item.data : null;
+            return item.data;
         }).toArray();
     }
     public async remove(...keys: string[]): Promise<void> {

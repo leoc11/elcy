@@ -19,6 +19,8 @@ export interface IQueryOption {
     useUpsert?: boolean;
     version?: Version;
 
+    // TODO:
+    // comment?: string;
     // noTracking?: boolean;
     // batchSize?: number;
     // batchDelay?: number;

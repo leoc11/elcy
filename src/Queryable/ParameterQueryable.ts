@@ -20,7 +20,7 @@ export class ParameterQueryable<T> extends Queryable<T> {
     private _parameterHashCode = 0;
     public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
         const command = this.parent.buildQuery(visitor);
-        visitor.setStack(this.stackTree.node);
+        visitor.stack = this.stackTree.node;
         return command;
     }
     public hashCode() {

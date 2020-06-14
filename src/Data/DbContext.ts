@@ -88,7 +88,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             this._resultCacheManager = Reflect.getOwnMetadata(resultCacheManagerKey, this.constructor);
             if (!this._resultCacheManager) {
                 this._resultCacheManager = this.resultCacheManagerFactory();
-                Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
+                Reflect.defineMetadata(resultCacheManagerKey, this._resultCacheManager, this.constructor);
             }
         }
 
@@ -464,11 +464,11 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             }
         }
     }
-    public abstract getDeleteQuery<T>(entry: EntityEntry<T>, deleteMode?: DeleteMode): DMLDeferredQuery<number>;
-    public abstract getInsertQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<number>;
-    public abstract getRelationAddQuery<T, T2, TData>(relationEntry: RelationEntry<T, T2, TData>): DMLDeferredQuery<number>;
-    public abstract getRelationDeleteQuery<T, T2, TData>(relationEntry: RelationEntry<T, T2, TData>): DMLDeferredQuery<number>;
-    public abstract getUpdateQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<number>;
-    public abstract getUpsertQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<number>;
+    public abstract getDeleteQuery<T>(entry: EntityEntry<T>, deleteMode?: DeleteMode): DMLDeferredQuery<T>;
+    public abstract getInsertQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<T>;
+    public abstract getRelationAddQuery<T, T2, TData>(relationEntry: RelationEntry<T, T2, TData>): DMLDeferredQuery;
+    public abstract getRelationDeleteQuery<T, T2, TData>(relationEntry: RelationEntry<T, T2, TData>): DMLDeferredQuery;
+    public abstract getUpdateQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<T>;
+    public abstract getUpsertQuery<T>(entry: EntityEntry<T>): DMLDeferredQuery<T>;
     //#endregion
 }

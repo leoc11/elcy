@@ -35,21 +35,21 @@ export class AutoParent {
 
     @BeforeSave<AutoParent>()
     public beforeSave(entity: AutoParent, param: ISaveEventParam) {
-        // before save
+        // do something
     }
 
     @AfterSave<AutoParent>()
     public afterSave(entity: AutoParent, param: ISaveEventParam) {
-        // after save
+        // do something
     }
 
     @BeforeDelete<AutoParent>()
     public beforeDelete(entity: AutoParent, param: ISaveEventParam) {
-        // before save
+        // do something
     }
 
     @AfterDelete<AutoParent>()
     public afterDelete(entity: AutoParent, param: ISaveEventParam) {
-        // after save
+        // do something
     }
 }

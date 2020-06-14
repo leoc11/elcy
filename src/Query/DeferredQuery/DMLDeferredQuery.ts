@@ -45,7 +45,7 @@ export abstract class DMLDeferredQuery<T = any> extends DeferredQuery<number> {
         return this._queryCacheKey;
     }
     constructor(
-        public readonly queryable: Queryable
+        public readonly queryable: Queryable<T>
     ) {
         super(queryable.dbContext, queryable.queryOption);
     }

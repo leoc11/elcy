@@ -1,9 +1,9 @@
-import "../../src/Startup";
+import "../../../src/Startup";
 // tslint:disable-next-line: ordered-imports
-import { DbSet } from "../../src/Data/DbSet";
-import { MockDriver } from "../../src/Mock/MockDriver";
-import { SqliteDbContext } from "../../src/Provider/Sqlite/SqliteDbContext";
-import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "./Model";
+import { DbSet } from "../../../src/Data/DbSet";
+import { MockDriver } from "../../../src/Mock/MockDriver";
+import { SqliteDbContext } from "../../../src/Provider/Sqlite/SqliteDbContext";
+import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 
 export class SqliteDb extends SqliteDbContext {
     constructor() {

@@ -24,9 +24,11 @@ export class UnionQueryable<T> extends Queryable<T> {
     }
     private _param: INodeTree<ParameterStack>;
     public buildQuery(visitor: IQueryVisitor) {
-        const childOperand = this.parent2.buildQuery(visitor) as SelectExpression<T>;
         const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
+        const stack = visitor.stack;
+        const childOperand = this.parent2.buildQuery(visitor) as SelectExpression<T>;
         objectOperand.parameterTree.childrens.push(childOperand.parameterTree);
+        visitor.stack = stack;
 
         const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression("union", Boolean)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };

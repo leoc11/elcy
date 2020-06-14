@@ -130,7 +130,7 @@ export class MockConnection implements IConnection {
                                             value = exp.rightOperand.value;
                                         }
                                         else if (exp.rightOperand instanceof SqlParameterExpression) {
-                                            value = query.parameters.get(exp.rightOperand.name);
+                                            value = query.parameters[exp.rightOperand.name];
                                         }
 
                                         if (value) {
@@ -143,7 +143,7 @@ export class MockConnection implements IConnection {
                                             value = exp.leftOperand.value;
                                         }
                                         else if (exp.leftOperand instanceof SqlParameterExpression) {
-                                            value = query.parameters.get(exp.leftOperand.name);
+                                            value = query.parameters[exp.leftOperand.name];
                                         }
                                         if (value) {
                                             propValueMap[exp.rightOperand.propertyName] = value;
@@ -235,7 +235,7 @@ export class MockConnection implements IConnection {
                                 const val: { [key in any]: any } = {};
                                 for (const col of generatedColumns) {
                                     const paramExp = v[col.dataPropertyName] as SqlParameterExpression;
-                                    val[col.dataPropertyName] = paramExp ? query.parameters.get(paramExp.name)
+                                    val[col.dataPropertyName] = paramExp ? query.parameters[paramExp.name]
                                         : this.generateValue(col);
                                 }
                                 return val;
@@ -386,7 +386,6 @@ export class MockConnection implements IConnection {
     }
     public async query(...commands: IQuery[]): Promise<IQueryResult[]> {
         const count = commands.length || 1;
-        console.log(JSON.stringify(commands));
         return this.results.splice(0, count);
     }
     public reset(): Promise<void> {
@@ -412,7 +411,7 @@ export class MockConnection implements IConnection {
             return ExpressionExecutor.execute(exp);
         }
         else if (query.parameters && exp instanceof SqlParameterExpression) {
-            const value = query.parameters.get(exp.name);
+            const value = query.parameters[exp.name];
             if (value !== undefined) {
                 return value;
             }

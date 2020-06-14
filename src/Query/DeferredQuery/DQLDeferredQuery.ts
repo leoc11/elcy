@@ -56,7 +56,7 @@ export abstract class DQLDeferredQuery<T = any> extends DeferredQuery<T> {
     private _hashCode: number;
     public hashCode(): number {
         if (!this._hashCode) {
-            this._hashCode = this.getQueryCacheKey() + this.queries.selectMany((o) => o.parameters).select((o) => hashCode((o[1].value || "NULL").toString())).sum();
+            this._hashCode = this.getQueryCacheKey() + this.queries.selectMany((o) => Object.values(o.parameters)).select((o) => hashCode((o.value || "NULL").toString())).sum();
         }
         return this._hashCode;
     }

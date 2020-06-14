@@ -169,7 +169,7 @@ export abstract class Queryable<T = any> {
         }
         return new ToMapDeferredQuery(this, keySelector, valueSelector);
     }
-    public deferredUpdate(setter: ResultSelector<T, T>) {
+    public deferredUpdate(setter: ResultSelector<T, T>): DeferredQuery<number> {
         return new BulkUpdateDeferredQuery(this, setter);
     }
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;

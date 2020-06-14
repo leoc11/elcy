@@ -11,10 +11,10 @@ export interface IQueryVisitor {
     namingStrategy: NamingStrategy;
     queryOption: IQueryOption;
     translator: QueryTranslator;
+    stack: ParameterStack;
     // TODO: remove
     newAlias(type?: "entity" | "column" | "param"): string;
     setDefaultBehaviour<T>(selectExp: SelectExpression<T>): void;
-    setStack(param: ParameterStack): void;
     visit(expression: IExpression, param: IQueryVisitParameter): IExpression;
     visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter): IExpression;
 }

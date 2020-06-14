@@ -13,7 +13,7 @@ export class ExecuteDeferredQuery extends DeferredQuery<number> {
         if (!this._queries) {
             this._queries = [{
                 query: this.sql,
-                parameters: this.parameters,
+                parameters: this.parameter,
                 type: QueryType.DML
             }];
 
@@ -25,15 +25,6 @@ export class ExecuteDeferredQuery extends DeferredQuery<number> {
             this._sql = this.rawSql.replace(/\$\{([a-z][a-z0-9])\}/ig, this.dbContext.queryBuilder.toString(new ParameterExpression("$1")));
         }
         return this._sql;
-    }
-    public get parameters() {
-        if (!this._parameters) {
-            this._parameters = new Map();
-            for (const prop in this.parameter) {
-                this._parameters.set(prop, this.parameter[prop]);
-            }
-        }
-        return this._parameters;
     }
     constructor(dbContext: DbContext,
                 private rawSql: string,

@@ -107,7 +107,8 @@ export abstract class DeferredQuery<T = any> {
             }
 
             const createQ = schemaBuilder.createTable(tvpExp.entityMeta);
-            const insertQ = this.dbContext.queryBuilder.toQuery(insertQuery, this.queryOption);
+            const insertQ = this.dbContext.queryBuilder.toQuery(insertQuery, this.queryOption)
+                .select((o) => this.toQuery(o, null, null)).toArray();
             const deleteQ = schemaBuilder.dropTable(tvpExp.entityMeta);
             preQ = preQ.concat(createQ).concat(insertQ);
             postQ = postQ.concat(deleteQ);
@@ -123,36 +124,38 @@ export abstract class DeferredQuery<T = any> {
             comment: template.comment,
             type: template.type,
             query: template.query,
-            parameters: new Map()
+            parameters: {}
         };
 
-        const queryBuilder = this.dbContext.queryBuilder;
-        let paramTrees = [paramTree];
-        let stackTrees = [stackTree];
-        let i = 0;
-        while (paramTrees.length > i) {
-            const paramNode = paramTrees[i];
-            const stackNode = stackTrees[i++];
-            const valueTransformer = new ExpressionExecutor(stackNode.node);
-            for (const param of paramNode.node) {
-                const value = valueTransformer.execute(param);
-                if (!this.queryOption.supportTVP && param instanceof SqlTableValueParameterExpression) {
-                    tvpMap.set(param, value);
+        if (stackTree) {
+            const queryBuilder = this.dbContext.queryBuilder;
+            let paramTrees = [paramTree];
+            let stackTrees = [stackTree];
+            let i = 0;
+            while (paramTrees.length > i) {
+                const paramNode = paramTrees[i];
+                const stackNode = stackTrees[i++];
+                const valueTransformer = new ExpressionExecutor(stackNode.node);
+                for (const param of paramNode.node) {
+                    const value = valueTransformer.execute(param);
+                    if (!this.queryOption.supportTVP && param instanceof SqlTableValueParameterExpression) {
+                        tvpMap.set(param, value);
+                    }
+                    else if (param.isReplacer) {
+                        result.query = result.query.replace(queryBuilder.toString(param), value);
+                    }
+                    else {
+                        result.parameters[param.name] = this.dbContext.queryBuilder.toParameterValue(value, param.column);
+                    }
                 }
-                else if (param.isReplacer) {
-                    result.query = result.query.replace(queryBuilder.toString(param), value);
-                }
-                else {
-                    result.parameters.set(param.name, value);
+                if (paramNode.childrens.any()) {
+                    paramTrees = paramTrees.concat(paramNode.childrens);
+                    stackTrees = stackTrees.concat(stackNode.childrens);
                 }
             }
-            if (paramNode.childrens.any()) {
-                paramTrees = paramTrees.concat(paramNode.childrens);
-                stackTrees = stackTrees.concat(stackNode.childrens);
+            if (Diagnostic.enabled) {
+                Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
             }
-        }
-        if (Diagnostic.enabled) {
-            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
         return result;
     }

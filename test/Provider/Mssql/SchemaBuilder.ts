@@ -11,11 +11,11 @@ import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData
 import { UniqueConstraintMetaData } from "../../../src/MetaData/UniqueConstraintMetaData";
 import { MockConnection } from "../../../src/Mock/MockConnection";
 import { mockContext } from "../../../src/Mock/MockContext";
-import { Schema } from "./Entities/Schema";
-import { SchemaContext } from "./Entities/SchemaContext";
-import { SubSchema } from "./Entities/SubSchema";
+import { Schema } from "../../Common/SchemaModel/Schema";
+import { SubSchema } from "../../Common/SchemaModel/SubSchema";
+import { MssqlSchemaDb } from "./MssqlSchemaDb";
 
-const db = new SchemaContext();
+const db = new MssqlSchemaDb();
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();

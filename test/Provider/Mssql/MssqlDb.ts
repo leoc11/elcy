@@ -1,18 +1,17 @@
-import { DefaultQueryCacheManager } from "../../src/Cache/DefaultQueryCacheManager";
-// tslint:disable-next-line: ordered-imports
-import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
-import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
-import { IDriver } from "../../src/Connection/IDriver";
-import { MockDriver } from "../../src/Mock/MockDriver";
-import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
-import "../../src/Startup";
-import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "./Model";
-import { AutoDetailDesc } from "./Model/AutoDetailDesc";
+import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
+import { IQueryCacheManager } from "../../../src/Cache/IQueryCacheManager";
+import { IResultCacheManager } from "../../../src/Cache/IResultCacheManager";
+import { IDriver } from "../../../src/Connection/IDriver";
+import { MockDriver } from "../../../src/Mock/MockDriver";
+import { MssqlDbContext } from "../../../src/Provider/Mssql/MssqlDbContext";
+import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
+import { AutoDetailDesc } from "../../Common/Model/AutoDetailDesc";
+
 const entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
     Collection, AutoParent, AutoDetail, AutoDetailDesc
 ];
 
-export class MyDb extends MssqlDbContext {
+export class MssqlDb extends MssqlDbContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
         super(factory, entityTypes);
         this.queryCacheManagerFactory = () => new DefaultQueryCacheManager();

@@ -16,7 +16,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         if (!this._type && this.objectOperand.type) {
             try {
                 const objectType = this.objectOperand.type as any;
-                if (Array === objectType || Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
+                if (objectType === Array || Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
@@ -41,13 +41,12 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
                         }
                     }
                 }
+                else if (objectType === Date) {
+                    const objectInstance = new objectType();
+                    this.type = (objectInstance[this.methodName] as any)().constructor;
+                }
                 else {
-                    try {
-                        this.type = objectType.prototype[this.methodName]().constructor;
-                    } catch (e) {
-                        const objectInstance = new objectType();
-                        this.type = (objectInstance[this.methodName] as any)().constructor;
-                    }
+                    this.type = objectType.prototype[this.methodName]().constructor;
                 }
             }
             catch (e) {

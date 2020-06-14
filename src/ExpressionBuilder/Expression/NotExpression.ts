@@ -34,7 +34,7 @@ export class NotExpression implements IUnaryOperatorExpression<boolean> {
         }
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("!"), this.operand.hashCode());
+        return -this.operand.hashCode();
     }
     public toString(): string {
         return "!" + this.operand.toString();

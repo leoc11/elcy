@@ -15,7 +15,7 @@ export class NotEqualExpression implements IBinaryOperatorExpression<boolean> {
         return clone;
     }
     public hashCode() {
-        return hashCode("!=", this.leftOperand.hashCode()) + hashCode("!=", this.rightOperand.hashCode());
+        return -(hashCode("==", this.leftOperand.hashCode()) + hashCode("==", this.rightOperand.hashCode()));
     }
     public toString(): string {
         return "(" + this.leftOperand.toString() + " != " + this.rightOperand.toString() + ")";

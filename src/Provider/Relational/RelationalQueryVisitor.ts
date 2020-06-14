@@ -66,11 +66,17 @@ export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
         this.queryOption = {};
         this.valueTransformer = new ExpressionExecutor();
-        this.stack = new ParameterStack();
     }
     public namingStrategy: NamingStrategy;
     public queryOption: IQueryOption;
-    public stack: ParameterStack;
+    public get stack(): ParameterStack {
+        return this.valueTransformer.stack;
+    }
+    public set stack(v: ParameterStack) {
+        v = v ? v.clone() : new ParameterStack();
+        this.valueTransformer.stack = v;
+    }
+
     public translator: QueryTranslator;
     public valueTransformer: ExpressionExecutor;
     private aliasObj: { [key: string]: number } = {};
@@ -94,12 +100,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             this.visit(new MethodCallExpression(selectExp, "orderBy", orderParams), { selectExpression: selectExp, scope: "orderBy" });
         }
     }
-    public setStack(param: ParameterStack) {
-        param = param ? param.clone() : new ParameterStack();
-        this.stack = param;
-        this.valueTransformer.stack = param;
-    }
-
     //#region visit parameter
     public visit(exp: IExpression, param: IQueryVisitParameter): IExpression {
         // TODO: ultimate goal is to remove clone as much as possible.
@@ -945,9 +945,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
 
                     if (exp.params.length > 0) {
-                        const predicateFn = exp.params[0] as FunctionExpression;
+                        let predicateFn = exp.params[0] as FunctionExpression;
                         if (!isAny) {
-                            predicateFn.body = new NotExpression(predicateFn.body);
+                            predicateFn = new FunctionExpression(new NotExpression(predicateFn.body), predicateFn.params, predicateFn.type);
                         }
                         const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: param.scope };
                         this.visit(new MethodCallExpression(selectOperand, "where", [predicateFn]), visitParam);
@@ -1513,6 +1513,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         }
         throw new Error(`${exp.methodName} not supported.`);
     }
+
+    // TODO: change to easy logic
     protected visitObjectLiteral<T extends { [Key: string]: IExpression } = any>(expression: ObjectValueExpression<T>, param: IQueryVisitParameter) {
         let requireCopy = false;
         const requireAlias = param.scope !== "groupBy";
@@ -1916,5 +1918,6 @@ const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExcl
     if (rootRel) {
         rootRel.child = childExp;
     }
+    childExp.parameterTree = root.parameterTree;
     return childExp;
 };

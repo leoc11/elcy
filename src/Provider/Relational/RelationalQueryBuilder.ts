@@ -34,9 +34,7 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
-import { BatchedQuery } from "../../Query/BatchedQuery";
 import { DbFunction } from "../../Query/DbFunction";
-import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilder } from "../../Query/IQueryBuilder";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
@@ -109,34 +107,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     //#endregion
 
-    public mergeQueries(queries: IEnumerable<IQuery>): IQuery[] {
-        const result: IQuery[] = [];
-        let queryCommand: BatchedQuery = null;
-        let paramCount = 0;
-        for (const o of queries) {
-            let isLimitExceed = true;
-            if (queryCommand) {
-                const qParamCount = o.parameters ? o.parameters.size : 0;
-                isLimitExceed = this.queryLimit.maxBatchQuery && queryCommand.queryCount >= this.queryLimit.maxBatchQuery
-                    || this.queryLimit.maxQueryLength && (queryCommand.query.length + o.query.length + 3) > this.queryLimit.maxQueryLength
-                    || this.queryLimit.maxParameters && paramCount + qParamCount > this.queryLimit.maxParameters;
-                if (isLimitExceed) {
-                    paramCount = qParamCount;
-                }
-                else {
-                    paramCount += qParamCount;
-                }
-            }
-
-            if (isLimitExceed) {
-                queryCommand = new BatchedQuery();
-                result.push(queryCommand);
-            }
-            queryCommand.add(o);
-        }
-
-        return result;
-    }
     public newAlias(type: AliasType = "entity") {
         if (!this.aliasObj[type]) {
             this.aliasObj[type] = 0;
@@ -571,12 +541,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         else if (entity instanceof UnionExpression) {
             const unionAllExp = entity.isUnionAll as SqlParameterExpression<boolean>;
-            const newUnionAllExp = new SqlParameterExpression(unionAllExp.name, new TernaryExpression(unionAllExp.valueExp, new ValueExpression("ALL"), new ValueExpression("")));
+            const newUnionAllExp = new SqlParameterExpression(unionAllExp.name, new TernaryExpression(unionAllExp.valueExp, new ValueExpression(" ALL"), new ValueExpression("")));
             newUnionAllExp.isReplacer = true;
             param.queryExpression.replaceSqlParameter(unionAllExp, newUnionAllExp);
 
             return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
-                this.newLine() + "UNION " + this.toString(newUnionAllExp) +
+                this.newLine() + "UNION" + this.toString(newUnionAllExp) +
                 this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
         }
         else if (entity instanceof ExceptExpression) {
@@ -707,7 +677,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
     }
     protected getSelectQuery<T>(selectExp: SelectExpression<T>, option: IQueryOption, skipInclude = false): IQueryTemplate[] {
-        let result: IQueryTemplate[] = [];
+        const result: IQueryTemplate[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: selectExp,
             option: option
@@ -794,13 +764,20 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const selectQuery = `SELECT${distinct}${top} ${selects}`
             + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
 
+        // select include before parent, coz result parser will parse include first before parent.
+        // this way it will be much more easier to implement async iterator.
+        const queryTemplate: IQueryTemplate = {
+            query: selectQuery,
+            type: QueryType.DQL,
+            parameterTree: selectExp.parameterTree
+        };
+        result.push(queryTemplate);
+
         if (!skipInclude) {
             // select each include as separated query as it more beneficial for performance
             for (const include of selectExp.resolvedIncludes) {
-                if (!include.isManyToManyRelation) {
-                    result = result.concat(this.getSelectQuery(include.child, param.option));
-                }
-                else {
+                let child = include.child;
+                if (include.isManyToManyRelation) {
                     // create relation data (clone select join clone child)
                     selectExp.includes.delete(include);
                     const cloneEntity = selectExp.entity.clone();
@@ -847,23 +824,16 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     }
                     selectExp.addInclude(include.name, relationData, parentBridgeRelation, "many");
 
-                    result = result.concat(this.getSelectQuery(relationData, param.option));
+                    child = relationData;
+                }
+
+                const templates = this.getSelectQuery(child, param.option);
+                for (const temp of templates) {
+                    temp.parameterTree = mergeTree(temp.parameterTree, queryTemplate.parameterTree);
+                    result.push(temp);
                 }
             }
         }
-
-        // select include before parent, coz result parser will parse include first before parent.
-        // this way it will be much more easier to implement async iterator.
-        const queryTemplate: IQueryTemplate = {
-            query: selectQuery,
-            type: QueryType.DQL,
-            parameterTree: selectExp.parameterTree
-        };
-        if (selectExp.parentRelation instanceof IncludeRelation) {
-            // merge parameter tree
-            queryTemplate.parameterTree = mergeTree(queryTemplate.parameterTree, selectExp.parentRelation.parent.parameterTree);
-        }
-        result.push(queryTemplate);
         return result;
     }
 
@@ -1088,11 +1058,22 @@ const mergeTree = (tree1: INodeTree<SqlParameterExpression[]>, tree2: INodeTree<
         childrens: [],
         node: []
     };
-    result.node = (tree1.node || []).concat(tree2.node || []);
-    for (let i = 0, len = Math.max(tree1 ? tree1.childrens.length : 0, tree2 ? tree2.childrens.length : 0); i < len; ++i) {
-        const child1 = tree1 ? tree1.childrens[i] : null;
-        const child2 = tree2 ? tree2.childrens[i] : null;
-        result.childrens.push(mergeTree(child1, child2));
+
+    const list: Array<[INodeTree<SqlParameterExpression[]>, INodeTree<SqlParameterExpression[]>, INodeTree<SqlParameterExpression[]>]> = [[result, tree1, tree2]];
+    while (list.any()) {
+        const a = list.shift();
+        a[0].node = [].concat(a[1] ? a[1].node : []).concat(a[2] ? a[2].node : []);
+
+        for (let i = 0, len = Math.max(a[1] ? a[1].childrens.length : 0, a[2] ? a[2].childrens.length : 0); i < len; ++i) {
+            const child1 = a[1] ? a[1].childrens[i] : null;
+            const child2 = a[2] ? a[2].childrens[i] : null;
+            const cresult = {
+                childrens: [],
+                node: []
+            };
+            a[0].childrens.push(cresult);
+            list.push([cresult, child1, child2]);
+        }
     }
 
     return result;

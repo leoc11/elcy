@@ -9,26 +9,14 @@ import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData
 import { mockContext } from "../../../src/Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
-import { MyDb } from "../../Common/MyDb";
-// import { MssqlDriver } from "elcy-tedious/MssqlDriver";
+import { MssqlDb } from "./MssqlDb";
 
 chai.use(sinonChai);
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
 const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
 
-const db = new MyDb(
-    // () => new MssqlDriver({
-    //     server: "localhost",
-    //     userName: "sa",
-    //     password: "password",
-    //     options: {
-    //         database: "Database",
-    //         instanceName: "SQLEXPRESS",
-    //         port: 1433
-    //     }
-    // })
-);
+const db = new MssqlDb();
 mockContext(db);
 beforeEach(async () => {
     db.connection = await db.getConnection();
@@ -48,10 +36,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
-                parameters: {}
-            } as IQuery);
+                parameters: {},
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]"
+            }, {
+                parameters: {},
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)"
+            });
 
             results.should.not.be.empty;
             for (const o of results) {
@@ -78,10 +70,17 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId]);\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            }, {
+                type: 1, query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -100,10 +99,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId]);\n\nSELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -118,10 +121,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId]);\n\nSELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[ProductId]=[entity2].[ProductId]);\n\nSELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[ProductId]=[entity2].[ProductId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -138,10 +149,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [CollectionProducts].[CollectionId],\n\t\t[CollectionProducts].[ProductId]\n\tFROM [CollectionProducts] AS [CollectionProducts]\n\tINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])\n) AS [CollectionProducts] ON ([CollectionProducts].[ProductId]=[entity1].[ProductId]);\n\nSELECT [CollectionProducts].[CollectionId],\n\t[CollectionProducts].[ProductId]\nFROM [CollectionProducts] AS [CollectionProducts]\nINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId]);\n\nSELECT [entity0].[CollectionId],\n\t[entity0].[name]\nFROM [Collections] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[CollectionId],\n\t[entity0].[name]\nFROM [Collections] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [CollectionProducts].[CollectionId],\n\t[CollectionProducts].[ProductId]\nFROM [CollectionProducts] AS [CollectionProducts]\nINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [CollectionProducts].[CollectionId],\n\t\t[CollectionProducts].[ProductId]\n\tFROM [CollectionProducts] AS [CollectionProducts]\n\tINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])\n) AS [CollectionProducts] ON ([CollectionProducts].[ProductId]=[entity1].[ProductId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -245,10 +264,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -268,10 +291,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[ProductId]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[ProductId]=[entity1].[ProductId]);\n\nSELECT [entity0].[OrderDetailId],\n\t[entity0].[ProductId]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailId],\n\t[entity0].[ProductId]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[ProductId]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[ProductId]=[entity1].[ProductId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -290,10 +317,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName] AS [column0]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName] AS [column0]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -315,10 +346,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId]);\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -341,10 +380,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity3].[Price] AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity1].[ProductId]=[entity3].[ProductId])\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity2].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity2].[isDeleted]=0);\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity3].[Price] AS [column0]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity3]\n\tON ([entity1].[ProductId]=[entity3].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity3].[Price] AS [column0]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity3]\n\tON ([entity1].[ProductId]=[entity3].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity3].[Price] AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity1].[ProductId]=[entity3].[ProductId])\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity2].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity2].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -388,10 +435,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tSUM([entity1].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE (([entity2].[isDeleted]=0) AND ([entity2].[Quantity]<=1));\n\nSELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tSUM([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tSUM([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tSUM([entity1].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE (([entity2].[isDeleted]=0) AND ([entity2].[Quantity]<=1))",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -568,10 +619,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000))",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -591,10 +646,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000))",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -761,10 +820,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity2].[Price] DESC;\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity2].[Price] DESC",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -784,10 +847,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC;\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -824,10 +891,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t1 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t1 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -880,10 +951,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t0 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t\t([entity3].[Price]<20000)\n\t\t))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t0 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t([entity3].[Price]<20000)\n\t))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t0 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t([entity3].[Price]<20000)\n\t))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t0 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t\t([entity3].[Price]<20000)\n\t\t))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -935,10 +1010,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMAX([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMAX([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMAX([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMAX([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -991,10 +1070,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMIN([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMIN([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMIN([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMIN([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1047,10 +1130,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tAVG([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tAVG([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tAVG([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tAVG([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -1103,10 +1190,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column1] AS [column2]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column1] AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity2].[column1] AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column1] AS [column2]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -1160,10 +1251,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             for (const o of results) {
@@ -1260,10 +1355,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t[entity3].[OrderId],\n\t\t\t[entity3].[Quantity]\n\t\tFROM [OrderDetails] AS [entity3]\n\t\tWHERE ([entity3].[isDeleted]=0)\n\t) AS [entity3]\n\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]>[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderDetailId]\n\tHAVING ((COUNT([entity2].[OrderDetailId])>2) AND (COUNT([entity2].[OrderDetailId])<=3))\n) AS [entity2]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC;\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t[entity3].[OrderId],\n\t\t\t[entity3].[Quantity]\n\t\tFROM [OrderDetails] AS [entity3]\n\t\tWHERE ([entity3].[isDeleted]=0)\n\t) AS [entity3]\n\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]>[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderDetailId]\n\tHAVING ((COUNT([entity2].[OrderDetailId])>2) AND (COUNT([entity2].[OrderDetailId])<=3))\n) AS [entity2]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             const any = results.any((o) => o.OrderDetails.count() > 1);
@@ -1283,10 +1382,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity4].[OrderDetailId]\n\tFROM [OrderDetails] AS [entity4]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t[entity3].[OrderId],\n\t\t\t\t[entity3].[Quantity]\n\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t) AS [entity3]\n\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderDetailId]\n\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t) AS [entity2]\n\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity4].[isDeleted]=0)\n) AS [entity4]\n\tON ([entity1].[OrderDetailId]=[entity4].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity5].[OrderDetailId],\n\t\tCOUNT([entity5].[OrderDetailId]) AS [column1]\n\tFROM [OrderDetails] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t) AS [entity3]\n\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t) AS [entity2]\n\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity5].[OrderDetailId]=[entity4].[OrderDetailId])\n\tINNER JOIN (\n\t\tSELECT [entity6].[OrderDetailId],\n\t\t\t[entity6].[OrderId],\n\t\t\t[entity6].[ProductName]\n\t\tFROM [OrderDetails] AS [entity6]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\t\tINNER JOIN (\n\t\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t\t) AS [entity3]\n\t\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t\t) AS [entity2]\n\t\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity6].[OrderDetailId]=[entity4].[OrderDetailId])\n\t) AS [entity6]\n\t\tON (([entity6].[OrderId]=[entity5].[OrderId]) AND (([entity6].[ProductName]>[entity5].[ProductName]) OR (([entity6].[ProductName]=[entity5].[ProductName]) AND ([entity6].[OrderDetailId]>=[entity5].[OrderDetailId]))))\n\tGROUP BY [entity5].[OrderDetailId]\n\tHAVING (COUNT([entity5].[OrderDetailId])<=3)\n) AS [entity5]\n\tON ([entity1].[OrderDetailId]=[entity5].[OrderDetailId])\nINNER JOIN (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity1].[ProductName] ASC;\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity4].[OrderDetailId]\n\tFROM [OrderDetails] AS [entity4]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t[entity3].[OrderId],\n\t\t\t\t[entity3].[Quantity]\n\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t) AS [entity3]\n\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderDetailId]\n\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t) AS [entity2]\n\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity4].[isDeleted]=0)\n) AS [entity4]\n\tON ([entity1].[OrderDetailId]=[entity4].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity5].[OrderDetailId],\n\t\tCOUNT([entity5].[OrderDetailId]) AS [column1]\n\tFROM [OrderDetails] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t) AS [entity3]\n\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t) AS [entity2]\n\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity5].[OrderDetailId]=[entity4].[OrderDetailId])\n\tINNER JOIN (\n\t\tSELECT [entity6].[OrderDetailId],\n\t\t\t[entity6].[OrderId],\n\t\t\t[entity6].[ProductName]\n\t\tFROM [OrderDetails] AS [entity6]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\t\tINNER JOIN (\n\t\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t\t) AS [entity3]\n\t\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t\t) AS [entity2]\n\t\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity6].[OrderDetailId]=[entity4].[OrderDetailId])\n\t) AS [entity6]\n\t\tON (([entity6].[OrderId]=[entity5].[OrderId]) AND (([entity6].[ProductName]>[entity5].[ProductName]) OR (([entity6].[ProductName]=[entity5].[ProductName]) AND ([entity6].[OrderDetailId]>=[entity5].[OrderDetailId]))))\n\tGROUP BY [entity5].[OrderDetailId]\n\tHAVING (COUNT([entity5].[OrderDetailId])<=3)\n) AS [entity5]\n\tON ([entity1].[OrderDetailId]=[entity5].[OrderDetailId])\nINNER JOIN (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity1].[ProductName] ASC",
+                parameters: {}
+            });
 
             results.should.be.a("array").and.not.empty;
             const any = results.any((o) => o.OrderDetails.count() > 3);
@@ -1335,10 +1438,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\tCOUNT([entity3].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON (([entity4].[OrderId]=[entity3].[OrderId]) AND (([entity4].[CreatedDate]<[entity3].[CreatedDate]) OR (([entity4].[CreatedDate]=[entity3].[CreatedDate]) AND ([entity4].[OrderDetailId]>=[entity3].[OrderDetailId]))))\n\tWHERE ([entity3].[isDeleted]=0)\n\tGROUP BY [entity3].[OrderDetailId]\n\tHAVING (COUNT([entity3].[OrderDetailId])<=1)\n) AS [entity3]\n\tON ([entity2].[OrderDetailId]=[entity3].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0)\nORDER BY [entity2].[CreatedDate] DESC;\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\tCOUNT([entity3].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON (([entity4].[OrderId]=[entity3].[OrderId]) AND (([entity4].[CreatedDate]<[entity3].[CreatedDate]) OR (([entity4].[CreatedDate]=[entity3].[CreatedDate]) AND ([entity4].[OrderDetailId]>=[entity3].[OrderDetailId]))))\n\tWHERE ([entity3].[isDeleted]=0)\n\tGROUP BY [entity3].[OrderDetailId]\n\tHAVING (COUNT([entity3].[OrderDetailId])<=1)\n) AS [entity3]\n\tON ([entity2].[OrderDetailId]=[entity3].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0)\nORDER BY [entity2].[CreatedDate] DESC",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1378,10 +1489,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[Quantity]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[Quantity]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1518,7 +1637,7 @@ describe("QUERYABLE", async () => {
             const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.where((g) => g.TotalAmount < 10000).sum((g) => g.TotalAmount)
             }));
             const results = await groupBy.toArray();
 
@@ -1567,10 +1686,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT DAY([entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [entity0]\n\tGROUP BY DAY([entity0].[OrderDate])\n) AS [entity0] ON ([entity0].[column0]=DAY([entity1].[OrderDate]));\n\nSELECT DAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY DAY([entity0].[OrderDate])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT DAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY DAY([entity0].[OrderDate])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT DAY([entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [entity0]\n\tGROUP BY DAY([entity0].[OrderDate])\n) AS [entity0] ON ([entity0].[column0]=DAY([entity1].[OrderDate]))",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1664,10 +1787,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\t\tSUM([entity2].[Quantity]) AS [column1]\n\tFROM [OrderDetails] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[Quantity]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[Quantity]>1)\n\t) AS [entity2]\n\t\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity0].[isDeleted]=0)\n\tGROUP BY [entity0].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\tSUM([entity2].[Quantity]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity]>1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[OrderId]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\tSUM([entity2].[Quantity]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity]>1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[OrderId]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\t\tSUM([entity2].[Quantity]) AS [column1]\n\tFROM [OrderDetails] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[Quantity]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[Quantity]>1)\n\t) AS [entity2]\n\t\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity0].[isDeleted]=0)\n\tGROUP BY [entity0].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1759,10 +1886,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\t\tSUM([entity3].[Amount]) AS [column1]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n\tLEFT JOIN (\n\t\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t\t[entity3].[Amount]\n\t\tFROM [OrderDetailProperties] AS [entity3]\n\t\tWHERE ([entity3].[Amount]<20000)\n\t) AS [entity3]\n\t\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);\n\nSELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\tSUM([entity3].[Amount]) AS [column1]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount]<20000)\n) AS [entity3]\n\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\nGROUP BY [entity1].[OrderId]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\tSUM([entity3].[Amount]) AS [column1]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount]<20000)\n) AS [entity3]\n\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\nGROUP BY [entity1].[OrderId]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\t\tSUM([entity3].[Amount]) AS [column1]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n\tLEFT JOIN (\n\t\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t\t[entity3].[Amount]\n\t\tFROM [OrderDetailProperties] AS [entity3]\n\t\tWHERE ([entity3].[Amount]<20000)\n\t) AS [entity3]\n\t\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -1965,10 +2096,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount],\n\t[entity1].[OrderId]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount],\n\t[entity1].[OrderId]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2041,10 +2176,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount]\n\tFROM [OrderDetailProperties] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount]\n\tFROM [OrderDetailProperties] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2079,10 +2218,18 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t[entity2].[TotalAmount],\n\t\t[entity2].[OrderDate]\n\tFROM [Orders] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity0].[OrderId],\n\t\t\t[entity0].[OrderId] AS [column0]\n\t\tFROM [Orders] AS [entity0]\n\t) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])\n) AS [entity2] ON ([entity2].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[OrderId] AS [column0]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0]\nFROM [Orders] AS [entity0]",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0]\nFROM [Orders] AS [entity0]",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[OrderId] AS [column0]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t[entity2].[TotalAmount],\n\t\t[entity2].[OrderDate]\n\tFROM [Orders] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity0].[OrderId],\n\t\t\t[entity0].[OrderId] AS [column0]\n\t\tFROM [Orders] AS [entity0]\n\t) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])\n) AS [entity2] ON ([entity2].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.a("map").and.not.empty;
             for (const [key, value] of results) {
@@ -2133,10 +2280,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity3].[OrderDetailPropertyId],\n\t[entity3].[OrderDetailId],\n\t[entity3].[Name]\nFROM [OrderDetailProperties] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[OrderDetailId],\n\t\t[entity1].[Quantity] AS [column0],\n\t\t[entity1].[ProductName] AS [column1],\n\t\t[entity2].[Price] AS [column2],\n\t\t[entity0].[OrderDate] AS [column3]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n\tLEFT JOIN [Products] AS [entity2]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tWHERE ([entity1].[Quantity]>1)\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId]);\n\nSELECT [entity0].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity3].[OrderDetailPropertyId],\n\t[entity3].[OrderDetailId],\n\t[entity3].[Name]\nFROM [OrderDetailProperties] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[OrderDetailId],\n\t\t[entity1].[Quantity] AS [column0],\n\t\t[entity1].[ProductName] AS [column1],\n\t\t[entity2].[Price] AS [column2],\n\t\t[entity0].[OrderDate] AS [column3]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n\tLEFT JOIN [Products] AS [entity2]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tWHERE ([entity1].[Quantity]>1)\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId])",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2152,20 +2303,23 @@ describe("QUERYABLE", async () => {
         });
         it("should support right join", async () => {
             const spy = sinon.spy(db.connection, "query");
-            const join = db.orders.rightJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
+            const qty = 1;
+            const qty2 = 2;
+            const join = db.orders.rightJoin(db.orderDetails.parameter({ qty2 }).where((o) => o.quantity >= qty2), (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.quantity,
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).parameter({ qty }).where((o) => o.quantity > qty);
             const results = await join.toArray();
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nRIGHT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)",
-                type: QueryType.DQL,
-                parameters: {}
-            } as IQuery);
+                comment: undefined,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nRIGHT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>=@param0))\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>@param1)",
+                parameters: { param1: 1, param0: 2 }
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2212,10 +2366,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity3].[OrderDetailId],\n\t[entity3].[OrderId],\n\t[entity3].[ProductName]\nFROM [OrderDetails] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1],\n\t\t[entity5].[column2] AS [column3],\n\t\t[entity0].[OrderDate] AS [column4]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM([entity2].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n\tLEFT JOIN (\n\t\tSELECT [entity4].[OrderId],\n\t\t\tSUM([entity5].[Price]) AS [column2]\n\t\tFROM [Products] AS [entity5]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t\t[entity4].[ProductId],\n\t\t\t\t[entity4].[OrderId],\n\t\t\t\t[entity4].[ProductName],\n\t\t\t\t[entity4].[Quantity],\n\t\t\t\t[entity4].[CreatedDate],\n\t\t\t\t[entity4].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\t\tGROUP BY [entity4].[OrderId]\n\t) AS [entity5]\n\t\tON ([entity0].[OrderId]=[entity5].[OrderId])\n\tWHERE ([entity2].[column0]>1)\n) AS [entity0] ON ([entity0].[OrderId]=[entity3].[OrderId])\nWHERE ([entity3].[isDeleted]=0);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1],\n\t[entity5].[column2] AS [column3],\n\t[entity0].[OrderDate] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity2].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nLEFT JOIN (\n\tSELECT [entity4].[OrderId],\n\t\tSUM([entity5].[Price]) AS [column2]\n\tFROM [Products] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\tGROUP BY [entity4].[OrderId]\n) AS [entity5]\n\tON ([entity0].[OrderId]=[entity5].[OrderId])\nWHERE ([entity2].[column0]>1)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1],\n\t[entity5].[column2] AS [column3],\n\t[entity0].[OrderDate] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity2].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nLEFT JOIN (\n\tSELECT [entity4].[OrderId],\n\t\tSUM([entity5].[Price]) AS [column2]\n\tFROM [Products] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\tGROUP BY [entity4].[OrderId]\n) AS [entity5]\n\tON ([entity0].[OrderId]=[entity5].[OrderId])\nWHERE ([entity2].[column0]>1)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity3].[OrderDetailId],\n\t[entity3].[OrderId],\n\t[entity3].[ProductName]\nFROM [OrderDetails] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1],\n\t\t[entity5].[column2] AS [column3],\n\t\t[entity0].[OrderDate] AS [column4]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM([entity2].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n\tLEFT JOIN (\n\t\tSELECT [entity4].[OrderId],\n\t\t\tSUM([entity5].[Price]) AS [column2]\n\t\tFROM [Products] AS [entity5]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t\t[entity4].[ProductId],\n\t\t\t\t[entity4].[OrderId],\n\t\t\t\t[entity4].[ProductName],\n\t\t\t\t[entity4].[Quantity],\n\t\t\t\t[entity4].[CreatedDate],\n\t\t\t\t[entity4].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\t\tGROUP BY [entity4].[OrderId]\n\t) AS [entity5]\n\t\tON ([entity0].[OrderId]=[entity5].[OrderId])\n\tWHERE ([entity2].[column0]>1)\n) AS [entity0] ON ([entity0].[OrderId]=[entity3].[OrderId])\nWHERE ([entity3].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2367,9 +2525,9 @@ describe("QUERYABLE", async () => {
                 {
                     month: (o) => o.OrderDate.getMonth()
                 }, {
-                    total: (o) => o.sum((o) => o.TotalAmount),
-                    qty: (o) => o.selectMany((o) => o.OrderDetails).select((o) => o.quantity).sum()
-                }).where((o) => o.month >= 10);
+                total: (o) => o.sum((o) => o.TotalAmount),
+                qty: (o) => o.selectMany((o) => o.OrderDetails).select((o) => o.quantity).sum()
+            }).where((o) => o.month >= 10);
             const results = await pivot.toArray();
 
             chai.should();
@@ -2397,10 +2555,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<@param0)",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", paramObj.now]])
-            } as IQuery);
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<@param1)",
+                parameters: { param1: paramObj.now }
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2416,10 +2574,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (DAY([entity0].[OrderDate])<>@param0)",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", paramObj.now.getDate()]])
-            } as IQuery);
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (DAY([entity0].[OrderDate])<>@param2 AND (DAY([entity0].[OrderDate]) IS NOT NULL OR @param2 IS NOT NULL))",
+                parameters: { param2: paramObj.now.getDate() }
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2473,10 +2631,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
                 query: "SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount]*@param0)/[entity1].[column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                parameters: { param0: multi }
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2520,10 +2678,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]=@param0)",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", dd]])
-            } as IQuery);
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]=@param0 OR ([entity0].[OrderDate] IS NULL AND @param0 IS NULL))",
+                parameters: { param0: dd }
+            });
 
             results.should.be.an("array");
             for (const o of results) {
@@ -2540,15 +2698,36 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate] IS NULL)",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", dd]])
-            } as IQuery);
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]=@param0 OR ([entity0].[OrderDate] IS NULL AND @param0 IS NULL))",
+                parameters: { param0: dd }
+            });
 
             results.should.be.an("array");
             for (const o of results) {
                 o.should.be.an.instanceof(Order);
             }
+        });
+        it("should handle param overwrite", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            let minAmount = 1000;
+            const q1 = db.orders.parameter({ minAmount }).where((o) => o.TotalAmount > minAmount);
+            minAmount = 500;
+            const q2 = db.orderDetails.parameter({ minAmount }).where((o) => o.GrossSales <= minAmount);
+            minAmount = 100;
+            const join = q1.innerJoin(q2, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
+                TotalAmount: o1.TotalAmount,
+                GrossSales: o2.GrossSales
+            })).parameter({ minAmount }).where((o) => o.GrossSales > minAmount);
+            const results = await join.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t[entity1].[GrossSales] AS [column1]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tLEFT JOIN [Products] AS [entity2]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tWHERE (([entity1].[isDeleted]=0) AND (([entity1].[Quantity]*[entity2].[Price])<=@param1))\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity3]\n\tON ([entity1].[ProductId]=[entity3].[ProductId])\nWHERE (([entity0].[TotalAmount]>@param0) AND ([entity1].[GrossSales]>@param2))",
+                parameters: { param0: 1000, param2: 100, param1: 500 }
+            });
         });
     });
     describe("SUBQUERY", () => {
@@ -2619,10 +2798,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
                 query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>1))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>1)",
-                type: QueryType.DQL,
                 parameters: {}
-            } as IQuery);
+            });
 
             results.should.be.an("array");
             for (const o of results) {
@@ -2640,10 +2819,14 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000)",
-                type: QueryType.DQL,
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2712,10 +2895,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
                 query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[TotalAmount] AS [column1],\n\t[entity2].[column3] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column2]) AS [column3]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column2]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS [entity1]\n\t\tON ([entity1].[OrderDate]>=[entity2].[OrderDate])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2737,10 +2920,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
                 query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column1]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2761,10 +2944,10 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
                 query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column1]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC",
-                type: QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                parameters: {}
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2791,10 +2974,19 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] uniqueidentifier\n);\n\nINSERT INTO #ad1([__index], [OrderId]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706');\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE [entity0].[OrderId] IN (\n\tSELECT DISTINCT [entity1].[OrderId]\n\tFROM #ad1 AS [entity1]\n);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderId] nvarchar(255),\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                query: "INSERT INTO #ad_1([__index], [OrderId]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706')",
+                type: 2
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE [entity0].[OrderId] IN (\n\tSELECT DISTINCT [entity1].[OrderId]\n\tFROM #ad_1 AS [entity1]\n)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4, comment: "You might lost your data"
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2812,10 +3004,19 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMAX([entity1].[quantity]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>10);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] bit,\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                query: "INSERT INTO #ad_1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0)",
+                type: 2
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMAX([entity1].[quantity]) AS [column0]\n\tFROM #ad_1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>10)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4
+            });
 
             results.should.be.an("array");
             for (const o of results) {
@@ -2833,10 +3034,19 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] bit,\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                query: "INSERT INTO #ad_1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0)",
+                type: 2
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM #ad_1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2854,10 +3064,19 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tWHERE ([entity1].[quantity]>1)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>1);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] bit,\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                query: "INSERT INTO #ad_1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0)",
+                type: 2
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad_1 AS [entity1]\n\tWHERE ([entity1].[quantity]>1)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>1)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4
+            });
 
             results.should.be.an("array");
             for (const o of results) {
@@ -2877,10 +3096,23 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity1].[__index],\n\t[entity1].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[name],\n\t[entity1].[quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM #ad1 AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] bit,\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                query: "INSERT INTO #ad_1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0)",
+                type: 2
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[__index],\n\t[entity1].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[name],\n\t[entity1].[quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM #ad_1 AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4
+            });
 
             results.should.be.an("array");
             for (const o of results) {
@@ -2903,10 +3135,20 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity0].[TotalAmount]<=20000);\n\nDROP TABLE #ad1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ad_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] bit,\n\tCONSTRAINT [PK_ad_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                type: 2,
+                query: "INSERT INTO #ad_1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0)",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad_1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity0].[TotalAmount]<=20000)",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ad_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2929,10 +3171,20 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ads1\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t[entity2].[column2] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column1]) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\tCOUNT([entity1].[__index]) AS [column1]\n\t\tFROM #ads1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC;\n\nDROP TABLE #ads1",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
+                query: "CREATE TABLE #ads_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255),\n\tCONSTRAINT [PK_ads_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                type: 2,
+                query: "INSERT INTO #ads_1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z')",
                 parameters: {}
-            } as IQuery);
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t[entity3].[column2] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\tSUM([entity1].[column1]) AS [column2]\n\tFROM [Orders] AS [entity3]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\tCOUNT([entity1].[__index]) AS [column1]\n\t\tFROM #ads_1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity3].[TotalAmount]>=[entity1].[TotalAmount])\n\tGROUP BY [entity3].[OrderId]\n) AS [entity3]\n\tON ([entity3].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ads_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2957,10 +3209,20 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[TotalAmount] AS [column1],\n\t[entity2].[column3] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column2]) AS [column3]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column2]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS [entity1]\n\t\tON ([entity1].[OrderDate]>=[entity2].[OrderDate])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC;\n\nDROP TABLE #ads2",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                query: "CREATE TABLE #ads_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255),\n\tCONSTRAINT [PK_ads_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                type: 2,
+                query: "INSERT INTO #ads_1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z')",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[TotalAmount] AS [column1],\n\t[entity3].[column3] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\tSUM([entity1].[column2]) AS [column3]\n\tFROM [Orders] AS [entity3]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column2]\n\t\tFROM #ads_1 AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS [entity1]\n\t\tON ([entity1].[OrderDate]>=[entity3].[OrderDate])\n\tGROUP BY [entity3].[OrderId]\n) AS [entity3]\n\tON ([entity3].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ads_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -2985,10 +3247,20 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column1]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC;\n\nDROP TABLE #ads2",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                query: "CREATE TABLE #ads_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255),\n\tCONSTRAINT [PK_ads_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                type: 2,
+                query: "INSERT INTO #ads_1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z')",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity3].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity3]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column1]\n\t\tFROM #ads_1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity3].[TotalAmount]>[entity1].[TotalAmount])\n\tGROUP BY [entity3].[OrderId]\n) AS [entity3]\n\tON ([entity3].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ads_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -3012,10 +3284,20 @@ describe("QUERYABLE", async () => {
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
-                query: "CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column1]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC;\n\nDROP TABLE #ads2",
-                type: QueryType.DDL | QueryType.DML | QueryType.DQL,
-                parameters: new Map<string, any>([["param0", 10]])
-            } as IQuery);
+                query: "CREATE TABLE #ads_1\n(\n\t[__index] decimal(18, 0) NOT NULL,\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255),\n\tCONSTRAINT [PK_ads_1] PRIMARY KEY ([__index])\n)",
+                type: 4
+            }, {
+                type: 2,
+                query: "INSERT INTO #ads_1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z')",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity3].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity3]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column1]\n\t\tFROM #ads_1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity3].[TotalAmount]>=[entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity3].[OrderId]\n) AS [entity3]\n\tON ([entity3].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC",
+                parameters: {}
+            }, {
+                query: "DROP TABLE #ads_1",
+                type: 4
+            });
 
             results.should.be.an("array").and.not.empty;
             for (const o of results) {
@@ -3050,6 +3332,7 @@ describe("QUERYABLE", async () => {
             chai.expect(queryExcludeSoftDeleted).to.not.equal(queryIncludeSoftDeleted);
         });
     });
+    /*
     // describe("TERNARY OPERATOR", () => {
     //     // TODO
     //     it("test 1", async () => {
@@ -3102,4 +3385,5 @@ describe("QUERYABLE", async () => {
     //         const results = await ternary.toArray();
     //     });
     // });
+    */
 });
