@@ -112,6 +112,7 @@ export class UpdateDeferredQuery<T> extends DMLDeferredQuery<T> {
         if (this.entry.metaData.modifiedDateColumn) {
             const prop = this.entry.metaData.modifiedDateColumn.propertyName;
             modifiedProperties.delete(prop);
+            /* istanbul ignore next */
             setter[prop] = ExpressionBuilder.parse(() => Date.utcTimestamp()).body;
         }
 
