@@ -9,7 +9,7 @@ cache:
 install:
   - npm install typescript@3.9.4
   - npm install nyc@13.3.0
-  - npm install tslint
+  - npm install tslint@5.20.0
 
 script:
   - tsc
