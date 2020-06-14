@@ -1,10 +1,11 @@
 {
   "name": "elcy",
   "private": true,
+  "type": "module",
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js",
+    "test": "node ./node_modules/mocha/bin/mocha ./build/test/test.js",
     "lint": "tslint ./src/**/*.ts --format verbose",
     "lint-fix": "tslint --fix ./src/**/*.ts --format verbose"
   },
@@ -32,16 +33,16 @@
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
-    "@types/chai": "^4.1.7",
-    "@types/chai-as-promised": "^7.1.0",
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^10.14.7",
+    "@types/chai": "^4.2.11",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^10.17.26",
     "@types/sinon": "^5.0.7",
-    "@types/sinon-chai": "^3.2.2",
+    "@types/sinon-chai": "^3.2.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "mocha": "^5.0.5",
     "sinon": "^6.3.5",
-    "sinon-chai": "^3.3.0"
+    "sinon-chai": "^3.5.0"
   }
 }

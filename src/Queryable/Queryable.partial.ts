@@ -1,4 +1,4 @@
-import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
+import { GenericType, IObjectType, Pivot, PredicateSelector, ResultSelector, ValueType } from "../Common/Type";
 import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
 import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "../Queryable/Queryable";
@@ -44,18 +44,18 @@ declare module "./Queryable" {
         pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
         project(...includes: Array<(item: T) => ValueType>): Queryable<T>;
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector?: (item1: T | null, item2: T2) => TResult): Queryable<TResult>;
-        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
-        select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>;
-        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ResultSelector<T, TReturn>): Queryable<TReturn>;
+        select<TReturn>(selector: ResultSelector<T, TReturn>): Queryable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ResultSelector<T, TReturn>, selector?: ResultSelector<T, TReturn>): Queryable<TReturn>;
         selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Queryable<TReturn>;
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>;
-        where(predicate: (item: T) => boolean): Queryable<T>;
+        where(predicate: PredicateSelector<T>): Queryable<T>;
     }
 }
 
-Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Queryable<TReturn> {
+Queryable.prototype.select = function <T, TReturn>(this: Queryable<T>, typeOrSelector: IObjectType<TReturn> | ResultSelector<T, TReturn>, selector?: ResultSelector<T, TReturn>): Queryable<TReturn> {
     let type: IObjectType<TReturn>;
     if (!selector) {
         selector = typeOrSelector as any;
@@ -74,7 +74,7 @@ Queryable.prototype.option = function <T>(option: IQueryOption): Queryable<T> {
 Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selector: (item: T) => TReturn[], type?: GenericType<TReturn>): Queryable<TReturn> {
     return new SelectManyQueryable<T, TReturn>(this, selector, type);
 };
-Queryable.prototype.where = function <T>(this: Queryable<T>, predicate: (item: T) => boolean): Queryable<T> {
+Queryable.prototype.where = function <T>(this: Queryable<T>, predicate: PredicateSelector<T>): Queryable<T> {
     return new WhereQueryable(this, predicate);
 };
 Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T> {

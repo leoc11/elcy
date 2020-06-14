@@ -1,6 +1,6 @@
 import { EntityState } from "../EntityState";
 
-export interface IEntityEntryOption<T> {
+export interface IEntityEntry<T> {
     entity: T;
     isCompletelyLoaded?: boolean;
     state: EntityState;

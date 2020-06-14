@@ -1,4 +1,5 @@
-import { ConcurrencyModel, IObjectType } from "../../Common/Type";
+import { ConcurrencyModel } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { IOrderQueryDefinition } from "../../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
@@ -11,7 +12,7 @@ import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IEntityMetaData<TE extends TParent = any, TParent = any> extends IDBEventListener<TE> {
+export interface IEntityMetaData<TE extends TBase = any, TBase = any> extends IDBEventListener<TE> {
     allowInheritance?: boolean;
     columns: Array<IColumnMetaData<TE>>;
     concurrencyMode?: ConcurrencyModel;
@@ -23,7 +24,7 @@ export interface IEntityMetaData<TE extends TParent = any, TParent = any> extend
     embeds?: Array<EmbeddedRelationMetaData<TE>>;
     hasIncrementPrimary?: boolean;
     indices?: Array<IIndexMetaData<TE>>;
-    inheritance: InheritanceMetaData<TParent>;
+    inheritance: InheritanceMetaData<TBase>;
 
     insertGeneratedColumns?: Array<IColumnMetaData<TE>>;
     isReadOnly?: boolean;

@@ -1,4 +1,4 @@
-import { JoinType } from "../../Common/Type";
+import { JoinType } from "../../Common/StringType";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";

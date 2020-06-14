@@ -1,32 +1,29 @@
-import { ColumnGeneration, DeleteMode, FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { INodeTree, ParameterStack } from "../Common/ParameterStack";
+import { DeleteMode } from "../Common/StringType";
+import { FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IEnumerable } from "../Enumerable/IEnumerable";
-import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
-import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
-import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
-import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { clone, hashCode, isNotNull, isValue } from "../Helper/Util";
-import { Diagnostic } from "../Logger/Diagnostic";
+import { hashCode, isNull, isValue } from "../Helper/Util";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { DeferredQuery } from "../Query/DeferredQuery";
+import { BulkDeferredQuery } from "../Query/DeferredQuery/BulkDeferredQuery";
+import { DeferredQuery } from "../Query/DeferredQuery/DeferredQuery";
+import { DMLDeferredQuery } from "../Query/DeferredQuery/DMLDeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "../Queryable/Queryable";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
-import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
-import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
+import { QueryExpression } from "../Queryable/QueryExpression/QueryExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
-import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
-import { WhereQueryable } from "../Queryable/WhereQueryable";
-import { DbContext } from "./DBContext";
+import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 
 export class DbSet<T> extends Queryable<T> {
+    public get stackTree(): INodeTree<ParameterStack> {
+        return this._param;
+    }
     public get dbContext(): DbContext {
         return this._dbContext;
     }
@@ -48,12 +45,21 @@ export class DbSet<T> extends Queryable<T> {
     constructor(public readonly type: IObjectType<T>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
+        this._param = {
+            node: new ParameterStack(),
+            childrens: []
+        };
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
+    private _param: INodeTree<ParameterStack>;
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<T>;
-    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
+        result.parameterTree = {
+            node: [],
+            childrens: []
+        };
         visitor.setDefaultBehaviour(result);
         return result;
     }
@@ -62,126 +68,41 @@ export class DbSet<T> extends Queryable<T> {
     }
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(key: FlatObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public deferredDelete(modeOrKeyOrPredicate?: FlatObjectLike<T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
             return super.deferredDelete(modeOrKeyOrPredicate as () => boolean, mode);
         }
         else {
-            const key = modeOrKeyOrPredicate;
-            let pkFilter: IExpression<boolean> = null;
-            const paramExp = new ParameterExpression("o", this.type);
-            for (const primaryCol of this.metaData.primaryKeys) {
-                const val = key[primaryCol.propertyName];
-                if (!val || !isValue(val)) {
-                    pkFilter = null;
-                    break;
-                }
-                const valExp = new ValueExpression(val);
-                const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
-                pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
-            }
-
-            if (!pkFilter) {
-                throw new Error("Missing Primary key to delete");
-            }
-
-            return (new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]))).deferredDelete(null, mode);
+            return this.dbContext.getDeleteQuery(this.entry(modeOrKeyOrPredicate as FlatObjectLike<T>), mode);
         }
     }
     public deferredInsert(...items: Array<ObjectLike<T>>) {
+        if (!items.any()) {
+            throw new Error("empty items");
+        }
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
             throw new Error(`Only entity supported`);
         }
 
-        const visitor = this.dbContext.queryVisitor;
-        const entityExp = new EntityExpression(this.type, visitor.newAlias());
-
-        const valueExp: Array<{ [key in keyof T]?: IExpression<T[key]> }> = [];
+        const defers: Array<DMLDeferredQuery<any>> = [];
         for (const item of items) {
-            const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
-            for (const prop in item) {
-                const propValue = item[prop];
-                if (propValue !== undefined && !(propValue instanceof Function)) {
-                    itemExp[prop] = new ValueExpression(propValue);
-                }
-            }
-            valueExp.push(itemExp);
+            const entry = this.entry(item as any);
+            defers.push(this.dbContext.getInsertQuery(entry));
         }
-        const insertExp = new InsertExpression(entityExp, valueExp);
-        insertExp.queryOption = clone(this.queryOption, true);
-
-        const timer = Diagnostic.timer();
-        const flatParams = this.flatQueryParameter({ index: 0 });
-        const params = this.buildParameter(insertExp, flatParams);
-        if (Diagnostic.enabled) {
-            Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
-        }
-
-        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.push(query);
-        return query;
+        return new BulkDeferredQuery(this.dbContext, defers);
     }
-    // simple update.
-    public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: T) => ValueType) }) {
-        let pkFilter: IExpression<boolean> = null;
-        const setterObj: { [key in keyof T]?: T[key] | ((item: T) => ValueType) } = {};
-        const paramExp = new ParameterExpression("o", this.type);
-        for (const prop in setter) {
-            const primaryCol = this.metaData.primaryKeys.first((o) => o.propertyName === prop);
-            if (primaryCol) {
-                const val = setter[primaryCol.propertyName];
-                if (!val) {
-                    continue;
-                }
-                if (!isValue(val)) {
-                    setterObj[prop] = setter[prop];
-                    continue;
-                }
-
-                const valExp = new ValueExpression(val as T[keyof T]);
-                const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
-                pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
-            }
-            else {
-                setterObj[prop] = setter[prop];
-            }
-        }
-
-        let query: Queryable<T> = this;
-        if (pkFilter) {
-            query = new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]));
-            return query.deferredUpdate(setterObj);
-        }
-
-        return super.deferredUpdate(setter);
+    // Prevent Update all records
+    public update(item: ObjectLike<T>) {
+        return this.deferredUpdate(item).execute();
+    }
+    // Prevent Update all records
+    public deferredUpdate(item: ObjectLike<T>) {
+        return this.dbContext.getUpdateQuery(this.dbContext.entry(item));
     }
     public deferredUpsert(item: ObjectLike<T>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
-            throw new Error(`Only entity supported`);
-        }
-
-        const visitor = this.dbContext.queryVisitor;
-        const entityExp = new EntityExpression(this.type, visitor.newAlias());
-
-        const setterExp: { [key in keyof T]?: IExpression<T[key]> } = {};
-        for (const prop in item) {
-            setterExp[prop] = new ValueExpression(item[prop]);
-        }
-        const upsertExp = new UpsertExpression(entityExp, setterExp);
-        upsertExp.queryOption = clone(this.queryOption, true);
-
-        const timer = Diagnostic.timer();
-        const flatParams = this.flatQueryParameter({ index: 0 });
-        const params = this.buildParameter(upsertExp, flatParams);
-        if (Diagnostic.enabled) {
-            Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
-        }
-
-        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
-        this.dbContext.deferredQueries.push(query);
-        return query;
+        return this.dbContext.getUpsertQuery(this.dbContext.add(item));
     }
     public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);
@@ -217,7 +138,7 @@ export class DbSet<T> extends Queryable<T> {
         return entry ? entry.entity : undefined;
     }
     public getKey(id: ValueType | ObjectLike<T>): string {
-        if (!isNotNull(id)) {
+        if (isNull(id)) {
             throw new Error("Parameter cannot be null");
         }
         if (isValue(id)) {
@@ -251,9 +172,8 @@ export class DbSet<T> extends Queryable<T> {
         return hashCode(this.type.name!);
     }
 
-    public async insert(...items: Array<ObjectLike<T>>) {
-        const query = this.deferredInsert(...items);
-        return await query.execute();
+    public insert(...items: Array<ObjectLike<T>>) {
+        return this.deferredInsert(...items).execute().then((o) => o.sum());
     }
     public new(primaryValue: ValueType | ObjectLike<T>) {
         const entity = new this.type();
@@ -282,8 +202,7 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary.set(entry.key, entry);
     }
 
-    public async upsert(item: ObjectLike<T>) {
-        const query = this.deferredUpsert(item);
-        return await query.execute();
+    public upsert(item: ObjectLike<T>) {
+        return this.deferredUpsert(item).execute();
     }
 }

@@ -4,6 +4,7 @@ import { RowVersionColumn } from "../../../src/Decorator/Column/RowVersionColumn
 import { StringColumn } from "../../../src/Decorator/Column/StringColumn";
 import { Entity } from "../../../src/Decorator/Entity/Entity";
 import { Relationship } from "../../../src/Decorator/Relation/Relationship";
+import { AutoDetailDesc } from "./AutoDetailDesc";
 import { AutoParent } from "./AutoParent";
 
 @Entity("AutoDetail")
@@ -20,4 +21,6 @@ export class AutoDetail {
 
     @Relationship<AutoDetail>("has", "by", "one", AutoParent || "AutoParent", [(o) => o.parentId])
     public parent: AutoParent;
+    @Relationship<AutoDetailDesc>("has1", "one", AutoDetailDesc || "AutoDetailDesc", [(o) => o.id])
+    public autoDetailDesc: AutoDetailDesc;
 }

@@ -13,7 +13,7 @@
                 "${workspaceRoot}/build/test/**/*.js"
             ],
             "env": {
-                "NODE_ENV" : "development"
+                "NODE_ENV": "development"
             },
             "console": "internalConsole"
         },
@@ -26,7 +26,7 @@
                 "${workspaceRoot}/build/src/**/*.js"
             ],
             "env": {
-                "NODE_ENV" : "development"
+                "NODE_ENV": "development"
             },
             "console": "internalConsole"
         }

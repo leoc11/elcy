@@ -5,10 +5,6 @@ export class ObservableArray<T> extends Array<T> {
     }
     public constructor(...items: T[]) {
         super(...items);
-        // Object.setPrototypeOf(this, ObservableArray.prototype);
-    }
-    public static from<T>(items: T[]): ObservableArray<T> {
-        return new ObservableArray(...items);
     }
     public static observe<T>(items: T[]): ObservableArray<T> {
         Object.setPrototypeOf(items, ObservableArray.prototype);
@@ -26,7 +22,7 @@ export class ObservableArray<T> extends Array<T> {
     }
     public push(...items: T[]) {
         const result = super.push(...items);
-        if (items && items.length > 0) {
+        if (items.length > 0) {
             this.raiseEvents("add", items);
         }
         return result;
@@ -46,7 +42,7 @@ export class ObservableArray<T> extends Array<T> {
         if (result.length > 0) {
             this.raiseEvents("del", result);
         }
-        if (items && items.length > 0) {
+        if (items.length > 0) {
             this.raiseEvents("add", items);
         }
         return result;
@@ -56,7 +52,7 @@ export class ObservableArray<T> extends Array<T> {
     }
     public unshift(...items: T[]) {
         const result = super.unshift();
-        if (items && items.length > 0) {
+        if (items.length > 0) {
             this.raiseEvents("add", items);
         }
         return result;

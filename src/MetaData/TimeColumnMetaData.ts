@@ -1,7 +1,8 @@
 import { TimeColumnType } from "../Common/ColumnType";
-import { TimeZoneHandling } from "../Common/Type";
+import { TimeZoneHandling } from "../Common/StringType";
 import { TimeSpan } from "../Data/TimeSpan";
 import { ColumnMetaData } from "./ColumnMetaData";
+
 export class TimeColumnMetaData extends ColumnMetaData<TimeSpan> {
     constructor() {
         super(TimeSpan);

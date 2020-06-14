@@ -1,4 +1,5 @@
-import { IObjectType, NullConstructor } from "../../Common/Type";
+import { NullConstructor } from "../../Common/Constant";
+import { IObjectType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";

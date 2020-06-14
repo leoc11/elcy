@@ -1,7 +1,7 @@
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
-import { relationalQueryTranslator } from "../Relation/RelationalQueryTranslator";
+import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);

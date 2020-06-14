@@ -1,3 +1,4 @@
+import { ColumnGeneration } from "../Common/Enum";
 import { GenericType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -20,6 +21,9 @@ export class ComputedColumnMetaData<TE = any, T = any> implements IColumnMetaDat
         if (propertyName) {
             this.propertyName = propertyName;
         }
+    }
+    public get generation() {
+        return ColumnGeneration.Insert | ColumnGeneration.Update;
     }
     public columnName = "";
     public description: string;

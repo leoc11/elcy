@@ -54,6 +54,7 @@ export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implement
         }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const clone = new MemberAccessExpression<TE, K, T>(objectOperand, this.memberName);
+        clone.type = this.type;
         replaceMap.set(this, clone);
         return clone;
     }

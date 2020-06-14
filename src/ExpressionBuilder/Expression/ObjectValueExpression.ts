@@ -25,9 +25,9 @@ export class ObjectValueExpression<T = any> implements IExpression<T> {
     public hashCode() {
         let hash = 0;
         for (const prop in this.object) {
-            hash = hashCodeAdd(hash, hashCode(prop, this.object[prop].hashCode()));
+            hash += hashCode(prop, this.object[prop].hashCode());
         }
-        return hash;
+        return hashCodeAdd(hash, hashCode(this.type.name));
     }
     public toString(): string {
         const itemString = [];

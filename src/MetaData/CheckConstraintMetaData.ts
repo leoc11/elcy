@@ -3,7 +3,7 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { replaceExpression } from "../Helper/Util";
-import { RelationQueryBuilder } from "../Provider/Relation/RelationQueryBuilder";
+import { IQueryBuilder } from "../Query/IQueryBuilder";
 import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
@@ -32,7 +32,7 @@ export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE>
     public columns: Array<IColumnMetaData<TE>>;
     private _definition: IExpression<boolean> | string;
     private checkFn: (entity: TE) => boolean;
-    public getDefinitionString(queryBuilder: RelationQueryBuilder) {
+    public getDefinitionString(queryBuilder: IQueryBuilder) {
         if (typeof this.definition === "string") {
             return this.definition;
         }

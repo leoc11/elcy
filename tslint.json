@@ -40,8 +40,7 @@
                     "public-instance-method",
                     "protected-instance-method",
                     "private-instance-method"
-                ],
-                "alphabetize": true
+                ]
             }
         ],
         "space-before-function-paren": [

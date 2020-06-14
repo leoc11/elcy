@@ -1,4 +1,4 @@
-import { JoinType } from "../../Common/Type";
+import { JoinType } from "../../Common/StringType";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
@@ -71,7 +71,10 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
             Object.assign(this.paging, select.paging);
 
             this.isSubSelect = select.isSubSelect;
-            this.paramExps = select.paramExps.slice();
+            this.parameterTree = {
+                node: select.parameterTree.node.slice(),
+                childrens: select.parameterTree.childrens.slice()
+            };
         }
     }
     public groupByExp: GroupByExpression<T>;
@@ -114,7 +117,11 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
         clone.includes = this.includes.select((o) => o.clone(replaceMap)).toArray();
 
         clone.where = resolveClone(this.where, replaceMap);
-        clone.paramExps = this.paramExps.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
+        clone.parameterTree = {
+            node: this.parameterTree.node.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray(),
+            childrens: this.parameterTree.childrens.slice()
+        };
+
         Object.assign(clone.paging, this.paging);
         return clone;
     }

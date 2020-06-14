@@ -1,4 +1,4 @@
-import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationOption } from "../../Decorator/Option/IRelationOption";
 import { Enumerable } from "../../Enumerable/Enumerable";
@@ -45,6 +45,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
                     col.nullable = this.nullable || this.deleteOption === "SET NULL";
                     Reflect.defineMetadata(columnMetaKey, col, relationOption.sourceType, o);
                 }
+                col.isReadOnly = true;
                 return col;
             }).toArray();
     }

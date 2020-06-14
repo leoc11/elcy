@@ -1,6 +1,9 @@
+import { Enumerable } from "../Enumerable/Enumerable";
+import { hasFlags, isNull } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
+import { RelationState } from "./RelationState";
 
 export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
     public get state() {
@@ -8,30 +11,34 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
     }
     public set state(value) {
         if (this._state !== value) {
-            let requireAttach = false;
             const dbContext = this.slaveEntry.dbSet.dbContext;
             switch (this.state) {
-                case EntityState.Added: {
+                case RelationState.Added: {
                     const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation);
                     if (typedAddEntries) {
                         typedAddEntries.delete(this);
                     }
                     break;
                 }
-                case EntityState.Deleted: {
+                case RelationState.Deleted: {
                     const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
                     if (typedEntries) {
                         typedEntries.delete(this);
                     }
                     break;
                 }
-                case EntityState.Detached: {
-                    requireAttach = true;
+                case RelationState.Detached: {
+                    if (this.masterEntry.state === EntityState.Detached) {
+                        this.masterEntry.state = EntityState.Unchanged;
+                    }
+                    if (this.slaveEntry.state === EntityState.Detached) {
+                        this.slaveEntry.state = EntityState.Unchanged;
+                    }
                     break;
                 }
             }
             switch (value) {
-                case EntityState.Added: {
+                case RelationState.Added: {
                     let typedEntries = dbContext.relationEntries.add.get(this.slaveRelation);
                     if (!typedEntries) {
                         typedEntries = [];
@@ -46,7 +53,7 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
                     }
                     break;
                 }
-                case EntityState.Deleted: {
+                case RelationState.Deleted: {
                     let typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
                     if (!typedEntries) {
                         typedEntries = [];
@@ -58,64 +65,65 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             }
             this._state = value;
             switch (value) {
-                case EntityState.Detached: {
-                    this.split(true);
+                case RelationState.Detached: {
+                    let relMap = this.slaveEntry.relationMap[this.slaveRelation.propertyName];
+                    if (relMap) {
+                        relMap.delete(this.masterEntry);
+                    }
+                    relMap = this.masterEntry.relationMap[this.slaveRelation.reverseRelation.propertyName];
+                    if (relMap) {
+                        relMap.delete(this.slaveEntry);
+                    }
+
+                    this.split();
                     break;
                 }
-                case EntityState.Deleted: {
+                case RelationState.Deleted: {
                     this.split();
                     break;
                 }
                 default: {
-                    this.join(requireAttach);
+                    this.join();
                     break;
                 }
             }
         }
     }
     constructor(public slaveEntry: EntityEntry<TE1>, public masterEntry: EntityEntry<TE2>, public slaveRelation: IRelationMetaData<TE1, TE2>, public relationData?: TRD) {
-        this._state = EntityState.Detached;
+        let isDetached = true;
+        const state = slaveEntry.state | masterEntry.state;
+        if (!hasFlags(state, EntityState.Added | EntityState.Detached)) {
+            isDetached = Enumerable.from(slaveRelation.relationMaps).any(([col, masterCol]) => {
+                const oVal = slaveEntry.getOriginalValue(col.propertyName);
+                return isNull(oVal) || oVal !== masterEntry.getOriginalValue(masterCol.propertyName);
+            });
+        }
+        this._state = isDetached ? RelationState.Detached : RelationState.Unchanged;
     }
-    private _state: EntityState;
+    private _state: RelationState;
 
     public acceptChanges() {
         switch (this.state) {
-            case EntityState.Added: {
-                this.state = EntityState.Unchanged;
+            case RelationState.Added: {
+                this.state = RelationState.Unchanged;
                 break;
             }
-            case EntityState.Deleted:
-            case EntityState.Detached: {
-                this.state = EntityState.Detached;
+            case RelationState.Deleted:
+            case RelationState.Detached: {
+                this.state = RelationState.Detached;
                 break;
             }
         }
     }
 
     public add() {
-        this.state = this.state === EntityState.Deleted ? EntityState.Unchanged : EntityState.Added;
+        this.state = this.state === RelationState.Deleted ? RelationState.Unchanged : RelationState.Added;
     }
     public delete() {
-        this.state = this.state === EntityState.Added || this.state === EntityState.Detached ? EntityState.Detached : EntityState.Deleted;
+        this.state = this.state === RelationState.Added || this.state === RelationState.Detached ? RelationState.Detached : RelationState.Deleted;
     }
 
-    public join(isAttach = false) {
-        if (isAttach) {
-            let relGroup = this.slaveEntry.relationMap[this.slaveRelation.fullName];
-            if (!relGroup) {
-                relGroup = new Map();
-                this.slaveEntry.relationMap[this.slaveRelation.fullName] = relGroup;
-            }
-            relGroup.set(this.masterEntry, this);
-
-            relGroup = this.masterEntry.relationMap[this.slaveRelation.fullName];
-            if (!relGroup) {
-                relGroup = new Map();
-                this.masterEntry.relationMap[this.slaveRelation.fullName] = relGroup;
-            }
-            relGroup.set(this.slaveEntry, this);
-        }
-
+    public join() {
         // apply slave relation property
         if (this.slaveRelation.relationType === "one") {
             this.slaveEntry.entity[this.slaveRelation.propertyName] = this.masterEntry.entity as any;
@@ -154,12 +162,7 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             }
         }
     }
-    public split(isDetach = false) {
-        if (isDetach) {
-            this.slaveEntry.relationMap[this.slaveRelation.fullName].delete(this.masterEntry);
-            this.masterEntry.relationMap[this.slaveRelation.fullName].delete(this.slaveEntry);
-        }
-
+    public split() {
         // detach slave relation property
         if (this.slaveRelation.relationType === "one") {
             this.slaveEntry.entity[this.slaveRelation.propertyName] = null;
@@ -183,9 +186,12 @@ export class RelationEntry<TE1 = any, TE2 = any, TRD = any> {
             }
         }
 
-        const cols = this.slaveRelation.mappedRelationColumns.where((o) => !!o.propertyName);
-        for (const col of cols) {
-            this.slaveEntry.entity[col.propertyName] = null;
+        // NOTE: MAYBE CAN BE REMOVED?
+        if (this.slaveRelation.relationType === "one") {
+            const cols = this.slaveRelation.mappedRelationColumns.where((o) => !o.isPrimaryColumn && !!o.propertyName);
+            for (const col of cols) {
+                this.slaveEntry.entity[col.propertyName] = null;
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+import { ParameterStack } from "../Common/ParameterStack";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { AdditionAssignmentExpression } from "./Expression/AdditionAssignmentExpression";
@@ -57,18 +58,26 @@ import { TernaryExpression } from "./Expression/TernaryExpression";
 import { TypeofExpression } from "./Expression/TypeofExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
-import { TransformerParameter } from "./TransformerParameter";
 
 export class ExpressionExecutor {
-    constructor(params?: { [key: string]: any }) {
-        if (params) {
-            this.setParameters(params);
+    constructor()
+    constructor(stack: ParameterStack)
+    constructor(params: { [key: string]: any })
+    constructor(params?: ParameterStack | { [key: string]: any }) {
+        if (params instanceof ParameterStack) {
+            this.stack = params;
+        }
+        else {
+            this.stack = new ParameterStack();
+            if (params) {
+                this.setParameters(params);
+            }
         }
     }
     public static execute<T = unknown>(expression: IExpression<T>): T {
         return new ExpressionExecutor().execute(expression);
     }
-    public scopeParameters = new TransformerParameter();
+    public stack: ParameterStack;
     // TODO: SQLParameterExpression
     public execute<T = unknown>(expression: IExpression<T>): T {
         switch (expression.constructor) {
@@ -193,22 +202,20 @@ export class ExpressionExecutor {
         let i = 0;
         for (const param of expression.params) {
             if (parameters.length > i) {
-                this.scopeParameters.add(param.name, parameters[i++]);
+                this.stack.push(param.name, parameters[i++]);
             }
         }
         const result = this.execute(expression.body);
         i = 0;
         for (const param of expression.params) {
             if (parameters.length > i++) {
-                this.scopeParameters.remove(param.name);
+                this.stack.pop(param.name);
             }
         }
         return result;
     }
     public setParameters(params: { [key: string]: any }) {
-        for (const key in params) {
-            this.scopeParameters.add(key.toString(), params[key]);
-        }
+        this.stack.set(params);
     }
     public toString(expression: IExpression) {
         return expression.toString();
@@ -218,9 +225,9 @@ export class ExpressionExecutor {
     }
 
     protected executeAdditionAssignment<T extends string | number>(expression: AdditionAssignmentExpression<T>): T {
-        const value = this.scopeParameters.get(expression.leftOperand.name) + this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) as any + this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeAnd(expression: AndExpression) {
@@ -235,17 +242,17 @@ export class ExpressionExecutor {
     }
     protected executeAssignment<T>(expression: AssignmentExpression<T>): T {
         const value = this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseAnd(expression: BitwiseAndExpression) {
         return this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
     }
     protected executeBitwiseAndAssignment(expression: BitwiseAndAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) & this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseNot(expression: BitwiseNotExpression) {
@@ -255,54 +262,54 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
     }
     protected executeBitwiseOrAssignment(expression: BitwiseOrAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) | this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseSignedRightShift(expression: BitwiseSignedRightShiftExpression) {
         return this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
     }
     protected executeBitwiseSignedRightShiftAssignment(expression: BitwiseSignedRightShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) >>> this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseXor(expression: BitwiseXorExpression) {
         return this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
     }
     protected executeBitwiseXorAssignment(expression: BitwiseXorAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) ^ this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseZeroLeftShift(expression: BitwiseZeroLeftShiftExpression) {
         return this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroLeftShiftAssignment(expression: BitwiseZeroLeftShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) << this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeBitwiseZeroRightShift(expression: BitwiseZeroRightShiftExpression) {
         return this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroRightShiftAssignment(expression: BitwiseZeroRightShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) >> this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeDivision(expression: DivisionExpression) {
         return this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
     }
     protected executeDivisionAssignment(expression: DivisionAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) / this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeEqual(expression: EqualExpression) {
@@ -313,9 +320,9 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) ** this.execute(expression.rightOperand);
     }
     protected executeExponentialAssignment(expression: ExponentiationAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) ** this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) ** this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeFunctionCall<T>(expression: FunctionCallExpression<T>): T {
@@ -345,14 +352,14 @@ export class ExpressionExecutor {
     }
     protected executeLeftDecrement(expression: LeftDecrementExpression) {
         const value = this.executeParameter(expression.operand) - 1;
-        this.scopeParameters.remove(expression.operand.name);
-        this.scopeParameters.add(expression.operand.name, value);
+        this.stack.pop(expression.operand.name);
+        this.stack.push(expression.operand.name, value);
         return value;
     }
     protected executeLeftIncrement(expression: LeftIncrementExpression) {
         const value = this.executeParameter(expression.operand) + 1;
-        this.scopeParameters.remove(expression.operand.name);
-        this.scopeParameters.add(expression.operand.name, value);
+        this.stack.pop(expression.operand.name);
+        this.stack.push(expression.operand.name, value);
         return value;
     }
     protected executeLessEqual(expression: LessEqualExpression) {
@@ -378,18 +385,18 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) % this.execute(expression.rightOperand);
     }
     protected executeModulusAssignment(expression: ModulusAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) % this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) % this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeMultiplication(expression: MultiplicationExpression) {
         return this.execute(expression.leftOperand) * this.execute(expression.rightOperand);
     }
     protected executeMultiplicationAssignment(expression: MultiplicationAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) * this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) * this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeNegation(expression: NegationExpression) {
@@ -413,18 +420,18 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
     }
     protected executeParameter<T>(expression: ParameterExpression<T>): T {
-        return this.scopeParameters.get(expression.name);
+        return this.stack.get(expression.name, expression.index);
     }
     protected executeRightDecrement(expression: RightDecrementExpression) {
         const value = this.executeParameter(expression.operand);
-        this.scopeParameters.remove(expression.operand.name);
-        this.scopeParameters.add(expression.operand.name, value - 1);
+        this.stack.pop(expression.operand.name);
+        this.stack.push(expression.operand.name, value - 1);
         return value;
     }
     protected executeRightIncrement(expression: RightIncrementExpression) {
         const value = this.executeParameter(expression.operand);
-        this.scopeParameters.remove(expression.operand.name);
-        this.scopeParameters.add(expression.operand.name, value + 1);
+        this.stack.pop(expression.operand.name);
+        this.stack.push(expression.operand.name, value + 1);
         return value;
     }
     protected executeSqlParameter<T>(expression: SqlParameterExpression<T>): T {
@@ -465,9 +472,9 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
     }
     protected executeSubstractionAssignment(expression: SubstractionAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) - this.execute(expression.rightOperand);
-        this.scopeParameters.remove(expression.leftOperand.name);
-        this.scopeParameters.add(expression.leftOperand.name, value);
+        const value = this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
+        this.stack.pop(expression.leftOperand.name);
+        this.stack.push(expression.leftOperand.name, value);
         return value;
     }
     protected executeTernary(expression: TernaryExpression) {

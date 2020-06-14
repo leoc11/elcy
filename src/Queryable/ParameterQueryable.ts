@@ -1,42 +1,43 @@
-import { clone } from "../Helper/Util";
+import { INodeTree, ParameterStack } from "../Common/ParameterStack";
+import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 
 export class ParameterQueryable<T> extends Queryable<T> {
-    public get parameters() {
-        return this._parameters;
+    public get stackTree() {
+        return this._param;
     }
-    constructor(public readonly parent: Queryable<T>, parameters: { [key: string]: any }) {
+    constructor(parent: Queryable<T>, params: { [key: string]: any }) {
         super(parent.type, parent);
-        this._parameters = clone(parent.parameters);
-        this.parameter(parameters);
+        this._param = {
+            node: parent.stackTree.node.clone(),
+            childrens: Array.from(parent.stackTree.childrens)
+        };
+        this.parameter(params);
     }
-    private _parameters: { [key: string]: any };
-    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
-        if (typeof visitor.parameterIndex !== "number") {
-            visitor.parameterIndex = 0;
-        }
+    private _param: INodeTree<ParameterStack>;
+    private _parameterHashCode = 0;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
         const command = this.parent.buildQuery(visitor);
-        visitor.parameterIndex++;
+        visitor.stack = this.stackTree.node;
         return command;
     }
-    public flatQueryParameter(param?: { index: number }) {
-        const flatParam = this.parent.flatQueryParameter(param);
-        param.index++;
-        for (const prop in this._parameters) {
-            flatParam[`${param.index}:${prop}`] = this._parameters[prop];
-        }
-
-        return flatParam;
-    }
     public hashCode() {
-        return this.parent.hashCode();
+        return hashCodeAdd(this._parameterHashCode, this.parent.hashCode());
     }
     public parameter(params: { [key: string]: any }) {
         for (const prop in params) {
-            this._parameters[prop] = params[prop];
+            const value = params[prop];
+            if (value instanceof Queryable) {
+                this._parameterHashCode += value.hashCode();
+            }
+            else if (value instanceof Function) {
+                this._parameterHashCode += hashCode(value.toString());
+            }
+            this._param.node.push(prop, value);
         }
+        this._param.node.set(params);
         return this;
     }
 }

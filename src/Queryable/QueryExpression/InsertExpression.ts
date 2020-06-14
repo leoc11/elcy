@@ -1,27 +1,17 @@
 import { IObjectType } from "../../Common/Type";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { EntityState } from "../../Data/EntityState";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
-import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
+import { resolveTreeClone } from "../../Helper/ExpressionUtil";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
-import { IQueryExpression } from "./IQueryExpression";
-import { SqlParameterExpression } from "./SqlParameterExpression";
-export class InsertExpression<T = any> implements IQueryExpression<void> {
+import { QueryExpression } from "./QueryExpression";
+
+// TODO: change to single insert
+export class InsertExpression<T = any> extends QueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
-            this._columns = this.entity.metaData.relations
-                .where((o) => !o.nullable && !o.isMaster && o.relationType === "one")
-                .selectMany((o) => o.relationColumns)
-                .union(this.entity.metaData.columns)
+            this._columns = this.entity.metaData.columns
                 .except(this.entity.metaData.insertGeneratedColumns)
                 .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
         }
@@ -32,12 +22,11 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         return undefined as any;
     }
     constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: Array<IColumnExpression<T>>) {
+        super();
         if (columns) {
             this._columns = columns;
         }
     }
-    public paramExps: SqlParameterExpression[] = [];
-    public queryOption: IQueryOption;
     private _columns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {
         if (!replaceMap) {
@@ -53,6 +42,7 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
             return item;
         }).toArray();
         const clone = new InsertExpression(entity, values, columns);
+        clone.parameterTree = resolveTreeClone(this.parameterTree, replaceMap);
         replaceMap.set(this, clone);
         return clone;
     }
@@ -72,42 +62,3 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
         return `Insert(${this.entity.toString()})`;
     }
 }
-
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
-    const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
-    for (const col of columns) {
-        const value = entry.entity[col.propertyName];
-        if (value !== undefined) {
-            const param = new SqlParameterExpression(new ParameterExpression("", col.type), col);
-            queryParameters.set(param, { value: value });
-            itemExp[col.propertyName] = param;
-            insertExp.paramExps.push(param);
-        }
-    }
-
-    for (const rel of relations) {
-        const parentEntity = entry.entity[rel.propertyName] as any;
-        if (parentEntity) {
-            const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-            const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
-            for (const [col, parentCol] of rel.relationMaps) {
-                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type), parentCol);
-                if (isGeneratedPrimary) {
-                    const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
-                    queryParameters.set(paramExp, { name: parentEntry.metaData.name });
-                }
-                else {
-                    const value = parentEntity[parentCol.propertyName];
-                    queryParameters.set(paramExp, { value: value });
-                }
-
-                insertExp.paramExps.push(paramExp);
-                itemExp[col.propertyName] = paramExp;
-            }
-        }
-    }
-
-    insertExp.values.push(itemExp);
-    return itemExp;
-};

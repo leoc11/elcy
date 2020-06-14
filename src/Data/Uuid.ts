@@ -10,11 +10,11 @@ export class Uuid extends Uint8Array {
         }
     }
     public static readonly empty = new Uuid();
+    public static randomGenerator: (uuid: Uuid) => void;
     public static new() {
         const res = new Uuid();
-        for (let i = 0, len = res.length; i < len; i++) {
-            res[i] = Math.floor(Math.random() * 256);
-        }
+        this.randomGenerator(res);
+
         res[6] &= 0x0F;
         res[6] |= 0x40;
 
@@ -46,9 +46,6 @@ export class Uuid extends Uint8Array {
         }
         return res;
     }
-    public valueOf() {
-        return this.toString();
-    }
     protected parse(uuid: string) {
         const l = uuid.length;
         for (let i = 0, j = 0; j < 16 && i < l; i += 2) {
@@ -58,4 +55,16 @@ export class Uuid extends Uint8Array {
             this[j++] = parseInt(uuid.slice(i, i + 2), 16);
         }
     }
+}
+
+const globThis: any = global || globalThis;
+if (globThis.crypto && globThis.crypto.getRandomValues) {
+    Uuid.randomGenerator = (res: Uuid) => globThis.crypto.getRandomValues(res);
+}
+else {
+    Uuid.randomGenerator = (res: Uuid) => {
+        for (let i = 0, len = res.length; i < len; i++) {
+            res[i] = Math.floor(Math.random() * 256);
+        }
+    };
 }

@@ -1,4 +1,6 @@
-import { IObjectType, JoinType } from "../Common/Type";
+import { INodeTree, ParameterStack } from "../Common/ParameterStack";
+import { JoinType } from "../Common/StringType";
+import { IObjectType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -6,21 +8,23 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
-    public get parameters() {
-        if (!this._parameters) {
-            this._parameters = {};
-            Object.assign(this._parameters, this.parent2.parameters);
-            Object.assign(this._parameters, this.parent.parameters);
+    public get stackTree() {
+        if (!this._param) {
+            this._param = {
+                node: this.parent.stackTree.node,
+                childrens: Array.from(this.parent.stackTree.childrens)
+            };
+            this._param.childrens.push(this.parent2.stackTree);
         }
-        return this._parameters;
+        return this._param;
     }
     protected get relation() {
         if (!this._relation && this.relationFn) {
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.stackTree.node);
         }
         return this._relation;
     }
@@ -29,7 +33,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     }
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn) {
-            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.stackTree.node);
         }
         return this._resultSelector;
     }
@@ -57,12 +61,16 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     }
     protected readonly relationFn: (item: T, item2: T2) => boolean;
     protected readonly resultSelectorFn: (item1: T | null, item2: T2 | null) => R;
-    private _parameters: { [key: string]: any };
+    private _param: INodeTree<ParameterStack>;
     private _relation: FunctionExpression<boolean>;
     private _resultSelector: FunctionExpression<R>;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<R[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
+        const stack = visitor.stack;
+        const childOperand = this.parent2.buildQuery(visitor) as SelectExpression<T2>;
+        objectOperand.parameterTree.childrens.push(childOperand.parameterTree);
+        visitor.stack = stack;
+
         const type = this.joinType.toLowerCase() + "Join";
         const params: IExpression[] = [childOperand];
         if (this.joinType !== "CROSS") {
@@ -71,12 +79,6 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
         params.push(this.resultSelector.clone());
         const methodExpression = new MethodCallExpression(objectOperand, type as any, params);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
-    }
-    public flatQueryParameter(param?: { index: number }) {
-        const flatParam = this.parent.flatQueryParameter(param);
-        const flatParam2 = this.parent2.flatQueryParameter(param);
-        Object.assign(flatParam, flatParam2);
-        return flatParam;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
 }

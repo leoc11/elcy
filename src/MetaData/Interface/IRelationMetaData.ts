@@ -1,11 +1,11 @@
-import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/Type";
+import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
 
-export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRelationMetaData<TSource, TTarget> {
+export interface IRelationMetaData<TSource = any, TTarget = any>  extends IBaseRelationMetaData<TSource, TTarget> {
     completeRelationType?: CompleteRelationshipType;
     deleteOption?: ReferenceOption;
     fullName: string;
@@ -21,7 +21,7 @@ export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRe
     propertyName?: keyof TSource;
     relationColumns: Array<IColumnMetaData<TSource>>;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
-    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     relationType: RelationshipType;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     source: IEntityMetaData<TSource>;

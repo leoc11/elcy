@@ -1,4 +1,6 @@
-import { ColumnGeneration, ConcurrencyModel, IObjectType } from "../Common/Type";
+import { ColumnGeneration } from "../Common/Enum";
+import { ConcurrencyModel } from "../Common/StringType";
+import { IObjectType } from "../Common/Type";
 import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
@@ -14,7 +16,7 @@ import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 
-export class EntityMetaData<TE extends TParent, TParent = any> implements IEntityMetaData<TE, TParent> {
+export class EntityMetaData<TE extends TBase, TBase = any> implements IEntityMetaData<TE, TBase> {
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
@@ -42,7 +44,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
         }).toArray();
     }
     constructor(public type: IObjectType<TE>, name?: string) {
-        this.inheritance = new InheritanceMetaData(this);
+        this.inheritance = new InheritanceMetaData();
         if (typeof name !== "undefined") {
             this.name = name;
         }
@@ -65,7 +67,7 @@ export class EntityMetaData<TE extends TParent, TParent = any> implements IEntit
     public descriminatorMember = "__type__";
     public embeds: Array<EmbeddedRelationMetaData<TE>> = [];
     public indices: Array<IIndexMetaData<TE>> = [];
-    public inheritance: InheritanceMetaData<TParent>;
+    public inheritance: InheritanceMetaData<TBase>;
     public modifiedDateColumn: DateTimeColumnMetaData<TE>;
     public name: string;
     public primaryKeys: Array<IColumnMetaData<TE>> = [];

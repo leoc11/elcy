@@ -1,19 +1,19 @@
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, QueryType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
-import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
+import { IQueryTemplate } from "../../Query/IQueryTemplate";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
-import { RelationQueryBuilder } from "../Relation/RelationQueryBuilder";
+import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 
-export class SqliteQueryBuilder extends RelationQueryBuilder {
+export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
         maxBatchQuery: 1,
         maxParameters: 999,
@@ -28,63 +28,61 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
         [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
-    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption): IQueryTemplate[] {
         const param: IQueryBuilderParameter = {
             option: option,
-            parameters: parameters,
             queryExpression: upsertExp
         };
 
-        if (option && option.version && option.version < new Version(3, 24)) {
-            return this.getUpsertQueryOlder(upsertExp, option, parameters);
+        if (option && option.version && option.version.valueOf() < (new Version(3, 24)).valueOf()) {
+            return this.getUpsertQueryOlder(upsertExp, option);
         }
 
         const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const valueString = upsertExp.insertColumns.select((o) => {
-            const valueExp = upsertExp.setter[o.propertyName];
+            const valueExp = upsertExp.value[o.propertyName];
             return valueExp ? this.toString(valueExp, param) : "DEFAULT";
         }).toArray().join(",");
         const primaryColString = upsertExp.entity.primaryColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
         const updateString = upsertExp.updateColumns.select((column) => {
-            const valueExp = upsertExp.setter[column.propertyName];
+            const valueExp = upsertExp.value[column.propertyName];
             if (!valueExp) {
                 return null;
             }
             return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
         }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
-        const queryCommand: IQuery = {
+        const queryCommand: IQueryTemplate = {
             query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine()
                 + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
-            parameters: this.getParameter(param),
+            parameterTree: upsertExp.parameterTree,
             type: QueryType.DML
         };
         return [queryCommand];
     }
-    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption): IQueryTemplate[] {
         const param: IQueryBuilderParameter = {
             option: option,
-            parameters: parameters,
             queryExpression: upsertExp
         };
 
         const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
             `VALUES (${upsertExp.insertColumns.select((o) => {
-                const valueExp = upsertExp.setter[o.propertyName];
+                const valueExp = upsertExp.value[o.propertyName];
                 return valueExp ? this.toString(valueExp, param) : "DEFAULT";
             }).toArray().join(",")})`;
 
-        const queryCommand: IQuery = {
+        const queryCommand: IQueryTemplate = {
             query: insertQuery,
-            parameters: this.getParameter(param),
+            parameterTree: upsertExp.parameterTree,
             type: QueryType.DML
         };
 
-        const result: IQuery[] = [queryCommand];
+        const result: IQueryTemplate[] = [queryCommand];
 
         const updateString = upsertExp.updateColumns.select((column) => {
-            const valueExp = upsertExp.setter[column.propertyName];
+            const valueExp = upsertExp.value[column.propertyName];
             if (!valueExp) {
                 return null;
             }
@@ -92,9 +90,9 @@ export class SqliteQueryBuilder extends RelationQueryBuilder {
             return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
         }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
-        const updateCommand: IQuery = {
+        const updateCommand: IQueryTemplate = {
             query: `UPDATE ${this.getEntityQueryString(upsertExp.entity, param)} SET ${updateString} WHERE ${this.toLogicalString(upsertExp.where, param)}`,
-            parameters: queryCommand.parameters,
+            parameterTree: upsertExp.parameterTree,
             type: QueryType.DML
         };
         result.push(updateCommand);

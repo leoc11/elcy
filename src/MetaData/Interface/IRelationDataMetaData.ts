@@ -1,4 +1,5 @@
-import { IObjectType, ReferenceOption } from "../../Common/Type";
+import { ReferenceOption } from "../../Common/StringType";
+import { IObjectType } from "../../Common/Type";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 

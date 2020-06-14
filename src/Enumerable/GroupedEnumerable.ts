@@ -15,7 +15,7 @@ export class GroupedEnumerable<K, T> extends Enumerable<T> {
     public addResult(value: T) {
         this._cacheResult.push(value);
     }
-    protected *generator(): IterableIterator<T> {
+    protected *generator() {
         if (!this.cache.result) {
             this.cache.result = [];
         }

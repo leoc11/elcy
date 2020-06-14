@@ -1,31 +1,36 @@
-import { ColumnGeneration, IsolationLevel, QueryType } from "../Common/Type";
+import { ColumnGeneration, QueryType } from "../Common/Enum";
+import { IsolationLevel } from "../Common/StringType";
 import { IConnection } from "../Connection/IConnection";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
+import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { isNotNull } from "../Helper/Util";
+import { isNull, visitExpression } from "../Helper/Util";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../MetaData/StringColumnMetaData";
-import { BatchedQuery } from "../Query/BatchedQuery";
-import { DeferredQuery } from "../Query/DeferredQuery";
+import { BulkDeferredQuery } from "../Query/DeferredQuery/BulkDeferredQuery";
+import { DeferredQuery } from "../Query/DeferredQuery/DeferredQuery";
 import { IQuery } from "../Query/IQuery";
 import { IQueryResult } from "../Query/IQueryResult";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { PagingJoinRelation } from "../Queryable/Interface/PagingJoinRelation";
+import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { DeleteExpression } from "../Queryable/QueryExpression/DeleteExpression";
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression";
 import { InsertIntoExpression } from "../Queryable/QueryExpression/InsertIntoExpression";
+import { QueryExpression } from "../Queryable/QueryExpression/QueryExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { UpdateExpression } from "../Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
+import { IMockedDeferredQuery } from "./MockContext";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
@@ -50,13 +55,13 @@ export class MockConnection implements IConnection {
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
     }
     public database: string;
-    public deferredQueries: IEnumerable<DeferredQuery>;
     public errorEvent: IEventHandler<MockConnection, Error>;
 
     //#region Abstract Member
     public isolationLevel: IsolationLevel;
     public isOpen: boolean;
     protected onError: IEventDispacher<Error>;
+    private _deferredQueries: IEnumerable<DeferredQuery & IMockedDeferredQuery>;
     private _generatedResults: IQueryResult[];
     private _results: IQueryResult[];
     private _transactionCount: number = 0;
@@ -68,11 +73,21 @@ export class MockConnection implements IConnection {
         return Promise.resolve();
     }
     public generateQueryResult() {
-        return this.deferredQueries
-            .selectMany((deferred) => {
-                const command = deferred.command;
-                const tvps = command.paramExps.where((o) => o instanceof SqlTableValueParameterExpression).toArray();
-                const skipCount = tvps.length;
+        return this._deferredQueries
+            .selectMany((def) => {
+                if (def instanceof BulkDeferredQuery) {
+                    return def.defers.cast<IMockedDeferredQuery>()
+                        .selectMany((def1) => def1.queryExps.select((o) => [def1, o]));
+                }
+                else {
+                    return def.queryExps.select((o) => [def, o]);
+                }
+            })
+            .selectMany((o) => {
+                const deferred = o[0] as DeferredQuery & IMockedDeferredQuery;
+                const command = o[1] as QueryExpression;
+                const skipCount = deferred.tvpMap.size;
+                const tvps = deferred.tvpMap.asEnumerable().toArray();
                 if (command instanceof InsertIntoExpression) {
                     let i = 0;
                     return deferred.queries.select((query) => {
@@ -85,10 +100,9 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
                             }
                             else {
-                                const arrayParameter = tvps[i];
-                                const queryValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(queryValue.value)) {
-                                    result.effectedRows = queryValue.value.length;
+                                const queryValue = tvps[i][1];
+                                if (Array.isArray(queryValue)) {
+                                    result.effectedRows = queryValue.length;
                                 }
                             }
                         }
@@ -96,11 +110,48 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof SelectExpression) {
+                    const queries = deferred.queries.skip(skipCount * 2).toArray();
                     const selects = this.flattenSelectExpression(command as any);
                     const map: Map<SelectExpression, any[]> = new Map();
+                    let qi = 0;
                     for (const select of selects) {
+                        const query = queries[qi++];
                         const rows: any[] = [];
                         map.set(select, rows);
+
+                        const propValueMap = {};
+                        if (select.where) {
+                            visitExpression(select.where, (exp) => {
+                                if (exp instanceof EqualExpression || exp instanceof StrictEqualExpression) {
+                                    if (exp.leftOperand instanceof ColumnExpression && exp.leftOperand.entity.type === select.entity.type) {
+                                        let value = null;
+                                        if (exp.rightOperand instanceof ValueExpression) {
+                                            value = exp.rightOperand.value;
+                                        }
+                                        else if (exp.rightOperand instanceof SqlParameterExpression) {
+                                            value = query.parameters[exp.rightOperand.name];
+                                        }
+
+                                        if (value) {
+                                            propValueMap[exp.leftOperand.propertyName] = value;
+                                        }
+                                    }
+                                    else if (exp.rightOperand instanceof ColumnExpression && exp.rightOperand.entity.type === select.entity.type) {
+                                        let value = null;
+                                        if (exp.leftOperand instanceof ValueExpression) {
+                                            value = exp.leftOperand.value;
+                                        }
+                                        else if (exp.leftOperand instanceof SqlParameterExpression) {
+                                            value = query.parameters[exp.leftOperand.name];
+                                        }
+                                        if (value) {
+                                            propValueMap[exp.rightOperand.propertyName] = value;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
                         if (select.parentRelation) {
                             const parentInclude = select.parentRelation as IncludeRelation;
                             const relMap = Array.from(parentInclude.relationMap());
@@ -111,30 +162,36 @@ export class MockConnection implements IConnection {
                             }
                             const parentRows = map.get(parentExp);
 
-                            const maxRowCount = this.getMaxCount(select, deferred, 3);
+                            const maxRowCount = this.getMaxCount(select, query, 3);
 
                             for (const parent of parentRows) {
                                 const numberOfRecord = parentInclude.type === "one" ? 1 : Math.floor(Math.random() * maxRowCount) + 1;
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
-                                    for (const o of select.projectedColumns) {
-                                        item[o.dataPropertyName] = this.generateValue(o);
+                                    for (const col of select.projectedColumns) {
+                                        item[col.dataPropertyName] = this.generateValue(col);
+                                    }
+                                    for (const prop in propValueMap) {
+                                        item[prop] = propValueMap[prop];
                                     }
                                     rows.push(item);
 
                                     for (const [parentCol, entityCol] of relMap) {
-                                        item[entityCol.alias || entityCol.columnName] = parent[parentCol.alias || parentCol.columnName];
+                                        item[entityCol.propertyName] = parent[parentCol.propertyName];
                                     }
                                 }
                             }
                         }
                         else {
-                            const maxRowCount = this.getMaxCount(select, deferred, 10);
+                            const maxRowCount = this.getMaxCount(select, query, 10);
                             const numberOfRecord = Math.floor(Math.random() * maxRowCount) + 1;
                             for (let i = 0; i < numberOfRecord; i++) {
                                 const item = {} as any;
-                                for (const o of select.projectedColumns) {
-                                    item[o.dataPropertyName] = this.generateValue(o);
+                                for (const col of select.projectedColumns) {
+                                    item[col.dataPropertyName] = this.generateValue(col);
+                                }
+                                for (const prop in propValueMap) {
+                                    item[prop] = propValueMap[prop];
                                 }
                                 rows.push(item);
                             }
@@ -148,10 +205,11 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         if (query.type & QueryType.DML) {
-                            const arrayParameter = tvps[index];
-                            const paramValue = deferred.parameters.get(arrayParameter);
-                            if (Array.isArray(paramValue.value)) {
-                                result.effectedRows = paramValue.value.length;
+                            if (tvps[index]) {
+                                const paramValue = tvps[index][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
+                                }
                             }
                         }
                         else if (query.type & QueryType.DQL) {
@@ -163,8 +221,8 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof InsertExpression) {
                     let i = 0;
-                    const generatedColumns = command.entity.columns.where((o) => isNotNull(o.columnMeta))
-                        .where((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp).toArray();
+                    const generatedColumns = command.entity.columns.where((col) => !isNull(col.columnMeta))
+                        .where((col) => (col.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!col.columnMeta!.defaultExp).toArray();
 
                     return deferred.queries.select((query) => {
                         const result: IQueryResult = {
@@ -172,10 +230,12 @@ export class MockConnection implements IConnection {
                         };
                         i++;
                         if (query.type & QueryType.DQL) {
-                            const rows = command.values.select((o) => {
+                            const rows = command.values.select((v) => {
                                 const val: { [key in any]: any } = {};
                                 for (const col of generatedColumns) {
-                                    val[col.dataPropertyName] = this.generateValue(col);
+                                    const paramExp = v[col.dataPropertyName] as SqlParameterExpression;
+                                    val[col.dataPropertyName] = paramExp ? query.parameters[paramExp.name]
+                                        : this.generateValue(col);
                                 }
                                 return val;
                             }).toArray();
@@ -186,10 +246,9 @@ export class MockConnection implements IConnection {
                                 result.effectedRows = command.values.length;
                             }
                             else {
-                                const arrayParameter = tvps[i];
-                                const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
-                                    result.effectedRows = paramValue.value.length;
+                                const paramValue = tvps[i][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
                                 }
                             }
                         }
@@ -205,10 +264,9 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i < skipCount) {
-                                const arrayParameter = tvps[i];
-                                const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
-                                    result.effectedRows = paramValue.value.length;
+                                const paramValue = tvps[i][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
                                 }
                             }
                         }
@@ -224,10 +282,9 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i < skipCount) {
-                                const arrayParameter = tvps[i];
-                                const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
-                                    result.effectedRows = paramValue.value.length;
+                                const paramValue = tvps[i][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
                                 }
                             }
                         }
@@ -235,7 +292,7 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpsertExpression) {
-                    const dmlCount = deferred.queries.where((o) => (o.type & QueryType.DML) !== 0).count();
+                    const dmlCount = deferred.queries.where((query) => (query.type & QueryType.DML) !== 0).count();
                     let i = 0;
                     return deferred.queries.select((query) => {
                         const result: IQueryResult = {
@@ -244,10 +301,9 @@ export class MockConnection implements IConnection {
                         if (query.type & QueryType.DML) {
                             i++;
                             if (i !== dmlCount) {
-                                const arrayParameter = tvps[i];
-                                const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
-                                    result.effectedRows = paramValue.value.length;
+                                const paramValue = tvps[i][1];
+                                if (Array.isArray(paramValue)) {
+                                    result.effectedRows = paramValue.length;
                                 }
                             }
                         }
@@ -327,30 +383,8 @@ export class MockConnection implements IConnection {
     public open(): Promise<void> {
         return Promise.resolve();
     }
-    public async query(command: IQuery): Promise<IQueryResult[]>;
-    public async query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public async query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public async query(commandOrQuery: IQuery | string, parametersOrType?: Map<string, any> | QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]> {
-        let command: IQuery;
-        if (typeof commandOrQuery === "string") {
-            let type: QueryType;
-            if (parametersOrType instanceof Map) {
-                parameters = parametersOrType;
-                type = QueryType.DQL;
-            }
-            else {
-                type = parametersOrType;
-            }
-            command = {
-                query: commandOrQuery,
-                type: type,
-                parameters: parameters
-            };
-        }
-        else {
-            command = commandOrQuery;
-        }
-        const count = (command as BatchedQuery).queryCount || 1;
+    public async query(...commands: IQuery[]): Promise<IQueryResult[]> {
+        const count = commands.length || 1;
         return this.results.splice(0, count);
     }
     public reset(): Promise<void> {
@@ -363,22 +397,22 @@ export class MockConnection implements IConnection {
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return Promise.resolve();
     }
-    public setQueries(deferredQueries: IEnumerable<DeferredQuery>) {
-        this.deferredQueries = deferredQueries;
+    public setQueries(deferredQueries: Array<DeferredQuery & IMockedDeferredQuery>) {
+        this._deferredQueries = deferredQueries;
         this._generatedResults = null;
     }
     public startTransaction(): Promise<void> {
         this._transactionCount++;
         return Promise.resolve();
     }
-    protected extractValue(o: DeferredQuery, exp: IExpression) {
+    protected extractValue(query: IQuery, exp: IExpression) {
         if (exp instanceof ValueExpression) {
             return ExpressionExecutor.execute(exp);
         }
-        else if (exp instanceof SqlParameterExpression) {
-            const sqlParam = o.parameters.get(exp);
-            if (sqlParam) {
-                return sqlParam.value;
+        else if (query.parameters && exp instanceof SqlParameterExpression) {
+            const value = query.parameters[exp.name];
+            if (value !== undefined) {
+                return value;
             }
         }
         return null;
@@ -393,17 +427,17 @@ export class MockConnection implements IConnection {
         return results;
     }
 
-    protected getMaxCount(select: SelectExpression, deferred: DeferredQuery, defaultValue = 10) {
+    protected getMaxCount(select: SelectExpression, query: IQuery, defaultValue = 10) {
         if (select.paging && select.paging.take) {
-            defaultValue = this.extractValue(deferred, select.paging.take);
+            defaultValue = this.extractValue(query, select.paging.take);
         }
         else {
             const takeJoin = select.joins.first((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
             if (takeJoin) {
                 if (takeJoin.end) {
-                    defaultValue = this.extractValue(deferred, takeJoin.end);
+                    defaultValue = this.extractValue(query, takeJoin.end);
                     if (takeJoin.start) {
-                        defaultValue -= this.extractValue(deferred, takeJoin.start);
+                        defaultValue -= this.extractValue(query, takeJoin.start);
                     }
                 }
             }

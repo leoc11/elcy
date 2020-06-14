@@ -5,13 +5,13 @@ import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class ProjectQueryable<T> extends Queryable<T> {
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters)).toArray();
+            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type], this.stackTree.node)).toArray();
         }
 
         return this._selectors;
@@ -30,12 +30,12 @@ export class ProjectQueryable<T> extends Queryable<T> {
     }
     protected readonly selectorsFn: Array<(item: T) => any>;
     private _selectors: FunctionExpression[];
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<T[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "project", selectors);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
         return hashCodeAdd(hashCode("PROJECT", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));

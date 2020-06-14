@@ -1,4 +1,4 @@
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";
@@ -34,7 +34,7 @@ export class NotExpression implements IUnaryOperatorExpression<boolean> {
         }
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("!"), this.operand.hashCode());
+        return -this.operand.hashCode();
     }
     public toString(): string {
         return "!" + this.operand.toString();

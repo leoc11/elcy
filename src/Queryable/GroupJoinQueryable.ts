@@ -6,13 +6,13 @@ import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import { QueryExpression } from "./QueryExpression/QueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected get relation() {
         if (!this._relation && this.relationFn) {
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.stackTree.node);
         }
         return this._relation;
     }
@@ -21,7 +21,7 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     }
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn) {
-            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.stackTree.node);
         }
         return this._resultSelector;
     }
@@ -51,12 +51,12 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     protected readonly resultSelectorFn: (item1: T, item2: T2[]) => R;
     private _relation: FunctionExpression<boolean>;
     private _resultSelector: FunctionExpression<R>;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
+    public buildQuery(visitor: IQueryVisitor): QueryExpression<R[]> {
+        const objectOperand = this.parent.buildQuery(visitor) as SelectExpression<T>;
+        const childOperand = this.parent2.buildQuery(visitor) as SelectExpression<T2>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupJoin", [childOperand, this.relation.clone(), this.resultSelector.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return visitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("GROUPJOIN", this.parent.hashCode()), this.parent2.hashCode());

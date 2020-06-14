@@ -1,18 +1,20 @@
 import { ColumnTypeMapKey } from "../../Common/ColumnType";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { QueryType, ReferenceOption } from "../../Common/Type";
-import { isNotNull } from "../../Helper/Util";
+import { ReferenceOption } from "../../Common/StringType";
+import { isNull } from "../../Helper/Util";
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
+import { TempEntityMetaData } from "../../MetaData/TempEntityMetaData";
 import { IQuery } from "../../Query/IQuery";
-import { RelationSchemaBuilder } from "../Relation/RelationSchemaBuilder";
+import { RelationalSchemaBuilder } from "../Relational/RelationalSchemaBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 
-export class MssqlSchemaBuilder extends RelationSchemaBuilder {
+export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<MssqlColumnType>>([
         ["bigint", { columnType: "bigint", group: "Integer" }],
         ["binary", { columnType: "binary", group: "Binary", option: { size: 50 } }],
@@ -108,24 +110,49 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{ query, type: QueryType.DDL }];
     }
+    public createTable<TE>(entityMetaData: IEntityMetaData<TE>, name?: string): IQuery[] {
+        const columnDefinitions = entityMetaData.columns.where((o) => !!o.columnName).select((o) => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
+        const constraints = (entityMetaData.constraints || []).select((o) => this.constraintDeclaration(o)).toArray().join("," + this.queryBuilder.newLine(1, false));
+        let tableName = this.entityName(entityMetaData);
+        if (name) {
+            const oldName = entityMetaData.name;
+            entityMetaData.name = name;
+            tableName = this.entityName(entityMetaData);
+            entityMetaData.name = oldName;
+        }
+        const query = `CREATE TABLE ${tableName}` +
+            `${this.queryBuilder.newLine()}(` +
+            `${this.queryBuilder.newLine(1, false)}${columnDefinitions}` +
+            `,${this.queryBuilder.newLine(1, false)}${this.primaryKeyDeclaration(entityMetaData)}` +
+            (constraints ? `,${this.queryBuilder.newLine(1, false)}${constraints}` : "") +
+            `${this.queryBuilder.newLine()})`;
+        return [{
+            query,
+            type: QueryType.DDL
+        }];
+    }
+    protected entityName(entityMeta: IEntityMetaData<any>) {
+        const tableModifier = entityMeta instanceof TempEntityMetaData ? "#" : "";
+        return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(tableModifier + entityMeta.name)}`;
+    }
     protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
         const columnType = super.columnType(column);
         switch (columnType.group) {
             case "Integer": {
                 const size = (column as unknown as IntegerColumnMetaData).size;
-                if (isNotNull(size)) {
+                if (!isNull(size)) {
                     if (size > 4) {
                         columnType.columnType = "bigint";
                     }
                     else if (size > 2) {
                         columnType.columnType = "int";
- }
+                    }
                     else if (size > 1) {
                         columnType.columnType = "smallint";
- }
+                    }
                     else {
                         columnType.columnType = "tinyint";
- }
+                    }
                 }
                 break;
             }
@@ -133,7 +160,7 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
                 switch (columnType.columnType) {
                     case "float": {
                         const size = (column as unknown as RealColumnMetaData).size;
-                        if (isNotNull(size)) {
+                        if (!isNull(size)) {
                             columnType.option.size = size <= 24 ? 24 : 53;
                         }
                     }
@@ -143,6 +170,7 @@ export class MssqlSchemaBuilder extends RelationSchemaBuilder {
         }
         return columnType;
     }
+
     protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
         const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");

@@ -51,10 +51,10 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             }
             else if ((columnOption as IDateTimeColumnOption).isModifiedDate) {
                 entityMetaData.modifiedDateColumn = metadata;
- }
+            }
         }
         else if (metadata instanceof BooleanColumnMetaData) {
-            if ((columnOption as IBooleanColumnOption).isDeletedColumn) {
+            if ((columnOption as IBooleanColumnOption).isDeleteColumn) {
                 entityMetaData.deletedColumn = metadata;
             }
         }

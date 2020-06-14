@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { TimeColumnType } from "../../Common/ColumnType";
-import { TimeZoneHandling } from "../../Common/Type";
+import { TimeZoneHandling } from "../../Common/StringType";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { ITimeColumnOption } from "../Option/ITimeColumnOption";

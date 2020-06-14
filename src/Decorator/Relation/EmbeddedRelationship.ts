@@ -14,7 +14,7 @@ export function EmbeddedRelationship<S = any, T = any>(optionOrType: IEmbeddedRe
         option.nullable = nullable;
     }
     else {
-        option = option;
+        option = optionOrType;
     }
 
     return (target: S, propertyKey: keyof S) => {

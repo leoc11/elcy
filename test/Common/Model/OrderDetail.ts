@@ -1,6 +1,7 @@
+import { ValueType } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Data/Uuid";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
-import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
+import { CreatedDateColumn } from "../../../src/Decorator/Column/CreatedDateColumn";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { DeletedColumn } from "../../../src/Decorator/Column/DeletedColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
@@ -15,6 +16,14 @@ import { Product } from "./Product";
 
 @Entity("OrderDetails")
 export class OrderDetail {
+    constructor(defValues?: { [key in keyof OrderDetail]?: ValueType }) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = (defValues as any)[prop];
+                this[prop as any] = value;
+            }
+        }
+    }
     @PrimaryKey()
     @IdentifierColumn()
     public OrderDetailId: Uuid;
@@ -27,7 +36,7 @@ export class OrderDetail {
     public name: string;
     @DecimalColumn({ columnType: "decimal", columnName: "Quantity" })
     public quantity: number;
-    @DateColumn()
+    @CreatedDateColumn()
     public CreatedDate: Date;
     @ComputedColumn<OrderDetail>((o) => o.quantity * o.Product.Price)
     public GrossSales: number;
@@ -40,12 +49,4 @@ export class OrderDetail {
     public Product: Product;
     @Relationship<OrderDetail>("has", "many", OrderDetailProperty || "OrderDetailProperty", [(o) => o.OrderDetailId])
     public OrderDetailProperties: OrderDetailProperty[];
-    constructor(defValues?: { [key in keyof OrderDetail]?: any }) {
-        if (defValues) {
-            for (const prop in defValues) {
-                const value = (defValues as any)[prop];
-                this[prop as keyof OrderDetail] = value;
-            }
-        }
-    }
 }

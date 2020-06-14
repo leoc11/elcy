@@ -36,4 +36,9 @@ export class FunctionExpression<T = any> implements IExpression<T> {
         }
         return "(" + params.join(", ") + ") => " + this.body.toString();
     }
+
+    public toFunction(): () => T {
+        // tslint:disable-next-line: no-eval
+        return eval(this.toString());
+    }
 }

@@ -1,4 +1,4 @@
-import { RelationshipType } from "../../Common/Type";
+import { RelationshipType } from "../../Common/StringType";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -38,6 +38,7 @@ export class IncludeRelation<T = any, TChild = any> implements ISelectRelation<T
             this.name = name;
         }
     }
+    public RelationData: any;
     public child: SelectExpression<TChild>;
     public isEmbedded: boolean;
     public name: string;
