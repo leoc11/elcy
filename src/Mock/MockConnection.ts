@@ -8,7 +8,6 @@ import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";

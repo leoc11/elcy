@@ -1,4 +1,4 @@
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";

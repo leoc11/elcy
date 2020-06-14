@@ -35,7 +35,6 @@ export class ExecuteDeferredQuery extends DeferredQuery<number> {
     protected resultParser = resultParser;
     private _queries: IQuery[];
     private _sql: string;
-    private _parameters: Map<string, any>;
     public hashCode(): number {
         return hashCode(this.sql);
     }

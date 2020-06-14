@@ -2720,7 +2720,7 @@ describe("QUERYABLE", async () => {
                 TotalAmount: o1.TotalAmount,
                 GrossSales: o2.GrossSales
             })).parameter({ minAmount }).where((o) => o.GrossSales > minAmount);
-            const results = await join.toArray();
+            await join.toArray();
 
             chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
