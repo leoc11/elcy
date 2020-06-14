@@ -71,6 +71,7 @@ import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
         if (!this._lastInsertedIdQuery) {
+            /* istanbul ignore next */
             this._lastInsertedIdQuery = this.toString(ExpressionBuilder.parse(() => DbFunction.lastInsertedId()).body);
         }
         return this._lastInsertedIdQuery;

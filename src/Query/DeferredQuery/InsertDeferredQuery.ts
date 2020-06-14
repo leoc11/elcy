@@ -106,6 +106,7 @@ export class InsertDeferredQuery<T> extends DMLDeferredQuery<T> {
         if (queryExp.selects.any()) {
             if (this.entry.metaData.hasIncrementPrimary) {
                 const incrementColumn = this.entry.metaData.primaryKeys.first((o) => (o as unknown as IntegerColumnMetaData).autoIncrement);
+                /* istanbul ignore next */
                 const lastIdExp = ExpressionBuilder.parse(() => DbFunction.lastInsertedId()).body;
                 queryExp.addWhere(new StrictEqualExpression(queryExp.entity.columns.first((c) => c.propertyName === incrementColumn.columnName), lastIdExp));
             }

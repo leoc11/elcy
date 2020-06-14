@@ -17,6 +17,3 @@ describe("Mssql", async () => {
     require("./Provider/Mssql/DataManipulation");
     require("./Provider/Mssql/Queryable");
 });
-// describe("Sqlite", async () => {
-//     //
-// });

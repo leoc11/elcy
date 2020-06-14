@@ -666,6 +666,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             return this.queryBuilder.valueString(0);
         }
         if (columnMeta instanceof IdentifierColumnMetaData || groupType === "Identifier") {
+            /* istanbul ignore next */
             return this.queryBuilder.toString(ExpressionBuilder.parse(() => Uuid.new()).body);
         }
         if (columnMeta instanceof StringColumnMetaData
@@ -677,14 +678,17 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             || columnMeta instanceof DateTimeColumnMetaData
             || groupType === "Date" || groupType === "DateTime") {
             // Result: GETUTCDATE()
+            /* istanbul ignore next */
             return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.utcTimestamp()).body);
         }
         if (columnMeta instanceof TimeColumnMetaData || groupType === "Time") {
             // Result: CONVERT(TIME, GETUTCDATE())
+            /* istanbul ignore next */
             return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.utcTimestamp().toTime()).body);
         }
         if (columnMeta instanceof RowVersionColumn || groupType === "RowVersion") {
             // Result: CURRENT_TIMESTAMP;
+            /* istanbul ignore next */
             return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.timestamp()).body);
         }
         if (columnMeta instanceof BinaryColumnMetaData || groupType === "Binary") {
