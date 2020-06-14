@@ -1,8 +1,13 @@
 import { ILogger, LogSeverity } from "./ILogger";
 
 export class DefaultLogger implements ILogger {
+    constructor(private excludeSource?: boolean) {
+
+    }
     public log(source: any, level: LogSeverity, message: string, error?: Error, ...args: any[]): void {
-        args.unshift(source);
+        if (!this.excludeSource) {
+            args.unshift(source);
+        }
         if (error) {
             args.unshift(error);
         }

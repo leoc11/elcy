@@ -4,7 +4,7 @@ import { DefaultLogger } from "../src/Logger/DefaultLogger";
 import { Diagnostic } from "../src/Logger/Diagnostic";
 // import "./test.debug";
 
-Diagnostic.logger = new DefaultLogger();
+Diagnostic.logger = new DefaultLogger(true);
 
 describe("Core", () => {
     require("./Core/ConnectionManager/PooledConnectionManager");
