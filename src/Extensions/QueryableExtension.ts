@@ -46,16 +46,16 @@ declare global {
     }
 }
 Reflect.getRelationData = <M, S, SKey extends KeysExceptType<S, ValueType>>(source: S, relationProperty: SKey, target: TypeItem<S[SKey]>): M => {
-    let relationMeta: IRelationMetaData = Reflect.getOwnMetadata(relationMetaKey, source, relationProperty);
+    const relationMeta: IRelationMetaData = Reflect.getOwnMetadata(relationMetaKey, source, relationProperty);
     if (!relationMeta.isMaster) {
-        relationMeta = relationMeta.reverseRelation;
+        return Reflect.getOwnMetadata(source, target, relationMeta.fullName);
     }
-    return Reflect.getOwnMetadata(target, source, relationProperty);
+    return Reflect.getOwnMetadata(target, source, relationMeta.fullName);
 };
 Reflect.setRelationData = <M, S, SKey extends KeysExceptType<S, ValueType>>(source: S, relationProperty: SKey, target: TypeItem<S[SKey]>, value: M) => {
-    let relationMeta: IRelationMetaData = Reflect.getOwnMetadata(relationMetaKey, source.constructor, relationProperty);
+    const relationMeta: IRelationMetaData<S, TypeItem<S[SKey]>> = Reflect.getOwnMetadata(relationMetaKey, source.constructor, relationProperty);
     if (!relationMeta.isMaster) {
-        relationMeta = relationMeta.reverseRelation;
+        return Reflect.defineMetadata(source, value, target, relationMeta.fullName);
     }
-    return Reflect.defineMetadata(target, value, source, relationProperty);
+    return Reflect.defineMetadata(target, value, source, relationMeta.fullName);
 };
