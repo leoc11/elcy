@@ -46,9 +46,6 @@ export class Uuid extends Uint8Array {
         }
         return res;
     }
-    public valueOf() {
-        return this.toString();
-    }
     protected parse(uuid: string) {
         const l = uuid.length;
         for (let i = 0, j = 0; j < 16 && i < l; i += 2) {
