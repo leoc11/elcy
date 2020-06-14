@@ -34,7 +34,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             queryExpression: upsertExp
         };
 
-        if (option && option.version && option.version < new Version(3, 24)) {
+        if (option && option.version && option.version.valueOf() < (new Version(3, 24)).valueOf()) {
             return this.getUpsertQueryOlder(upsertExp, option);
         }
 

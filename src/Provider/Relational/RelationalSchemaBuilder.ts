@@ -549,9 +549,6 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         else if (column instanceof DecimalColumnMetaData) {
             columnType = this.columnTypeMap.get("defaultBoolean");
         }
-        else if (column instanceof DateTimeColumnMetaData) {
-            columnType = this.columnTypeMap.get("defaultBoolean");
-        }
         else if (column instanceof IdentifierColumnMetaData) {
             columnType = this.columnTypeMap.get("defaultInteger");
         }

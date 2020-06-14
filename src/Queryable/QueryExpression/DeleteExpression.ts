@@ -42,9 +42,7 @@ export class DeleteExpression<T = any> extends QueryExpression<void> {
     constructor(select: SelectExpression<T>, mode: DeleteMode);
     constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, public readonly mode: DeleteMode) {
         super();
-        if (selectOrEntity instanceof SelectExpression) {
-            selectOrEntity = selectOrEntity;
-        } else {
+        if (!(selectOrEntity instanceof SelectExpression)) {
             selectOrEntity = new SelectExpression(selectOrEntity);
         }
         this.select = selectOrEntity;

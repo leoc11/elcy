@@ -118,14 +118,14 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
     private _originalValues: Map<keyof T, any> = new Map();
     private _state: EntityState;
     public acceptChanges(...properties: Array<KeysType<T, ValueType>>) {
-        if (properties && this.state !== EntityState.Modified) {
+        if (properties.any() && this.state !== EntityState.Modified) {
             return;
         }
 
         switch (this.state) {
             case EntityState.Modified: {
                 let acceptedProperties: Array<keyof T> = [];
-                if (properties) {
+                if (properties.any()) {
                     for (const prop of properties) {
                         const isDeleted = this._originalValues.delete(prop);
                         if (isDeleted) {
@@ -355,7 +355,7 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
         }
     }
     public resetChanges(...properties: Array<KeysType<T, ValueType>>) {
-        if (properties.length <= 0) {
+        if (!properties.any()) {
             properties = Array.from(this._originalValues.keys()) as Array<KeysType<T, ValueType>>;
         }
 

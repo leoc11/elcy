@@ -188,7 +188,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             const autoIncrementCol = sqlLines.select((o) => {
                 o = o.trim();
                 const index = o.indexOf(" ");
-                const columnName = o.substr(0, index).replace("\"", "");
+                const columnName = o.substr(0, index).replace(/"/g, "");
                 return {
                     columnName,
                     sql: o.substr(index + 1)

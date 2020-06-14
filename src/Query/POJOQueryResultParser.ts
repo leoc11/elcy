@@ -325,7 +325,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
             const groupEntity = groupData.entity as IGroupArray<any, any>;
             groupEntity.push(entity);
-            relationData = groupData;
+            // relationData = groupData;
             entity = groupEntity;
         }
 

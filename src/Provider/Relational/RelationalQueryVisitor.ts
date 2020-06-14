@@ -1079,7 +1079,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             const sortCol = sorter.entity.primaryColumns[i];
                             const filterCol = filterer.entity.primaryColumns[i];
                             const orderCompExp = new GreaterEqualExpression(sortCol, filterCol);
-                            orderExp = orderExp ? new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp)) : orderExp = orderCompExp;
+                            orderExp = orderExp ? new OrExpression(orderCompExp, new AndExpression(new StrictEqualExpression(sortCol, filterCol), orderExp)) : orderCompExp;
                         }
 
                         for (let i = 0, len = objectOperand.orders.length; i < len; i++) {
@@ -1848,9 +1848,6 @@ const joinToInclude = <TChild, TParent>(childExp: SelectExpression<TChild>, pare
         const nextRel = parentRel.parent.parentRelation as JoinRelation<any, any>;
         parentRel.parent.joins.delete(parentRel);
         parentRel.child.addJoin(parentRel.parent, parentRel.relation, "INNER");
-        if (!parentRel) {
-            break;
-        }
         parentRel = nextRel;
     }
 
