@@ -2,7 +2,6 @@ import { ParameterStack } from "../../Common/ParameterStack";
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { GenericType, IObjectType } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
-import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
@@ -941,7 +940,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     const isAny = exp.methodName === "any";
                     if (!isAny && exp.params.length <= 0) {
-                        throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "All required 1 parameter");
+                        throw new Error("All required 1 parameter");
                     }
 
                     if (exp.params.length > 0) {

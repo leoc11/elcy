@@ -3,7 +3,6 @@ import { DeleteMode } from "../Common/StringType";
 import { GenericType, IObjectType, ObjectLike, PredicateSelector, ResultSelector, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
-import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -123,7 +122,7 @@ export abstract class Queryable<T = any> {
         const isValueType = isValue(id);
         const dbSet = this.dbContext.set(this.type as IObjectType<T>);
         if (!dbSet) {
-            throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "Find only support entity queryable");
+            throw new Error("Find only support entity queryable");
         }
 
         const param = new ParameterExpression("o", this.type);
