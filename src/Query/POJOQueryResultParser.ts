@@ -55,7 +55,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     private _cache = new Map<SelectExpression, IResolveData>();
     private _orderedSelects: SelectExpression[];
     public parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
-        return this.parseData(queryResults, dbContext);
+        return this.parseData(queryResults.reverse(), dbContext);
     }
     private getColumnValue<TType>(column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
         const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };

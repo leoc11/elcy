@@ -312,7 +312,7 @@ export class MockConnection implements IConnection {
                 }
 
                 return [];
-            }).toArray();
+            }).toArray().reverse();
     }
     public generateValue(column: IColumnExpression) {
         if (column.columnMeta) {
