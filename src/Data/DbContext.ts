@@ -446,10 +446,6 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             if (Diagnostic.enabled) {
                 Diagnostic.error(this.connection, e instanceof Error ? e.message : "Error", e);
             }
-            await this.connection.rollbackTransaction();
-            if (Diagnostic.enabled) {
-                Diagnostic.debug(this.connection, isSavePoint ? "rollback transaction save point" : "rollback transaction");
-            }
             throw e;
         }
         finally {
@@ -457,6 +453,12 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                 await this.connection.commitTransaction();
                 if (Diagnostic.enabled) {
                     Diagnostic.debug(this.connection, isSavePoint ? "commit transaction save point" : "Commit transaction");
+                }
+            }
+            else {
+                await this.connection.rollbackTransaction();
+                if (Diagnostic.enabled) {
+                    Diagnostic.debug(this.connection, isSavePoint ? "rollback transaction save point" : "rollback transaction");
                 }
             }
             if (!isSavePoint) {
