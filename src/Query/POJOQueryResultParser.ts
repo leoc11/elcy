@@ -108,9 +108,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         const resolveMap: IResolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
         const loops = this.orderedSelects.toArray();
 
-        queryResults.reverse();
-        loops.reverse();
-        for (let i = 0, len = loops.length; i < len; i++) {
+        for (let i = loops.length - 1; i >= 0; i--) {
             const queryResult = queryResults[i];
             if (!queryResult.rows) {
                 continue;
@@ -135,11 +133,11 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
             if (resolveCache.dbSet) {
                 dbEventEmitter = new DBEventEmitter<TType>(resolveCache.dbSet.metaData as IDBEventListener<TType>, dbContext);
             }
-            const isResult = i === len - 1;
+
             for (const row of queryResult.rows) {
                 const entity = this.parseEntity(select, row, resolveCache, resolveMap, dbContext, itemMap, dbEventEmitter);
 
-                if (isResult) {
+                if (i === 0) {
                     if (isGroup) {
                         results.add(entity);
                     }

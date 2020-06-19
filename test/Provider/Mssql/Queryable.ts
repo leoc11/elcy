@@ -171,6 +171,45 @@ describe("QUERYABLE", async () => {
                 }
             }
         });
+        it("should support nested include", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const results = await db.orders.include((o) => o.OrderDetails.include((od) => od.Product, (od) => od.OrderDetailProperties)).toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity3].[OrderDetailPropertyId],\n\t[entity3].[OrderDetailId],\n\t[entity3].[Name],\n\t[entity3].[Amount]\nFROM [OrderDetailProperties] AS [entity3]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[OrderDetailId]=[entity3].[OrderDetailId])",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+                o.should.have.property("OrderDetails").that.is.an("array");
+                for (const od of o.OrderDetails) {
+                    od.should.be.an.instanceof(OrderDetail);
+                    od.should.have.property("Product").that.is.an.instanceOf(Product);
+                    od.should.have.property("OrderDetailProperties").that.is.an("array");
+
+                    for (const odp of od.OrderDetailProperties) {
+                        odp.should.be.an.instanceOf(OrderDetailProperty);
+                    }
+                }
+            }
+        });
     });
     describe("PROJECT", async () => {
         it("should project specific property", async () => {
@@ -190,6 +229,35 @@ describe("QUERYABLE", async () => {
             for (const o of results) {
                 o.should.has.property("TotalAmount").that.not.undefined;
                 o.should.has.property("OrderDate").that.is.undefined;
+            }
+        });
+        it("should project specific property for include", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const projection = db.orders.include((o) => o.OrderDetails.project((od) => od.quantity, (od) => od.name));
+            const results = await projection.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[Quantity],\n\t[entity1].[ProductName]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.has.property("OrderDetails").that.is.an("array").and.not.empty;
+                for (const od of o.OrderDetails) {
+                    od.should.has.property("quantity").that.is.not.undefined;
+                    od.should.has.property("name").that.is.not.undefined;
+                    od.should.has.property("GrossSales").that.is.undefined;
+                    od.should.has.property("CreatedDate").that.is.undefined;
+                    od.should.has.property("ProductId").that.is.undefined;
+                }
             }
         });
     });
