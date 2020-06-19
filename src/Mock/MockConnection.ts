@@ -213,7 +213,7 @@ export class MockConnection implements IConnection {
                             }
                         }
                         else if (query.type & QueryType.DQL) {
-                            const rows = generatedResults[generatedResults.length - (++index)];
+                            const rows = generatedResults[index++];
                             result.rows = rows;
                         }
                         return result;
@@ -312,7 +312,7 @@ export class MockConnection implements IConnection {
                 }
 
                 return [];
-            }).toArray().reverse();
+            }).toArray();
     }
     public generateValue(column: IColumnExpression) {
         if (column.columnMeta) {
@@ -421,7 +421,7 @@ export class MockConnection implements IConnection {
         const results = [selectExp];
         for (let i = 0; i < results.length; i++) {
             const select = results[i];
-            const addition = select.resolvedIncludes.select((o) => o.child).toArray().reverse();
+            const addition = select.resolvedIncludes.select((o) => o.child).toArray();
             results.splice(i + 1, 0, ...addition);
         }
         return results;

@@ -41,11 +41,10 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     public get orderedSelects() {
         if (!this._orderedSelects) {
             this._orderedSelects = [this.queryExpression];
-            for (let i = this._orderedSelects.length - 1; i >= 0; i--) {
+            for (let i = 0; i < this._orderedSelects.length; i++) {
                 const select = this._orderedSelects[i];
                 const addition = select.resolvedIncludes.select((o) => o.child).toArray();
-                this._orderedSelects.splice(i, 0, ...addition);
-                i += addition.length;
+                this._orderedSelects.splice(i + 1, 0, ...addition);
             }
         }
         return this._orderedSelects;
@@ -55,7 +54,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     private _cache = new Map<SelectExpression, IResolveData>();
     private _orderedSelects: SelectExpression[];
     public parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
-        return this.parseData(queryResults.reverse(), dbContext);
+        return this.parseData(queryResults, dbContext);
     }
     private getColumnValue<TType>(column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
         const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
@@ -107,8 +106,10 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     private parseData<TType>(queryResults: IQueryResult[], dbContext: DbContext): TType[] {
         const results: TType[] = [];
         const resolveMap: IResolveMap = new Map<SelectExpression, Map<number, IResolvedRelationData | IResolvedRelationData[]>>();
-        const loops = this.orderedSelects;
+        const loops = this.orderedSelects.toArray();
 
+        queryResults.reverse();
+        loops.reverse();
         for (let i = 0, len = loops.length; i < len; i++) {
             const queryResult = queryResults[i];
             if (!queryResult.rows) {
