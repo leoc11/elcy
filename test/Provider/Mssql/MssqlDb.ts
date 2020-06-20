@@ -14,7 +14,7 @@ const entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
 ];
 
 export class MssqlDb extends MssqlDbContext {
-    constructor(factory: () => IConnectionManager | IDriver = () => new PooledConnectionManager(new MockDriver())) {
+    constructor(factory: () => IConnectionManager | IDriver = () => new PooledConnectionManager(new MockDriver(), { idleTimeout: 1000 })) {
         super(factory, entityTypes);
         this.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
     }

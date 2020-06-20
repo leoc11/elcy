@@ -114,7 +114,6 @@ describe("DATA MANIPULATION", () => {
         });
         it("should insert entity with it relation correctly", async () => {
             const spy = sinon.spy(db.connection, "query");
-
             const data = db.autoParents.new({
                 name: "Insert 1",
                 createdDate: null,
@@ -243,10 +242,6 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.autoParents.where((o) => o.id === 1).update({
                 name: "Updated",
                 isDefault: (o) => !o.isDefault
-            });
-
-            await db.autoParents.where((o) => o.id === 1).update({
-                name: (o) => "update"
             });
 
             chai.should();
@@ -388,6 +383,7 @@ describe("DATA MANIPULATION", () => {
             }];
             const promise = db.saveChanges();
             await promise.should.eventually.be.rejectedWith("DbUpdateConcurrencyException");
+            mockConnection.results = null;
         });
         it("should update ModifiedDate", async () => {
             const spy = sinon.spy(db.connection, "query");
@@ -398,9 +394,9 @@ describe("DATA MANIPULATION", () => {
             entry.state = EntityState.Unchanged;
             parent.name = "Updated";
 
-            chai.should();
             await db.saveChanges();
 
+            chai.should();
             spy.should.have.been.calledOnce.and.calledWithMatch({
                 type: 2,
                 query: "UPDATE [entity0]\nSET [entity0].[modifiedDate] = getutcdate(), [entity0].[name] = @param1\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=@param0 OR ([entity0].[id] IS NULL AND @param0 IS NULL)))",

@@ -4,6 +4,7 @@ import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 import { IConnectionManager } from "../../src/Connection/IConnectionManager";
 import { IDriver } from "../../src/Connection/IDriver";
+import { PooledConnectionManager } from "../../src/Connection/PooledConnectionManager";
 import { MockDriver } from "../../src/Mock/MockDriver";
 import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
 import "../../src/Startup";
@@ -14,7 +15,7 @@ const entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
 ];
 
 export class MyDb extends MssqlDbContext {
-    constructor(factory: () => IConnectionManager | IDriver = () => new MockDriver()) {
+    constructor(factory: () => IConnectionManager | IDriver = () => new PooledConnectionManager(new MockDriver(), { idleTimeout: 1000 })) {
         super(factory, entityTypes);
         this.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
     }

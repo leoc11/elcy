@@ -2973,6 +2973,7 @@ describe("QUERYABLE", async () => {
                         parameters: {}
                     } as IQuery);
                 }
+                spy.restore();
             }
         });
         it("should support null value parameter", async () => {
