@@ -1,10 +1,12 @@
 import { expect, should } from "chai";
 import "mocha";
+import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { mockContext } from "../../../src/Mock/MockContext";
+import { MockDriver } from "../../../src/Mock/MockDriver";
 import { Collection, Order } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 
-const db = new MyDb();
+const db = new MyDb(() => new PooledConnectionManager(new MockDriver()));
 mockContext(db);
 
 describe("DEFERRED QUERY", () => {
