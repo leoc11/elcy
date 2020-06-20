@@ -1,7 +1,7 @@
-import { TimeSpan } from "../Data/TimeSpan";
-import { Uuid } from "../Data/Uuid";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { TimeSpan } from "./TimeSpan";
+import { Uuid } from "./Uuid";
 
 export interface IObjectType<T = any> { new(...values: any[]): T; name?: string; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }

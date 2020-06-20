@@ -1,10 +1,10 @@
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType } from "../../Common/Type";
+import { Uuid } from "../../Common/Uuid";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryTemplate } from "../../Query/IQueryTemplate";

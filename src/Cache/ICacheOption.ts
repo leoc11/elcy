@@ -1,4 +1,4 @@
-import { TimeSpan } from "../Data/TimeSpan";
+import { TimeSpan } from "../Common/TimeSpan";
 
 export interface ICacheOption {
     expiredTime?: Date;

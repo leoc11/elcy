@@ -1,4 +1,4 @@
-import { TimeSpan } from "../Data/TimeSpan";
+import { TimeSpan } from "../Common/TimeSpan";
 import { fillZero } from "../Helper/Util";
 
 declare global {

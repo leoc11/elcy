@@ -1,4 +1,4 @@
-import { Uuid } from "../../Data/Uuid";
+import { Uuid } from "../../Common/Uuid";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 

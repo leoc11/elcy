@@ -3,7 +3,7 @@ import { expect } from "chai";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
 import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
-import { TimeSpan } from "../../../src/Data/TimeSpan";
+import { TimeSpan } from "../../../src/Common/TimeSpan";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { IQueryResult } from "../../../src/Query/IQueryResult";
 import { MyDb } from "../../Common/MyDb";

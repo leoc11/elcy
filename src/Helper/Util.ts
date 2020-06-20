@@ -1,6 +1,6 @@
+import { TimeSpan } from "../Common/TimeSpan";
 import { ArrayView, GenericType, ValueType } from "../Common/Type";
-import { TimeSpan } from "../Data/TimeSpan";
-import { Uuid } from "../Data/Uuid";
+import { Uuid } from "../Common/Uuid";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";

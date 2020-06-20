@@ -1,5 +1,5 @@
 import { IdentifierColumnType } from "../Common/ColumnType";
-import { Uuid } from "../Data/Uuid";
+import { Uuid } from "../Common/Uuid";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 

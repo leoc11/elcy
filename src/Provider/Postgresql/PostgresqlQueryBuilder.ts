@@ -1,8 +1,8 @@
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType } from "../../Common/Type";
+import { Uuid } from "../../Common/Uuid";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {

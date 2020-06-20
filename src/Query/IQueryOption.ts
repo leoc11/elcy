@@ -1,7 +1,7 @@
 import { ConcurrencyModel } from "../Common/StringType";
+import { TimeSpan } from "../Common/TimeSpan";
 import { Version } from "../Common/Version";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
-import { TimeSpan } from "../Data/TimeSpan";
 
 export interface ISelectCacheOption {
     expiredTime?: Date;

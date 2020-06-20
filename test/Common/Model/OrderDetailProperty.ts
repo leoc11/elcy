@@ -1,4 +1,4 @@
-import { Uuid } from "../../../src/Data/Uuid";
+import { Uuid } from "../../../src/Common/Uuid";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";

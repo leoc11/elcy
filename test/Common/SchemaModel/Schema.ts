@@ -1,5 +1,5 @@
-import { TimeSpan } from "../../../src/Data/TimeSpan";
-import { Uuid } from "../../../src/Data/Uuid";
+import { TimeSpan } from "../../../src/Common/TimeSpan";
+import { Uuid } from "../../../src/Common/Uuid";
 import { CheckContraint } from "../../../src/Decorator/CheckConstraint";
 import { BooleanColumn } from "../../../src/Decorator/Column/BooleanColumn";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";

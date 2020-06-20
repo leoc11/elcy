@@ -1,4 +1,4 @@
-import { Uuid } from "../../Data/Uuid";
+import { Uuid } from "../../Common/Uuid";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
 import { DbFunction } from "../../Query/DbFunction";

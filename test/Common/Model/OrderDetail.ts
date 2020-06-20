@@ -1,5 +1,5 @@
 import { ValueType } from "../../../src/Common/Type";
-import { Uuid } from "../../../src/Data/Uuid";
+import { Uuid } from "../../../src/Common/Uuid";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
 import { CreatedDateColumn } from "../../../src/Decorator/Column/CreatedDateColumn";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";

@@ -1,8 +1,8 @@
 import { ColumnGeneration, QueryType } from "../Common/Enum";
 import { IsolationLevel } from "../Common/StringType";
+import { TimeSpan } from "../Common/TimeSpan";
+import { Uuid } from "../Common/Uuid";
 import { IConnection } from "../Connection/IConnection";
-import { TimeSpan } from "../Data/TimeSpan";
-import { Uuid } from "../Data/Uuid";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";

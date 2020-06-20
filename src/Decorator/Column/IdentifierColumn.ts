@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Uuid } from "../../Data/Uuid";
+import { Uuid } from "../../Common/Uuid";
 import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
 import { IIdentityColumnOption } from "../Option/IIdentityColumnOption";
 import { Column } from "./Column";

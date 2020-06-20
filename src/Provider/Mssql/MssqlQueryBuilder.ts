@@ -1,9 +1,9 @@
 import { ColumnGeneration, QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
+import { TimeSpan } from "../../Common/TimeSpan";
 import { GenericType, IObjectType } from "../../Common/Type";
+import { Uuid } from "../../Common/Uuid";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";

@@ -1,5 +1,5 @@
 import { Collection, OrderDetail } from ".";
-import { Uuid } from "../../../src/Data/Uuid";
+import { Uuid } from "../../../src/Common/Uuid";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
 import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
