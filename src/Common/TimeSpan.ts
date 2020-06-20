@@ -16,19 +16,19 @@ export class TimeSpan {
             return TimeSpan.parse(hours);
         }
         else if (arguments.length === 1) {
-            this.epochMilliSeconds = hours;
+            this.setMilliSeconds(hours);
             return;
         }
 
-        this.epochMilliSeconds = hours * 3600000;
+        this.setHours(hours);
         if (minutes) {
-            this.epochMilliSeconds += minutes * 60000;
+            this.setMinutes(minutes);
         }
         if (seconds) {
-            this.epochMilliSeconds += seconds * 1000;
+            this.setSeconds(seconds);
         }
         if (milliSeconds) {
-            this.epochMilliSeconds += milliSeconds;
+            this.setMilliSeconds(milliSeconds);
         }
     }
     public static parse(timeSpan: string) {
@@ -40,7 +40,7 @@ export class TimeSpan {
         const milliSeconds = secondmilis.length > 1 ? parseInt(secondmilis[1], 10) : 0;
         return new TimeSpan(hours, minutes, seconds, milliSeconds);
     }
-    private epochMilliSeconds: number;
+    private epochMilliSeconds: number = 0;
     public [Symbol.toPrimitive](hint?: "number" | "string" | "default") {
         if (hint === "number") {
             return this.epochMilliSeconds;
@@ -72,16 +72,16 @@ export class TimeSpan {
         return Math.floor(this.totalSeconds()) % 60;
     }
     public setHours(hours: number) {
-        return this.epochMilliSeconds += (hours * 3600000);
-    }
-    public setMilliSeconds(milliSeconds: number) {
-        return this.epochMilliSeconds += milliSeconds;
+        return this.epochMilliSeconds += (hours - this.getHours()) * 3600000;
     }
     public setMinutes(minutes: number) {
-        return this.epochMilliSeconds += (minutes * 60000);
+        return this.epochMilliSeconds += (minutes - this.getMinutes()) * 60000;
     }
     public setSeconds(seconds: number) {
-        return this.epochMilliSeconds += (seconds * 1000);
+        return this.epochMilliSeconds += (seconds - this.getSeconds()) * 1000;
+    }
+    public setMilliSeconds(milliSeconds: number) {
+        return this.epochMilliSeconds += milliSeconds - this.getMilliseconds();
     }
     public toJSON() {
         return this.toString();
