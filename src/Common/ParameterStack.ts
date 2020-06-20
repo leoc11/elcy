@@ -14,13 +14,6 @@ export class ParameterStack {
             this._data.set(entry[0], vals.concat(entry[1]));
         }
     }
-    public reduce() {
-        const res: { [key: string]: any } = {};
-        for (const entry of this) {
-            res[entry[0]] = entry[1][entry[1].length - 1];
-        }
-        return res;
-    }
     public get<T = any>(key: string, index?: number) {
         const vals = this._data.get(key);
         if (!vals) {

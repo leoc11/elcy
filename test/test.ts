@@ -3,6 +3,7 @@ import "../src/Startup";
 describe("Core", () => {
     require("./Core/Cache/QueryCache");
     require("./Core/Cache/ResultCache");
+    require("./Core/Common/ObserveableArray");
     require("./Core/ConnectionManager/PooledConnectionManager");
     require("./Core/ConnectionManager/ReplicationConnectionManager");
     require("./Core/DbContext/DbContext");

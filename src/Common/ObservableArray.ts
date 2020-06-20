@@ -1,8 +1,9 @@
 export type ArrayChangeType = "add" | "del";
 export class ObservableArray<T> extends Array<T> {
-    public set length(value: number) {
-        this.splice(value);
-    }
+    // TODO: NOT WORKING
+    // public set length(value: number) {
+    //     this.splice(value);
+    // }
     public constructor(...items: T[]) {
         super(...items);
     }
@@ -14,8 +15,9 @@ export class ObservableArray<T> extends Array<T> {
     }
     private _observers: Array<(eventType: ArrayChangeType, items: T[]) => void> = [];
     public pop() {
+        const hasAny = this.length > 0;
         const result = super.pop();
-        if (result) {
+        if (hasAny) {
             this.raiseEvents("del", [result]);
         }
         return result;
@@ -31,8 +33,9 @@ export class ObservableArray<T> extends Array<T> {
         this._observers.push(observer);
     }
     public shift() {
+        const hasAny = this.length > 0;
         const result = super.shift();
-        if (result) {
+        if (hasAny) {
             this.raiseEvents("del", [result]);
         }
         return result;
@@ -51,7 +54,7 @@ export class ObservableArray<T> extends Array<T> {
         this._observers = [];
     }
     public unshift(...items: T[]) {
-        const result = super.unshift();
+        const result = super.unshift(...items);
         if (items.length > 0) {
             this.raiseEvents("add", items);
         }

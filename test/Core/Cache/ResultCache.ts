@@ -174,5 +174,20 @@ describe("RESULT CACHE", () => {
             cqr = await cacheManager.get("test");
             expect(cqr).to.be.null;
         });
+        it("tag invalidation", async () => {
+            const qr: IQueryResult[] = [];
+            await cacheManager.clear();
+            await cacheManager.set("test", qr, {
+                tags: ["tag1"]
+            });
+            let cqr = await cacheManager.get("test");
+            expect(cqr).to.equal(qr);
+            await cacheManager.removeTag(["tag2"]);
+            cqr = await cacheManager.get("test");
+            expect(cqr).to.equal(qr);
+            await cacheManager.removeTag(["tag1"]);
+            cqr = await cacheManager.get("test");
+            expect(cqr).to.be.null;
+        });
     });
 });
