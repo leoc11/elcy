@@ -1,7 +1,9 @@
 import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
 import { IQueryCacheManager } from "../../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../../src/Cache/IResultCacheManager";
+import { IConnectionManager } from "../../../src/Connection/IConnectionManager";
 import { IDriver } from "../../../src/Connection/IDriver";
+import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { MockDriver } from "../../../src/Mock/MockDriver";
 import { MssqlDbContext } from "../../../src/Provider/Mssql/MssqlDbContext";
 import { AutoDetail, AutoParent, Collection, CollectionProductData, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
@@ -12,7 +14,7 @@ const entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
 ];
 
 export class MssqlDb extends MssqlDbContext {
-    constructor(factory: () => IDriver<any> = () => new MockDriver()) {
+    constructor(factory: () => IConnectionManager | IDriver = () => new PooledConnectionManager(new MockDriver())) {
         super(factory, entityTypes);
         this.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
     }
