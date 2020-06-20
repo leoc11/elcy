@@ -187,7 +187,7 @@ describe("DBCONTEXT", () => {
             spy.should.be.calledOnce.and.calledAfter(spy3);
             spy2.should.not.be.calledOnce;
         });
-        it("should set isolation level", async () => {
+        it("should start transactin with specifix isolation level", async () => {
             const isolationLevels: IsolationLevel[] = ["READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ", "SERIALIZABLE", "SNAPSHOT"];
             const il = isolationLevels[Math.floor(Math.random() * 6)];
             const spy = sinon.spy(db, "closeConnection");
@@ -205,6 +205,30 @@ describe("DBCONTEXT", () => {
 
             chai.should();
             spy1.should.be.calledOnceWith(il);
+            spy2.should.be.calledOnceWith();
+            spy2.should.be.calledAfter(spy1);
+            spy.should.be.calledOnce.and.calledAfter(spy2);
+            spy3.should.not.be.called;
+        });
+        it("should set isolation level", async () => {
+            const isolationLevels: IsolationLevel[] = ["READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ", "SERIALIZABLE", "SNAPSHOT"];
+            const il = isolationLevels[Math.floor(Math.random() * 6)];
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            const con = db.connection;
+            const oil = con.isolationLevel;
+            await db.transaction(async () => {
+                await db.connection.setIsolationLevel(il);
+                // do someting here
+                expect(con.isolationLevel).to.equal(il);
+            });
+
+            expect(con.isolationLevel).to.equal(oil);
+
+            chai.should();
+            spy1.should.be.calledOnceWith();
             spy2.should.be.calledOnceWith();
             spy2.should.be.calledAfter(spy1);
             spy.should.be.calledOnce.and.calledAfter(spy2);
