@@ -2,6 +2,7 @@ import { DefaultQueryCacheManager } from "../../src/Cache/DefaultQueryCacheManag
 // tslint:disable-next-line: ordered-imports
 import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
+import { IConnectionManager } from "../../src/Connection/IConnectionManager";
 import { IDriver } from "../../src/Connection/IDriver";
 import { MockDriver } from "../../src/Mock/MockDriver";
 import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
@@ -13,7 +14,7 @@ const entityTypes = [Order, OrderDetail, Product, OrderDetailProperty,
 ];
 
 export class MyDb extends MssqlDbContext {
-    constructor(factory: () => IDriver<any> = () => new MockDriver()) {
+    constructor(factory: () => IConnectionManager | IDriver = () => new MockDriver()) {
         super(factory, entityTypes);
         this.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
     }
