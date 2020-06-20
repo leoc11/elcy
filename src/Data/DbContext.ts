@@ -421,7 +421,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
     public async transaction(isolationLevel: IsolationLevel, transactionBody: () => Promise<void>): Promise<void>;
     public async transaction(isolationOrBody: IsolationLevel | (() => Promise<void>), transactionBody?: () => Promise<void>): Promise<void> {
         let isSavePoint: boolean;
-        let isError: boolean;
+        let error: Error;
         try {
             let isolationLevel: IsolationLevel;
             if (typeof isolationOrBody === "function") {
@@ -444,14 +444,13 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             await transactionBody();
         }
         catch (e) {
-            isError = true;
+            error = e;
             if (Diagnostic.enabled) {
                 Diagnostic.error(this.connection, e instanceof Error ? e.message : "Error", e);
             }
-            throw e;
         }
         finally {
-            if (!isError) {
+            if (!error) {
                 await this.connection.commitTransaction();
                 if (Diagnostic.enabled) {
                     Diagnostic.debug(this.connection, isSavePoint ? "commit transaction save point" : "Commit transaction");
@@ -466,6 +465,10 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
             if (!isSavePoint) {
                 await this.closeConnection();
             }
+        }
+
+        if (error) {
+            throw error;
         }
     }
     public abstract getDeleteQuery<T>(entry: EntityEntry<T>, deleteMode?: DeleteMode): DMLDeferredQuery<T>;

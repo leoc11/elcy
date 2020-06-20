@@ -7,7 +7,7 @@ export interface IConnection {
     database: string;
     errorEvent: IEventHandler<IConnection, Error>;
     inTransaction: boolean;
-    isolationLevel: IsolationLevel;
+    readonly isolationLevel: IsolationLevel;
     isOpen: boolean;
     close(): Promise<void>;
     commitTransaction(): Promise<void>;

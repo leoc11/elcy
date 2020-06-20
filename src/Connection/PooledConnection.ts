@@ -17,9 +17,6 @@ export class PooledConnection extends PoolResource implements IConnection {
     public get isolationLevel() {
         return this.connection.isolationLevel;
     }
-    public set isolationLevel(value) {
-        this.connection.isolationLevel = value;
-    }
     public get isOpen() {
         return this.connection.isOpen;
     }
@@ -50,7 +47,7 @@ export class PooledConnection extends PoolResource implements IConnection {
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         return this.connection.setIsolationLevel(isolationLevel);
     }
-    public startTransaction(): Promise<void> {
-        return this.connection.startTransaction();
+    public startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        return this.connection.startTransaction(isolationLevel);
     }
 }

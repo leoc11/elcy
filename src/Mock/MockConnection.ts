@@ -35,7 +35,7 @@ import { IMockedDeferredQuery } from "./MockContext";
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
     public get inTransaction(): boolean {
-        return this._transactionCount > 0;
+        return this._transactions.any();
     }
     public get results() {
         if (!this._results) {
@@ -50,26 +50,29 @@ export class MockConnection implements IConnection {
     public set results(value) {
         this._results = value;
     }
+
+    //#region Abstract Member
+    public get isolationLevel() {
+        return this._isolationLevel;
+    }
     constructor(database?: string) {
         this.database = database || "database";
         [this.errorEvent, this.onError] = EventHandlerFactory(this);
     }
     public database: string;
     public errorEvent: IEventHandler<MockConnection, Error>;
-
-    //#region Abstract Member
-    public isolationLevel: IsolationLevel;
     public isOpen: boolean;
     protected onError: IEventDispacher<Error>;
+    private _isolationLevel: IsolationLevel = "READ COMMITTED";
     private _deferredQueries: IEnumerable<DeferredQuery & IMockedDeferredQuery>;
     private _generatedResults: IQueryResult[];
     private _results: IQueryResult[];
-    private _transactionCount: number = 0;
+    private _transactions: IsolationLevel[] = [];
     public close(): Promise<void> {
         return Promise.resolve();
     }
     public commitTransaction(): Promise<void> {
-        this._transactionCount--;
+        this._isolationLevel = this._transactions.pop();
         return Promise.resolve();
     }
     public generateQueryResult() {
@@ -391,18 +394,20 @@ export class MockConnection implements IConnection {
         return Promise.resolve();
     }
     public rollbackTransaction(): Promise<void> {
-        this._transactionCount--;
+        this._isolationLevel = this._transactions.pop();
         return Promise.resolve();
     }
     public setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
+        this._isolationLevel = isolationLevel;
         return Promise.resolve();
     }
     public setQueries(deferredQueries: Array<DeferredQuery & IMockedDeferredQuery>) {
         this._deferredQueries = deferredQueries;
         this._generatedResults = null;
     }
-    public startTransaction(): Promise<void> {
-        this._transactionCount++;
+    public startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        this._transactions.push(this._isolationLevel);
+        this.setIsolationLevel(isolationLevel);
         return Promise.resolve();
     }
     protected extractValue(query: IQuery, exp: IExpression) {

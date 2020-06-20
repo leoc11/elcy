@@ -1,5 +1,8 @@
 import * as chai from "chai";
+import { expect } from "chai";
+import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
+import { IsolationLevel } from "../../../src/Common/StringType";
 import { EntityState } from "../../../src/Data/EntityState";
 import { RelationState } from "../../../src/Data/RelationState";
 import { Uuid } from "../../../src/Data/Uuid";
@@ -11,8 +14,13 @@ chai.use(sinonChai);
 
 const db = new MyDb();
 mockContext(db);
+beforeEach(async () => {
+    db.connection = await db.getConnection();
+});
 afterEach(() => {
     db.clear();
+    sinon.restore();
+    db.closeConnection();
 });
 describe("DBCONTEXT", () => {
     describe("ENTITY ENTRY", async () => {
@@ -138,6 +146,128 @@ describe("DBCONTEXT", () => {
                 chai.expect(o).to.be.an.instanceof(OrderDetail);
                 chai.expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
             }
+        });
+    });
+    describe("TRANSACTION", async () => {
+        it("should worked", async () => {
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            await db.transaction(async () => {
+                // do someting here
+            });
+
+            chai.should();
+            spy1.should.be.calledOnceWith(undefined);
+            spy2.should.be.calledOnceWith();
+            spy2.should.be.calledAfter(spy1);
+            spy.should.be.calledOnce.and.calledAfter(spy2);
+            spy3.should.not.be.called;
+        });
+        it("should rollback", async () => {
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+
+            try {
+                await db.transaction(async () => {
+                    // do someting here
+                    throw new Error("test rollback transaction");
+                });
+            }
+            catch {
+
+            }
+
+            chai.should();
+            spy1.should.be.calledOnceWith(undefined);
+            spy3.should.be.calledAfter(spy1).and.calledOnceWith();
+            spy.should.be.calledOnce.and.calledAfter(spy3);
+            spy2.should.not.be.calledOnce;
+        });
+        it("should set isolation level", async () => {
+            const isolationLevels: IsolationLevel[] = ["READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ", "SERIALIZABLE", "SNAPSHOT"];
+            const il = isolationLevels[Math.floor(Math.random() * 6)];
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            const con = db.connection;
+            const oil = con.isolationLevel;
+            await db.transaction(il, async () => {
+                // do someting here
+                expect(con.isolationLevel).to.equal(il);
+            });
+
+            expect(con.isolationLevel).to.equal(oil);
+
+            chai.should();
+            spy1.should.be.calledOnceWith(il);
+            spy2.should.be.calledOnceWith();
+            spy2.should.be.calledAfter(spy1);
+            spy.should.be.calledOnce.and.calledAfter(spy2);
+            spy3.should.not.be.called;
+        });
+        it("should worked nested 1", async () => {
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            await db.transaction(async () => {
+                await db.transaction(async () => {
+                    // do someting here
+                });
+            });
+
+            chai.should();
+            spy1.should.be.calledTwice;
+            spy2.should.be.calledTwice;
+            spy.should.be.calledOnce;
+            spy3.should.not.be.called;
+        });
+        it("should worked nested 2", async () => {
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            try {
+                await db.transaction(async () => {
+                    await db.transaction(async () => {
+                        // do someting here
+                        throw new Error("test rollback transaction");
+                    });
+                });
+            }
+            catch { }
+
+            chai.should();
+            spy1.should.be.calledTwice;
+            spy3.should.be.calledTwice;
+            spy.should.be.calledOnce;
+            spy2.should.not.be.called;
+        });
+        it("should worked nested 3", async () => {
+            const spy = sinon.spy(db, "closeConnection");
+            const spy1 = sinon.spy(db.connection, "startTransaction");
+            const spy2 = sinon.spy(db.connection, "commitTransaction");
+            const spy3 = sinon.spy(db.connection, "rollbackTransaction");
+            await db.transaction(async () => {
+                try {
+                    await db.transaction(async () => {
+                        // do someting here
+                        throw new Error("test rollback transaction");
+                    });
+                }
+                catch { }
+            });
+
+            chai.should();
+            spy1.should.be.calledTwice;
+            spy2.should.be.calledOnce;
+            spy3.should.be.calledOnce.and.calledBefore(spy2);
+            spy.should.be.calledOnce;
         });
     });
 });
