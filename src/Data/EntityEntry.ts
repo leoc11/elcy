@@ -6,6 +6,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
+import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
@@ -18,7 +19,8 @@ import { RelationState } from "./RelationState";
 
 export class EntityEntry<T = any> implements IEntityEntry<T> {
     public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
+        return this.dbSet.metaData.columns.where((o) => !(o instanceof ComputedColumnMetaData))
+            .all((o) => this.entity[o.propertyName] !== undefined);
     }
     public get metaData(): IEntityMetaData<T> {
         return this.dbSet.metaData;
