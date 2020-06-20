@@ -60,8 +60,8 @@ describe("TYPE", () => {
             expect(time.totalDays()).equal(0.3126492476851852);
             expect(time.totalHours()).equal(7.503581944444444);
             expect(time.totalMinutes()).equal(450.2149166666666666);
-            expect(time.totalSeconds()).equal(‭27012.895);
-            expect(time.totalMilliSeconds()).equal(‭27012895‬);
+            expect(time.totalSeconds()).equal(27012.895);
+            expect(time.totalMilliSeconds()).equal(27012895);
         });
         it("should worked 2", () => {
             const time = new TimeSpan(0);
