@@ -216,7 +216,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 break;
             }
             case TimeSpan: {
-                result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
+                result = typeof input === "string" ? TimeSpan.parse(input) : new TimeSpan(input);
                 const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none") {
                     result = result.addMinutes(-(new Date(result.totalMilliSeconds())).getTimezoneOffset());

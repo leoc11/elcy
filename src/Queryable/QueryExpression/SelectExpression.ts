@@ -7,7 +7,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { resolveTreeClone } from "../../Helper/ExpressionUtil";
-import { hashCode, hashCodeAdd, isColumnExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, isColumnExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
@@ -96,26 +96,8 @@ export class SelectExpression<T = any> extends QueryExpression<T[]> {
         return joins;
     }
     public get resolvedSelects(): IEnumerable<IColumnExpression> {
-        let selects = this.selects.asEnumerable();
-        for (const include of this.includes) {
-            if (include.isEmbedded) {
-                const cloneMap = new Map();
-                mapReplaceExp(cloneMap, include.child.entity, this.entity);
-                // add column which include in emdedded relation
-                const childSelects = include.child.resolvedSelects.select((o) => {
-                    let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
-                    if (!curCol) {
-                        curCol = o.clone(cloneMap);
-                    }
-                    return curCol;
-                });
-                selects = selects.union(childSelects);
-            }
-            else {
-                selects = selects.union(include.parentColumns);
-            }
-        }
-        return selects;
+        return this.selects.union(this.includes
+            .selectMany((o) => o.isEmbedded ? o.child.resolvedSelects : o.parentColumns));
     }
     constructor(entity?: IEntityExpression<T>) {
         super();

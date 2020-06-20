@@ -5,7 +5,7 @@ export class GroupedEnumerable<K, T> extends Enumerable<T> {
     public get enableCache() {
         return true;
     }
-    public get keySelector() {
+    protected get keySelector() {
         return this.parent.keySelector;
     }
     constructor(protected readonly parent: GroupByEnumerable<K, T>, public readonly key: K, protected cache: IEnumerableCache) {

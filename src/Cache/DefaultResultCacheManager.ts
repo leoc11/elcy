@@ -1,3 +1,4 @@
+import { IEnumerable } from "../Enumerable/IEnumerable";
 import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheItem } from "./ICacheItem";
 import { ICacheOption } from "./ICacheOption";
@@ -15,10 +16,10 @@ export class DefaultResultCacheManager implements IResultCacheManager {
         this._tagMap.clear();
     }
     public async get(key: string): Promise<IQueryResult[]> {
-        const res = await this.gets(key);
+        const res = await this.gets([key]);
         return res.first();
     }
-    public async gets(...keys: string[]): Promise<IQueryResult[][]> {
+    public async gets(keys: IEnumerable<string>): Promise<IQueryResult[][]> {
         return keys.select((key) => {
             const titem = this._keyMap.get(key);
             if (!titem) {
@@ -36,7 +37,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                     item.expiredTime = expiredDate;
                     if (item.expiredTime) {
                         clearTimeout(titem[1]);
-                        titem[1] = setTimeout(() => this.remove(item.key), Date.now() - item.expiredTime.getTime());
+                        titem[1] = setTimeout(() => this.remove([item.key]), Date.now() - item.expiredTime.getTime());
                     }
                 }
             }
@@ -44,7 +45,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             return item.data;
         }).toArray();
     }
-    public async remove(...keys: string[]): Promise<void> {
+    public async remove(keys: IEnumerable<string>): Promise<void> {
         for (const key of keys) {
             const titem = this._keyMap.get(key);
             const item = titem[0];
@@ -62,7 +63,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             }
         }
     }
-    public async removeTag(...tags: string[]): Promise<void> {
+    public async removeTag(tags: IEnumerable<string>): Promise<void> {
         for (const tag of tags) {
             const keys = this._tagMap.get(tag);
             if (keys) {
@@ -86,7 +87,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
         }
         if (item.expiredTime) {
-            titem[1] = setTimeout(() => this.remove(item.key), Date.now() - item.expiredTime.getTime());
+            titem[1] = setTimeout(() => this.remove([item.key]), Date.now() - item.expiredTime.getTime());
         }
         if (item.tags) {
             for (const tag of item.tags) {

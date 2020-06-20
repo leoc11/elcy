@@ -3,6 +3,7 @@ import "mocha";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
 import { QueryType } from "../../../src/Common/Enum";
+import { TimeSpan } from "../../../src/Data/TimeSpan";
 import { Uuid } from "../../../src/Data/Uuid";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
@@ -546,6 +547,26 @@ describe("QUERYABLE", async () => {
                 o.should.have.property("test3").that.is.a("number");
             }
         });
+        it("should work 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const select = db.orderDetails.select({
+                test: (o) => o.Order.TotalAmount
+            }).where((o) => o.test > 10000);
+            const results = await select.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderDetailId],\n\t[entity1].[TotalAmount] AS [column0]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity1].[TotalAmount]>10000))",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.have.property("test").that.is.a("number");
+            }
+        });
     });
     describe("SELECT MANY", async () => {
         it("should work", async () => {
@@ -991,6 +1012,119 @@ describe("QUERYABLE", async () => {
             for (const o of results) {
                 o.should.be.an.instanceof(Order);
             }
+        });
+        it("should work 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const result = await db.orders.groupBy((o) => o.TotalAmount)
+                .where((o) => o.count() > 3).any();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT DISTINCT TOP 1 1 AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[TotalAmount]\nHAVING (COUNT([entity0].[OrderId])>3)",
+                parameters: {}
+            });
+
+            result.should.equal(true);
+        });
+    });
+    describe("CONTAINS", async () => {
+        it("should work", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const result = await db.orders.select((o) => o.TotalAmount).contains(10000);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT DISTINCT TOP 1 1 AS [column0]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]=@param0 OR ([entity0].[TotalAmount] IS NULL AND @param0 IS NULL))",
+                parameters: { param0: 10000 }
+            });
+
+            result.should.equal(true);
+        });
+        it("could be used in select", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const pid = Uuid.new();
+            const any = db.orders.parameter({ pid }).select((o) => ({
+                order: o,
+                hasDetail: o.OrderDetails.select((od) => od.ProductId).contains(pid)
+            }));
+            const results = await any.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE (([entity2].[isDeleted]=0) AND ([entity2].[ProductId]=@param0 OR ([entity2].[ProductId] IS NULL AND @param0 IS NULL)))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t1 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE (([entity2].[isDeleted]=0) AND ([entity2].[ProductId]=@param0 OR ([entity2].[ProductId] IS NULL AND @param0 IS NULL)))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: { param0: pid }
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.have.property("order").that.is.an.instanceof(Order);
+                o.should.have.property("hasDetail").that.is.a("boolean");
+            }
+        });
+        it("could be used in where", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const pid = Uuid.new();
+            const any = db.orders.parameter({ pid }).where((o) => o.OrderDetails.select((o) => o.ProductId).contains(pid));
+            const results = await any.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[ProductId]=@param0 OR ([entity1].[ProductId] IS NULL AND @param0 IS NULL)))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL)",
+                parameters: { param0: pid }
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+            }
+        });
+        it("should work 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const order = new Order({ OrderId: Uuid.new() });
+            const result = await db.orders.contains(order);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT DISTINCT TOP 1 1 AS [column0]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderId]=@param1 OR ([entity0].[OrderId] IS NULL AND @param1 IS NULL))",
+                parameters: { param1: order.OrderId }
+            });
+
+            result.should.equal(true);
+        });
+        it("should work 3", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const item = {
+                Amount: 10000,
+                Date: 19
+            };
+            const result = await db.orders.select((o) => ({
+                Amount: o.TotalAmount,
+                Date: o.OrderDate.getDate()
+            })).contains(item);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT DISTINCT TOP 1 1 AS [column2]\nFROM [Orders] AS [entity0]\nWHERE (([entity0].[TotalAmount]=@param1 OR ([entity0].[TotalAmount] IS NULL AND @param1 IS NULL)) AND (DAY([entity0].[OrderDate])=@param3 OR (DAY([entity0].[OrderDate]) IS NULL AND @param3 IS NULL)))",
+                parameters: { param1: item.Amount, param3: item.Date }
+            });
+
+            result.should.equal(true);
         });
     });
     describe("ALL", async () => {
@@ -1463,6 +1597,29 @@ describe("QUERYABLE", async () => {
             const any = results.any((o) => o.OrderDetails.count() > 3);
             any.should.be.a("boolean").and.equal(false);
         });
+        it("should work in group", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const take = db.orders.groupBy((o) => o.OrderDate.toTime())
+                .orderBy([(o) => o.key, "DESC"])
+                .take(10);
+            const results = await take.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate],\n\tCAST([entity0].[OrderDate] AS TIME) AS [column0]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT DISTINCT TOP 10 CAST([entity1].[OrderDate] AS TIME) AS [column0]\n\tFROM [Orders] AS [entity1]\n\tORDER BY CAST([entity1].[OrderDate] AS TIME) DESC\n) AS [entity1]\n\tON (CAST([entity0].[OrderDate] AS TIME)=[entity1].[column0])\nORDER BY CAST([entity0].[OrderDate] AS TIME) DESC",
+                parameters: {}
+            });
+
+            results.should.be.a("array").and.have.length.lte(10);
+            for (const o of results) {
+                o.should.have.property("key").that.is.an.instanceOf(TimeSpan);
+                for (const item of o) {
+                    item.should.be.an.instanceOf(Order);
+                }
+            }
+        });
     });
     describe("FIRST", async () => {
         it("should work", async () => {
@@ -1500,7 +1657,8 @@ describe("QUERYABLE", async () => {
 
             const first = db.orders.select((o) => ({
                 order: o,
-                lastAddedItem: o.OrderDetails.orderBy([(o) => o.CreatedDate, "DESC"]).first()
+                lastAddedItem: o.OrderDetails.orderBy([(o) => o.CreatedDate, "DESC"])
+                    .first()
             }));
             const results = await first.toArray();
 
@@ -1516,6 +1674,37 @@ describe("QUERYABLE", async () => {
             }, {
                 type: 1,
                 query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\tCOUNT([entity3].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON (([entity4].[OrderId]=[entity3].[OrderId]) AND (([entity4].[CreatedDate]<[entity3].[CreatedDate]) OR (([entity4].[CreatedDate]=[entity3].[CreatedDate]) AND ([entity4].[OrderDetailId]>=[entity3].[OrderDetailId]))))\n\tWHERE ([entity3].[isDeleted]=0)\n\tGROUP BY [entity3].[OrderDetailId]\n\tHAVING (COUNT([entity3].[OrderDetailId])<=1)\n) AS [entity3]\n\tON ([entity2].[OrderDetailId]=[entity3].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0)\nORDER BY [entity2].[CreatedDate] DESC",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.have.property("order").that.is.an.instanceof(Order);
+                o.should.have.property("lastAddedItem").that.is.an.instanceof(OrderDetail);
+            }
+        });
+        it("should work with select 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const first = db.orders.select((o) => ({
+                order: o,
+                lastAddedItem: o.OrderDetails.orderBy([(o) => o.CreatedDate, "DESC"])
+                    .first((o) => o.quantity > 1)
+            }));
+            const results = await first.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])",
+                parameters: {}
+            }, {
+                type: 1,
+                query: "SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity3].[OrderDetailId],\n\t\tCOUNT([entity3].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE (([entity4].[isDeleted]=0) AND ([entity4].[Quantity]>1))\n\t) AS [entity4]\n\t\tON (([entity4].[OrderId]=[entity3].[OrderId]) AND (([entity4].[CreatedDate]<[entity3].[CreatedDate]) OR (([entity4].[CreatedDate]=[entity3].[CreatedDate]) AND ([entity4].[OrderDetailId]>=[entity3].[OrderDetailId]))))\n\tWHERE (([entity3].[isDeleted]=0) AND ([entity3].[Quantity]>1))\n\tGROUP BY [entity3].[OrderDetailId]\n\tHAVING (COUNT([entity3].[OrderDetailId])<=1)\n) AS [entity3]\n\tON ([entity2].[OrderDetailId]=[entity3].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE (([entity2].[isDeleted]=0) AND ([entity2].[Quantity]>1))\nORDER BY [entity2].[CreatedDate] DESC",
                 parameters: {}
             });
 
@@ -2261,6 +2450,31 @@ describe("QUERYABLE", async () => {
                 }
             }
         });
+        // it("test 20", async () => {
+        //     const spy = sinon.spy(db.connection, "query");
+        //     const groupBy = db.orderDetailProperties.groupBy((o) => ({
+        //         od: o.OrderDetail
+        //     })).select((o) => ({
+        //         a: o.key,
+        //         b: o.where((l) => l.amount !== 0),
+        //         c: o.key.od.Order.OrderDetails
+        //     }));
+        //     const results = await groupBy.toArray();
+        //     chai.should();
+        //     spy.should.have.been.calledOnce.and.calledWithMatch({
+        //         type: 1,
+        //         query: "SELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]",
+        //         parameters: {}
+        //     }, {
+        //         type: 1,
+        //         query: "SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount]\n\tFROM [OrderDetailProperties] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted]=0)",
+        //         parameters: {}
+        //     });
+        //     results.should.be.an("array").and.not.empty;
+        //     for (const o of results) {
+        //         o.should.be.an("array").with.property("key").that.have.property("od").that.is.an.instanceof(OrderDetail);
+        //     }
+        // });
     });
     describe("TOMAP", async () => {
         it("should work", async () => {
@@ -2645,6 +2859,30 @@ describe("QUERYABLE", async () => {
                 type: 1,
                 query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (DAY([entity0].[OrderDate])<>@param2 AND (DAY([entity0].[OrderDate]) IS NOT NULL OR @param2 IS NOT NULL))",
                 parameters: { param2: paramObj.now.getDate() }
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.instanceof(Order);
+            }
+        });
+        it("should be computed in application 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const p = {
+                PI: Math.PI,
+                E: Math.E,
+                Val: 100
+            };
+            const parameter = db.orders.parameter({ p })
+                .where((o) => o.TotalAmount >= p.PI * p.E * p.Val);
+            const results = await parameter.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]>=@param7)",
+                parameters: { param7: p.PI * p.E * p.Val }
             });
 
             results.should.be.an("array").and.not.empty;
@@ -3400,58 +3638,4 @@ describe("QUERYABLE", async () => {
             chai.expect(queryExcludeSoftDeleted).to.not.equal(queryIncludeSoftDeleted);
         });
     });
-    /*
-    // describe("TERNARY OPERATOR", () => {
-    //     // TODO
-    //     it("test 1", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
-    //             item: o.TotalAmount > 20000 ? 20000 : o.TotalAmount
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 2", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
-    //             item: o.quantity === 1 ? o.Order : null
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 3", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
-    //             item: o.quantity === 1 ? o.Order : { OrderId: o.OrderId }
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 4", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
-    //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails : null
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 5", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
-    //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails.first() : o.OrderDate
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 6", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
-    //             item: o.quantity === 1 ? o.OrderDetailProperties : o.Product
-    //         }));
-    //         const results = await ternary.toArray();
-    //     });
-    //     it("test 7", async () => {
-    //         const spy = sinon.spy(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
-    //             item: o.OrderDetails
-    //         })).select(o => o.item.count());
-    //         const results = await ternary.toArray();
-    //     });
-    // });
-    */
 });

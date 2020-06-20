@@ -281,7 +281,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         if (this.resultCacheManager) {
             deferredQueries = deferredQueries.toArray();
             const cacheQueries = deferredQueries.where((o) => o instanceof DQLDeferredQuery && o.queryOption.resultCache !== "none");
-            const cachedResults = await this.resultCacheManager.gets(...cacheQueries.select((o) => o.hashCode().toString()).toArray());
+            const cachedResults = await this.resultCacheManager.gets(cacheQueries.select((o) => o.hashCode().toString()));
             let index = 0;
             for (const cacheQuery of cacheQueries) {
                 const res = cachedResults[index++];
@@ -315,8 +315,8 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                     }
                 }
                 else if (deferredQuery instanceof DMLDeferredQuery) {
-                    const effecteds = deferredQuery.entities.select((o) => `entity:${o.name}`).toArray();
-                    this.resultCacheManager.removeTag(...effecteds);
+                    const effecteds = deferredQuery.entities.select((o) => `entity:${o.name}`);
+                    this.resultCacheManager.removeTag(effecteds);
                 }
             }
         }

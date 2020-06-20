@@ -361,7 +361,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             objectOperand.select.joins.pop();
                             relJoin.parent = param.selectExpression;
                         }
-                        return relationMeta.relationType === "many" ? child : child.entity;
+
+                        if (relationMeta.relationType === "many") {
+                            child.parameterTree = objectOperand.select.parameterTree;
+                            return child;
+                        }
+                        return child.entity;
                     }
                 }
             }
@@ -661,17 +666,16 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
-                    let item = exp.params[0];
+                    const item = this.visit(exp.params[0], param);
                     let andExp: IExpression<boolean>;
-                    const isSubSelect = objectOperand.isSubSelect;
-                    if (isSubSelect) {
-                        item = this.visit(item, param);
+                    if (objectOperand.isSubSelect) {
                         objectOperand.distinct = true;
                         objectOperand.parentRelation.parent.joins.delete(objectOperand.parentRelation as any);
                         objectOperand.parentRelation = null;
                         return new MethodCallExpression(objectOperand, "contains", [item]);
                     }
-                    else if (objectOperand.itemType === objectOperand.entity.type) {
+
+                    if (objectOperand.itemType === objectOperand.entity.type) {
                         if (objectOperand.entity instanceof EntityExpression) {
                             for (const primaryCol of objectOperand.entity.primaryColumns) {
                                 const d = new StrictEqualExpression(primaryCol, new MemberAccessExpression(item, primaryCol.propertyName));
@@ -689,15 +693,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         andExp = new StrictEqualExpression(objectOperand.selects.first(), item);
                     }
 
-                    if (param.scope === "queryable") {
-                        objectOperand.addWhere(andExp);
-                        const column = new ComputedColumnExpression(objectOperand.entity, new ValueExpression(true), this.newAlias("column"));
-                        objectOperand.selects = [column];
-                        objectOperand.paging.take = new ValueExpression(1);
-                        objectOperand.distinct = true;
-                        return objectOperand;
-                    }
-                    return andExp;
+                    objectOperand.addWhere(andExp);
+                    const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: param.scope };
+                    return this.visit(new MethodCallExpression(selectOperand, "any", []), visitParam);
                 }
                 case "distinct": {
                     if (param.scope === "include" || param.scope === "project") {
@@ -960,6 +958,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         objectOperand.selects = [column];
                         objectOperand.paging.take = new ValueExpression(1);
                         objectOperand.distinct = true;
+                        if (objectOperand instanceof GroupByExpression) {
+                            objectOperand.isAggregate = true;
+                        }
                         return objectOperand;
                     }
                     else if (selectOperand instanceof GroupedExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {

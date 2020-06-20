@@ -218,6 +218,7 @@ relationalQueryTranslator.registerMethod(Boolean.prototype, "toString" as any, (
 /**
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
+ * TODO: fromUTCDate,toUTCDate
  */
 relationalQueryTranslator.registerMethod(Date, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
 relationalQueryTranslator.registerMethod(Date, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
@@ -244,6 +245,8 @@ relationalQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, p
 relationalQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, param) => `DATEADD(MI, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
 relationalQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, param) => `DATEADD(SS, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
 relationalQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, param) => `DATEADD(MS, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "toDate", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS DATE)`);
+relationalQueryTranslator.registerMethod(Date.prototype, "toTime", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS TIME)`);
 
 /**
  * RegExp

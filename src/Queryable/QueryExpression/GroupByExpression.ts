@@ -144,24 +144,10 @@ export class GroupByExpression<T = any> extends SelectExpression<T> {
         return join;
     }
     public get resolvedSelects(): IEnumerable<IColumnExpression> {
-        let selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
-        for (const include of this.includes) {
-            if (include.isEmbedded) {
-                const cloneMap = new Map();
-                mapReplaceExp(cloneMap, include.child.entity, this.entity);
-                // add column which include in emdedded relation
-                const childSelects = include.child.resolvedSelects.select((o) => {
-                    let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
-                    if (!curCol) {
-                        curCol = o.clone(cloneMap);
-                    }
-                    return curCol;
-                });
-                // include.child.entity.alias = this.entity.alias;
-                selects = selects.union(childSelects);
-            }
-        }
-        return selects;
+        const selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
+        // parentColumns ??
+        return selects.union(this.includes.where((o) => o.isEmbedded)
+            .selectMany((o) => o.child.resolvedSelects));
     }
     public get where() {
         return this.itemSelect.where;
