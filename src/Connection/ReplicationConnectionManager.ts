@@ -7,10 +7,8 @@ import { PooledConnection } from "./PooledConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 
 export class ReplicationConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
-    public get driver() {
-        return this.masterConnectionManager.driver;
-    }
     constructor(masterDriver: IDriver<T>, replicaDrivers: Array<IDriver<T>>, poolOption?: IPoolOption) {
+        this.driver = masterDriver;
         this.masterConnectionManager = new PooledConnectionManager(masterDriver, poolOption);
         if (replicaDrivers.length <= 0) {
             replicaDrivers.push(masterDriver);
@@ -19,6 +17,7 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
         this.replicaConnectionManagers = replicaDrivers.select((o) => o === masterDriver ? this.masterConnectionManager : new PooledConnectionManager(o, poolOption)).toArray();
         this.nextReplicaManager = this.replicaConnectionManagers[0];
     }
+    public readonly driver: IDriver<T>;
     public readonly masterConnectionManager: PooledConnectionManager<T>;
     public readonly replicaConnectionManagers: Array<PooledConnectionManager<T>>;
     private counter = 0;
