@@ -72,7 +72,7 @@ Date.prototype.addSeconds = function (seconds: number): Date {
 
 Date.prototype.addMilliseconds = function (milliSeconds: number): Date {
     const dat = new Date(this.valueOf());
-    dat.setDate(dat.getDate() + milliSeconds);
+    dat.setMilliseconds(dat.getMilliseconds() + milliSeconds);
     return dat;
 };
 

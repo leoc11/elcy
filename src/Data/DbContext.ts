@@ -1,3 +1,4 @@
+import { ICacheOption } from "../Cache/ICacheOption";
 import { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { QueryType } from "../Common/Enum";
@@ -308,10 +309,11 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                 if (deferredQuery instanceof DQLDeferredQuery) {
                     const queryOption = deferredQuery.queryOption;
                     if (queryOption.resultCache !== "none") {
-                        if (queryOption.resultCache && !queryOption.resultCache.disableEntityAsTag) {
-                            queryOption.resultCache.tags = queryOption.resultCache.tags.union(deferredQuery.entities.select((o) => `entity:${o.name}`)).distinct().toArray();
+                        const cacheOption = (queryOption.resultCache || {}) as ICacheOption;
+                        if (queryOption.resultCache && queryOption.resultCache.invalidateOnUpdate) {
+                            cacheOption.tags = deferredQuery.entities.select((o) => `entity:${o.name}`).toArray();
                         }
-                        this.resultCacheManager.set(deferredQuery.hashCode().toString(), results, queryOption.resultCache);
+                        this.resultCacheManager.set(deferredQuery.hashCode().toString(), results, cacheOption);
                     }
                 }
                 else if (deferredQuery instanceof DMLDeferredQuery) {

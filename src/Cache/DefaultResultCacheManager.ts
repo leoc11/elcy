@@ -36,8 +36,8 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;
                     if (item.expiredTime) {
-                        clearTimeout(titem[1]);
-                        titem[1] = setTimeout(() => this.remove([item.key]), Date.now() - item.expiredTime.getTime());
+                        titem[1] = clearTimeout(titem[1]);
+                        titem[1] = setTimeout(() => this.remove([item.key]), item.expiredTime.getTime() - Date.now());
                     }
                 }
             }
@@ -87,7 +87,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
         }
         if (item.expiredTime) {
-            titem[1] = setTimeout(() => this.remove([item.key]), Date.now() - item.expiredTime.getTime());
+            titem[1] = setTimeout(() => this.remove([item.key]), item.expiredTime.getTime() - Date.now());
         }
         if (item.tags) {
             for (const tag of item.tags) {

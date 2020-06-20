@@ -1,10 +1,12 @@
-import { ICacheOption } from "../Cache/ICacheOption";
 import { ConcurrencyModel } from "../Common/StringType";
 import { Version } from "../Common/Version";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
+import { TimeSpan } from "../Data/TimeSpan";
 
-export interface ISelectCacheOption extends ICacheOption {
-    disableEntityAsTag?: boolean;
+export interface ISelectCacheOption {
+    expiredTime?: Date;
+    slidingExpiration?: TimeSpan;
+    invalidateOnUpdate?: boolean;
 }
 export interface IQueryOption {
     concurrencyMode?: ConcurrencyModel;
