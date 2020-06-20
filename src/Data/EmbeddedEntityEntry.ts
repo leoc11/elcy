@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+// TODO: Re-enabled once embedded entity fully supported
 import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";

@@ -88,9 +88,6 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
             this._state = value;
         }
     }
-    public get originalValues(): Readonly<Map<keyof T, any>> {
-        return this._originalValues;
-    }
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
 

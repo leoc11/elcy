@@ -53,6 +53,40 @@ describe("DBCONTEXT", () => {
             const entry = db.detach(entity);
             chai.expect(entry.state).equal(EntityState.Detached);
         });
+        it("should reload all properties", async () => {
+            const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
+            const entry = db.attach(entity);
+            chai.expect(entry.isCompletelyLoaded).to.equal(false);
+            await entry.reload();
+            chai.expect(entry.isCompletelyLoaded).to.equal(true);
+            chai.expect(entity).to.has.property("name").that.not.null;
+            chai.expect(entity).to.has.property("quantity").that.not.null;
+        });
+        it("should load to-one relation", async () => {
+            const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
+            const entry = db.attach(entity);
+            await entry.loadRelation((o) => o.Order);
+            chai.expect(entity).to.has.property("Order").that.is.an.instanceOf(Order);
+        });
+        it("should load to-many relation", async () => {
+            const entity = new Order({ OrderId: Uuid.new() });
+            const entry = db.attach(entity);
+            await entry.loadRelation((o) => o.OrderDetails);
+            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
+            for (const o of entity.OrderDetails) {
+                chai.expect(o).to.be.an.instanceof(OrderDetail);
+            }
+        });
+        it("should load multiple relations", async () => {
+            const entity = new Order({ OrderId: Uuid.new() });
+            const entry = db.attach(entity);
+            await entry.loadRelation((o) => o.OrderDetails.include((od) => od.Product));
+            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
+            for (const o of entity.OrderDetails) {
+                chai.expect(o).to.be.an.instanceof(OrderDetail);
+                chai.expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
+            }
+        });
     });
     describe("ENTITY CHANGES DETECTION", async () => {
         it("should detect property changes and reset", () => {
@@ -112,40 +146,6 @@ describe("DBCONTEXT", () => {
             db.relationAdd(order, "OrderDetails", orderDetail);
             const relEntry = db.relationDetach(order, "OrderDetails", orderDetail);
             chai.expect(relEntry.state).equal(RelationState.Detached);
-        });
-    });
-    describe("ENTITY ENTRY", async () => {
-        it("should reload all properties", async () => {
-            const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
-            const entry = db.attach(entity);
-            await entry.reload();
-            chai.expect(entity).to.has.property("name").that.not.null;
-            chai.expect(entity).to.has.property("quantity").that.not.null;
-        });
-        it("should load to-one relation", async () => {
-            const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
-            const entry = db.attach(entity);
-            await entry.loadRelation((o) => o.Order);
-            chai.expect(entity).to.has.property("Order").that.is.an.instanceOf(Order);
-        });
-        it("should load to-many relation", async () => {
-            const entity = new Order({ OrderId: Uuid.new() });
-            const entry = db.attach(entity);
-            await entry.loadRelation((o) => o.OrderDetails);
-            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
-            for (const o of entity.OrderDetails) {
-                chai.expect(o).to.be.an.instanceof(OrderDetail);
-            }
-        });
-        it("should load multiple relations", async () => {
-            const entity = new Order({ OrderId: Uuid.new() });
-            const entry = db.attach(entity);
-            await entry.loadRelation((o) => o.OrderDetails.include((od) => od.Product));
-            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
-            for (const o of entity.OrderDetails) {
-                chai.expect(o).to.be.an.instanceof(OrderDetail);
-                chai.expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
-            }
         });
     });
     describe("TRANSACTION", async () => {
