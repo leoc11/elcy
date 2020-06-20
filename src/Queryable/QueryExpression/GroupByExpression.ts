@@ -3,7 +3,7 @@ import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, hashCodeAdd, isColumnExp, isEntityExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, isColumnExp, isEntityExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";

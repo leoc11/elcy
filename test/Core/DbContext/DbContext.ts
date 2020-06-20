@@ -1,8 +1,5 @@
 import * as chai from "chai";
-import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
-import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
-import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
 import { EntityState } from "../../../src/Data/EntityState";
 import { RelationState } from "../../../src/Data/RelationState";
 import { Uuid } from "../../../src/Data/Uuid";
