@@ -56,14 +56,14 @@ describe("RESULT CACHE", () => {
             expect(cqrs).has.lengthOf(2);
             expect(cqrs).to.deep.equal([qr, qr2]);
 
-            await db.resultCacheManager.remove(["test2"].where((o) => true));
+            await db.resultCacheManager.remove(["test2"]);
             const cqr2 = await db.resultCacheManager.get("test2");
-            expect(cqr2).to.be.undefined;
+            expect(cqr2).to.be.null;
 
             await db.resultCacheManager.clear();
             cqrs = await db.resultCacheManager.gets(["test"]);
             expect(cqrs).to.be.an("array");
-            expect(cqrs[0]).to.has.lengthOf(0);
+            expect(cqrs[0]).to.be.null;
         });
         it("get set", async () => {
             const qr: IQueryResult[] = [];

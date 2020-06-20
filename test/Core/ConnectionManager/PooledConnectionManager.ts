@@ -1,5 +1,3 @@
-import "../../../src/Startup";
-// tslint:disable-next-line: ordered-imports
 import { expect, use } from "chai";
 import * as chaiPromise from "chai-as-promised";
 import "mocha";
@@ -37,7 +35,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         await new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
-            }, 101);
+            }, 110);
         });
         const con2 = await connectionManager.getConnection();
         await con2.close();
