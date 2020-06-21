@@ -3639,4 +3639,99 @@ describe("QUERYABLE", async () => {
             chai.expect(queryExcludeSoftDeleted).to.not.equal(queryIncludeSoftDeleted);
         });
     });
+    describe("RAW QUERY", () => {
+        it("should work", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const rawQuery = db.query<Order>({
+                OrderId: Uuid,
+                OrderDate: Date,
+                TotalAmount: Number
+            }, "select * from orders", Order);
+            const results = await rawQuery.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate],\n\t[entity0].[TotalAmount]\nFROM (\n\tselect * from orders\n) AS [entity0]",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+            }
+        });
+        it("should support chain with other queryable method", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const rawQuery = db.query<Order>({
+                OrderId: Uuid,
+                OrderDate: Date,
+                TotalAmount: Number
+            }, "select * from orders", Order).where((o) => o.TotalAmount > 0);
+            const results = await rawQuery.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate],\n\t[entity0].[TotalAmount]\nFROM (\n\tselect * from orders\n) AS [entity0]\nWHERE ([entity0].[TotalAmount]>0)",
+                parameters: {}
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+            }
+        });
+        it("should support parameters 1", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const rawQuery = db.query<Order>({
+                OrderId: Uuid,
+                OrderDate: Date,
+                TotalAmount: Number
+            }, "select * from orders where totalamount < ${totalamount}", {
+                totalamount: 0
+            }, Order);
+            const results = await rawQuery.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate],\n\t[entity0].[TotalAmount]\nFROM (\n\tselect * from orders where totalamount < @param0\n) AS [entity0]",
+                parameters: { param0: 0 }
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+            }
+        });
+        it("should support parameters 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const now = Date.timestamp();
+            const rawQuery = db.query<Order>({
+                OrderId: Uuid,
+                OrderDate: Date,
+                TotalAmount: Number
+            }, "select * from orders where totalamount < ${totalamount}", {
+                totalamount: 0
+            }, Order).parameter({ now }).where((o) => o.OrderDate < now);
+            const results = await rawQuery.toArray();
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 1,
+                query: "SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate],\n\t[entity0].[TotalAmount]\nFROM (\n\tselect * from orders where totalamount < @param0\n) AS [entity0]\nWHERE ([entity0].[OrderDate]<@param1)",
+                parameters: { param0: 0, param1: now }
+            });
+
+            results.should.be.an("array").and.not.empty;
+            for (const o of results) {
+                o.should.be.an.instanceof(Order);
+            }
+        });
+    });
 });

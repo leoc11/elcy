@@ -155,7 +155,7 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
                     if (relEntity) {
                         if (relation.relationType === "one") {
                             const relEntry = this.attach(relEntity, true);
-                            const relationEntry = entry.getRelation(relation.propertyName, relEntry);
+                            const relationEntry = entry.getRelation(relation.propertyName, relEntry as EntityEntry);
                             relationEntry.state = RelationState.Unchanged;
                         }
                         else if (Array.isArray(relEntity)) {
@@ -348,7 +348,17 @@ export abstract class DbContext<TDB extends DbType = any> implements IDBEventLis
         return results;
     }
     // Parameter placeholder: ${paramname}
-    public query<T = any>(schema: { [K in keyof T]: GenericType<T[K]> }, sql: string, parameters?: { [key: string]: any }, type?: GenericType<T>): Queryable<T> {
+    public query<T = any>(schema: { [K in keyof T]?: GenericType<ValueType & T[K]> }, sql: string, type?: GenericType<T>): Queryable<T>;
+    public query<T = any>(schema: { [K in keyof T]?: GenericType<ValueType & T[K]> }, sql: string, parameters?: { [key: string]: any }, type?: GenericType<T>): Queryable<T>;
+    public query<T = any>(schema: { [K in keyof T]?: GenericType<ValueType & T[K]> }, sql: string, parametersOrType?: { [key: string]: any } | GenericType<T>, type?: GenericType<T>): Queryable<T> {
+        let parameters: { [key: string]: any } = null;
+        if (!type && parametersOrType instanceof Function) {
+            type = parametersOrType;
+        }
+        else {
+            parameters = parametersOrType;
+        }
+
         return new RawQueryable(this, schema, sql, parameters, type);
     }
     // Parameter placeholder: ${paramname}

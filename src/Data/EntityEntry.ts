@@ -1,4 +1,4 @@
-import { FlatObjectLike, KeysExceptType, KeysType, ValueType } from "../Common/Type";
+import { FlatObjectLike, KeysExceptType, KeysType, TypeItem, ValueType } from "../Common/Type";
 import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey, relationChangeDispatherMetaKey, relationChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventHandler } from "../Event/IEventHandler";
@@ -263,7 +263,7 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
     }
 
     //#region Relations
-    public getRelation<T2>(propertyName: keyof T, relatedEntry: EntityEntry<T2>): RelationEntry<T, T2> | RelationEntry<T2, T> {
+    public getRelation<TK extends keyof T, T2 extends TypeItem<T[TK]>>(propertyName: TK, relatedEntry: EntityEntry<T2>): RelationEntry<T, T2> | RelationEntry<T2, T> {
         const relationMeta: IRelationMetaData<T, T2> = this.metaData.relations.first((o) => o.propertyName === propertyName);
         let relGroup = this.relationMap[propertyName];
         if (!relGroup) {
@@ -273,7 +273,7 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
         let relEntry: RelationEntry<T, T2> | RelationEntry<T2, T> = relGroup.get(relatedEntry);
         if (!relEntry) {
             if (relationMeta.isMaster) {
-                relEntry = relatedEntry.getRelation(relationMeta.reverseRelation.propertyName as any, this);
+                relEntry = relatedEntry.getRelation(relationMeta.reverseRelation.propertyName, this as EntityEntry);
             }
             else {
                 relEntry = new RelationEntry(this, relatedEntry, relationMeta);

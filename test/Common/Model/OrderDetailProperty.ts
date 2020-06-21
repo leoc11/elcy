@@ -1,3 +1,4 @@
+import { ValueType } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Common/Uuid";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
 import { IdentifierColumn } from "../../../src/Decorator/Column/IdentifierColumn";
@@ -9,6 +10,14 @@ import { OrderDetail } from "./OrderDetail";
 
 @Entity("OrderDetailProperties")
 export class OrderDetailProperty {
+    constructor(defValues?: { [key in keyof OrderDetailProperty]?: ValueType }) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = (defValues as any)[prop];
+                this[prop as any] = value;
+            }
+        }
+    }
     @PrimaryKey()
     @IdentifierColumn()
     public OrderDetailPropertyId: Uuid;

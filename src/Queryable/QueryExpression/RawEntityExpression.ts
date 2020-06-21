@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, ValueType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode } from "../../Helper/Util";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -10,7 +10,7 @@ import { SelectExpression } from "./SelectExpression";
 
 export class RawEntityExpression<T = any> implements IEntityExpression<T> {
     constructor(public readonly type: IObjectType<T>,
-                protected schema: { [K in keyof T]: GenericType<T[K]> },
+                protected schema: { [K in keyof T]?: GenericType<T[K] & ValueType> },
                 public readonly definingQuery: string,
                 public alias: string) {
         this.entityTypes = [this.type];

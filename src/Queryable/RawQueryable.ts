@@ -1,5 +1,5 @@
 import { INodeTree, ParameterStack } from "../Common/ParameterStack";
-import { GenericType, IObjectType } from "../Common/Type";
+import { GenericType, IObjectType, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { hashCode, isNull } from "../Helper/Util";
@@ -15,7 +15,7 @@ export class RawQueryable<T> extends Queryable<T> {
         return this._param;
     }
     constructor(dbContext: DbContext,
-                protected readonly schema: { [K in keyof T]: GenericType<T[K]> },
+                protected readonly schema: { [K in keyof T]?: GenericType<T[K] & ValueType> },
                 public readonly definingQuery: string,
                 parameters?: { [key: string]: any },
                 type?: GenericType<T>) {

@@ -1,5 +1,7 @@
 import { expect, should } from "chai";
 import "mocha";
+import * as sinon from "sinon";
+import { QueryType } from "../../../src/Common/Enum";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { MockDriver } from "../../../src/Mock/MockDriver";
@@ -266,6 +268,50 @@ describe("DEFERRED QUERY", () => {
             a.should.be.equal(true);
         });
     });
+    describe("EXECUTE", async () => {
+        it("should work", async () => {
+            const deferred = db.deferredExecute("update orders set totalamount=0 where totalamount < 0");
+            // do something here.
+            const a = await deferred.execute();
+
+            should();
+            a.should.be.a("number");
+        });
+        it("should work with parameter", async () => {
+            db.connection = await db.getConnection();
+            const spy = sinon.spy(db.connection, "query");
+            const deferred = db.deferredExecute("update orders set totalamount=${totalamount} where totalamount < ${totalamount}", {
+                totalamount: 0
+            });
+            // do something here.
+            const a = await deferred.execute();
+
+            should();
+
+            spy.should.be.calledOnceWith({
+                type: QueryType.DML,
+                query: "update orders set totalamount=@totalamount where totalamount < @totalamount",
+                parameters: { totalamount: 0 }
+            });
+            a.should.be.a("number");
+        });
+        it("should be executed in batch", async () => {
+            const deferred = db.deferredExecute("update orders set totalamount=0 where totalamount < 0");
+            await db.orders.count();
+            const a = deferred.value;
+            should();
+            a.should.be.a("number");
+        });
+        it("re-execution should used resolved value", async () => {
+            const deferred = db.deferredExecute("update orders set totalamount=0 where totalamount < 0");
+            // emulate the resolved value.
+            deferred.value = 1;
+            const a = await deferred.execute();
+            should();
+            a.should.be.a("number");
+            a.should.equal(1);
+        });
+    });
     describe("ADVANCE", async () => {
         it("should wait for result if it being executed", async () => {
             const db2 = new MyDb();
@@ -289,6 +335,19 @@ describe("DEFERRED QUERY", () => {
             const array = db.orders.include((o) => o.OrderDetails).deferredToArray();
             // do something here.
             await any.execute();
+
+            should();
+            sum.value.should.be.a("number");
+            any.value.should.be.a("boolean");
+            array.value.should.be.an("array");
+            array.value[0].should.be.an.instanceof(Order);
+        });
+        it("should execute all query in batch", async () => {
+            const sum = db.orders.select((o) => o.TotalAmount).deferredSum();
+            const any = db.orders.deferredAny((o) => o.TotalAmount < 1000000000);
+            const array = db.orders.include((o) => o.OrderDetails).deferredToArray();
+            // do something here.
+            await db.executeDeferred();
 
             should();
             sum.value.should.be.a("number");

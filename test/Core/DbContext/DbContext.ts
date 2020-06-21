@@ -3,11 +3,12 @@ import { expect } from "chai";
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
 import { IsolationLevel } from "../../../src/Common/StringType";
+import { FlatObjectLike } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Common/Uuid";
 import { EntityState } from "../../../src/Data/EntityState";
 import { RelationState } from "../../../src/Data/RelationState";
 import { mockContext } from "../../../src/Mock/MockContext";
-import { Order, OrderDetail, Product } from "../../Common/Model";
+import { Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 
 chai.use(sinonChai);
@@ -36,17 +37,73 @@ describe("DBCONTEXT", () => {
             }));
             chai.expect(entry.state).equal(EntityState.Added);
         });
-        it("should attach and mark entity updated", () => {
+        it("should attach and mark entity updated 1", () => {
             const entry = db.update(new Order({
                 OrderId: Uuid.new()
             }));
             chai.expect(entry.state).equal(EntityState.Modified);
+        });
+        it("should attach and mark entity updated 2", () => {
+            const oriVal: FlatObjectLike<Order> = {
+                TotalAmount: 10000,
+                OrderDate: Date.utcTimestamp()
+            };
+            const entry = db.update(new Order({
+                OrderId: Uuid.new(),
+                TotalAmount: 20000,
+                OrderDate: Date.timestamp()
+            }), oriVal);
+            chai.expect(entry.state).equal(EntityState.Modified);
+            for (const prop in oriVal) {
+                chai.expect(entry.getOriginalValue(prop as keyof Order)).to.equal(oriVal[prop]);
+            }
         });
         it("should mark entity deleted", () => {
             const entry = db.delete(new Order({
                 OrderId: Uuid.new()
             }));
             chai.expect(entry.state).equal(EntityState.Deleted);
+        });
+        it("should attach entity and relations", () => {
+            const od = new OrderDetail({
+                OrderId: Uuid.new(),
+                OrderDetailId: Uuid.new(),
+                ProductId: Uuid.new()
+            });
+            od.Product = new Product({
+                ProductId: od.ProductId
+            });
+            od.OrderDetailProperties = [
+                new OrderDetailProperty({
+                    OrderDetailPropertyId: Uuid.new(),
+                    OrderDetailId: od.OrderDetailId
+                }),
+                new OrderDetailProperty({
+                    OrderDetailPropertyId: Uuid.new(),
+                    OrderDetailId: od.OrderDetailId
+                })
+            ];
+            const entry = db.attach(od, true);
+            chai.expect(db.products.local.count()).to.equal(1);
+            chai.expect(db.orderDetailProperties.local.count()).to.equal(2);
+
+            chai.expect(entry.state).equal(EntityState.Unchanged);
+            const pentry = db.entry(od.Product);
+            chai.expect(pentry.state).equal(EntityState.Unchanged);
+
+            const odpentry1 = db.entry(od.OrderDetailProperties[0]);
+            chai.expect(odpentry1.state).equal(EntityState.Unchanged);
+            const odpentry2 = db.entry(od.OrderDetailProperties[1]);
+            chai.expect(odpentry2.state).equal(EntityState.Unchanged);
+
+            const odpre = entry.getRelation("Product", pentry);
+            chai.expect(odpre.state).to.equal(RelationState.Unchanged);
+
+            const ododpre1 = entry.getRelation("OrderDetailProperties", odpentry1);
+            chai.expect(ododpre1.state).to.equal(RelationState.Unchanged);
+
+            const ododpre2 = entry.getRelation("OrderDetailProperties", odpentry2);
+            chai.expect(ododpre2.state).to.equal(RelationState.Unchanged);
         });
         it("should detach entity", () => {
             const entity = db.orders.new(Uuid.new());

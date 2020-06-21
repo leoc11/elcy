@@ -2,12 +2,15 @@ import { QueryType } from "../../Common/Enum";
 import { DbContext } from "../../Data/DbContext";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
 import { hashCode } from "../../Helper/Util";
+import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { IQuery } from "../IQuery";
 import { IQueryOption } from "../IQueryOption";
 import { IQueryResult } from "../IQueryResult";
 import { DeferredQuery } from "./DeferredQuery";
 
-const resultParser = (result: IQueryResult[]) => result.sum((o) => o.effectedRows);
+const resultParser = (result: IQueryResult[]) => {
+    return result.sum((o) => o.effectedRows);
+};
 export class ExecuteDeferredQuery extends DeferredQuery<number> {
     public get queries() {
         if (!this._queries) {
@@ -22,7 +25,8 @@ export class ExecuteDeferredQuery extends DeferredQuery<number> {
     }
     public get sql() {
         if (!this._sql) {
-            this._sql = this.rawSql.replace(/\$\{([a-z][a-z0-9])\}/ig, this.dbContext.queryBuilder.toString(new ParameterExpression("$1")));
+            const template = this.dbContext.queryBuilder.toString(new SqlParameterExpression("$1", new ParameterExpression("$1")));
+            this._sql = this.rawSql.replace(/\$\{([a-z_][a-z0-9_]*)\}/ig, template);
         }
         return this._sql;
     }
