@@ -753,11 +753,13 @@ describe("DATA MANIPULATION", () => {
 
             const effected = await db.saveChanges({ useUpsert: true });
 
-            spy.should.have.been.calledOnce.and.calledWithMatch({
+            spy.should.have.been.calledWithMatch({
+                comment: undefined,
                 type: 2,
                 query: "MERGE INTO [AutoParent] AS [entity0]\nUSING (SELECT @param0 AS [id]) AS _VAL ON _VAL.[id] = [entity0].[id]\nWHEN MATCHED THEN\n\tUPDATE SET [name] = @param1,\n\t\t[modifiedDate] = getutcdate()\nWHEN NOT MATCHED THEN\n\tINSERT ([name],[isDefault],[isDeleted])\n\tVALUES (@param1,DEFAULT,DEFAULT)",
                 parameters: { param0: 1, param1: "Updated" }
             }, {
+                comment: undefined,
                 type: 1,
                 query: "SELECT [entity0].[id],\n\t[entity0].[createdDate],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
                 parameters: { param0: 1, param1: "Updated" }
