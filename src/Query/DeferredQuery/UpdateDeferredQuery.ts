@@ -75,9 +75,11 @@ export class UpdateDeferredQuery<T> extends DMLDeferredQuery<T> {
             selectExp = queryExp.clone();
         }
 
-        const modifiedColumnMetas = this.entry.getModifiedProperties().select((o) => Reflect.getMetadata(columnMetaKey, this.entry.metaData.type, o) as IColumnMetaData<T>).where((o) => !!o);
         switch (this.entry.metaData.concurrencyMode) {
             case "OPTIMISTIC DIRTY": {
+                const modifiedColumnMetas = this.entry.getModifiedProperties()
+                    .where((o) => this.entry.getOriginalValue(o) !== undefined)
+                    .select((o) => Reflect.getMetadata(columnMetaKey, this.entry.metaData.type, o) as IColumnMetaData<T>).where((o) => !!o);
                 for (const colMeta of modifiedColumnMetas) {
                     const parameter = queryExp.addSqlParameter(visitor.newAlias("param"), new MethodCallExpression(new ParameterExpression<EntityEntry<T>>("entry", EntityEntry), "getOriginalValue", [new ValueExpression(colMeta.propertyName)], colMeta.type), colMeta);
                     const colExp = queryExp.entity.columns.first((c) => c.propertyName === colMeta.propertyName);

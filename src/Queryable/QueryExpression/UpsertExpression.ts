@@ -1,4 +1,5 @@
 import { IObjectType } from "../../Common/Type";
+import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
@@ -39,9 +40,11 @@ export class UpsertExpression<T = any> extends QueryExpression<void> {
     }
     constructor(public readonly entity: EntityExpression<T>,
                 public readonly value: { [key in keyof T]?: IExpression<T[key]> },
-                updateColumns: Array<keyof T>) {
+                updateColumns: IEnumerable<keyof T>) {
         super();
-        this.updateColumns = updateColumns.select((prop) => entity.columns.first((o) => o.propertyName === prop)).toArray();
+        this.updateColumns = updateColumns
+            .except(this.entity.metaData.updateGeneratedColumns.select((o) => o.propertyName))
+            .select((prop) => entity.columns.first((o) => o.propertyName === prop)).toArray();
     }
     public readonly updateColumns: Array<IColumnExpression<T>>;
     private _insertColumns: Array<IColumnExpression<T>>;
@@ -55,7 +58,7 @@ export class UpsertExpression<T = any> extends QueryExpression<void> {
         for (const prop in this.value) {
             setter[prop] = resolveClone(this.value[prop], replaceMap);
         }
-        const clone = new UpsertExpression(entity, setter, this.updateColumns.select((o) => o.propertyName).toArray());
+        const clone = new UpsertExpression(entity, setter, this.updateColumns.select((o) => o.propertyName));
         clone.parameterTree = resolveTreeClone(this.parameterTree, replaceMap);
         replaceMap.set(this, clone);
         return clone;

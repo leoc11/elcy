@@ -237,7 +237,7 @@ describe("DATA MANIPULATION", () => {
             });
             effected.should.equal(1);
         });
-        it("should bulk update entity", async () => {
+        it("should bulk update entity 1", async () => {
             const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.where((o) => o.id === 1).update({
                 name: "Updated",
@@ -250,6 +250,26 @@ describe("DATA MANIPULATION", () => {
                 type: QueryType.DML,
                 parameters: {}
             } as IQuery);
+            effected.should.equal(1);
+        });
+        it("should bulk update entity 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const effected = await db.autoParents.update({
+                id: 1,
+                name: "Updated",
+                isDefault: false
+            });
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "UPDATE [entity0]\nSET [entity0].[modifiedDate] = getutcdate(), [entity0].[name] = @param1, [entity0].[isDefault] = @param2\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=@param0 OR ([entity0].[id] IS NULL AND @param0 IS NULL)))",
+                parameters: { param0: 1, param1: "Updated", param2: false }
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=@param0 OR ([entity0].[id] IS NULL AND @param0 IS NULL)))",
+                parameters: { param0: 1 }
+            });
             effected.should.equal(1);
         });
         it("should update with DIRTY concurrency check", async () => {
@@ -499,7 +519,7 @@ describe("DATA MANIPULATION", () => {
             });
             effected.should.equal(1);
         });
-        it("should bulk delete with include (soft delete)", async () => {
+        it("should bulk delete with include (soft delete) 1", async () => {
             const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.include((o) => o.details).delete((o) => o.id === 1);
 
@@ -514,7 +534,33 @@ describe("DATA MANIPULATION", () => {
             });
             effected.should.be.greaterThan(0);
         });
-        it("should bulk delete with include (hard delete)", async () => {
+        it("should bulk delete (soft delete) 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const effected = await db.autoParents.delete((o) => o.id === 1);
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
+                parameters: {}
+            });
+            effected.should.be.greaterThan(0);
+        });
+        it("should bulk delete (soft delete) 3", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const effected = await db.autoParents.delete({
+                id: 1
+            });
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=@param0 OR ([entity0].[id] IS NULL AND @param0 IS NULL)))",
+                parameters: { param0: 1 }
+            });
+            effected.should.be.greaterThan(0);
+        });
+        it("should bulk delete with include (hard delete) 1", async () => {
             const spy = sinon.spy(db.connection, "query");
             const effected = await db.autoParents.include((o) => o.details)
                 .where((o) => o.id === 1)
@@ -529,6 +575,32 @@ describe("DATA MANIPULATION", () => {
                 type: 2,
                 query: "DELETE [entity1]\nFROM [AutoDetail] AS [entity1]\nINNER JOIN [AutoParent] AS [entity0]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
                 parameters: {}
+            });
+            effected.should.be.greaterThan(0);
+        });
+        it("should bulk delete (hard delete) 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const effected = await db.autoParents.delete((o) => o.id === 1, "hard");
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))",
+                parameters: {}
+            });
+            effected.should.be.greaterThan(0);
+        });
+        it("should bulk delete (hard delete) 3", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const effected = await db.autoParents.delete({
+                id: 1
+            }, "hard");
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=@param0 OR ([entity0].[id] IS NULL AND @param0 IS NULL)))",
+                parameters: { param0: 1 }
             });
             effected.should.be.greaterThan(0);
         });
@@ -611,6 +683,121 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
             spy.should.have.been.calledOnce.and.calledWithMatch(data, { mode: "soft" } as IDeleteEventParam);
             spy2.should.have.been.calledOnce.and.calledWithMatch(data, { mode: "soft" } as IDeleteEventParam);
+            spy.should.be.calledBefore(spy2);
+        });
+    });
+    describe("UPSERT", () => {
+        it("should upsert new entity 1", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const productId = Uuid.new();
+            const effected = await db.products.upsert({
+                ProductId: productId,
+                Price: 10000
+            });
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "MERGE INTO [Products] AS [entity0]\nUSING (SELECT @param0 AS [ProductId]) AS _VAL ON _VAL.[ProductId] = [entity0].[ProductId]\nWHEN MATCHED THEN\n\tUPDATE SET [Price] = @param1\nWHEN NOT MATCHED THEN\n\tINSERT ([ProductId],[Price])\n\tVALUES (@param0,@param1)",
+                parameters: { param0: productId, param1: 10000 }
+            });
+            effected.should.equal(1);
+        });
+        it("should upsert new entity 2", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const product = new Product();
+            product.ProductId = Uuid.new();
+            product.Price = 10000;
+            db.add(product);
+            const effected = await db.saveChanges({ useUpsert: true });
+
+            chai.should();
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "MERGE INTO [Products] AS [entity0]\nUSING (SELECT @param0 AS [ProductId]) AS _VAL ON _VAL.[ProductId] = [entity0].[ProductId]\nWHEN MATCHED THEN\n\tUPDATE SET [Price] = @param1\nWHEN NOT MATCHED THEN\n\tINSERT ([ProductId],[Price])\n\tVALUES (@param0,@param1)",
+                parameters: { param0: product.ProductId, param1: 10000 }
+            });
+            effected.should.equal(1);
+        });
+        it("should upsert new entity 3", async () => {
+            const spy = sinon.spy(db.connection, "query");
+
+            const product = db.products.new({
+                ProductId: Uuid.new(),
+                Price: 10000
+            });
+            const effected = await db.saveChanges({ useUpsert: true });
+
+            chai.should();
+            effected.should.equal(1);
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "MERGE INTO [Products] AS [entity0]\nUSING (SELECT @param0 AS [ProductId]) AS _VAL ON _VAL.[ProductId] = [entity0].[ProductId]\nWHEN MATCHED THEN\n\tUPDATE SET [Price] = @param1\nWHEN NOT MATCHED THEN\n\tINSERT ([ProductId],[Price])\n\tVALUES (@param0,@param1)",
+                parameters: { param0: product.ProductId, param1: 10000 }
+            });
+            effected.should.equal(1);
+        });
+        it("should upsert entity 4", async () => {
+            const spy = sinon.spy(db.connection, "query");
+            const parent = new AutoParent();
+            parent.id = 1;
+            parent.name = "Original";
+            const entry = db.entry(parent);
+            entry.state = EntityState.Unchanged;
+            parent.name = "Updated";
+
+            chai.should();
+            entry.state.should.equal(EntityState.Modified);
+
+            const effected = await db.saveChanges({ useUpsert: true });
+
+            spy.should.have.been.calledOnce.and.calledWithMatch({
+                type: 2,
+                query: "MERGE INTO [AutoParent] AS [entity0]\nUSING (SELECT @param0 AS [id]) AS _VAL ON _VAL.[id] = [entity0].[id]\nWHEN MATCHED THEN\n\tUPDATE SET [name] = @param1,\n\t\t[modifiedDate] = getutcdate()\nWHEN NOT MATCHED THEN\n\tINSERT ([name],[isDefault],[isDeleted])\n\tVALUES (@param1,DEFAULT,DEFAULT)",
+                parameters: { param0: 1, param1: "Updated" }
+            }, {
+                type: 1,
+                query: "SELECT [entity0].[id],\n\t[entity0].[createdDate],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)",
+                parameters: { param0: 1, param1: "Updated" }
+            });
+            effected.should.equal(1);
+        });
+        it("should trigger before/after save event 1", async () => {
+            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const spy = sinon.spy(entityMetaData, "beforeSave");
+            const spy2 = sinon.spy(entityMetaData, "afterSave");
+
+            const data = db.autoParents.new({
+                name: "Insert 1",
+                createdDate: null,
+                modifiedDate: null
+            });
+            const effected = await db.saveChanges({ useUpsert: true });
+
+            chai.should();
+            effected.should.equal(1);
+            spy.should.have.been.calledOnce.and.calledWithMatch(data, { type: "insert" } as ISaveEventParam);
+            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { type: "insert" } as ISaveEventParam);
+            spy.should.be.calledBefore(spy2);
+        });
+        it("should trigger before/after save event 2", async () => {
+            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const spy = sinon.spy(entityMetaData, "beforeSave");
+            const spy2 = sinon.spy(entityMetaData, "afterSave");
+
+            const data = new AutoParent();
+            data.id = 1;
+            data.name = "Original";
+            db.attach(data);
+            data.name = "Updated";
+            const effected = await db.saveChanges({ useUpsert: true });
+
+            chai.should();
+            effected.should.equal(1);
+            spy.should.have.been.calledOnce.and.calledWithMatch(data, { type: "update" } as ISaveEventParam);
+            spy2.should.have.been.calledOnce.and.calledWithMatch(data, { type: "update" } as ISaveEventParam);
             spy.should.be.calledBefore(spy2);
         });
     });

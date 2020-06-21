@@ -383,6 +383,9 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
     public setOriginalValues(originalValues: { [key: string]: any }) {
         for (const prop in originalValues) {
             const value = originalValues[prop];
+            if (value === undefined) {
+                continue;
+            }
             this.setOriginalValue(prop as any, value);
         }
         this.state = this._originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
@@ -438,7 +441,7 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
                     this.state = EntityState.Unchanged;
                 }
             }
-            else if (oriValue === undefined && param.oldValue !== undefined && !param.column.isReadOnly) {
+            else if (!this._originalValues.has(param.column.propertyName) && !param.column.isReadOnly) {
                 this._originalValues.set(param.column.propertyName, param.oldValue);
                 if (this.state === EntityState.Unchanged) {
                     this.state = EntityState.Modified;

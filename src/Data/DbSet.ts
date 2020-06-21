@@ -66,6 +66,12 @@ export class DbSet<T> extends Queryable<T> {
     public clear() {
         this.dictionary = new Map();
     }
+    public delete(mode: DeleteMode): Promise<number>;
+    public delete(key: FlatObjectLike<T>, mode?: DeleteMode): Promise<number>;
+    public delete(predicate?: (item: T) => boolean, mode?: DeleteMode): Promise<number>;
+    public delete(modeOrKeyOrPredicate?: FlatObjectLike<T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): Promise<number> {
+        return this.deferredDelete(modeOrKeyOrPredicate as any, mode).execute();
+    }
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
     public deferredDelete(key: FlatObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
@@ -94,15 +100,28 @@ export class DbSet<T> extends Queryable<T> {
         return new BulkDeferredQuery(this.dbContext, defers);
     }
     // Prevent Update all records
-    public update(item: ObjectLike<T>) {
+    public update(item: T | FlatObjectLike<T>) {
         return this.deferredUpdate(item).execute();
     }
     // Prevent Update all records
-    public deferredUpdate(item: ObjectLike<T>) {
-        return this.dbContext.getUpdateQuery(this.dbContext.entry(item));
+    public deferredUpdate(item: T | FlatObjectLike<T>) {
+        const id: { [key in keyof T]?: any } = {};
+        for (const pk of this.metaData.primaryKeys) {
+            id[pk.propertyName] = item[pk.propertyName];
+        }
+        const entry = this.entry(id);
+        for (const prop in (item as any)) {
+            entry.entity[prop] = item[prop];
+        }
+        return this.dbContext.getUpdateQuery(entry);
     }
-    public deferredUpsert(item: ObjectLike<T>) {
-        return this.dbContext.getUpsertQuery(this.dbContext.add(item));
+    public upsert(item: T | FlatObjectLike<T>) {
+        return this.deferredUpsert(item).execute();
+    }
+    public deferredUpsert(item: T | FlatObjectLike<T>) {
+        const entry = this.entry(item);
+        entry.add();
+        return this.dbContext.getUpsertQuery(entry);
     }
     public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);
@@ -200,9 +219,5 @@ export class DbSet<T> extends Queryable<T> {
         this.dictionary.delete(entry.key);
         entry.key = this.getKey(entry.entity);
         this.dictionary.set(entry.key, entry);
-    }
-
-    public upsert(item: ObjectLike<T>) {
-        return this.deferredUpsert(item).execute();
     }
 }
