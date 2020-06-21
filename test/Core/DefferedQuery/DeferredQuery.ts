@@ -277,6 +277,11 @@ describe("DEFERRED QUERY", () => {
             should();
             a.should.be.a("number");
         });
+        it("should work 2", async () => {
+            const a = db.execute("update orders set totalamount=0 where totalamount < 0");
+            should();
+            a.should.be.a("number");
+        });
         it("should work with parameter", async () => {
             db.connection = await db.getConnection();
             const spy = sinon.spy(db.connection, "query");
