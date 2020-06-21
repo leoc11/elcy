@@ -278,7 +278,7 @@ describe("DEFERRED QUERY", () => {
             a.should.be.a("number");
         });
         it("should work 2", async () => {
-            const a = db.execute("update orders set totalamount=0 where totalamount < 0");
+            const a = await db.execute("update orders set totalamount=0 where totalamount < 0");
             should();
             a.should.be.a("number");
         });
