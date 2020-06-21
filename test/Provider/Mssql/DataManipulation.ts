@@ -740,6 +740,7 @@ describe("DATA MANIPULATION", () => {
             effected.should.equal(1);
         });
         it("should upsert entity 4", async () => {
+            db.clear();
             const spy = sinon.spy(db.connection, "query");
             const parent = new AutoParent();
             parent.id = 1;
