@@ -14,7 +14,7 @@ export class TakeQueryable<T> extends Queryable<T> {
     public expression: SelectExpression<T>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);
+        const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number, true)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }

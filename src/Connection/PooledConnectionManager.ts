@@ -46,7 +46,6 @@ export class PooledConnectionManager<T extends DbType = any> implements IConnect
     public readonly waitingQueue = new QueuedTimeout<IResolver<PooledConnection>>((resolver) => {
         resolver.reject(new ConnectionError(10, "Acquire Timeout"));
     });
-    protected _waitQueues: Array<(value: PooledConnection) => void> = [];
     public async getAllConnections(): Promise<IConnection[]> {
         return [await this.driver.getConnection()];
     }

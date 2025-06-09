@@ -15,7 +15,7 @@ export class FunctionExpression<T = any> implements IExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
-        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.map((o) => resolveClone(o, replaceMap));
         const body = resolveClone(this.body, replaceMap);
         const clone = new FunctionExpression(body, params);
         replaceMap.set(this, clone);
@@ -35,5 +35,10 @@ export class FunctionExpression<T = any> implements IExpression<T> {
             return "(" + params.join(", ") + ") => (" + this.body.toString() + ")";
         }
         return "(" + params.join(", ") + ") => " + this.body.toString();
+    }
+
+    public toFunction(): () => T {
+        // tslint:disable-next-line: no-eval
+        return eval(this.toString());
     }
 }

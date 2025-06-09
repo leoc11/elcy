@@ -1,5 +1,4 @@
-import { expect, should } from "chai";
-import "mocha";
+import { expect, describe, it } from "vitest";
 import { mockContext } from "../../../src/Mock/MockContext";
 import { Collection, Order } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
@@ -14,28 +13,25 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("array");
-            a.should.has.length.greaterThan(0);
-            a[0].should.be.instanceof(Order);
+            expect(a).toBeInstanceOf(Array);
+            expect(a.length).toBeGreaterThan(0);
+            expect(a[0]).toBeInstanceOf(Order);
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("array");
-            a.should.has.length.greaterThan(0);
-            a[0].should.be.instanceof(Order);
+            expect(a).toBeInstanceOf(Array);
+            expect(a.length).toBeGreaterThan(0);
+            expect(a[0]).toBeInstanceOf(Order);
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
             // emulate the resolved value.
             deferred.value = [];
             const a = await deferred.execute();
-            should();
-            a.should.be.a("array");
-            a.should.has.length(0);
+            expect(a).toBeInstanceOf(Array);
+            expect(a.length).toBe(0);
         });
     });
     describe("COUNT", async () => {
@@ -44,23 +40,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(Infinity);
+            expect(a).toBe(Infinity);
         });
     });
     describe("SUM", async () => {
@@ -69,23 +62,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredSum((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredSum((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(Infinity);
+            expect(a).toBe(Infinity);
         });
     });
     describe("MAX", async () => {
@@ -94,23 +84,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredMax((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredMax((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(Infinity);
+            expect(a).toBe(Infinity);
         });
     });
     describe("MIN", async () => {
@@ -119,23 +106,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredMin((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredMin((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(Infinity);
+            expect(a).toBe(Infinity);
         });
     });
     describe("AVG", async () => {
@@ -144,23 +128,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredAvg((o) => o.TotalAmount);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("number");
+            expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredAvg((o) => o.TotalAmount);
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(Infinity);
+            expect(a).toBe(Infinity);
         });
     });
     describe("ALL", async () => {
@@ -169,23 +150,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("boolean");
+            expect(typeof a).toBe("boolean");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("boolean");
+            expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(true);
+            expect(a).toBe(true);
         });
     });
     describe("ANY", async () => {
@@ -194,23 +172,20 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.equal(true);
+            expect(a).toBe(true);
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredAny((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
-            should();
-            a.should.be.a("boolean");
+            expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredAny((o) => o.TotalAmount < 0);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(true);
+            expect(a).toBe(true);
         });
     });
     describe("FIRST", async () => {
@@ -219,16 +194,14 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.an.instanceof(Order);
+            expect(a).toBeInstanceOf(Order);
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.deferredFirst();
             await db.orders.count();
             const a = deferred.value;
 
-            should();
-            a.should.be.an.instanceof(Order);
+            expect(a).toBeInstanceOf(Order);
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.deferredFirst();
@@ -244,24 +217,21 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             const a = await deferred.execute();
 
-            should();
-            a.should.be.a("boolean");
+            expect(typeof a).toBe("boolean");
         });
         it("should be executed in batch", async () => {
             const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(10000);
             await db.orders.count();
             const a = deferred.value;
 
-            should();
-            a.should.be.an("boolean");
+            expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
             const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(-20);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
-            should();
-            a.should.be.equal(true);
+            expect(a).toBe(true);
         });
     });
     describe("ADVANCE", async () => {
@@ -275,11 +245,10 @@ describe("DEFERRED QUERY", () => {
             c.execute();
             const a = await collection.execute();
 
-            should();
-            a.should.be.a("array");
-            a.should.has.length.greaterThan(0);
-            a[0].should.be.instanceof(Collection);
-            c.value.should.be.an("number");
+            expect(a).toBeInstanceOf(Array);
+            expect(a.length).toBeGreaterThan(0);
+            expect(a[0]).toBeInstanceOf(Collection);
+            expect(typeof c.value).toBe("number");
         });
         it("should execute several query in batch", async () => {
             const sum = db.orders.select((o) => o.TotalAmount).deferredSum();
@@ -288,11 +257,10 @@ describe("DEFERRED QUERY", () => {
             // do something here.
             await any.execute();
 
-            should();
-            sum.value.should.be.a("number");
-            any.value.should.be.a("boolean");
-            array.value.should.be.an("array");
-            array.value[0].should.be.an.instanceof(Order);
+            expect(typeof sum.value).toBe("number");
+            expect(typeof any.value).toBe("boolean");
+            expect(array.value).toBeInstanceOf(Array);
+            expect(array.value[0]).toBeInstanceOf(Order);
         });
         it("should not have overlaping parameter issue", async () => {
             let value = 10000;
@@ -303,10 +271,9 @@ describe("DEFERRED QUERY", () => {
 
             await any2.execute();
 
-            should();
-            any1.value.should.be.an("array");
-            any2.value.should.be.an("array");
-            any1.value.should.not.equal(any2.value);
+            expect(any1.value).toBeInstanceOf(Array);
+            expect(any2.value).toBeInstanceOf(Array);
+            expect(any1.value).not.toEqual(any2.value);
         });
     });
 });

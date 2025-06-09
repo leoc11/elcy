@@ -67,6 +67,7 @@ import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
+import { SystemParameterExpression } from "../../ExpressionBuilder/Expression/SystemParameterExpression";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -735,7 +736,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected getParameter(param: IQueryBuilderParameter) {
         const paramObj = new Map<string, any>();
-        const qparams = param.queryExpression.paramExps.select((o) => param.parameters.get(o)).where((o) => !!o);
+        const qparams = param.queryExpression.paramExps
+            .where(o => !o.isSystem)
+            .select((o) => param.parameters.get(o)).where((o) => !!o);
         for (const o of qparams) {
             paramObj.set(o.name, o.value);
         }

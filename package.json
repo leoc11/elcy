@@ -5,7 +5,8 @@
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js",
+    "test": "vitest",
+    "test2": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js",
     "lint": "tslint ./src/**/*.ts --format verbose",
     "lint-fix": "tslint --fix ./src/**/*.ts --format verbose"
   },
@@ -33,17 +34,10 @@
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
-    "@types/chai": "^5.2.2",
-    "@types/chai-as-promised": "^8.0.2",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^22.15.30",
     "@types/sinon": "^17.0.4",
-    "@types/sinon-chai": "^4.0.0",
-    "chai": "^5.2.0",
-    "chai-as-promised": "^8.0.1",
-    "mocha": "^11.5.0",
     "sinon": "^20.0.0",
-    "sinon-chai": "^4.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "vitest": "^3.2.2"
   }
 }

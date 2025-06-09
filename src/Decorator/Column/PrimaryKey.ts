@@ -14,7 +14,7 @@ export function PrimaryKey(): PropertyDecorator {
             Reflect.defineMetadata(entityMetaKey, entityMetaData, target.constructor);
         }
 
-        if (!entityMetaData.primaryKeys.any((o) => o.propertyName === propertyKey)) {
+        if (!entityMetaData.primaryKeys.some((o) => o.propertyName === propertyKey)) {
             let columnMeta: IColumnMetaData<TE> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
             if (!columnMeta) {
                 columnMeta = new ColumnMetaData<TE, any>();

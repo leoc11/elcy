@@ -1,8 +1,10 @@
-import { should } from "chai";
-import "mocha";
+import "../../../src/Startup";
+import { Enumerable } from "../../../src/Enumerable/Enumerable";
+import "../../../src/Extensions/EnumerableExtension";
+import { describe, it, expect } from "vitest";
 
 describe("ENUMERABLE", () => {
-    const items = [1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7];
+    const items = Enumerable.from([1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7]);
     const items2 = [[1, 2], [3, 4]];
     const objArray = [{ position: 6, value: 6 }, { position: 3, value: 12 }, { position: 1, value: 1 }, { position: 3, value: 1 }];
     describe("DISTINCT", () => {
@@ -18,11 +20,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(10);
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
+            expect(index1).toBe(10);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
         });
     });
     describe("EXCEPT", () => {
@@ -38,11 +39,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.not.has.members([1, 5]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).not.toEqual(expect.arrayContaining([1, 5]));
         });
     });
     describe("FULLJOIN", () => {
@@ -58,11 +58,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([2, 6, 6, 10, 4, 8, 0, 0, 0, 2, 6, 8, 6, 10, 6, 10, 10, 14, 0, 2, 6, 4, 8, 8, 12]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([2, 6, 6, 10, 4, 8, 0, 0, 0, 2, 6, 8, 6, 10, 6, 10, 10, 14, 0, 2, 6, 4, 8, 8, 12]);
         });
     });
     describe("CROSSJOIN", () => {
@@ -78,16 +77,15 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([2, 6, 3, 7, 4, 8, 5, 9, 6, 10]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([2, 6, 3, 7, 4, 8, 5, 9, 6, 10]);
         });
     });
     describe("GROUPBY", () => {
         it("should work", () => {
-            const distincts = items.groupBy((o) => o % 2);
+            const distincts = items.groupBy((o) => (o % 2));
             let index1 = 0;
             for (const { } of distincts) {
                 index1++;
@@ -98,11 +96,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(2);
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
+            expect(index1).toBe(2);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
         });
     });
     describe("INNERJOIN", () => {
@@ -118,11 +115,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([2, 5, 0, 0, 0, 2, 5, 5, 0, 7]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([2, 5, 0, 0, 0, 2, 5, 5, 0, 7]);
         });
     });
     describe("INTERSECT", () => {
@@ -138,12 +134,11 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(1);
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([2]);
+            expect(index1).toBe(1);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([2]);
         });
     });
     describe("LEFTJOIN", () => {
@@ -159,11 +154,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([2, 6, 4, 0, 0, 0, 2, 8, 6, 6, 10, 0, 2, 6, 4, 8, 8]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([2, 6, 4, 0, 0, 0, 2, 8, 6, 6, 10, 0, 2, 6, 4, 8, 8]);
         });
     });
     describe("ORDER", () => {
@@ -179,11 +173,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9]);
         });
         it("should sort by desc", () => {
             const distincts = items.orderBy([(o) => o, "DESC"]);
@@ -197,11 +190,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([9, 8, 8, 7, 6, 5, 5, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([9, 8, 8, 7, 6, 5, 5, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0]);
         });
         it("should sort by position asc, value desc", () => {
             const distincts = objArray.orderBy([(o) => o.position], [(o) => o.value, "DESC"]);
@@ -215,11 +207,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([{ position: 1, value: 1 }, { position: 3, value: 12 }, { position: 3, value: 1 }, { position: 6, value: 6 }]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([{ position: 1, value: 1 }, { position: 3, value: 12 }, { position: 3, value: 1 }, { position: 6, value: 6 }]);
         });
     });
     describe("RIGHTJOIN", () => {
@@ -235,11 +226,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([0, 0, 0, 8, 0, 2, 6, 4, 8, 12]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([0, 0, 0, 8, 0, 2, 6, 4, 8, 12]);
         });
     });
     describe("SELECT", () => {
@@ -255,11 +245,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1]);
         });
     });
     describe("SELECTMANY", () => {
@@ -275,11 +264,10 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([1, 2, 3, 4]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([1, 2, 3, 4]);
         });
     });
     describe("SKIP TAKE", () => {
@@ -295,12 +283,11 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(2);
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([9, 0]);
+            expect(index1).toBe(2);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([9, 0]);
         });
     });
     describe("UNION", () => {
@@ -316,12 +303,11 @@ describe("ENUMERABLE", () => {
             }
             const array = distincts.toArray();
 
-            should();
-            index1.should.equal(3);
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([[1, 2], [3, 4], [5, 6]]);
+            expect(index1).toBe(3);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([[1, 2], [3, 4], [5, 6]]);
         });
     });
     describe("WHERE", () => {
@@ -337,10 +323,9 @@ describe("ENUMERABLE", () => {
             }
             const array = where.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
         });
         it("should apply multiple filter", () => {
             const where = items.where((o) => o % 2 === 0).where((o) => o <= 2);
@@ -354,11 +339,10 @@ describe("ENUMERABLE", () => {
             }
             const array = where.toArray();
 
-            should();
-            index1.should.equal(index2);
-            array.should.be.a("array");
-            array.should.has.lengthOf(index1);
-            array.should.deep.equals([0, 0, 0, 0, 2]);
+            expect(index1).toBe(index2);
+            expect(array).toBeInstanceOf(Array);
+            expect(array).toHaveLength(index1);
+            expect(array).toEqual([0, 0, 0, 0, 2]);
         });
     });
 });

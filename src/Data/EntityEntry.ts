@@ -429,7 +429,8 @@ export class EntityEntry<T = any> implements IEntityEntry<T> {
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedRelationMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.target.type);
-            new EmbeddedEntityEntry(embeddedDbSet, param.newValue, this);
+            
+            import("./EmbeddedEntityEntry").then(o => new o.EmbeddedEntityEntry(embeddedDbSet, param.newValue, this));
         }
 
         if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {

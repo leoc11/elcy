@@ -6,7 +6,7 @@ export class ArrayValueExpression<T = any> implements IExpression<T[]> {
     constructor(...items: Array<IExpression<T>>) {
         this.items = items;
         if (items.length > 0) {
-            this.itemType = items.first().type;
+            this.itemType = items[0].type;
         }
     }
     public items: Array<IExpression<T>>;
@@ -16,7 +16,7 @@ export class ArrayValueExpression<T = any> implements IExpression<T[]> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
-        const items = this.items.select((o) => resolveClone(o, replaceMap)).toArray();
+        const items = this.items.map((o) => resolveClone(o, replaceMap));
         const clone = new ArrayValueExpression(...items);
         replaceMap.set(this, clone);
         return clone;

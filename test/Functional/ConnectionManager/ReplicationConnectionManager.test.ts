@@ -1,5 +1,4 @@
-import { expect } from "chai";
-import "mocha";
+import {describe, it, expect } from "vitest";
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
 import { MockDriver } from "../../../src/Mock/MockDriver";
 

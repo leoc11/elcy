@@ -1,7 +1,7 @@
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
 
-export interface IObjectType<T = any> { new(...values: any[]): T; name?: string; }
+export interface IObjectType<T = any> { new(...values: any[]): T; }
 export interface IEnumType<T extends string | number> { [key: string]: T; }
 export type Pivot<T,
     TD extends { [key: string]: (item: T) => ValueType },
@@ -12,6 +12,7 @@ export type ObjectLike<T> = { [key in keyof T]?: T[key] };
 export type FlatObjectLike<T> = { [key in keyof T]?: T[key] & ValueType };
 export type PropertySelector<TE> = keyof TE | ((source: TE) => ValueType);
 export type KeysExceptType<T, TProp> = { [P in keyof T]: T[P] extends TProp ? never : P }[keyof T];
+export type KeyOfString<T> = Extract<keyof T, string>;
 export type KeysType<T, TProp> = { [P in keyof T]: T[P] extends TProp ? P : never }[keyof T];
 export type TypeItem<T> = (T extends Array<(infer U)> ? U : T);
 export type ValueType = number | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView;

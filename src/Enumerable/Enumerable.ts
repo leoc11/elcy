@@ -1,6 +1,129 @@
-import { GenericType } from "../Common/Type";
+import { IObjectType, Pivot, ValueType } from "../Common/Type";
+import { Enumerable } from "./Enumerable.internal";
+import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
+import { DistinctEnumerable } from "./DistinctEnumerable";
+import { ExceptEnumerable } from "./ExceptEnumerable";
+import { FullJoinEnumerable } from "./FullJoinEnumerable";
+import { GroupByEnumerable } from "./GroupByEnumerable";
+import { GroupJoinEnumerable } from "./GroupJoinEnumerable";
+import { IEnumerable } from "./IEnumerable";
+import { InnerJoinEnumerable } from "./InnerJoinEnumerable";
+import { IOrderDefinition } from "./Interface/IOrderDefinition";
+import { IntersectEnumerable } from "./IntersectEnumerable";
+import { LeftJoinEnumerable } from "./LeftJoinEnumerable";
+import { OrderEnumerable } from "./OrderEnumerable";
+import { RightJoinEnumerable } from "./RightJoinEnumerable";
+import { SelectEnumerable } from "./SelectEnumerable";
+import { SelectManyEnumerable } from "./SelectManyEnumerable";
+import { SkipEnumerable } from "./SkipEnumerable";
+import { TakeEnumerable } from "./TakeEnumerable";
+import { UnionEnumerable } from "./UnionEnumerable";
+import { WhereEnumerable } from "./WhereEnumerable";
 import { isNotNull } from "../Helper/Util";
-import { IEnumerableCache } from "./IEnumerableCache";
+declare module "./Enumerable" {
+    interface Enumerable<T> {
+        cast<TReturn>(): Enumerable<TReturn>;
+        crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        distinct(selector?: (item: T) => any): Enumerable<T>;
+        except(array2: IEnumerable<T>): Enumerable<T>;
+        fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
+        groupBy<K>(keySelector: (item: T) => K): GroupByEnumerable<K, T>;
+        groupJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult): Enumerable<TResult>;
+        innerJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
+        intersect(array2: IEnumerable<T>): Enumerable<T>;
+        leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
+        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
+        rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
+        select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
+        select<TReturn>(typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn>;
+        selectMany<TReturn>(selector: (item: T) => Iterable<TReturn>): Enumerable<TReturn>;
+        skip(skip: number): Enumerable<T>;
+        take(take: number): Enumerable<T>;
+        union(array2: IEnumerable<T>, isUnionAll?: boolean): Enumerable<T>;
+        where(predicate: (item: T) => boolean): Enumerable<T>;
+    }
+}
+Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
+    return this as any;
+};
+Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn> {
+    let type: IObjectType<TReturn>;
+    if (!selector) {
+        selector = typeOrSelector as any;
+    }
+    else {
+        type = typeOrSelector as any;
+    }
+    return new SelectEnumerable(this, selector, type);
+};
+Enumerable.prototype.selectMany = function <T, TReturn>(this: Enumerable<T>, selector: (item: T) => TReturn[] | Enumerable<TReturn>): Enumerable<TReturn> {
+    return new SelectManyEnumerable(this, selector);
+};
+Enumerable.prototype.where = function <T>(this: Enumerable<T>, predicate: (item: T) => boolean): Enumerable<T> {
+    return new WhereEnumerable(this, predicate);
+};
+Enumerable.prototype.orderBy = function <T>(this: Enumerable<T>, ...selectors: Array<IOrderDefinition<T>>): Enumerable<T> {
+    return new OrderEnumerable(this, ...selectors);
+};
+Enumerable.prototype.skip = function <T>(this: Enumerable<T>, skip: number): Enumerable<T> {
+    return new SkipEnumerable(this, skip);
+};
+Enumerable.prototype.take = function <T>(this: Enumerable<T>, take: number): Enumerable<T> {
+    return new TakeEnumerable(this, take);
+};
+Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector: (item: T) => K): GroupByEnumerable<K, T> {
+    return new GroupByEnumerable(this, keySelector);
+};
+Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {
+    return new DistinctEnumerable(this, selector);
+};
+Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new InnerJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.leftJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new LeftJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.rightJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new RightJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.fullJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new FullJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.groupJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new GroupJoinEnumerable(this, Enumerable.from(array2), relation, resultSelector);
+};
+Enumerable.prototype.crossJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, resultSelector: (item1: T | null, item2: T2 | null) => TResult = defaultResultFn): Enumerable<TResult> {
+    return new CrossJoinEnumerable(this, Enumerable.from(array2), resultSelector);
+};
+Enumerable.prototype.union = function <T>(this: Enumerable<T>, array2: IEnumerable<T>, isUnionAll: boolean = false): Enumerable<T> {
+    return new UnionEnumerable(this, Enumerable.from(array2), isUnionAll);
+};
+Enumerable.prototype.intersect = function <T>(this: Enumerable<T>, array2: IEnumerable<T>): Enumerable<T> {
+    return new IntersectEnumerable(this, Enumerable.from(array2));
+};
+Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: IEnumerable<T>): Enumerable<T> {
+    return new ExceptEnumerable(this, Enumerable.from(array2));
+};
+Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>> {
+    return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
+        const dimensionKey = {} as Pivot<T, TD, TM>;
+        for (const key in dimensions) {
+            if (dimensions[key] instanceof Function) {
+                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[keyof TD];
+            }
+        }
+        return dimensionKey;
+    }), (o) => {
+        for (const key in metrics) {
+            if (o.key) {
+                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[keyof TD];
+            }
+        }
+        return o.key;
+    });
+};
 
 export const keyComparer = <T = any>(a: T, b: T) => {
     let result = a === b;
@@ -14,234 +137,19 @@ export const keyComparer = <T = any>(a: T, b: T) => {
     }
     return result;
 };
-export class Enumerable<T = any> implements Iterable<T> {
-    public set enableCache(value) {
-        if (this.parent) {
-            this.cache.enabled = value;
-            if (!value) {
-                this.cache.result = null;
-            }
+export const defaultResultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R => {
+    const result = {} as any;
+    if (item2) {
+        for (const prop in item2) {
+            result[prop] = item2[prop];
         }
     }
-    public get enableCache() {
-        return !this.parent || this.cache.enabled;
-    }
-    constructor(source?: Iterable<any> | (() => IterableIterator<T>)) {
-        this.cache = {};
-        if (source) {
-            if (Array.isArray(source)) {
-                this.cache.result = source;
-                this.cache.enabled = true;
-                this.cache.isDone = true;
-            }
-            if ((source as IterableIterator<any>).next) {
-                this.cache.iterator = source as IterableIterator<any>;
-                this.enableCache = true;
-            }
-            else if (source instanceof Function) {
-                this.generator = source;
-            }
-            else {
-                this.parent = source as Iterable<any>;
-            }
+    if (item1) {
+        for (const prop in item1) {
+            result[prop] = item1[prop];
         }
     }
-    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
-        return source instanceof Enumerable ? source : new Enumerable(source);
-    }
-    public static range(start: number, end: number, step: number = 1) {
-        return new Enumerable(function* () {
-            while (start <= end) {
-                yield start;
-                start += step;
-            }
-        });
-    }
-    protected cache: IEnumerableCache<T>;
-    protected parent: Iterable<any>;
-    public [Symbol.iterator](): IterableIterator<T> {
-        if (this.enableCache) {
-            return this.cachedGenerator();
-        }
-        return this.generator();
-    }
-    public all(predicate: (item: T) => boolean): boolean {
-        for (const item of this) {
-            if (!predicate(item)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    public any(predicate?: (item: T) => boolean): boolean {
-        for (const item of this) {
-            if (!predicate || predicate(item)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    public avg(selector?: (item: T) => number): number {
-        let sum = 0;
-        let count = 0;
-        for (const item of this) {
-            sum += selector ? selector(item) : item as any;
-            count++;
-        }
-        return sum / count;
-    }
-    public contains(item: T): boolean {
-        for (const it of this) {
-            if (it === item) {
-                return true;
-            }
-        }
-        return false;
-    }
-    public count(predicate?: (item: T) => boolean): number {
-        let count = 0;
-        for (const item of this) {
-            if (!predicate || predicate(item)) {
-                count++;
-            }
-        }
-        return count;
-    }
+    return result;
+};
 
-    // Helper extension
-    public each(executor: (item: T, index: number) => void): void {
-        let index = 0;
-        for (const item of this) {
-            executor(item, index++);
-        }
-    }
-    public first(predicate?: (item: T) => boolean): T | null {
-        for (const item of this) {
-            if (!predicate || predicate(item)) {
-                return item;
-            }
-        }
-        return null;
-    }
-    public max(selector?: (item: T) => number): number {
-        let max = -Infinity;
-        for (const item of this) {
-            const num = selector ? selector(item) : item as any;
-            if (max < num) {
-                max = num;
-            }
-        }
-        return max;
-    }
-    public min(selector?: (item: T) => number): number {
-        let min = Infinity;
-        for (const item of this) {
-            const num = selector ? selector(item) : item as any;
-            if (!min || min > num) {
-                min = num;
-            }
-        }
-        return min;
-    }
-    public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
-        return this.where((o) => o instanceof (type as any)) as any;
-    }
-    public reduce<R>(func: (accumulated: R, item: T) => R): R;
-    public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;
-    public reduce<R>(seedOrFunc: R | ((accumulated: R, item: T) => R), func?: (accumulated: R, item: T) => R): R {
-        let accumulated: R;
-        if (func) {
-            accumulated = seedOrFunc as any;
-        }
-        else {
-            func = seedOrFunc as any;
-        }
-
-        for (const a of this) {
-            accumulated = func(accumulated, a);
-        }
-        return accumulated;
-    }
-    public sum(selector?: (item: T) => number): number {
-        let sum = 0;
-        for (const item of this) {
-            sum += selector ? selector(item) : item as any;
-        }
-        return sum;
-    }
-    public toArray(): T[] {
-        if (this.enableCache && this.cache.isDone) {
-            return this.cache.result.slice(0);
-        }
-
-        const arr = [];
-        for (const i of this) {
-            arr.push(i);
-        }
-        return arr;
-    }
-    public toMap<K, V = T>(keySelector: (item: T) => K, valueSelector?: (item: T) => V): Map<K, V> {
-        const rel = new Map<K, V>();
-        for (const i of this) {
-            rel.set(keySelector(i), valueSelector ? valueSelector(i) : i as any);
-        }
-        return rel;
-    }
-    protected *generator() {
-        for (const value of this.parent) {
-            yield value;
-        }
-    }
-    private *cachedGenerator(): IterableIterator<T> {
-        if (this.cache.isDone) {
-            yield* this.cache.result;
-            return;
-        }
-
-        if (!this.cache.iterator) {
-            this.cache.iterator = this.generator();
-            this.cache.result = [];
-        }
-        else if (!this.cache.result) {
-            this.cache.result = [];
-        }
-        const iterator = this.cache.iterator as (IterableIterator<any> & { _accessCount: number });
-        if (iterator && !iterator._accessCount) {
-            iterator._accessCount = 0;
-        }
-        iterator._accessCount++;
-
-        try {
-            let index = 0;
-            for (; ;) {
-                const isDone = this.cache.isDone;
-                const len = this.cache.result.length;
-                while (len > index) {
-                    yield this.cache.result[index++];
-                }
-                if (isDone) {
-                    break;
-                }
-
-                const a = iterator.next();
-                if (!a.done) {
-                    this.cache.result.push(a.value);
-                }
-                else if (!this.cache.isDone) {
-                    this.cache.isDone = true;
-                }
-            }
-        }
-        finally {
-            iterator._accessCount--;
-            if (iterator.return && iterator._accessCount <= 0) {
-                iterator.return();
-                if (this.cache.iterator === iterator) {
-                    this.cache.iterator = null;
-                }
-            }
-        }
-    }
-}
-
-import "./Enumerable.partial";
+export { Enumerable };

@@ -1,5 +1,5 @@
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, KeyOfString } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
@@ -278,7 +278,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
     protected visitMember<T, K extends keyof T>(exp: MemberAccessExpression<T, K>, param: IQueryVisitParameter): IExpression {
         const objectOperand = exp.objectOperand;
         if (exp.memberName === "prototype" || exp.memberName === "__proto__") {
-            throw new Error(`property ${exp.memberName} not supported in linq to sql.`);
+            throw new Error(`property ${String(exp.memberName)} not supported in linq to sql.`);
         }
 
         if (isEntityExp(objectOperand)) {
@@ -1138,12 +1138,21 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (exp.methodName === "skip") {
                             if (selectOperand.paging.take) {
                                 selectOperand.paging.take = this.visit(new SubstractionExpression(selectOperand.paging.take, paramExp), param);
+                                if (selectOperand.paging.take instanceof SqlParameterExpression) {
+                                    selectOperand.paging.take.isSystem = true;
+                                }
                                 paramExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
                             }
                             selectOperand.paging.skip = this.visit(selectOperand.paging.skip ? new AdditionExpression(selectOperand.paging.skip, paramExp) : paramExp, param);
+                            if (selectOperand.paging.skip instanceof SqlParameterExpression) {
+                                selectOperand.paging.skip.isSystem = true;
+                            }
                         }
                         else {
                             selectOperand.paging.take = this.visit(selectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [selectOperand.paging.take, paramExp]) : paramExp, param);
+                            if (selectOperand.paging.take instanceof SqlParameterExpression) {
+                                selectOperand.paging.take.isSystem = true;
+                            }
                         }
                     }
                     else {
@@ -1258,6 +1267,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     switch (exp.methodName) {
                         case "union":
                             const isUnionAllExp = this.visit(exp.params[1] as ParameterExpression<boolean>, param);
+                            if (isUnionAllExp instanceof SqlParameterExpression) {
+                                isUnionAllExp.isSystem = true;
+                            }
                             entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAllExp);
                             break;
                         case "intersect":
@@ -1729,7 +1741,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 return selectExp;
             }
 
-            const paramExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, exp.type);
+            const paramExp = exp.clone();
+            paramExp.name = this.parameterIndex + ":" + exp.name;
             paramExp.itemType = exp.itemType;
             return param.selectExpression.addSqlParameter(paramExp);
         }

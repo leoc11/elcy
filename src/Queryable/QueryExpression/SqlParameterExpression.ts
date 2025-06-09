@@ -6,12 +6,14 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 export class SqlParameterExpression<T = any> implements IExpression<T> {
     constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData) { }
     public type: GenericType<T>;
+    public isSystem?: boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
         const valueGetter = resolveClone(this.valueExp, replaceMap);
         const clone = new SqlParameterExpression(valueGetter, this.column);
+        clone.isSystem = this.isSystem;
         replaceMap.set(this, clone);
         return clone;
     }

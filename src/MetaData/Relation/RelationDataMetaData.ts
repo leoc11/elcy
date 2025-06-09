@@ -28,8 +28,8 @@ export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> imp
         this.relationName = relationOption.relationName;
 
         // TODO: possible failed coz relationOption.targetType / sourceType may undefined|string
-        this.sourceRelationColumns = relationOption.sourceRelationKeys.select((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o)).toArray();
-        this.targetRelationColumns = relationOption.targetRelationKeys.select((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o)).toArray();
+        this.sourceRelationColumns = relationOption.sourceRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
+        this.targetRelationColumns = relationOption.targetRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
         this.type = relationOption.type;
     }
     public columns: Array<IColumnMetaData<TType>> = [];

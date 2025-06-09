@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { IObjectType } from "../../Common/Type";
 import { IEventDispacher } from "../../Event/IEventHandler";
-import { isEqual } from "../../Helper/Util";
+import { arrayDelete, isEqual } from "../../Helper/Util";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
@@ -34,12 +34,12 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         const existingMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
         if (existingMetaData != null) {
             metadata.applyOption(existingMetaData);
-            entityMetaData.columns.delete(existingMetaData);
+            arrayDelete(entityMetaData.columns, existingMetaData);
         }
         Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
         entityMetaData.columns.push(metadata);
 
-        const pk = entityMetaData.primaryKeys.first((o) => o.propertyName === metadata.propertyName);
+        const pk = entityMetaData.primaryKeys.find((o) => o.propertyName === metadata.propertyName);
         if (pk) {
             entityMetaData.primaryKeys.delete(pk);
             entityMetaData.primaryKeys.push(metadata);

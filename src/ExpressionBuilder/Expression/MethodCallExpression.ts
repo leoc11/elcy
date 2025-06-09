@@ -75,7 +75,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
             replaceMap = new Map();
         }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
-        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.map((o) => resolveClone(o, replaceMap));
         const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
         replaceMap.set(this, clone);
         return clone;

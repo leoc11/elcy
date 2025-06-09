@@ -14,6 +14,7 @@ import { StringTemplateExpression } from "./Expression/StringTemplateExpression"
 import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
+import { Enumerable } from "../Enumerable/Enumerable";
 
 interface SyntaticParameter {
     index: number;
@@ -74,8 +75,8 @@ const globalObjectMaps = new Map<string, any>([
     // Helper
     ["DbFunction", DbFunction]
 ]);
-const prefixOperators = operators.where((o) => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap((o) => o.identifier);
-const postfixOperators = operators.where((o) => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap((o) => o.identifier);
+const prefixOperators = Enumerable.from(operators).where((o) => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix).toMap((o) => o.identifier);
+const postfixOperators = Enumerable.from(operators).where((o) => o.type !== OperatorType.Unary || (o as IUnaryOperator).position === UnaryPosition.Postfix).toMap((o) => o.identifier);
 export class SyntacticAnalyzer {
     public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: any }) {
         if (!userParameters) {

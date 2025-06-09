@@ -1,4 +1,5 @@
 import { operators } from "./IOperator";
+import { Enumerable } from "../Enumerable/Enumerable";
 
 interface ILexicalPointer {
     index: number;
@@ -96,7 +97,7 @@ export class LexicalAnalyzer {
     }
 }
 
-const keywordOperators = operators.where((o) => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select((o) => o.identifier);
+const keywordOperators = Enumerable.from(operators).where((o) => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select((o) => o.identifier);
 keywordOperators.enableCache = true;
 const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with"];
 
@@ -112,7 +113,7 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
 
     const data = input.slice(start, pointer.index);
     const type = keywordOperators.contains(data) ? LexicalTokenType.Operator :
-        keywords.contains(data) ? LexicalTokenType.Keyword : LexicalTokenType.Identifier;
+        keywords.includes(data) ? LexicalTokenType.Keyword : LexicalTokenType.Identifier;
 
     return {
         data: data,
@@ -150,7 +151,7 @@ function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexical
     do {
         pointer.index++;
         char = input[pointer.index];
-    } while ((char >= "0" && char <= "9") || char === ".");
+    } while ((char >= "0" && char <= "9") || char === "." || char === "e");
     const data = input.slice(start, pointer.index);
     return {
         data: data,

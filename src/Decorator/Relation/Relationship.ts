@@ -64,7 +64,7 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
 
         if (relationOption.targetType) {
             const targetMetaData: EntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
-            const reverseRelation = targetMetaData.relations.first((o) => o.fullName === relationName);
+            const reverseRelation = targetMetaData.relations.find((o) => o.fullName === relationName);
 
             if (reverseRelation) {
                 relationMeta.completeRelation(reverseRelation);

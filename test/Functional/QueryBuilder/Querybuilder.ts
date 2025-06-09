@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it, expect } from "vitest";
 
 describe("QUERYBUILDER", () => {
     describe("EXPRESSION", () => {

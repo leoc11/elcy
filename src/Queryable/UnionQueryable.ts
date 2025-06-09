@@ -24,7 +24,7 @@ export class UnionQueryable<T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor) {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression("union", Boolean)]);
+        const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression("union", Boolean, true)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const resut = queryVisitor.visit(methodExpression, visitParam) as any;
         return resut;

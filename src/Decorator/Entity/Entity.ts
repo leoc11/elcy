@@ -31,7 +31,8 @@ export function Entity<T extends TParent = any, TParent = any>(optionOrName?: IE
         }
     }
 
-    return (type: IObjectType<T>) => {
+    return <T>
+        (type: IObjectType<T>, context: ClassDecoratorContext<IObjectType<T>>) => {
         if (!option.name) {
             option.name = type.name;
         }

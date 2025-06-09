@@ -9,7 +9,9 @@ export class ParameterExpression<T = any> implements IExpression<T> {
     public itemType?: GenericType;
     public type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>): ParameterExpression<T> {
-        return this;
+        var clone = new ParameterExpression(this.name, this.type);
+        clone.itemType = this.itemType;
+        return clone;
     }
     public hashCode() {
         return this.type ? hashCode(this.type.name) : 27;

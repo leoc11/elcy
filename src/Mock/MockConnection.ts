@@ -395,6 +395,8 @@ export class MockConnection implements IConnection {
             command = commandOrQuery;
         }
         const count = (command as BatchedQuery).queryCount || 1;
+        // console.log(JSON.stringify(command.query));
+        // console.log(command.query);
         return this.results.splice(0, count);
     }
     public reset(): Promise<void> {

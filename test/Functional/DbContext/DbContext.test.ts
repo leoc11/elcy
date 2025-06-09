@@ -1,6 +1,4 @@
-import * as chai from "chai";
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import { describe, it, expect, afterEach, beforeAll, afterAll, vi } from "vitest";
 import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheManager";
 import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
 import { EntityState } from "../../../src/Data/EntityState";
@@ -9,8 +7,6 @@ import { mockContext } from "../../../src/Mock/MockContext";
 import { Order, OrderDetail, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { RelationState } from "../../../src/Data/RelationState";
-
-chai.use(sinonChai);
 
 const db = new MyDb();
 mockContext(db);
@@ -23,55 +19,55 @@ describe("DBCONTEXT", () => {
             const entry = db.attach(new Order({
                 OrderId: Uuid.new()
             }));
-            chai.expect(entry.state).equal(EntityState.Unchanged);
+            expect(entry.state).toBe(EntityState.Unchanged);
         });
         it("should attach and mark entity added", () => {
             const entry = db.add(new Order({
                 OrderId: Uuid.new()
             }));
-            chai.expect(entry.state).equal(EntityState.Added);
+            expect(entry.state).toBe(EntityState.Added);
         });
         it("should attach and mark entity updated", () => {
             const entry = db.update(new Order({
                 OrderId: Uuid.new()
             }));
-            chai.expect(entry.state).equal(EntityState.Modified);
+            expect(entry.state).toBe(EntityState.Modified);
         });
         it("should mark entity deleted", () => {
             const entry = db.delete(new Order({
                 OrderId: Uuid.new()
             }));
-            chai.expect(entry.state).equal(EntityState.Deleted);
+            expect(entry.state).toBe(EntityState.Deleted);
         });
         it("should detach entity", () => {
             const entity = db.orders.new(Uuid.new());
             const entry = db.detach(entity);
-            chai.expect(entry.state).equal(EntityState.Detached);
+            expect(entry.state).toBe(EntityState.Detached);
         });
     });
     describe("ENTITY CHANGES DETECTION", async () => {
         it("should detect property changes and reset", () => {
             const entity = new Order({ OrderDate: null, OrderId: Uuid.new() });
             const entry = db.attach(entity);
-            chai.expect(entry.state).equal(EntityState.Unchanged);
+            expect(entry.state).toBe(EntityState.Unchanged);
 
             entity.OrderDate = new Date();
-            chai.expect(entry.state).equal(EntityState.Modified);
-            chai.expect(entry.getModifiedProperties()).to.contains("OrderDate");
-            chai.expect(entry.getOriginalValue("OrderDate")).to.equal(null);
+            expect(entry.state).toBe(EntityState.Modified);
+            expect(entry.getModifiedProperties()).to.contains("OrderDate");
+            expect(entry.getOriginalValue("OrderDate")).to.equal(null);
 
             entry.resetChanges();
-            chai.expect(entry.state).equal(EntityState.Unchanged);
-            chai.expect(entity.OrderDate).equal(null);
-            chai.expect(entry.getModifiedProperties()).to.be.empty;
+            expect(entry.state).toBe(EntityState.Unchanged);
+            expect(entity.OrderDate).toBe(null);
+            expect(entry.getModifiedProperties()).to.be.empty;
         });
         it("should not detect property changes for readonly property", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
             const entry = db.attach(entity);
-            chai.expect(entry.state).equal(EntityState.Unchanged);
+            expect(entry.state).toBe(EntityState.Unchanged);
 
             entity.isDeleted = true;
-            chai.expect(entry.state).equal(EntityState.Unchanged);
+            expect(entry.state).toBe(EntityState.Unchanged);
         });
         it("should detect relation changes", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
@@ -79,7 +75,7 @@ describe("DBCONTEXT", () => {
             entity.Order = new Order({ OrderId: Uuid.new() });
 
             const relationEntry = db.relationEntry(entity, "Order", entity.Order);
-            chai.expect(relationEntry.state).equal(RelationState.Added);
+            expect(relationEntry.state).toBe(RelationState.Added);
         });
     });
     describe("RELATION ENTRY", async () => {
@@ -87,26 +83,26 @@ describe("DBCONTEXT", () => {
             const order = new Order({ OrderId: Uuid.new() });
             const orderDetail = new OrderDetail({ OrderDetailId: Uuid.new() });
             const relEntry = db.relationAttach(order, "OrderDetails", orderDetail);
-            chai.expect(relEntry.state).equal(RelationState.Unchanged);
+            expect(relEntry.state).toBe(RelationState.Unchanged);
         });
         it("should attach and mark relation added", () => {
             const order = new Order({ OrderId: Uuid.new() });
             const orderDetail = new OrderDetail({ OrderDetailId: Uuid.new() });
             const relEntry = db.relationAdd(order, "OrderDetails", orderDetail);
-            chai.expect(relEntry.state).equal(RelationState.Added);
+            expect(relEntry.state).toBe(RelationState.Added);
         });
         it("should mark relation deleted", () => {
             const order = new Order({ OrderId: Uuid.new() });
             const orderDetail = new OrderDetail({ OrderDetailId: Uuid.new() });
             const relEntry = db.relationDelete(order, "OrderDetails", orderDetail);
-            chai.expect(relEntry.state).equal(RelationState.Deleted);
+            expect(relEntry.state).toBe(RelationState.Deleted);
         });
         it("should detach relation", () => {
             const order = new Order({ OrderId: Uuid.new() });
             const orderDetail = new OrderDetail({ OrderDetailId: Uuid.new() });
             db.relationAdd(order, "OrderDetails", orderDetail);
             const relEntry = db.relationDetach(order, "OrderDetails", orderDetail);
-            chai.expect(relEntry.state).equal(RelationState.Detached);
+            expect(relEntry.state).toBe(RelationState.Detached);
         });
     });
     describe("ENTITY ENTRY", async () => {
@@ -114,41 +110,41 @@ describe("DBCONTEXT", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
             const entry = db.attach(entity);
             await entry.reload();
-            chai.expect(entity).to.has.property("name").that.not.null;
-            chai.expect(entity).to.has.property("quantity").that.not.null;
+            expect(entity).to.has.property("name").that.not.null;
+            expect(entity).to.has.property("quantity").that.not.null;
         });
         it("should load to-one relation", async () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
             const entry = db.attach(entity);
             await entry.loadRelation((o) => o.Order);
-            chai.expect(entity).to.has.property("Order").that.is.an.instanceOf(Order);
+            expect(entity).to.has.property("Order").that.is.an.instanceOf(Order);
         });
         it("should load to-many relation", async () => {
             const entity = new Order({ OrderId: Uuid.new() });
             const entry = db.attach(entity);
             await entry.loadRelation((o) => o.OrderDetails);
-            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
+            expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
             for (const o of entity.OrderDetails) {
-                o.should.be.an.instanceof(OrderDetail);
+                expect(o).toBeInstanceOf(OrderDetail);
             }
         });
         it("should load multiple relations", async () => {
             const entity = new Order({ OrderId: Uuid.new() });
             const entry = db.attach(entity);
             await entry.loadRelation((o) => o.OrderDetails.include((od) => od.Product));
-            chai.expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
+            expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
             for (const o of entity.OrderDetails) {
-                chai.expect(o).to.be.an.instanceof(OrderDetail);
-                chai.expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
+                expect(o).toBeInstanceOf(OrderDetail);
+                expect(o).to.has.property("Product").that.is.an.instanceOf(Product);
 
             }
         });
     });
     describe("QUERY CACHE", async () => {
-        before(async () => {
+        beforeAll(async () => {
             db.queryCacheManagerFactory = () => new DefaultQueryCacheManager();
         });
-        after(async () => {
+        afterAll(async () => {
             db.queryCacheManagerFactory = null;
         });
         it("should cached query", async () => {
@@ -159,7 +155,7 @@ describe("DBCONTEXT", () => {
             }));
             groupBy.toString();
             const queryCache = db.queryCacheManager.get(groupBy.hashCode());
-            chai.expect(queryCache).not.equal(null);
+            expect(queryCache).not.equal(null);
         });
         it("should use same query cache for diff take skip value", async () => {
             // build string with it's query cache
@@ -167,8 +163,8 @@ describe("DBCONTEXT", () => {
             const take = db.orders.take(1).skip(2);
             const cache = db.queryCacheManager.get(take.hashCode());
 
-            chai.expect(cache).not.null;
-            chai.expect(cache).not.undefined;
+            expect(cache).not.null;
+            expect(cache).not.undefined;
         });
         it("should used cached query for same query", async () => {
             const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
@@ -176,17 +172,16 @@ describe("DBCONTEXT", () => {
                 count: o.count(),
                 sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
-            const spy = sinon.spy(groupBy, "buildQuery");
+            const spy = vi.spyOn(groupBy, "buildQuery");
             groupBy.toString();
-            chai.should();
-            spy.should.not.be.called;
+            expect(spy).not.toHaveBeenCalled();
         });
     });
     describe("RESULT CACHE", async () => {
-        before(async () => {
+        beforeAll(async () => {
             db.resultCacheManagerFactory = () => new DefaultResultCacheManager();
         });
-        after(async () => {
+        afterAll(async () => {
             db.resultCacheManagerFactory = null;
         });
         it("should cached result", async () => {
@@ -198,7 +193,7 @@ describe("DBCONTEXT", () => {
             const deferredQuery = groupBy.deferredToArray();
             await deferredQuery.execute();
             const resultCache = await db.resultCacheManager.get(deferredQuery.hashCode().toString());
-            chai.expect(resultCache).not.equal(null);
+            expect(resultCache).not.equal(null);
         });
         it("should used cached result for same query", async () => {
             const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
@@ -206,10 +201,9 @@ describe("DBCONTEXT", () => {
                 count: o.count(),
                 sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
-            const spy = sinon.spy(db, "executeQueries");
+            const spy = vi.spyOn(db, "executeQueries");
             await groupBy.toArray();
-            chai.should();
-            spy.should.not.be.called;
+            expect(spy).not.toHaveBeenCalled();
         });
     });
 });

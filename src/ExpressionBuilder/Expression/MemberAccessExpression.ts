@@ -5,6 +5,7 @@ import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
+
 export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implements IMemberOperatorExpression<TE, T> {
     public get type() {
         if (!this._type) {

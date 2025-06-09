@@ -6,7 +6,7 @@ import { IEntityExpression } from "./IEntityExpression";
 
 export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
     public get columnName() {
-        return this.propertyName;
+        return String(this.propertyName);
     }
     public get dataPropertyName() {
         return this.alias;
@@ -19,7 +19,7 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
             this.expression = expression.expression;
         }
         if (!this.alias) {
-            this.alias = this.propertyName;
+            this.alias = String(this.propertyName);
         }
     }
     /**
@@ -41,12 +41,12 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         return clone;
     }
     public hashCode() {
-        return hashCode(this.propertyName, hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
+        return hashCode(String(this.propertyName), hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
     }
     public toString(): string {
         return `ComputedColum({
 Expression:${this.expression.toString()},
-Name:${this.propertyName}
+Name:${String(this.propertyName)}
 })`;
     }
 }

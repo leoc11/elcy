@@ -1,5 +1,5 @@
-import { expect } from "chai";
-import "mocha";
+import "../../../src/Startup";
+import { describe, it, expect } from "vitest";
 import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";
 

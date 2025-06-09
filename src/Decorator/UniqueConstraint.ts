@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { Enumerable } from "../Enumerable/Enumerable";
 import { GenericType, PropertySelector } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
@@ -48,11 +49,11 @@ export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstrain
             entityMetaData = new AbstractEntityMetaData(target.constructor as any);
         }
 
-        let checkMetaData = entityMetaData.constraints.first((o) => o instanceof UniqueConstraintMetaData && o.name === option.name);
+        let checkMetaData = entityMetaData.constraints.find((o) => o instanceof UniqueConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
             entityMetaData.constraints.delete(checkMetaData);
         }
-        const columns = option.properties
+        const columns = Enumerable.from(option.properties)
             .select((o) => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o as keyof TE) as IColumnMetaData)
             .where((o) => !!o)
             .toArray();

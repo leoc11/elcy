@@ -34,7 +34,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
             this.target = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
         }
 
-        this.relationColumns = relationOption.relationKeys.select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+        this.relationColumns = Enumerable.from(relationOption.relationKeys).select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
             .select((o) => {
                 let col = Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>;
                 if (!col) {
@@ -77,7 +77,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
 
             // validate nullable
             if (typeof this.reverseRelation.nullable !== "boolean") {
-                this.reverseRelation.nullable = this.reverseRelation.relationColumns.all((o) => o.nullable);
+                this.reverseRelation.nullable = this.reverseRelation.relationColumns.every((o) => o.nullable);
             }
             else if (this.reverseRelation.nullable && this.reverseRelation.relationColumns.any((o) => !o.nullable)) {
                 throw new Error(`Relation ${this.name} is nullable but it's dependent column is not nullable`);

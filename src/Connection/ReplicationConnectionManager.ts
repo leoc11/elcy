@@ -5,6 +5,7 @@ import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "./IDriver";
 import { PooledConnection } from "./PooledConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
+import { Enumerable } from "../Enumerable/Enumerable";
 
 export class ReplicationConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
     public get driver() {
@@ -35,7 +36,7 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
             replicaDrivers.push(masterDriver);
         }
 
-        this.replicaConnectionManagers = replicaDrivers.select((o) => o === masterDriver ? this.masterConnectionManager : new PooledConnectionManager(o)).toArray();
+        this.replicaConnectionManagers = replicaDrivers.map((o) => o === masterDriver ? this.masterConnectionManager : new PooledConnectionManager(o));
     }
     public readonly masterConnectionManager: PooledConnectionManager<T>;
     public readonly replicaConnectionManagers: Array<PooledConnectionManager<T>>;
@@ -47,7 +48,7 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
         return res;
     }
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
-        const manager = writable ? this.masterConnectionManager : this.replicaConnectionManagers.orderBy([(o) => o.connectionCount]).first();
+        const manager = writable ? this.masterConnectionManager : Enumerable.from(this.replicaConnectionManagers).orderBy([(o) => o.connectionCount]).first();
         return await manager.getConnection(writable);
     }
 }

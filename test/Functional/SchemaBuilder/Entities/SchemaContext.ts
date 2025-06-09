@@ -1,3 +1,4 @@
+import "../../../../src/Startup";
 import { DefaultResultCacheManager } from "../../../../src/Cache/DefaultResultCacheManager";
 import { IObjectType } from "../../../../src/Common/Type";
 import { IDriver } from "../../../../src/Connection/IDriver";

@@ -1,4 +1,5 @@
-import * as chai from "chai";
+import "../../../src/Startup";
+import {describe, it, expect, beforeEach, afterEach, vi} from "vitest";
 import { QueryType } from "../../../src/Common/Enum";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
@@ -36,8 +37,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.include({
+            expect(schemaQuery).toEqual(expect.objectContaining({
                 commit: [
                     {
                         query: "CREATE TABLE [dbo].[Schema]\n(\n\t[primaryKey] int NOT NULL IDENTITY(1,1),\n\t[boolean] bit NOT NULL,\n\t[decimal] decimal(10, 2) NOT NULL,\n\t[enum] nvarchar(255) NOT NULL,\n\t[identifier] uniqueidentifier NOT NULL,\n\t[integer] int NOT NULL,\n\t[nullable] bit,\n\t[real] real NOT NULL,\n\t[rowVersion] rowversion NOT NULL,\n\t[string] nvarchar(150) DEFAULT 'empty' NOT NULL,\n\t[date] date NOT NULL,\n\t[time] time(7) NOT NULL,\n\t[timeUTC] time(5) NOT NULL,\n\t[dateTime] datetime NOT NULL,\n\t[dateTimeUTC] datetime NOT NULL,\n\t[createdDate] datetime DEFAULT getutcdate() NOT NULL,\n\t[modifiedDate] datetime DEFAULT getutcdate() NOT NULL,\n\t[deleted] bit DEFAULT 0 NOT NULL,\n\tCONSTRAINT [PK_Schema] PRIMARY KEY ([primaryKey]),\n\tCONSTRAINT [CK_Schema_decimal] CHECK (([decimal]>=0)),\n\tCONSTRAINT [UQ_Schema_identifier] UNIQUE ([identifier]),\n\tCONSTRAINT [Schema_entity_unique] UNIQUE ([decimal],[real]),\n\tCONSTRAINT [Schema_entity_check] CHECK (([decimal]>[integer]))\n)",
@@ -52,7 +52,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
                     { query: "DROP TABLE [dbo].[Schema]", type: 4, comment: "You might lost your data" },
                     { query: "DROP TABLE [dbo].[SubSchema]", type: 4, comment: "You might lost your data" }
                 ]
-            });
+            }));
         });
         it("should not detect any changes", async () => {
             const mockConnection = getConnection(db.connection);
@@ -60,8 +60,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [],
                 rollback: []
             });
@@ -82,8 +81,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] ADD [binary] binary(50) NOT NULL", type: QueryType.DDL }
                 ],
@@ -108,8 +106,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] ALTER COLUMN [binary] varbinary(10)", type: QueryType.DDL },
                     { query: "ALTER TABLE [dbo].[Schema] ADD DEFAULT 0x000c280c00 FOR [binary]", type: QueryType.DDL }
@@ -137,8 +134,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.include({
+            expect(schemaQuery).toEqual(expect.objectContaining({
                 commit: [
                     { query: "DECLARE @param0 nvarchar(255) = ( SELECT dc.name AS ConstraintName FROM sys.default_constraints dc join sys.columns c on dc.parent_object_id = c.object_id and dc.parent_column_id = c.column_id where SCHEMA_NAME(schema_id) = 'dbo' and OBJECT_NAME(parent_object_id) = 'Schema' and c.name = 'binary' )", type: QueryType.DQL },
                     { query: "EXEC('ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [' + @param0 + ']')", type: QueryType.DDL },
@@ -149,7 +145,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
                     { query: "ALTER TABLE [dbo].[Schema] ALTER COLUMN [binary] varbinary(10)", type: QueryType.DDL },
                     { query: "ALTER TABLE [dbo].[Schema] ADD DEFAULT 0x000C280C00 FOR [binary]", type: QueryType.DDL }
                 ]
-            });
+            }));
         });
         it("should update column 3", async () => {
             const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
@@ -165,8 +161,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.include({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "DECLARE @param0 nvarchar(255) = ( SELECT dc.name AS ConstraintName FROM sys.default_constraints dc join sys.columns c on dc.parent_object_id = c.object_id and dc.parent_column_id = c.column_id where SCHEMA_NAME(schema_id) = 'dbo' and OBJECT_NAME(parent_object_id) = 'Schema' and c.name = 'binary' )", type: QueryType.DQL },
                     { query: "EXEC('ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [' + @param0 + ']')", type: QueryType.DDL },
@@ -189,8 +184,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] DROP COLUMN [binary]", type: QueryType.DDL, comment: "You might lost your data" }
                 ],
@@ -209,8 +203,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] ADD [NEW_primaryKey] int NOT NULL", type: QueryType.DDL },
                     { query: "EXEC('UPDATE [dbo].[Schema] WITH (HOLDLOCK TABLOCKX) SET [NEW_primaryKey] = [primaryKey]')", type: QueryType.DML },
@@ -241,8 +234,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "CREATE UNIQUE INDEX IX_createdDate_modifiedDate ON [dbo].[Schema] ([createdDate],[modifiedDate])", type: QueryType.DDL }
                 ],
@@ -265,8 +257,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "DROP INDEX [dbo].[Schema].IX_deleted", type: QueryType.DDL }
                 ],
@@ -292,8 +283,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [Schema_entity_check]", type: 4 },
                     { query: "ALTER TABLE [dbo].[Schema] ADD CONSTRAINT CONSTRAINT [Schema_entity_check] CHECK (([decimal]<[integer]))", type: 4 }
@@ -317,8 +307,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [CK_Schema_decimal]", type: 4 }
                 ],
@@ -343,8 +332,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [Schema_entity_unique]", type: 4 },
                     { query: "ALTER TABLE [dbo].[Schema] ADD CONSTRAINT CONSTRAINT [Schema_entity_unique] UNIQUE ([real])", type: 4 }
@@ -368,8 +356,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[Schema] DROP CONSTRAINT [UQ_Schema_identifier]", type: 4 }
                 ],
@@ -394,8 +381,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[SubSchema] DROP CONSTRAINT [own_Schema_SubSchema]", type: 4 },
                     { query: "ALTER TABLE [dbo].[SubSchema] ADD CONSTRAINT [own_Schema_SubSchema] FOREIGN KEY ([identifier]) REFERENCES [dbo].[Schema] ([primaryKey])", type: 4 }
@@ -419,8 +405,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
 
             const schemaQuery = await db.getUpdateSchemaQueries([Schema, SubSchema]);
 
-            chai.should();
-            schemaQuery.should.deep.equal({
+            expect(schemaQuery).toEqual({
                 commit: [
                     { query: "ALTER TABLE [dbo].[SubSchema] DROP CONSTRAINT [own_Schema_SubSchema]", type: 4 }
                 ],
