@@ -6,14 +6,14 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
-    public get primaryColumns(): IColumnExpression[] {
+export class CustomEntityExpression<T = unknown> implements IEntityExpression<T> {
+    public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
         }
         return this._primaryColumns;
     }
-    constructor(public name: string, columns: IColumnExpression[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: IOrderQueryDefinition[] = []) {
+    constructor(public name: string, columns: IColumnExpression<T>[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: IOrderQueryDefinition[] = []) {
         this.columns = columns.select((o) => {
             const clone = o.clone();
             clone.entity = this;
@@ -24,11 +24,11 @@ export class CustomEntityExpression<T = any> implements IEntityExpression<T> {
             return clone;
         }).toArray();
     }
-    public columns: IColumnExpression[];
+    public columns: IColumnExpression<T>[];
     public entityTypes: IObjectType[] = [];
     public isRelationData?: boolean;
     public select?: SelectExpression<T>;
-    private _primaryColumns: IColumnExpression[];
+    private _primaryColumns: IColumnExpression<T>[];
     public clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();

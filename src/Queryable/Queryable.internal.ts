@@ -32,14 +32,14 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 
-export abstract class Queryable<T = any> {
+export abstract class Queryable<T = unknown> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
     /**
      * parameter that is actually used by current queryable
      */
-    public get parameters(): { [key: string]: any } {
+    public get parameters(): { [key: string]: unknown } {
         return this.parent ? this.parent.parameters : {};
     }
     public get queryOption(): IQueryOption {
@@ -66,7 +66,7 @@ export abstract class Queryable<T = any> {
 
     //#region Get Result
 
-    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: any }): IQueryParameterMap {
+    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: unknown }): IQueryParameterMap {
         const result: IQueryParameterMap = new Map();
         const valueTransformer = new ExpressionExecutor(params);
         for (const sqlParameter of queryExp.paramExps) {
@@ -375,17 +375,20 @@ export abstract class Queryable<T = any> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrPredicate?: DeleteMode | ((item: T) => boolean), mode?: DeleteMode) {
+    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: T) => boolean), mode?: DeleteMode) {
         let queryCache: IQueryCache<T>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let predicate: (item: T) => boolean = null;
         if (modeOrPredicate) {
-            if (modeOrPredicate instanceof Function) {
-                predicate = modeOrPredicate;
+            if (modeOrPredicate instanceof FunctionExpression) {
+                return this.where(modeOrPredicate).deferredDelete(mode);
+            }
+            else if (modeOrPredicate instanceof Function) {
+                return this.where(modeOrPredicate).deferredDelete(mode);
             }
             else {
                 mode = modeOrPredicate;
@@ -414,16 +417,7 @@ export abstract class Queryable<T = any> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let selectExp = this.buildQuery(visitor) as SelectExpression<T>;
-
-            if (predicate) {
-                const metParams = [];
-                metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
-                const methodExpression = new MethodCallExpression(selectExp, "where", metParams);
-                const param: IQueryVisitParameter = { selectExpression: selectExp, scope: "queryable" };
-                visitor.visit(methodExpression, param);
-                selectExp = param.selectExpression;
-            }
+            const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
 
             const commandQuery = new DeleteExpression(selectExp, new SqlParameterExpression(new ParameterExpression("__deleteMode")));
             if (Diagnostic.enabled) {
@@ -528,7 +522,7 @@ export abstract class Queryable<T = any> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => {
                 let i = 0;
-                result = result.where((o) => (query.queries[i++].type & QueryType.DQL) && true).toArray();
+                result = result.where(() => (query.queries[i++].type & QueryType.DQL) && true).toArray();
                 return queryCache.resultParser.parse(result, this.dbContext).first();
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
@@ -565,7 +559,7 @@ export abstract class Queryable<T = any> {
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
             const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
-            if (!this.dbContext.entityTypes.contains(selectExp.itemExpression.type as any)) {
+            if (!this.dbContext.entityTypes.contains(selectExp.itemExpression.type as IObjectType<T>)) {
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
             }
 
@@ -824,7 +818,7 @@ export abstract class Queryable<T = any> {
     }
     public deferredToMap<K, V>(keySelector: (item: T) => K, valueSelector?: (item: T) => V) {
         if (!valueSelector) {
-            valueSelector = (o: any) => o;
+            valueSelector = (o: T) => (o as unknown as V);
         }
 
         let queryCache: IQueryCache<{ Key: K, Value: V }>;
@@ -928,11 +922,11 @@ export abstract class Queryable<T = any> {
             for (const prop in setter) {
                 const val = setter[prop];
                 if (val instanceof Function) {
-                    const funcExp = ExpressionBuilder.parse(val as any, [this.type], this.parameters);
+                    const funcExp = ExpressionBuilder.parse(val as (item: T) => ValueType, [this.type], this.parameters);
                     setterExp[prop] = visitor.visitFunction(funcExp, [commandQuery.getItemExpression()], { selectExpression: commandQuery, scope: "queryable" });
                 }
                 else {
-                    setterExp[prop] = new ValueExpression(val as T[keyof T]);
+                    setterExp[prop] = new ValueExpression(val as T[Extract<keyof T, string>]);
                 }
             }
 
@@ -959,10 +953,11 @@ export abstract class Queryable<T = any> {
         return query;
     }
 
-    public async delete(mode: DeleteMode): Promise<number>;
+    public async delete(mode?: DeleteMode): Promise<number>;
+    public async delete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): Promise<number>;
     public async delete(predicate?: (item: T) => boolean, mode?: DeleteMode): Promise<number>;
-    public async delete(modeOrPredicate?: DeleteMode | ((item: T) => boolean), mode?: DeleteMode) {
-        const query = this.deferredDelete(modeOrPredicate as any, mode);
+    public async delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: T) => boolean), mode?: DeleteMode) {
+        const query = this.deferredDelete(modeOrPredicate as FunctionExpression<boolean, T>, mode);
         return await query.execute();
     }
     public async find(id: ValueType | ObjectLike<T>) {
@@ -973,7 +968,7 @@ export abstract class Queryable<T = any> {
         const query = this.deferredFirst(predicate);
         return await query.execute();
     }
-    public flatQueryParameter(param: { index: number }): { [key: string]: any } {
+    public flatQueryParameter(param: { index: number }): { [key: string]: unknown } {
         return this.parent ? this.parent.flatQueryParameter(param) : {};
     }
     public abstract hashCode(): number;
@@ -1048,7 +1043,7 @@ export abstract class Queryable<T = any> {
         return await query.execute();
     }
 
-    private cacheKey(flatParams: { [key: string]: any }, type?: string, addCode?: number) {
+    private cacheKey(flatParams: { [key: string]: unknown }, type?: string, addCode?: number) {
         let cacheKey = hashCode(type, this.hashCode());
         if (addCode) {
             cacheKey = hashCodeAdd(cacheKey, addCode);

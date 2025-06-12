@@ -1,6 +1,6 @@
 import { Enumerable } from "./Enumerable";
 
-export class SelectManyEnumerable<T = any, K = any> extends Enumerable<K> {
+export class SelectManyEnumerable<T = unknown, K = unknown> extends Enumerable<K> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => (K[] | Enumerable<K>)) {
         super();
     }

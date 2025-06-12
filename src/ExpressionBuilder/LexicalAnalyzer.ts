@@ -183,6 +183,7 @@ function analyzeRegexp(pointer: ILexicalPointer, input: string): ILexicalToken {
 function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock = false) {
     pointer.index += 2;
     let char: string;
+    const loop = true;
     do {
         char = input[pointer.index++];
         if (isBlock) {
@@ -196,7 +197,7 @@ function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock 
         else if (char === "\n") {
             break;
         }
-    } while (true);
+    } while (loop);
 }
 function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
     const start = pointer.index;

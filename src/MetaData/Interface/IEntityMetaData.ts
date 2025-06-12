@@ -12,7 +12,7 @@ import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IEntityMetaData<TE extends TBase = any, TBase = any> extends IDBEventListener<TE> {
+export interface IEntityMetaData<TE = unknown, TBase = unknown> extends IDBEventListener<TE> {
     allowInheritance?: boolean;
     columns: Array<IColumnMetaData<TE>>;
     concurrencyMode?: ConcurrencyModel;

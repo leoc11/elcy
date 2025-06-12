@@ -8,10 +8,10 @@ import { IDriver } from "./IDriver";
 import { PooledConnection } from "./PooledConnection";
 
 interface IResolver<T> {
-    reject: (reason: any) => void;
+    reject: (reason: unknown) => void;
     resolve: (item: T) => void;
 }
-export class PooledConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
+export class PooledConnectionManager<T extends DbType = DbType> implements IConnectionManager<T> {
     public get poolSize() {
         return this.pools.queue.length;
     }
@@ -39,18 +39,19 @@ export class PooledConnectionManager<T extends DbType = any> implements IConnect
         }
     }
     public connectionCount = 0;
-    public readonly pools = new QueuedTimeout<PooledConnection>((con: PooledConnection) => {
+    public readonly pools = new QueuedTimeout<PooledConnection>(async (con: PooledConnection) => {
         this.connectionCount--;
-        con.connection.close();
+        await con.connection.close();
     });
     public readonly waitingQueue = new QueuedTimeout<IResolver<PooledConnection>>((resolver) => {
         resolver.reject(new ConnectionError(10, "Acquire Timeout"));
+        return Promise.resolve();
     });
     public async getAllConnections(): Promise<IConnection[]> {
         return [await this.driver.getConnection()];
     }
 
-    public async getConnection(writable?: boolean): Promise<PooledConnection> {
+    public async getConnection(): Promise<PooledConnection> {
         let con: PooledConnection;
         if (this.driver.allowPooling && this.pools.queue.length > this.poolOption.min) {
             con = this.poolOption.queueType === "lifo" ? this.pools.pop() : this.pools.shift();
@@ -73,9 +74,10 @@ export class PooledConnectionManager<T extends DbType = any> implements IConnect
 
         return con;
     }
-    public release(connection: PooledConnection): Promise<void> {
+    public async release(connection: PooledConnection): Promise<void> {
         if (this.driver.allowPooling && !connection.inTransaction) {
-            return connection.reset().then(() => {
+            try {
+                await connection.reset();
                 const waiting = this.waitingQueue.shift();
                 if (waiting) {
                     waiting.resolve(connection);
@@ -83,20 +85,21 @@ export class PooledConnectionManager<T extends DbType = any> implements IConnect
                 else {
                     this.pools.setTimeout(connection, (new Date()).addMilliseconds(this.poolOption.idleTimeout));
                     if (this.pools.queue.length > this.poolOption.max) {
-                        this.pools.forceExecute(this.pools.queue.length - this.poolOption.max);
+                        await this.pools.forceExecute(this.pools.queue.length - this.poolOption.max);
                     }
                 }
-            }, () => {
+            }
+            catch {
                 this.connectionCount--;
-            });
+            }
         }
         else {
             this.connectionCount--;
             return connection.connection.close();
         }
     }
-    public reset(): void {
-        this.pools.reset();
-        this.waitingQueue.reset();
+    public async reset(): Promise<void> {
+        await this.pools.reset();
+        await this.waitingQueue.reset();
     }
 }

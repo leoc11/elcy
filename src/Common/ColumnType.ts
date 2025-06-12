@@ -12,7 +12,6 @@ export type IntLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlit
  */
 export type IntColumnType = IntLengthColumnType
     | "int2" // postgres, sqlite
-    | "int2" // postgres, sqlite
     | "int4" // postgres
     | "int8" // postgres, sqlite
     | "integer" // postgres, oracle, sqlite

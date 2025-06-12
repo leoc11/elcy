@@ -4,6 +4,7 @@ import { hashCode } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
+import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class UnionQueryable<T> extends Queryable<T> {
@@ -20,13 +21,13 @@ export class UnionQueryable<T> extends Queryable<T> {
         this.parent2 = parent2.parameter({ union: isUnionAll });
     }
     protected readonly parent2: Queryable<T>;
-    private _parameters: { [key: string]: any };
-    public buildQuery(queryVisitor: IQueryVisitor) {
+    private _parameters: { [key: string]: unknown };
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression("union", Boolean, true)]);
+        const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression<boolean>("union", Boolean)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const resut = queryVisitor.visit(methodExpression, visitParam) as any;
+        const resut = queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
         return resut;
     }
     public flatQueryParameter(param?: { index: number }) {

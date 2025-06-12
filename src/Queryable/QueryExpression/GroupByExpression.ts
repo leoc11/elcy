@@ -11,7 +11,7 @@ import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class GroupByExpression<T = any> extends SelectExpression<T> {
+export class GroupByExpression<T = unknown> extends SelectExpression<T> {
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
     }

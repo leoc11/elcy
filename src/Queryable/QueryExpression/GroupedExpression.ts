@@ -4,6 +4,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { hashCode, isEntityExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
+import { ISelectRelation } from "../Interface/ISelectRelation";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { GroupByExpression } from "./GroupByExpression";
 import { IColumnExpression } from "./IColumnExpression";
@@ -11,7 +12,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 
-export class GroupedExpression<T = any> extends SelectExpression<T> {
+export class GroupedExpression<T = unknown> extends SelectExpression<T> {
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
     }
@@ -22,14 +23,14 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                 const entityExp = this.key as IEntityExpression;
                 const childSelectExp = entityExp.select;
                 if (childSelectExp.parentRelation) {
-                    const parentRel = childSelectExp.parentRelation;
+                    const parentRel = childSelectExp.parentRelation as ISelectRelation<T>;
                     if (parentRel.isEmbedded) {
                         const cloneMap = new Map();
                         mapReplaceExp(cloneMap, entityExp, this.entity);
                         const childSelects = childSelectExp.resolvedSelects.select((o) => {
                             let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName && c.constructor === o.constructor);
                             if (!curCol) {
-                                curCol = o.clone(cloneMap);
+                                curCol = o.clone(cloneMap) as any;
                             }
                             return curCol;
                         });
@@ -41,12 +42,12 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
                 }
             }
             else if (this.key instanceof ObjectValueExpression) {
-                for (const prop in this.key.object) {
-                    this._groupBy.push(this.key.object[prop] as any);
+                for (const prop in (this.key as ObjectValueExpression<T>).object) {
+                    this._groupBy.push(this.key.object[prop] as IColumnExpression<T>);
                 }
             }
             else {
-                const column = this.key as any as IColumnExpression;
+                const column = this.key as IColumnExpression<T>;
                 this._groupBy.push(column);
             }
         }
@@ -91,7 +92,7 @@ export class GroupedExpression<T = any> extends SelectExpression<T> {
             replaceMap = new Map();
         }
         const entity = resolveClone(this.entity, replaceMap);
-        const clone = new GroupedExpression();
+        const clone = new GroupedExpression<T>();
         replaceMap.set(this, clone);
         clone.entity = entity;
         if ((this.key as IEntityExpression).primaryColumns) {

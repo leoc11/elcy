@@ -1,6 +1,6 @@
 import { Enumerable } from "./Enumerable";
 
-export class WhereEnumerable<T = any> extends Enumerable<T> {
+export class WhereEnumerable<T = unknown> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly predicate: (item: T) => boolean) {
         super();
     }

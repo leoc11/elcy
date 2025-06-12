@@ -10,8 +10,8 @@ import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventP
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
 import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
-import { MockConnection } from "../../../src/Mock/MockConnection";
-import { mockContext } from "../../../src/Mock/MockContext";
+import { MockConnection } from "../../Mock/MockConnection";
+import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { AutoDetail, AutoParent, Order, OrderDetail, Product } from "../../Common/Model";
 import { AutoDetailDesc } from "../../Common/Model/AutoDetailDesc";

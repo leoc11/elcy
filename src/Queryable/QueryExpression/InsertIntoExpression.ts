@@ -1,11 +1,11 @@
-import { IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
-export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
+export class InsertIntoExpression<T = unknown> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         return this.select.selects;
     }
@@ -13,9 +13,9 @@ export class InsertIntoExpression<T = any> implements IQueryExpression<void> {
         return this.select.paramExps;
     }
     public get type() {
-        return undefined as any;
+        return undefined as GenericType<void>;
     }
-    constructor(public entity: EntityExpression<T>, public select: SelectExpression) {
+    constructor(public entity: EntityExpression<T>, public select: SelectExpression<T>) {
         this.select.isSelectOnly = true;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<T> {

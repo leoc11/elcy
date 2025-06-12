@@ -1,8 +1,9 @@
+import { GenericType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-export class InstanceofExpression implements IBinaryOperatorExpression<boolean> {
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
+export class InstanceofExpression<T> implements IBinaryOperatorExpression<boolean> {
+    constructor(public leftOperand: IExpression<T>, public rightOperand: IExpression<GenericType<T>>) { }
     public type = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {

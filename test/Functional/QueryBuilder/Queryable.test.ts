@@ -3,7 +3,7 @@ import { QueryType } from "../../../src/Common/Enum";
 import { Uuid } from "../../../src/Data/Uuid";
 import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
-import { mockContext } from "../../../src/Mock/MockContext";
+import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";

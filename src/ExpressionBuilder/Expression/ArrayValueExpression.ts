@@ -2,7 +2,7 @@ import { GenericType } from "../../Common/Type";
 import { hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
-export class ArrayValueExpression<T = any> implements IExpression<T[]> {
+export class ArrayValueExpression<T = unknown> implements IExpression<T[]> {
     constructor(...items: Array<IExpression<T>>) {
         this.items = items;
         if (items.length > 0) {

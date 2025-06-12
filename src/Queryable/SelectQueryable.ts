@@ -21,7 +21,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     protected set selector(value) {
         this._selector = value;
     }
-    constructor(public readonly parent: Queryable<S>, selector: ((item: S) => T) | FunctionExpression<T>, public type: GenericType<T> = Object) {
+    constructor(public readonly parent: Queryable<S>, selector: ((item: S) => T) | FunctionExpression<T, S>, public type: GenericType<T> = Object) {
         super(type, parent);
         if (selector instanceof FunctionExpression) {
             this.selector = selector;

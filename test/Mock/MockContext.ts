@@ -1,8 +1,8 @@
-import { IConnection } from "../Connection/IConnection";
-import { PooledConnection } from "../Connection/PooledConnection";
-import { DbContext } from "../Data/DbContext";
-import { IEnumerable } from "../Enumerable/IEnumerable";
-import { DeferredQuery } from "../Query/DeferredQuery";
+import { IConnection } from "../../src/Connection/IConnection";
+import { PooledConnection } from "../../src/Connection/PooledConnection";
+import { DbContext } from "../../src/Data/DbContext";
+import { IEnumerable } from "../../src/Enumerable/IEnumerable";
+import { DeferredQuery } from "../../src/Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";
 
 export interface IMockedContext {

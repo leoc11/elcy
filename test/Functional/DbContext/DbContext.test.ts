@@ -3,7 +3,7 @@ import { DefaultQueryCacheManager } from "../../../src/Cache/DefaultQueryCacheMa
 import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCacheManager";
 import { EntityState } from "../../../src/Data/EntityState";
 import { Uuid } from "../../../src/Data/Uuid";
-import { mockContext } from "../../../src/Mock/MockContext";
+import { mockContext } from "../../Mock/MockContext";
 import { Order, OrderDetail, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { RelationState } from "../../../src/Data/RelationState";

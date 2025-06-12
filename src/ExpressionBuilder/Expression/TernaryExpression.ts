@@ -3,9 +3,9 @@ import { GenericType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
-export class TernaryExpression<T1 = any, T2 = any> implements IExpression<T1 | T2> {
+export class TernaryExpression<T1 = unknown, T2 = unknown> implements IExpression<T1 | T2> {
     public get type(): GenericType<T1 | T2> {
-        if (this.trueOperand.type as any === this.falseOperand.type) {
+        if (this.trueOperand.type === this.falseOperand.type) {
             return this.trueOperand.type;
         }
         else if (this.trueOperand.type === NullConstructor) {

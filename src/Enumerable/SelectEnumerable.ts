@@ -1,7 +1,7 @@
 import { IObjectType } from "../Common/Type";
 import { Enumerable } from "./Enumerable";
 
-export class SelectEnumerable<T = any, K = any> extends Enumerable<K> {
+export class SelectEnumerable<T = unknown, K = unknown> extends Enumerable<K> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly selector: (item: T) => K, protected readonly type?: IObjectType<K>) {
         super();
     }

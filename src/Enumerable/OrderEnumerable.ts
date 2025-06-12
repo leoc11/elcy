@@ -6,7 +6,7 @@ export interface IRange {
     first: number;
     last: number;
 }
-const comparers = (a: any, b: any, selectors: IOrderDefinition[]) => {
+const comparers = <T>(a: T, b: T, selectors: IOrderDefinition<T>[]) => {
     for (const selector of selectors) {
         const aVal = selector[0](a);
         const bVal = selector[0](b);
@@ -39,7 +39,7 @@ export const partition = <T>(source: T[], first: number, last: number, selectors
         }
     }
 };
-export class OrderEnumerable<T = any> extends Enumerable<T> {
+export class OrderEnumerable<T = unknown> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, ...selectors: Array<IOrderDefinition<T>>) {
         super();
         this.selectors = selectors;
@@ -53,7 +53,7 @@ export class OrderEnumerable<T = any> extends Enumerable<T> {
         if (array.length > 0) {
             stack.push({ first: 0, last: array.length - 1 });
             while (stack.length > 0) {
-                const currentRange = stack.pop() as IRange;
+                const currentRange = stack.pop();
                 if (currentRange.last - currentRange.first === 0) {
                     yield array[index++];
                 }

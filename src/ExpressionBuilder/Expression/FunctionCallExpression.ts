@@ -1,36 +1,38 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class FunctionCallExpression<T = any> implements IExpression<T> {
+export class FunctionCallExpression<T = unknown> implements IExpression<T> {
     public get type() {
         if (!this._type) {
             if (this.fnExpression instanceof ValueExpression) {
                 try {
-                    const fn = this.fnExpression.value;
-                    switch (fn as any) {
+                    const fn = (this.fnExpression as ValueExpression<() => T>).value;
+                    switch (fn) {
                         case parseInt:
                         case parseFloat:
-                            this._type = Number as any;
+                            (this._type as GenericType<number>) = Number;
                             break;
                         case decodeURI:
                         case decodeURIComponent:
                         case encodeURI:
                         case encodeURIComponent:
-                            this._type = String as any;
+                            (this._type as GenericType<string>) = String;
                             break;
                         case isNaN:
                         case isFinite:
-                            this._type = Boolean as any;
+                            (this._type as GenericType<boolean>) = Boolean;
                             break;
                         case eval:
-                            this._type = Function as any;
+                            (this._type as GenericType) = Function;
                             break;
                         default:
-                            try { this._type = fn().constructor as any; } catch (e) { }
+                            try {
+                                this._type = (fn().constructor as IObjectType<T>);
+                            } catch { /* ignoring error */ }
                     }
                 }
-                catch (e) {
+                catch {
                     return Object;
                 }
             }
@@ -38,7 +40,7 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
 
         return this._type;
     }
-    constructor(fnExpression: IExpression<(...params: any[]) => T> | ((...params: any[]) => T), params: IExpression[], functionName?: string) {
+    constructor(fnExpression: IExpression<(...params: unknown[]) => T> | ((...params: unknown[]) => T), params: IExpression[], functionName?: string) {
         if (fnExpression instanceof Function) {
             functionName = fnExpression.name;
             fnExpression = new ValueExpression(fnExpression);
@@ -50,7 +52,7 @@ export class FunctionCallExpression<T = any> implements IExpression<T> {
         this.params = params;
         this.functionName = functionName;
     }
-    public fnExpression: IExpression<(...params: any[]) => T>;
+    public fnExpression: IExpression<(...params: unknown[]) => T>;
     public functionName: string;
     public params: IExpression[];
     private _type: GenericType<T>;

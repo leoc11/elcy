@@ -1,6 +1,6 @@
-import { DbType } from "../Common/StringType";
-import { IConnection } from "../Connection/IConnection";
-import { IDriver } from "../Connection/IDriver";
+import { DbType } from "../../src/Common/StringType";
+import { IConnection } from "../../src/Connection/IConnection";
+import { IDriver } from "../../src/Connection/IDriver";
 import { MockConnection } from "./MockConnection";
 
 export interface IMockDriverOption<T> {

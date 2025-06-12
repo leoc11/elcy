@@ -2,7 +2,7 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { ParameterExpression } from "./ParameterExpression";
-export class SpreadExpression<T = any> implements IUnaryOperatorExpression<T[]> {
+export class SpreadExpression<T = unknown> implements IUnaryOperatorExpression<T[]> {
     constructor(public readonly operand: ParameterExpression<T[]>) { }
     public type = Array;
     public clone(replaceMap?: Map<IExpression, IExpression>) {

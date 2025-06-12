@@ -1,4 +1,4 @@
-import { IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
@@ -14,7 +14,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class InsertExpression<T = any> implements IQueryExpression<void> {
+export class InsertExpression<T = unknown> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = this.entity.metaData.columns
@@ -25,7 +25,7 @@ export class InsertExpression<T = any> implements IQueryExpression<void> {
     }
 
     public get type() {
-        return undefined as any;
+        return undefined as GenericType<void>;
     }
     constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: Array<IColumnExpression<T>>) {
         if (columns) {
@@ -81,7 +81,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
     }
 
     for (const rel of relations) {
-        const parentEntity = entry.entity[rel.propertyName] as any;
+        const parentEntity = entry.entity[rel.propertyName];
         if (parentEntity) {
             const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
             const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
@@ -89,7 +89,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                 let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type), parentCol);
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName), parentCol);
+                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as any), parentCol);
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {

@@ -1,6 +1,6 @@
 import { Enumerable } from "./Enumerable";
 
-export class SkipEnumerable<T = any> extends Enumerable<T> {
+export class SkipEnumerable<T = unknown> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly skipCount: number) {
         super();
     }

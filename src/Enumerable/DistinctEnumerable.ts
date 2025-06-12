@@ -1,7 +1,7 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 
-export class DistinctEnumerable<T = any> extends Enumerable<T> {
-    constructor(protected readonly parent: Enumerable<T>, protected readonly selector?: (item: T) => any) {
+export class DistinctEnumerable<T = unknown> extends Enumerable<T> {
+    constructor(protected readonly parent: Enumerable<T>, protected readonly selector?: (item: T) => unknown) {
         super();
     }
     protected *generator() {

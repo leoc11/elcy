@@ -1,19 +1,22 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupByEnumerable } from "./GroupByEnumerable";
 import { IEnumerableCache } from "./IEnumerableCache";
-export class GroupedEnumerable<K, T> extends Enumerable<T> {
+export class GroupedEnumerable<K = unknown, T = unknown> extends Enumerable<T> {
     public get enableCache() {
         return true;
     }
     public get keySelector() {
         return this.parent.keySelector;
     }
-    constructor(protected readonly parent: GroupByEnumerable<K, T>, public readonly key: K, protected cache: IEnumerableCache) {
+    constructor(protected readonly parent: GroupByEnumerable<K, T>, public readonly key: K, protected cache: IEnumerableCache<T>) {
         super();
+        this.cache.result = [];
     }
-    private _cacheResult = [];
     public addResult(value: T) {
-        this._cacheResult.push(value);
+        this.cache.result.push(value);
+    }
+    public [Symbol.iterator](): IterableIterator<T> {
+        return this.generator();
     }
     protected *generator() {
         if (!this.cache.result) {
@@ -23,15 +26,15 @@ export class GroupedEnumerable<K, T> extends Enumerable<T> {
         let index = 0;
         for (; ;) {
             const isDone = this.cache.isDone;
-            while (this._cacheResult.length > index) {
-                yield this._cacheResult[index++];
+            while (this.cache.result.length > index) {
+                yield this.cache.result[index++];
             }
             if (isDone) {
                 break;
             }
 
             const a = this.cache.iterator.next();
-            if (!a.done) {
+            if (a.done !== true) {
                 const key = this.keySelector(a.value);
                 if (keyComparer(this.key, key)) {
                     this.addResult(a.value);

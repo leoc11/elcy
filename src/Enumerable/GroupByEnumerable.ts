@@ -1,27 +1,28 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 import { GroupedEnumerable } from "./GroupedEnumerable";
 
-export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>> {
+export class GroupByEnumerable<K = unknown, T = unknown> extends Enumerable<GroupedEnumerable<K, T>> {
     public get enableCache() {
         return true;
     }
     constructor(public readonly parent: Enumerable<T>, public readonly keySelector: (item: T) => K) {
-        super(parent as any);
+        super(parent);
     }
     public [Symbol.iterator](): IterableIterator<GroupedEnumerable<K, T>> {
         return this.generator();
     }
     public addValue(key: K, value: T) {
-        let group = this.cache.result.first((o) => keyComparer(o.key, key));
+        let group = this.cache.result.find((o) => keyComparer(o.key, key));
         if (!group) {
-            group = new GroupedEnumerable(this, key, this.cache);
+            group = new GroupedEnumerable(this, key, { iterator: this.sourceIterator });
             this.cache.result.push(group);
         }
         group.addResult(value);
     }
+    private sourceIterator: IterableIterator<T>;
     protected *generator() {
-        if (!this.cache.iterator) {
-            this.cache.iterator = this.parent[Symbol.iterator]();
+        if (!this.sourceIterator) {
+            this.sourceIterator = this.parent[Symbol.iterator]();
         }
         if (!this.cache.result) {
             this.cache.result = [];
@@ -37,15 +38,15 @@ export class GroupByEnumerable<K, T> extends Enumerable<GroupedEnumerable<K, T>>
                 break;
             }
 
-            const a = this.cache.iterator.next();
-            if (!a.done) {
+            const a = this.sourceIterator.next();
+            if (a.done !== true) {
                 const key = this.keySelector(a.value);
                 this.addValue(key, a.value);
             }
             else if (!this.cache.isDone) {
                 this.cache.isDone = true;
-                if (this.cache.iterator.return) {
-                    this.cache.iterator.return();
+                if (this.sourceIterator.return) {
+                    this.sourceIterator.return();
                 }
             }
         }

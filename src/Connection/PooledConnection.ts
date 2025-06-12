@@ -44,10 +44,10 @@ export class PooledConnection implements IConnection {
         return this.connection.open();
     }
     public query(command: IQuery): Promise<IQueryResult[]>;
-    public query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    public query(queryOrCommand: string | IQuery, parametersOrType?: Map<string, any> | QueryType, typeOrParameters?: QueryType | Map<string, any>): Promise<IQueryResult[]> {
-        return this.connection.query(queryOrCommand as any, parametersOrType as any, typeOrParameters as any);
+    public query(query: string, parameters?: Map<string, unknown>): Promise<IQueryResult[]>;
+    public query(query: string, type?: QueryType, parameters?: Map<string, unknown>): Promise<IQueryResult[]>;
+    public query(queryOrCommand: string | IQuery, parametersOrType?: Map<string, unknown> | QueryType, typeOrParameters?: QueryType | Map<string, unknown>): Promise<IQueryResult[]> {
+        return this.connection.query(queryOrCommand as string, parametersOrType as QueryType, typeOrParameters as Map<string, unknown>);
     }
     public reset(): Promise<void> {
         return this.connection.reset();

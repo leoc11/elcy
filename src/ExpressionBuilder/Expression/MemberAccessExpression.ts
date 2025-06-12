@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, StringKeyOf } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
@@ -6,13 +6,13 @@ import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 
-export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implements IMemberOperatorExpression<TE, T> {
+export class MemberAccessExpression<TE, K extends StringKeyOf<TE>, T = TE[K]> implements IMemberOperatorExpression<TE, T> {
     public get type() {
         if (!this._type) {
             if (this.objectOperand.type) {
-                const objectType = this.objectOperand.type as IObjectType;
-                const columnMeta: ColumnMetaData = Reflect.getOwnMetadata(columnMetaKey, objectType, this.memberName);
-                const relationMeta: RelationMetaData<TE, any> = Reflect.getOwnMetadata(relationMetaKey, objectType, this.memberName);
+                const objectType = this.objectOperand.type as IObjectType<TE>;
+                const columnMeta = Reflect.getOwnMetadata(columnMetaKey, objectType, this.memberName) as ColumnMetaData;
+                const relationMeta = Reflect.getOwnMetadata(relationMetaKey, objectType, this.memberName) as RelationMetaData<TE>;
                 if (columnMeta) {
                     this._type = columnMeta.type;
                 }
@@ -21,20 +21,20 @@ export class MemberAccessExpression<TE, K extends keyof TE, T = TE[K]> implement
                         this._type = relationMeta.target.type;
                     }
                     else {
-                        this._type = Array as any;
+                        this._type = Array;
                         this.itemType = relationMeta.target.type;
                     }
                 }
                 else {
-                    let memberValue = objectType.prototype[this.memberName];
+                    let memberValue = (objectType.prototype as TE)[this.memberName];
                     if (!memberValue) {
                         try {
                             const objectInstance = new objectType();
                             memberValue = objectInstance[this.memberName];
-                        } catch (e) { }
+                        } catch { /* ignoring error */ }
                     }
                     if (memberValue) {
-                        this._type = memberValue.constructor;
+                        this._type = (memberValue.constructor as GenericType<T>);
                     }
                 }
             }

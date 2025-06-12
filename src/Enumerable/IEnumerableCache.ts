@@ -1,6 +1,6 @@
-export interface IEnumerableCache<T = any> {
+export interface IEnumerableCache<T = unknown> {
     enabled?: boolean;
     isDone?: boolean;
-    iterator?: IterableIterator<any>;
+    iterator?: IterableIterator<T>;
     result?: T[];
 }

@@ -1,13 +1,13 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, IObjectType, MethodKey, MethodReturnType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 
-export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> implements IMemberOperatorExpression<TE, T> {
+export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = MethodKey<TE>, T = MethodReturnType<TE, K>> implements IMemberOperatorExpression<TE, T> {
     public get itemType() {
-        if ((this.type as any) === Array) {
+        if (this.type === Array) {
             return this.objectOperand.itemType;
         }
         return null;
@@ -15,42 +15,42 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     public get type() {
         if (!this._type && this.objectOperand.type) {
             try {
-                const objectType = this.objectOperand.type as any;
-                if (Array === objectType || Queryable.isPrototypeOf(objectType) || Enumerable.isPrototypeOf(objectType)) {
+                const objectType = this.objectOperand.type;
+                if (Array === objectType || Object.prototype.isPrototypeOf.call(Queryable, objectType) || Object.prototype.isPrototypeOf.call(Enumerable, objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
                         case "count":
                         case "sum": {
-                            this._type = Number as any;
+                            (this._type as GenericType<number>) = Number;
                             break;
                         }
                         case "contains":
                         case "any":
                         case "all": {
-                            this._type = Boolean as any;
+                            (this._type as GenericType<boolean>) = Boolean;
                             break;
                         }
                         case "first": {
-                            this._type = this.objectOperand.itemType;
+                            this._type = this.objectOperand.itemType as GenericType<T>;
                             break;
                         }
                         default: {
-                            this._type = Array as any;
+                            this._type = Array;
                             break;
                         }
                     }
                 }
                 else {
                     try {
-                        this.type = objectType.prototype[this.methodName]().constructor;
-                    } catch (e) {
-                        const objectInstance = new objectType();
-                        this.type = (objectInstance[this.methodName] as any)().constructor;
+                        this.type = ((objectType.prototype as TE)[this.methodName] as () => T)().constructor as GenericType<T>;
+                    } catch {
+                        const objectInstance = new (objectType as IObjectType<TE>)();
+                        this.type = (objectInstance[this.methodName] as () => T)().constructor as GenericType<T>;
                     }
                 }
             }
-            catch (e) {
+            catch {
                 this._type = Object;
             }
         }
@@ -62,7 +62,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
         this._type = type;
         if (typeof method === "function") {
-            this.methodName = method.name as any;
+            this.methodName = method.name as K;
         }
         else {
             this.methodName = method;
@@ -76,7 +76,7 @@ export class MethodCallExpression<TE = any, K extends keyof TE = any, T = any> i
         }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const params = this.params.map((o) => resolveClone(o, replaceMap));
-        const clone = new MethodCallExpression(objectOperand, this.methodName as K, params, this.type);
+        const clone = new MethodCallExpression(objectOperand, this.methodName, params, this.type);
         replaceMap.set(this, clone);
         return clone;
     }

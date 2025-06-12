@@ -1,3 +1,4 @@
+import { MethodKey, MethodReturnType, StringKeyOf } from "../Common/Type";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { AdditionAssignmentExpression } from "./Expression/AdditionAssignmentExpression";
@@ -60,7 +61,7 @@ import { ExpressionBuilder } from "./ExpressionBuilder";
 import { TransformerParameter } from "./TransformerParameter";
 
 export class ExpressionExecutor {
-    constructor(params?: { [key: string]: any }) {
+    constructor(params?: { [key: string | number]: unknown }) {
         if (params) {
             this.setParameters(params);
         }
@@ -71,125 +72,125 @@ export class ExpressionExecutor {
     public scopeParameters = new TransformerParameter();
     // TODO: SQLParameterExpression
     public execute<T = unknown>(expression: IExpression<T>): T {
-        switch (expression.constructor) {
-            case AdditionAssignmentExpression:
-                return this.executeAdditionAssignment(expression as any) as any;
-            case AdditionExpression:
-                return this.executeAddition(expression as AdditionExpression);
-            case AndExpression:
-                return this.executeAnd(expression as any) as any;
-            case ArrayValueExpression:
-                return this.executeArrayValue(expression as any) as any;
-            case AssignmentExpression:
+        switch (true) {
+            case expression instanceof AdditionAssignmentExpression:
+                return this.executeAdditionAssignment(expression as AdditionAssignmentExpression<T & (string | number)>);
+            case expression instanceof AdditionExpression:
+                return this.executeAddition(expression as AdditionExpression<T & (string | number)>) as T;
+            case expression instanceof AndExpression:
+                return this.executeAnd(expression) as T;
+            case expression instanceof ArrayValueExpression:
+                return this.executeArrayValue(expression) as T;
+            case expression instanceof AssignmentExpression:
                 return this.executeAssignment(expression as AssignmentExpression<T>);
-            case BitwiseAndAssignmentExpression:
-                return this.executeBitwiseAndAssignment(expression as any) as any;
-            case BitwiseAndExpression:
-                return this.executeBitwiseAnd(expression as any) as any;
-            case BitwiseNotExpression:
-                return this.executeBitwiseNot(expression as any) as any;
-            case BitwiseOrAssignmentExpression:
-                return this.executeBitwiseOrAssignment(expression as any) as any;
-            case BitwiseOrExpression:
-                return this.executeBitwiseOr(expression as any) as any;
-            case BitwiseSignedRightShiftAssignmentExpression:
-                return this.executeBitwiseSignedRightShiftAssignment(expression as any) as any;
-            case BitwiseSignedRightShiftExpression:
-                return this.executeBitwiseSignedRightShift(expression as any) as any;
-            case BitwiseXorAssignmentExpression:
-                return this.executeBitwiseXorAssignment(expression as any) as any;
-            case BitwiseXorExpression:
-                return this.executeBitwiseXor(expression as any) as any;
-            case BitwiseZeroLeftShiftAssignmentExpression:
-                return this.executeBitwiseZeroLeftShiftAssignment(expression as any) as any;
-            case BitwiseZeroLeftShiftExpression:
-                return this.executeBitwiseZeroLeftShift(expression as any) as any;
-            case BitwiseZeroRightShiftAssignmentExpression:
-                return this.executeBitwiseZeroRightShiftAssignment(expression as any) as any;
-            case BitwiseZeroRightShiftExpression:
-                return this.executeBitwiseZeroRightShift(expression as any) as any;
-            case DivisionAssignmentExpression:
-                return this.executeDivisionAssignment(expression as any) as any;
-            case DivisionExpression:
-                return this.executeDivision(expression as any) as any;
-            case EqualExpression:
-                return this.executeEqual(expression as any) as any;
-            case ExponentiationAssignmentExpression:
-                return this.executeExponentialAssignment(expression as any) as any;
-            case ExponentiationExpression:
-                return this.executeExponential(expression as any) as any;
-            case FunctionCallExpression:
+            case expression instanceof BitwiseAndAssignmentExpression:
+                return this.executeBitwiseAndAssignment(expression) as T;
+            case expression instanceof BitwiseAndExpression:
+                return this.executeBitwiseAnd(expression) as T;
+            case expression instanceof BitwiseNotExpression:
+                return this.executeBitwiseNot(expression) as T;
+            case expression instanceof BitwiseOrAssignmentExpression:
+                return this.executeBitwiseOrAssignment(expression) as T;
+            case expression instanceof BitwiseOrExpression:
+                return this.executeBitwiseOr(expression) as T;
+            case expression instanceof BitwiseSignedRightShiftAssignmentExpression:
+                return this.executeBitwiseSignedRightShiftAssignment(expression) as T;
+            case expression instanceof BitwiseSignedRightShiftExpression:
+                return this.executeBitwiseSignedRightShift(expression) as T;
+            case expression instanceof BitwiseXorAssignmentExpression:
+                return this.executeBitwiseXorAssignment(expression) as T;
+            case expression instanceof BitwiseXorExpression:
+                return this.executeBitwiseXor(expression) as T;
+            case expression instanceof BitwiseZeroLeftShiftAssignmentExpression:
+                return this.executeBitwiseZeroLeftShiftAssignment(expression) as T;
+            case expression instanceof BitwiseZeroLeftShiftExpression:
+                return this.executeBitwiseZeroLeftShift(expression) as T;
+            case expression instanceof BitwiseZeroRightShiftAssignmentExpression:
+                return this.executeBitwiseZeroRightShiftAssignment(expression) as T;
+            case expression instanceof BitwiseZeroRightShiftExpression:
+                return this.executeBitwiseZeroRightShift(expression) as T;
+            case expression instanceof DivisionAssignmentExpression:
+                return this.executeDivisionAssignment(expression) as T;
+            case expression instanceof DivisionExpression:
+                return this.executeDivision(expression) as T;
+            case expression instanceof EqualExpression:
+                return this.executeEqual(expression) as T;
+            case expression instanceof ExponentiationAssignmentExpression:
+                return this.executeExponentialAssignment(expression) as T;
+            case expression instanceof ExponentiationExpression:
+                return this.executeExponential(expression) as T;
+            case expression instanceof FunctionCallExpression:
                 return this.executeFunctionCall(expression as FunctionCallExpression<T>);
-            case FunctionExpression:
+            case expression instanceof FunctionExpression:
                 return this.executeFunction(expression as FunctionExpression<T>, []);
-            case GreaterEqualExpression:
-                return this.executeGreaterEqual(expression as any) as any;
-            case GreaterThanExpression:
-                return this.executeGreaterThan(expression as any) as any;
-            case InstanceofExpression:
-                return this.executeInstanceof(expression as any) as any;
-            case InstantiationExpression:
-                return this.executeInstantiation(expression as any);
-            case LeftDecrementExpression:
-                return this.executeLeftDecrement(expression as any) as any;
-            case LeftIncrementExpression:
-                return this.executeLeftIncrement(expression as any) as any;
-            case LessEqualExpression:
-                return this.executeLessEqual(expression as any) as any;
-            case LessThanExpression:
-                return this.executeLessThan(expression as any) as any;
-            case MemberAccessExpression:
-                return this.executeMemberAccess(expression as MemberAccessExpression<any, any, T>);
-            case MethodCallExpression:
-                return this.executeMethodCall(expression as MethodCallExpression<any, any, T>);
-            case ModulusAssignmentExpression:
-                return this.executeModulusAssignment(expression as any) as any;
-            case ModulusExpression:
-                return this.executeModulus(expression as any) as any;
-            case MultiplicationAssignmentExpression:
-                return this.executeMultiplicationAssignment(expression as any) as any;
-            case MultiplicationExpression:
-                return this.executeMultiplication(expression as any) as any;
-            case NegationExpression:
-                return this.executeNegation(expression as any) as any;
-            case NotEqualExpression:
-                return this.executeNotEqual(expression as any) as any;
-            case NotExpression:
-                return this.executeNot(expression as any) as any;
-            case ObjectValueExpression:
-                return this.executeObjectValue(expression as ObjectValueExpression);
-            case OrExpression:
-                return this.executeOr(expression as any) as any;
-            case ParameterExpression:
-                return this.executeParameter(expression as ParameterExpression);
-            case SqlTableValueParameterExpression:
-            case SqlParameterExpression:
-                return this.executeSqlParameter(expression as SqlParameterExpression);
-            case RightDecrementExpression:
-                return this.executeRightDecrement(expression as any) as any;
-            case RightIncrementExpression:
-                return this.executeRightIncrement(expression as any) as any;
-            case StrictEqualExpression:
-                return this.executeStrictEqual(expression as any) as any;
-            case StrictNotEqualExpression:
-                return this.executeStrictNotEqual(expression as any) as any;
-            case SubstractionAssignmentExpression:
-                return this.executeSubstractionAssignment(expression as any) as any;
-            case SubstractionExpression:
-                return this.executeSubstraction(expression as any) as any;
-            case TernaryExpression:
-                return this.executeTernary(expression as TernaryExpression);
-            case TypeofExpression:
-                return this.executeTypeof(expression as any) as any;
-            case ValueExpression:
+            case expression instanceof GreaterEqualExpression:
+                return this.executeGreaterEqual(expression) as T;
+            case expression instanceof GreaterThanExpression:
+                return this.executeGreaterThan(expression) as T;
+            case expression instanceof InstanceofExpression:
+                return this.executeInstanceof(expression) as T;
+            case expression instanceof InstantiationExpression:
+                return this.executeInstantiation(expression as InstantiationExpression<T>);
+            case expression instanceof LeftDecrementExpression:
+                return this.executeLeftDecrement(expression) as T;
+            case expression instanceof LeftIncrementExpression:
+                return this.executeLeftIncrement(expression) as T;
+            case expression instanceof LessEqualExpression:
+                return this.executeLessEqual(expression) as T;
+            case expression instanceof LessThanExpression:
+                return this.executeLessThan(expression) as T;
+            case expression instanceof MemberAccessExpression:
+                return this.executeMemberAccess(expression as MemberAccessExpression<unknown, StringKeyOf<unknown>, T & never>);
+            case expression instanceof MethodCallExpression:
+                return this.executeMethodCall(expression as MethodCallExpression<unknown, MethodKey<unknown>, T & never>);
+            case expression instanceof ModulusAssignmentExpression:
+                return this.executeModulusAssignment(expression) as T;
+            case expression instanceof ModulusExpression:
+                return this.executeModulus(expression) as T;
+            case expression instanceof MultiplicationAssignmentExpression:
+                return this.executeMultiplicationAssignment(expression) as T;
+            case expression instanceof MultiplicationExpression:
+                return this.executeMultiplication(expression) as T;
+            case expression instanceof NegationExpression:
+                return this.executeNegation(expression) as T;
+            case expression instanceof NotEqualExpression:
+                return this.executeNotEqual(expression) as T;
+            case expression instanceof NotExpression:
+                return this.executeNot(expression) as T;
+            case expression instanceof ObjectValueExpression:
+                return this.executeObjectValue(expression as ObjectValueExpression<T>);
+            case expression instanceof OrExpression:
+                return this.executeOr(expression) as T;
+            case expression instanceof ParameterExpression:
+                return this.executeParameter(expression as ParameterExpression<T>);
+            case expression instanceof SqlTableValueParameterExpression:
+            case expression instanceof SqlParameterExpression:
+                return this.executeSqlParameter(expression as SqlParameterExpression<T>);
+            case expression instanceof RightDecrementExpression:
+                return this.executeRightDecrement(expression) as T;
+            case expression instanceof RightIncrementExpression:
+                return this.executeRightIncrement(expression) as T;
+            case expression instanceof StrictEqualExpression:
+                return this.executeStrictEqual(expression) as T;
+            case expression instanceof StrictNotEqualExpression:
+                return this.executeStrictNotEqual(expression) as T;
+            case expression instanceof SubstractionAssignmentExpression:
+                return this.executeSubstractionAssignment(expression) as T;
+            case expression instanceof SubstractionExpression:
+                return this.executeSubstraction(expression) as T;
+            case expression instanceof TernaryExpression:
+                return this.executeTernary(expression) as T;
+            case expression instanceof TypeofExpression:
+                return this.executeTypeof(expression) as T;
+            case expression instanceof ValueExpression:
                 return this.executeValue(expression as ValueExpression<T>);
-            case StringTemplateExpression:
-                return this.executeStringTemplate(expression as any) as any;
+            case expression instanceof StringTemplateExpression:
+                return this.executeStringTemplate(expression) as T;
             default:
                 throw new Error(`expression "${expression.toString()}" not supported`);
         }
     }
-    public executeFunction<T>(expression: FunctionExpression<T>, parameters: any[]) {
+    public executeFunction<T>(expression: FunctionExpression<T>, parameters: unknown[]) {
         let i = 0;
         for (const param of expression.params) {
             if (parameters.length > i) {
@@ -205,7 +206,7 @@ export class ExpressionExecutor {
         }
         return result;
     }
-    public setParameters(params: { [key: string]: any }) {
+    public setParameters(params: { [key: string]: unknown }) {
         for (const key in params) {
             this.scopeParameters.add(key.toString(), params[key]);
         }
@@ -213,12 +214,12 @@ export class ExpressionExecutor {
     public toString(expression: IExpression) {
         return expression.toString();
     }
-    protected executeAddition<T extends string | number>(expression: AdditionExpression<T>): T {
-        return this.execute(expression.leftOperand) as any + this.execute(expression.rightOperand);
+    protected executeAddition<T extends string | number = string | number>(expression: AdditionExpression<T>): T {
+        return ((this.execute(expression.leftOperand) as string) + this.execute(expression.rightOperand)) as T;
     }
 
     protected executeAdditionAssignment<T extends string | number>(expression: AdditionAssignmentExpression<T>): T {
-        const value = this.scopeParameters.get(expression.leftOperand.name) + this.execute(expression.rightOperand);
+        const value = (this.scopeParameters.get<string>(expression.leftOperand.name) + this.execute(expression.rightOperand)) as T;
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -227,7 +228,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) && this.execute(expression.rightOperand);
     }
     protected executeArrayValue<T>(expression: ArrayValueExpression<T>): T[] {
-        const result = [];
+        const result: T[] = [];
         for (const item of expression.items) {
             result.push(this.execute(item));
         }
@@ -243,7 +244,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
     }
     protected executeBitwiseAndAssignment(expression: BitwiseAndAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) & this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) & this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -255,7 +256,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
     }
     protected executeBitwiseOrAssignment(expression: BitwiseOrAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) | this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) | this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -264,7 +265,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
     }
     protected executeBitwiseSignedRightShiftAssignment(expression: BitwiseSignedRightShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) >>> this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) >>> this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -273,7 +274,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
     }
     protected executeBitwiseXorAssignment(expression: BitwiseXorAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) ^ this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) ^ this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -282,7 +283,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroLeftShiftAssignment(expression: BitwiseZeroLeftShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) << this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) << this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -291,7 +292,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroRightShiftAssignment(expression: BitwiseZeroRightShiftAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) >> this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) >> this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -300,7 +301,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) / this.execute(expression.rightOperand);
     }
     protected executeDivisionAssignment(expression: DivisionAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) / this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) / this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -313,18 +314,18 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) ** this.execute(expression.rightOperand);
     }
     protected executeExponentialAssignment(expression: ExponentiationAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) ** this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) ** this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
     protected executeFunctionCall<T>(expression: FunctionCallExpression<T>): T {
-        const params = [];
+        const params: unknown[] = [];
         for (const param of expression.params) {
             params.push(this.execute(param));
         }
         const fn = this.execute(expression.fnExpression);
-        return fn.apply(null, params);
+        return fn(...params);
     }
     protected executeGreaterEqual(expression: GreaterEqualExpression) {
         return this.execute(expression.leftOperand) >= this.execute(expression.rightOperand);
@@ -332,11 +333,11 @@ export class ExpressionExecutor {
     protected executeGreaterThan(expression: GreaterThanExpression) {
         return this.execute(expression.leftOperand) > this.execute(expression.rightOperand);
     }
-    protected executeInstanceof(expression: InstanceofExpression) {
+    protected executeInstanceof<T>(expression: InstanceofExpression<T>) {
         return this.execute(expression.leftOperand) instanceof this.execute(expression.rightOperand);
     }
     protected executeInstantiation<T>(expression: InstantiationExpression<T>): T {
-        const params = [];
+        const params: unknown[] = [];
         for (const param of expression.params) {
             params.push(this.execute(param));
         }
@@ -361,24 +362,24 @@ export class ExpressionExecutor {
     protected executeLessThan(expression: LessThanExpression) {
         return this.execute(expression.leftOperand) < this.execute(expression.rightOperand);
     }
-    protected executeMemberAccess<TE, K extends keyof TE>(expression: MemberAccessExpression<TE, K>) {
+    protected executeMemberAccess<TE, K extends Extract<keyof TE, string>>(expression: MemberAccessExpression<TE, K>) {
         return this.execute(expression.objectOperand)[expression.memberName];
     }
-    protected executeMethodCall<TE, K extends keyof TE, T>(expression: MethodCallExpression<TE, K, T>): T {
+    protected executeMethodCall<TE, K extends MethodKey<TE>, T extends MethodReturnType<TE, K>>(expression: MethodCallExpression<TE, K, T>): T {
         const params = [];
         for (const param of expression.params) {
             params.push(this.execute(param));
         }
 
         const obj = this.execute(expression.objectOperand);
-        const method = obj[expression.methodName] as TE[K] & ((...params: any) => T);
+        const method = obj[expression.methodName] as TE[K] & ((...params: unknown[]) => T);
         return method.apply(obj, params);
     }
     protected executeModulus(expression: ModulusExpression) {
         return this.execute(expression.leftOperand) % this.execute(expression.rightOperand);
     }
     protected executeModulusAssignment(expression: ModulusAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) % this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) % this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -387,7 +388,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) * this.execute(expression.rightOperand);
     }
     protected executeMultiplicationAssignment(expression: MultiplicationAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) * this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) * this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
@@ -445,7 +446,7 @@ export class ExpressionExecutor {
             if (isPolymorph) {
                 if (char === "}") {
                     const exp = ExpressionBuilder.parse(polymorphString);
-                    result += this.execute(exp);
+                    result += this.execute(exp) as string;
                     isPolymorph = false;
                 }
                 polymorphString += char;
@@ -465,7 +466,7 @@ export class ExpressionExecutor {
         return this.execute(expression.leftOperand) - this.execute(expression.rightOperand);
     }
     protected executeSubstractionAssignment(expression: SubstractionAssignmentExpression) {
-        const value = this.scopeParameters.get(expression.leftOperand.name) - this.execute(expression.rightOperand);
+        const value = this.scopeParameters.get<number>(expression.leftOperand.name) - this.execute(expression.rightOperand);
         this.scopeParameters.remove(expression.leftOperand.name);
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;

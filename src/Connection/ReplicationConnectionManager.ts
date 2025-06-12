@@ -7,7 +7,7 @@ import { PooledConnection } from "./PooledConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
 import { Enumerable } from "../Enumerable/Enumerable";
 
-export class ReplicationConnectionManager<T extends DbType = any> implements IConnectionManager<T> {
+export class ReplicationConnectionManager<T extends DbType = DbType> implements IConnectionManager<T> {
     public get driver() {
         return this.masterConnectionManager.driver;
     }
@@ -41,14 +41,14 @@ export class ReplicationConnectionManager<T extends DbType = any> implements ICo
     public readonly masterConnectionManager: PooledConnectionManager<T>;
     public readonly replicaConnectionManagers: Array<PooledConnectionManager<T>>;
     public async getAllConnections(): Promise<IConnection[]> {
-        const res: IConnection[] = [await this.masterConnectionManager.getConnection(true)];
+        const res: IConnection[] = [await this.masterConnectionManager.getConnection()];
         for (const a of this.replicaConnectionManagers) {
-            res.push(await a.getConnection(false));
+            res.push(await a.getConnection());
         }
         return res;
     }
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
         const manager = writable ? this.masterConnectionManager : Enumerable.from(this.replicaConnectionManagers).orderBy([(o) => o.connectionCount]).first();
-        return await manager.getConnection(writable);
+        return await manager.getConnection();
     }
 }

@@ -13,12 +13,12 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IDeleteIncludeRelation<T = any, TChild = any> {
+export interface IDeleteIncludeRelation<T = unknown, TChild = unknown> {
     child: DeleteExpression<TChild>;
     parent: IQueryExpression<T>;
     relations: IExpression<boolean>;
 }
-export class DeleteExpression<T = any> implements IQueryExpression<void> {
+export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
     }
@@ -38,7 +38,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         this.select.paramExps = value;
     }
     public get type() {
-        return undefined as any;
+        return undefined as IObjectType<void>;
     }
     public get where() {
         return this.select.where;
@@ -61,8 +61,8 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         this.select.includes = [];
     }
     public deleteMode?: IExpression<DeleteMode>;
-    public includes: Array<IDeleteIncludeRelation<T, any>> = [];
-    public parentRelation: IDeleteIncludeRelation<any, T>;
+    public includes: Array<IDeleteIncludeRelation<T>> = [];
+    public parentRelation: IDeleteIncludeRelation<unknown, T>;
     public select: SelectExpression<T>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
     public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;
@@ -86,7 +86,7 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
                     parent: this,
                     relations: relations
                 };
-                this.includes.push(relationDelete.parentRelation);
+                this.includes.push(relationDelete.parentRelation as any);
 
                 // include child to relationSelect
                 relations = null;
@@ -102,8 +102,8 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
                     parent: relationDelete,
                     relations: relations
                 };
-                relationDelete.includes.push(child.parentRelation);
-                return child.parentRelation;
+                relationDelete.includes.push(child.parentRelation as any);
+                return child.parentRelation as IDeleteIncludeRelation<T, TChild>;
             }
 
             relations = null;
@@ -122,13 +122,13 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
             parent: this,
             relations: relations
         };
-        this.includes.push(child.parentRelation);
-        return child.parentRelation;
+        this.includes.push(child.parentRelation as IDeleteIncludeRelation<T, unknown>);
+        return child.parentRelation as IDeleteIncludeRelation<T, TChild>;
     }
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): JoinRelation<T, any>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
-        return this.select.addJoin(child, relationMetaOrRelations as any, type);
+        return this.select.addJoin(child, relationMetaOrRelations as IExpression<boolean>, type);
     }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
@@ -155,9 +155,9 @@ export class DeleteExpression<T = any> implements IQueryExpression<void> {
         return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
     }
     public setOrder(orders: IOrderExpression[]): void;
-    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.setOrder(expression as any, direction);
+    public setOrder(expression: IExpression<unknown>, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression<unknown>, direction?: OrderDirection) {
+        this.select.setOrder(expression as IExpression<unknown>, direction);
     }
     public toString(): string {
         return `Delete({

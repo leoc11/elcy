@@ -10,7 +10,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class EntityExpression<T = any> implements IEntityExpression<T> {
+export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns) {
             if (this.metaData) {

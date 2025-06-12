@@ -4,7 +4,7 @@ import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IEntityExpression<T = any> extends IExpression<T> {
+export interface IEntityExpression<T = unknown> extends IExpression<T> {
     alias: string;
     columns: Array<IColumnExpression<T>>;
     defaultOrders: Array<IOrderQueryDefinition<T>>;

@@ -4,11 +4,12 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
 import { ParameterExpression } from "./ParameterExpression";
-export class AssignmentExpression<T = any> implements IBinaryOperatorExpression<T> {
-    constructor(public leftOperand: ParameterExpression, public rightOperand: IExpression) {
+
+export class AssignmentExpression<T = unknown> implements IBinaryOperatorExpression<T> {
+    constructor(public leftOperand: ParameterExpression<T>, public rightOperand: IExpression<T>) {
         this.type = leftOperand.type;
-        if (leftOperand.type === String) {
-            this.rightOperand = this.convertToStringOperand(rightOperand) as any;
+        if ((leftOperand.type as GenericType<string>) === String) {
+            (this.rightOperand as IExpression<string>) = this.convertToStringOperand(rightOperand);
         }
     }
     public itemType?: GenericType<T>;
@@ -25,9 +26,9 @@ export class AssignmentExpression<T = any> implements IBinaryOperatorExpression<
     }
     public convertToStringOperand(operand: IExpression): IExpression<string> {
         if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", [], String);
+            operand = new MethodCallExpression(operand as IExpression<string>, "toString", [], String);
         }
-        return operand as any;
+        return operand as IExpression<string>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("=", this.leftOperand.hashCode()), this.rightOperand.hashCode());

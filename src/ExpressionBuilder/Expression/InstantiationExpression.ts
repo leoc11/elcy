@@ -3,12 +3,12 @@ import { IObjectType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
-export class InstantiationExpression<T = any> implements IExpression<T> {
+export class InstantiationExpression<T = unknown> implements IExpression<T> {
     public get type() {
         try {
             return this.typeOperand.value;
         }
-        catch (e) {
+        catch {
             return NullConstructor;
         }
     }

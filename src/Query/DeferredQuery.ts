@@ -9,7 +9,7 @@ import { IQueryOption } from "./IQueryOption";
 import { IQueryParameterMap } from "./IQueryParameter";
 import { IQueryResult } from "./IQueryResult";
 
-export class DeferredQuery<T = any> {
+export class DeferredQuery<T = unknown> {
     public get queries() {
         return this._queries.slice();
     }

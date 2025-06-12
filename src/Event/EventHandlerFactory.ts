@@ -1,7 +1,7 @@
 import { IEventDispacher, IEventHandler } from "./IEventHandler";
 
-export const EventHandlerFactory = <TSource, TArgs = any>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
-    const handlers: any[] = [];
+export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
+    const handlers: Array<(source: TSource, args: TArgs) => boolean | void> = [];
     const eventHandler: IEventHandler<TSource, TArgs> = {
         add: (handler) => {
             handlers.push(handler);

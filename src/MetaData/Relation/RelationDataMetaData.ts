@@ -9,7 +9,7 @@ import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./InheritanceMetaData";
 
-export class RelationDataMetaData<TType = any, TSource = any, TTarget = any> implements IRelationDataMetaData<TType, TSource, TTarget> {
+export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = unknown> implements IRelationDataMetaData<TType, TSource, TTarget> {
     public get completeRelationType() {
         return this.sourceRelationMeta.completeRelationType;
     }

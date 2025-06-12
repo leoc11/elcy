@@ -10,8 +10,8 @@ import { CheckConstraintMetaData } from "../../../src/MetaData/CheckConstraintMe
 import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaData";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { UniqueConstraintMetaData } from "../../../src/MetaData/UniqueConstraintMetaData";
-import { MockConnection } from "../../../src/Mock/MockConnection";
-import { mockContext } from "../../../src/Mock/MockContext";
+import { MockConnection } from "../../Mock/MockConnection";
+import { mockContext } from "../../Mock/MockContext";
 import { Schema } from "./Entities/Schema";
 import { SchemaContext } from "./Entities/SchemaContext";
 import { SubSchema } from "./Entities/SubSchema";

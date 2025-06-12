@@ -24,7 +24,7 @@ declare module "./Enumerable" {
     interface Enumerable<T> {
         cast<TReturn>(): Enumerable<TReturn>;
         crossJoin<T2, TResult>(array2: IEnumerable<T2>, resultSelector: (item1: T, item2: T2) => TResult): Enumerable<TResult>;
-        distinct(selector?: (item: T) => any): Enumerable<T>;
+        distinct(selector?: (item: T) => unknown): Enumerable<T>;
         except(array2: IEnumerable<T>): Enumerable<T>;
         fullJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2 | null) => TResult): Enumerable<TResult>;
         groupBy<K>(keySelector: (item: T) => K): GroupByEnumerable<K, T>;
@@ -46,15 +46,15 @@ declare module "./Enumerable" {
     }
 }
 Enumerable.prototype.cast = function <T, TReturn>(this: Enumerable<T>): Enumerable<TReturn> {
-    return this as any;
+    return this as unknown as Enumerable<TReturn>;
 };
-Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: ((item: T) => TReturn)): Enumerable<TReturn> {
+Enumerable.prototype.select = function <T, TReturn>(this: Enumerable<T>, typeOrSelector: IObjectType<TReturn> | ((item: T) => TReturn), selector?: (item: T) => TReturn): Enumerable<TReturn> {
     let type: IObjectType<TReturn>;
     if (!selector) {
-        selector = typeOrSelector as any;
+        selector = typeOrSelector as (item: T) => TReturn;
     }
     else {
-        type = typeOrSelector as any;
+        type = typeOrSelector as IObjectType<TReturn>;
     }
     return new SelectEnumerable(this, selector, type);
 };
@@ -76,7 +76,7 @@ Enumerable.prototype.take = function <T>(this: Enumerable<T>, take: number): Enu
 Enumerable.prototype.groupBy = function <T, K>(this: Enumerable<T>, keySelector: (item: T) => K): GroupByEnumerable<K, T> {
     return new GroupByEnumerable(this, keySelector);
 };
-Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => any): Enumerable<T> {
+Enumerable.prototype.distinct = function <T>(this: Enumerable<T>, selector?: (item: T) => unknown): Enumerable<T> {
     return new DistinctEnumerable(this, selector);
 };
 Enumerable.prototype.innerJoin = function <T, T2, TResult>(this: Enumerable<T>, array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn): Enumerable<TResult> {
@@ -107,38 +107,38 @@ Enumerable.prototype.except = function <T>(this: Enumerable<T>, array2: IEnumera
     return new ExceptEnumerable(this, Enumerable.from(array2));
 };
 Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(this: Enumerable<T>, dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>> {
-    return new SelectEnumerable(new GroupByEnumerable(this, (o) => {
+    return this.groupBy((o) => {
         const dimensionKey = {} as Pivot<T, TD, TM>;
         for (const key in dimensions) {
             if (dimensions[key] instanceof Function) {
-                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[keyof TD];
+                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[Extract<keyof TD, string>];
             }
         }
         return dimensionKey;
-    }), (o) => {
+    }).select((o) => {
         for (const key in metrics) {
             if (o.key) {
-                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[keyof TD];
+                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[Extract<keyof TM, string>];
             }
         }
         return o.key;
     });
 };
 
-export const keyComparer = <T = any>(a: T, b: T) => {
+export const keyComparer = <T = unknown>(a: T, b: T) => {
     let result = a === b;
     if (!result && isNotNull(a) && isNotNull(b) && a instanceof Object && b instanceof Object) {
         const aKeys = Object.keys(a) as Array<keyof T>;
         const bKeys = Object.keys(b) as Array<keyof T>;
         result = aKeys.length === bKeys.length;
         if (result) {
-            result = aKeys.all((o) => b.hasOwnProperty(o) && b[o] === a[o]);
+            result = aKeys.all((o) => Object.prototype.hasOwnProperty.call(b, o) && b[o] === a[o]);
         }
     }
     return result;
 };
-export const defaultResultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R => {
-    const result = {} as any;
+export const defaultResultFn = <T = unknown, T2 = unknown, R = unknown>(item1: T | null, item2: T2 | null): R => {
+    const result = {} as Partial<Record<string, unknown>>;
     if (item2) {
         for (const prop in item2) {
             result[prop] = item2[prop];
@@ -149,7 +149,7 @@ export const defaultResultFn = <T, T2, R>(item1: T | null, item2: T2 | null): R 
             result[prop] = item1[prop];
         }
     }
-    return result;
+    return result as R;
 };
 
 export { Enumerable };

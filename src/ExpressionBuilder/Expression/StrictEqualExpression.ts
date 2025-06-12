@@ -1,7 +1,7 @@
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
-export class StrictEqualExpression<T = any> implements IBinaryOperatorExpression<boolean> {
+export class StrictEqualExpression<T = unknown> implements IBinaryOperatorExpression<boolean> {
     constructor(public leftOperand: IExpression<T>, public rightOperand: IExpression<T>) { }
     public type = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {

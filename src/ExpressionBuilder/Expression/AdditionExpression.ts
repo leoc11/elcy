@@ -4,17 +4,17 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
 
-export class AdditionExpression<T extends number | string = any> implements IBinaryOperatorExpression<T> {
-    constructor(leftOperand: IExpression, rightOperand: IExpression) {
-        if (leftOperand.type === String || rightOperand.type === String) {
-            this.type = String as any;
-            this.leftOperand = this.convertToStringOperand(leftOperand) as any;
-            this.rightOperand = this.convertToStringOperand(rightOperand) as any;
+export class AdditionExpression<T extends string | number = string | number> implements IBinaryOperatorExpression<T> {
+    constructor(leftOperand: IExpression<T>, rightOperand: IExpression<T>) {
+        if ((leftOperand as IExpression<string>).type === String || (rightOperand as IExpression<string>).type === String) {
+            (this.type as GenericType<string>) = String;
+            (this.leftOperand as IExpression<string>) = this.convertToStringOperand(leftOperand);
+            (this.rightOperand as IExpression<string>) = this.convertToStringOperand(rightOperand);
         }
         else {
-            this.leftOperand = leftOperand;
-            this.rightOperand = rightOperand;
-            this.type = Number as any;
+            (this.leftOperand as IExpression<number>) = leftOperand as IExpression<number>;
+            (this.rightOperand as IExpression<number>) = rightOperand as IExpression<number>;
+            (this.type as GenericType<number>) = Number;
         }
     }
     public itemType?: GenericType<T>;
@@ -31,11 +31,11 @@ export class AdditionExpression<T extends number | string = any> implements IBin
         replaceMap.set(this, clone);
         return clone;
     }
-    public convertToStringOperand(operand: IExpression): IExpression<string> {
-        if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", [], String);
+    public convertToStringOperand(operand: IExpression<string | number>): IExpression<string> {
+        if (operand.type === Number) {
+            operand = new MethodCallExpression<number, "toString", string>(operand as IExpression<number>, "toString", [], String);
         }
-        return operand as any;
+        return operand as IExpression<string>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("+", this.leftOperand.hashCode()), this.rightOperand.hashCode());

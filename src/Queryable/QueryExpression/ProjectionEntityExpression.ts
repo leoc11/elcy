@@ -9,8 +9,8 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 
-export abstract class ProjectionEntityExpression<T = any> implements IEntityExpression<T> {
-    public get primaryColumns(): IColumnExpression[] {
+export abstract class ProjectionEntityExpression<T = unknown> implements IEntityExpression<T> {
+    public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
         }
@@ -30,7 +30,7 @@ export abstract class ProjectionEntityExpression<T = any> implements IEntityExpr
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = subSelect.projectedColumns.select((o) => {
-            const col = new ColumnExpression(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
+            const col = new ColumnExpression<T>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
             col.columnMeta = o.columnMeta;
             return col;
         }).toArray();
@@ -41,7 +41,7 @@ export abstract class ProjectionEntityExpression<T = any> implements IEntityExpr
         this.paramExps = subSelect.paramExps;
     }
     public alias: string;
-    public columns: IColumnExpression[];
+    public columns: IColumnExpression<T>[];
     public defaultOrders: IOrderQueryDefinition[] = [];
     public readonly entityTypes: IObjectType[];
     public name: string = "";

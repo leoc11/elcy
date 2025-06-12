@@ -1,6 +1,6 @@
 import { ColumnGeneration } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, IObjectType, ObjectLike, ValueType } from "../Common/Type";
+import { FlatObjectLike, IObjectType, ObjectLike, StringKeyOf, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IEnumerable } from "../Enumerable/IEnumerable";
@@ -28,7 +28,7 @@ import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 
-export class DbSet<T> extends Queryable<T> {
+export class DbSet<T extends object = object> extends Queryable<T> {
     public get dbContext(): DbContext {
         return this._dbContext;
     }
@@ -37,7 +37,7 @@ export class DbSet<T> extends Queryable<T> {
     }
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
+            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type) as EntityMetaData<T>;
         }
         return this._metaData;
     }
@@ -65,10 +65,10 @@ export class DbSet<T> extends Queryable<T> {
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
     public deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(predicate?: (item: T) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
-        if (modeOrKeyOrPredicate instanceof Function || typeof modeOrKeyOrPredicate === "string") {
-            return super.deferredDelete(modeOrKeyOrPredicate as () => boolean, mode);
+    public deferredDelete(predicate?: FunctionExpression<boolean, T> | ((item: T) => boolean), mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | FunctionExpression<boolean, T> | ((item: T) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+        if (modeOrKeyOrPredicate instanceof Function || modeOrKeyOrPredicate instanceof FunctionExpression || typeof modeOrKeyOrPredicate === "string") {
+            return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, T>, mode);
         }
         else {
             const key = modeOrKeyOrPredicate;
@@ -150,9 +150,8 @@ export class DbSet<T> extends Queryable<T> {
             }
         }
 
-        let query: Queryable<T> = this;
         if (pkFilter) {
-            query = new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]));
+            const query = new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]));
             return query.deferredUpdate(setterObj);
         }
 
@@ -216,12 +215,12 @@ export class DbSet<T> extends Queryable<T> {
         const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
-    public getKey(id: ValueType | ObjectLike<T>): string {
+    public getKey(id: ValueType | FlatObjectLike<T>): string {
         if (!isNotNull(id)) {
             throw new Error("Parameter cannot be null");
         }
         if (isValue(id)) {
-            return id.toString();
+            return (id as string).toString();
         }
 
         let keyString = "";
@@ -238,17 +237,18 @@ export class DbSet<T> extends Queryable<T> {
                 break;
             }
             else {
-                keyString += val.toString() + "|";
+                keyString += (val as string) + "|";
             }
         }
 
         if (useReference) {
-            return id as any;
+            // TODO: need to find other way for db value data
+            return id as unknown as string;
         }
         return keyString.slice(0, - 1);
     }
     public hashCode() {
-        return hashCode(this.type.name!);
+        return hashCode(this.type.name);
     }
 
     public async insert(...items: Array<ObjectLike<T>>) {
@@ -262,7 +262,7 @@ export class DbSet<T> extends Queryable<T> {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.first().propertyName] = primaryValue as unknown as T[keyof T];
+            entity[this.primaryKeys.first().propertyName] = primaryValue as T[StringKeyOf<T>];
         }
         else {
             if (this.primaryKeys.any((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
@@ -270,7 +270,7 @@ export class DbSet<T> extends Queryable<T> {
             }
 
             for (const prop in primaryValue) {
-                entity[prop] = primaryValue[prop] as unknown as T[keyof T];
+                entity[prop] = primaryValue[prop] as T[StringKeyOf<T>];
             }
         }
         this.dbContext.add(entity);

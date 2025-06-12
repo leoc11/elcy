@@ -1,5 +1,6 @@
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { GenericType, IObjectType } from "../../Common/Type";
+import { Enumerable } from "../../Enumerable/Enumerable";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -23,9 +24,9 @@ import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 
-export class SelectExpression<T = any> implements IQueryExpression<T> {
-    public get allColumns(): IEnumerable<IColumnExpression<T>> {
-        let columns = this.entity.columns.union(this.resolvedSelects);
+export class SelectExpression<T = unknown> implements IQueryExpression<T> {
+    public get allColumns(): IEnumerable<IColumnExpression> {
+        let columns = Enumerable.from(this.entity.columns as IColumnExpression[]).union(this.resolvedSelects as IColumnExpression[]);
         for (const join of this.joins) {
             const child = join.child;
             columns = child.entity.columns.union(child.resolvedSelects);
@@ -42,7 +43,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public get allSelects(): IEnumerable<SelectExpression> {
         return [this as SelectExpression].union(this.joins.selectMany((o) => o.child.allSelects));
     }
-    public get itemType(): GenericType<any> {
+    public get itemType(): GenericType<T> {
         return this.itemExpression.type;
     }
     public get primaryKeys() {
@@ -59,7 +60,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
         // primary column used in hydration to identify an entity.
         // relation column used in hydration to build relationship.
-        let projectedColumns = this.primaryKeys.union(this.relationColumns);
+        let projectedColumns = Enumerable.from(this.primaryKeys).union(this.relationColumns);
         if (this.entity instanceof EntityExpression && this.entity.versionColumn && this.entity.metaData.concurrencyMode === "OPTIMISTIC VERSION") {
             // Version column for optimistic concurency.
             projectedColumns = projectedColumns.union([this.entity.versionColumn]);
@@ -69,7 +70,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         return projectedColumns;
     }
 
-    public get relationColumns(): IEnumerable<IColumnExpression> {
+    public get relationColumns(): IEnumerable<IColumnExpression<T>> {
         // Include Relation Columns are used later for hydration
         let relations = this.includes.where((o) => !o.isEmbedded).selectMany((o) => o.parentColumns);
         if (this.parentRelation) {
@@ -81,7 +82,7 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
     public get resolvedIncludes(): IEnumerable<IncludeRelation<T>> {
         return this.includes.selectMany((o) => {
             if (o.isEmbedded) {
-                return o.child.resolvedIncludes;
+                return o.child.resolvedIncludes as IEnumerable<IncludeRelation<T>>;
             }
             else {
                 return [o];
@@ -89,23 +90,23 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
         });
     }
     public get resolvedJoins(): IEnumerable<JoinRelation<T>> {
-        let joins: IEnumerable<JoinRelation<T>> = this.joins;
+        let joins = Enumerable.from(this.joins);
         for (const include of this.includes.where((o) => o.isEmbedded)) {
-            joins = joins.union(include.child.resolvedJoins);
+            joins = joins.union(include.child.resolvedJoins as JoinRelation<T>[]);
         }
         return joins;
     }
-    public get resolvedSelects(): IEnumerable<IColumnExpression> {
+    public get resolvedSelects(): IEnumerable<IColumnExpression<T>> {
         let selects = this.selects.asEnumerable();
         for (const include of this.includes) {
             if (include.isEmbedded) {
                 const cloneMap = new Map();
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
-                // add column which include in emdedded relation
+                // add column which include in embedded relation
                 const childSelects = include.child.resolvedSelects.select((o) => {
                     let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
                     if (!curCol) {
-                        curCol = o.clone(cloneMap);
+                        curCol = o.clone(cloneMap) as any;
                     }
                     return curCol;
                 });
@@ -136,18 +137,18 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
 
     //#region Properties
     public entity: IEntityExpression<T>;
-    public includes: Array<IncludeRelation<T, any>> = [];
+    public includes: Array<IncludeRelation<T>> = [];
     // TODO: remove this workaround for insertInto Expression
     public isSelectOnly = false;
     public isSubSelect: boolean;
-    public itemExpression: IExpression;
-    public joins: Array<JoinRelation<T, any>> = [];
+    public itemExpression: IExpression<T>;
+    public joins: Array<JoinRelation<T>> = [];
     public orders: IOrderExpression[] = [];
     public paging: IPagingExpression = {};
     public paramExps: SqlParameterExpression[] = [];
 
-    public parentRelation: ISelectRelation<any, T>;
-    public selects: IColumnExpression[] = [];
+    public parentRelation: ISelectRelation<unknown, T>;
+    public selects: IColumnExpression<T>[] = [];
     public type = Array;
     public where: IExpression<boolean>;
     public addInclude<TChild>(name: string, child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>): IncludeRelation<T, TChild>;
@@ -203,17 +204,17 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             isEmbedded = true;
         }
         else {
-            relation = relationMetaOrRelations as any;
+            relation = relationMetaOrRelations as IExpression<boolean>;
         }
 
         const includeRel = new IncludeRelation(this, child, name, type, relation);
         includeRel.isEmbedded = isEmbedded;
-        child.parentRelation = includeRel;
-        this.includes.push(includeRel);
+        child.parentRelation = includeRel as IncludeRelation<unknown, TChild>;
+        this.includes.push(includeRel as IncludeRelation<T, unknown>);
         return includeRel;
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType): JoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, any>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>, type?: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<T, TChild>;
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
         const existingRelation = this.joins.first((o) => o.child === child);
         if (existingRelation) {
@@ -274,21 +275,21 @@ export class SelectExpression<T = any> implements IQueryExpression<T> {
             isEmbedded = true;
         }
         else {
-            relation = relationMetaOrRelations as any;
+            relation = relationMetaOrRelations as IExpression<boolean>;
         }
 
         const joinRel = new JoinRelation(this, child, relation, type);
         joinRel.isEmbedded = isEmbedded;
-        child.parentRelation = joinRel;
-        this.joins.push(joinRel);
+        child.parentRelation = joinRel as JoinRelation<unknown, TChild>;
+        this.joins.push(joinRel as JoinRelation<T, unknown>);
         return joinRel;
     }
     public addSqlParameter<Tval>(valueExp: IExpression<Tval[]>, colExp?: IEntityExpression<Tval>): SqlTableValueParameterExpression<Tval>;
     public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData): SqlParameterExpression<Tval>;
-    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData | IEntityExpression): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Tval> {
-        let paramExp: SqlParameterExpression;
-        if ((valueExp.type as any) === Array) {
-            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<any>, colExp as IEntityExpression);
+    public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData | IEntityExpression<Tval>): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Tval> {
+        let paramExp: SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Tval>;
+        if (valueExp.type === Array) {
+            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<Tval[]>, colExp as IEntityExpression<Tval>);
         }
         else {
             paramExp = new SqlParameterExpression(valueExp, colExp as IColumnMetaData);

@@ -1,6 +1,6 @@
 import {describe, it, expect } from "vitest";
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
-import { MockDriver } from "../../../src/Mock/MockDriver";
+import { MockDriver } from "../../Mock/MockDriver";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MockDriver({ database: "Master" });

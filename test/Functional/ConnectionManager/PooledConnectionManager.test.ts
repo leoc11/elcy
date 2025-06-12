@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
-import { MockDriver } from "../../../src/Mock/MockDriver";
+import { MockDriver } from "../../Mock/MockDriver";
 
 describe("POOLED CONNECTION MANAGER", () => {
     const getManager = (option?: IConnectionPoolOption) => {

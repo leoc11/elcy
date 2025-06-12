@@ -1,7 +1,7 @@
 import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
 import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
 
-export interface IDBEventListener<T = any> {
+export interface IDBEventListener<T = unknown> {
     afterDelete?: (entity: T, param: IDeleteEventParam) => void;
     afterLoad?: (entity: T) => void;
     afterSave?: (entity: T, param: ISaveEventParam) => void;

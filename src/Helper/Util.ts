@@ -159,7 +159,7 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     }
     return source;
 };
-export const isEntityExp = (data: IExpression): data is IEntityExpression => {
+export const isEntityExp = <T>(data: IExpression<T>): data is IEntityExpression<T> => {
     return !!(data as IEntityExpression).entityTypes;
 };
 export const isExpression = (data: IExpression): data is IExpression => {

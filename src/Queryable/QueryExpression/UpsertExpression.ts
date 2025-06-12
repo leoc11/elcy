@@ -1,4 +1,4 @@
-import { IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -13,7 +13,7 @@ import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class UpsertExpression<T = any> implements IQueryExpression<void> {
+export class UpsertExpression<T = unknown> implements IQueryExpression<void> {
     public get insertColumns(): Array<IColumnExpression<T>> {
         if (!this._insertColumns) {
             this._insertColumns = this.relations
@@ -33,7 +33,7 @@ export class UpsertExpression<T = any> implements IQueryExpression<void> {
         return this._relations;
     }
     public get type() {
-        return undefined as any;
+        return undefined as GenericType<void[]>;
     }
     public get updateColumns(): Array<IColumnExpression<T>> {
         if (!this._updateColumns) {

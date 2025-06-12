@@ -4,9 +4,9 @@ import { IExpression } from "./IExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
-export class FunctionExpression<T = any> implements IExpression<T> {
+export class FunctionExpression<T = unknown, K = unknown> implements IExpression<T> {
     // TODO: type must always specified
-    constructor(public body: IExpression<T>, public params: ParameterExpression[], type?: GenericType<T>) {
+    constructor(public body: IExpression<T>, public params: ParameterExpression<K>[], type?: GenericType<T>) {
         this.type = type;
     }
     public itemType?: GenericType;
@@ -35,10 +35,5 @@ export class FunctionExpression<T = any> implements IExpression<T> {
             return "(" + params.join(", ") + ") => (" + this.body.toString() + ")";
         }
         return "(" + params.join(", ") + ") => " + this.body.toString();
-    }
-
-    public toFunction(): () => T {
-        // tslint:disable-next-line: no-eval
-        return eval(this.toString());
     }
 }

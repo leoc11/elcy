@@ -3,7 +3,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
-export class SqlParameterExpression<T = any> implements IExpression<T> {
+export class SqlParameterExpression<T = unknown> implements IExpression<T> {
     constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData) { }
     public type: GenericType<T>;
     public isSystem?: boolean;

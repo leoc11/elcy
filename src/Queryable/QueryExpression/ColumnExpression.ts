@@ -6,13 +6,13 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
-export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
+export class ColumnExpression<TE = unknown, T = unknown> implements IColumnExpression<TE, T> {
     public get dataPropertyName() {
         return this.alias || this.columnName;
     }
     constructor(entity: IEntityExpression<TE>, columnMeta: IColumnMetaData<TE, T>, isPrimary?: boolean);
-    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: keyof TE, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
-    constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | keyof TE, columnName?: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType) {
+    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: Extract<keyof TE, string>, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
+    constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | Extract<keyof TE, string>, columnName?: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType) {
         this.entity = entity;
         if ((columnMetaOrType as IColumnMetaData).entity) {
             this.columnMeta = columnMetaOrType as IColumnMetaData<TE, T>;
@@ -24,7 +24,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
         }
         else {
             this.type = columnMetaOrType as GenericType<T>;
-            this.propertyName = isPrimaryOrPropertyName as keyof TE;
+            this.propertyName = isPrimaryOrPropertyName as Extract<keyof TE, string>;
             this.columnName = columnName;
             this.isPrimary = isPrimary;
             this.isNullable = isNullable;
@@ -36,7 +36,7 @@ export class ColumnExpression<TE = any, T = any> implements IColumnExpression<TE
     public entity: IEntityExpression<TE>;
     public isNullable: boolean;
     public isPrimary: boolean;
-    public propertyName: keyof TE;
+    public propertyName: Extract<keyof TE, string>;
     public type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {

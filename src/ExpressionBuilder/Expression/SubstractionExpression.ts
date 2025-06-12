@@ -2,7 +2,7 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class SubstractionExpression implements IBinaryOperatorExpression<number> {
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
+    constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
     public type = Number;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {

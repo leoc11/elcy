@@ -5,7 +5,7 @@ import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 import { IRelationDataMetaData } from "./IRelationDataMetaData";
 
-export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRelationMetaData<TSource, TTarget> {
+export interface IRelationMetaData<TSource extends object = object, TTarget extends object = object, TRel extends RelationshipType = RelationshipType> extends IBaseRelationMetaData<TSource, TTarget> {
     completeRelationType?: CompleteRelationshipType;
     deleteOption?: ReferenceOption;
     fullName: string;
@@ -18,11 +18,11 @@ export interface IRelationMetaData<TSource = any, TTarget = any> extends IBaseRe
     mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource>>;
     name?: string;
     nullable?: boolean;
-    propertyName?: keyof TSource;
+    propertyName?: Extract<keyof TSource, string>;
     relationColumns: Array<IColumnMetaData<TSource>>;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
     relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
-    relationType: RelationshipType;
+    relationType: TRel;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     source: IEntityMetaData<TSource>;
     target: IEntityMetaData<TTarget>;

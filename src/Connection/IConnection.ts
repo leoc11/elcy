@@ -14,8 +14,8 @@ export interface IConnection {
     commitTransaction(): Promise<void>;
     open(): Promise<void>;
     query(command: IQuery): Promise<IQueryResult[]>;
-    query(query: string, parameters?: Map<string, any>): Promise<IQueryResult[]>;
-    query(query: string, type?: QueryType, parameters?: Map<string, any>): Promise<IQueryResult[]>;
+    query(query: string, parameters?: Map<string, unknown>): Promise<IQueryResult[]>;
+    query(query: string, type?: QueryType, parameters?: Map<string, unknown>): Promise<IQueryResult[]>;
     reset(): Promise<void>;
     rollbackTransaction(): Promise<void>;
     setIsolationLevel(isolationLevel: IsolationLevel): Promise<void>;

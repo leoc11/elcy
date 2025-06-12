@@ -8,19 +8,19 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     private _expiredQueue = new QueuedTimeout((item: ICacheItem) => {
         return this.remove(item.key);
     });
-    private _keyMap = new Map<string, ICacheItem>();
+    private _keyMap = new Map<string, ICacheItem<IQueryResult[]>>();
     private _tagMap = new Map<string, string[]>();
     public async clear(): Promise<void> {
         this._keyMap.clear();
         this._tagMap.clear();
-        this._expiredQueue.reset();
+        await this._expiredQueue.reset();
     }
     public async get(key: string): Promise<IQueryResult[]> {
         const res = await this.gets(key);
         return res.first();
     }
-    public async gets(...keys: string[]): Promise<IQueryResult[][]> {
-        return keys.select((key) => {
+    public gets(...keys: string[]): Promise<IQueryResult[][]> {
+        return Promise.resolve(keys.map((key) => {
             const item = this._keyMap.get(key);
             if (item && item.slidingExpiration) {
                 const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
@@ -32,9 +32,9 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             }
 
             return item ? item.data : null;
-        }).toArray();
+        }).toArray());
     }
-    public async remove(...keys: string[]): Promise<void> {
+    public remove(...keys: string[]): Promise<void> {
         for (const key of keys) {
             const item = this._keyMap.get(key);
             this._keyMap.delete(key);
@@ -50,8 +50,9 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 this._expiredQueue.clearTimeout(item);
             }
         }
+        return Promise.resolve();
     }
-    public async removeTag(...tags: string[]): Promise<void> {
+    public removeTag(...tags: string[]): Promise<void> {
         for (const tag of tags) {
             const keys = this._tagMap.get(tag);
             if (keys) {
@@ -61,8 +62,10 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 }
             }
         }
+
+        return Promise.resolve();
     }
-    public async set(key: string, cache: IQueryResult[], option?: ICacheOption): Promise<void> {
+    public set(key: string, cache: IQueryResult[], option?: ICacheOption): Promise<void> {
         const item = {} as ICacheItem<IQueryResult[]>;
         if (option) {
             Object.assign(item, option);
@@ -86,5 +89,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                 tagList.push(key);
             }
         }
+
+        return Promise.resolve();
     }
 }

@@ -5,9 +5,9 @@ import { LexicalAnalyzer } from "./LexicalAnalyzer";
 import { SyntacticAnalyzer } from "./SyntacticAnalyzer";
 
 export class ExpressionBuilder {
-    public static parse<T = any>(fn: (...items: any[]) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: any }): FunctionExpression<T>;
-    public static parse<T = any>(fn: string, paramTypes?: GenericType[], userParameters?: { [key: string]: any }): IExpression<T>;
-    public static parse<T = any>(fn: ((...items: any[]) => T) | string | Function, paramTypes?: GenericType[], userParameters?: { [key: string]: any }) {
+    public static parse<T = unknown>(fn: (...items: unknown[]) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): FunctionExpression<T>;
+    public static parse<T = unknown>(fn: string, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): IExpression<T>;
+    public static parse<T = unknown>(fn: ((...items: unknown[]) => T) | string, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }) {
         const tokens = LexicalAnalyzer.parse(fn.toString());
         return SyntacticAnalyzer.parse(Array.from(tokens), paramTypes, userParameters);
     }

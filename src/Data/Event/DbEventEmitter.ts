@@ -3,7 +3,7 @@ import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
 import { EntityEntry } from "../EntityEntry";
 import { IDBEventListener } from "./IDBEventListener";
 
-export class DBEventEmitter<T = any> {
+export class DBEventEmitter<T extends object = object> {
     constructor(...eventListeners: Array<IDBEventListener<T>>) {
         this.eventListeners = eventListeners;
     }

@@ -3,7 +3,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityExpression } from "./IEntityExpression";
 
-export interface IColumnExpression<TE = any, T = any> extends IExpression<T> {
+export interface IColumnExpression<TE = unknown, T = unknown> extends IExpression<T> {
     alias?: string;
     columnMeta?: IColumnMetaData<TE, T>;
     // TODO: columnName not needed. coz it not available for computed column.
@@ -12,7 +12,7 @@ export interface IColumnExpression<TE = any, T = any> extends IExpression<T> {
     entity: IEntityExpression<TE>;
     isNullable?: boolean;
     isPrimary: boolean;
-    propertyName: keyof TE;
+    propertyName: Extract<keyof TE, string>;
     type: GenericType<T>;
     clone(replaceMap?: Map<IExpression, IExpression>): IColumnExpression<TE, T>;
     hashCode(): number;

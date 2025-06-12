@@ -6,7 +6,7 @@ import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IEntityMetaData } from "./IEntityMetaData";
 
-export interface IColumnMetaData<TE = any, T = any> {
+export interface IColumnMetaData<TE = unknown, T = unknown> {
     charset?: string;
     collation?: string;
     columnName?: string;
@@ -20,7 +20,7 @@ export interface IColumnMetaData<TE = any, T = any> {
     isProjected?: boolean;
     isReadOnly?: boolean;
     nullable?: boolean;
-    propertyName?: keyof TE;
+    propertyName?: Extract<keyof TE, string>;
     type?: GenericType<T>;
     applyOption?(option: IColumnMetaData | IColumnOption): void;
 }

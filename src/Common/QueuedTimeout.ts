@@ -1,16 +1,16 @@
 import { SortedArray } from "./SortedArray";
 
-interface IQueuedTimeoutItem<T = any> {
+interface IQueuedTimeoutItem<T = unknown> {
     item: T;
     timeOut: number;
 }
 
 export class QueuedTimeout<T> {
-    constructor(public readonly action: (item: T) => any) { }
+    constructor(public readonly action: (item: T) => Promise<unknown>) { }
     public readonly queue = SortedArray.create((a: IQueuedTimeoutItem<T>, b: IQueuedTimeoutItem<T>) => {
         return a.timeOut < b.timeOut ? -1 : a.timeOut > b.timeOut ? 1 : 0;
     });
-    private _timeout: any;
+    private _timeout: NodeJS.Timeout | string | number | undefined;
     public clearTimeout(item?: T) {
         if (this._timeout && this.queue.length > 0) {
             if (item) {
@@ -31,14 +31,14 @@ export class QueuedTimeout<T> {
             }
         }
     }
-    public forceExecute(count: number) {
+    public async forceExecute(count: number) {
         if (count < 0) {
             count = 0;
         }
         const items = this.queue.splice(0, count);
         this.clearTimeout();
         for (const item of items) {
-            this.action(item.item);
+            await this.action(item.item);
         }
     }
     public pop() {
@@ -48,11 +48,11 @@ export class QueuedTimeout<T> {
         }
         return item ? item.item : undefined;
     }
-    public reset(): void {
+    public async reset(): Promise<void> {
         const queue = this.queue.splice(0);
         this.clearTimeout();
         for (const item of queue) {
-            this.action(item.item);
+            await this.action(item.item);
         }
     }
     public setTimeout(): void;
@@ -78,11 +78,11 @@ export class QueuedTimeout<T> {
         this.clearTimeout();
         return item ? item.item : undefined;
     }
-    private execute() {
+    private async execute() {
         const item = this.queue.shift();
         this._timeout = null;
         if (item) {
-            this.action(item.item);
+            await this.action(item.item);
         }
 
         if (this.queue.length) {

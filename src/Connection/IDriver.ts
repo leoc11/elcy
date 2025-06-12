@@ -1,7 +1,7 @@
 import { DbType } from "../Common/StringType";
 import { IConnection } from "./IConnection";
 
-export interface IDriver<T extends DbType = any> {
+export interface IDriver<T extends DbType = DbType> {
     allowPooling: boolean;
     database: string;
     dbType: T;

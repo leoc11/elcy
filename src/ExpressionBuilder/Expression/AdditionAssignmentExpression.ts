@@ -7,11 +7,11 @@ import { ParameterExpression } from "./ParameterExpression";
 export class AdditionAssignmentExpression<T extends number | string = number | string> implements IBinaryOperatorExpression<T> {
     constructor(public leftOperand: ParameterExpression<T>, public rightOperand: IExpression<T>) {
         this.type = this.leftOperand.type;
-        if (leftOperand.type as any === String) {
-            this.rightOperand = this.convertToStringOperand(rightOperand) as any;
+        if ((leftOperand as ParameterExpression<string>).type === String) {
+            (this.rightOperand as IExpression<string>) = this.convertToStringOperand(rightOperand);
         }
     }
-    public itemType: GenericType<any>;
+    public itemType: GenericType;
     public type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
@@ -31,8 +31,8 @@ export class AdditionAssignmentExpression<T extends number | string = number | s
     }
     protected convertToStringOperand(operand: IExpression): IExpression<string> {
         if (operand.type !== String) {
-            operand = new MethodCallExpression(operand, "toString", [], String);
+            operand = new MethodCallExpression(operand as IExpression<string>, "toString", [], String);
         }
-        return operand;
+        return operand as IExpression<string>;
     }
 }

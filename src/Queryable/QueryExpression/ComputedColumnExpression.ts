@@ -4,9 +4,9 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
-export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpression<TE, T> {
+export class ComputedColumnExpression<TE = unknown, T = unknown> implements IColumnExpression<TE, T> {
     public get columnName() {
-        return String(this.propertyName);
+        return this.propertyName;
     }
     public get dataPropertyName() {
         return this.alias;
@@ -14,12 +14,12 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
     public get type(): GenericType<T> {
         return this.expression.type;
     }
-    constructor(public entity: IEntityExpression<TE>, public expression: IExpression, public propertyName: keyof TE, public alias?: string) {
+    constructor(public entity: IEntityExpression<TE>, public expression: IExpression<T>, public propertyName: Extract<keyof TE, string>, public alias?: string) {
         if (expression instanceof ComputedColumnExpression) {
-            this.expression = expression.expression;
+            this.expression = (expression as ComputedColumnExpression<TE, T>).expression;
         }
         if (!this.alias) {
-            this.alias = String(this.propertyName);
+            this.alias = this.propertyName;
         }
     }
     /**
@@ -41,12 +41,12 @@ export class ComputedColumnExpression<TE = any, T = any> implements IColumnExpre
         return clone;
     }
     public hashCode() {
-        return hashCode(String(this.propertyName), hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
+        return hashCode(this.propertyName, hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
     }
     public toString(): string {
         return `ComputedColum({
 Expression:${this.expression.toString()},
-Name:${String(this.propertyName)}
+Name:${this.propertyName}
 })`;
     }
 }

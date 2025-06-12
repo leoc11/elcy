@@ -1,6 +1,6 @@
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 
-export interface IQueryParameter<T = any> {
+export interface IQueryParameter<T = unknown> {
     name?: string;
     value?: T;
 }

@@ -3,12 +3,12 @@ import { GenericType } from "../../Common/Type";
 import { hashCode } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
-export class ValueExpression<T = any> implements IExpression<T> {
+export class ValueExpression<T = unknown> implements IExpression<T> {
     public get type(): GenericType<T> {
         if (this.value === null || this.value === undefined) {
-            return NullConstructor as any;
+            return NullConstructor;
         }
-        return this.value.constructor as any;
+        return this.value.constructor as GenericType<T>;
     }
     constructor(public readonly value: T, public expressionString: string = null) { }
     public clone() {

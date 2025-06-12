@@ -1,6 +1,6 @@
 import { Enumerable, keyComparer } from "./Enumerable";
 
-export class UnionEnumerable<T = any> extends Enumerable<T> {
+export class UnionEnumerable<T = unknown> extends Enumerable<T> {
     constructor(protected readonly parent: Enumerable<T>, protected readonly parent2: Enumerable<T>, public readonly isUnionAll = false) {
         super();
     }

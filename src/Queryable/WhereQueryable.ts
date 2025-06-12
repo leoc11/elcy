@@ -18,7 +18,7 @@ export class WhereQueryable<T> extends Queryable<T> {
     protected set predicate(value) {
         this._predicate = value;
     }
-    constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<boolean> | ((item: T) => boolean)) {
+    constructor(public readonly parent: Queryable<T>, predicate: FunctionExpression<boolean, T> | ((item: T) => boolean)) {
         super(parent.type, parent);
         if (predicate instanceof FunctionExpression) {
             this.predicate = predicate;
@@ -33,7 +33,7 @@ export class WhereQueryable<T> extends Queryable<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("WHERE", this.parent.hashCode()), this.predicate.hashCode());

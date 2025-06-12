@@ -19,7 +19,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class UpdateExpression<T = any> implements IQueryExpression<void> {
+export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
     }
@@ -39,7 +39,7 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         this.select.paramExps = value;
     }
     public get type() {
-        return undefined as any;
+        return undefined as IObjectType<void[]>;
     }
     public get where() {
         return this.select.where;
@@ -62,10 +62,10 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
     }
     public select: SelectExpression<T>;
     public setter: { [key in keyof T]?: IExpression<T[key]> } = {};
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type: JoinType): JoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T, any>, IColumnExpression<TChild, any>>, type?: JoinType) {
-        return this.select.addJoin(child, relationMetaOrRelations as any, type);
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T>, IColumnExpression<TChild>>, type: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T>, IColumnExpression<TChild>>, type?: JoinType) {
+        return this.select.addJoin(child, relationMetaOrRelations as IRelationMetaData<T, TChild>, type);
     }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
@@ -94,9 +94,9 @@ export class UpdateExpression<T = any> implements IQueryExpression<void> {
         return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
     }
     public setOrder(orders: IOrderExpression[]): void;
-    public setOrder(expression: IExpression<any>, direction: OrderDirection): void;
-    public setOrder(expression: IOrderExpression[] | IExpression<any>, direction?: OrderDirection) {
-        this.select.setOrder(expression as any, direction);
+    public setOrder(expression: IExpression, direction: OrderDirection): void;
+    public setOrder(expression: IOrderExpression[] | IExpression, direction?: OrderDirection) {
+        this.select.setOrder(expression as IExpression, direction);
     }
     public toString(): string {
         let setter = "";
