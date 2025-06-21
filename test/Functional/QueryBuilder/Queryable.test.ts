@@ -246,7 +246,26 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await include.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [CollectionProducts].[CollectionId],\n\t\t[CollectionProducts].[ProductId]\n\tFROM [CollectionProducts] AS [CollectionProducts]\n\tINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])\n) AS [CollectionProducts] ON ([CollectionProducts].[ProductId]=[entity1].[ProductId]);\n\nSELECT [CollectionProducts].[CollectionId],\n\t[CollectionProducts].[ProductId]\nFROM [CollectionProducts] AS [CollectionProducts]\nINNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId]);\n\nSELECT [entity0].[CollectionId],\n\t[entity0].[name]\nFROM [Collections] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[ProductId],
+	[entity1].[Price]
+FROM [Products] AS [entity1]
+INNER JOIN (
+	SELECT [CollectionProducts].[CollectionId],
+		[CollectionProducts].[ProductId]
+	FROM [CollectionProducts] AS [CollectionProducts]
+	INNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])
+) AS [CollectionProducts] ON ([CollectionProducts].[ProductId]=[entity1].[ProductId]);
+
+SELECT [CollectionProducts].[CollectionId],
+	[CollectionProducts].[ProductId]
+FROM [CollectionProducts] AS [CollectionProducts]
+INNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId]);
+
+SELECT [entity0].[CollectionId],
+	[entity0].[name]
+FROM [Collections] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -269,7 +288,11 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await projection.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -289,7 +312,11 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -309,7 +336,12 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[OrderDate] AS [column0],\n\t([entity0].[TotalAmount]+1.2) AS [column1]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[OrderDate] AS [column0],
+	([entity0].[TotalAmount]+1.2) AS [column1]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -329,7 +361,14 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity1].[OrderDate] AS [column0]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity0].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity1].[OrderDate] AS [column0]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity0].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -348,7 +387,21 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -370,7 +423,22 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[ProductId],\n\t[entity1].[Price]\nFROM [Products] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId],\n\t\t[entity0].[ProductId]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE ([entity0].[isDeleted]=0)\n) AS [entity0] ON ([entity0].[ProductId]=[entity1].[ProductId]);\n\nSELECT [entity0].[OrderDetailId],\n\t[entity0].[ProductId]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity1].[ProductId],
+	[entity1].[Price]
+FROM [Products] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderDetailId],
+		[entity0].[ProductId]
+	FROM [OrderDetails] AS [entity0]
+	WHERE ([entity0].[isDeleted]=0)
+) AS [entity0] ON ([entity0].[ProductId]=[entity1].[ProductId]);
+
+SELECT [entity0].[OrderDetailId],
+	[entity0].[ProductId]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -391,7 +459,17 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductName] AS [column0]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductName] AS [column0]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -416,7 +494,29 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId]);\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[OrderId]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity2].[ProductId],
+	[entity2].[Price]
+FROM [Products] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[ProductId],
+		[entity1].[OrderId]
+	FROM [OrderDetails] AS [entity1]
+	INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1] ON ([entity1].[ProductId]=[entity2].[ProductId]);
+
+SELECT [entity1].[OrderDetailId],
+	[entity1].[ProductId],
+	[entity1].[OrderId]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -442,7 +542,39 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity3].[Price] AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity1].[ProductId]=[entity3].[ProductId])\n\tINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1] ON ([entity2].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity2].[isDeleted]=0);\n\nSELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity3].[Price] AS [column0]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity3]\n\tON ([entity1].[ProductId]=[entity3].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderDetailId],
+	[entity2].[OrderId],
+	[entity2].[ProductId],
+	[entity2].[ProductName],
+	[entity2].[Quantity],
+	[entity2].[CreatedDate],
+	[entity2].[isDeleted]
+FROM [OrderDetails] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity3].[Price] AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	LEFT JOIN [Products] AS [entity3]
+		ON ([entity1].[ProductId]=[entity3].[ProductId])
+	INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1] ON ([entity2].[OrderDetailId]=[entity1].[OrderDetailId])
+WHERE ([entity2].[isDeleted]=0);
+
+SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity3].[Price] AS [column0]
+FROM [OrderDetails] AS [entity1]
+LEFT JOIN [Products] AS [entity3]
+	ON ([entity1].[ProductId]=[entity3].[ProductId])
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -465,7 +597,19 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -489,7 +633,42 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderDetailId],\n\t[entity2].[OrderId],\n\t[entity2].[ProductId],\n\t[entity2].[ProductName],\n\t[entity2].[Quantity],\n\t[entity2].[CreatedDate],\n\t[entity2].[isDeleted]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderId],\n\t\t\tSUM([entity1].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\t\tGROUP BY [entity1].[OrderId]\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE (([entity2].[isDeleted]=0) AND ([entity2].[Quantity]<=1));\n\nSELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tSUM([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderDetailId],
+	[entity2].[OrderId],
+	[entity2].[ProductId],
+	[entity2].[ProductName],
+	[entity2].[Quantity],
+	[entity2].[CreatedDate],
+	[entity2].[isDeleted]
+FROM [OrderDetails] AS [entity2]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity1].[column0] AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity1].[OrderId],
+			SUM([entity1].[Quantity]) AS [column0]
+		FROM [OrderDetails] AS [entity1]
+		WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))
+		GROUP BY [entity1].[OrderId]
+	) AS [entity1]
+		ON ([entity0].[OrderId]=[entity1].[OrderId])
+) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE (([entity2].[isDeleted]=0) AND ([entity2].[Quantity]<=1));
+
+SELECT [entity0].[OrderId],
+	[entity1].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		SUM([entity1].[Quantity]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>2))
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -517,7 +696,14 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity1].[TotalAmount] AS [column0]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity1].[TotalAmount]>10000))");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity1].[TotalAmount] AS [column0]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE (([entity0].[isDeleted]=0) AND ([entity1].[TotalAmount]>10000))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -536,7 +722,19 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -553,7 +751,25 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[ProductId],
+	[entity2].[Price]
+FROM [Products] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[ProductId],
+		[entity1].[OrderId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+INNER JOIN [Orders] AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -570,7 +786,25 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[ProductId],\n\t[entity2].[Price]\nFROM [Products] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[ProductId],
+	[entity2].[Price]
+FROM [Products] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[ProductId],
+		[entity1].[OrderId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+INNER JOIN [Orders] AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -587,7 +821,33 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]>10000)\n) AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderDetailPropertyId],
+	[entity2].[OrderDetailId],
+	[entity2].[Name],
+	[entity2].[Amount]
+FROM [OrderDetailProperties] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+	WHERE ([entity0].[TotalAmount]>10000)
+) AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -607,7 +867,27 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN [Orders] AS [entity0]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderDetailPropertyId],
+	[entity2].[OrderDetailId],
+	[entity2].[Name],
+	[entity2].[Amount]
+FROM [OrderDetailProperties] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	INNER JOIN [Orders] AS [entity0]
+		ON ([entity0].[OrderId]=[entity1].[OrderId])
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -624,7 +904,27 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderDetailPropertyId],\n\t[entity2].[OrderDetailId],\n\t[entity2].[Name],\n\t[entity2].[Amount]\nFROM [OrderDetailProperties] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderDetailPropertyId],
+	[entity2].[OrderDetailId],
+	[entity2].[Name],
+	[entity2].[Amount]
+FROM [OrderDetailProperties] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])
+INNER JOIN [Orders] AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -643,7 +943,13 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=10000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[TotalAmount]<=10000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -661,7 +967,25 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -684,7 +1008,23 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE (([entity1].[isDeleted]=0) AND ([entity2].[Price]<=15000));
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -704,7 +1044,19 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ((([entity0].[isDeleted]=0) AND ([entity1].[Price]<=15000)) AND ([entity0].[ProductName] LIKE '%a%'))");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ((([entity0].[isDeleted]=0) AND ([entity1].[Price]<=15000)) AND ([entity0].[ProductName] LIKE '%a%'))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -723,7 +1075,14 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]>20000)\nGROUP BY [entity0].[OrderDate]\nHAVING ((COUNT([entity0].[OrderId])>=1) AND (DAY([entity0].[OrderDate])>15))\nORDER BY [entity0].[OrderDate] ASC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[TotalAmount]>20000)
+GROUP BY [entity0].[OrderDate]
+HAVING ((COUNT([entity0].[OrderId])>=1) AND (DAY([entity0].[OrderDate])>15))
+ORDER BY [entity0].[OrderDate] ASC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -740,7 +1099,28 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nLEFT JOIN [Orders] AS [entity2]\n\tON ([entity1].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[TotalAmount]>10000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailPropertyId],
+	[entity0].[OrderDetailId],
+	[entity0].[Name],
+	[entity0].[Amount]
+FROM [OrderDetailProperties] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+LEFT JOIN [Orders] AS [entity2]
+	ON ([entity1].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[TotalAmount]>10000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -759,7 +1139,13 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nORDER BY [entity0].[TotalAmount] DESC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+ORDER BY [entity0].[TotalAmount] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -776,7 +1162,20 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ([entity0].[isDeleted]=0)\nORDER BY [entity1].[Price] DESC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ([entity0].[isDeleted]=0)
+ORDER BY [entity1].[Price] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -793,7 +1192,20 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ([entity0].[isDeleted]=0)\nORDER BY ([entity0].[Quantity]*[entity1].[Price]) DESC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ([entity0].[isDeleted]=0)
+ORDER BY ([entity0].[Quantity]*[entity1].[Price]) DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -810,7 +1222,20 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ([entity0].[isDeleted]=0)\nORDER BY [entity0].[Quantity] ASC, [entity1].[Price] DESC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ([entity0].[isDeleted]=0)
+ORDER BY [entity0].[Quantity] ASC, [entity1].[Price] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -828,7 +1253,20 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ([entity0].[isDeleted]=0)\nORDER BY [entity0].[Quantity] ASC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ([entity0].[isDeleted]=0)
+ORDER BY [entity0].[Quantity] ASC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -845,7 +1283,26 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity2].[Price] DESC;\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0)
+ORDER BY [entity2].[Price] DESC;
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -869,7 +1326,22 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC;\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0)
+ORDER BY [entity1].[Quantity] ASC;
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -891,7 +1363,10 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.any();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT TOP 1 1 AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT TOP 1 1 AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -907,7 +1382,51 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await any.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t1 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NOT NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		(
+		CASE WHEN (([entity2].[column0] IS NOT NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			1 AS [column0]
+		FROM [OrderDetails] AS [entity2]
+		LEFT JOIN [Products] AS [entity3]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		WHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))
+		GROUP BY [entity2].[OrderId]
+	) AS [entity2]
+		ON ([entity0].[OrderId]=[entity2].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	(
+	CASE WHEN (([entity2].[column0] IS NOT NULL)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		1 AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	LEFT JOIN [Products] AS [entity3]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	WHERE (([entity2].[isDeleted]=0) AND ([entity3].[Price]<20000))
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -925,7 +1444,21 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await any.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		1 AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[column0] IS NOT NULL)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -943,7 +1476,13 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.all((o) => o.TotalAmount <= 20000);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT TOP 1 0 AS [column0]\nFROM [Orders] AS [entity0]\nWHERE NOT(\n\t([entity0].[TotalAmount]<=20000)\n)");
+            expect(param.query).toBe(
+`SELECT DISTINCT TOP 1 0 AS [column0]
+FROM [Orders] AS [entity0]
+WHERE NOT(
+	([entity0].[TotalAmount]<=20000)
+)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -959,7 +1498,55 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await all.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t(\n\t\tCASE WHEN (([entity2].[column0] IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\t0 AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t\t([entity3].[Price]<20000)\n\t\t))\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t(\n\tCASE WHEN (([entity2].[column0] IS NULL)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t0 AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE (([entity2].[isDeleted]=0) AND NOT(\n\t\t([entity3].[Price]<20000)\n\t))\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		(
+		CASE WHEN (([entity2].[column0] IS NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			0 AS [column0]
+		FROM [OrderDetails] AS [entity2]
+		LEFT JOIN [Products] AS [entity3]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		WHERE (([entity2].[isDeleted]=0) AND NOT(
+			([entity3].[Price]<20000)
+		))
+		GROUP BY [entity2].[OrderId]
+	) AS [entity2]
+		ON ([entity0].[OrderId]=[entity2].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	(
+	CASE WHEN (([entity2].[column0] IS NULL)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		0 AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	LEFT JOIN [Products] AS [entity3]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	WHERE (([entity2].[isDeleted]=0) AND NOT(
+		([entity3].[Price]<20000)
+	))
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -977,7 +1564,25 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await all.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t0 AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tLEFT JOIN [Products] AS [entity2]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tWHERE (([entity1].[isDeleted]=0) AND NOT(\n\t\t([entity2].[Price]<=20000)\n\t))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0] IS NULL)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		0 AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	LEFT JOIN [Products] AS [entity2]
+		ON ([entity1].[ProductId]=[entity2].[ProductId])
+	WHERE (([entity1].[isDeleted]=0) AND NOT(
+		([entity2].[Price]<=20000)
+	))
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[column0] IS NULL)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -995,7 +1600,10 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.max((o) => o.TotalAmount);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT MAX([entity0].[TotalAmount]) AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT MAX([entity0].[TotalAmount]) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
             expect(typeof result).toBe("number");
@@ -1010,7 +1618,59 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await max.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMAX([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMAX([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity3].[column0] AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			MAX([entity3].[Price]) AS [column0]
+		FROM [Products] AS [entity3]
+		INNER JOIN (
+			SELECT [entity2].[OrderDetailId],
+				[entity2].[ProductId],
+				[entity2].[OrderId],
+				[entity2].[ProductName],
+				[entity2].[Quantity],
+				[entity2].[CreatedDate],
+				[entity2].[isDeleted]
+			FROM [OrderDetails] AS [entity2]
+			WHERE ([entity2].[isDeleted]=0)
+		) AS [entity2]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		GROUP BY [entity2].[OrderId]
+	) AS [entity3]
+		ON ([entity0].[OrderId]=[entity3].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity3].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		MAX([entity3].[Price]) AS [column0]
+	FROM [Products] AS [entity3]
+	INNER JOIN (
+		SELECT [entity2].[OrderDetailId],
+			[entity2].[ProductId],
+			[entity2].[OrderId],
+			[entity2].[ProductName],
+			[entity2].[Quantity],
+			[entity2].[CreatedDate],
+			[entity2].[isDeleted]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[isDeleted]=0)
+	) AS [entity2]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	GROUP BY [entity2].[OrderId]
+) AS [entity3]
+	ON ([entity0].[OrderId]=[entity3].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1028,7 +1688,32 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await max.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMAX([entity2].[Price]) AS [column0]\n\tFROM [Products] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[column0]>20000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		MAX([entity2].[Price]) AS [column0]
+	FROM [Products] AS [entity2]
+	INNER JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[ProductId],
+			[entity1].[OrderId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity1].[ProductId]=[entity2].[ProductId])
+	GROUP BY [entity1].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[column0]>20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1046,7 +1731,10 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.min((o) => o.TotalAmount);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT MIN([entity0].[TotalAmount]) AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT MIN([entity0].[TotalAmount]) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1062,7 +1750,59 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await min.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tMIN([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tMIN([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity3].[column0] AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			MIN([entity3].[Price]) AS [column0]
+		FROM [Products] AS [entity3]
+		INNER JOIN (
+			SELECT [entity2].[OrderDetailId],
+				[entity2].[ProductId],
+				[entity2].[OrderId],
+				[entity2].[ProductName],
+				[entity2].[Quantity],
+				[entity2].[CreatedDate],
+				[entity2].[isDeleted]
+			FROM [OrderDetails] AS [entity2]
+			WHERE ([entity2].[isDeleted]=0)
+		) AS [entity2]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		GROUP BY [entity2].[OrderId]
+	) AS [entity3]
+		ON ([entity0].[OrderId]=[entity3].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity3].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		MIN([entity3].[Price]) AS [column0]
+	FROM [Products] AS [entity3]
+	INNER JOIN (
+		SELECT [entity2].[OrderDetailId],
+			[entity2].[ProductId],
+			[entity2].[OrderId],
+			[entity2].[ProductName],
+			[entity2].[Quantity],
+			[entity2].[CreatedDate],
+			[entity2].[isDeleted]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[isDeleted]=0)
+	) AS [entity2]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	GROUP BY [entity2].[OrderId]
+) AS [entity3]
+	ON ([entity0].[OrderId]=[entity3].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1080,7 +1820,32 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await min.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMIN([entity2].[Price]) AS [column0]\n\tFROM [Products] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[column0]>20000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		MIN([entity2].[Price]) AS [column0]
+	FROM [Products] AS [entity2]
+	INNER JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[ProductId],
+			[entity1].[OrderId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity1].[ProductId]=[entity2].[ProductId])
+	GROUP BY [entity1].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[column0]>20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1098,7 +1863,10 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.avg((o) => o.TotalAmount);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT AVG([entity0].[TotalAmount]) AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT AVG([entity0].[TotalAmount]) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1114,7 +1882,59 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await avg.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity3].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tAVG([entity3].[Price]) AS [column0]\n\t\tFROM [Products] AS [entity3]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t[entity2].[ProductId],\n\t\t\t\t[entity2].[OrderId],\n\t\t\t\t[entity2].[ProductName],\n\t\t\t\t[entity2].[Quantity],\n\t\t\t\t[entity2].[CreatedDate],\n\t\t\t\t[entity2].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t) AS [entity2]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity3]\n\t\tON ([entity0].[OrderId]=[entity3].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity3].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tAVG([entity3].[Price]) AS [column0]\n\tFROM [Products] AS [entity3]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[ProductId],\n\t\t\t[entity2].[OrderId],\n\t\t\t[entity2].[ProductName],\n\t\t\t[entity2].[Quantity],\n\t\t\t[entity2].[CreatedDate],\n\t\t\t[entity2].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t) AS [entity2]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity3].[column0] AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			AVG([entity3].[Price]) AS [column0]
+		FROM [Products] AS [entity3]
+		INNER JOIN (
+			SELECT [entity2].[OrderDetailId],
+				[entity2].[ProductId],
+				[entity2].[OrderId],
+				[entity2].[ProductName],
+				[entity2].[Quantity],
+				[entity2].[CreatedDate],
+				[entity2].[isDeleted]
+			FROM [OrderDetails] AS [entity2]
+			WHERE ([entity2].[isDeleted]=0)
+		) AS [entity2]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		GROUP BY [entity2].[OrderId]
+	) AS [entity3]
+		ON ([entity0].[OrderId]=[entity3].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity3].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		AVG([entity3].[Price]) AS [column0]
+	FROM [Products] AS [entity3]
+	INNER JOIN (
+		SELECT [entity2].[OrderDetailId],
+			[entity2].[ProductId],
+			[entity2].[OrderId],
+			[entity2].[ProductName],
+			[entity2].[Quantity],
+			[entity2].[CreatedDate],
+			[entity2].[isDeleted]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[isDeleted]=0)
+	) AS [entity2]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	GROUP BY [entity2].[OrderId]
+) AS [entity3]
+	ON ([entity0].[OrderId]=[entity3].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1132,7 +1952,32 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await avg.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tAVG([entity2].[Price]) AS [column0]\n\tFROM [Products] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[column0]>20000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		AVG([entity2].[Price]) AS [column0]
+	FROM [Products] AS [entity2]
+	INNER JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[ProductId],
+			[entity1].[OrderId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity1].[ProductId]=[entity2].[ProductId])
+	GROUP BY [entity1].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[column0]>20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1150,7 +1995,10 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.sum((o) => o.TotalAmount);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT SUM([entity0].[TotalAmount]) AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT SUM([entity0].[TotalAmount]) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1166,7 +2014,41 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await sum.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column1] AS [column2]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tLEFT JOIN [Products] AS [entity3]\n\t\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column1] AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]\n\tFROM [OrderDetails] AS [entity2]\n\tLEFT JOIN [Products] AS [entity3]\n\t\tON ([entity2].[ProductId]=[entity3].[ProductId])\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity2].[column1] AS [column2]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			SUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]
+		FROM [OrderDetails] AS [entity2]
+		LEFT JOIN [Products] AS [entity3]
+			ON ([entity2].[ProductId]=[entity3].[ProductId])
+		WHERE ([entity2].[isDeleted]=0)
+		GROUP BY [entity2].[OrderId]
+	) AS [entity2]
+		ON ([entity0].[OrderId]=[entity2].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity2].[column1] AS [column2]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM(([entity3].[Price]*[entity2].[Quantity])) AS [column1]
+	FROM [OrderDetails] AS [entity2]
+	LEFT JOIN [Products] AS [entity3]
+		ON ([entity2].[ProductId]=[entity3].[ProductId])
+	WHERE ([entity2].[isDeleted]=0)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1184,7 +2066,21 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await sum.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tSUM([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0]>3)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		SUM([entity1].[Quantity]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[column0]>3)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1203,7 +2099,19 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await count.count();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT COUNT([entity0].[OrderId]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tSUM([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0]>3)");
+            expect(param.query).toBe(
+`SELECT DISTINCT COUNT([entity0].[OrderId]) AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		SUM([entity1].[Quantity]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[column0]>3)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1219,7 +2127,37 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await count.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity2].[column0] AS [column1]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			COUNT([entity2].[OrderDetailId]) AS [column0]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[isDeleted]=0)
+		GROUP BY [entity2].[OrderId]
+	) AS [entity2]
+		ON ([entity0].[OrderId]=[entity2].[OrderId])
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity2].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		COUNT([entity2].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[isDeleted]=0)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1237,7 +2175,21 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await count.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[column0]>3)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[column0]>3)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1258,7 +2210,33 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await count.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT SUM([entity1].[Quantity]) AS [column1],\n\tCOUNT([entity2].[OrderId]) AS [column2],\n\tCOUNT([entity3].[OrderId]) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[Quantity]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN (\n\tSELECT [entity2].[OrderId]\n\tFROM [Orders] AS [entity2]\n\tWHERE ([entity2].[TotalAmount]>20000)\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderId]\n\tFROM [Orders] AS [entity3]\n\tWHERE ([entity3].[TotalAmount]<=20000)\n) AS [entity3]\n\tON ([entity0].[OrderId]=[entity3].[OrderId])\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)");
+            expect(param.query).toBe(
+`SELECT SUM([entity1].[Quantity]) AS [column1],
+	COUNT([entity2].[OrderId]) AS [column2],
+	COUNT([entity3].[OrderId]) AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[Quantity]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN (
+	SELECT [entity2].[OrderId]
+	FROM [Orders] AS [entity2]
+	WHERE ([entity2].[TotalAmount]>20000)
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+LEFT JOIN (
+	SELECT [entity3].[OrderId]
+	FROM [Orders] AS [entity3]
+	WHERE ([entity3].[TotalAmount]<=20000)
+) AS [entity3]
+	ON ([entity0].[OrderId]=[entity3].[OrderId])
+GROUP BY (MONTH([entity0].[OrderDate]) - 1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1279,7 +2257,15 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await take.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nORDER BY (SELECT NULL)\nOFFSET 5 ROWS\nFETCH NEXT 1 ROWS ONLY");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+ORDER BY (SELECT NULL)
+OFFSET 5 ROWS
+FETCH NEXT 1 ROWS ONLY`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1297,7 +2283,19 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await take.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 5 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT TOP 10 [entity1].[OrderId]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[OrderDate] DESC\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC");
+            expect(param.query).toBe(
+`SELECT TOP 5 [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+INNER JOIN (
+	SELECT TOP 10 [entity1].[OrderId]
+	FROM [Orders] AS [entity1]
+	ORDER BY [entity1].[OrderDate] DESC
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+ORDER BY [entity0].[TotalAmount] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1313,7 +2311,41 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await take.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t[entity3].[OrderId],\n\t\t\t[entity3].[Quantity]\n\t\tFROM [OrderDetails] AS [entity3]\n\t\tWHERE ([entity3].[isDeleted]=0)\n\t) AS [entity3]\n\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]>[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderDetailId]\n\tHAVING ((COUNT([entity2].[OrderDetailId])>2) AND (COUNT([entity2].[OrderDetailId])<=3))\n) AS [entity2]\n\tON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0)\nORDER BY [entity1].[Quantity] ASC;\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity2].[OrderDetailId],
+		COUNT([entity2].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	INNER JOIN (
+		SELECT [entity3].[OrderDetailId],
+			[entity3].[OrderId],
+			[entity3].[Quantity]
+		FROM [OrderDetails] AS [entity3]
+		WHERE ([entity3].[isDeleted]=0)
+	) AS [entity3]
+		ON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]>[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))
+	WHERE ([entity2].[isDeleted]=0)
+	GROUP BY [entity2].[OrderDetailId]
+	HAVING ((COUNT([entity2].[OrderDetailId])>2) AND (COUNT([entity2].[OrderDetailId])<=3))
+) AS [entity2]
+	ON ([entity1].[OrderDetailId]=[entity2].[OrderDetailId])
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0)
+ORDER BY [entity1].[Quantity] ASC;
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1336,7 +2368,112 @@ WHERE ([entity0].[isDeleted]=0)`
             const results = await take.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity4].[OrderDetailId]\n\tFROM [OrderDetails] AS [entity4]\n\tINNER JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t[entity3].[OrderId],\n\t\t\t\t[entity3].[Quantity]\n\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t) AS [entity3]\n\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderDetailId]\n\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t) AS [entity2]\n\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity4].[isDeleted]=0)\n) AS [entity4]\n\tON ([entity1].[OrderDetailId]=[entity4].[OrderDetailId])\nINNER JOIN (\n\tSELECT [entity5].[OrderDetailId],\n\t\tCOUNT([entity5].[OrderDetailId]) AS [column1]\n\tFROM [OrderDetails] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t) AS [entity3]\n\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t) AS [entity2]\n\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity5].[OrderDetailId]=[entity4].[OrderDetailId])\n\tINNER JOIN (\n\t\tSELECT [entity6].[OrderDetailId],\n\t\t\t[entity6].[OrderId],\n\t\t\t[entity6].[ProductName]\n\t\tFROM [OrderDetails] AS [entity6]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tINNER JOIN (\n\t\t\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\t\t\t\tFROM [OrderDetails] AS [entity2]\n\t\t\t\tINNER JOIN (\n\t\t\t\t\tSELECT [entity3].[OrderDetailId],\n\t\t\t\t\t\t[entity3].[OrderId],\n\t\t\t\t\t\t[entity3].[Quantity]\n\t\t\t\t\tFROM [OrderDetails] AS [entity3]\n\t\t\t\t\tWHERE ([entity3].[isDeleted]=0)\n\t\t\t\t) AS [entity3]\n\t\t\t\t\tON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))\n\t\t\t\tWHERE ([entity2].[isDeleted]=0)\n\t\t\t\tGROUP BY [entity2].[OrderDetailId]\n\t\t\t\tHAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))\n\t\t\t) AS [entity2]\n\t\t\t\tON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity6].[OrderDetailId]=[entity4].[OrderDetailId])\n\t) AS [entity6]\n\t\tON (([entity6].[OrderId]=[entity5].[OrderId]) AND (([entity6].[ProductName]>[entity5].[ProductName]) OR (([entity6].[ProductName]=[entity5].[ProductName]) AND ([entity6].[OrderDetailId]>=[entity5].[OrderDetailId]))))\n\tGROUP BY [entity5].[OrderDetailId]\n\tHAVING (COUNT([entity5].[OrderDetailId])<=3)\n) AS [entity5]\n\tON ([entity1].[OrderDetailId]=[entity5].[OrderDetailId])\nINNER JOIN (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])\nORDER BY [entity1].[ProductName] ASC;\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity4].[OrderDetailId]
+	FROM [OrderDetails] AS [entity4]
+	INNER JOIN (
+		SELECT [entity2].[OrderDetailId],
+			COUNT([entity2].[OrderDetailId]) AS [column0]
+		FROM [OrderDetails] AS [entity2]
+		INNER JOIN (
+			SELECT [entity3].[OrderDetailId],
+				[entity3].[OrderId],
+				[entity3].[Quantity]
+			FROM [OrderDetails] AS [entity3]
+			WHERE ([entity3].[isDeleted]=0)
+		) AS [entity3]
+			ON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))
+		WHERE ([entity2].[isDeleted]=0)
+		GROUP BY [entity2].[OrderDetailId]
+		HAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))
+	) AS [entity2]
+		ON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])
+	WHERE ([entity4].[isDeleted]=0)
+) AS [entity4]
+	ON ([entity1].[OrderDetailId]=[entity4].[OrderDetailId])
+INNER JOIN (
+	SELECT [entity5].[OrderDetailId],
+		COUNT([entity5].[OrderDetailId]) AS [column1]
+	FROM [OrderDetails] AS [entity5]
+	INNER JOIN (
+		SELECT [entity4].[OrderDetailId]
+		FROM [OrderDetails] AS [entity4]
+		INNER JOIN (
+			SELECT [entity2].[OrderDetailId],
+				COUNT([entity2].[OrderDetailId]) AS [column0]
+			FROM [OrderDetails] AS [entity2]
+			INNER JOIN (
+				SELECT [entity3].[OrderDetailId],
+					[entity3].[OrderId],
+					[entity3].[Quantity]
+				FROM [OrderDetails] AS [entity3]
+				WHERE ([entity3].[isDeleted]=0)
+			) AS [entity3]
+				ON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))
+			WHERE ([entity2].[isDeleted]=0)
+			GROUP BY [entity2].[OrderDetailId]
+			HAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))
+		) AS [entity2]
+			ON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])
+		WHERE ([entity4].[isDeleted]=0)
+	) AS [entity4]
+		ON ([entity5].[OrderDetailId]=[entity4].[OrderDetailId])
+	INNER JOIN (
+		SELECT [entity6].[OrderDetailId],
+			[entity6].[OrderId],
+			[entity6].[ProductName]
+		FROM [OrderDetails] AS [entity6]
+		INNER JOIN (
+			SELECT [entity4].[OrderDetailId]
+			FROM [OrderDetails] AS [entity4]
+			INNER JOIN (
+				SELECT [entity2].[OrderDetailId],
+					COUNT([entity2].[OrderDetailId]) AS [column0]
+				FROM [OrderDetails] AS [entity2]
+				INNER JOIN (
+					SELECT [entity3].[OrderDetailId],
+						[entity3].[OrderId],
+						[entity3].[Quantity]
+					FROM [OrderDetails] AS [entity3]
+					WHERE ([entity3].[isDeleted]=0)
+				) AS [entity3]
+					ON (([entity3].[OrderId]=[entity2].[OrderId]) AND (([entity3].[Quantity]<[entity2].[Quantity]) OR (([entity3].[Quantity]=[entity2].[Quantity]) AND ([entity3].[OrderDetailId]>=[entity2].[OrderDetailId]))))
+				WHERE ([entity2].[isDeleted]=0)
+				GROUP BY [entity2].[OrderDetailId]
+				HAVING ((COUNT([entity2].[OrderDetailId])>1) AND (COUNT([entity2].[OrderDetailId])<=5))
+			) AS [entity2]
+				ON ([entity4].[OrderDetailId]=[entity2].[OrderDetailId])
+			WHERE ([entity4].[isDeleted]=0)
+		) AS [entity4]
+			ON ([entity6].[OrderDetailId]=[entity4].[OrderDetailId])
+	) AS [entity6]
+		ON (([entity6].[OrderId]=[entity5].[OrderId]) AND (([entity6].[ProductName]>[entity5].[ProductName]) OR (([entity6].[ProductName]=[entity5].[ProductName]) AND ([entity6].[OrderDetailId]>=[entity5].[OrderDetailId]))))
+	GROUP BY [entity5].[OrderDetailId]
+	HAVING (COUNT([entity5].[OrderDetailId])<=3)
+) AS [entity5]
+	ON ([entity1].[OrderDetailId]=[entity5].[OrderDetailId])
+INNER JOIN (
+	SELECT TOP 10 [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId])
+ORDER BY [entity1].[ProductName] ASC;
+
+SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1354,7 +2491,12 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.first();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 1 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT TOP 1 [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1367,7 +2509,13 @@ WHERE ([entity0].[isDeleted]=0)`
             const result = await db.orders.where((o) => o.OrderDate < new Date()).first((o) => o.TotalAmount > 20000);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 1 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (([entity0].[OrderDate]<getdate()) AND ([entity0].[TotalAmount]>20000))");
+            expect(param.query).toBe(
+`SELECT TOP 1 [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE (([entity0].[OrderDate]<getdate()) AND ([entity0].[TotalAmount]>20000))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1445,7 +2593,10 @@ FROM [Orders] AS [entity0]`);
             const results = await distinct.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DISTINCT [entity0].[TotalAmount]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT DISTINCT [entity0].[TotalAmount]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1466,7 +2617,22 @@ FROM [Orders] AS [entity0]`);
             const results = await distinct.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT DISTINCT [entity2].[OrderId],\n\t[entity2].[Quantity]\nFROM [OrderDetails] AS [entity2]\nINNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN [Orders] AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT DISTINCT [entity2].[OrderId],
+	[entity2].[Quantity]
+FROM [OrderDetails] AS [entity2]
+INNER JOIN [Orders] AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1491,7 +2657,11 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[OrderDate]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+GROUP BY [entity0].[OrderDate]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1508,7 +2678,11 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[OrderDate]");
+            expect(param.query).toBe(
+`SELECT DAY([entity0].[OrderDate]) AS [column0]
+FROM [Orders] AS [entity0]
+GROUP BY [entity0].[OrderDate]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1525,7 +2699,11 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT COUNT([entity0].[OrderId]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY [entity0].[OrderDate]");
+            expect(param.query).toBe(
+`SELECT COUNT([entity0].[OrderId]) AS [column0]
+FROM [Orders] AS [entity0]
+GROUP BY [entity0].[OrderDate]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1542,7 +2720,11 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate])) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate]))");
+            expect(param.query).toBe(
+`SELECT (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate])) AS [column0]
+FROM [Orders] AS [entity0]
+GROUP BY (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate]))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1563,7 +2745,20 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate])) AS [column0],\n\tCOUNT([entity0].[OrderId]) AS [column1],\n\tSUM([entity1].[TotalAmount]) AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t[entity1].[TotalAmount]\n\tFROM [Orders] AS [entity1]\n\tWHERE ([entity1].[TotalAmount]<10000)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nGROUP BY (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate]))");
+            expect(param.query).toBe(
+`SELECT (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate])) AS [column0],
+	COUNT([entity0].[OrderId]) AS [column1],
+	SUM([entity1].[TotalAmount]) AS [column2]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		[entity1].[TotalAmount]
+	FROM [Orders] AS [entity1]
+	WHERE ([entity1].[TotalAmount]<10000)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+GROUP BY (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate]))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1583,7 +2778,20 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted],\n\t([entity0].[Quantity]*[entity1].[Price]) AS [GrossSales]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Products] AS [entity1]\n\tON ([entity0].[ProductId]=[entity1].[ProductId])\nWHERE ([entity0].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted],
+	([entity0].[Quantity]*[entity1].[Price]) AS [GrossSales]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Products] AS [entity1]
+	ON ([entity0].[ProductId]=[entity1].[ProductId])
+WHERE ([entity0].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1607,7 +2815,34 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT YEAR([entity2].[OrderDate]) AS [column0],\n\tCOUNT([entity2].[OrderId]) AS [column1],\n\tSUM([entity3].[TotalAmount]) AS [column2]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT TOP 100 [entity0].[OrderDetailId],\n\t\t[entity0].[OrderId],\n\t\t[entity0].[ProductId],\n\t\t[entity0].[ProductName],\n\t\t[entity0].[Quantity],\n\t\t[entity0].[CreatedDate],\n\t\t[entity0].[isDeleted]\n\tFROM [OrderDetails] AS [entity0]\n\tLEFT JOIN [Products] AS [entity1]\n\t\tON ([entity0].[ProductId]=[entity1].[ProductId])\n\tWHERE (([entity0].[isDeleted]=0) AND (([entity0].[Quantity]*[entity1].[Price])>10000))\n) AS [entity0]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderId],\n\t\t[entity3].[TotalAmount]\n\tFROM [Orders] AS [entity3]\n\tWHERE ([entity3].[TotalAmount]<10000)\n) AS [entity3]\n\tON ([entity2].[OrderId]=[entity3].[OrderId])\nGROUP BY YEAR([entity2].[OrderDate])");
+            expect(param.query).toBe(
+`SELECT YEAR([entity2].[OrderDate]) AS [column0],
+	COUNT([entity2].[OrderId]) AS [column1],
+	SUM([entity3].[TotalAmount]) AS [column2]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT TOP 100 [entity0].[OrderDetailId],
+		[entity0].[OrderId],
+		[entity0].[ProductId],
+		[entity0].[ProductName],
+		[entity0].[Quantity],
+		[entity0].[CreatedDate],
+		[entity0].[isDeleted]
+	FROM [OrderDetails] AS [entity0]
+	LEFT JOIN [Products] AS [entity1]
+		ON ([entity0].[ProductId]=[entity1].[ProductId])
+	WHERE (([entity0].[isDeleted]=0) AND (([entity0].[Quantity]*[entity1].[Price])>10000))
+) AS [entity0]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+LEFT JOIN (
+	SELECT [entity3].[OrderId],
+		[entity3].[TotalAmount]
+	FROM [Orders] AS [entity3]
+	WHERE ([entity3].[TotalAmount]<10000)
+) AS [entity3]
+	ON ([entity2].[OrderId]=[entity3].[OrderId])
+GROUP BY YEAR([entity2].[OrderDate])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1627,7 +2862,19 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate],\n\tDAY([entity1].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT DAY([entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [entity0]\n\tGROUP BY DAY([entity0].[OrderDate])\n) AS [entity0]\n\tON ([entity0].[column0]=DAY([entity1].[OrderDate]))");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate],
+	DAY([entity1].[OrderDate]) AS [column0]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT DAY([entity0].[OrderDate]) AS [column0]
+	FROM [Orders] AS [entity0]
+	GROUP BY DAY([entity0].[OrderDate])
+) AS [entity0]
+	ON ([entity0].[column0]=DAY([entity1].[OrderDate]))`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1649,7 +2896,22 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT DAY([entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [entity0]\n\tGROUP BY DAY([entity0].[OrderDate])\n) AS [entity0] ON ([entity0].[column0]=DAY([entity1].[OrderDate]));\n\nSELECT DAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nGROUP BY DAY([entity0].[OrderDate])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	DAY([entity1].[OrderDate]) AS [column0],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT DAY([entity0].[OrderDate]) AS [column0]
+	FROM [Orders] AS [entity0]
+	GROUP BY DAY([entity0].[OrderDate])
+) AS [entity0] ON ([entity0].[column0]=DAY([entity1].[OrderDate]));
+
+SELECT DAY([entity0].[OrderDate]) AS [column0]
+FROM [Orders] AS [entity0]
+GROUP BY DAY([entity0].[OrderDate])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1669,7 +2931,19 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [OrderDetails] AS [entity0]\n\tWHERE (([entity0].[isDeleted]=0) AND ([entity0].[Quantity]>1))\n\tGROUP BY [entity0].[OrderId]\n) AS [entity0]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId]
+	FROM [OrderDetails] AS [entity0]
+	WHERE (([entity0].[isDeleted]=0) AND ([entity0].[Quantity]>1))
+	GROUP BY [entity0].[OrderId]
+) AS [entity0]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1686,7 +2960,14 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT DAY([entity1].[OrderDate]) AS [column0]\nFROM [OrderDetails] AS [entity0]\nINNER JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[OrderId], [entity1].[OrderDate]");
+            expect(param.query).toBe(
+`SELECT DAY([entity1].[OrderDate]) AS [column0]
+FROM [OrderDetails] AS [entity0]
+INNER JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[OrderId], [entity1].[OrderDate]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1703,7 +2984,12 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT COUNT([entity0].[OrderDetailId]) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[OrderId]");
+            expect(param.query).toBe(
+`SELECT COUNT([entity0].[OrderDetailId]) AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[OrderId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1720,7 +3006,29 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderId],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity0]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderId],
+	[entity2].[OrderDate]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderId]
+	FROM [OrderDetailProperties] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[OrderId],
+			[entity1].[ProductId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+	GROUP BY [entity1].[OrderId]
+) AS [entity0]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1741,7 +3049,41 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderId],\n\t[entity1].[TotalAmount],\n\t[entity1].[OrderDate]\nFROM [Orders] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\t\tSUM([entity2].[Quantity]) AS [column1]\n\tFROM [OrderDetails] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderDetailId],\n\t\t\t[entity2].[Quantity]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[Quantity]>1)\n\t) AS [entity2]\n\t\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\n\tWHERE ([entity0].[isDeleted]=0)\n\tGROUP BY [entity0].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\tCOUNT([entity0].[OrderDetailId]) AS [column0],\n\tSUM([entity2].[Quantity]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity]>1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[OrderId]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderId],
+	[entity1].[TotalAmount],
+	[entity1].[OrderDate]
+FROM [Orders] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		COUNT([entity0].[OrderDetailId]) AS [column0],
+		SUM([entity2].[Quantity]) AS [column1]
+	FROM [OrderDetails] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderDetailId],
+			[entity2].[Quantity]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[Quantity]>1)
+	) AS [entity2]
+		ON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])
+	WHERE ([entity0].[isDeleted]=0)
+	GROUP BY [entity0].[OrderId]
+) AS [entity0] ON ([entity0].[OrderId]=[entity1].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	COUNT([entity0].[OrderDetailId]) AS [column0],
+	SUM([entity2].[Quantity]) AS [column1]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderDetailId],
+		[entity2].[Quantity]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[Quantity]>1)
+) AS [entity2]
+	ON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[OrderId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1765,7 +3107,13 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT ([entity0].[Quantity]*2) AS [column1],\n\t[entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]");
+            expect(param.query).toBe(
+`SELECT ([entity0].[Quantity]*2) AS [column1],
+	[entity0].[ProductId] AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1789,7 +3137,12 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]");
+            expect(param.query).toBe(
+`SELECT [entity0].[ProductId] AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1811,7 +3164,12 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]");
+            expect(param.query).toBe(
+`SELECT [entity0].[ProductId] AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1832,7 +3190,63 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\t\tSUM([entity3].[Amount]) AS [column1]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n\tLEFT JOIN (\n\t\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t\t[entity3].[Amount]\n\t\tFROM [OrderDetailProperties] AS [entity3]\n\t\tWHERE ([entity3].[Amount]<20000)\n\t) AS [entity3]\n\t\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\n\tGROUP BY [entity1].[OrderId]\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);\n\nSELECT [entity1].[OrderId],\n\tCOUNT([entity0].[OrderDetailPropertyId]) AS [column0],\n\tSUM([entity3].[Amount]) AS [column1]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nLEFT JOIN (\n\tSELECT [entity3].[OrderDetailPropertyId],\n\t\t[entity3].[Amount]\n\tFROM [OrderDetailProperties] AS [entity3]\n\tWHERE ([entity3].[Amount]<20000)\n) AS [entity3]\n\tON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])\nGROUP BY [entity1].[OrderId]");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderId],
+	[entity2].[TotalAmount],
+	[entity2].[OrderDate]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity0].[OrderDetailPropertyId]) AS [column0],
+		SUM([entity3].[Amount]) AS [column1]
+	FROM [OrderDetailProperties] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[OrderId],
+			[entity1].[ProductId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+	LEFT JOIN (
+		SELECT [entity3].[OrderDetailPropertyId],
+			[entity3].[Amount]
+		FROM [OrderDetailProperties] AS [entity3]
+		WHERE ([entity3].[Amount]<20000)
+	) AS [entity3]
+		ON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])
+	GROUP BY [entity1].[OrderId]
+) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);
+
+SELECT [entity1].[OrderId],
+	COUNT([entity0].[OrderDetailPropertyId]) AS [column0],
+	SUM([entity3].[Amount]) AS [column1]
+FROM [OrderDetailProperties] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+LEFT JOIN (
+	SELECT [entity3].[OrderDetailPropertyId],
+		[entity3].[Amount]
+	FROM [OrderDetailProperties] AS [entity3]
+	WHERE ([entity3].[Amount]<20000)
+) AS [entity3]
+	ON ([entity0].[OrderDetailPropertyId]=[entity3].[OrderDetailPropertyId])
+GROUP BY [entity1].[OrderId]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1851,7 +3265,30 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tINNER JOIN (\n\t\tSELECT [entity0].[OrderDetailId]\n\t\tFROM [OrderDetailProperties] AS [entity0]\n\t\tGROUP BY [entity0].[OrderDetailId]\n\t) AS [entity0]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity2].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderId],
+	[entity2].[TotalAmount],
+	[entity2].[OrderDate]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	INNER JOIN (
+		SELECT [entity0].[OrderDetailId]
+		FROM [OrderDetailProperties] AS [entity0]
+		GROUP BY [entity0].[OrderDetailId]
+	) AS [entity0]
+		ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity2].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1871,7 +3308,13 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[ProductId],\n\t([entity0].[Quantity]*2) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)");
+            expect(param.query).toBe(
+`SELECT [entity0].[ProductId],
+	([entity0].[Quantity]*2) AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1892,7 +3335,12 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT COUNT([entity0].[OrderDetailId]) AS [column1]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)");
+            expect(param.query).toBe(
+`SELECT COUNT([entity0].[OrderDetailId]) AS [column1]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1912,7 +3360,12 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT ([entity0].[Quantity]*2) AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)");
+            expect(param.query).toBe(
+`SELECT ([entity0].[Quantity]*2) AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1940,7 +3393,25 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT COUNT([entity0].[OrderDetailId]) AS [column3],\n\tSUM([entity2].[Quantity]) AS [column4],\n\t[entity0].[ProductId] AS [column1],\n\t([entity0].[Quantity]*2) AS [column0],\n\tAVG([entity1].[Quantity]) AS [column2]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[Quantity]>1)\n) AS [entity2]\n\tON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])\nLEFT JOIN [OrderDetails] AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)");
+            expect(param.query).toBe(
+`SELECT COUNT([entity0].[OrderDetailId]) AS [column3],
+	SUM([entity2].[Quantity]) AS [column4],
+	[entity0].[ProductId] AS [column1],
+	([entity0].[Quantity]*2) AS [column0],
+	AVG([entity1].[Quantity]) AS [column2]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderDetailId],
+		[entity2].[Quantity]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[Quantity]>1)
+) AS [entity2]
+	ON ([entity0].[OrderDetailId]=[entity2].[OrderDetailId])
+LEFT JOIN [OrderDetails] AS [entity1]
+	ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1970,7 +3441,29 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT COUNT([entity0].[OrderDetailId]) AS [column3],\n\tSUM([entity4].[Quantity]) AS [column4],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price] AS [column1],\n\tAVG([entity3].[Quantity]) AS [column2]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity0].[ProductId]=[entity2].[ProductId])\nLEFT JOIN (\n\tSELECT [entity4].[OrderDetailId],\n\t\t[entity4].[Quantity]\n\tFROM [OrderDetails] AS [entity4]\n\tWHERE ([entity4].[Quantity]>1)\n) AS [entity4]\n\tON ([entity0].[OrderDetailId]=[entity4].[OrderDetailId])\nLEFT JOIN [OrderDetails] AS [entity3]\n\tON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId])\nWHERE ([entity0].[isDeleted]=0)\nGROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]");
+            expect(param.query).toBe(
+`SELECT COUNT([entity0].[OrderDetailId]) AS [column3],
+	SUM([entity4].[Quantity]) AS [column4],
+	DAY([entity1].[OrderDate]) AS [column0],
+	[entity2].[Price] AS [column1],
+	AVG([entity3].[Quantity]) AS [column2]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity0].[ProductId]=[entity2].[ProductId])
+LEFT JOIN (
+	SELECT [entity4].[OrderDetailId],
+		[entity4].[Quantity]
+	FROM [OrderDetails] AS [entity4]
+	WHERE ([entity4].[Quantity]>1)
+) AS [entity4]
+	ON ([entity0].[OrderDetailId]=[entity4].[OrderDetailId])
+LEFT JOIN [OrderDetails] AS [entity3]
+	ON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId])
+WHERE ([entity0].[isDeleted]=0)
+GROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -1991,7 +3484,18 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[ProductName]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tGROUP BY [entity0].[OrderDetailId]\n) AS [entity0]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[ProductName]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderDetailId]
+	FROM [OrderDetailProperties] AS [entity0]
+	GROUP BY [entity0].[OrderDetailId]
+) AS [entity0]
+	ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+WHERE ([entity1].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2009,7 +3513,22 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate],\n\tDAY([entity0].[OrderDate]) AS [column0]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT DISTINCT DAY([rel_entity0].[OrderDate]) AS [column0]\n\tFROM [Orders] AS [rel_entity0]\n\tWHERE ([rel_entity0].[TotalAmount]>20000)\n\tGROUP BY DAY([rel_entity0].[OrderDate])\n\tHAVING (COUNT([rel_entity0].[OrderId])>3)\n) AS [rel_entity0]\n\tON (DAY([entity0].[OrderDate])=[rel_entity0].[column0])\nWHERE ([entity0].[TotalAmount]>20000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate],
+	DAY([entity0].[OrderDate]) AS [column0]
+FROM [Orders] AS [entity0]
+INNER JOIN (
+	SELECT DISTINCT DAY([rel_entity0].[OrderDate]) AS [column0]
+	FROM [Orders] AS [rel_entity0]
+	WHERE ([rel_entity0].[TotalAmount]>20000)
+	GROUP BY DAY([rel_entity0].[OrderDate])
+	HAVING (COUNT([rel_entity0].[OrderId])>3)
+) AS [rel_entity0]
+	ON (DAY([entity0].[OrderDate])=[rel_entity0].[column0])
+WHERE ([entity0].[TotalAmount]>20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2030,7 +3549,51 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount],\n\t\t[entity1].[OrderId]\n\tFROM [OrderDetailProperties] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\n) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount],\n\t[entity1].[OrderId]\nFROM [OrderDetailProperties] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])");
+            expect(param.query).toBe(
+`SELECT [entity2].[OrderId],
+	[entity2].[TotalAmount],
+	[entity2].[OrderDate]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT [entity0].[OrderDetailPropertyId],
+		[entity0].[OrderDetailId],
+		[entity0].[Name],
+		[entity0].[Amount],
+		[entity1].[OrderId]
+	FROM [OrderDetailProperties] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[OrderId],
+			[entity1].[ProductId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+) AS [entity0] ON ([entity0].[OrderId]=[entity2].[OrderId]);
+
+SELECT [entity0].[OrderDetailPropertyId],
+	[entity0].[OrderDetailId],
+	[entity0].[Name],
+	[entity0].[Amount],
+	[entity1].[OrderId]
+FROM [OrderDetailProperties] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2054,7 +3617,23 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted],\n\tDAY([entity1].[OrderDate]) AS [column0],\n\t[entity2].[Price]\nFROM [OrderDetails] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity0].[ProductId]=[entity2].[ProductId])\nWHERE ([entity0].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted],
+	DAY([entity1].[OrderDate]) AS [column0],
+	[entity2].[Price]
+FROM [OrderDetails] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity0].[ProductId]=[entity2].[ProductId])
+WHERE ([entity0].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2080,7 +3659,19 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted],\n\t([entity0].[Quantity]*2) AS [column1],\n\t[entity0].[ProductId] AS [column0]\nFROM [OrderDetails] AS [entity0]\nWHERE ([entity0].[isDeleted]=0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted],
+	([entity0].[Quantity]*2) AS [column1],
+	[entity0].[ProductId] AS [column0]
+FROM [OrderDetails] AS [entity0]
+WHERE ([entity0].[isDeleted]=0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2105,7 +3696,30 @@ FROM [Orders] AS [entity0]`);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderDetailPropertyId],\n\t\t[entity0].[OrderDetailId],\n\t\t[entity0].[Name],\n\t\t[entity0].[Amount]\n\tFROM [OrderDetailProperties] AS [entity0]\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderDetailPropertyId],\n\t[entity0].[OrderDetailId],\n\t[entity0].[Name],\n\t[entity0].[Amount]\nFROM [OrderDetailProperties] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderDetailPropertyId],
+		[entity0].[OrderDetailId],
+		[entity0].[Name],
+		[entity0].[Amount]
+	FROM [OrderDetailProperties] AS [entity0]
+) AS [entity0] ON ([entity0].[OrderDetailId]=[entity1].[OrderDetailId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderDetailPropertyId],
+	[entity0].[OrderDetailId],
+	[entity0].[Name],
+	[entity0].[Amount]
+FROM [OrderDetailProperties] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2126,7 +3740,12 @@ FROM [Orders] AS [entity0]`);
             const results = await db.orders.toMap((o) => o.OrderId, (o) => o.OrderDate);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[OrderDate] AS [column1]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[OrderId] AS [column0],
+	[entity0].[OrderDate] AS [column1]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2142,7 +3761,42 @@ FROM [Orders] AS [entity0]`);
             const results = await db.orders.include((o) => o.OrderDetails).toMap((o) => o.OrderId, (o) => o);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t[entity2].[TotalAmount],\n\t\t[entity2].[OrderDate]\n\tFROM [Orders] AS [entity2]\n\tINNER JOIN (\n\t\tSELECT [entity0].[OrderId],\n\t\t\t[entity0].[OrderId] AS [column0]\n\t\tFROM [Orders] AS [entity0]\n\t) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])\n) AS [entity2] ON ([entity2].[OrderId]=[entity1].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity2].[OrderId],\n\t[entity2].[TotalAmount],\n\t[entity2].[OrderDate]\nFROM [Orders] AS [entity2]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity0].[OrderId] AS [column0]\n\tFROM [Orders] AS [entity0]\n) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0]\nFROM [Orders] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity2].[OrderId],
+		[entity2].[TotalAmount],
+		[entity2].[OrderDate]
+	FROM [Orders] AS [entity2]
+	INNER JOIN (
+		SELECT [entity0].[OrderId],
+			[entity0].[OrderId] AS [column0]
+		FROM [Orders] AS [entity0]
+	) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId])
+) AS [entity2] ON ([entity2].[OrderId]=[entity1].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity2].[OrderId],
+	[entity2].[TotalAmount],
+	[entity2].[OrderDate]
+FROM [Orders] AS [entity2]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity0].[OrderId] AS [column0]
+	FROM [Orders] AS [entity0]
+) AS [entity0] ON ([entity2].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId],
+	[entity0].[OrderId] AS [column0]
+FROM [Orders] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2169,7 +3823,29 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nINNER JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity1].[Quantity] AS [column0],
+	[entity1].[ProductName] AS [column1],
+	[entity2].[Price] AS [column2],
+	[entity0].[OrderDate] AS [column3]
+FROM [Orders] AS [entity0]
+INNER JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+WHERE ([entity1].[Quantity]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2194,7 +3870,59 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity3].[OrderDetailPropertyId],\n\t[entity3].[OrderDetailId],\n\t[entity3].[Name]\nFROM [OrderDetailProperties] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity1].[OrderDetailId],\n\t\t[entity1].[Quantity] AS [column0],\n\t\t[entity1].[ProductName] AS [column1],\n\t\t[entity2].[Price] AS [column2],\n\t\t[entity0].[OrderDate] AS [column3]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDetailId],\n\t\t\t[entity1].[OrderId],\n\t\t\t[entity1].[ProductId],\n\t\t\t[entity1].[ProductName],\n\t\t\t[entity1].[Quantity],\n\t\t\t[entity1].[CreatedDate],\n\t\t\t[entity1].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity1]\n\t\tWHERE ([entity1].[isDeleted]=0)\n\t) AS [entity1]\n\t\tON ([entity0].[OrderId]=[entity1].[OrderId])\n\tLEFT JOIN [Products] AS [entity2]\n\t\tON ([entity1].[ProductId]=[entity2].[ProductId])\n\tWHERE ([entity1].[Quantity]>1)\n) AS [entity0] ON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId]);\n\nSELECT [entity0].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)");
+            expect(param.query).toBe(
+`SELECT [entity3].[OrderDetailPropertyId],
+	[entity3].[OrderDetailId],
+	[entity3].[Name]
+FROM [OrderDetailProperties] AS [entity3]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity1].[OrderDetailId],
+		[entity1].[Quantity] AS [column0],
+		[entity1].[ProductName] AS [column1],
+		[entity2].[Price] AS [column2],
+		[entity0].[OrderDate] AS [column3]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDetailId],
+			[entity1].[OrderId],
+			[entity1].[ProductId],
+			[entity1].[ProductName],
+			[entity1].[Quantity],
+			[entity1].[CreatedDate],
+			[entity1].[isDeleted]
+		FROM [OrderDetails] AS [entity1]
+		WHERE ([entity1].[isDeleted]=0)
+	) AS [entity1]
+		ON ([entity0].[OrderId]=[entity1].[OrderId])
+	LEFT JOIN [Products] AS [entity2]
+		ON ([entity1].[ProductId]=[entity2].[ProductId])
+	WHERE ([entity1].[Quantity]>1)
+) AS [entity0] ON ([entity0].[OrderDetailId]=[entity3].[OrderDetailId]);
+
+SELECT [entity0].[OrderId],
+	[entity1].[OrderDetailId],
+	[entity1].[Quantity] AS [column0],
+	[entity1].[ProductName] AS [column1],
+	[entity2].[Price] AS [column2],
+	[entity0].[OrderDate] AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+WHERE ([entity1].[Quantity]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2222,7 +3950,29 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nRIGHT JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity1].[Quantity] AS [column0],
+	[entity1].[ProductName] AS [column1],
+	[entity2].[Price] AS [column2],
+	[entity0].[OrderDate] AS [column3]
+FROM [Orders] AS [entity0]
+RIGHT JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+WHERE ([entity1].[Quantity]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2246,7 +3996,29 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nFULL JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity1].[Quantity] AS [column0],
+	[entity1].[ProductName] AS [column1],
+	[entity2].[Price] AS [column2],
+	[entity0].[OrderDate] AS [column3]
+FROM [Orders] AS [entity0]
+FULL JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+WHERE ([entity1].[Quantity]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2270,7 +4042,82 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity3].[OrderDetailId],\n\t[entity3].[OrderId],\n\t[entity3].[ProductName]\nFROM [OrderDetails] AS [entity3]\nINNER JOIN (\n\tSELECT [entity0].[OrderId],\n\t\t[entity2].[column0] AS [column1],\n\t\t[entity5].[column2] AS [column3],\n\t\t[entity0].[OrderDate] AS [column4]\n\tFROM [Orders] AS [entity0]\n\tLEFT JOIN (\n\t\tSELECT [entity2].[OrderId],\n\t\t\tSUM([entity2].[Quantity]) AS [column0]\n\t\tFROM [OrderDetails] AS [entity2]\n\t\tWHERE ([entity2].[isDeleted]=0)\n\t\tGROUP BY [entity2].[OrderId]\n\t) AS [entity2]\n\t\tON ([entity0].[OrderId]=[entity2].[OrderId])\n\tLEFT JOIN (\n\t\tSELECT [entity4].[OrderId],\n\t\t\tSUM([entity5].[Price]) AS [column2]\n\t\tFROM [Products] AS [entity5]\n\t\tINNER JOIN (\n\t\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t\t[entity4].[ProductId],\n\t\t\t\t[entity4].[OrderId],\n\t\t\t\t[entity4].[ProductName],\n\t\t\t\t[entity4].[Quantity],\n\t\t\t\t[entity4].[CreatedDate],\n\t\t\t\t[entity4].[isDeleted]\n\t\t\tFROM [OrderDetails] AS [entity4]\n\t\t\tWHERE ([entity4].[isDeleted]=0)\n\t\t) AS [entity4]\n\t\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\t\tGROUP BY [entity4].[OrderId]\n\t) AS [entity5]\n\t\tON ([entity0].[OrderId]=[entity5].[OrderId])\n\tWHERE ([entity2].[column0]>1)\n) AS [entity0] ON ([entity0].[OrderId]=[entity3].[OrderId])\nWHERE ([entity3].[isDeleted]=0);\n\nSELECT [entity0].[OrderId],\n\t[entity2].[column0] AS [column1],\n\t[entity5].[column2] AS [column3],\n\t[entity0].[OrderDate] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity2].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nLEFT JOIN (\n\tSELECT [entity4].[OrderId],\n\t\tSUM([entity5].[Price]) AS [column2]\n\tFROM [Products] AS [entity5]\n\tINNER JOIN (\n\t\tSELECT [entity4].[OrderDetailId],\n\t\t\t[entity4].[ProductId],\n\t\t\t[entity4].[OrderId],\n\t\t\t[entity4].[ProductName],\n\t\t\t[entity4].[Quantity],\n\t\t\t[entity4].[CreatedDate],\n\t\t\t[entity4].[isDeleted]\n\t\tFROM [OrderDetails] AS [entity4]\n\t\tWHERE ([entity4].[isDeleted]=0)\n\t) AS [entity4]\n\t\tON ([entity4].[ProductId]=[entity5].[ProductId])\n\tGROUP BY [entity4].[OrderId]\n) AS [entity5]\n\tON ([entity0].[OrderId]=[entity5].[OrderId])\nWHERE ([entity2].[column0]>1)");
+            expect(param.query).toBe(
+`SELECT [entity3].[OrderDetailId],
+	[entity3].[OrderId],
+	[entity3].[ProductName]
+FROM [OrderDetails] AS [entity3]
+INNER JOIN (
+	SELECT [entity0].[OrderId],
+		[entity2].[column0] AS [column1],
+		[entity5].[column2] AS [column3],
+		[entity0].[OrderDate] AS [column4]
+	FROM [Orders] AS [entity0]
+	LEFT JOIN (
+		SELECT [entity2].[OrderId],
+			SUM([entity2].[Quantity]) AS [column0]
+		FROM [OrderDetails] AS [entity2]
+		WHERE ([entity2].[isDeleted]=0)
+		GROUP BY [entity2].[OrderId]
+	) AS [entity2]
+		ON ([entity0].[OrderId]=[entity2].[OrderId])
+	LEFT JOIN (
+		SELECT [entity4].[OrderId],
+			SUM([entity5].[Price]) AS [column2]
+		FROM [Products] AS [entity5]
+		INNER JOIN (
+			SELECT [entity4].[OrderDetailId],
+				[entity4].[ProductId],
+				[entity4].[OrderId],
+				[entity4].[ProductName],
+				[entity4].[Quantity],
+				[entity4].[CreatedDate],
+				[entity4].[isDeleted]
+			FROM [OrderDetails] AS [entity4]
+			WHERE ([entity4].[isDeleted]=0)
+		) AS [entity4]
+			ON ([entity4].[ProductId]=[entity5].[ProductId])
+		GROUP BY [entity4].[OrderId]
+	) AS [entity5]
+		ON ([entity0].[OrderId]=[entity5].[OrderId])
+	WHERE ([entity2].[column0]>1)
+) AS [entity0] ON ([entity0].[OrderId]=[entity3].[OrderId])
+WHERE ([entity3].[isDeleted]=0);
+
+SELECT [entity0].[OrderId],
+	[entity2].[column0] AS [column1],
+	[entity5].[column2] AS [column3],
+	[entity0].[OrderDate] AS [column4]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM([entity2].[Quantity]) AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[isDeleted]=0)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+LEFT JOIN (
+	SELECT [entity4].[OrderId],
+		SUM([entity5].[Price]) AS [column2]
+	FROM [Products] AS [entity5]
+	INNER JOIN (
+		SELECT [entity4].[OrderDetailId],
+			[entity4].[ProductId],
+			[entity4].[OrderId],
+			[entity4].[ProductName],
+			[entity4].[Quantity],
+			[entity4].[CreatedDate],
+			[entity4].[isDeleted]
+		FROM [OrderDetails] AS [entity4]
+		WHERE ([entity4].[isDeleted]=0)
+	) AS [entity4]
+		ON ([entity4].[ProductId]=[entity5].[ProductId])
+	GROUP BY [entity4].[OrderId]
+) AS [entity5]
+	ON ([entity0].[OrderId]=[entity5].[OrderId])
+WHERE ([entity2].[column0]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2297,7 +4144,28 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity1].[Quantity] AS [column0],\n\t[entity1].[ProductName] AS [column1],\n\t[entity2].[Price] AS [column2],\n\t[entity0].[OrderDate] AS [column3]\nFROM [Orders] AS [entity0]\nCROSS JOIN (\n\tSELECT [entity1].[OrderDetailId],\n\t\t[entity1].[OrderId],\n\t\t[entity1].[ProductId],\n\t\t[entity1].[ProductName],\n\t\t[entity1].[Quantity],\n\t\t[entity1].[CreatedDate],\n\t\t[entity1].[isDeleted]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n) AS [entity1]\nLEFT JOIN [Products] AS [entity2]\n\tON ([entity1].[ProductId]=[entity2].[ProductId])\nWHERE ([entity1].[Quantity]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity1].[Quantity] AS [column0],
+	[entity1].[ProductName] AS [column1],
+	[entity2].[Price] AS [column2],
+	[entity0].[OrderDate] AS [column3]
+FROM [Orders] AS [entity0]
+CROSS JOIN (
+	SELECT [entity1].[OrderDetailId],
+		[entity1].[OrderId],
+		[entity1].[ProductId],
+		[entity1].[ProductName],
+		[entity1].[Quantity],
+		[entity1].[CreatedDate],
+		[entity1].[isDeleted]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+) AS [entity1]
+LEFT JOIN [Products] AS [entity2]
+	ON ([entity1].[ProductId]=[entity2].[ProductId])
+WHERE ([entity1].[Quantity]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2320,7 +4188,33 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 5 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tUNION\n\tSELECT TOP 5 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tCOUNT([entity2].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nWHERE ([entity2].[column0]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM (
+	SELECT TOP 5 [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+	ORDER BY [entity0].[TotalAmount] DESC
+	UNION
+	SELECT TOP 5 [entity1].[OrderId],
+		[entity1].[TotalAmount],
+		[entity1].[OrderDate]
+	FROM [Orders] AS [entity1]
+	ORDER BY [entity1].[TotalAmount] ASC
+) AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		COUNT([entity2].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[isDeleted]=0)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+WHERE ([entity2].[column0]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2338,7 +4232,24 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tUNION ALL\n\tSELECT TOP 5 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM (
+	SELECT TOP 10 [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+	ORDER BY [entity0].[TotalAmount] DESC
+	UNION ALL
+	SELECT TOP 5 [entity1].[OrderId],
+		[entity1].[TotalAmount],
+		[entity1].[OrderDate]
+	FROM [Orders] AS [entity1]
+	ORDER BY [entity1].[TotalAmount] ASC
+) AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2356,7 +4267,24 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 5 [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tINTERSECT\n\tSELECT TOP 10 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]");
+            expect(param.query).toBe(
+`SELECT TOP 5 [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM (
+	SELECT TOP 10 [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+	ORDER BY [entity0].[TotalAmount] DESC
+	INTERSECT
+	SELECT TOP 10 [entity1].[OrderId],
+		[entity1].[TotalAmount],
+		[entity1].[OrderDate]
+	FROM [Orders] AS [entity1]
+	ORDER BY [entity1].[TotalAmount] ASC
+) AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2374,7 +4302,25 @@ FROM [Orders] AS [entity0]`);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM (\n\tSELECT TOP 10 [entity0].[OrderId],\n\t\t[entity0].[TotalAmount],\n\t\t[entity0].[OrderDate]\n\tFROM [Orders] AS [entity0]\n\tORDER BY [entity0].[TotalAmount] DESC\n\tEXCEPT\n\tSELECT TOP 5 [entity1].[OrderId],\n\t\t[entity1].[TotalAmount],\n\t\t[entity1].[OrderDate]\n\tFROM [Orders] AS [entity1]\n\tORDER BY [entity1].[TotalAmount] ASC\n) AS [entity0]\nORDER BY [entity0].[TotalAmount] DESC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM (
+	SELECT TOP 10 [entity0].[OrderId],
+		[entity0].[TotalAmount],
+		[entity0].[OrderDate]
+	FROM [Orders] AS [entity0]
+	ORDER BY [entity0].[TotalAmount] DESC
+	EXCEPT
+	SELECT TOP 5 [entity1].[OrderId],
+		[entity1].[TotalAmount],
+		[entity1].[OrderDate]
+	FROM [Orders] AS [entity1]
+	ORDER BY [entity1].[TotalAmount] ASC
+) AS [entity0]
+ORDER BY [entity0].[TotalAmount] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2400,7 +4346,23 @@ FROM [Orders] AS [entity0]`);
             const results = await pivot.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],\n\tSUM([entity1].[TotalAmount]) AS [column1],\n\tSUM([entity2].[Quantity]) AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[OrderId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)");
+            expect(param.query).toBe(
+`SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],
+	SUM([entity1].[TotalAmount]) AS [column1],
+	SUM([entity2].[Quantity]) AS [column2]
+FROM [Orders] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN (
+	SELECT [entity2].[OrderDetailId],
+		[entity2].[OrderId],
+		[entity2].[Quantity]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[isDeleted]=0)
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+GROUP BY (MONTH([entity0].[OrderDate]) - 1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2425,7 +4387,24 @@ FROM [Orders] AS [entity0]`);
             const results = await pivot.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],\n\tSUM([entity1].[TotalAmount]) AS [column1],\n\tSUM([entity2].[Quantity]) AS [column2]\nFROM [Orders] AS [entity0]\nLEFT JOIN [Orders] AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])\nLEFT JOIN (\n\tSELECT [entity2].[OrderDetailId],\n\t\t[entity2].[OrderId],\n\t\t[entity2].[Quantity]\n\tFROM [OrderDetails] AS [entity2]\n\tWHERE ([entity2].[isDeleted]=0)\n) AS [entity2]\n\tON ([entity0].[OrderId]=[entity2].[OrderId])\nGROUP BY (MONTH([entity0].[OrderDate]) - 1)\nHAVING ((MONTH([entity0].[OrderDate]) - 1)>=10)");
+            expect(param.query).toBe(
+`SELECT (MONTH([entity0].[OrderDate]) - 1) AS [column0],
+	SUM([entity1].[TotalAmount]) AS [column1],
+	SUM([entity2].[Quantity]) AS [column2]
+FROM [Orders] AS [entity0]
+LEFT JOIN [Orders] AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])
+LEFT JOIN (
+	SELECT [entity2].[OrderDetailId],
+		[entity2].[OrderId],
+		[entity2].[Quantity]
+	FROM [OrderDetails] AS [entity2]
+	WHERE ([entity2].[isDeleted]=0)
+) AS [entity2]
+	ON ([entity0].[OrderId]=[entity2].[OrderId])
+GROUP BY (MONTH([entity0].[OrderDate]) - 1)
+HAVING ((MONTH([entity0].[OrderDate]) - 1)>=10)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2448,7 +4427,13 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<@param0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[OrderDate]<@param0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map<string, any>([["param0", paramObj.now]]));
 
@@ -2467,7 +4452,13 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE (DAY([entity0].[OrderDate])<>@param0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE (DAY([entity0].[OrderDate])<>@param0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map<string, any>([["param0", paramObj.now.getDate()]]));
 
@@ -2484,7 +4475,13 @@ FROM [Orders] AS [entity0]`);
             const results = await parameter.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]<getdate())");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[OrderDate]<getdate())`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2502,7 +4499,19 @@ FROM [Orders] AS [entity0]`);
             const results = await parameter.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount]/[entity1].[column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	([entity0].[TotalAmount]/[entity1].[column0]) AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2522,7 +4531,19 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t(([entity0].[TotalAmount]*@param0)/[entity1].[column0]) AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity0].[OrderId]=[entity1].[OrderId])");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	(([entity0].[TotalAmount]*@param0)/[entity1].[column0]) AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity0].[OrderId]=[entity1].[OrderId])`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map<string, any>([["param0", 10]]));
 
@@ -2544,14 +4565,22 @@ FROM [Orders] AS [entity0]`);
                 await where.toArray();
                 if (i % 2 === 0) {
                     const param = spy.mock.calls[0][0] as unknown as IQuery;
-                    expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount]+1) AS [column0]\nFROM [Orders] AS [entity0]");
+                    expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	([entity0].[TotalAmount]+1) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
                     expect(param.type).toBe(QueryType.DQL);
                     expect(param.parameters).toEqual(new Map());
                 }
                 else {
 
                     const param = spy.mock.calls[0][0] as unknown as IQuery;
-                    expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t([entity0].[TotalAmount]-1) AS [column0]\nFROM [Orders] AS [entity0]");
+                    expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	([entity0].[TotalAmount]-1) AS [column0]
+FROM [Orders] AS [entity0]`
+            );
                     expect(param.type).toBe(QueryType.DQL);
                     expect(param.parameters).toEqual(new Map());
                 }
@@ -2566,7 +4595,13 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             let param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate]=@param0)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[OrderDate]=@param0)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map<string, any>([["param0", dd]]));
 
@@ -2585,7 +4620,13 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[OrderDate] IS NULL)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[OrderDate] IS NULL)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map<string, any>([["param0", dd]]));
 
@@ -2605,7 +4646,17 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE [entity0].[OrderId] IN (\n\tSELECT DISTINCT [entity1].[OrderId]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))\n)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE [entity0].[OrderId] IN (
+	SELECT DISTINCT [entity1].[OrderId]
+	FROM [OrderDetails] AS [entity1]
+	WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))
+)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2623,7 +4674,21 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMAX([entity1].[Quantity]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>10)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		MAX([entity1].[Quantity]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0]>10)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2641,7 +4706,21 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		1 AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>5))
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0] IS NOT NULL)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2659,7 +4738,21 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>1))\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>1)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE (([entity1].[isDeleted]=0) AND ([entity1].[Quantity]>1))
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0]>1)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2678,7 +4771,26 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity1].[OrderDetailId],\n\t[entity1].[OrderId],\n\t[entity1].[ProductId],\n\t[entity1].[ProductName],\n\t[entity1].[Quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM [OrderDetails] AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[isDeleted]=0);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000)");
+            expect(param.query).toBe(
+`SELECT [entity1].[OrderDetailId],
+	[entity1].[OrderId],
+	[entity1].[ProductId],
+	[entity1].[ProductName],
+	[entity1].[Quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM [OrderDetails] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId]
+	FROM [Orders] AS [entity0]
+	WHERE ([entity0].[TotalAmount]<=20000)
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[isDeleted]=0);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[TotalAmount]<=20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2702,7 +4814,20 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[OrderDetailId]) AS [column0]\n\tFROM [OrderDetails] AS [entity1]\n\tWHERE ([entity1].[isDeleted]=0)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity0].[TotalAmount]<=20000)");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity1].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[OrderDetailId]) AS [column0]
+	FROM [OrderDetails] AS [entity1]
+	WHERE ([entity1].[isDeleted]=0)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity0].[TotalAmount]<=20000)`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2724,7 +4849,27 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t[entity2].[column2] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column1]) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\tCOUNT([entity1].[OrderId]) AS [column1]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	[entity2].[column2] AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM([entity1].[column1]) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			COUNT([entity1].[OrderId]) AS [column1]
+		FROM [Orders] AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON ([entity2].[TotalAmount]>=[entity1].[TotalAmount])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] ASC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2749,7 +4894,28 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[TotalAmount] AS [column1],\n\t[entity2].[column3] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column2]) AS [column3]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column2]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS [entity1]\n\t\tON ([entity1].[OrderDate]>=[entity2].[OrderDate])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC");
+            expect(param.query).toBe(
+`SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[OrderId] AS [column0],
+	[entity0].[TotalAmount] AS [column1],
+	[entity2].[column3] AS [column4]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM([entity1].[column2]) AS [column3]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDate],
+			SUM([entity1].[TotalAmount]) AS [column2]
+		FROM [Orders] AS [entity1]
+		GROUP BY [entity1].[OrderDate]
+	) AS [entity1]
+		ON ([entity1].[OrderDate]>=[entity2].[OrderDate])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[OrderDate] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2774,7 +4940,37 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column1]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC");
+            expect(param.query).toBe(
+`SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	(
+	CASE WHEN (([entity2].[column2]=1)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		(
+		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			1 AS [column1]
+		FROM [Orders] AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON ([entity2].[TotalAmount]>[entity1].[TotalAmount])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] ASC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2798,7 +4994,41 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column1]\n\t\tFROM [Orders] AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC");
+            expect(param.query).toBe(
+`SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	(
+	CASE WHEN (([entity2].[column2]=1)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		(
+		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			0 AS [column1]
+		FROM [Orders] AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON NOT(
+		NOT(
+			([entity2].[TotalAmount]>=[entity1].[TotalAmount])
+		)
+	)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] DESC`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
@@ -2827,7 +5057,27 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] uniqueidentifier\n);\n\nINSERT INTO #ad1([__index], [OrderId]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706');\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nWHERE [entity0].[OrderId] IN (\n\tSELECT DISTINCT [entity1].[OrderId]\n\tFROM #ad1 AS [entity1]\n);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderId] uniqueidentifier
+);
+
+INSERT INTO #ad1([__index], [OrderId]) VALUES
+	(0,'C7438661-DD97-4099-A370-053A72F4C706');
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+WHERE [entity0].[OrderId] IN (
+	SELECT DISTINCT [entity1].[OrderId]
+	FROM #ad1 AS [entity1]
+);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2847,7 +5097,37 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tMAX([entity1].[quantity]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>10);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderDetailId] nvarchar(255),
+	[OrderId] nvarchar(255),
+	[ProductId] nvarchar(255),
+	[name] nvarchar(255),
+	[quantity] decimal(18, 0),
+	[CreatedDate] nvarchar(255),
+	[isDeleted] nvarchar(255)
+);
+
+INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
+	(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		MAX([entity1].[quantity]) AS [column0]
+	FROM #ad1 AS [entity1]
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0]>10);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2866,7 +5146,37 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\t1 AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0] IS NOT NULL);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderDetailId] nvarchar(255),
+	[OrderId] nvarchar(255),
+	[ProductId] nvarchar(255),
+	[name] nvarchar(255),
+	[quantity] decimal(18, 0),
+	[CreatedDate] nvarchar(255),
+	[isDeleted] nvarchar(255)
+);
+
+INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
+	(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		1 AS [column0]
+	FROM #ad1 AS [entity1]
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0] IS NOT NULL);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2886,7 +5196,38 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount],\n\t[entity0].[OrderDate]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tWHERE ([entity1].[quantity]>1)\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity1].[column0]>1);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderDetailId] nvarchar(255),
+	[OrderId] nvarchar(255),
+	[ProductId] nvarchar(255),
+	[name] nvarchar(255),
+	[quantity] decimal(18, 0),
+	[CreatedDate] nvarchar(255),
+	[isDeleted] nvarchar(255)
+);
+
+INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
+	(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount],
+	[entity0].[OrderDate]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[__index]) AS [column0]
+	FROM #ad1 AS [entity1]
+	WHERE ([entity1].[quantity]>1)
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity1].[column0]>1);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2907,7 +5248,43 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity1].[__index],\n\t[entity1].[OrderId],\n\t[entity1].[OrderDetailId],\n\t[entity1].[ProductId],\n\t[entity1].[name],\n\t[entity1].[quantity],\n\t[entity1].[CreatedDate],\n\t[entity1].[isDeleted]\nFROM #ad1 AS [entity1]\nINNER JOIN (\n\tSELECT [entity0].[OrderId]\n\tFROM [Orders] AS [entity0]\n\tWHERE ([entity0].[TotalAmount]<=20000)\n) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);\n\nSELECT [entity0].[OrderId]\nFROM [Orders] AS [entity0]\nWHERE ([entity0].[TotalAmount]<=20000);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderDetailId] nvarchar(255),
+	[OrderId] nvarchar(255),
+	[ProductId] nvarchar(255),
+	[name] nvarchar(255),
+	[quantity] decimal(18, 0),
+	[CreatedDate] nvarchar(255),
+	[isDeleted] nvarchar(255)
+);
+
+INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
+	(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);
+
+SELECT [entity1].[__index],
+	[entity1].[OrderId],
+	[entity1].[OrderDetailId],
+	[entity1].[ProductId],
+	[entity1].[name],
+	[entity1].[quantity],
+	[entity1].[CreatedDate],
+	[entity1].[isDeleted]
+FROM #ad1 AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[OrderId]
+	FROM [Orders] AS [entity0]
+	WHERE ([entity0].[TotalAmount]<=20000)
+) AS [entity0] ON ([entity1].[OrderId]=[entity0].[OrderId]);
+
+SELECT [entity0].[OrderId]
+FROM [Orders] AS [entity0]
+WHERE ([entity0].[TotalAmount]<=20000);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2931,7 +5308,36 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ad1\n(\n\t[__index] decimal(18, 0),\n\t[OrderDetailId] nvarchar(255),\n\t[OrderId] nvarchar(255),\n\t[ProductId] nvarchar(255),\n\t[name] nvarchar(255),\n\t[quantity] decimal(18, 0),\n\t[CreatedDate] nvarchar(255),\n\t[isDeleted] nvarchar(255)\n);\n\nINSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES\n\t(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);\n\nSELECT [entity0].[OrderId],\n\t[entity1].[column0] AS [column1]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[OrderId],\n\t\tCOUNT([entity1].[__index]) AS [column0]\n\tFROM #ad1 AS [entity1]\n\tGROUP BY [entity1].[OrderId]\n) AS [entity1]\n\tON ([entity1].[OrderId]=[entity0].[OrderId])\nWHERE ([entity0].[TotalAmount]<=20000);\n\nDROP TABLE #ad1");
+            expect(param.query).toBe(
+`CREATE TABLE #ad1
+(
+	[__index] decimal(18, 0),
+	[OrderDetailId] nvarchar(255),
+	[OrderId] nvarchar(255),
+	[ProductId] nvarchar(255),
+	[name] nvarchar(255),
+	[quantity] decimal(18, 0),
+	[CreatedDate] nvarchar(255),
+	[isDeleted] nvarchar(255)
+);
+
+INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
+	(0,'E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E59','Product 2',2,'2017-02-22T23:03:39.737Z',0);
+
+SELECT [entity0].[OrderId],
+	[entity1].[column0] AS [column1]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[OrderId],
+		COUNT([entity1].[__index]) AS [column0]
+	FROM #ad1 AS [entity1]
+	GROUP BY [entity1].[OrderId]
+) AS [entity1]
+	ON ([entity1].[OrderId]=[entity0].[OrderId])
+WHERE ([entity0].[TotalAmount]<=20000);
+
+DROP TABLE #ad1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ad]]));
 
@@ -2956,7 +5362,41 @@ FROM [Orders] AS [entity0]`);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ads1\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');\n\nSELECT [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t[entity2].[column2] AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column1]) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\tCOUNT([entity1].[__index]) AS [column1]\n\t\tFROM #ads1 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC;\n\nDROP TABLE #ads1");
+            expect(param.query).toBe(
+`CREATE TABLE #ads1
+(
+	[__index] decimal(18, 0),
+	[OrderId] nvarchar(255),
+	[TotalAmount] decimal(18, 0),
+	[OrderDate] nvarchar(255)
+);
+
+INSERT INTO #ads1([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES
+	(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),
+	(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');
+
+SELECT [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	[entity2].[column2] AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM([entity1].[column1]) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			COUNT([entity1].[__index]) AS [column1]
+		FROM #ads1 AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON ([entity2].[TotalAmount]>=[entity1].[TotalAmount])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] ASC;
+
+DROP TABLE #ads1`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(new Map([["param0", ads]]));
 
@@ -2984,7 +5424,42 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[OrderId] AS [column0],\n\t[entity0].[TotalAmount] AS [column1],\n\t[entity2].[column3] AS [column4]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\tSUM([entity1].[column2]) AS [column3]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[OrderDate],\n\t\t\tSUM([entity1].[TotalAmount]) AS [column2]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[OrderDate]\n\t) AS [entity1]\n\t\tON ([entity1].[OrderDate]>=[entity2].[OrderDate])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[OrderDate] DESC;\n\nDROP TABLE #ads2");
+            expect(param.query).toBe(
+`CREATE TABLE #ads2
+(
+	[__index] decimal(18, 0),
+	[OrderId] nvarchar(255),
+	[TotalAmount] decimal(18, 0),
+	[OrderDate] nvarchar(255)
+);
+
+INSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES
+	(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),
+	(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');
+
+SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[OrderId] AS [column0],
+	[entity0].[TotalAmount] AS [column1],
+	[entity2].[column3] AS [column4]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		SUM([entity1].[column2]) AS [column3]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[OrderDate],
+			SUM([entity1].[TotalAmount]) AS [column2]
+		FROM #ads2 AS [entity1]
+		GROUP BY [entity1].[OrderDate]
+	) AS [entity1]
+		ON ([entity1].[OrderDate]>=[entity2].[OrderDate])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[OrderDate] DESC;
+
+DROP TABLE #ads2`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(expect.objectContaining(new Map()));
 
@@ -3012,7 +5487,51 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),\n\t(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t1 AS [column1]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON ([entity2].[TotalAmount]>[entity1].[TotalAmount])\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] ASC;\n\nDROP TABLE #ads2");
+            expect(param.query).toBe(
+`CREATE TABLE #ads2
+(
+	[__index] decimal(18, 0),
+	[OrderId] nvarchar(255),
+	[TotalAmount] decimal(18, 0),
+	[OrderDate] nvarchar(255)
+);
+
+INSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES
+	(0,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z'),
+	(1,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z');
+
+SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	(
+	CASE WHEN (([entity2].[column2]=1)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		(
+		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			1 AS [column1]
+		FROM #ads2 AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON ([entity2].[TotalAmount]>[entity1].[TotalAmount])
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] ASC;
+
+DROP TABLE #ads2`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(expect.objectContaining(new Map<string, any>([["param0", 10]])));
 
@@ -3039,7 +5558,55 @@ FROM [Orders] AS [entity0]`);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("CREATE TABLE #ads2\n(\n\t[__index] decimal(18, 0),\n\t[OrderId] nvarchar(255),\n\t[TotalAmount] decimal(18, 0),\n\t[OrderDate] nvarchar(255)\n);\n\nINSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES\n\t(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),\n\t(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');\n\nSELECT TOP 10 [entity0].[OrderId],\n\t[entity0].[TotalAmount] AS [column0],\n\t(\n\tCASE WHEN (([entity2].[column2]=1)) \n\tTHEN 1\n\tELSE 0\n\tEND\n) AS [column3]\nFROM [Orders] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity2].[OrderId],\n\t\t(\n\t\tCASE WHEN ((SUM([entity1].[column1]) IS NULL)) \n\t\tTHEN 1\n\t\tELSE 0\n\t\tEND\n\t) AS [column2]\n\tFROM [Orders] AS [entity2]\n\tLEFT JOIN (\n\t\tSELECT [entity1].[TotalAmount],\n\t\t\t0 AS [column1]\n\t\tFROM #ads2 AS [entity1]\n\t\tGROUP BY [entity1].[TotalAmount]\n\t) AS [entity1]\n\t\tON NOT(\n\t\tNOT(\n\t\t\t([entity2].[TotalAmount]>=[entity1].[TotalAmount])\n\t\t)\n\t)\n\tGROUP BY [entity2].[OrderId]\n) AS [entity2]\n\tON ([entity2].[OrderId]=[entity0].[OrderId])\nORDER BY [entity0].[TotalAmount] DESC;\n\nDROP TABLE #ads2");
+            expect(param.query).toBe(
+`CREATE TABLE #ads2
+(
+	[__index] decimal(18, 0),
+	[OrderId] nvarchar(255),
+	[TotalAmount] decimal(18, 0),
+	[OrderDate] nvarchar(255)
+);
+
+INSERT INTO #ads2([__index], [OrderId], [TotalAmount], [OrderDate]) VALUES
+	(0,'C7438661-DD97-4099-A370-053A72F4C706',71000,'2017-02-22T23:03:39.447Z'),
+	(1,'57CE0F63-AFD3-4A04-A07E-0392C87AE381',13200,'2017-01-19T02:08:41.530Z');
+
+SELECT TOP 10 [entity0].[OrderId],
+	[entity0].[TotalAmount] AS [column0],
+	(
+	CASE WHEN (([entity2].[column2]=1)) 
+	THEN 1
+	ELSE 0
+	END
+) AS [column3]
+FROM [Orders] AS [entity0]
+LEFT JOIN (
+	SELECT [entity2].[OrderId],
+		(
+		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		THEN 1
+		ELSE 0
+		END
+	) AS [column2]
+	FROM [Orders] AS [entity2]
+	LEFT JOIN (
+		SELECT [entity1].[TotalAmount],
+			0 AS [column1]
+		FROM #ads2 AS [entity1]
+		GROUP BY [entity1].[TotalAmount]
+	) AS [entity1]
+		ON NOT(
+		NOT(
+			([entity2].[TotalAmount]>=[entity1].[TotalAmount])
+		)
+	)
+	GROUP BY [entity2].[OrderId]
+) AS [entity2]
+	ON ([entity2].[OrderId]=[entity0].[OrderId])
+ORDER BY [entity0].[TotalAmount] DESC;
+
+DROP TABLE #ads2`
+            );
             expect(param.type).toBe(QueryType.DDL | QueryType.DML | QueryType.DQL);
             expect(param.parameters).toEqual(expect.objectContaining(new Map<string, any>([["param0", 10]])));
 
@@ -3059,7 +5626,16 @@ FROM [Orders] AS [entity0]`);
             const results = await softDeleteQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("SELECT [entity0].[OrderDetailId],\n\t[entity0].[OrderId],\n\t[entity0].[ProductId],\n\t[entity0].[ProductName],\n\t[entity0].[Quantity],\n\t[entity0].[CreatedDate],\n\t[entity0].[isDeleted]\nFROM [OrderDetails] AS [entity0]");
+            expect(param.query).toBe(
+`SELECT [entity0].[OrderDetailId],
+	[entity0].[OrderId],
+	[entity0].[ProductId],
+	[entity0].[ProductName],
+	[entity0].[Quantity],
+	[entity0].[CreatedDate],
+	[entity0].[isDeleted]
+FROM [OrderDetails] AS [entity0]`
+            );
             expect(param.type).toBe(QueryType.DQL);
             expect(param.parameters).toEqual(new Map());
 
