@@ -1,6 +1,6 @@
 import { ColumnGeneration } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, IObjectType, ObjectLike, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IEnumerable } from "../Enumerable/IEnumerable";
@@ -92,7 +92,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
             return (new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]))).deferredDelete(null, mode);
         }
     }
-    public deferredInsert(...items: Array<ObjectLike<T>>) {
+    public deferredInsert(...items: Array<FlatObjectLike<T>>) {
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
             throw new Error(`Only entity supported`);
         }
@@ -100,9 +100,9 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const valueExp: Array<{ [key in keyof T]?: IExpression<T[key]> }> = [];
+        const valueExp: Array<SetterObj<T>> = [];
         for (const item of items) {
-            const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
+            const itemExp: SetterObj<T> = {};
             for (const prop in item) {
                 const propValue = item[prop];
                 if (propValue !== undefined && !(propValue instanceof Function)) {
@@ -157,7 +157,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
 
         return super.deferredUpdate(setter);
     }
-    public deferredUpsert(item: ObjectLike<T>) {
+    public deferredUpsert(item: FlatObjectLike<T>) {
         if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
             throw new Error(`Only entity supported`);
         }
@@ -165,7 +165,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const setterExp: { [key in keyof T]?: IExpression<T[key]> } = {};
+        const setterExp: SetterObj<T> = {};
         for (const prop in item) {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
@@ -251,7 +251,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return hashCode(this.type.name);
     }
 
-    public async insert(...items: Array<ObjectLike<T>>) {
+    public async insert(...items: Array<FlatObjectLike<T>>) {
         const query = this.deferredInsert(...items);
         return await query.execute();
     }
@@ -282,7 +282,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         this.dictionary.set(entry.key, entry);
     }
 
-    public async upsert(item: ObjectLike<T>) {
+    public async upsert(item: FlatObjectLike<T>) {
         const query = this.deferredUpsert(item);
         return await query.execute();
     }

@@ -79,7 +79,7 @@ export const operators: IOperator[] = [
     { identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<unknown[]>) => new SpreadExpression(op) } as IUnaryOperator,
-    { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T>(objectExp: IExpression<T>, memberName: Extract<keyof T, string>) => new MemberAccessExpression(objectExp, memberName) },
+    { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T>(objectExp: IExpression<T>, memberName: StringKeyOf<T>) => new MemberAccessExpression(objectExp, memberName) },
     { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
     { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } },

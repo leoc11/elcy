@@ -76,7 +76,7 @@ export class JoinRelation<T = unknown, TChild = unknown> implements ISelectRelat
         if (this.relation) {
             visitExpression(this.relation, (exp: IExpression) => {
                 if (isColumnExp(exp)) {
-                    const colExp = exp as IColumnExpression;
+                    const colExp = exp;
                     if (this.child.entity === colExp.entity) {
                         this._childColumns.push(colExp);
                     }

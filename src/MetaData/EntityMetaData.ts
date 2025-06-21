@@ -1,7 +1,7 @@
 import { ColumnGeneration } from "../Common/Enum";
-import { ConcurrencyModel } from "../Common/StringType";
-import { IObjectType } from "../Common/Type";
-import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
+import { ConcurrencyModel, OrderDirection } from "../Common/StringType";
+import { IObjectType, ValueType } from "../Common/Type";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
 import { EmbeddedRelationMetaData } from "./EmbeddedColumnMetaData";
@@ -16,7 +16,7 @@ import { ISaveEventParam } from "./Interface/ISaveEventParam";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 import { RowVersionColumnMetaData } from "./RowVersionColumnMetaData";
 
-export class EntityMetaData<TE extends TBase, TBase = any> implements IEntityMetaData<TE, TBase> {
+export class EntityMetaData<TE extends TBase, TBase extends object = object> implements IEntityMetaData<TE, TBase> {
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
@@ -57,11 +57,11 @@ export class EntityMetaData<TE extends TBase, TBase = any> implements IEntityMet
     public afterSave?: (entity: TE, param: ISaveEventParam) => void;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
-    public columns: Array<IColumnMetaData<TE>> = [];
+    public columns: Array<IColumnMetaData<TE, ValueType>> = [];
     public concurrencyMode: ConcurrencyModel;
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn: DateTimeColumnMetaData<TE>;
-    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     public deletedColumn: BooleanColumnMetaData<TE>;
     // inheritance
     public descriminatorMember = "__type__";

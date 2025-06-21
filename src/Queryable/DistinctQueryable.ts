@@ -31,7 +31,7 @@ export class DistinctQueryable<T> extends Queryable<T> {
         }
 
         const methodExpression = new MethodCallExpression(objectOperand, "distinct", methodParams);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

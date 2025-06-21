@@ -1,19 +1,20 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { OrderDirection } from "../../Common/StringType";
+import { GenericType, IObjectType, ValueType } from "../../Common/Type";
+import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class CustomEntityExpression<T = unknown> implements IEntityExpression<T> {
+export class CustomEntityExpression<T extends object = object> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
         }
         return this._primaryColumns;
     }
-    constructor(public name: string, columns: IColumnExpression<T>[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: IOrderQueryDefinition[] = []) {
+    constructor(public name: string, columns: IColumnExpression<T>[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> = []) {
         this.columns = columns.select((o) => {
             const clone = o.clone();
             clone.entity = this;

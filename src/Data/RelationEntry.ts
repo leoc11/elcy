@@ -1,3 +1,4 @@
+import type { StringKeyOf } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { hasFlags, isNotNull } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
@@ -5,7 +6,7 @@ import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
 import { RelationState } from "./RelationState";
 
-export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
+export class RelationEntry<TE1 extends object = object, TE2 extends object = object, TRD extends object = object> {
     public get state() {
         return this._state;
     }
@@ -14,14 +15,14 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
             const dbContext = this.slaveEntry.dbSet.dbContext;
             switch (this.state) {
                 case RelationState.Added: {
-                    const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation as IRelationMetaData) as RelationEntry<TE1, TE2, TRD>[];
+                    const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation);
                     if (typedAddEntries) {
                         typedAddEntries.delete(this);
                     }
                     break;
                 }
                 case RelationState.Deleted: {
-                    const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation as IRelationMetaData) as RelationEntry<TE1, TE2, TRD>[];
+                    const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
                     if (typedEntries) {
                         typedEntries.delete(this);
                     }
@@ -39,10 +40,10 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
             }
             switch (value) {
                 case RelationState.Added: {
-                    let typedEntries = dbContext.relationEntries.add.get(this.slaveRelation as IRelationMetaData) as RelationEntry<TE1, TE2, TRD>[];
+                    let typedEntries = dbContext.relationEntries.add.get(this.slaveRelation);
                     if (!typedEntries) {
                         typedEntries = [];
-                        dbContext.relationEntries.add.set(this.slaveRelation as IRelationMetaData, typedEntries as RelationEntry[]);
+                        dbContext.relationEntries.add.set(this.slaveRelation, typedEntries);
                     }
                     typedEntries.push(this);
                     if (this.slaveEntry.state === EntityState.Deleted) {
@@ -54,10 +55,10 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
                     break;
                 }
                 case RelationState.Deleted: {
-                    let typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation as IRelationMetaData) as RelationEntry<TE1, TE2, TRD>[];
+                    let typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
                     if (!typedEntries) {
                         typedEntries = [];
-                        dbContext.relationEntries.delete.set(this.slaveRelation as IRelationMetaData, typedEntries as RelationEntry[]);
+                        dbContext.relationEntries.delete.set(this.slaveRelation, typedEntries);
                     }
                     typedEntries.push(this);
                     break;
@@ -66,11 +67,11 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
             this._state = value;
             switch (value) {
                 case RelationState.Detached: {
-                    const srelMap = this.slaveEntry.relationMap[this.slaveRelation.propertyName] as Map<EntityEntry<TE2>, unknown>;
+                    const srelMap = this.slaveEntry.relationMap[this.slaveRelation.propertyName] as unknown as Map<EntityEntry<TE2>, unknown>;
                     if (srelMap) {
                         srelMap.delete(this.masterEntry);
                     }
-                    const mrelMap = this.masterEntry.relationMap[this.slaveRelation.reverseRelation.propertyName] as Map<EntityEntry<TE1>, unknown>;
+                    const mrelMap = this.masterEntry.relationMap[this.slaveRelation.reverseRelation.propertyName] as unknown as Map<EntityEntry<TE1>, unknown>;
                     if (mrelMap) {
                         mrelMap.delete(this.slaveEntry);
                     }
@@ -126,13 +127,13 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
     public join() {
         // apply slave relation property
         if (this.slaveRelation.relationType === "one") {
-            this.slaveEntry.entity[this.slaveRelation.propertyName] = this.masterEntry.entity as TE1[Extract<keyof TE1, string>];
+            this.slaveEntry.entity[this.slaveRelation.propertyName] = this.masterEntry.entity as TE1[StringKeyOf<TE1>];
         }
         else {
-            let relationVal = this.slaveEntry.entity[this.slaveRelation.propertyName] as TE1[Extract<keyof TE1, string>] | TE2[];
+            let relationVal = this.slaveEntry.entity[this.slaveRelation.propertyName] as TE1[StringKeyOf<TE1>] | TE2[];
             if (!Array.isArray(relationVal)) {
                 relationVal = [];
-                this.slaveEntry.entity[this.slaveRelation.propertyName] = relationVal as TE1[Extract<keyof TE1, string>];
+                this.slaveEntry.entity[this.slaveRelation.propertyName] = relationVal as TE1[StringKeyOf<TE1>];
             }
             relationVal.add(this.masterEntry.entity);
         }
@@ -140,13 +141,13 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
         // apply master relation property
         const masterRelation = this.slaveRelation.reverseRelation;
         if (masterRelation.relationType === "one") {
-            this.masterEntry.entity[masterRelation.propertyName] = this.slaveEntry.entity as TE2[Extract<keyof TE2, string>];
+            this.masterEntry.entity[masterRelation.propertyName] = this.slaveEntry.entity as TE2[StringKeyOf<TE2>];
         }
         else {
-            let relationVal = this.masterEntry.entity[masterRelation.propertyName] as TE2[Extract<keyof TE2, string>] | TE1[];
+            let relationVal = this.masterEntry.entity[masterRelation.propertyName] as TE2[StringKeyOf<TE2>] | TE1[];
             if (!Array.isArray(relationVal)) {
                 relationVal = [];
-                this.masterEntry.entity[masterRelation.propertyName] = relationVal as TE2[Extract<keyof TE2, string>];
+                this.masterEntry.entity[masterRelation.propertyName] = relationVal as TE2[StringKeyOf<TE2>];
             }
             relationVal.add(this.slaveEntry.entity);
         }
@@ -157,7 +158,7 @@ export class RelationEntry<TE1 = unknown, TE2 = unknown, TRD = unknown> {
                 const reverseProperty = this.slaveRelation.relationMaps.get(col).propertyName;
                 if (reverseProperty) {
                     const value = this.masterEntry.entity[reverseProperty];
-                    this.slaveEntry.entity[col.propertyName] = value as unknown as TE1[Extract<keyof TE1, string>];
+                    this.slaveEntry.entity[col.propertyName] = value as unknown as TE1[StringKeyOf<TE1>];
                 }
             }
         }

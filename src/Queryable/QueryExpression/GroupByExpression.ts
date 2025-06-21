@@ -1,17 +1,36 @@
 import { RelationshipType } from "../../Common/StringType";
+import { GroupedEnumerable } from "../../Enumerable/GroupedEnumerable";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, hashCodeAdd, isColumnExp, isEntityExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { IncludeRelation } from "../Interface/IncludeRelation";
+import { ISelectRelation } from "../Interface/ISelectRelation";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { ComputedColumnExpression } from "./ComputedColumnExpression";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
+import { IEntityExpression } from "./IEntityExpression";
+import { IOrderExpression } from "./IOrderExpression";
+import { IPagingExpression } from "./IPagingExpression";
 import { SelectExpression } from "./SelectExpression";
+import { SqlParameterExpression } from "./SqlParameterExpression";
 
-export class GroupByExpression<T = unknown> extends SelectExpression<T> {
+export class GroupByExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
+    public override readonly entity: IEntityExpression<TE>;
+    public readonly groupBy: IColumnExpression<TE>[];
+    public override readonly includes: IncludeRelation<TE>[];
+    public override readonly isSubSelect: boolean;
+    public override itemExpression: IExpression<T>;
+    public override readonly joins: JoinRelation<TE>[];
+    public readonly key: IExpression<K>;
+    public override readonly orders: IOrderExpression[];
+    public override readonly paging: IPagingExpression;
+    public override readonly paramExps: SqlParameterExpression[];
+    public override readonly parentRelation: ISelectRelation<unknown, TE>;
+    public override readonly where: IExpression<boolean>;
+
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
     }
@@ -99,14 +118,14 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
     public get primaryKeys() {
         return this.groupBy;
     }
-    public get projectedColumns(): IEnumerable<IColumnExpression<T>> {
+    public get relationColumns() {
+        return this.itemSelect.relationColumns;
+    }
+    public get projectedColumns(): IEnumerable<IColumnExpression<TE>> {
         if (this.isAggregate) {
             return this.relationColumns.union(this.resolvedSelects);
         }
         return this.itemSelect.projectedColumns;
-    }
-    public get relationColumns() {
-        return this.itemSelect.relationColumns;
     }
     public get resolvedGroupBy() {
         if (isEntityExp(this.key)) {
@@ -124,11 +143,11 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
         return this.groupBy;
     }
 
-    public get resolvedIncludes(): IEnumerable<IncludeRelation<T>> {
+    public get resolvedIncludes(): IEnumerable<IncludeRelation<TE>> {
         let includes = super.resolvedIncludes;
         if (!this.isAggregate && this.keyRelation) {
             if (this.keyRelation.isEmbedded) {
-                includes = this.keyRelation.child.resolvedIncludes.union(includes);
+                includes = (this.keyRelation.child.resolvedIncludes as IEnumerable<IncludeRelation<TE>>).union(includes);
             }
             else {
                 includes = ([this.keyRelation]).union(includes);
@@ -136,14 +155,14 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
         }
         return includes;
     }
-    public get resolvedJoins(): IEnumerable<JoinRelation<T>> {
+    public get resolvedJoins(): IEnumerable<JoinRelation<TE>> {
         let join = super.resolvedJoins;
         if (this.keyRelation && this.keyRelation.isEmbedded && (!this.parentRelation || !this.parentRelation.isEmbedded)) {
-            join = this.keyRelation.child.resolvedJoins.union(join);
+            join = (this.keyRelation.child.resolvedJoins as IEnumerable<JoinRelation<TE>>).union(join);
         }
         return join;
     }
-    public get resolvedSelects(): IEnumerable<IColumnExpression> {
+    public get resolvedSelects(): IEnumerable<IColumnExpression<TE>> {
         let selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
         for (const include of this.includes) {
             if (include.isEmbedded) {
@@ -153,7 +172,7 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
                 const childSelects = include.child.resolvedSelects.select((o) => {
                     let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
                     if (!curCol) {
-                        curCol = o.clone(cloneMap);
+                        curCol = (o as IColumnExpression<TE>).clone(cloneMap);
                     }
                     return curCol;
                 });
@@ -171,15 +190,20 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
             this.itemSelect.where = value;
         }
     }
-    constructor();
-    constructor(select: SelectExpression<T>, key: IExpression);
-    constructor(select?: SelectExpression<T>, key?: IExpression) {
+
+    constructor(grouped: GroupedExpression<TE, K, T>);
+    constructor(select: SelectExpression<TE, T>, key: IExpression);
+    constructor(select: SelectExpression<TE, T> | GroupedExpression<TE, T>, key?: IExpression) {
         super();
-        if (select) {
+        if (select instanceof GroupedExpression) {
+            this.itemSelect = select;
+            this.itemSelect.groupByExp = this;
+        }
+        else {
             this.itemSelect = new GroupedExpression(select, key);
             this.entity.select = this.itemSelect.groupByExp = this;
-            this.selects = this.groupBy.slice();
 
+            this.selects = this.groupBy.slice();
             for (const include of select.includes) {
                 this.addInclude(include.name, include.child, include.relation, include.type);
             }
@@ -208,14 +232,15 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
                     this.addKeyRelation(selectExp, relation, "one");
                     this.keyRelation.isEmbedded = keyParentRel.isEmbedded;
                 }
-            }
+            }   
         }
     }
+
     public having: IExpression<boolean>;
     public isAggregate: boolean;
-    public itemSelect: GroupedExpression<T>;
-    public keyRelation: IncludeRelation<T>;
-    public addKeyRelation<TChild>(child: SelectExpression<TChild>, relation: IExpression<boolean>, type?: RelationshipType): IncludeRelation<T, TChild> {
+    public readonly itemSelect: GroupedExpression<TE, K, T>;
+    public keyRelation: IncludeRelation<TE, any>;
+    public addKeyRelation<TChild extends object>(child: SelectExpression<TChild>, relation: IExpression<boolean>, type?: RelationshipType): IncludeRelation<TE, TChild> {
         const includeRel = new IncludeRelation(this, child, "key", type, relation);
         child.parentRelation = includeRel;
         this.keyRelation = includeRel;
@@ -224,14 +249,13 @@ export class GroupByExpression<T = unknown> extends SelectExpression<T> {
     public addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<T> {
+    public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<TE, K, T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
         const selectClone = resolveClone(this.itemSelect, replaceMap);
-        const clone = new GroupByExpression();
+        const clone = new GroupByExpression(selectClone);
         replaceMap.set(this, clone);
-        clone.itemSelect = selectClone;
         selectClone.groupByExp = clone;
         clone.having = resolveClone(this.having, replaceMap);
         clone.selects = this.selects.select((o) => resolveClone(o, replaceMap)).toArray();

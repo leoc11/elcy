@@ -38,7 +38,7 @@ export function ComputedColumn<T = any, R = any>(fn: (o: T) => R): PropertyDecor
                         writable: true
                     });
                 }
-                (this as any)[privatePropertySymbol] = value;
+                (this)[privatePropertySymbol] = value;
             }
         };
         Object.defineProperty(target, propertyKey, descriptor);

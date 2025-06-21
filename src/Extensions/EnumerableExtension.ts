@@ -34,7 +34,7 @@ declare global {
         min(fn?: (item: T) => number): number;
         ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
         orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
-        pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }, TResult extends { [key in (keyof TD & keyof TM)]: ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
         rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
@@ -57,7 +57,7 @@ Map.prototype.asEnumerable = function <K, V>(this: Map<K, V>) {
     return Enumerable.from(this);
 };
 Array.prototype.toArray = function <T>(this: T[]) {
-    return this as T[];
+    return Array.from(this);
 };
 Array.prototype.cast = function <T extends TTarget, TTarget>(this: T[]) {
     return this as TTarget[];
@@ -83,7 +83,7 @@ Array.prototype.orderBy = function <T>(this: T[], ...selectors: Array<IOrderDefi
 Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.where(predicate).first() : this[0];
 };
-Array.prototype.any = function <T>(this: T[], predicate: (item: T) => boolean = (o) => true) {
+Array.prototype.any = function <T>(this: T[], predicate: (item: T) => boolean = () => true) {
     return this.some(predicate);
 };
 Array.prototype.all = function <T>(this: T[], predicate: (item: T) => boolean) {
@@ -96,17 +96,17 @@ Array.prototype.take = function <T>(this: T[], take: number) {
     return this.asEnumerable().take(take);
 };
 Array.prototype.sum = function <T>(this: T[], selector?: (item: T) => number) {
-    return selector ? this.select(selector).sum() : (this as any as number[]).reduce((a, b) => a + b, 0);
+    return selector ? this.select(selector).sum() : (this as unknown as number[]).reduce((a, b) => a + b, 0);
 };
 Array.prototype.avg = function <T>(this: T[], selector?: (item: T) => number) {
     return selector ? this.select(selector).avg() : this.sum() / this.count();
 };
 Array.prototype.max = function <T>(this: T[], selector?: (item: T) => number): number {
-    return selector ? this.select(selector).max() : Math.max.apply(Math, this as unknown as number[]);
+    return selector ? this.select(selector).max() : Math.max(...(this as unknown as number[]));
 };
 
 Array.prototype.min = function <T>(this: T[], selector?: (item: T) => number) {
-    return selector ? this.select(selector).min() : Math.min.apply(Math, this as unknown as number[]);
+    return selector ? this.select(selector).min() : Math.min(...(this as unknown as number[]));
 };
 Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean) {
     return predicate ? this.asEnumerable().count(predicate) : this.length;
@@ -114,7 +114,7 @@ Array.prototype.count = function <T>(this: T[], predicate?: (item: T) => boolean
 Array.prototype.groupBy = function <T, K>(this: T[], keySelector: (item: T) => K): Enumerable<GroupedEnumerable<K, T>> {
     return this.asEnumerable().groupBy(keySelector);
 };
-Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => any) {
+Array.prototype.distinct = function <T>(this: T[], fn?: (item: T) => unknown) {
     return this.asEnumerable().distinct(fn);
 };
 Array.prototype.innerJoin = function <T, T2, TResult>(this: T[], array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2) => TResult) {
@@ -148,9 +148,9 @@ Array.prototype.pivot = function <T, TD extends { [key: string]: (item: T) => Va
     return this.asEnumerable().pivot(dimensions, metrics);
 };
 Array.prototype.toMap = function <T, K, V>(this: T[], keySelector: (item: T) => K, valueSelector?: (item: T) => V) {
-    const result = new Map();
+    const result = new Map<K, V>();
     for (const item of this) {
-        result.set(keySelector(item), valueSelector ? valueSelector(item) : item);
+        result.set(keySelector(item), valueSelector ? valueSelector(item) : item as unknown as V);
     }
     return result;
 };

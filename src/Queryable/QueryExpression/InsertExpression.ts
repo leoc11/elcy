@@ -27,7 +27,7 @@ export class InsertExpression<T = unknown> implements IQueryExpression<void> {
     public get type() {
         return undefined as GenericType<void>;
     }
-    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<{ [key in keyof T]?: IExpression<T[key]> }>, columns?: Array<IColumnExpression<T>>) {
+    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<SetterObj<T>>, columns?: Array<IColumnExpression<T>>) {
         if (columns) {
             this._columns = columns;
         }
@@ -41,7 +41,7 @@ export class InsertExpression<T = unknown> implements IQueryExpression<void> {
         const entity = resolveClone(this.entity, replaceMap);
         const columns = this.columns.select((o) => resolveClone(o, replaceMap)).toArray();
         const values = this.values.select((o) => {
-            const item: { [key in keyof T]?: IExpression<T[key]> } = {};
+            const item: SetterObj<T> = {};
             for (const prop in o) {
                 item[prop] = resolveClone(o[prop], replaceMap);
             }
@@ -69,7 +69,7 @@ export class InsertExpression<T = unknown> implements IQueryExpression<void> {
 }
 
 export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
-    const itemExp: { [key in keyof T]?: IExpression<T[key]> } = {};
+    const itemExp: SetterObj<T> = {};
     for (const col of columns) {
         const value = entry.entity[col.propertyName];
         if (value !== undefined) {

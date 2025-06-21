@@ -43,7 +43,7 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
     public isProjected: boolean;
     public isReadOnly: boolean;
     public nullable: boolean;
-    public propertyName?: Extract<keyof TE, string>;
+    public propertyName?: StringKeyOf<TE>;
     public type: GenericType<T>;
     private _default?: () => T;
     public applyOption(columnMeta: IColumnOption<T> | IColumnMetaData<TE, T>) {

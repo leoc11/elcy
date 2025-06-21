@@ -51,12 +51,12 @@ export function Relationship<S, T = any>(name: string, typeOrDirection: Relation
         if (!relationOption.sourceType) {
             relationOption.sourceType = target.constructor as any;
         }
-        relationOption.propertyName = propertyKey as any;
-        const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType!);
+        relationOption.propertyName = propertyKey;
+        const sourceMetaData: EntityMetaData<S> = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
 
         const relationMeta = new RelationMetaData(relationOption, isMaster);
         relationMeta.isMaster = isMaster;
-        Reflect.defineMetadata(relationMetaKey, relationMeta, relationOption.sourceType!, propertyKey);
+        Reflect.defineMetadata(relationMetaKey, relationMeta, relationOption.sourceType, propertyKey);
 
         const relationName = relationOption.relationKeyName ? relationOption.relationKeyName : relationOption.name + "_" + (isMaster ? relationMeta.source.type.name + "_" + targetName : targetName + "_" + relationMeta.source.type.name);
         relationMeta.fullName = relationName;

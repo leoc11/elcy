@@ -7,8 +7,8 @@ import { Queryable } from "../Queryable/Queryable";
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
-        include(...includes: Array<(item: T) => any>): T[];
-        project(...includes: Array<(item: T) => any>): T[];
+        include(...includes: Array<(item: T) => unknown>): T[];
+        project(...includes: Array<(item: T) => unknown>): T[];
     }
 }
 Array.prototype.include = function <T>(this: T[]): T[] {
@@ -20,8 +20,8 @@ Array.prototype.project = function <T>(this: T[]): T[] {
 
 declare module "../Enumerable/Enumerable" {
     interface Enumerable<T> {
-        include(...includes: Array<(item: T) => any>): Enumerable<T>;
-        project(...includes: Array<(item: T) => any>): Enumerable<T>;
+        include(...includes: Array<(item: T) => unknown>): Enumerable<T>;
+        project(...includes: Array<(item: T) => unknown>): Enumerable<T>;
     }
 }
 Enumerable.prototype.include = function <T>(this: Enumerable<T>): Enumerable<T> {
@@ -37,7 +37,7 @@ declare module "../Queryable/Queryable" {
     }
 }
 Queryable.prototype.asSubquery = function <T>(this: Queryable<T>): Enumerable<T> {
-    return this as any;
+    return this as unknown as Enumerable<T>;
 };
 declare global {
     namespace Reflect {
@@ -46,14 +46,14 @@ declare global {
     }
 }
 Reflect.getRelationData = <M, S, SKey extends KeysExceptType<S, ValueType>>(source: S, relationProperty: SKey, target: TypeItem<S[SKey]>): M => {
-    let relationMeta: IRelationMetaData = Reflect.getOwnMetadata(relationMetaKey, source, relationProperty);
+    let relationMeta = Reflect.getOwnMetadata(relationMetaKey, source, relationProperty) as IRelationMetaData;
     if (!relationMeta.isMaster) {
         relationMeta = relationMeta.reverseRelation;
     }
-    return Reflect.getOwnMetadata(target, source, relationProperty);
+    return Reflect.getOwnMetadata(target, source, relationProperty) as M;
 };
 Reflect.setRelationData = <M, S, SKey extends KeysExceptType<S, ValueType>>(source: S, relationProperty: SKey, target: TypeItem<S[SKey]>, value: M) => {
-    let relationMeta: IRelationMetaData = Reflect.getOwnMetadata(relationMetaKey, source.constructor, relationProperty);
+    let relationMeta = Reflect.getOwnMetadata(relationMetaKey, source.constructor, relationProperty) as IRelationMetaData;
     if (!relationMeta.isMaster) {
         relationMeta = relationMeta.reverseRelation;
     }

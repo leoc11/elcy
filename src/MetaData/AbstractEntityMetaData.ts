@@ -1,9 +1,10 @@
 import { ClassBase } from "../Common/Constant";
 import { ColumnGeneration } from "../Common/Enum";
-import { GenericType, IObjectType } from "../Common/Type";
+import { OrderDirection } from "../Common/StringType";
+import { GenericType, IObjectType, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { isNotNull } from "../Helper/Util";
-import { IOrderQueryDefinition } from "../Queryable/Interface/IOrderQueryDefinition";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "./DateTimeColumnMetaData";
 import { EntityMetaData } from "./EntityMetaData";
@@ -14,7 +15,7 @@ import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
-export class AbstractEntityMetaData<TE extends TBase, TBase = any> implements IEntityMetaData<TE, TBase> {
+export class AbstractEntityMetaData<TE extends TBase, TBase extends object = object> implements IEntityMetaData<TE, TBase> {
     public get insertGeneratedColumns() {
         return this.columns.where((o) => {
             return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
@@ -47,7 +48,7 @@ export class AbstractEntityMetaData<TE extends TBase, TBase = any> implements IE
     public columns: Array<IColumnMetaData<TE>> = [];
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn?: DateTimeColumnMetaData<TE>;
-    public defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     public deletedColumn?: BooleanColumnMetaData<TE>;
     public indices: Array<IndexMetaData<TE>> = [];
     public inheritance: InheritanceMetaData<TBase>;

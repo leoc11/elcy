@@ -918,7 +918,7 @@ export abstract class Queryable<T = unknown> {
             const commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
             commandQuery.includes = [];
 
-            const setterExp: { [key in keyof T]?: IExpression<T[key]> } = {};
+            const setterExp: SetterObj<T> = {};
             for (const prop in setter) {
                 const val = setter[prop];
                 if (val instanceof Function) {
@@ -926,7 +926,7 @@ export abstract class Queryable<T = unknown> {
                     setterExp[prop] = visitor.visitFunction(funcExp, [commandQuery.getItemExpression()], { selectExpression: commandQuery, scope: "queryable" });
                 }
                 else {
-                    setterExp[prop] = new ValueExpression(val as T[Extract<keyof T, string>]);
+                    setterExp[prop] = new ValueExpression(val as T[StringKeyOf<T>]);
                 }
             }
 

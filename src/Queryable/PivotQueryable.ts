@@ -13,7 +13,7 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
-export type TExpObject<T> = FunctionExpression<{ [key in keyof T]?: IExpression<T[key]> }>;
+export type TExpObject<T> = FunctionExpression<SetterObj<T>>;
 export class PivotQueryable<T,
     TD extends { [key: string]: (o: T) => ValueType },
     TM extends { [key: string]: (o: IEnumerable<T>) => ValueType }>
@@ -68,7 +68,7 @@ export class PivotQueryable<T,
     }
     protected toObjectValueExpression<K, KE extends { [key in keyof K]: FunctionExpression<K[key]> | ((item: T) => K[key]) }>(objectFn: KE, paramName: string): TExpObject<KE> {
         const param = new ParameterExpression(paramName, this.parent.type);
-        const objectValue: { [key in Extract<keyof KE, string>]?: IExpression<KE[key]> } = {};
+        const objectValue: { [key in StringKeyOf<KE>]?: IExpression<KE[key]> } = {};
         for (const prop in objectFn) {
             const value = objectFn[prop];
             let fnExpression: FunctionExpression;

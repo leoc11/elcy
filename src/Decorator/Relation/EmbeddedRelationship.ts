@@ -21,7 +21,7 @@ export function EmbeddedRelationship<S = any, T = any>(optionOrType: IEmbeddedRe
         option.sourceType = target.constructor as any;
         option.propertyName = propertyKey;
         const embeddedRelationMeta = new EmbeddedRelationMetaData(option);
-        Reflect.defineMetadata(relationMetaKey, embeddedRelationMeta, option.sourceType!, propertyKey);
+        Reflect.defineMetadata(relationMetaKey, embeddedRelationMeta, option.sourceType, propertyKey);
 
         const source = embeddedRelationMeta.source;
         source.embeds.push(embeddedRelationMeta);

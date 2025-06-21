@@ -13,7 +13,7 @@ export class Enumerable<T = unknown> implements Iterable<T> {
     public get enableCache() {
         return !this.parent || this.cache.enabled;
     }
-    constructor(source?: Iterable<unknown> | (() => IterableIterator<unknown>)) {
+    constructor(source?: Iterable<unknown>) {
         this.cache = {};
         if (source) {
             if (Array.isArray(source)) {
@@ -25,15 +25,12 @@ export class Enumerable<T = unknown> implements Iterable<T> {
                 this.cache.iterator = source as IterableIterator<T>;
                 this.enableCache = true;
             }
-            else if (source instanceof Function) {
-                this.generator = source as () => Generator<T>;
-            }
             else {
                 this.parent = source;
             }
         }
     }
-    public static from<T>(source: Iterable<T> | (() => IterableIterator<T>)): Enumerable<T> {
+    public static from<T>(source: Iterable<T>): Enumerable<T> {
         return source instanceof Enumerable ? source as Enumerable<T> : new Enumerable(source);
     }
     public static range(start: number, end: number, step: number = 1) {
@@ -42,7 +39,7 @@ export class Enumerable<T = unknown> implements Iterable<T> {
                 yield start;
                 start += step;
             }
-        });
+        }());
     }
     protected cache: IEnumerableCache<T>;
     protected parent: Iterable<unknown>;

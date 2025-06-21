@@ -159,8 +159,8 @@ export const replaceExpression = <T extends IExpression>(source: IExpression, fi
     }
     return source;
 };
-export const isEntityExp = <T>(data: IExpression<T>): data is IEntityExpression<T> => {
-    return !!(data as IEntityExpression).entityTypes;
+export const isEntityExp = <T>(data: IExpression<T>): data is IEntityExpression<T & object> => {
+    return !!(data as IEntityExpression<T & object>)?.entityTypes;
 };
 export const isExpression = (data: IExpression): data is IExpression => {
     return !!(data.type && data.hashCode && data.clone);

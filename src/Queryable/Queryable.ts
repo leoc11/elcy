@@ -10,7 +10,6 @@ import { GroupByQueryable } from "./GroupByQueryable";
 import { GroupJoinQueryable } from "./GroupJoinQueryable";
 import { IncludeQueryable } from "./IncludeQueryable";
 import { InnerJoinQueryable } from "./InnerJoinQueryable";
-import { IOrderQueryDefinition } from "./Interface/IOrderQueryDefinition";
 import { IntersectQueryable } from "./IntersectQueryable";
 import { LeftJoinQueryable } from "./LeftJoinQueryable";
 import { OptionQueryable } from "./OptionQueryable";
@@ -26,6 +25,9 @@ import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
+import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
+import { OrderDirection } from "../Common/StringType";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -63,7 +65,10 @@ declare module "./Queryable" {
         leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2 | null) => boolean), resultSelector?: FunctionExpression<TResult, T | T2> | ((item1: T, item2: T2 | null) => TResult)): Queryable<TResult>;
         
         option(option: IQueryOption): Queryable<T>;
-        orderBy(...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T>;
+        
+        orderBy(...selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>): Queryable<T>;
+        orderBy(...selectors: Array<IOrderDefinition<T>>): Queryable<T>;
+        
         parameter(params: { [key: string]: unknown }): Queryable<T>;
         
         pivot<TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
@@ -118,7 +123,7 @@ Queryable.prototype.selectMany = function <T, TReturn>(this: Queryable<T>, selec
 Queryable.prototype.where = function <T>(this: Queryable<T>, predicate: FunctionExpression<boolean, T> | ((item: T) => boolean)): Queryable<T> {
     return new WhereQueryable(this, predicate);
 };
-Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: Array<IOrderQueryDefinition<T>>): Queryable<T> {
+Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> | Array<IOrderDefinition<T>>): Queryable<T> {
     return new OrderQueryable(this, ...selectors);
 };
 Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Queryable<T> {

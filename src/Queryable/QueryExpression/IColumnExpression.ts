@@ -1,9 +1,9 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityExpression } from "./IEntityExpression";
 
-export interface IColumnExpression<TE = unknown, T = unknown> extends IExpression<T> {
+export interface IColumnExpression<TE extends object = object, T = ValueType> extends IExpression<T> {
     alias?: string;
     columnMeta?: IColumnMetaData<TE, T>;
     // TODO: columnName not needed. coz it not available for computed column.
@@ -12,7 +12,7 @@ export interface IColumnExpression<TE = unknown, T = unknown> extends IExpressio
     entity: IEntityExpression<TE>;
     isNullable?: boolean;
     isPrimary: boolean;
-    propertyName: Extract<keyof TE, string>;
+    propertyName: StringKeyOf<TE>;
     type: GenericType<T>;
     clone(replaceMap?: Map<IExpression, IExpression>): IColumnExpression<TE, T>;
     hashCode(): number;

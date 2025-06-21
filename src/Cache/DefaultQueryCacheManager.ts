@@ -6,8 +6,8 @@ export class DefaultQueryCacheManager implements IQueryCacheManager {
     public clear() {
         this._cache.clear();
     }
-    public get(key: number) {
-        return this._cache.get(key);
+    public get<T = unknown>(key: number) {
+        return this._cache.get(key) as IQueryCache<T>;
     }
     public set<T>(key: number, cache: IQueryCache<T>) {
         return this._cache.set(key, cache);

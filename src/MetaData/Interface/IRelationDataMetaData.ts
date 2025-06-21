@@ -3,7 +3,7 @@ import { IObjectType } from "../../Common/Type";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 
-export interface IRelationDataMetaData<TType, TSource, TTarget> extends IEntityMetaData<TType> {
+export interface IRelationDataMetaData<TType extends object, TSource extends object, TTarget extends object> extends IEntityMetaData<TType> {
     deleteOption?: ReferenceOption;
     name: string;
     relationName?: string;

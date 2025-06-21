@@ -1,22 +1,23 @@
-import { IObjectType } from "../../Common/Type";
+import type { OrderDirection } from "../../Common/StringType";
+import type { IObjectType, ValueType } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
+import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
-import { IOrderQueryDefinition } from "../Interface/IOrderQueryDefinition";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class EntityExpression<T = unknown> implements IEntityExpression<T> {
-    public get columns(): Array<IColumnExpression<T>> {
+export class EntityExpression<T extends object = object> implements IEntityExpression<T> {
+    public get columns(): Array<IColumnExpression<T, ValueType>> {
         if (!this._columns) {
             if (this.metaData) {
                 this._columns = this.metaData.columns
                     .where((o) => !(o instanceof ComputedColumnMetaData))
-                    .select((o) => new ColumnExpression<T>(this, o, this.metaData.primaryKeys.contains(o)))
+                    .select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o)))
                     .toArray();
             }
             else {
@@ -28,7 +29,7 @@ export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     public set columns(value) {
         this._columns = value;
     }
-    public get defaultOrders(): IOrderQueryDefinition[] {
+    public get defaultOrders(): Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> {
         if (!this._defaultOrders) {
             if (this.metaData && this.metaData.defaultOrders) {
                 this._defaultOrders = this.metaData.defaultOrders.slice();
@@ -41,7 +42,7 @@ export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.deletedColumn.propertyName);
+            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.deletedColumn.propertyName) as IColumnExpression<T, boolean>;
         }
         return this._deleteColumn;
     }
@@ -53,11 +54,11 @@ export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     }
     public get modifiedColumn() {
         if (typeof this._modifiedColumn === "undefined") {
-            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName);
+            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName) as IColumnExpression<T, Date>;
         }
         return this._modifiedColumn;
     }
-    public get primaryColumns(): Array<IColumnExpression<T>> {
+    public get primaryColumns(): Array<IColumnExpression<T, ValueType>> {
         if (!this._primaryColumns) {
             if (this.metaData) {
                 this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
@@ -73,7 +74,7 @@ export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     }
     public get versionColumn() {
         if (typeof this._versionColumn === "undefined") {
-            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.versionColumn.propertyName);
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<T, Uint8Array>;
         }
         return this._versionColumn;
     }
@@ -90,12 +91,12 @@ export class EntityExpression<T = unknown> implements IEntityExpression<T> {
     public name: string;
     public select?: SelectExpression<T>;
     private _columns: Array<IColumnExpression<T>>;
-    private _defaultOrders: IOrderQueryDefinition[];
-    private _deleteColumn: IColumnExpression<T>;
+    private _defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
+    private _deleteColumn: IColumnExpression<T, boolean>;
     private _metaData: EntityMetaData<T>;
-    private _modifiedColumn: IColumnExpression<T>;
-    private _primaryColumns: IColumnExpression[];
-    private _versionColumn: IColumnExpression<T>;
+    private _modifiedColumn: IColumnExpression<T, Date>;
+    private _primaryColumns: IColumnExpression<T>[];
+    private _versionColumn: IColumnExpression<T, Uint8Array>;
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();

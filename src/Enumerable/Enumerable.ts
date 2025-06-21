@@ -111,14 +111,14 @@ Enumerable.prototype.pivot = function <T, TD extends { [key: string]: (item: T) 
         const dimensionKey = {} as Pivot<T, TD, TM>;
         for (const key in dimensions) {
             if (dimensions[key] instanceof Function) {
-                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[Extract<keyof TD, string>];
+                dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[StringKeyOf<TD>];
             }
         }
         return dimensionKey;
     }).select((o) => {
         for (const key in metrics) {
             if (o.key) {
-                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[Extract<keyof TM, string>];
+                o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[StringKeyOf<TM>];
             }
         }
         return o.key;

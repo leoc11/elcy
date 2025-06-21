@@ -113,8 +113,8 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     //#endregion
 
     public enableTrackChanges = true;
-    public relationMap: { [relationName in Extract<keyof T, string>]?: Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>> } = {};
-    private _originalValues: Map<Extract<keyof T, string>, unknown> = new Map();
+    public relationMap: { [relationName in StringKeyOf<T>]?: Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>> } = {};
+    private _originalValues: Map<StringKeyOf<T>, unknown> = new Map();
     private _state: EntityState;
     public acceptChanges(...properties: Array<KeysType<T, ValueType>>) {
         if (properties && this.state !== EntityState.Modified) {
@@ -249,7 +249,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public getModifiedProperties() {
         return Array.from(this._originalValues.keys());
     }
-    public getOriginalValue(prop: Extract<keyof T, string>) {
+    public getOriginalValue(prop: StringKeyOf<T>) {
         if (this._originalValues.has(prop)) {
             return this._originalValues.get(prop);
         }
@@ -259,13 +259,13 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public getPrimaryValues() {
         const res: FlatObjectLike<T> = {};
         for (const o of this.dbSet.primaryKeys) {
-            res[o.propertyName] = this.entity[o.propertyName] as T[Extract<keyof T, string>] & ValueType;
+            res[o.propertyName] = this.entity[o.propertyName] as T[StringKeyOf<T>] & ValueType;
         }
         return res;
     }
 
     //#region Relations
-    public getRelation<T2 extends object>(propertyName: Extract<keyof T, string>, relatedEntry: EntityEntry<T2>): RelationEntry<T, T2> | RelationEntry<T2, T> {
+    public getRelation<T2 extends object>(propertyName: StringKeyOf<T>, relatedEntry: EntityEntry<T2>): RelationEntry<T, T2> | RelationEntry<T2, T> {
         const relationMeta: IRelationMetaData<T, T2> = this.metaData.relations.first((o) => o.propertyName === propertyName);
         let relGroup = this.relationMap[propertyName] as unknown as Map<EntityEntry<T2>, RelationEntry<T, T2> | RelationEntry<T2, T>>;
         if (!relGroup) {
@@ -284,7 +284,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         }
         return relEntry;
     }
-    public isPropertyModified(prop: Extract<keyof T, string>) {
+    public isPropertyModified(prop: StringKeyOf<T>) {
         return this._originalValues.has(prop);
     }
     /**
@@ -319,7 +319,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         }
 
         for (const relMeta of relationMetas) {
-            this.entity[relMeta.propertyName] = this.relatedEntity(relMeta as IRelationMetaData<T, object & T[Extract<keyof T, string>], "one">);
+            this.entity[relMeta.propertyName] = this.relatedEntity(relMeta as IRelationMetaData<T, object & T[StringKeyOf<T>], "one">);
         }
     }
     public relatedEntity<T2 extends object = object>(relation: IRelationMetaData<T, T2, "one">): T2
@@ -337,7 +337,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         if (relation.relationType === "many") {
             let enumerable = set.local;
             for (const [col, tCol] of relation.relationMaps) {
-                const propVal = this.entity[col.propertyName] as unknown as T2[Extract<keyof T2, string>];
+                const propVal = this.entity[col.propertyName] as unknown as T2[StringKeyOf<T2>];
                 if (propVal === undefined) {
                     return undefined;
                 }
@@ -348,7 +348,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         else {
             const key: FlatObjectLike<T2> = {};
             for (const [col, tCol] of relation.relationMaps) {
-                const propVal = this.entity[col.propertyName] as unknown as T2[Extract<keyof T2, string>] & ValueType;
+                const propVal = this.entity[col.propertyName] as unknown as T2[StringKeyOf<T2>] & ValueType;
                 if (propVal === undefined) {
                     return undefined;
                 }

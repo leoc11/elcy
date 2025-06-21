@@ -1,12 +1,12 @@
 
 import { ColumnType } from "../../Common/ColumnType";
 import { ColumnGeneration } from "../../Common/Enum";
-import { GenericType } from "../../Common/Type";
+import type { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IEntityMetaData } from "./IEntityMetaData";
 
-export interface IColumnMetaData<TE = unknown, T = unknown> {
+export interface IColumnMetaData<TE extends object = object, T = ValueType> {
     charset?: string;
     collation?: string;
     columnName?: string;
@@ -20,7 +20,7 @@ export interface IColumnMetaData<TE = unknown, T = unknown> {
     isProjected?: boolean;
     isReadOnly?: boolean;
     nullable?: boolean;
-    propertyName?: Extract<keyof TE, string>;
+    propertyName?: StringKeyOf<TE>;
     type?: GenericType<T>;
     applyOption?(option: IColumnMetaData | IColumnOption): void;
 }

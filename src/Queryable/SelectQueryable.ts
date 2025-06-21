@@ -39,8 +39,8 @@ export class SelectQueryable<S, T> extends Queryable<T> {
             params.unshift(new ValueExpression(this.type));
         }
         const methodExpression = new MethodCallExpression(objectOperand, "select", params);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        const visitParam: IQueryVisitParameter<S> = { selectExpression: objectOperand, scope: "queryable" };
+        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression<T>;
         result.parentRelation = null;
         return result;
     }

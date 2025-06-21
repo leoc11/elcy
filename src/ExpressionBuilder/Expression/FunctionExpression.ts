@@ -4,13 +4,15 @@ import { IExpression } from "./IExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
-export class FunctionExpression<T = unknown, K = unknown> implements IExpression<T> {
+const FunctionTypeConstructor: () => ((...param: any[]) => any) = () => (() => {});
+export class FunctionExpression<T = unknown, K = unknown> implements IExpression<(...param: K[]) => T> {
     // TODO: type must always specified
     constructor(public body: IExpression<T>, public params: ParameterExpression<K>[], type?: GenericType<T>) {
-        this.type = type;
+        this.returnType = type;
+        this.type = FunctionTypeConstructor;
     }
-    public itemType?: GenericType;
-    public type: GenericType<T>;
+    public returnType?: GenericType<T>;
+    public type: GenericType<(...param: K[]) => T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

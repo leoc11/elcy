@@ -1,7 +1,7 @@
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";
 
-export interface IIndexMetaData<TE = any> {
+export interface IIndexMetaData<TE extends object = object> {
     columns: Array<IColumnMetaData<TE>>;
     entity: IEntityMetaData<TE>;
     name: string;

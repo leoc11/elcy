@@ -1,4 +1,5 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
+import { StringKeyOf, ValueType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
@@ -15,13 +16,13 @@ export interface IRelationMetaData<TSource extends object = object, TTarget exte
     /**
      * Column used in relation that has been mapped to an entity's property.
      */
-    mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource>>;
+    mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource, ValueType>>;
     name?: string;
     nullable?: boolean;
-    propertyName?: Extract<keyof TSource, string>;
-    relationColumns: Array<IColumnMetaData<TSource>>;
+    propertyName?: StringKeyOf<TSource>;
+    relationColumns: Array<IColumnMetaData<TSource, ValueType>>;
     relationData?: IRelationDataMetaData<any, TSource, TTarget> | IRelationDataMetaData<any, TTarget, TSource>;
-    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
+    relationMaps?: Map<IColumnMetaData<TSource, ValueType>, IColumnMetaData<TTarget, ValueType>>;
     relationType: TRel;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     source: IEntityMetaData<TSource>;

@@ -53,7 +53,7 @@ export class Uuid extends Uint8Array {
         return res;
     }
     public valueOf() {
-        return this.toString();
+        return this;
     }
     protected parse(uuid: string) {
         const l = uuid.length;

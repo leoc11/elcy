@@ -14,7 +14,7 @@ export class ComputedColumnExpression<TE = unknown, T = unknown> implements ICol
     public get type(): GenericType<T> {
         return this.expression.type;
     }
-    constructor(public entity: IEntityExpression<TE>, public expression: IExpression<T>, public propertyName: Extract<keyof TE, string>, public alias?: string) {
+    constructor(public entity: IEntityExpression<TE>, public expression: IExpression<T>, public propertyName: StringKeyOf<TE>, public alias?: string) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = (expression as ComputedColumnExpression<TE, T>).expression;
         }

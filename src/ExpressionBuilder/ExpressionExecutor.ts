@@ -362,7 +362,7 @@ export class ExpressionExecutor {
     protected executeLessThan(expression: LessThanExpression) {
         return this.execute(expression.leftOperand) < this.execute(expression.rightOperand);
     }
-    protected executeMemberAccess<TE, K extends Extract<keyof TE, string>>(expression: MemberAccessExpression<TE, K>) {
+    protected executeMemberAccess<TE, K extends StringKeyOf<TE>>(expression: MemberAccessExpression<TE, K>) {
         return this.execute(expression.objectOperand)[expression.memberName];
     }
     protected executeMethodCall<TE, K extends MethodKey<TE>, T extends MethodReturnType<TE, K>>(expression: MethodCallExpression<TE, K, T>): T {

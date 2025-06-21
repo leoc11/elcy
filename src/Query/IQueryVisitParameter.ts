@@ -1,5 +1,5 @@
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
-export interface IQueryVisitParameter {
+export interface IQueryVisitParameter<T = unknown> {
     scope?: string;
-    selectExpression: SelectExpression;
+    selectExpression: SelectExpression<T>;
 }

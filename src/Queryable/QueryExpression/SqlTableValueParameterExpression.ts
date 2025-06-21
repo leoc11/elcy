@@ -3,7 +3,7 @@ import { resolveClone } from "../../Helper/Util";
 import { IEntityExpression } from "./IEntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 
-export class SqlTableValueParameterExpression<T = unknown> extends SqlParameterExpression<T[]> {
+export class SqlTableValueParameterExpression<T extends object = object> extends SqlParameterExpression<T[]> {
     constructor(valueExp: IExpression<T[]>, public entityExp: IEntityExpression<T>) {
         super(valueExp);
     }

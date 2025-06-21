@@ -1,7 +1,7 @@
-import { ConcurrencyModel } from "../../Common/StringType";
-import { IObjectType } from "../../Common/Type";
+import { ConcurrencyModel, OrderDirection } from "../../Common/StringType";
+import { IObjectType, ValueType } from "../../Common/Type";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
-import { IOrderQueryDefinition } from "../../Queryable/Interface/IOrderQueryDefinition";
+import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
 import { DateTimeColumnMetaData } from "../DateTimeColumnMetaData";
 import { EmbeddedRelationMetaData } from "../EmbeddedColumnMetaData";
@@ -12,19 +12,19 @@ import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IEntityMetaData<TE = unknown, TBase = unknown> extends IDBEventListener<TE> {
+export interface IEntityMetaData<TE extends object = object, TBase extends object = object> extends IDBEventListener<TE> {
     allowInheritance?: boolean;
     columns: Array<IColumnMetaData<TE>>;
     concurrencyMode?: ConcurrencyModel;
     constraints?: Array<IConstraintMetaData<TE>>;
     createDateColumn?: DateTimeColumnMetaData<TE>;
-    defaultOrders?: Array<IOrderQueryDefinition<TE>>;
+    defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     deletedColumn?: BooleanColumnMetaData<TE>;
     descriminatorMember?: string;
     embeds?: Array<EmbeddedRelationMetaData<TE>>;
     hasIncrementPrimary?: boolean;
     indices?: Array<IIndexMetaData<TE>>;
-    inheritance: InheritanceMetaData<TBase>;
+    inheritance?: InheritanceMetaData<TBase>;
 
     insertGeneratedColumns?: Array<IColumnMetaData<TE>>;
     isReadOnly?: boolean;

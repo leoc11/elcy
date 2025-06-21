@@ -33,7 +33,7 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<K, T>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector.clone()]);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;

@@ -5,10 +5,12 @@
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
-    "test": "vitest",
-    "test2": "node ./node_modules/mocha/bin/mocha ./build/test/Functional/**/*.js",
-    "lint": "tslint ./src/**/*.ts --format verbose",
-    "lint-fix": "tslint --fix ./src/**/*.ts --format verbose"
+    "tsc": "tsc --noEmit",
+    "tsc:watch": "tsc --noEmit --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ./src",
+    "lint-fix": "eslint ./src --fix"
   },
   "repository": {
     "type": "git",

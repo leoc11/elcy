@@ -1,4 +1,4 @@
-import { GenericType, IObjectType, MethodKey, MethodReturnType } from "../../Common/Type";
+import type { ElementType, GenericType, IObjectType, MethodKey, MethodReturnType } from "../../Common/Type";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
@@ -7,7 +7,7 @@ import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 
 export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = MethodKey<TE>, T = MethodReturnType<TE, K>> implements IMemberOperatorExpression<TE, T> {
     public get itemType() {
-        if (this.type === Array) {
+        if ((this.type as GenericType<ElementType<T>[]>) === Array) {
             return this.objectOperand.itemType;
         }
         return null;
@@ -16,7 +16,7 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
         if (!this._type && this.objectOperand.type) {
             try {
                 const objectType = this.objectOperand.type;
-                if (Array === objectType || Object.prototype.isPrototypeOf.call(Queryable, objectType) || Object.prototype.isPrototypeOf.call(Enumerable, objectType)) {
+                if ((objectType as GenericType<ElementType<T>[]>) == Array || Object.prototype.isPrototypeOf.call(Queryable, objectType) || Object.prototype.isPrototypeOf.call(Enumerable, objectType)) {
                     switch (this.methodName) {
                         case "min":
                         case "max":
@@ -36,7 +36,7 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
                             break;
                         }
                         default: {
-                            this._type = Array;
+                            this._type = Array as GenericType<ElementType<T>[]> as GenericType<T>;
                             break;
                         }
                     }

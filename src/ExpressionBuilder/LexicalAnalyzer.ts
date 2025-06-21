@@ -146,13 +146,26 @@ function analyzeLexicalTemplateLiteral(pointer: ILexicalPointer, input: string):
     return res;
 }
 function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexicalToken {
-    const start = pointer.index;
-    let char: string;
-    do {
+    let data = input[pointer.index];
+    for (; ;) {
         pointer.index++;
-        char = input[pointer.index];
-    } while ((char >= "0" && char <= "9") || char === "." || char === "e");
-    const data = input.slice(start, pointer.index);
+        const char = input[pointer.index];
+        if (char === "_") {
+            pointer.index++;
+        }
+        else if (char === "e") {
+            data += char;
+            if (input[pointer.index + 1] === "-") {
+                data += input[pointer.index++];
+            }
+        }
+        else if ((char >= "0" && char <= "9") || char === ".") {
+            data += char;
+        }
+        else {
+            break;
+        }
+    }
     return {
         data: data,
         type: LexicalTokenType.Number

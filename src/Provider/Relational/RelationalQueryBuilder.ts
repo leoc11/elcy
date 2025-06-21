@@ -520,7 +520,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         if (deleteStrategy === "soft") {
             // if soft delete, set delete column to true
-            const set: { [key in keyof T]?: IExpression<T[key]> } = {};
+            const set: SetterObj<T> = {};
             set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true) as any;
             const updateQuery = new UpdateExpression(deleteExp.select, set);
             result = this.getUpdateQuery(updateQuery, param.option, param.parameters);

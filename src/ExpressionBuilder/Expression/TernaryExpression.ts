@@ -1,10 +1,10 @@
+import type { GenericType } from "../../Common/Type";
+import type { IExpression } from "./IExpression";
 import { NullConstructor } from "../../Common/Constant";
-import { GenericType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
-import { IExpression } from "./IExpression";
 
-export class TernaryExpression<T1 = unknown, T2 = unknown> implements IExpression<T1 | T2> {
-    public get type(): GenericType<T1 | T2> {
+export class TernaryExpression<T = unknown> implements IExpression<T> {
+    public get type(): GenericType<T> {
         if (this.trueOperand.type === this.falseOperand.type) {
             return this.trueOperand.type;
         }
@@ -18,7 +18,7 @@ export class TernaryExpression<T1 = unknown, T2 = unknown> implements IExpressio
         return Object;
     }
 
-    constructor(public logicalOperand: IExpression<boolean>, public trueOperand: IExpression<T1>, public falseOperand: IExpression<T2>) { }
+    constructor(public logicalOperand: IExpression<boolean>, public trueOperand: IExpression<T>, public falseOperand: IExpression<T>) { }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

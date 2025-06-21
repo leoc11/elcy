@@ -13,5 +13,5 @@ export type SqliteIdentifier = "text";
 export type SqliteSerialize = "text";
 export type SqliteEnum = "text";
 export type SqliteColumnType = SqliteInt | SqliteDecimal | SqliteReal | SqliteDate
-    | SqliteDateTime | SqliteTime | SqliteRowVersion | SqliteBinary | SqliteString
-    | SqliteBoolean | SqliteSpacial | SqliteIdentifier | SqliteSerialize | SqliteEnum;
+          | SqliteBinary  
+             ;
