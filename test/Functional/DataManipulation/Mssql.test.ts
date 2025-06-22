@@ -42,7 +42,8 @@ describe("DATA MANIPULATION", () => {
             });
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t('${productId.toString()}',10000)`,
+                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES
+	('${productId.toString()}',10000)`,
                 type: QueryType.DML,
                 parameters: new Map()
             } as IQuery));
@@ -58,7 +59,8 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t(@param0,@param1)`,
+                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES
+	(@param0,@param1)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", product.ProductId], ["param1", product.Price]])
             } as IQuery));
@@ -75,7 +77,8 @@ describe("DATA MANIPULATION", () => {
 
             expect(effected).toBe(1);
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES\n\t(@param0,@param1)`,
+                query: `INSERT INTO [Products]([ProductId], [Price]) VALUES
+	(@param0,@param1)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", product.ProductId], ["param1", product.Price]])
             } as IQuery));
@@ -93,7 +96,9 @@ describe("DATA MANIPULATION", () => {
 
             expect(effected).toBe(1);
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT)",
+                query:
+`INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES
+	(@param0,DEFAULT,DEFAULT)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", "Insert 1"]])
             } as IQuery));
@@ -135,12 +140,19 @@ describe("DATA MANIPULATION", () => {
             expect(effected).toBe(5);
             expect(spy).toHaveBeenCalledTimes(2);
             expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-                query: "INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES\n\t(@param0,DEFAULT,DEFAULT),\n\t(@param1,DEFAULT,DEFAULT)",
+                query:
+`INSERT INTO [AutoParent]([name], [isDefault], [isDeleted]) OUTPUT INSERTED.[id] AS id, INSERTED.[isDefault] AS isDefault, INSERTED.[isDeleted] AS isDeleted, INSERTED.[createdDate] AS createdDate, INSERTED.[modifiedDate] AS modifiedDate VALUES
+	(@param0,DEFAULT,DEFAULT),
+	(@param1,DEFAULT,DEFAULT)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", "Insert 1"], ["param1", "Insert 2"]])
             } as IQuery));
             expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-                query: "INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES\n\t(@param1,@param0),\n\t(@param1,@param2),\n\t(@param4,@param3)",
+                query:
+`INSERT INTO [AutoDetail]([parentId], [description]) OUTPUT INSERTED.[id] AS id, INSERTED.[parentId] AS parentId, INSERTED.[version] AS version VALUES
+	(@param1,@param0),
+	(@param1,@param2),
+	(@param4,@param3)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", "detail 1"], ["param1", data.id], ["param2", "detail 2"], ["param3", "detail 21"], ["param4", data2.id]])
             } as IQuery));
@@ -195,7 +207,19 @@ describe("DATA MANIPULATION", () => {
 
             expect(spy).toHaveBeenCalledOnce();
             var param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("INSERT INTO [AutoDetail] ([description])\nSELECT ('Detail of parent '+CAST([entity0].[id] AS nvarchar(255))) AS [column1]\nFROM [AutoParent] AS [entity0]\nLEFT JOIN (\n\tSELECT [entity1].[parentId],\n\t\tCOUNT([entity1].[id]) AS [column0]\n\tFROM [AutoDetail] AS [entity1]\n\tGROUP BY [entity1].[parentId]\n) AS [entity1]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity1].[column0]<=0))");
+            expect(param.query).toBe(
+`INSERT INTO [AutoDetail] ([description])
+SELECT ('Detail of parent '+CAST([entity0].[id] AS nvarchar(255))) AS [column1]
+FROM [AutoParent] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[parentId],
+		COUNT([entity1].[id]) AS [column0]
+	FROM [AutoDetail] AS [entity1]
+	GROUP BY [entity1].[parentId]
+) AS [entity1]
+	ON ([entity0].[id]=[entity1].[parentId])
+WHERE (([entity0].[isDeleted]=0) AND ([entity1].[column0]<=0))`
+            );
             expect(param.type).toBe(QueryType.DML);
             expect(param.parameters).toEqual(new Map());
             expect(effected).toBeGreaterThan(0);
@@ -216,7 +240,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0);
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery));
@@ -231,7 +264,19 @@ describe("DATA MANIPULATION", () => {
 
             expect(spy).toHaveBeenCalledOnce();
             var param = spy.mock.calls[0][0] as any as IQuery;
-            expect(param.query).toBe("UPDATE [entity0]\nSET [entity0].[name] = 'Updated', [entity0].[isDefault] = (\n\tCASE WHEN (NOT(\n\t\t([entity0].[isDefault]=1)\n\t)) \n\tTHEN 1\n\tELSE 0\n\tEND\n), [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))");
+            expect(param.query).toBe(
+`UPDATE [entity0]
+SET [entity0].[name] = 'Updated', [entity0].[isDefault] = (
+	CASE WHEN (NOT(
+		([entity0].[isDefault]=1)
+	)) 
+	THEN 1
+	ELSE 0
+	END
+), [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
+            );
             expect(param.type).toBe(QueryType.DML);
             expect(param.parameters).toEqual(new Map());
             expect(effected).toBe(1);
@@ -253,7 +298,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[id]=@param0) AND ([entity0].[name]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE (([entity0].[id]=@param0) AND ([entity0].[name]=@param2));
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", "Original"]])
             } as IQuery));
@@ -275,7 +329,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[description] = @param1\nFROM [AutoDetail] AS [entity0]\nWHERE (([entity0].[id]=@param0) AND ([entity0].[version]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[version]\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[description] = @param1
+FROM [AutoDetail] AS [entity0]
+WHERE (([entity0].[id]=@param0) AND ([entity0].[version]=@param2));
+
+SELECT [entity0].[id],
+	[entity0].[version]
+FROM [AutoDetail] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", oldVersion]])
             } as IQuery));
@@ -300,7 +363,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[id]=@param0) AND ([entity0].[modifiedDate]=@param2));\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE (([entity0].[id]=@param0) AND ([entity0].[modifiedDate]=@param2));
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"], ["param2", oldModifiedDate.toUTCDate()]])
             } as IQuery));
@@ -323,7 +395,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0);
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery));
@@ -357,7 +438,16 @@ describe("DATA MANIPULATION", () => {
             await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0);
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery));
@@ -380,7 +470,16 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0);\n\nSELECT [entity0].[id],\n\t[entity0].[modifiedDate]\nFROM [AutoParent] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[name] = @param1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0);
+
+SELECT [entity0].[id],
+	[entity0].[modifiedDate]
+FROM [AutoParent] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([["param0", 1], ["param1", "Updated"]])
             } as IQuery));
@@ -417,7 +516,11 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE [entity0].[id] IN (@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE [entity0].[id] IN (@param0)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1]])
             } as IQuery));
@@ -437,7 +540,10 @@ describe("DATA MANIPULATION", () => {
             });
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "DELETE [entity0]\nFROM [AutoParent] AS [entity0]\nWHERE [entity0].[id] IN (@param0)",
+                query:
+`DELETE [entity0]
+FROM [AutoParent] AS [entity0]
+WHERE [entity0].[id] IN (@param0)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1]])
             } as IQuery));
@@ -449,7 +555,18 @@ describe("DATA MANIPULATION", () => {
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));\n\nDELETE [entity1]\nFROM [AutoDetail] AS [entity1]\nINNER JOIN [AutoParent] AS [entity0]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))");
+            expect(param.query).toBe(
+`UPDATE [entity0]
+SET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));
+
+DELETE [entity1]
+FROM [AutoDetail] AS [entity1]
+INNER JOIN [AutoParent] AS [entity0]
+	ON ([entity0].[id]=[entity1].[parentId])
+WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
+            );
             expect(param.type).toBe(QueryType.DML);
             expect(param.parameters).toEqual(new Map());
             expect(effected).toBeGreaterThan(0);
@@ -462,7 +579,17 @@ describe("DATA MANIPULATION", () => {
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe("DELETE [entity0]\nFROM [AutoParent] AS [entity0]\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));\n\nDELETE [entity1]\nFROM [AutoDetail] AS [entity1]\nINNER JOIN [AutoParent] AS [entity0]\n\tON ([entity0].[id]=[entity1].[parentId])\nWHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))");
+            expect(param.query).toBe(
+`DELETE [entity0]
+FROM [AutoParent] AS [entity0]
+WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1));
+
+DELETE [entity1]
+FROM [AutoDetail] AS [entity1]
+INNER JOIN [AutoParent] AS [entity0]
+	ON ([entity0].[id]=[entity1].[parentId])
+WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
+            );
             expect(param.type).toBe(QueryType.DML);
             expect(param.parameters).toEqual(new Map());
             expect(effected).toBeGreaterThan(0);
@@ -487,7 +614,25 @@ describe("DATA MANIPULATION", () => {
             await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE [entity0].[id] IN (@param0);\n\nDELETE [AutoDetail]\nFROM [AutoDetail] AS [AutoDetail]\nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                query:
+`UPDATE [entity0]
+SET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE [entity0].[id] IN (@param0);
+
+DELETE [AutoDetail]
+FROM [AutoDetail] AS [AutoDetail]
+INNER JOIN (
+	SELECT [entity0].[id],
+		[entity0].[name],
+		[entity0].[isDefault],
+		[entity0].[isDeleted],
+		[entity0].[createdDate],
+		[entity0].[modifiedDate]
+	FROM [AutoParent] AS [entity0]
+	WHERE [entity0].[id] IN (@param0)
+) AS [entity0]
+	ON ([AutoDetail].[parentId]=[entity0].[id])`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1]])
             } as IQuery));
@@ -506,7 +651,26 @@ describe("DATA MANIPULATION", () => {
             await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = NULL\nFROM [AutoDetail] AS [AutoDetail]\nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                query:
+`UPDATE [entity0]
+SET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE [entity0].[id] IN (@param0);
+
+UPDATE [AutoDetail]
+SET [AutoDetail].[parentId] = NULL
+FROM [AutoDetail] AS [AutoDetail]
+INNER JOIN (
+	SELECT [entity0].[id],
+		[entity0].[name],
+		[entity0].[isDefault],
+		[entity0].[isDeleted],
+		[entity0].[createdDate],
+		[entity0].[modifiedDate]
+	FROM [AutoParent] AS [entity0]
+	WHERE [entity0].[id] IN (@param0)
+) AS [entity0]
+	ON ([AutoDetail].[parentId]=[entity0].[id])`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1]])
             } as IQuery));
@@ -525,7 +689,26 @@ describe("DATA MANIPULATION", () => {
             await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()\nFROM [AutoParent] AS [entity0]\nWHERE [entity0].[id] IN (@param0);\n\nUPDATE [AutoDetail]\nSET [AutoDetail].[parentId] = 0\nFROM [AutoDetail] AS [AutoDetail]\nINNER JOIN (\n\tSELECT [entity0].[id],\n\t\t[entity0].[name],\n\t\t[entity0].[isDefault],\n\t\t[entity0].[isDeleted],\n\t\t[entity0].[createdDate],\n\t\t[entity0].[modifiedDate]\n\tFROM [AutoParent] AS [entity0]\n\tWHERE [entity0].[id] IN (@param0)\n) AS [entity0]\n\tON ([AutoDetail].[parentId]=[entity0].[id])",
+                query:
+`UPDATE [entity0]
+SET [entity0].[isDeleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [AutoParent] AS [entity0]
+WHERE [entity0].[id] IN (@param0);
+
+UPDATE [AutoDetail]
+SET [AutoDetail].[parentId] = 0
+FROM [AutoDetail] AS [AutoDetail]
+INNER JOIN (
+	SELECT [entity0].[id],
+		[entity0].[name],
+		[entity0].[isDefault],
+		[entity0].[isDeleted],
+		[entity0].[createdDate],
+		[entity0].[modifiedDate]
+	FROM [AutoParent] AS [entity0]
+	WHERE [entity0].[id] IN (@param0)
+) AS [entity0]
+	ON ([AutoDetail].[parentId]=[entity0].[id])`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1]])
             } as IQuery));
@@ -603,7 +786,11 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[id] = @param0\nFROM [AutoDetailDesc] AS [entity0]\nWHERE ([entity0].[id]=@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[id] = @param0
+FROM [AutoDetailDesc] AS [entity0]
+WHERE ([entity0].[id]=@param0)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 10]])
             } as IQuery));
@@ -623,7 +810,11 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[parentId] = @param0\nFROM [AutoDetail] AS [entity0]\nWHERE ([entity0].[id]=@param1)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[parentId] = @param0
+FROM [AutoDetail] AS [entity0]
+WHERE ([entity0].[id]=@param1)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 1], ["param1", 10]])
             } as IQuery));
@@ -660,7 +851,14 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "DELETE [entity0]\nFROM [AutoDetailDesc] AS [entity0]\nWHERE [entity0].[id] IN (@param0);\n\nDELETE [entity0]\nFROM [AutoDetail] AS [entity0]\nWHERE [entity0].[id] IN (@param0)",
+                query:
+`DELETE [entity0]
+FROM [AutoDetailDesc] AS [entity0]
+WHERE [entity0].[id] IN (@param0);
+
+DELETE [entity0]
+FROM [AutoDetail] AS [entity0]
+WHERE [entity0].[id] IN (@param0)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 10]])
             } as IQuery));
@@ -686,7 +884,11 @@ describe("DATA MANIPULATION", () => {
             relationMeta.nullable = false;
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "UPDATE [entity0]\nSET [entity0].[parentId] = NULL\nFROM [AutoDetail] AS [entity0]\nWHERE [entity0].[id] IN (@param0)",
+                query:
+`UPDATE [entity0]
+SET [entity0].[parentId] = NULL
+FROM [AutoDetail] AS [entity0]
+WHERE [entity0].[id] IN (@param0)`,
                 type: QueryType.DML,
                 parameters: new Map<string, any>([["param0", 10]])
             } as IQuery));
@@ -725,7 +927,29 @@ describe("DATA MANIPULATION", () => {
             const effected = await db.saveChanges();
 
             expect(spy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-                query: "INSERT INTO [OrderDetails]([OrderDetailId], [OrderId], [ProductId], [ProductName], [Quantity], [CreatedDate], [isDeleted]) OUTPUT INSERTED.[isDeleted] AS isDeleted VALUES\n\t(@param0,@param1,DEFAULT,@param2,@param3,DEFAULT,DEFAULT);\n\nUPDATE [entity1]\nSET [entity1].[TotalAmount] = @param4\nFROM [Orders] AS [entity1]\nWHERE ([entity1].[OrderId]=@param1);\n\nUPDATE [entity2]\nSET [entity2].[OrderId] = @param1\nFROM [OrderDetails] AS [entity2]\nWHERE ([entity2].[OrderDetailId]=@param5);\n\nUPDATE [entity0]\nSET [entity0].[OrderId] = NULL\nFROM [OrderDetails] AS [entity0]\nWHERE [entity0].[OrderDetailId] IN (@param6);\n\nUPDATE [entity3]\nSET [entity3].[isDeleted] = 1\nFROM [OrderDetails] AS [entity3]\nWHERE [entity3].[OrderDetailId] IN (@param7)",
+                query:
+`INSERT INTO [OrderDetails]([OrderDetailId], [OrderId], [ProductId], [ProductName], [Quantity], [CreatedDate], [isDeleted]) OUTPUT INSERTED.[isDeleted] AS isDeleted VALUES
+	(@param0,@param1,DEFAULT,@param2,@param3,DEFAULT,DEFAULT);
+
+UPDATE [entity1]
+SET [entity1].[TotalAmount] = @param4
+FROM [Orders] AS [entity1]
+WHERE ([entity1].[OrderId]=@param1);
+
+UPDATE [entity2]
+SET [entity2].[OrderId] = @param1
+FROM [OrderDetails] AS [entity2]
+WHERE ([entity2].[OrderDetailId]=@param5);
+
+UPDATE [entity0]
+SET [entity0].[OrderId] = NULL
+FROM [OrderDetails] AS [entity0]
+WHERE [entity0].[OrderDetailId] IN (@param6);
+
+UPDATE [entity3]
+SET [entity3].[isDeleted] = 1
+FROM [OrderDetails] AS [entity3]
+WHERE [entity3].[OrderDetailId] IN (@param7)`,
                 type: QueryType.DML | QueryType.DQL,
                 parameters: new Map<string, any>([
                     ["param0", newOd.OrderDetailId],
