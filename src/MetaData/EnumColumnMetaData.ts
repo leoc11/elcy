@@ -4,7 +4,7 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 // TODO: for not supported db, use Check constraint
-export class EnumColumnMetaData<TE = any, T extends string | number = any> extends ColumnMetaData<TE, T> {
+export class EnumColumnMetaData<TE extends object = object, T extends string | number = any> extends ColumnMetaData<TE, T> {
     constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
     }

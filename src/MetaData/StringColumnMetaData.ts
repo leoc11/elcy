@@ -1,7 +1,7 @@
 import { StringColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 
-export class StringColumnMetaData<TE = any> extends ColumnMetaData<TE, string> {
+export class StringColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, string> {
     constructor() {
         super(String);
     }

@@ -3,7 +3,7 @@ import { GenericType } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class SerializeColumnMetaData<TE, T> extends ColumnMetaData<TE, T> {
+export class SerializeColumnMetaData<TE extends object = object, T = unknown> extends ColumnMetaData<TE, T> {
     constructor(type: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
     }
@@ -14,11 +14,5 @@ export class SerializeColumnMetaData<TE, T> extends ColumnMetaData<TE, T> {
         if (typeof columnMeta.type !== "undefined") {
             this.type = columnMeta.type;
         }
-    }
-    public deserialize(data: T): string {
-        return JSON.stringify(data);
-    }
-    public serialize(data: string): T {
-        return JSON.parse(data);
     }
 }

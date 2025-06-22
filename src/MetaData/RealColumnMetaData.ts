@@ -1,7 +1,7 @@
 import { RealColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-export class RealColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
+export class RealColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Number, entityMeta);
     }

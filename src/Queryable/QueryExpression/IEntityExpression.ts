@@ -14,7 +14,7 @@ export interface IEntityExpression<T extends object = object> extends IExpressio
     isRelationData?: boolean;
     name: string;
     primaryColumns: Array<IColumnExpression<T>>;
-    select?: SelectExpression<T>;
+    select?: SelectExpression<T, any>;
     type: GenericType<T>;
     clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
 }

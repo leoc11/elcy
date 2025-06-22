@@ -5,9 +5,9 @@ import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { Column } from "./Column";
 
-export function DateTimeColumn(option?: IDateTimeColumnOption): PropertyDecorator;
-export function DateTimeColumn(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator;
-export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator {
+export function DateTimeColumn(option?: IDateTimeColumnOption): PropertyDecorator & MethodDecorator;
+export function DateTimeColumn(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator;
+export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator {
     let option: IDateTimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -25,5 +25,5 @@ export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, db
         option = optionOrName;
     }
 
-    return Column<any, Date>(DateTimeColumnMetaData, option);
+    return Column<any, any, Date>(DateTimeColumnMetaData, option);
 }

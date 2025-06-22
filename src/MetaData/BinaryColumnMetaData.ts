@@ -3,7 +3,7 @@ import { GenericType } from "../Common/Type";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class BinaryColumnMetaData<TE = any> extends ColumnMetaData<TE, ArrayBufferView> {
+export class BinaryColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, ArrayBufferView> {
     constructor(type: GenericType<ArrayBufferView>, entityMeta?: IEntityMetaData<TE>) {
         super(type, entityMeta);
     }

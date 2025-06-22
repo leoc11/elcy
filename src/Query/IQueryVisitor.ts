@@ -14,8 +14,8 @@ export interface IQueryVisitor {
 
     // TODO: remove
     newAlias(type?: "entity" | "column" | "param"): string;
-    setDefaultBehaviour<T>(selectExp: SelectExpression<T>): void;
+    setDefaultBehaviour<T extends object>(selectExp: SelectExpression<T>): void;
     setParameter(flatParameterStacks: { [key: string]: any }): void;
-    visit<T>(expression: IExpression, param: IQueryVisitParameter<T>): IExpression;
-    visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter): IExpression;
+    visit<T>(exp: IExpression<T>, param: IQueryVisitParameter): IExpression<T>;
+    visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter): IExpression<T>;
 }

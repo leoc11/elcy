@@ -1,13 +1,13 @@
 import { ColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
-import { GenericType } from "../Common/Type";
+import { GenericType, StringKeyOf } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T> {
+export class ColumnMetaData<TE extends object, T = unknown> implements IColumnMetaData<TE, T> {
     public get default() {
         return this._default;
     }
@@ -76,6 +76,9 @@ export class ColumnMetaData<TE = any, T = any> implements IColumnMetaData<TE, T>
         }
         if (typeof columnMeta.isReadOnly !== "undefined") {
             this.isReadOnly = columnMeta.isReadOnly;
+        }
+        if (typeof columnMeta.generation !== "undefined") {
+            this.generation = columnMeta.generation;
         }
         if (typeof (columnMeta as IColumnOption).default !== "undefined") {
             this.default = (columnMeta as IColumnOption).default;

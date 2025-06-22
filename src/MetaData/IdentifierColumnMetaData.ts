@@ -3,7 +3,7 @@ import { Uuid } from "../Data/Uuid";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class IdentifierColumnMetaData<TE> extends ColumnMetaData<TE, Uuid> {
+export class IdentifierColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, Uuid> {
     constructor(entity?: IEntityMetaData<TE>) {
         super(Uuid, entity);
     }

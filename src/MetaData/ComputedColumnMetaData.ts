@@ -1,7 +1,6 @@
 import { ColumnGeneration } from "../Common/Enum";
 import { GenericType, StringKeyOf, ValueType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
@@ -9,14 +8,14 @@ export class ComputedColumnMetaData<TE extends object = object, T = ValueType> i
     public get type(): GenericType<T> {
         return this.functionExpression.returnType;
     }
-    constructor();
-    constructor(entity: IEntityMetaData<TE>, fn: (item: TE) => T, propertyName: StringKeyOf<TE>)
-    constructor(entity?: IEntityMetaData<TE>, fn?: (item: TE) => T, propertyName?: StringKeyOf<TE>) {
+    constructor()
+    constructor(entity: IEntityMetaData<TE>, fn: FunctionExpression<T, TE>, propertyName: StringKeyOf<TE>)
+    constructor(entity?: IEntityMetaData<TE>, fn?: FunctionExpression<T, TE>, propertyName?: StringKeyOf<TE>) {
         if (entity) {
             this.entity = entity;
         }
         if (fn) {
-            this.functionExpression = ExpressionBuilder.parse(fn, [entity.type]);
+            this.functionExpression = fn;
         }
         if (propertyName) {
             this.propertyName = propertyName;

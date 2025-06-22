@@ -1,11 +1,12 @@
 import { fillZero } from "../Helper/Util";
 
 export class TimeSpan {
+    constructor();
     constructor(date: Date);
     constructor(timeString: string);
     constructor(epochMilliSeconds: number);
-    constructor(hours: number, minutes: number, seconds: number, milliSeconds?: number);
-    constructor(hours: number | Date | string, minutes?: number, seconds?: number, milliSeconds?: number) {
+    constructor(hours: number, minutes?: number, seconds?: number, milliSeconds?: number);
+    constructor(hours?: number | Date | string, minutes?: number, seconds?: number, milliSeconds?: number) {
         if (hours instanceof Date) {
             milliSeconds = hours.getMilliseconds();
             seconds = hours.getSeconds();
@@ -17,6 +18,10 @@ export class TimeSpan {
         }
         else if (arguments.length === 1) {
             this.epochMilliSeconds = hours;
+            return;
+        }
+        else if(arguments.length === 0) {
+            this.epochMilliSeconds = 0;
             return;
         }
 

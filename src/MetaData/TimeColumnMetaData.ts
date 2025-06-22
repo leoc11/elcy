@@ -3,7 +3,7 @@ import { TimeZoneHandling } from "../Common/StringType";
 import { TimeSpan } from "../Data/TimeSpan";
 import { ColumnMetaData } from "./ColumnMetaData";
 
-export class TimeColumnMetaData extends ColumnMetaData<TimeSpan> {
+export class TimeColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, TimeSpan> {
     constructor() {
         super(TimeSpan);
     }

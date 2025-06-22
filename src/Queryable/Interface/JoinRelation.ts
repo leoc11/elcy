@@ -8,7 +8,7 @@ import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 
-export class JoinRelation<T = unknown, TChild = unknown> implements ISelectRelation<T, TChild> {
+export class JoinRelation<T extends object = object, TChild extends object = object> implements ISelectRelation<T, TChild> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -35,8 +35,8 @@ export class JoinRelation<T = unknown, TChild = unknown> implements ISelectRelat
         this._childColumns = this._parentColumns = this._isManyManyRelation = null;
     }
     constructor();
-    constructor(parent: SelectExpression<T>, child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType);
-    constructor(parent?: SelectExpression<T>, child?: SelectExpression<TChild>, relations?: IExpression<boolean>, type?: JoinType) {
+    constructor(parent: SelectExpression<T, any>, child: SelectExpression<TChild, any>, relations: IExpression<boolean>, type: JoinType);
+    constructor(parent?: SelectExpression<T, any>, child?: SelectExpression<TChild, any>, relations?: IExpression<boolean>, type?: JoinType) {
         if (parent) {
             this.parent = parent;
             this.child = child;

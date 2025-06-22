@@ -1,26 +1,20 @@
-import "reflect-metadata";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IEventDispacher } from "../../Event/IEventHandler";
-import { arrayDelete, isEqual } from "../../Helper/Util";
-import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
+import { arrayDelete, isEqual, isNotNull } from "../../Helper/Util";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
-import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { IChangeEventParam } from "../../MetaData/Interface/IChangeEventParam";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
-import { columnMetaKey, entityMetaKey, propertyChangeDispatherMetaKey } from "../DecoratorKey";
+import { propertyChangeDispatherMetaKey } from "../DecoratorKey";
 import { AbstractEntity } from "../Entity/AbstractEntity";
-import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { IColumnOption } from "../Option/IColumnOption";
-import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { getColumnMetadata, getEntityMetadata, setColumnMetadata } from "../../MetaData/MetaDataMapper";
 
-export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator {
-    return (target: TE, propertyKey: keyof TE) => {
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+export function Column<TE extends object = object, K extends StringKeyOf<TE> = StringKeyOf<TE>, T extends TE[K] & ValueType = TE[K] & ValueType>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator & MethodDecorator {
+    return <R>(target: TE, propertyKey: K, descriptor?: TypedPropertyDescriptor<T & R>) => {
+        const isAccessor = isNotNull(descriptor);
+        let entityMetaData = getEntityMetadata(target);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
-            entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+            entityMetaData = getEntityMetadata(target);
         }
 
         const metadata = new columnMetaType();
@@ -31,12 +25,12 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
         }
         metadata.propertyName = propertyKey;
 
-        const existingMetaData: ColumnMetaData<TE, T> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
+        const existingMetaData = getColumnMetadata<TE, K, T>(target, propertyKey);
         if (existingMetaData != null) {
             metadata.applyOption(existingMetaData);
             arrayDelete(entityMetaData.columns, existingMetaData);
         }
-        Reflect.defineMetadata(columnMetaKey, metadata, target.constructor, propertyKey);
+        setColumnMetadata(target, propertyKey, metadata);
         entityMetaData.columns.push(metadata);
 
         const pk = entityMetaData.primaryKeys.find((o) => o.propertyName === metadata.propertyName);
@@ -45,63 +39,64 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
             entityMetaData.primaryKeys.push(metadata);
         }
 
-        if (metadata instanceof DateTimeColumnMetaData) {
-            if ((columnOption as IDateTimeColumnOption).isCreatedDate) {
-                entityMetaData.createDateColumn = metadata;
-            }
-            else if ((columnOption as IDateTimeColumnOption).isModifiedDate) {
-                entityMetaData.modifiedDateColumn = metadata;
- }
-        }
-        else if (metadata instanceof BooleanColumnMetaData) {
-            if ((columnOption as IBooleanColumnOption).isDeleteColumn) {
-                entityMetaData.deletedColumn = metadata;
-            }
-        }
-        else if (metadata instanceof RowVersionColumnMetaData) {
-            entityMetaData.versionColumn = metadata;
-            if (!entityMetaData.concurrencyMode) {
-                entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
-            }
-        }
-        else if (metadata instanceof IntegerColumnMetaData) {
-            if (metadata.autoIncrement && metadata.defaultExp) {
-                console.warn("Auto increment cannot has default value");
+        // add property to use setter getter.
+        if (!isAccessor) {
+            descriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
+            if (descriptor?.configurable === false) {
+                throw new Error(`Cannot decorate property '${propertyKey}' because it not configurable`);
             }
         }
 
-        // add property to use setter getter.
-        const privatePropertySymbol = Symbol(propertyKey);
-        let descriptor: PropertyDescriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
-        let oldGet: any;
-        let oldSet: any;
-        if (descriptor) {
-            if (descriptor.get) {
-                oldGet = descriptor.get;
-            }
-            if (descriptor.set) {
-                oldSet = descriptor.set;
-            }
+        if (!descriptor) {
+            descriptor = {
+                writable: true,
+                enumerable: true,
+                configurable: true
+            };
         }
-        descriptor = {
-            set: function (this: any, value: any) {
-                if (!oldGet && !this.hasOwnProperty(privatePropertySymbol)) {
-                    Object.defineProperty(this, privatePropertySymbol, {
-                        value: undefined,
-                        enumerable: false,
-                        writable: true,
-                        configurable: true
-                    });
-                }
-                const oldValue = this[propertyKey];
-                // tslint:disable-next-line:triple-equals
-                if (!isEqual(oldValue, value)) {
-                    if (oldSet) {
-                        oldSet.apply(this, value);
-                    }
-                    else {
+
+        if (descriptor.writable) {
+            const privatePropertySymbol = Symbol(`_${propertyKey}`);
+            Object.defineProperty(target, privatePropertySymbol, {
+                value: descriptor.value,
+                enumerable: false,
+                writable: true,
+                configurable: false
+            });
+
+            descriptor = {
+                get: function (this: any) {
+                    return this[privatePropertySymbol];
+                },
+                set: function (this: TE, value: T) {
+                    const oldValue = this[privatePropertySymbol];
+                    // tslint:disable-next-line:triple-equals
+                    if (!isEqual(oldValue, value)) {
                         this[privatePropertySymbol] = value;
+    
+                        const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = this[propertyChangeDispatherMetaKey];
+                        if (propertyChangeDispatcher) {
+                            propertyChangeDispatcher({
+                                column: metadata,
+                                oldValue,
+                                newValue: value
+                            });
+                        }
                     }
+                },
+                enumerable: descriptor.enumerable,
+                configurable: descriptor.configurable
+            };
+            Object.defineProperty(target, propertyKey, descriptor);
+        }
+        else {
+            const ori_Get = descriptor?.get;
+            const ori_Set = descriptor?.set;
+            
+            descriptor.set = function (this: TE, value: T) {
+                const oldValue = ori_Get?.call(this);
+                if (!isEqual(oldValue, value)) {
+                    ori_Set?.call(this, value);
 
                     const propertyChangeDispatcher: IEventDispacher<IChangeEventParam<TE>> = this[propertyChangeDispatherMetaKey];
                     if (propertyChangeDispatcher) {
@@ -112,17 +107,12 @@ export function Column<TE = any, T = any>(columnMetaType: IObjectType<ColumnMeta
                         });
                     }
                 }
-            },
-            get: function (this: any) {
-                if (oldGet) {
-                    return oldGet.apply(this);
-                }
-                return this[privatePropertySymbol];
-            },
-            configurable: true,
-            enumerable: true
-        };
+            };
+            descriptor.get = function (this: any) {
+                return ori_Get?.call(this);
+            }
+        }
 
-        Object.defineProperty(target, propertyKey, descriptor);
+        return descriptor;
     };
 }

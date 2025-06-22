@@ -1,14 +1,16 @@
-import "reflect-metadata";
+import { StringKeyOf } from "../../Common/Type";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { columnMetaKey } from "../DecoratorKey";
+import { getColumnMetadata, setColumnMetadata } from "../../MetaData/MetaDataMapper";
 
-export function NullableColumn(): PropertyDecorator {
-    return (target: object, propertyKey: string /* | symbol*//*, descriptor: PropertyDescriptor*/) => {
-        let columnMetaData: ColumnMetaData<any> = Reflect.getOwnMetadata(columnMetaKey, target.constructor, propertyKey);
+export function NullableColumn(): PropertyDecorator & MethodDecorator {
+    return <TE extends object = object>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
+        let columnMetaData = getColumnMetadata(target, propertyKey);
         if (columnMetaData == null) {
-            columnMetaData = new ColumnMetaData<any>();
+            columnMetaData = new ColumnMetaData<TE, any>();
         }
         columnMetaData.nullable = true;
-        Reflect.defineMetadata(columnMetaKey, columnMetaData, target.constructor, propertyKey);
+        setColumnMetadata(target, propertyKey, columnMetaData);
+
+        return descriptor;
     };
 }

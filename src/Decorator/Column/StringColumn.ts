@@ -1,10 +1,9 @@
-import "reflect-metadata";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 import { IStringColumnOption } from "../Option/IStringColumnOption";
 import { Column } from "./Column";
 
-export function StringColumn(option?: IStringColumnOption): PropertyDecorator;
-export function StringColumn(optionOrName?: IStringColumnOption | string, defaultValue?: () => string): PropertyDecorator {
+export function StringColumn(option?: IStringColumnOption): PropertyDecorator & MethodDecorator;
+export function StringColumn(optionOrName?: IStringColumnOption | string, defaultValue?: () => string): PropertyDecorator & MethodDecorator {
     let option: IStringColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -17,5 +16,5 @@ export function StringColumn(optionOrName?: IStringColumnOption | string, defaul
             option.default = defaultValue;
         }
     }
-    return Column<any, string>(StringColumnMetaData, option);
+    return Column<any, any, string>(StringColumnMetaData, option);
 }

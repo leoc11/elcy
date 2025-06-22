@@ -4,9 +4,9 @@ import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
 import { Column } from "./Column";
 
-export function DateColumn(option?: IDateColumnOption): PropertyDecorator;
-export function DateColumn(name: string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator;
-export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator {
+export function DateColumn(option?: IDateColumnOption): PropertyDecorator & MethodDecorator;
+export function DateColumn(name: string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator & MethodDecorator;
+export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator & MethodDecorator {
     let option: IDateColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -21,5 +21,5 @@ export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: D
         option = optionOrName;
     }
 
-    return Column<any, Date>(DateColumnMetaData, option);
+    return Column<any, any, Date>(DateColumnMetaData, option);
 }

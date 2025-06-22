@@ -3,8 +3,8 @@ import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { Column } from "./Column";
 
-export function BooleanColumn(option?: IBooleanColumnOption): PropertyDecorator;
-export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defaultValue?: () => boolean): PropertyDecorator {
+export function BooleanColumn(option?: IBooleanColumnOption): PropertyDecorator & MethodDecorator;
+export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defaultValue?: () => boolean): PropertyDecorator & MethodDecorator {
     let option: IBooleanColumnOption;
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -18,5 +18,5 @@ export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defa
             option.default = defaultValue;
         }
     }
-    return Column<any, boolean>(BooleanColumnMetaData, option);
+    return Column<any, any, boolean>(BooleanColumnMetaData, option);
 }

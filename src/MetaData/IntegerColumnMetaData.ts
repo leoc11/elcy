@@ -3,7 +3,7 @@ import { ColumnGeneration } from "../Common/Enum";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class IntegerColumnMetaData<TE = any> extends ColumnMetaData<TE, number> {
+export class IntegerColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(Number, entityMeta);
     }

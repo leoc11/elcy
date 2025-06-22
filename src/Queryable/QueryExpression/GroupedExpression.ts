@@ -2,7 +2,6 @@ import type { JoinType } from "../../Common/StringType";
 import type { IEnumerable } from "../../Enumerable/IEnumerable";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import type { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
-import type { ISelectRelation } from "../Interface/ISelectRelation";
 import type { IColumnExpression } from "./IColumnExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { hashCode, isEntityExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
@@ -10,9 +9,8 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { GroupByExpression } from "./GroupByExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { GroupedEnumerable } from "../../Enumerable/GroupedEnumerable";
 
-export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> implements IExpression<GroupedEnumerable<K, T>> {
+export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
     }
@@ -23,7 +21,7 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                 const entityExp = this.key;
                 const childSelectExp = entityExp.select;
                 if (childSelectExp.parentRelation) {
-                    const parentRel = childSelectExp.parentRelation as ISelectRelation<TE>;
+                    const parentRel = childSelectExp.parentRelation;
                     if (parentRel.isEmbedded) {
                         const cloneMap = new Map();
                         mapReplaceExp(cloneMap, entityExp, this.entity);
