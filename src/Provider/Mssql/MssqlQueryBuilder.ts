@@ -9,6 +9,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { isNotNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
+import { DbFunction } from "../../Query/DbFunction";
 import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { IQueryOption } from "../../Query/IQueryOption";
@@ -133,7 +134,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 const colMeta = updateExp.entity.metaData.modifiedDateColumn;
                 // only update modifiedDate column if not explicitly specified in update set statement.
                 if (!updateExp.setter[colMeta.propertyName]) {
-                    const valueExp = new MethodCallExpression(new ValueExpression(Date), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
+                    const valueExp = new MethodCallExpression(new ValueExpression(DbFunction), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
                     const valueStr = this.toString(valueExp, param);
                     setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
                 }

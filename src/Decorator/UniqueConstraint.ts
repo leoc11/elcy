@@ -1,36 +1,33 @@
-import "reflect-metadata";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { GenericType, PropertySelector } from "../Common/Type";
+import { IObjectType, PropertySelector, StringKeyOf } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { UniqueConstraintMetaData } from "../MetaData/UniqueConstraintMetaData";
-import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
 import { IUniqueConstraintOption } from "./Option/IUniqueConstraintOption";
+import { getColumnMetadata, getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
 
-export function UniqueConstraint<TE>(option?: IUniqueConstraintOption<TE>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<TE>(properties: Array<keyof TE | ((item: TE) => any)>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<TE>(name: string, properties: Array<PropertySelector<TE>>): (target: object, propertyKey?: string | symbol) => void;
-export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstraintOption<TE> | string | Array<PropertySelector<TE>>, properties?: Array<PropertySelector<TE>>): (target: object, propertyKey?: string | symbol) => void {
+export function UniqueConstraint<TE extends object>(option?: IUniqueConstraintOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function UniqueConstraint<TE extends object>(properties: Array<PropertySelector<TE>>): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function UniqueConstraint<TE extends object>(name: string, properties: Array<PropertySelector<TE>>): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function UniqueConstraint<TE extends object>(optionOrPropertiesOrName?: IUniqueConstraintOption<TE> | string | Array<PropertySelector<TE>>, properties?: Array<PropertySelector<TE>>): ClassDecorator & PropertyDecorator & MethodDecorator {
     let option: IUniqueConstraintOption<TE> = {};
-    switch (typeof optionOrPropertiesOrName) {
-        case "object":
-            option = optionOrPropertiesOrName as any;
+    switch (true) {
+        case Array.isArray(optionOrPropertiesOrName):
+            properties = optionOrPropertiesOrName;
             break;
-        case "function":
-            properties = optionOrPropertiesOrName as any;
+        case typeof optionOrPropertiesOrName === "object":
+            option = optionOrPropertiesOrName;
             break;
-        case "string":
-            option.name = optionOrPropertiesOrName as any;
+        case typeof optionOrPropertiesOrName === "string":
+            option.name = optionOrPropertiesOrName;
             break;
     }
     if (properties) {
         option.properties = properties;
     }
 
-    return (target: GenericType<TE> | object, propertyKey?: keyof TE) => {
-        const entConstructor: GenericType<TE> = propertyKey ? target.constructor as any : target;
+    return (target: IObjectType<TE> | object, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
+        const entConstructor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
         if (propertyKey) {
             option.properties = [propertyKey];
         }
@@ -44,9 +41,9 @@ export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstrain
             option.name = `UQ_${entConstructor.name}${(option.properties ? "_" + option.properties.join("_") : "")}`;
         }
 
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
+        let entityMetaData = getEntityMetadata(entConstructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
+            entityMetaData = new AbstractEntityMetaData(entConstructor);
         }
 
         let checkMetaData = entityMetaData.constraints.find((o) => o instanceof UniqueConstraintMetaData && o.name === option.name);
@@ -54,11 +51,12 @@ export function UniqueConstraint<TE>(optionOrPropertiesOrName?: IUniqueConstrain
             entityMetaData.constraints.delete(checkMetaData);
         }
         const columns = Enumerable.from(option.properties)
-            .select((o) => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o as keyof TE) as IColumnMetaData)
+            .select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+            .select((o) => getColumnMetadata(entityMetaData.type, o))
             .where((o) => !!o)
             .toArray();
         checkMetaData = new UniqueConstraintMetaData(option.name, entityMetaData, columns);
         entityMetaData.constraints.push(checkMetaData);
-        Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
+        setEntityMetadata(entConstructor, entityMetaData);
     };
 }

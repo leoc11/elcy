@@ -57,7 +57,7 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
     public afterSave?: (entity: TE, param: ISaveEventParam) => void;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
-    public columns: Array<IColumnMetaData<TE, ValueType>> = [];
+    public columns: Array<IColumnMetaData<TE, any>> = [];
     public concurrencyMode: ConcurrencyModel;
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn: DateTimeColumnMetaData<TE>;

@@ -1,18 +1,16 @@
-import "reflect-metadata";
-import { IObjectType } from "../../Common/Type";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { entityMetaKey } from "../DecoratorKey";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { AbstractEntity } from "../Entity/AbstractEntity";
 /**
  * Register before save event. only for concrete entity
  */
-export function AfterLoad<T = any>(handler?: (this: T) => void): MethodDecorator | ClassDecorator {
-    return (target: object | IObjectType<T>, propertyKey?: string /* | symbol*/, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as ObjectConstructor;
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, ctor);
+export function AfterLoad<TE extends object = object>(handler?: (item: TE) => void): MethodDecorator | ClassDecorator {
+    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
+        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
+        let entityMetaData = getEntityMetadata(ctor);
         if (!entityMetaData) {
             AbstractEntity()(ctor);
-            entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+            entityMetaData = getEntityMetadata(ctor);
         }
 
         if (!handler && descriptor && typeof descriptor.value === "function") {

@@ -1,8 +1,7 @@
-import "reflect-metadata";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { Column } from "./Column";
-import { StringKeyOf } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
 
 // TODO: casecade soft delete.
@@ -24,8 +23,8 @@ export function DeletedColumn<TE extends object = object>(optionOrName?: IBoolea
     const columnDecorator = Column<any, any, boolean>(BooleanColumnMetaData, option);
     return <T = boolean>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
         let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, boolean>(target, propertyKey) as BooleanColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target);
+        const metadata = getColumnMetadata<TE, any, boolean>(target.constructor as IObjectType<TE>, propertyKey) as BooleanColumnMetaData<TE>;
+        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         entityMetaData.deletedColumn = metadata;
 
         return descriptorResult;

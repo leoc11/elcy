@@ -2,21 +2,25 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IIndexMetaData } from "./Interface/IIndexMetaData";
 
-export class IndexMetaData<TE = any> implements IIndexMetaData<TE> {
-    constructor(public entity: IEntityMetaData<TE>, public name: string, ...members: Array<IColumnMetaData<TE>>) {
-        this.columns = members;
+export class IndexMetaData<TE extends object = object> implements IIndexMetaData<TE> {
+    constructor(public readonly entity: IEntityMetaData<TE>, public name: string, public keys: Array<IColumnMetaData<TE>>, includes?: Array<IColumnMetaData<TE>>, unique?: boolean) {
+        this.includes = includes || [];
+        this.unique = unique || false;
     }
-    public columns: Array<IColumnMetaData<TE>> = [];
+    public includes?: Array<IColumnMetaData<TE>>;
     public unique = false;
     /**
      * Apply index option
      */
-    public apply(indexOption: IIndexMetaData) {
+    public apply(indexOption: IIndexMetaData<TE>) {
         if (typeof indexOption.name !== "undefined") {
             this.name = indexOption.name;
         }
-        if (typeof indexOption.columns !== "undefined") {
-            this.columns = indexOption.columns;
+        if (Array.isArray(indexOption.keys)) {
+            this.keys = indexOption.keys;
+        }
+        if (Array.isArray(indexOption.includes)) {
+            this.includes = indexOption.includes;
         }
         if (typeof indexOption.unique !== "undefined") {
             this.unique = indexOption.unique;

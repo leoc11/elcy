@@ -1,15 +1,13 @@
-import "reflect-metadata";
-import { GenericType } from "../Common/Type";
+import { IObjectType, StringKeyOf } from "../Common/Type";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
-import { entityMetaKey } from "./DecoratorKey";
+import { getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
 import { ICheckConstraintOption } from "./Option/ICheckConstraintOption";
 
-export function CheckContraint<TE>(option: ICheckConstraintOption<TE>): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<TE>(check: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<TE>(name: string, check: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void;
-export function CheckContraint<TE>(optionOrCheckOrName: ICheckConstraintOption | string | ((entity: TE) => boolean), check?: (entity: TE) => boolean): (target: object, propertyKey?: string | symbol) => void {
+export function CheckContraint<TE extends object = object>(option: ICheckConstraintOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function CheckContraint<TE extends object = object>(check: (entity: TE) => boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function CheckContraint<TE extends object = object>(name: string, check: (entity: TE) => boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function CheckContraint<TE extends object = object>(optionOrCheckOrName: ICheckConstraintOption | string | ((entity: TE) => boolean), check?: (entity: TE) => boolean): ClassDecorator & PropertyDecorator & MethodDecorator {
     let option: ICheckConstraintOption<TE> = {} as any;
     switch (typeof optionOrCheckOrName) {
         case "object":
@@ -26,15 +24,15 @@ export function CheckContraint<TE>(optionOrCheckOrName: ICheckConstraintOption |
         option.check = check;
     }
 
-    return (target: GenericType<TE> | object, propertyKey?: keyof TE) => {
-        const entConstructor: GenericType<TE> = propertyKey ? target.constructor as any : target;
+    return <T, TC extends Function = IObjectType<TE>>(target: TC | TE, propertyKey?: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
+        const entConstructor: IObjectType<TE> = propertyKey ? target.constructor as IObjectType<TE> : target as IObjectType<TE>;
         if (!option.name) {
-            option.name = `CK_${entConstructor.name}_${(propertyKey ? propertyKey : (target as GenericType<TE>).name)}`;
+            option.name = `CK_${entConstructor.name}_${(propertyKey ? propertyKey : "")}`;
         }
 
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
+        let entityMetaData = getEntityMetadata(entConstructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
+            entityMetaData = new AbstractEntityMetaData(entConstructor);
         }
 
         let checkMetaData = entityMetaData.constraints.find((o) => o instanceof CheckConstraintMetaData && o.name === option.name);
@@ -43,6 +41,6 @@ export function CheckContraint<TE>(optionOrCheckOrName: ICheckConstraintOption |
         }
         checkMetaData = new CheckConstraintMetaData(option.name, entityMetaData, option.check);
         entityMetaData.constraints.push(checkMetaData);
-        Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
+        setEntityMetadata(entConstructor, entityMetaData);
     };
 }

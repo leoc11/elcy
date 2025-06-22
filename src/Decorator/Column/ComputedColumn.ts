@@ -7,17 +7,17 @@ import { getEntityMetadata, setColumnMetadata, setEntityMetadata } from "../../M
 
 // TODO: types: Persisted, Virtual, Query
 export function ComputedColumn<TE extends object = object, K extends StringKeyOf<TE> = StringKeyOf<TE>, T extends TE[K] & ValueType = TE[K] & ValueType>(fn: (o: TE) => T): PropertyDecorator & MethodDecorator {
-    return (target: TE, propertyKey: K, descriptor?: TypedPropertyDescriptor<T>) => {
+    return <R>(target: TE, propertyKey: K, descriptor?: TypedPropertyDescriptor<R & T>) => {
         const isAccessor = isNotNull(descriptor);
-        let entityMetaData = getEntityMetadata(target);
+        let entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(target.constructor as IObjectType<TE>);
-            setEntityMetadata(target, entityMetaData);
+            setEntityMetadata(target.constructor as IObjectType<TE>, entityMetaData);
         }
         const fnExp = ExpressionBuilder.parse(fn, [entityMetaData.type]);
         const computedMetaData = new ComputedColumnMetaData(entityMetaData, fnExp, propertyKey);
         entityMetaData.columns.push(computedMetaData);
-        setColumnMetadata(target, propertyKey, computedMetaData);
+        setColumnMetadata(target.constructor as IObjectType<TE>, propertyKey, computedMetaData);
 
         // add property to use setter getter.
         if (!isAccessor) {
@@ -75,7 +75,7 @@ export function ComputedColumn<TE extends object = object, K extends StringKeyOf
                 let value = ori_Get?.call(this);
                 if (typeof value === "undefined") {
                     try {
-                        value = fn(this);
+                        value = fn(this) as R & T;
                         ori_Set?.call(this, value);
                     } catch { }
                 }

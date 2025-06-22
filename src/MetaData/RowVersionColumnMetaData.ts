@@ -2,7 +2,7 @@ import { RowVersionColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
 import { ColumnMetaData } from "./ColumnMetaData";
 
-export class RowVersionColumnMetaData<TE = unknown> extends ColumnMetaData<TE, Uint8Array> {
+export class RowVersionColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, Uint8Array> {
     constructor() {
         super(Uint8Array);
     }

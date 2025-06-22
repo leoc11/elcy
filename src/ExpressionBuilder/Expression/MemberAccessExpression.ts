@@ -1,18 +1,16 @@
-import { GenericType, IObjectType, StringKeyOf } from "../../Common/Type";
-import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
+import { ElementType, GenericType, IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
 import { hashCode, resolveClone } from "../../Helper/Util";
-import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
+import { getColumnMetadata, getRelationMetadata } from "../../MetaData/MetaDataMapper";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
 
-export class MemberAccessExpression<TE, K extends StringKeyOf<TE>, T = TE[K]> implements IMemberOperatorExpression<TE, T> {
+export class MemberAccessExpression<TE extends object, K extends StringKeyOf<TE>, T extends TE[K] = TE[K]> implements IMemberOperatorExpression<TE, T> {
     public get type() {
         if (!this._type) {
             if (this.objectOperand.type) {
                 const objectType = this.objectOperand.type as IObjectType<TE>;
-                const columnMeta = Reflect.getOwnMetadata(columnMetaKey, objectType, this.memberName) as ColumnMetaData;
-                const relationMeta = Reflect.getOwnMetadata(relationMetaKey, objectType, this.memberName) as RelationMetaData<TE>;
+                const columnMeta = getColumnMetadata<TE, K, T & ValueType>(objectType, this.memberName);
+                const relationMeta = getRelationMetadata<TE, K, T & Object>(objectType, this.memberName);
                 if (columnMeta) {
                     this._type = columnMeta.type;
                 }
@@ -21,7 +19,7 @@ export class MemberAccessExpression<TE, K extends StringKeyOf<TE>, T = TE[K]> im
                         this._type = relationMeta.target.type;
                     }
                     else {
-                        this._type = Array;
+                        this._type = Array as IObjectType<ElementType<T>[]> as IObjectType<T>;
                         this.itemType = relationMeta.target.type;
                     }
                 }

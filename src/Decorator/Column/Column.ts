@@ -11,10 +11,10 @@ import { getColumnMetadata, getEntityMetadata, setColumnMetadata } from "../../M
 export function Column<TE extends object = object, K extends StringKeyOf<TE> = StringKeyOf<TE>, T extends TE[K] & ValueType = TE[K] & ValueType>(columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): PropertyDecorator & MethodDecorator {
     return <R>(target: TE, propertyKey: K, descriptor?: TypedPropertyDescriptor<T & R>) => {
         const isAccessor = isNotNull(descriptor);
-        let entityMetaData = getEntityMetadata(target);
+        let entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         if (!entityMetaData) {
             AbstractEntity()(target.constructor as ObjectConstructor);
-            entityMetaData = getEntityMetadata(target);
+            entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         }
 
         const metadata = new columnMetaType();
@@ -25,12 +25,12 @@ export function Column<TE extends object = object, K extends StringKeyOf<TE> = S
         }
         metadata.propertyName = propertyKey;
 
-        const existingMetaData = getColumnMetadata<TE, K, T>(target, propertyKey);
+        const existingMetaData = getColumnMetadata<TE, K, T>(target.constructor as IObjectType<TE>, propertyKey);
         if (existingMetaData != null) {
             metadata.applyOption(existingMetaData);
             arrayDelete(entityMetaData.columns, existingMetaData);
         }
-        setColumnMetadata(target, propertyKey, metadata);
+        setColumnMetadata(target.constructor as IObjectType<TE>, propertyKey, metadata);
         entityMetaData.columns.push(metadata);
 
         const pk = entityMetaData.primaryKeys.find((o) => o.propertyName === metadata.propertyName);

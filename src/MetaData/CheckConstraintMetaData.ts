@@ -12,7 +12,7 @@ import { ICheckConstraintMetaData } from "./Interface/ICheckConstraintMetaData";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class CheckConstraintMetaData<TE> implements ICheckConstraintMetaData<TE> {
+export class CheckConstraintMetaData<TE extends object> implements ICheckConstraintMetaData<TE> {
     public get definition(): IExpression<boolean> | string {
         if (!this._definition) {
             const fnExp = ExpressionBuilder.parse(this.checkFn, [this.entity.type]);

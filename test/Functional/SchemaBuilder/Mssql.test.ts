@@ -226,7 +226,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
     describe("INDEX", () => {
         it("should add multi columns index", async () => {
             // index defined in entity and column
-            const indexFactory = ColumnIndex<Schema>({ properties: [(o) => o.createdDate, "modifiedDate"], unique: true });
+            const indexFactory = ColumnIndex<Schema>({ keys: [(o) => o.createdDate, "modifiedDate"], unique: true });
             indexFactory(Schema);
 
             const mockConnection = getConnection(db.connection);

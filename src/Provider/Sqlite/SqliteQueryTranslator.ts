@@ -109,8 +109,6 @@ sqliteQueryTranslator.registerMethod(String.prototype, "split", null);
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
  */
-sqliteQueryTranslator.registerMethod(Date, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
-sqliteQueryTranslator.registerMethod(Date, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
 sqliteQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `STRFTIME('%d', ${qb.toString(exp.objectOperand, param)})`);
 sqliteQueryTranslator.registerMethod(Date.prototype, "getDay", (qb, exp, param) => `STRFTIME('%w', ${qb.toString(exp.objectOperand, param)})`);
 sqliteQueryTranslator.registerMethod(Date.prototype, "getFullYear", (qb, exp, param) => `STRFTIME('%Y', ${qb.toString(exp.objectOperand, param)})`);
@@ -148,3 +146,9 @@ sqliteQueryTranslator.registerMethod(RegExp.prototype, "test", null);
 sqliteQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `${qb.toOperandString(exp.leftOperand, param)} ${exp.type === String ? "||" : "+"} ${qb.toOperandString(exp.rightOperand, param)}`);
 
 //#endregion
+
+/**
+ * DbFunction
+ */
+sqliteQueryTranslator.registerMethod(DbFunction, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
+sqliteQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");

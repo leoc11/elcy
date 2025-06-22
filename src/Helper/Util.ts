@@ -248,15 +248,6 @@ export const hashCodeAdd = (hash: number, add: number) => {
     return hash;
 };
 
-export const toJSON = function <T>(this: T) {
-    const proto = this.constructor.prototype;
-    const jsonObj: any = {};
-    for (const o of Object.keys(this).union(Object.keys(proto))) {
-        jsonObj[o] = this[o];
-    }
-    return jsonObj;
-};
-
 export const toDateTimeString = function (date: Date) {
     return date.getFullYear() + "-" + fillZero(date.getMonth() + 1) + "-" + fillZero(date.getDate()) + " " +
         fillZero(date.getHours()) + ":" + fillZero(date.getMinutes()) + ":" + fillZero(date.getSeconds()) + "." + fillZero(date.getMilliseconds(), 3);

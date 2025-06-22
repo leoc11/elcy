@@ -19,6 +19,7 @@ export interface ILexicalToken {
     data: string | number;
     type: LexicalTokenType;
 }
+const viteSSRRegex = /^__vite_ssr_import_[0-9]+__$/i;
 export class LexicalAnalyzer {
     public static *parse(input: string): IterableIterator<ILexicalToken> {
         const pointer: ILexicalPointer = {
@@ -38,6 +39,10 @@ export class LexicalAnalyzer {
             else if ((char >= "A" && char <= "Z") || (char >= "a" && char <= "z")
                 || char === "_" || char === "$") {
                 lastToken = analyzeLexicalIdentifier(pointer, input);
+                if (viteSSRRegex.test(lastToken.data as string) && input[pointer.index] === ".") {
+                    pointer.index++;
+                    continue;
+                }
                 yield lastToken;
             }
             else if (char === "(" || char === "[" || char === "%"

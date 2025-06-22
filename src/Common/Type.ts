@@ -12,7 +12,7 @@ export type Pivot<T,
 export type GenericType<T = unknown> = { (...values: unknown[]): T; } | IObjectType<T>;
 export type ObjectLike<T> = { [key in keyof T]?: T[key] };
 export type FlatObjectLike<T> = { [key in keyof T]?: T[key] & ValueType };
-export type PropertySelector<TE> = keyof TE | ((source: TE) => ValueType);
+export type PropertySelector<TE> = StringKeyOf<TE> | ((source: TE) => ValueType);
 export type KeysExceptType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? never : P }[StringKeyOf<T>];
 export type KeysExtractType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];
 export type KeysType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];

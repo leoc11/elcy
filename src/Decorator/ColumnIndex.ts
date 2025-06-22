@@ -1,69 +1,87 @@
-import "reflect-metadata";
-import { GenericType, PropertySelector } from "../Common/Type";
+import { IObjectType, PropertySelector, StringKeyOf } from "../Common/Type";
+import { Enumerable } from "../Enumerable/Enumerable.internal";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";
 import { IndexMetaData } from "../MetaData/IndexMetaData";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
-import { columnMetaKey, entityMetaKey } from "./DecoratorKey";
+import { getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
 import { IIndexOption } from "./Option/IIndexOption";
 
-export function ColumnIndex<TE>(option?: IIndexOption<TE>): (target: object, propertyKey?: string | symbol) => void;
-export function ColumnIndex<TE>(name: string, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
-export function ColumnIndex<TE>(name: string, columns: Array<PropertySelector<TE>>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
-export function ColumnIndex<TE>(columns: Array<PropertySelector<TE>>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void;
-export function ColumnIndex<TE>(optionOrNameOrColumns: IIndexOption<TE> | string | Array<PropertySelector<TE>>, uniqueOrColumns?: boolean | Array<PropertySelector<TE>>, unique?: boolean): (target: object, propertyKey?: string | symbol) => void {
+export function ColumnIndex<TE extends object = object>(option?: IIndexOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function ColumnIndex<TE extends object = object>(name: string, unique?: boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function ColumnIndex<TE extends object = object>(name: string, columns: Array<PropertySelector<TE>>, includes?: Array<PropertySelector<TE>>, unique?: boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function ColumnIndex<TE extends object = object>(columns: Array<PropertySelector<TE>>, includes?: Array<PropertySelector<TE>>, unique?: boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
+export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: IIndexOption<TE> | string | Array<PropertySelector<TE>>, uniqueOrColumnsOrIncludes?: boolean | Array<PropertySelector<TE>>, uniqueOrIncludes?: boolean | Array<PropertySelector<TE>>, unique?: boolean): ClassDecorator & PropertyDecorator & MethodDecorator {
     let option: IIndexOption<TE> = {};
-    if (typeof optionOrNameOrColumns === "object" && !Array.isArray(optionOrNameOrColumns)) {
+    if (Array.isArray(optionOrNameOrColumns)) {
+        option.keys = optionOrNameOrColumns;
+        if (Array.isArray(uniqueOrColumnsOrIncludes)) {
+            option.includes = uniqueOrColumnsOrIncludes;
+        }
+        option.unique = typeof uniqueOrIncludes === "boolean" ? uniqueOrIncludes : unique || false;
+    }
+    else if (typeof optionOrNameOrColumns === "object") {
         option = optionOrNameOrColumns;
     }
-    else {
-        option.name = typeof optionOrNameOrColumns === "string" ? optionOrNameOrColumns : "";
-        option.unique = typeof uniqueOrColumns === "boolean" ? uniqueOrColumns : unique || false;
-        option.properties = (Array.isArray(optionOrNameOrColumns) ? optionOrNameOrColumns : uniqueOrColumns && Array.isArray(uniqueOrColumns) ? uniqueOrColumns : []);
-    }
-
-    return (target: GenericType<TE> | object, propertyKey?: keyof TE) => {
-        if (propertyKey) {
-            option.properties = [propertyKey];
+    else if (typeof optionOrNameOrColumns === "string") {
+        option.name = optionOrNameOrColumns;
+        if (Array.isArray(uniqueOrColumnsOrIncludes)) {
+            option.keys = uniqueOrColumnsOrIncludes;
+            if (Array.isArray(uniqueOrIncludes)) {
+                option.includes = uniqueOrIncludes;
+                option.unique = unique || false;
+            }
+            else {
+                option.unique = uniqueOrIncludes || false;
+            }
         }
         else {
-            option.properties = option.properties
-                .select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
-                .toArray();
+            option.unique = uniqueOrColumnsOrIncludes || false;
+        }
+    }
+
+    return <T, TC extends Function = IObjectType<TE>>(target: TC | object, propertyKey?: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
+        if (propertyKey) {
+            option.keys = [propertyKey];
         }
 
+        const keyStrings = option.keys.map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o));
+        const includeStrings = !option.includes ? null : option.includes.map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o));
+        const entConstructor = propertyKey ? target.constructor as IObjectType<TE> : target as IObjectType<TE>;
         if (!option.name) {
-            option.name = "IX_" + (unique ? "UQ_" : "") + (option.properties ? option.properties.join("_") : (target as GenericType<TE>).name);
+            option.name = `IX_${(unique ? "UQ_" : "")}${keyStrings.join("_")}${(includeStrings ? "_" + includeStrings.join("_") : "")}`;
         }
 
-        const entConstructor = propertyKey ? target.constructor : target;
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, entConstructor);
+        if (option.keys.length <= 0) {
+            throw new Error(`"${option.name}" must have at least 1 properties to index`);
+        }
+
+        let entityMetaData = getEntityMetadata(entConstructor);
         if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(target.constructor as any);
+            entityMetaData = new AbstractEntityMetaData(entConstructor);
         }
         let indexMetaData = entityMetaData.indices.first((o) => o.name === option.name);
         if (indexMetaData) {
             entityMetaData.indices.delete(indexMetaData);
         }
-        indexMetaData = new IndexMetaData(entityMetaData, option.name);
+        const map = Enumerable.from(entityMetaData.columns).toMap(o => o.propertyName);
+        const keys = keyStrings.map(o => map.get(o));
+        const includes = !option.includes ? null : includeStrings.map(o => map.get(o));
+        indexMetaData = new IndexMetaData(entityMetaData, option.name, keys, includes, option.unique);
         entityMetaData.indices.push(indexMetaData);
 
-        indexMetaData.apply(option as any);
-        if (option.properties) {
-            indexMetaData.columns = option.properties
-                .select((o) => Reflect.getOwnMetadata(columnMetaKey, entityMetaData.type, o as keyof TE) as IColumnMetaData)
-                .toArray();
+        let allColumns = Enumerable.from(keys);
+        if (includes) {
+            allColumns = allColumns.union(includes);
+        }
 
-            const computedCol = indexMetaData.columns.first((o) => o instanceof ComputedColumnMetaData && !o.columnName);
-            if (computedCol) {
-                throw new Error(`"${computedCol.propertyName}" cannot be indexed because it's a computed properties`);
-            }
+        const computedColumn = allColumns
+            .where(o => o instanceof ComputedColumnMetaData && !o.columnName)
+            .first();
+        if (computedColumn) {
+            throw new Error(`"${computedColumn.propertyName}" cannot be indexed because it's a computed properties`);
         }
-        if (!indexMetaData.columns.any()) {
-            throw new Error(`"${indexMetaData.name}" must have at least 1 properties to index`);
-        }
-        Reflect.defineMetadata(entityMetaKey, entityMetaData, entConstructor);
+
+        setEntityMetadata(entConstructor, entityMetaData);
     };
 }

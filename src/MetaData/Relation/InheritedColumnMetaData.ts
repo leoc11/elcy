@@ -1,17 +1,17 @@
 import { ColumnType } from "../../Common/ColumnType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, StringKeyOf } from "../../Common/Type";
 import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ColumnMetaData } from "../ColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 
-export class InheritedColumnMetaData<TE extends TP = any, TP = any, T = any> implements IColumnMetaData<TE, T> {
+export class InheritedColumnMetaData<TE extends TP = any, TP extends object = object, T = any> implements IColumnMetaData<TE, T> {
     public get columnName(): string {
         return this.parentColumnMetaData.columnName;
     }
     public get propertyName() {
-        return this.parentColumnMetaData.propertyName;
+        return this.parentColumnMetaData.propertyName as StringKeyOf<TE>;
     }
     public get nullable(): boolean {
         return this.parentColumnMetaData.nullable;
@@ -54,7 +54,7 @@ export class InheritedColumnMetaData<TE extends TP = any, TP = any, T = any> imp
             this.parentColumnMetaData = columnMeta.parentColumnMetaData;
         }
         else if (columnMeta instanceof ColumnMetaData) {
-            this.parentColumnMetaData = columnMeta as ColumnMetaData<TP>;
+            this.parentColumnMetaData = columnMeta as ColumnMetaData<TP, T>;
         }
     }
 }

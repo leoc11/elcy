@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";

@@ -958,7 +958,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 const colMeta = updateExp.entity.metaData.modifiedDateColumn;
                 // only update modifiedDate column if not explicitly specified in update set statement.
                 if (!updateExp.setter[colMeta.propertyName]) {
-                    const valueExp = new MethodCallExpression(new ValueExpression(Date), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
+                    const valueExp = new MethodCallExpression(new ValueExpression(DbFunction), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
                     const valueStr = this.toString(valueExp, param);
                     setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
                 }

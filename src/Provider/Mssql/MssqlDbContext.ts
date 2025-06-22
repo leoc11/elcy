@@ -1,9 +1,11 @@
 import { QueryType } from "../../Common/Enum";
+import { FlatObjectLike } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { DeferredQuery } from "../../Query/DeferredQuery";
 import { IQuery } from "../../Query/IQuery";
+import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { IQueryResult } from "../../Query/IQueryResult";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
@@ -24,18 +26,19 @@ export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
     protected queryVisitorType = RelationalQueryVisitor;
     protected schemaBuilderType = MssqlSchemaBuilder;
     protected translator = mssqlQueryTranslator;
-    protected getInsertQueries<T>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor): Array<DeferredQuery<IQueryResult>> {
+    protected override getInsertQueries<T extends object>(entityMeta: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> {
         if (!visitor) {
             visitor = this.queryVisitor;
         }
+        super.getInsertQueries
         const results: DeferredQuery[] = [];
 
         if (!entries.any()) {
             return results;
         }
 
-        const entityExp = new EntityExpression<T>(entityMetaData.type, visitor.newAlias());
-        const relations = entityMetaData.relations
+        const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
+        const relations = entityMeta.relations
             .where((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
         const columns = relations.selectMany((o) => o.relationColumns)
             .union(entityExp.metaData.columns)

@@ -1,20 +1,18 @@
-import "reflect-metadata";
-import { IObjectType } from "../../Common/Type";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
-import { entityMetaKey } from "../DecoratorKey";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { AbstractEntity } from "../Entity/AbstractEntity";
 /**
  * Register before save event. only for concrete
  * @handler: if named function was passed, then it will override last function with the same name
  */
-export function BeforeSave<T = any>(handler?: (this: T, item?: ISaveEventParam) => boolean): MethodDecorator & ClassDecorator {
-    return (target: object | IObjectType<T>, propertyKey?: keyof T, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as ObjectConstructor;
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, ctor);
+export function BeforeSave<TE extends object = object>(handler?: (item: TE, param?: ISaveEventParam) => boolean): MethodDecorator & ClassDecorator {
+    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
+        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
+        let entityMetaData = getEntityMetadata(ctor);
         if (!entityMetaData) {
             AbstractEntity()(ctor);
-            entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+            entityMetaData = getEntityMetadata(ctor);
         }
 
         if (!handler && descriptor && typeof descriptor.value === "function") {

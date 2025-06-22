@@ -191,7 +191,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             const operand = createExpression(param, tokens, undefined, operator);
                             if (operator.identifier === ".") {
                                 const memberName = operand.toString();
-                                expression = new MemberAccessExpression(expression, memberName as never);
+                                expression = new MemberAccessExpression(expression as IExpression<object>, memberName as never);
                             }
                             else {
                                 expression = operator.expressionFactory(expression, operand);

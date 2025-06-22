@@ -15,19 +15,8 @@ declare global {
         toTime(): TimeSpan;
         toUTCDate(): Date;
     }
-    interface DateConstructor {
-        timestamp(): Date;
-        utcTimestamp(): Date;
-    }
 }
 
-Date.timestamp = function () {
-    return new Date();
-};
-Date.utcTimestamp = function () {
-    const ts = new Date();
-    return ts.toUTCDate();
-};
 Date.prototype.toUTCDate = function (this: Date) {
     return new Date(this.getUTCFullYear(), this.getUTCMonth(), this.getUTCDate(), this.getUTCHours(), this.getUTCMinutes(), this.getUTCSeconds(), this.getUTCMilliseconds());
 };

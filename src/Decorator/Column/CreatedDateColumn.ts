@@ -1,9 +1,10 @@
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { ColumnGeneration } from "../../Common/Enum";
 import { TimeZoneHandling } from "../../Common/StringType";
-import { StringKeyOf } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
+import { DbFunction } from "../../Query/DbFunction";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { Column } from "./Column";
 
@@ -27,14 +28,14 @@ export function CreatedDateColumn<TE extends object = object>(optionOrName?: IDa
     }
 
     /* istanbul ignore next */
-    option.default = option.timeZoneHandling === "none" ? () => Date.timestamp() : () => Date.utcTimestamp();
+    option.default = option.timeZoneHandling === "none" ? () => DbFunction.timestamp() : () => DbFunction.utcTimestamp();
     option.isReadOnly = true;
     option.generation = ColumnGeneration.Insert;
     const columnDecorator = Column<any, any, Date>(DateTimeColumnMetaData, option);
     return <T = Date>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
         let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, Date>(target, propertyKey) as DateTimeColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target);
+        const metadata = getColumnMetadata<TE, any, Date>(target.constructor as IObjectType<TE>, propertyKey) as DateTimeColumnMetaData<TE>;
+        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         entityMetaData.createDateColumn = metadata;
 
         return descriptorResult;

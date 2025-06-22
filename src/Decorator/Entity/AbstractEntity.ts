@@ -1,23 +1,23 @@
-import "reflect-metadata";
 import { ClassBase } from "../../Common/Constant";
 import { InheritanceType } from "../../Common/Enum";
-import { IObjectType } from "../../Common/Type";
+import { OrderDirection } from "../../Common/StringType";
+import { IObjectType, ValueType } from "../../Common/Type";
 import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
+import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
+import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { toJSON } from "../../Helper/Util";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { getEntityMetadata, setColumnMetadata, setEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
-import { columnMetaKey, entityMetaKey } from "../DecoratorKey";
 import { IEntityOption } from "../Option/IEntityOption";
 
-export function AbstractEntity<T extends TParent = any, TParent = any>(option: IEntityOption<T>): ClassDecorator;
-export function AbstractEntity<T extends TParent = any, TParent = any>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
-export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrName?: IEntityOption<T> | string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean) {
+export function AbstractEntity<T extends TParent = any, TParent extends object = object>(option: IEntityOption<T>): ClassDecorator;
+export function AbstractEntity<T extends TParent = any, TParent extends object = object>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
+export function AbstractEntity<T extends TParent = any, TParent extends object = object>(optionOrName?: IEntityOption<T> | string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean) {
     const option: IEntityOption<T> = {};
     if (optionOrName) {
         if (typeof optionOrName === "string") {
@@ -37,15 +37,12 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
         const entityMetadata = new AbstractEntityMetaData(type, option.name);
 
         if (defaultOrders) {
-            entityMetadata.defaultOrders = defaultOrders.select((o) => ({
-                0: ExpressionBuilder.parse(o[0], [type]),
-                1: o[1]
-            })).toArray();
+            entityMetadata.defaultOrders = defaultOrders.map((o) => new ArrayValueExpression<OrderDirection | ((...param: T[]) => ValueType)>(ExpressionBuilder.parse(o[0], [type]), new ValueExpression(o[1])));
         }
 
         const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;
         if (parentType !== ClassBase) {
-            const parentMetaData: IEntityMetaData<TParent> = Reflect.getOwnMetadata(entityMetaKey, parentType);
+            const parentMetaData = getEntityMetadata(parentType);
             if (parentMetaData) {
                 let isInheritance = false;
                 if (parentMetaData instanceof AbstractEntityMetaData) {
@@ -82,14 +79,14 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
 
                         if (inheritedColumnMeta) {
                             entityMetadata.columns.push(inheritedColumnMeta);
-                            Reflect.defineMetadata(columnMetaKey, inheritedColumnMeta, type, parentColumnMeta.propertyName);
+                            setColumnMetadata(type, parentColumnMeta.propertyName, inheritedColumnMeta as any);
                         }
                     }
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
-                        const additionProperties = entityMetadata.columns.where((o) => parentMetaData.columns.all((p) => p.propertyName !== o.propertyName)).toArray();
+                        const additionProperties = entityMetadata.columns.where((o) => parentMetaData.columns.all((p) => p.propertyName !== o.propertyName));
                         for (const columnMeta of additionProperties) {
                             // TODO
-                            parentMetaData.columns.push(columnMeta as unknown as IColumnMetaData);
+                            parentMetaData.columns.push(columnMeta as unknown as IColumnMetaData<TParent>);
                         }
                     }
 
@@ -112,10 +109,6 @@ export function AbstractEntity<T extends TParent = any, TParent = any>(optionOrN
                 }
             }
         }
-        Reflect.defineMetadata(entityMetaKey, entityMetadata, type);
-
-        if (!type.prototype.toJSON) {
-            type.prototype.toJSON = toJSON;
-        }
+        setEntityMetadata(type, entityMetadata);
     };
 }

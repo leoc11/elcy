@@ -43,7 +43,8 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
                 }
                 else {
                     try {
-                        this.type = ((objectType.prototype as TE)[this.methodName] as () => T)().constructor as GenericType<T>;
+                        const proto = objectType.prototype as TE;
+                        this.type = (proto[this.methodName] as () => T)().constructor as GenericType<T>;
                     } catch {
                         const objectInstance = new (objectType as IObjectType<TE>)();
                         this.type = (objectInstance[this.methodName] as () => T)().constructor as GenericType<T>;

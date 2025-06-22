@@ -1,7 +1,7 @@
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { IRowVersionColumnOption } from "../Option/IRowVersionColumnOption";
 import { Column } from "./Column";
-import { StringKeyOf } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
 
 export function RowVersionColumn(option?: IRowVersionColumnOption): PropertyDecorator & MethodDecorator;
@@ -20,10 +20,10 @@ export function RowVersionColumn(optionOrName?: IRowVersionColumnOption | string
     }
     
     const columnDecorator = Column<any, any, Uint8Array>(RowVersionColumnMetaData, option);
-    return <TE extends object>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<Uint8Array>) => {
+    return <TE extends object = object, T = Uint8Array>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
         let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, Uint8Array>(target, propertyKey) as RowVersionColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target);
+        const metadata = getColumnMetadata<TE, any, Uint8Array>(target.constructor as IObjectType<TE>, propertyKey) as RowVersionColumnMetaData<TE>;
+        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
         entityMetaData.versionColumn = metadata;
         if (!entityMetaData.concurrencyMode) {
             entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";

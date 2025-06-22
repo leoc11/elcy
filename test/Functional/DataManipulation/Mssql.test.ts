@@ -16,6 +16,7 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { AutoDetail, AutoParent, Order, OrderDetail, Product } from "../../Common/Model";
 import { AutoDetailDesc } from "../../Common/Model/AutoDetailDesc";
 import { MyDb } from "../../Common/MyDb";
+import { DbFunction } from "../../../src/Query/DbFunction";
 
 const db = new MyDb();
 mockContext(db);
@@ -352,7 +353,7 @@ WHERE ([entity0].[id]=@param0)`,
             const parent = new AutoParent();
             parent.id = 1;
             parent.name = "Original";
-            const oldModifiedDate = Date.utcTimestamp();
+            const oldModifiedDate = DbFunction.utcTimestamp();
             parent.modifiedDate = oldModifiedDate;
             const entry = db.entry(parent);
             entry.state = EntityState.Unchanged;

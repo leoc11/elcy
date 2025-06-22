@@ -2,6 +2,7 @@ import { PropertySelector } from "../../Common/Type";
 
 export interface IIndexOption<TE = any> {
     name?: string;
-    properties?: Array<PropertySelector<TE>>;
+    keys?: Array<PropertySelector<TE>>;
+    includes?: Array<PropertySelector<TE>>;
     unique?: boolean;
 }

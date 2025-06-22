@@ -1,3 +1,4 @@
+import { GenericType, StringKeyOf } from "../Common/Type";
 import { AdditionAssignmentExpression } from "./Expression/AdditionAssignmentExpression";
 import { AdditionExpression } from "./Expression/AdditionExpression";
 import { AndExpression } from "./Expression/AndExpression";
@@ -79,7 +80,7 @@ export const operators: IOperator[] = [
     { identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<unknown[]>) => new SpreadExpression(op) } as IUnaryOperator,
-    { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T>(objectExp: IExpression<T>, memberName: StringKeyOf<T>) => new MemberAccessExpression(objectExp, memberName) },
+    { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T extends object>(objectExp: IExpression<T>, memberName: StringKeyOf<T>) => new MemberAccessExpression(objectExp, memberName) },
     { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
     { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } } as IUnaryOperator,
     { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } },
@@ -111,7 +112,7 @@ export const operators: IOperator[] = [
     { identifier: ">", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterThanExpression(op1, op2) },
     { identifier: ">=", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterEqualExpression(op1, op2) },
     { identifier: "in", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: () => { throw new Error("operator not supported"); } },
-    { identifier: "instanceof", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new InstanceofExpression(op1, op2) },
+    { identifier: "instanceof", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: <T>(op1: IExpression<T>, op2: IExpression<GenericType<T>>) => new InstanceofExpression(op1, op2) },
     { identifier: "==", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new EqualExpression(op1, op2) },
     { identifier: "!=", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new NotEqualExpression(op1, op2) },
     { identifier: "===", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new StrictEqualExpression(op1, op2) },

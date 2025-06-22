@@ -122,7 +122,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 const indexName = indexSchema.name;
                 const index: IIndexMetaData = {
                     name: indexName,
-                    columns: [],
+                    keys: [],
                     entity: entity,
                     unique: (indexSchema.unique || "").toString() === "1"
                 };
@@ -132,7 +132,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                     type: QueryType.DQL
                 });
 
-                index.columns = indexInfos.first().rows.orderBy([(o) => o.seqno])
+                index.keys = indexInfos.first().rows.orderBy([(o) => o.seqno])
                     .select((o) => entity.columns.first((c) => c.columnName === o.name))
                     .where((o) => !!o)
                     .toArray();
@@ -269,7 +269,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
         };
         const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
-            return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
+            return !!index1.unique === !!index2.unique && isColumnsEquals(index1.keys, index1.keys);
         };
         const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
             const check1 = cons1 as ICheckConstraintMetaData;

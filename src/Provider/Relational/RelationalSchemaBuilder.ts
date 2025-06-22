@@ -34,6 +34,7 @@ import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData"
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
+import { DbFunction } from "../../Query/DbFunction";
 import { IQuery } from "../../Query/IQuery";
 import { IQueryResult } from "../../Query/IQueryResult";
 import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
@@ -45,7 +46,7 @@ const isColumnsEquals = <TE extends object>(cols1: IColumnMetaData<TE>[], cols2:
     return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
 };
 const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
-    return !!index1.unique === !!index2.unique && isColumnsEquals(index1.columns, index1.columns);
+    return !!index1.unique === !!index2.unique && isColumnsEquals(index1.keys, index1.keys);
 };
 
 export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
@@ -88,7 +89,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         return result;
     }
     public addIndex<TE extends object>(indexMeta: IIndexMetaData<TE>): IQuery[] {
-        const columns = indexMeta.columns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+        const columns = indexMeta.keys.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
         const query = `CREATE${indexMeta.unique ? " UNIQUE" : ""} INDEX ${indexMeta.name} ON ${this.entityName(indexMeta.entity)} (${columns})`;
         return [{
             query,
@@ -477,7 +478,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             if (!index) {
                 index = {
                     name: indexName,
-                    columns: [],
+                    keys: [],
                     entity: entity,
                     unique: indexSchema.IS_UNIQUE
                     // type: indexSchema["TYPE"]
@@ -486,7 +487,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             }
             const column = entity.columns.first((o) => o.columnName === indexSchema.COLUMN_NAME);
             if (column) {
-                index.columns.push(column);
+                index.keys.push(column);
             }
         }
 
@@ -677,15 +678,15 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             || columnMeta instanceof DateTimeColumnMetaData
             || groupType === "Date" || groupType === "DateTime") {
             // Result: GETUTCDATE()
-            return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.utcTimestamp()).body);
+            return this.queryBuilder.toString(ExpressionBuilder.parse(() => DbFunction.utcTimestamp()).body);
         }
         if (columnMeta instanceof TimeColumnMetaData || groupType === "Time") {
             // Result: CONVERT(TIME, GETUTCDATE())
-            return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.utcTimestamp().toTime()).body);
+            return this.queryBuilder.toString(ExpressionBuilder.parse(() => DbFunction.utcTimestamp().toTime()).body);
         }
         if (columnMeta instanceof RowVersionColumn || groupType === "RowVersion") {
             // Result: CURRENT_TIMESTAMP;
-            return this.queryBuilder.toString(ExpressionBuilder.parse(() => Date.timestamp()).body);
+            return this.queryBuilder.toString(ExpressionBuilder.parse(() => DbFunction.timestamp()).body);
         }
         if (columnMeta instanceof BinaryColumnMetaData || groupType === "Binary") {
             return this.queryBuilder.valueString(new Uint8Array(0));

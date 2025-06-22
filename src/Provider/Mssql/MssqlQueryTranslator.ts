@@ -10,8 +10,6 @@ mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerType(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
-mssqlQueryTranslator.registerMethod(Date, "timestamp", (qb, exp, param) => "getdate()", () => true);
-mssqlQueryTranslator.registerMethod(Date, "utcTimestamp", () => "getutcdate()", () => true);
 
 /**
  * Math
@@ -55,3 +53,10 @@ relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
 });
 
 relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
+
+
+/**
+ * DbFunction
+ */
+mssqlQueryTranslator.registerMethod(DbFunction, "timestamp", (qb, exp, param) => "getdate()", () => true);
+mssqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "getutcdate()", () => true);

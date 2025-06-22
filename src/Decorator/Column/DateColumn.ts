@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { DateColumnType } from "../../Common/ColumnType";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { IDateColumnOption } from "../Option/IDateColumnOption";

@@ -41,6 +41,7 @@ import { StrictNotEqualExpression } from "../../ExpressionBuilder/Expression/Str
 import { SubstractionAssignmentExpression } from "../../ExpressionBuilder/Expression/SubstractionAssignmentExpression";
 import { SubstractionExpression } from "../../ExpressionBuilder/Expression/SubstractionExpression";
 import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
+import { DbFunction } from "../../Query/DbFunction";
 import { IQueryBuilder } from "../../Query/IQueryBuilder";
 import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
 import { QueryTranslator } from "../../Query/QueryTranslator";
@@ -172,14 +173,6 @@ relationalQueryTranslator.registerMethod(String.prototype, "includes", (qb, exp,
         : `(${qb.toString(exp.objectOperand, param)} LIKE CONCAT(${qb.valueString("%")}, ${qb.toString(exp.params[0], param)}, ${qb.valueString("%")}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, param) => `(CHARINDEX(${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param) + (exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}) - 1)`);
 relationalQueryTranslator.registerMethod(String.prototype, "lastIndexOf", (qb, exp, param) => `(LEN(${qb.toString(exp.objectOperand, param)}) - CHARINDEX(${qb.toString(exp.params[0], param)}, REVERSE(${qb.toString(exp.objectOperand, param)})${(exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}))`);
-relationalQueryTranslator.registerMethod(String.prototype, "like", (qb, exp, param) => {
-    let escape = "";
-    if (exp.params.length > 1) {
-        escape = ` ESCAPE ${qb.toString(exp.params[1], param)}`;
-    }
-
-    return `(${qb.toString(exp.objectOperand, param)} LIKE ${qb.toString(exp.params[0], param)}${escape})`;
-});
 relationalQueryTranslator.registerMethod(String.prototype, "repeat", (qb, exp, param) => `REPLICATE(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`);
 relationalQueryTranslator.registerMethod(String.prototype, "replace", (qb, exp, param) => `REPLACE(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.params[1], param)})`);
 relationalQueryTranslator.registerMethod(String.prototype, "split", (qb, exp, param) => `STRING_SPLIT(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`);
@@ -219,8 +212,6 @@ relationalQueryTranslator.registerMethod(Boolean.prototype, "toString" as any, (
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
  */
-relationalQueryTranslator.registerMethod(Date, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
-relationalQueryTranslator.registerMethod(Date, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
 relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
 relationalQueryTranslator.registerMethod(Date.prototype, "getDay", (qb, exp, param) => `(DATEPART(weekday, ${qb.toString(exp.objectOperand, param)}) - 1)`);
 relationalQueryTranslator.registerMethod(Date.prototype, "getFullYear", (qb, exp, param) => `YEAR(${qb.toString(exp.objectOperand, param)})`);
@@ -351,3 +342,14 @@ relationalQueryTranslator.registerOperator(BitwiseNotExpression, (qb, exp, param
 relationalQueryTranslator.registerOperator(TernaryExpression, (qb, exp, param) => `(${qb.newLine(1)}CASE WHEN (${qb.toString(exp.logicalOperand, param)}) ${qb.newLine()}THEN ${qb.toOperandString(exp.trueOperand, param)}${qb.newLine()}ELSE ${qb.toOperandString(exp.falseOperand, param)}${qb.newLine()}END${qb.newLine(-1)})`);
 
 //#endregion
+
+relationalQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, param) => {
+    let escape = "";
+    if (exp.params.length > 2) {
+        escape = ` ESCAPE ${qb.toString(exp.params[2], param)}`;
+    }
+
+    return `(${qb.toString(exp.params[0], param)} LIKE ${qb.toString(exp.params[1], param)}${escape})`;
+});
+relationalQueryTranslator.registerMethod(DbFunction, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
+relationalQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);

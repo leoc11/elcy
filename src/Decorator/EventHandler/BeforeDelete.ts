@@ -1,19 +1,17 @@
-import "reflect-metadata";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { IDeleteEventParam } from "../../MetaData/Interface/IDeleteEventParam";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { entityMetaKey } from "../DecoratorKey";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { AbstractEntity } from "../Entity/AbstractEntity";
 /**
  * Register before save event. only for concrete entity
  */
-export function BeforeDelete<TE = any>(handler?: (this: TE, param?: IDeleteEventParam) => boolean): MethodDecorator & ClassDecorator {
-    return (target: object | IObjectType<TE>, propertyKey?: keyof TE, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as ObjectConstructor;
-        let entityMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, ctor);
+export function BeforeDelete<TE extends object = object>(handler?: (item: TE, param?: IDeleteEventParam) => boolean): MethodDecorator & ClassDecorator {
+    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
+        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
+        let entityMetaData = getEntityMetadata(ctor);
         if (!entityMetaData) {
             AbstractEntity()(ctor);
-            entityMetaData = Reflect.getOwnMetadata(entityMetaKey, target.constructor);
+            entityMetaData = getEntityMetadata(ctor);
         }
 
         if (!handler && descriptor && typeof descriptor.value === "function") {

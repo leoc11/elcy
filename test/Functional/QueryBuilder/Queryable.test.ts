@@ -7,6 +7,7 @@ import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
+import { DbFunction } from "../../../src/Query/DbFunction";
 // import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
@@ -1040,7 +1041,7 @@ FROM [Orders] AS [entity0]`
         it("could be used more than once in chain", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orderDetails.where((o) => o.Product.Price <= 15000).where((o) => o.name.like("%a%"));
+            const where = db.orderDetails.where((o) => o.Product.Price <= 15000).where((o) => DbFunction.like(o.name, "%a%"));
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;

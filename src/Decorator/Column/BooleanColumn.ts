@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { Column } from "./Column";

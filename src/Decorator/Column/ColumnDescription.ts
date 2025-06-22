@@ -1,16 +1,15 @@
-import "reflect-metadata";
 import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
 import { getColumnMetadata, setColumnMetadata } from "../../MetaData/MetaDataMapper";
-import { StringKeyOf } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 
 export function ColumnDescription<TE extends object = object>(description: string): PropertyDecorator & MethodDecorator {
     return <T>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
-        let columnMetaData = getColumnMetadata(target, propertyKey);
+        let columnMetaData = getColumnMetadata(target.constructor as IObjectType<TE>, propertyKey);
         if (columnMetaData == null) {
             columnMetaData = new ColumnMetaData();
         }
         columnMetaData.description = description;
-        setColumnMetadata(target, propertyKey, columnMetaData);
+        setColumnMetadata(target.constructor as IObjectType<TE>, propertyKey, columnMetaData);
 
         return descriptor;
     };
