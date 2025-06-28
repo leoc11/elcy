@@ -7,12 +7,40 @@ import { ParameterExpression } from "./ParameterExpression";
 const FunctionTypeConstructor: () => ((...param: any[]) => any) = () => (() => {});
 export class FunctionExpression<T = unknown, K = unknown> implements IExpression<(...param: K[]) => T> {
     // TODO: type must always specified
-    constructor(public body: IExpression<T>, public params: ParameterExpression<K>[], type?: GenericType<T>) {
+    constructor(body?: IExpression<T>, params?: ParameterExpression<K>[], type?: GenericType<T>) {
+        this.body = body;
+        this.params = params;
         this.returnType = type;
         this.type = FunctionTypeConstructor;
     }
-    public returnType?: GenericType<T>;
-    public type: GenericType<(...param: K[]) => T>;
+    private _body: IExpression<T>;
+    public get body(): IExpression<T> {
+        return this._body;
+    }
+    public set body(value: IExpression<T>) {
+        this._body = value;
+    }
+    private _params: ParameterExpression<K>[];
+    public get params(): ParameterExpression<K>[] {
+        return this._params;
+    }
+    public set params(value: ParameterExpression<K>[]) {
+        this._params = value;
+    }
+    private _returnType?: GenericType<T>;
+    public get returnType(): GenericType<T> {
+        return this._returnType;
+    }
+    public set returnType(value: GenericType<T>) {
+        this._returnType = value;
+    }
+    private _type: GenericType<(...param: K[]) => T>;
+    public get type(): GenericType<(...param: K[]) => T> {
+        return this._type;
+    }
+    public set type(value: GenericType<(...param: K[]) => T>) {
+        this._type = value;
+    }
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

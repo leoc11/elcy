@@ -176,7 +176,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return null;
         }
         let result = input;
-        const type = column ? column.type : isNotNull(input) ? input.constructor : NullConstructor;
+        const type = column ? column.type : input.constructor;
         switch (type) {
             case Date: {
                 const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";

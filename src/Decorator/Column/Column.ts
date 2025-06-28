@@ -19,7 +19,7 @@ export function Column<TE extends object = object, K extends StringKeyOf<TE> = S
 
         const metadata = new columnMetaType();
         metadata.isProjected = true;
-        metadata.applyOption(columnOption as any);
+        metadata.applyOption(columnOption);
         if (!metadata.columnName) {
             metadata.columnName = propertyKey;
         }

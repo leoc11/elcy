@@ -54,12 +54,12 @@ describe("DBCONTEXT", () => {
             entity.OrderDate = new Date();
             expect(entry.state).toBe(EntityState.Modified);
             expect(entry.getModifiedProperties()).to.contains("OrderDate");
-            expect(entry.getOriginalValue("OrderDate")).to.equal(null);
+            expect(entry.getOriginalValue("OrderDate")).toBe(null);
 
             entry.resetChanges();
             expect(entry.state).toBe(EntityState.Unchanged);
             expect(entity.OrderDate).toBe(null);
-            expect(entry.getModifiedProperties()).to.be.empty;
+            expect(entry.getModifiedProperties()).toEqual([]);
         });
         it("should not detect property changes for readonly property", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
