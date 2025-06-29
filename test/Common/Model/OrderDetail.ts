@@ -1,3 +1,4 @@
+import Decimal from "decimal.js-light";
 import { ObjectLike } from "../../../src/Common/Type";
 import { Uuid } from "../../../src/Data/Uuid";
 import { ComputedColumn } from "../../../src/Decorator/Column/ComputedColumn";
@@ -39,7 +40,7 @@ export class OrderDetail {
     @DateColumn()
     public CreatedDate: Date;
     @ComputedColumn<OrderDetail>((o) => o.quantity * o.Product.Price)
-    public GrossSales: number;
+    public GrossSales: Decimal;
 
     @DeletedColumn()
     public isDeleted: boolean;

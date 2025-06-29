@@ -1,3 +1,4 @@
+import Decimal from "decimal.js-light";
 import { ArrayView, GenericType, ValueType } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
@@ -177,6 +178,8 @@ export const isValue = (data: any): data is ValueType => {
 export const isValueType = (type: GenericType) => {
     switch (type) {
         case Number:
+        case BigInt:
+        case Decimal:
         case String:
         case Date:
         case TimeSpan:

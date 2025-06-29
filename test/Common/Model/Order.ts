@@ -1,3 +1,4 @@
+import Decimal from "decimal.js-light";
 import { Uuid } from "../../../src/Data/Uuid";
 import { DateColumn } from "../../../src/Decorator/Column/DateColumn";
 import { DecimalColumn } from "../../../src/Decorator/Column/DecimalColumn";
@@ -30,11 +31,11 @@ export class Order {
     public OrderId: Uuid;
 
     @DecimalColumn({ columnType: "decimal" })
-    public TotalAmount: number;
+    public TotalAmount: Decimal;
 
     @DateColumn()
     public OrderDate: Date;
-
+    
     // @TimestampColumn()
     // public Timestamp: string;
     @Relationship<Order>("has", "many", OrderDetail || "OrderDetail", [(o) => o.OrderId])

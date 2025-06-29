@@ -9,6 +9,7 @@ export enum LexicalTokenType {
     String,
     StringTemplate,
     Number,
+    BigInt,
     Regexp,
     Keyword,
     Operator,
@@ -104,7 +105,7 @@ export class LexicalAnalyzer {
 
 const keywordOperators = Enumerable.from(operators).where((o) => o.identifier >= "a" && o.identifier <= "z" && o.identifier !== "function").select((o) => o.identifier);
 keywordOperators.enableCache = true;
-const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with"];
+const keywords = ["abstract", "arguments", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "do", "double", "else", "enum", "eval", "export", "extends", "final", "finally", "for", "goto", "if", "implements", "import", "interface", "let", "long", "native", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "var", "volatile", "while", "with", "new"];
 
 function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILexicalToken {
     const start = pointer.index;
@@ -152,6 +153,7 @@ function analyzeLexicalTemplateLiteral(pointer: ILexicalPointer, input: string):
 }
 function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexicalToken {
     let data = input[pointer.index];
+    let type = LexicalTokenType.Number;
     for (; ;) {
         pointer.index++;
         const char = input[pointer.index];
@@ -167,13 +169,19 @@ function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexical
         else if ((char >= "0" && char <= "9") || char === ".") {
             data += char;
         }
+        else if (char === "n") {
+            type = LexicalTokenType.BigInt;
+            data += char;
+            pointer.index++
+            break;
+        }
         else {
             break;
         }
     }
     return {
         data: data,
-        type: LexicalTokenType.Number
+        type: type
     };
 }
 function analyzeRegexp(pointer: ILexicalPointer, input: string): ILexicalToken {

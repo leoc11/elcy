@@ -15,6 +15,7 @@ import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
 import { Enumerable } from "../Enumerable/Enumerable";
+import Decimal from "decimal.js-light";
 
 interface SyntaticParameter {
     index: number;
@@ -43,6 +44,7 @@ const globalObjectMaps = new Map<string, unknown>([
     // Constructor/ Type
     ["Error", Error],
     ["Number", Number],
+    ["BigInt", BigInt],
     ["Math", Math],
     ["Date", Date],
     ["String", String],
@@ -63,6 +65,7 @@ const globalObjectMaps = new Map<string, unknown>([
     ["Float32Array", Float32Array],
     ["Float64Array", Float64Array],
     ["DataView", DataView],
+    ["Decimal", Decimal],
 
     // Value
     ["Infinity", Infinity],
@@ -227,7 +230,12 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 return createKeywordExpression(param, token);
             }
             case LexicalTokenType.Number: {
-                expression = new ValueExpression(Number.parseFloat(token.data as string));
+                expression = new ValueExpression(Number(token.data));
+                param.index++;
+                break;
+            }
+            case LexicalTokenType.BigInt: {
+                expression = new ValueExpression(BigInt(token.data));
                 param.index++;
                 break;
             }

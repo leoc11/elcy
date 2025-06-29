@@ -8,6 +8,7 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { DbFunction } from "../../../src/Query/DbFunction";
+import Decimal from "decimal.js-light";
 // import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
@@ -3123,7 +3124,7 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
             for (const o of results) {
                 expect(o.obj).toBeInstanceOf(Object);
                 expect(o.obj.pid).toBeInstanceOf(Uuid);
-                expect(typeof o.Quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
             }
         });
         it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj)", async () => {
@@ -3323,7 +3324,7 @@ GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
             expect(results.length).not.toBe(0);
             for (const o of results) {
                 expect(o.productid).toBeInstanceOf(Uuid);
-                expect(typeof o.Quantity).toBe("number");
+                expect(typeof o.quantity).toBe("number");
             }
         });
         it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.count())", async () => {
@@ -3853,7 +3854,7 @@ WHERE ([entity1].[Quantity]>1)`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
                 expect(typeof o.name).toBe("string");
                 expect(typeof o.price).toBe("number");
                 expect(o.date).toBeInstanceOf(Date);
@@ -3930,7 +3931,7 @@ WHERE ([entity1].[Quantity]>1)`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
                 expect(typeof o.name).toBe("string");
                 expect(typeof o.price).toBe("number");
                 expect(o.date).toBeInstanceOf(Date);
@@ -3980,7 +3981,7 @@ WHERE ([entity1].[Quantity]>1)`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
                 expect(typeof o.name).toBe("string");
                 expect(typeof o.price).toBe("number");
                 expect(o.date).toBeInstanceOf(Date);
@@ -4026,7 +4027,7 @@ WHERE ([entity1].[Quantity]>1)`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
                 expect(typeof o.name).toBe("string");
                 expect(typeof o.price).toBe("number");
                 expect(o.date).toBeInstanceOf(Date);
@@ -4173,7 +4174,7 @@ WHERE ([entity1].[Quantity]>1)`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.quantity).toBe("number");
+                expect(o.quantity).toBeInstanceOf(Decimal);
                 expect(typeof o.name).toBe("string");
                 expect(typeof o.price).toBe("number");
                 expect(o.date).toBeInstanceOf(Date);
@@ -4877,7 +4878,7 @@ ORDER BY [entity0].[TotalAmount] ASC`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.Count).toBe("number");
             }
         });
@@ -4923,7 +4924,7 @@ ORDER BY [entity0].[OrderDate] DESC`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.Accumulated).toBe("number");
                 expect(o.OrderId).toBeInstanceOf(Uuid);
             }
@@ -4978,7 +4979,7 @@ ORDER BY [entity0].[TotalAmount] ASC`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.IsNotLowest).toBe("boolean");
             }
         });
@@ -5036,7 +5037,7 @@ ORDER BY [entity0].[TotalAmount] DESC`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.IsHighest).toBe("boolean");
             }
         });
@@ -5404,7 +5405,7 @@ DROP TABLE #ads1`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.Count).toBe("number");
             }
         });
@@ -5468,7 +5469,7 @@ DROP TABLE #ads2`
             expect(results.length).not.toBe(0);
             for (const o of results) {
                 expect(o.OrderId).toBeInstanceOf(Uuid);
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.Accumulated).toBe("number");
             }
         });
@@ -5539,7 +5540,7 @@ DROP TABLE #ads2`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.IsNotLowest).toBe("boolean");
             }
         });
@@ -5614,7 +5615,7 @@ DROP TABLE #ads2`
             expect(results).toBeInstanceOf(Array);
             expect(results.length).not.toBe(0);
             for (const o of results) {
-                expect(typeof o.TotalAmount).toBe("number");
+                expect(o.TotalAmount).toBeInstanceOf(Decimal);
                 expect(typeof o.IsHighest).toBe("boolean");
             }
         });
