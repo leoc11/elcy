@@ -4,7 +4,7 @@ import { DefaultResultCacheManager } from "../../../src/Cache/DefaultResultCache
 import { EntityState } from "../../../src/Data/EntityState";
 import { Uuid } from "../../../src/Data/Uuid";
 import { mockContext } from "../../Mock/MockContext";
-import { Order, OrderDetail, Product } from "../../Common/Model";
+import { AutoDetail, Order, OrderDetail, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { RelationState } from "../../../src/Data/RelationState";
 
@@ -62,12 +62,20 @@ describe("DBCONTEXT", () => {
             expect(entry.getModifiedProperties()).toEqual([]);
         });
         it("should not detect property changes for readonly property", () => {
+            const entity = new AutoDetail({ id: 0, version: Uuid.new() });
+            const entry = db.attach(entity);
+            expect(entry.state).toBe(EntityState.Unchanged);
+
+            entity.version = Uuid.new();
+            expect(entry.state).toBe(EntityState.Unchanged);
+        });
+        it("should detect changes for delete property", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });
             const entry = db.attach(entity);
             expect(entry.state).toBe(EntityState.Unchanged);
 
             entity.isDeleted = true;
-            expect(entry.state).toBe(EntityState.Unchanged);
+            expect(entry.state).toBe(EntityState.Deleted);
         });
         it("should detect relation changes", () => {
             const entity = new OrderDetail({ OrderDetailId: Uuid.new(), isDeleted: false });

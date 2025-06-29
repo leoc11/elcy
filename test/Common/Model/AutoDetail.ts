@@ -1,3 +1,4 @@
+import { ObjectLike } from "../../../src/Common/Type";
 import { IntegerColumn } from "../../../src/Decorator/Column/IntegerColumn";
 import { PrimaryKey } from "../../../src/Decorator/Column/PrimaryKey";
 import { RowVersionColumn } from "../../../src/Decorator/Column/RowVersionColumn";
@@ -9,6 +10,15 @@ import { AutoParent } from "./AutoParent";
 
 @Entity("AutoDetail")
 export class AutoDetail {
+    constructor(defValues?: ObjectLike<AutoDetail>) {
+        if (defValues) {
+            for (const prop in defValues) {
+                const value = defValues[prop];
+                this[prop] = value;
+            }
+        }
+    }
+    
     @PrimaryKey()
     @IntegerColumn({ columnType: "int", autoIncrement: true })
     public id: number;

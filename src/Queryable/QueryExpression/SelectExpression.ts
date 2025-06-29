@@ -24,7 +24,7 @@ import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
 
-export class SelectExpression<TE extends object, T = unknown> implements IQueryExpression<T> {
+export class SelectExpression<TE extends object = object, T = unknown> implements IQueryExpression<T> {
     public get allColumns(): IEnumerable<IColumnExpression<any>> {
         let columns = Enumerable.from<IColumnExpression<any>>(this.entity.columns).union(this.resolvedSelects);
         for (const join of this.joins) {

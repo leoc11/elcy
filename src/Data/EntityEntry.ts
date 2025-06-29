@@ -31,23 +31,23 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
             const dbContext = this.dbSet.dbContext;
             switch (this.state) {
                 case EntityState.Added: {
-                    const typedAddEntries = dbContext.entityEntries.add.get(this.metaData as IEntityMetaData);
+                    const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries) {
-                        typedAddEntries.delete(this as unknown as EntityEntry);
+                        typedAddEntries.delete(this);
                     }
                     break;
                 }
                 case EntityState.Deleted: {
-                    const typedEntries = dbContext.entityEntries.delete.get(this.metaData as IEntityMetaData);
+                    const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this as unknown as EntityEntry);
+                        typedEntries.delete(this);
                     }
                     break;
                 }
                 case EntityState.Modified: {
-                    const typedEntries = dbContext.entityEntries.update.get(this.metaData as IEntityMetaData);
+                    const typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this as unknown as EntityEntry);
+                        typedEntries.delete(this);
                     }
                     break;
                 }
@@ -58,30 +58,30 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
             }
             switch (value) {
                 case EntityState.Added: {
-                    let typedEntries = dbContext.entityEntries.add.get(this.metaData as IEntityMetaData);
+                    let typedEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (!typedEntries) {
                         typedEntries = [];
-                        dbContext.entityEntries.add.set(this.metaData as IEntityMetaData, typedEntries);
+                        dbContext.entityEntries.add.set(this.metaData, typedEntries);
                     }
-                    typedEntries.push(this as unknown as EntityEntry);
+                    typedEntries.push(this);
                     break;
                 }
                 case EntityState.Deleted: {
-                    let typedEntries = dbContext.entityEntries.delete.get(this.metaData as IEntityMetaData);
+                    let typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (!typedEntries) {
                         typedEntries = [];
-                        dbContext.entityEntries.delete.set(this.metaData as IEntityMetaData, typedEntries);
+                        dbContext.entityEntries.delete.set(this.metaData, typedEntries);
                     }
-                    typedEntries.push(this as unknown as EntityEntry);
+                    typedEntries.push(this);
                     break;
                 }
                 case EntityState.Modified: {
-                    let typedEntries = dbContext.entityEntries.update.get(this.metaData as IEntityMetaData);
+                    let typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (!typedEntries) {
                         typedEntries = [];
-                        dbContext.entityEntries.update.set(this.metaData as IEntityMetaData, typedEntries);
+                        dbContext.entityEntries.update.set(this.metaData, typedEntries);
                     }
-                    typedEntries.push(this as unknown as EntityEntry);
+                    typedEntries.push(this);
                     break;
                 }
             }
@@ -296,8 +296,6 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         await this.dbSet.project(...projected).include(...relations).find(this.getPrimaryValues());
     }
 
-    //#region asd
-
     /**
      * Reloads the entity from the database overwriting any property values with values from the database.
      * For modified properties, then the original value will be overwrite with vallue from the database.
@@ -306,7 +304,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public async reload() {
         await this.dbSet.find(this.getPrimaryValues(), true);
     }
-    //#endregion
+
     public buildRelation(...relations: Array<KeysExceptType<T, ValueType> | IRelationMetaData<T>>) {
         let relationMetas = this.metaData.relations;
         if (relations.any()) {
@@ -431,11 +429,24 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedRelationMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.target.type);
-            
+
             void import("./EmbeddedEntityEntry").then(o => new o.EmbeddedEntityEntry(embeddedDbSet, param.newValue as object, this));
         }
 
-        if (this.enableTrackChanges && (this.state === EntityState.Modified || this.state === EntityState.Unchanged) && param.oldValue !== param.newValue) {
+        if (!this.enableTrackChanges) {
+            return;
+        }
+
+        // if deletedColumn changed to true, then entry state should be changed accordingly
+        if (this.metaData.deletedColumn === param.column && this.state !== EntityState.Detached) {
+            if (param.newValue && this.state != EntityState.Deleted) {
+                this.state = EntityState.Deleted;
+            }
+            else if (!param.newValue && this.state == EntityState.Deleted) {
+                this.state = EntityState.Unchanged;
+            }
+        }
+        if (param.oldValue !== param.newValue && (this.state === EntityState.Modified || this.state === EntityState.Unchanged)) {
             const oriValue = this._originalValues.get(param.column.propertyName);
             if (oriValue === param.newValue) {
                 this._originalValues.delete(param.column.propertyName);
