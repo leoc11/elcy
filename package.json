@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com/leoc11/elcy",
   "dependencies": {
+    "decimal.js-light": "^2.5.1",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
