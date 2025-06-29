@@ -605,7 +605,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         result = result.concat(includedDeletes);
         return result;
     }
-    protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
+    protected getEntityQueryString<T extends object>(entity: IEntityExpression<T>, param?: IQueryBuilderParameter): string {
         if (entity instanceof IntersectExpression) {
             return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
                 this.newLine() + "INTERSECT" +
@@ -646,7 +646,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getInsertQuery<T extends object>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         if (insertExp.values.length <= 0) {
             return [];
         }
@@ -934,7 +934,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return result;
     }
     // TODO: Update Query should use ANSI SQL Standard
-    protected getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getUpdateQuery<T extends object>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: updateExp,

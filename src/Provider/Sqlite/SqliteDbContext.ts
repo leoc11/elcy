@@ -8,13 +8,12 @@ import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
 const namingStrategy = new NamingStrategy();
 export abstract class SqliteDbContext extends RelationalDbContext<"sqlite"> {
-    public queryBuilderType = SqliteQueryBuilder;
-    public queryParser = POJOQueryResultParser;
-    public schemaBuilderType = SqliteSchemaBuilder;
-    protected namingStrategy = namingStrategy;
-    protected queryResultParserType = POJOQueryResultParser;
-    protected queryVisitorType = RelationalQueryVisitor;
-    protected translator = mssqlQueryTranslator;
+    public override queryBuilderType = SqliteQueryBuilder;
+    public override schemaBuilderType = SqliteSchemaBuilder;
+    protected override namingStrategy = namingStrategy;
+    protected override queryResultParserType = POJOQueryResultParser;
+    protected override queryVisitorType = RelationalQueryVisitor;
+    protected override translator = mssqlQueryTranslator;
     public mergeQueryCommands(queries: IQuery[]): IQuery[] {
         return queries;
     }

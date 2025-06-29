@@ -107,7 +107,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
@@ -163,7 +163,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
@@ -220,7 +220,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
@@ -292,7 +292,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "contains", [new ValueExpression(item)]);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -344,7 +344,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "count", []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
@@ -416,7 +416,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
+            const selectExp = this.buildQuery(visitor) as SelectExpression<any, T>;
 
             const commandQuery = new DeleteExpression(selectExp, new SqlParameterExpression(new ParameterExpression("__deleteMode")));
             if (Diagnostic.enabled) {
@@ -445,21 +445,21 @@ export abstract class Queryable<T = unknown> {
         return query;
     }
     public deferredFind(id: ValueType | ObjectLike<T>) {
-        const isValueType = isValue(id);
-        const dbSet = this.dbContext.set(this.type as any);
+        const dbSet = this.dbContext.set(this.type as IObjectType<T & object>);
         if (!dbSet) {
             throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "Find only support entity queryable");
         }
 
-        const param = new ParameterExpression("o", this.type);
-        const paramId = new ParameterExpression("id", id.constructor as any);
+        const param = new ParameterExpression("o", this.type as IObjectType<T & object>);
         let andExp: IExpression<boolean>;
-        if (isValueType) {
+        if (isValue(id)) {
+            const paramId = new ParameterExpression("id", id.constructor as GenericType<ValueType>);
             andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys.first().propertyName), paramId);
         }
         else {
+            const paramId = new ParameterExpression("id", id.constructor as IObjectType<object>);
             for (const pk of dbSet.primaryKeys) {
-                const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName));
+                const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName as never));
                 andExp = andExp ? new AndExpression(andExp, d) : d;
             }
         }
@@ -491,7 +491,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             const metParams = [];
             if (predicate) {
                 metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
@@ -527,7 +527,7 @@ export abstract class Queryable<T = unknown> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredInsertInto<TT>(type: IObjectType<TT>) {
+    public deferredInsertInto<TE extends object>(type: IObjectType<TE>) {
         const targetSet = this.dbContext.set(type);
 
         let queryCache: IQueryCache<T>;
@@ -557,7 +557,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
+            const selectExp = this.buildQuery(visitor) as SelectExpression<any, T>;
             if (!this.dbContext.entityTypes.contains(selectExp.itemExpression.type as IObjectType<T>)) {
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
             }
@@ -610,7 +610,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
@@ -668,7 +668,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
@@ -725,7 +725,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
@@ -844,7 +844,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
 
             const paramExp = new ParameterExpression("m");
             const selector = new ObjectValueExpression<{ Key: K, Value: V }>({});
@@ -914,7 +914,7 @@ export abstract class Queryable<T = unknown> {
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            const commandQuery = this.buildQuery(visitor) as SelectExpression<any, T>;
             commandQuery.includes = [];
 
             const setterExp: SetterObj<T> = {};
@@ -971,7 +971,7 @@ export abstract class Queryable<T = unknown> {
         return this.parent ? this.parent.flatQueryParameter(param) : {};
     }
     public abstract hashCode(): number;
-    public async insertInto<TT>(type: IObjectType<TT>) {
+    public async insertInto<TE extends object>(type: IObjectType<TE>) {
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }

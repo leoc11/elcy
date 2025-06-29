@@ -113,7 +113,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     //#endregion
 
     public enableTrackChanges = true;
-    public relationMap: { [relationName in StringKeyOf<T>]?: Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>> } = {};
+    public relationMap: { [relationName in StringKeyOf<T>]?: Map<EntityEntry, RelationEntry<T> | RelationEntry<object, T>> } = {};
     private _originalValues: Map<StringKeyOf<T>, unknown> = new Map();
     private _state: EntityState;
     public acceptChanges(...properties: Array<KeysType<T, ValueType>>) {
@@ -149,7 +149,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                         }
                         const col = rel.relationColumns.first((o) => o.propertyName === prop);
                         const rCol = rel.relationMaps.get(col);
-                        for (const relEntry of relationData.values() as MapIterator<RelationEntry<unknown, T>>) {
+                        for (const relEntry of relationData.values() as MapIterator<RelationEntry<object, T>>) {
                             switch (rel.updateOption) {
                                 case "CASCADE": {
                                     relEntry.slaveEntry[rCol.propertyName as string] = this.entity[prop];
@@ -270,7 +270,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         let relGroup = this.relationMap[propertyName] as unknown as Map<EntityEntry<T2>, RelationEntry<T, T2> | RelationEntry<T2, T>>;
         if (!relGroup) {
             relGroup = new Map();
-            this.relationMap[propertyName] = relGroup as unknown as Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>>;
+            this.relationMap[propertyName] = relGroup as unknown as Map<EntityEntry, RelationEntry<T> | RelationEntry<object, T>>;
         }
         let relEntry = relGroup.get(relatedEntry);
         if (!relEntry) {

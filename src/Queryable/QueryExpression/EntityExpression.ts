@@ -1,11 +1,11 @@
 import type { OrderDirection } from "../../Common/StringType";
 import type { IObjectType, ValueType } from "../../Common/Type";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
-import { EntityMetaData } from "../../MetaData/EntityMetaData";
+import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -48,7 +48,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
+            this._metaData = getEntityMetadata(this.type);
         }
         return this._metaData;
     }
@@ -93,7 +93,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     private _columns: Array<IColumnExpression<T>>;
     private _defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
     private _deleteColumn: IColumnExpression<T, boolean>;
-    private _metaData: EntityMetaData<T>;
+    private _metaData: IEntityMetaData<T>;
     private _modifiedColumn: IColumnExpression<T, Date>;
     private _primaryColumns: IColumnExpression<T>[];
     private _versionColumn: IColumnExpression<T, Uint8Array>;

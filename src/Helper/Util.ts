@@ -133,8 +133,8 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
         visitExpression(memberOperatorExp.objectOperand, finder);
     }
 };
-export const replaceExpression = <T extends IExpression>(source: T, finder: <TEx extends IExpression>(exp: TEx) => TEx): T => {
-    const rsource = finder(source);
+export const replaceExpression = <T extends IExpression>(source: T, finder: (exp: IExpression) => IExpression): T => {
+    const rsource = finder(source) as T;
     if (rsource !== source) {
         return rsource;
     }
@@ -168,8 +168,8 @@ export const isExpression = (data: IExpression): data is IExpression => {
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;
 };
-export const isColumnExp = (data: IExpression): data is IColumnExpression => {
-    return !!(data as IColumnExpression).entity;
+export const isColumnExp = <T>(data: IExpression<T>): data is IColumnExpression<any, T> => {
+    return !!(data as IColumnExpression<any, T>).entity;
 };
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);

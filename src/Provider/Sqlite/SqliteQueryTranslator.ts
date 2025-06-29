@@ -4,7 +4,7 @@ import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
-sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
+sqliteQueryTranslator.extends(relationalQueryTranslator);
 
 //#region Function
 
@@ -85,7 +85,7 @@ sqliteQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, para
     }
     return `(INSTR(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)}) - 1)`;
 });
-sqliteQueryTranslator.registerMethod(String.prototype, "like", (qb, exp, param) => {
+sqliteQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, param) => {
     let escape = qb.valueString("\\");
     if (exp.params.length > 1) {
         escape = qb.toString(exp.params[1], param);

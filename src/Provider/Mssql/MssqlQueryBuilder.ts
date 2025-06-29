@@ -45,7 +45,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             return identity;
         }
     }
-    public getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public getInsertQuery<T extends object>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         if (insertExp.values.length <= 0) {
             return [];
         }
@@ -114,7 +114,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     }
 
     //#region Update
-    public getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public getUpdateQuery<T extends object>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
@@ -122,7 +122,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             queryExpression: updateExp
         };
 
-        const setQuery = Object.keys(updateExp.setter).select((o: keyof T) => {
+        const setQuery = Object.keys(updateExp.setter).select((o) => {
             const value = updateExp.setter[o];
             const valueStr = this.toOperandString(value, param);
             const column = updateExp.entity.columns.first((c) => c.propertyName === o);

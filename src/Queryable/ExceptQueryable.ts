@@ -20,8 +20,8 @@ export class ExceptQueryable<T> extends Queryable<T> {
     }
     private _parameters: { [key: string]: any };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "except", [childOperand]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;

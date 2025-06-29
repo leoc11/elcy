@@ -5,7 +5,7 @@ import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
-export class InsertIntoExpression<T = unknown> implements IQueryExpression<void> {
+export class InsertIntoExpression<T extends object = object> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         return this.select.selects;
     }

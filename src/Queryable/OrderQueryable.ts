@@ -44,11 +44,11 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected _selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
     protected readonly selectorsFn: Array<IOrderDefinition<T>>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "orderBy", selectors);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as unknown as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("ORDERBY", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));

@@ -1,4 +1,4 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, SetterObj, ValueType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
@@ -14,7 +14,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class InsertExpression<T = unknown> implements IQueryExpression<void> {
+export class InsertExpression<T extends object = object> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = this.entity.metaData.columns
@@ -68,7 +68,7 @@ export class InsertExpression<T = unknown> implements IQueryExpression<void> {
     }
 }
 
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
+export const insertEntryExp = <T extends object>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T, ValueType>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
     const itemExp: SetterObj<T> = {};
     for (const col of columns) {
         const value = entry.entity[col.propertyName];
@@ -81,7 +81,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
     }
 
     for (const rel of relations) {
-        const parentEntity = entry.entity[rel.propertyName];
+        const parentEntity = entry.entity[rel.propertyName] as object;
         if (parentEntity) {
             const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
             const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
@@ -89,7 +89,7 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
                 let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type), parentCol);
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as any), parentCol);
+                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), Object), parentCol.columnName), parentCol);
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {

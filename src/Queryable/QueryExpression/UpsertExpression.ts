@@ -1,4 +1,4 @@
-import { GenericType, IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
+import { GenericType, IObjectType, SetterObj } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -14,7 +14,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 export class UpsertExpression<T extends object = object> implements IQueryExpression<void> {
-    public get insertColumns(): Array<IColumnExpression<T, T[StringKeyOf<T>]>> {
+    public get insertColumns(): Array<IColumnExpression<T>> {
         if (!this._insertColumns) {
             this._insertColumns = this.relations
                 .selectMany((o) => o.relationColumns)
@@ -25,7 +25,7 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
 
         return this._insertColumns;
     }
-    public get relations(): Array<IRelationMetaData<T, T[StringKeyOf<T>] & object>> {
+    public get relations(): Array<IRelationMetaData<T, object>> {
         if (!this._relations) {
             this._relations = this.entity.metaData.relations
                 .where((o) => !o.nullable && !o.isMaster && o.relationType === "one").toArray();
@@ -55,8 +55,8 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
     constructor(public readonly entity: EntityExpression<T>, public readonly setter: SetterObj<T>) {
     }
     public paramExps: SqlParameterExpression[];
-    private _insertColumns: Array<IColumnExpression<T, T[StringKeyOf<T>]>>;
-    private _relations: Array<IRelationMetaData<T, T[StringKeyOf<T>] & object>>;
+    private _insertColumns: Array<IColumnExpression<T>>;
+    private _relations: Array<IRelationMetaData<T, object>>;
     private _updateColumns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): UpsertExpression<T> {
         if (!replaceMap) {

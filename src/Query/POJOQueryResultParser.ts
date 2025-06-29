@@ -8,7 +8,6 @@ import { DBEventEmitter } from "../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { hashCode, isValueType } from "../Helper/Util";
-import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { RelationDataMetaData } from "../MetaData/Relation/RelationDataMetaData";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
@@ -21,12 +20,12 @@ import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryResult } from "./IQueryResult";
 import { IQueryResultParser } from "./IQueryResultParser";
 
-interface IResolvedRelationData<T = any, TData = any> {
+interface IResolvedRelationData<T extends object = object, TData extends object = object> {
     data?: IResolvedRelationData<TData>;
     entity: T;
     entry?: EntityEntry<T>;
 }
-interface IResolveData<T = any> {
+interface IResolveData<T = unknown> {
     column?: IColumnExpression<T>;
     columns?: IEnumerable<IColumnExpression<T>>;
     dbSet?: DbSet<T>;
@@ -51,22 +50,22 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
         return this._orderedSelects;
     }
     public queryBuilder: IQueryBuilder;
-    public queryExpression: SelectExpression<T>;
+    public queryExpression: SelectExpression<any, T>;
     private _cache = new Map<SelectExpression, IResolveData>();
     private _orderedSelects: SelectExpression[];
     public parse(queryResults: IQueryResult[], dbContext: DbContext): T[] {
         return this.parseData(queryResults, dbContext);
     }
-    private getColumnValue<TType>(column: IColumnExpression<TType>, data: any, dbContext?: DbContext) {
-        const columnMeta: IColumnMetaData = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
+    private getColumnValue<TType>(column: IColumnExpression<any, TType>, data: any, dbContext?: DbContext) {
+        const columnMeta = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
         return this.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta);
     }
-    private getResolveData<TType>(select: SelectExpression<TType>, dbContext: DbContext) {
+    private getResolveData<TType>(select: SelectExpression<any, TType>, dbContext: DbContext) {
         let resolveCache = this._cache.get(select);
         if (!resolveCache) {
             resolveCache = {
                 isValueType: isValueType(select.itemType),
-                dbSet: dbContext.set<TType>(select.itemType as IObjectType<TType>)
+                dbSet: dbContext.set<TType & object>(select.itemType as IObjectType<TType & object>)
             };
             if (resolveCache.isValueType) {
                 resolveCache.column = select.selects.first();
@@ -151,9 +150,9 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
         return results;
     }
-    private parseEntity<TType>(select: SelectExpression<TType>, row: any, resolveCache: IResolveData<TType>, resolveMap: IResolveMap, dbContext?: DbContext, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbEventEmitter?: DBEventEmitter<TType>) {
+    private parseEntity<TType>(select: SelectExpression<any, TType>, row: any, resolveCache: IResolveData<TType>, resolveMap: IResolveMap, dbContext?: DbContext, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbEventEmitter?: DBEventEmitter<TType>) {
         let entity: any;
-        let entry: EntityEntry<TType>;
+        let entry: EntityEntry<TType & object>;
 
         const parentRelation = select.parentRelation as IncludeRelation;
         const reverseRelationMap = resolveCache.reverseRelationMap;

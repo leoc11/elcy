@@ -11,12 +11,12 @@ export class TakeQueryable<T> extends Queryable<T> {
     constructor(parent: Queryable<T>, protected readonly quantity: number) {
         super(parent.type, parent.parameter({ take: quantity }));
     }
-    public expression: SelectExpression<T>;
+    protected override parent: Queryable<T>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "take", [new ParameterExpression("take", Number)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        return queryVisitor.visit(methodExpression, visitParam) as unknown as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCode("TAKE", this.parent.hashCode());

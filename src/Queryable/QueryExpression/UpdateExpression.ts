@@ -1,7 +1,6 @@
 import { JoinType, OrderDirection } from "../../Common/StringType";
-import { FlatObjectLike, IObjectType, SetterObj } from "../../Common/Type";
+import { FlatObjectLike, IObjectType, SetterObj, ValueType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
-import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
@@ -10,6 +9,7 @@ import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { getColumnMetadata } from "../../MetaData/MetaDataMapper";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
@@ -19,7 +19,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
+export class UpdateExpression<T extends object = object> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
     }
@@ -39,7 +39,7 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
         this.select.paramExps = value;
     }
     public get type() {
-        return undefined as IObjectType<void[]>;
+        return undefined as IObjectType<void>;
     }
     public get where() {
         return this.select.where;
@@ -62,9 +62,9 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
     }
     public select: SelectExpression<T>;
     public setter: SetterObj<T> = {};
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T>, IColumnExpression<TChild>>, type: JoinType): JoinRelation<T, TChild>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T>, IColumnExpression<TChild>>, type?: JoinType) {
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T>, IColumnExpression<TChild>>, type: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T>, IColumnExpression<TChild>>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as IRelationMetaData<T, TChild>, type);
     }
     public addWhere(expression: IExpression<boolean>) {
@@ -108,10 +108,10 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
     }
 }
 
-export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
+export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
-    const modifiedColumns = entry.getModifiedProperties().select((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where((o) => !!o);
+    const modifiedColumns = entry.getModifiedProperties().select((o) => getColumnMetadata(entityMeta.type, o)).where((o) => !!o);
 
     for (const o of modifiedColumns) {
         const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);
@@ -121,7 +121,7 @@ export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEn
 
     switch (entityMeta.concurrencyMode) {
         case "OPTIMISTIC VERSION": {
-            const versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
+            const versionCol: IColumnMetaData<T, ValueType> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
             if (!versionCol) {
                 throw new Error(`${entityMeta.name} did not have version column`);
             }

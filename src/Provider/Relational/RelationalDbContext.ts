@@ -10,13 +10,13 @@ import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
 
 export abstract class RelationalDbContext<TDB extends DbType> extends DbContext<TDB> {
-    protected getRelationAddQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: IEnumerable<RelationEntry<T, T2, TData>>, visitor?: IQueryVisitor, param?: IQueryOption) {
+    protected getRelationAddQueries<T extends object, T2 extends object, TData extends object>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: IEnumerable<RelationEntry<T, T2, TData>>, visitor?: IQueryVisitor, param?: IQueryOption) {
         // Filter out new relation with Added slave entity,
         // coz relation has been set at insert query.
         relationEntries = relationEntries.where((o) => !(o.slaveRelation.relationType === "one" && o.slaveEntry.state === EntityState.Added));
         return super.getRelationAddQueries(slaveRelationMetaData, relationEntries, visitor, param);
     }
-    protected getRelationDeleteQueries<T, T2, TData>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: IEnumerable<RelationEntry<T, T2, TData>>, visitor?: IQueryVisitor, param?: IQueryOption) {
+    protected getRelationDeleteQueries<T extends object, T2 extends object, TData extends object>(slaveRelationMetaData: IRelationMetaData<T, T2>, relationEntries: IEnumerable<RelationEntry<T, T2, TData>>, visitor?: IQueryVisitor, param?: IQueryOption) {
         // Filter out deleted relation that have related new relation,
         // coz relation have been replaced.
         relationEntries = relationEntries.where((o) => {

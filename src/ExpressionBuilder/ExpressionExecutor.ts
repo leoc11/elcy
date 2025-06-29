@@ -140,7 +140,7 @@ export class ExpressionExecutor {
             case expression instanceof LessThanExpression:
                 return this.executeLessThan(expression) as T;
             case expression instanceof MemberAccessExpression:
-                return this.executeMemberAccess(expression as MemberAccessExpression<unknown, StringKeyOf<unknown>, T & never>);
+                return this.executeMemberAccess(expression as MemberAccessExpression<object, StringKeyOf<unknown>, T & never>);
             case expression instanceof MethodCallExpression:
                 return this.executeMethodCall(expression as MethodCallExpression<unknown, MethodKey<unknown>, T & never>);
             case expression instanceof ModulusAssignmentExpression:
@@ -362,7 +362,7 @@ export class ExpressionExecutor {
     protected executeLessThan(expression: LessThanExpression) {
         return this.execute(expression.leftOperand) < this.execute(expression.rightOperand);
     }
-    protected executeMemberAccess<TE, K extends StringKeyOf<TE>>(expression: MemberAccessExpression<TE, K>) {
+    protected executeMemberAccess<TE extends object, K extends StringKeyOf<TE>>(expression: MemberAccessExpression<TE, K>) {
         return this.execute(expression.objectOperand)[expression.memberName];
     }
     protected executeMethodCall<TE, K extends MethodKey<TE>, T extends MethodReturnType<TE, K>>(expression: MethodCallExpression<TE, K, T>): T {

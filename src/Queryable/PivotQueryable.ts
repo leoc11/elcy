@@ -1,7 +1,6 @@
-import { Pivot, ValueType } from "../Common/Type";
+import { Pivot, SetterObj, ValueType } from "../Common/Type";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
@@ -13,7 +12,7 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
-export type TExpObject<T> = FunctionExpression<SetterObj<T>>;
+export type TExpObject<T> = FunctionExpression<SetterObj<T>, any>;
 export class PivotQueryable<T,
     TD extends { [key: string]: (o: T) => ValueType },
     TM extends { [key: string]: (o: IEnumerable<T>) => ValueType }>
@@ -53,25 +52,25 @@ export class PivotQueryable<T,
     }
     protected readonly dimensionFn: TD;
     protected readonly metricFn: TM;
-    private _dimensions: TExpObject<TD>;
-    private _metrics: TExpObject<TM>;
+    private _dimensions: FunctionExpression<TD, T>;
+    private _metrics: FunctionExpression<TM, T[]>;
     public buildQuery(queryVisitor: IQueryVisitor) {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "pivot", [this.dimensions.clone(), this.metrics.clone()]);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand as SelectExpression, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<Pivot<T, TD, TM>>;
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, visitParam) as unknown as IQueryExpression<Pivot<T, TD, TM>>;
     }
     public hashCode() {
         let code = this.dimensions.hashCode();
         code += this.metrics.hashCode();
         return hashCodeAdd(hashCode("PIVOT", this.parent.hashCode()), code);
     }
-    protected toObjectValueExpression<K, KE extends { [key in keyof K]: FunctionExpression<K[key]> | ((item: T) => K[key]) }>(objectFn: KE, paramName: string): TExpObject<KE> {
+    protected toObjectValueExpression<K, KE extends { [key in keyof K]: FunctionExpression<K[key] & ValueType> | ((item: T) => K[key] & ValueType) }>(objectFn: KE, paramName: string): FunctionExpression<KE> {
         const param = new ParameterExpression(paramName, this.parent.type);
-        const objectValue: { [key in StringKeyOf<KE>]?: IExpression<KE[key]> } = {};
+        const objectValue: SetterObj<KE> = {};
         for (const prop in objectFn) {
             const value = objectFn[prop];
-            let fnExpression: FunctionExpression;
+            let fnExpression: FunctionExpression<ValueType>;
             if (value instanceof FunctionExpression) {
                 fnExpression = value;
             }
@@ -84,6 +83,6 @@ export class PivotQueryable<T,
             objectValue[prop] = fnExpression.body;
         }
         const objExpression = new ObjectValueExpression(objectValue);
-        return new FunctionExpression(objExpression, [param]) as TExpObject<KE>;
+        return new FunctionExpression(objExpression, [param]);
     }
 }

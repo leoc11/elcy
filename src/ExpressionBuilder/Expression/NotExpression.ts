@@ -28,7 +28,7 @@ export class NotExpression implements IUnaryOperatorExpression<boolean> {
             case undefined:
             case null:
             case Boolean:
-                return operand;
+                return operand as IExpression<boolean>;
             default:
                 return new NotEqualExpression(operand, new ValueExpression(null));
         }

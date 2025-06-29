@@ -1,4 +1,4 @@
-import { IObjectType, Pivot, ValueType } from "../Common/Type";
+import { IObjectType, Pivot, StringKeyOf, ValueType } from "../Common/Type";
 import { Enumerable } from "./Enumerable.internal";
 import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
 import { DistinctEnumerable } from "./DistinctEnumerable";

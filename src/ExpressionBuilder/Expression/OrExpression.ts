@@ -2,7 +2,7 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class OrExpression implements IBinaryOperatorExpression<boolean> {
-    constructor(public leftOperand: IExpression, public rightOperand: IExpression) { }
+    constructor(public leftOperand: IExpression<boolean>, public rightOperand: IExpression<boolean>) { }
     public type = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {

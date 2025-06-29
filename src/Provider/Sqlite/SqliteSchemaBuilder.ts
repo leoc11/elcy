@@ -12,6 +12,7 @@ import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { IQuery } from "../../Query/IQuery";
+import { IQueryResult } from "../../Query/IQueryResult";
 import { RelationalSchemaBuilder } from "../Relational/RelationalSchemaBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 
@@ -43,7 +44,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
         return [];
     }
 
-    public dropTable<TE>(entityMeta: IEntityMetaData<TE>): IQuery[] {
+    public dropTable<TE extends object>(entityMeta: IEntityMetaData<TE>): IQuery[] {
         const result = super.dropTable(entityMeta);
         result.unshift({
             query: "PRAGMA foreign_keys = OFF",
@@ -65,7 +66,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             query: `SELECT * FROM "sqlite_master" WHERE type='table' AND tbl_name IN (${tableNames})`,
             type: QueryType.DQL
         });
-        const tableSchemas = schemaDatas[0];
+        const tableSchemas = schemaDatas[0] as IQueryResult<any>;
 
         // convert all schema to entityMetaData for comparison
         const result: { [key: string]: IEntityMetaData<any> } = {};
@@ -256,14 +257,14 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
 
         return Object.keys(result).select((o) => result[o]).toArray();
     }
-    public renameTable<TE>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
+    public renameTable<TE extends object>(entityMetaData: IEntityMetaData<TE>, newName: string): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(entityMetaData)} RENAME TO ${this.queryBuilder.enclose(newName)}`;
         return [{
             query,
             type: QueryType.DDL
         }];
     }
-    protected updateEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
+    protected updateEntitySchema<T extends object>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
         let result: IQuery[] = [];
         const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
             return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));

@@ -3,6 +3,7 @@ import { FunctionExpression } from "./Expression/FunctionExpression";
 import { IExpression } from "./Expression/IExpression";
 import { LexicalAnalyzer } from "./LexicalAnalyzer";
 import { SyntacticAnalyzer } from "./SyntacticAnalyzer";
+import { LazyFunctionExpression } from "./Expression/LazyFunctionExpression";
 
 export class ExpressionBuilder {
     public static parse<T = unknown, ARG = unknown>(fn: (...items: ARG[]) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): FunctionExpression<T, ARG>;
@@ -11,4 +12,11 @@ export class ExpressionBuilder {
         const tokens = LexicalAnalyzer.parse(fn.toString());
         return SyntacticAnalyzer.parse(Array.from(tokens), paramTypes, userParameters);
     }
+}
+
+export function $l<T, TARG>(fn: string, hashCode?: number): FunctionExpression<T, TARG> {
+    return new LazyFunctionExpression(fn, hashCode);
+}
+export function $c<T extends Function, TARG>(fn: T): T {
+    return fn;
 }

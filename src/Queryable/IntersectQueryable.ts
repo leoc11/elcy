@@ -20,10 +20,10 @@ export class IntersectQueryable<T> extends Queryable<T> {
     }
     private _parameters: { [key: string]: any };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "intersect", [childOperand]);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return  queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public flatQueryParameter(param?: { index: number }) {

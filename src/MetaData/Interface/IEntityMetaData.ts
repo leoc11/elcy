@@ -26,7 +26,7 @@ export interface IEntityMetaData<TE extends object = object, TBase extends objec
     indices?: Array<IIndexMetaData<TE>>;
     inheritance?: InheritanceMetaData<TBase>;
 
-    insertGeneratedColumns?: Array<IColumnMetaData<TE>>;
+    insertGeneratedColumns?: Array<IColumnMetaData<TE, any>>;
     isReadOnly?: boolean;
     modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     name: string;

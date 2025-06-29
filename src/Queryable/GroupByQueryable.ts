@@ -31,10 +31,10 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     protected readonly keySelectorFn: (item: T) => K;
     private _keySelector: FunctionExpression;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<K, T>> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector.clone()]);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const result = queryVisitor.visit(methodExpression, visitParam) as unknown as SelectExpression;
         result.parentRelation = null;
         return result;
     }

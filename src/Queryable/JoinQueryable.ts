@@ -62,8 +62,8 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     private _relation: FunctionExpression<boolean>;
     private _resultSelector: FunctionExpression<R>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T2>;
         const type = this.joinType.toLowerCase() + "Join";
         const params: IExpression[] = [childOperand];
         if (this.joinType !== "CROSS") {

@@ -8,7 +8,7 @@ export class OptionQueryable<T> extends Queryable<T> {
     public get queryOption() {
         return this._queryOption;
     }
-    constructor(parent: Queryable<T>, option: IQueryOption) {
+    constructor(protected parent: Queryable<T>, option: IQueryOption) {
         super(parent.type, parent);
         this._queryOption = clone(this.parent.queryOption);
         this.option(option);

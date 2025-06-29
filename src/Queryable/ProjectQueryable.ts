@@ -9,6 +9,7 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
+// REMOVE:
 export class ProjectQueryable<T> extends Queryable<T> {
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
@@ -32,10 +33,10 @@ export class ProjectQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => unknown>;
     private _selectors: FunctionExpression[];
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "project", selectors);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand as SelectExpression, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {

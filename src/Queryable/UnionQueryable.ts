@@ -23,11 +23,11 @@ export class UnionQueryable<T> extends Queryable<T> {
     protected readonly parent2: Queryable<T>;
     private _parameters: { [key: string]: unknown };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression<boolean>("union", Boolean)]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const resut = queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        const resut = queryVisitor.visit(methodExpression, visitParam) as unknown as IQueryExpression<T>;
         return resut;
     }
     public flatQueryParameter(param?: { index: number }) {

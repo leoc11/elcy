@@ -214,9 +214,9 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
     public set where(value: IExpression<boolean>) {
         this._where = value;
     }
-    public addInclude<TChild extends object>(name: string, child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<T, TChild>): IncludeRelation<TE, TChild>;
+    public addInclude<TChild extends object>(name: string, child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<TE, TChild>): IncludeRelation<TE, TChild>;
     public addInclude<TChild extends object>(name: string, child: SelectExpression<TChild>, relations: IExpression<boolean>, type: RelationshipType, isEmbedded?: boolean): IncludeRelation<TE, TChild>;
-    public addInclude<TChild extends object>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<T, TChild> | IExpression<boolean>, type?: RelationshipType, isEmbedded?: boolean): IncludeRelation<TE, TChild> {
+    public addInclude<TChild extends object>(name: string, child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<TE, TChild> | IExpression<boolean>, type?: RelationshipType, isEmbedded?: boolean): IncludeRelation<TE, TChild> {
         let relation: IExpression<boolean>;
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;

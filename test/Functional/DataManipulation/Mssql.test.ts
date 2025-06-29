@@ -5,11 +5,8 @@ import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { EntityState } from "../../../src/Data/EntityState";
 import { Uuid } from "../../../src/Data/Uuid";
-import { entityMetaKey, relationMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
-import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
-import { RelationMetaData } from "../../../src/MetaData/Relation/RelationMetaData";
 import { MockConnection } from "../../Mock/MockConnection";
 import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
@@ -17,6 +14,7 @@ import { AutoDetail, AutoParent, Order, OrderDetail, Product } from "../../Commo
 import { AutoDetailDesc } from "../../Common/Model/AutoDetailDesc";
 import { MyDb } from "../../Common/MyDb";
 import { DbFunction } from "../../../src/Query/DbFunction";
+import { getEntityMetadata, getRelationMetadata } from "../../../src/MetaData/MetaDataMapper";
 
 const db = new MyDb();
 mockContext(db);
@@ -183,7 +181,7 @@ describe("DATA MANIPULATION", () => {
             }
         });
         it("should trigger before/after save event", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(AutoParent);
             const spy = vi.spyOn(entityMetaData, "beforeSave");
             const spy2 = vi.spyOn(entityMetaData, "afterSave");
 
@@ -283,7 +281,7 @@ WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
             expect(effected).toBe(1);
         });
         it("should update with DIRTY concurrency check", async () => {
-            const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
+            const entityMeta = getEntityMetadata(AutoParent);
             entityMeta.concurrencyMode = "OPTIMISTIC DIRTY";
 
             const spy = vi.spyOn(db.connection, "query");
@@ -346,7 +344,7 @@ WHERE ([entity0].[id]=@param0)`,
             expect(effected).toBe(1);
         });
         it("should update with VERSION concurrency check (fallback to ModifiedDate)", async () => {
-            const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
+            const entityMeta = getEntityMetadata(AutoParent);
             entityMeta.concurrencyMode = "OPTIMISTIC VERSION";
 
             const spy = vi.spyOn(db.connection, "query");
@@ -380,7 +378,7 @@ WHERE ([entity0].[id]=@param0)`,
             expect(effected).toBe(1);
         });
         it("should update without concurrency check", async () => {
-            const entityMeta = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData<AutoParent>;
+            const entityMeta = getEntityMetadata(AutoParent);
             entityMeta.concurrencyMode = "NONE";
 
             const spy = vi.spyOn(db.connection, "query");
@@ -487,7 +485,7 @@ WHERE ([entity0].[id]=@param0)`,
             expect(effected).toBe(1);
         });
         it("should trigger before/after save event", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(AutoParent);
             const spy = vi.spyOn(entityMetaData, "beforeSave");
             const spy2 = vi.spyOn(entityMetaData, "afterSave");
 
@@ -605,7 +603,7 @@ WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
         // it("should fail hard delete when relation still exist", async () => { });
         it("should cascade delete entity + relation (soft delete)", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            const relationMeta = getRelationMetadata(AutoDetail, "parent");
             relationMeta.deleteOption = "CASCADE";
 
             const parent = new AutoParent();
@@ -642,7 +640,7 @@ INNER JOIN (
         });
         it("should delete with SET NULL option (soft delete)", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            const relationMeta = getRelationMetadata(AutoDetail, "parent");
             relationMeta.deleteOption = "SET NULL";
 
             const parent = new AutoParent();
@@ -680,7 +678,7 @@ INNER JOIN (
         });
         it("should delete with SET DEFAULT option (soft delete)", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            const relationMeta = getRelationMetadata(AutoDetail, "parent");
             relationMeta.deleteOption = "SET DEFAULT";
 
             const parent = new AutoParent();
@@ -717,7 +715,7 @@ INNER JOIN (
             relationMeta.deleteOption = "NO ACTION";
         });
         it("should trigger before/after delete event", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, AutoParent) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(AutoParent);
             const spy = vi.spyOn(entityMetaData, "beforeDelete");
             const spy2 = vi.spyOn(entityMetaData, "afterDelete");
 
@@ -867,7 +865,7 @@ WHERE [entity0].[id] IN (@param0)`,
         });
         it("should remove one-one/one-many relation by SET NULL", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const relationMeta = Reflect.getOwnMetadata(relationMetaKey, AutoDetail, "parent") as RelationMetaData;
+            const relationMeta = getRelationMetadata(AutoDetail, "parent");
             relationMeta.nullable = true;
 
             const parent = new AutoParent();

@@ -127,8 +127,8 @@ export class Enumerable<T = unknown> implements Iterable<T> {
         }
         return min;
     }
-    public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
-        return this.where((o) => o instanceof type) as unknown as Enumerable<TType>;
+    public ofType<TType>(type: GenericType<TType>): Enumerable<T & TType> {
+        return this.where((o) => o instanceof type) as unknown as Enumerable<T & TType>;
     }
     public reduce<R>(func: (accumulated: R, item: T) => R): R;
     public reduce<R>(seed: R, func: (accumulated: R, item: T) => R): R;

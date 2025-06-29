@@ -52,10 +52,10 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     private _relation: FunctionExpression<boolean>;
     private _resultSelector: FunctionExpression<R>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T2>;
         const methodExpression = new MethodCallExpression(objectOperand, "groupJoin", [childOperand, this.relation.clone(), this.resultSelector.clone()]);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

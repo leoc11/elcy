@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryType } from "../../../src/Common/Enum";
 import { Uuid } from "../../../src/Data/Uuid";
-import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
-import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { DbFunction } from "../../../src/Query/DbFunction";
+import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
 // import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
-const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
-const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
+const orderDetailMeta = getEntityMetadata(OrderDetail);
+const orderMeta = getEntityMetadata(Order);
 
 const db = new MyDb(
     // () => new MssqlDriver({
@@ -5141,7 +5140,14 @@ DROP TABLE #ad1`
             const spy = vi.spyOn(db.connection, "query");
 
             const ad: OrderDetail[] = [
-                new OrderDetail({ OrderDetailId: "648F644D-EB4A-4200-91AD-13694EEF1CAB", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E58", name: "Product 1", quantity: 1, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
+                new OrderDetail({
+                    OrderDetailId: new Uuid("648F644D-EB4A-4200-91AD-13694EEF1CAB"), 
+                    OrderId: new Uuid("C7438661-DD97-4099-A370-053A72F4C706"),
+                    ProductId: new Uuid("BE019609-99E0-4EF5-85BB-AD90DC302E58"),
+                    name: "Product 1", quantity: 1, 
+                    CreatedDate: new Date("2017-02-22T23:03:39.737Z"), 
+                    isDeleted: false
+                })
             ];
             const subQuery = db.orders.parameter({ ad }).where((o) => ad.any((od) => od.OrderId === o.OrderId));
             const results = await subQuery.toArray();
@@ -5151,17 +5157,17 @@ DROP TABLE #ad1`
 `CREATE TABLE #ad1
 (
 	[__index] decimal(18, 0),
-	[OrderDetailId] nvarchar(255),
-	[OrderId] nvarchar(255),
-	[ProductId] nvarchar(255),
+	[OrderDetailId] uniqueidentifier,
+	[OrderId] uniqueidentifier,
+	[ProductId] uniqueidentifier,
 	[name] nvarchar(255),
 	[quantity] decimal(18, 0),
-	[CreatedDate] nvarchar(255),
+	[CreatedDate] datetime,
 	[isDeleted] nvarchar(255)
 );
 
 INSERT INTO #ad1([__index], [OrderDetailId], [OrderId], [ProductId], [name], [quantity], [CreatedDate], [isDeleted]) VALUES
-	(0,'648F644D-EB4A-4200-91AD-13694EEF1CAB','C7438661-DD97-4099-A370-053A72F4C706','BE019609-99E0-4EF5-85BB-AD90DC302E58','Product 1',1,'2017-02-22T23:03:39.737Z',0);
+	(0,'648f644d-eb4a-4200-91ad-13694eef1cab','c7438661-dd97-4099-a370-053a72f4c706','be019609-99e0-4ef5-85bb-ad90dc302e58','Product 1',1,'2017-02-23 06:03:39.737',0);
 
 SELECT [entity0].[OrderId],
 	[entity0].[TotalAmount],

@@ -1,9 +1,9 @@
 import { OrderDirection } from "../../Common/StringType";
 import { GenericType, IObjectType, ValueType } from "../../Common/Type";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd } from "../../Helper/Util";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
@@ -26,13 +26,13 @@ export abstract class ProjectionEntityExpression<T extends object = object> impl
         }
         return this._selectedColumns;
     }
-    constructor(public subSelect: SelectExpression<T>, type?: GenericType<T>) {
+    constructor(public subSelect: SelectExpression<object, T>, type?: GenericType<T>) {
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = subSelect.projectedColumns.select((o) => {
             const col = new ColumnExpression<T, ValueType>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMeta = o.columnMeta;
+            col.columnMeta = o.columnMeta as unknown as IColumnMetaData<T, ValueType>;
             return col;
         }).toArray();
         // TODO

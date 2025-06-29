@@ -62,7 +62,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         };
         return [queryCommand];
     }
-    protected getUpsertQueryOlder<T>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getUpsertQueryOlder<T extends object>(upsertExp: UpsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,

@@ -1,7 +1,7 @@
-import { GenericType, IObjectType } from "../Common/Type";
+import { GenericType, IObjectType, MethodKey, StringKeyOf } from "../Common/Type";
 import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
+import { InstantiationExpression } from "../ExpressionBuilder/Expression/InstantiationExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -12,10 +12,14 @@ import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
-    protected fallbacks: QueryTranslator[] = [];
+    protected fallbacks: QueryTranslator;
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
-    public registerFallbacks(...fallbacks: QueryTranslator[]) {
-        this.fallbacks = this.fallbacks.concat(fallbacks);
+    public extends(base: QueryTranslator) {
+        if (this._map.size > 0) {
+            throw new Error("Cannot extends filled translator");
+        }
+
+        this._map = new Map(base._map);
     }
     public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: any[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(fn);
@@ -29,7 +33,7 @@ export class QueryTranslator {
         };
         map[""] = translateItem;
     }
-    public registerMember<T, K extends keyof T, TExp extends MemberAccessExpression<T, K>>(object: T, memberName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerMember<T extends object, K extends StringKeyOf<T>, TExp extends MemberAccessExpression<T, K>>(object: T, memberName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(object);
         if (!map) {
             map = {};
@@ -41,7 +45,7 @@ export class QueryTranslator {
         };
         map[memberName] = translateItem;
     }
-    public registerMethod<T, K extends keyof T, TExp extends MethodCallExpression<T, K>>(object: T, methodName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerMethod<T, K extends MethodKey<T>, TExp extends MethodCallExpression<T, K>>(object: T, methodName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(object);
         if (!map) {
             map = {};
@@ -65,7 +69,7 @@ export class QueryTranslator {
         };
         map[""] = translateItem;
     }
-    public registerType<T, TExp extends IExpression<GenericType<T>>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerType<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(type);
         if (!map) {
             map = {};
@@ -81,14 +85,6 @@ export class QueryTranslator {
     public resolve(object: any, memberName?: string) {
         const map = this._map.get(object);
         let item = map && map[memberName || ""];
-        if (item === undefined) {
-            for (const fallback of this.fallbacks) {
-                item = fallback.resolve(object, memberName);
-                if (item) {
-                    break;
-                }
-            }
-        }
         return item;
     }
 }

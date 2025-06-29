@@ -76,18 +76,18 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
         if (this.relation) {
             visitExpression(this.relation, (exp: IExpression) => {
                 if (isColumnExp(exp)) {
-                    const colExp = exp;
+                    const colExp = exp as IColumnExpression<T | TChild>;
                     if (this.child.entity === colExp.entity) {
-                        this._childColumns.push(colExp);
+                        this._childColumns.push(colExp as IColumnExpression<TChild>);
                     }
                     else if (this.parent.entity === colExp.entity) {
-                        this._parentColumns.push(colExp);
+                        this._parentColumns.push(colExp as IColumnExpression<T>);
                     }
                     else if (this.child.allSelects.select((o) => o.entity).contains(colExp.entity)) {
-                        this._childColumns.push(colExp);
+                        this._childColumns.push(colExp as IColumnExpression<TChild>);
                     }
                     else if (this.parent.allSelects.select((o) => o.entity).contains(colExp.entity)) {
-                        this._parentColumns.push(colExp);
+                        this._parentColumns.push(colExp as IColumnExpression<T>);
                     }
                 }
                 else if (!(exp instanceof AndExpression || exp instanceof EqualExpression || exp instanceof StrictEqualExpression)) {

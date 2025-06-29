@@ -32,9 +32,9 @@ declare global {
         leftJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T, item2: T2 | null) => TResult): Enumerable<TResult>;
         max(fn?: (item: T) => number): number;
         min(fn?: (item: T) => number): number;
-        ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
+        ofType<TR>(type: GenericType<TR>): Enumerable<T & TR>;
         orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
-        pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
         rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;
@@ -154,6 +154,6 @@ Array.prototype.toMap = function <T, K, V>(this: T[], keySelector: (item: T) => 
     }
     return result;
 };
-Array.prototype.ofType = function <T, TR>(this: T[], type: GenericType<TR>): Enumerable<TR> {
+Array.prototype.ofType = function <T, TR>(this: T[], type: GenericType<TR>): Enumerable<T & TR> {
     return this.asEnumerable().ofType(type);
 };

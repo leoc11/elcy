@@ -2,7 +2,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone } from "../../Helper/Util";
 import { JoinRelation } from "./JoinRelation";
 
-export class PagingJoinRelation<T = any, TChild = any> extends JoinRelation<T, TChild> {
+export class PagingJoinRelation<T extends object = object, TChild extends object = object> extends JoinRelation<T, TChild> {
     public end: IExpression<boolean>;
     public start: IExpression<boolean>;
     public clone(replaceMap: Map<IExpression, IExpression>) {

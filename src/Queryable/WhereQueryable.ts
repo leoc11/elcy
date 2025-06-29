@@ -30,10 +30,10 @@ export class WhereQueryable<T> extends Queryable<T> {
     protected _predicate: FunctionExpression<boolean>;
     protected readonly predicateFn: (item: T) => boolean;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        return queryVisitor.visit(methodExpression, visitParam) as unknown as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("WHERE", this.parent.hashCode()), this.predicate.hashCode());

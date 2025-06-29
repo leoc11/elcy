@@ -31,10 +31,10 @@ export class IncludeQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<(item: T) => any>;
     private _selectors: FunctionExpression[];
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "include", selectors);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {

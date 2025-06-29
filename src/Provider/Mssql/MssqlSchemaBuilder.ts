@@ -67,7 +67,7 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.queryBuilder.enclose(columnMeta.columnName)}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
+    public dropDefaultContraint<TE extends object>(columnMeta: IColumnMetaData<TE>): IQuery[] {
         const result: IQuery[] = [];
         const variableName = this.queryBuilder.newAlias("param");
         result.push({
@@ -89,7 +89,7 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropPrimaryKey(entityMeta: IEntityMetaData): IQuery[] {
+    public dropPrimaryKey<TE extends object>(entityMeta: IEntityMetaData<TE>): IQuery[] {
         const result: IQuery[] = [];
         const variableName = this.queryBuilder.newAlias("param");
         result.push({
@@ -105,11 +105,11 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         });
         return result;
     }
-    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
+    public renameColumn<TE extends object>(columnMeta: IColumnMetaData<TE>, newName: string): IQuery[] {
         const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{ query, type: QueryType.DDL }];
     }
-    protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
+    protected columnType<TE extends object>(column: IColumnMetaData<TE>): ICompleteColumnType {
         const columnType = super.columnType(column);
         switch (columnType.group) {
             case "Integer": {
@@ -144,7 +144,7 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         }
         return columnType;
     }
-    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
+    protected foreignKeyDeclaration<TE extends object>(relationMeta: IRelationMetaData<TE>) {
         const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +

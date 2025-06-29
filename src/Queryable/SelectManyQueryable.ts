@@ -31,10 +31,10 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected _selector: FunctionExpression<Iterable<T>>;
     protected readonly selectorFn: ((item: S) => Iterable<T>);
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, S>;
         const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        const result = queryVisitor.visit(methodExpression, visitParam) as unknown as SelectExpression<any, T>;
         result.parentRelation = null;
         return result;
     }
