@@ -1,9 +1,10 @@
+import Decimal from "decimal.js-light";
 import { DecimalColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-export class DecimalColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
+export class DecimalColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, Decimal> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(Number, entityMeta);
+        super(Decimal, entityMeta);
     }
     public columnType: DecimalColumnType = "decimal";
     public precision?: number;

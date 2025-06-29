@@ -1,3 +1,4 @@
+import type Decimal from "decimal.js-light";
 import type { TimeSpan } from "../Data/TimeSpan";
 import type { Uuid } from "../Data/Uuid";
 import type { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -17,7 +18,7 @@ export type KeysExceptType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TPr
 export type KeysExtractType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];
 export type KeysType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];
 export type TypeItem<T> = (T extends Array<(infer U)> ? U : T);
-export type ValueType = number | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView;
+export type ValueType = number | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView | Decimal | BigInt;
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
     | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
 export type ElementType<T> = T extends (infer K)[] ? K : never;
