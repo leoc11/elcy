@@ -1,9 +1,8 @@
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { GenericType, IObjectType, ObjectLike, ValueType } from "../Common/Type";
+import { GenericType, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
@@ -18,7 +17,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { hashCode, hashCodeAdd, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { getEntityMetadata } from "../MetaData/MetaDataMapper";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryParameterMap } from "../Query/IQueryParameter";
@@ -267,7 +266,7 @@ export abstract class Queryable<T = unknown> {
                 paramStr = item.toString();
             }
             else {
-                const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type) as IEntityMetaData<T>;
+                const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
                 if (entityMeta) {
                     const primaryItem = {} as T;
                     for (const o of entityMeta.primaryKeys) {
@@ -410,7 +409,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -551,7 +550,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -908,7 +907,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -926,7 +925,7 @@ export abstract class Queryable<T = unknown> {
                     setterExp[prop] = visitor.visitFunction(funcExp, [commandQuery.getItemExpression()], { selectExpression: commandQuery, scope: "queryable" });
                 }
                 else {
-                    setterExp[prop] = new ValueExpression(val as T[StringKeyOf<T>]);
+                    setterExp[prop] = new ValueExpression(val as T[StringKeyOf<T>] & ValueType);
                 }
             }
 
@@ -1056,6 +1055,9 @@ export abstract class Queryable<T = unknown> {
             }
             else if (val instanceof Function) {
                 subQueryCacheKey += hashCode(val.toString());
+            }
+            else if (val instanceof FunctionExpression) {
+                subQueryCacheKey += val.hashCode();
             }
         }
 

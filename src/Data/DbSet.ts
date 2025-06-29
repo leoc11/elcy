@@ -1,7 +1,6 @@
 import { ColumnGeneration } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
 import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "../Enumerable/Enumerable";
 import { IEnumerable } from "../Enumerable/IEnumerable";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -13,8 +12,9 @@ import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqu
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { hashCode, isNotNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
+import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
+import { getEntityMetadata } from "../MetaData/MetaDataMapper";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
@@ -37,7 +37,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     }
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type) as EntityMetaData<T>;
+            this._metaData = getEntityMetadata(this.type);
         }
         return this._metaData;
     }
@@ -53,7 +53,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     }
     protected dictionary: Map<string, EntityEntry<T>> = new Map();
     private readonly _dbContext: DbContext;
-    private _metaData: EntityMetaData<T>;
+    private _metaData: IEntityMetaData<T>;
     public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
         visitor.setDefaultBehaviour(result);
@@ -93,7 +93,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         }
     }
     public deferredInsert(...items: Array<FlatObjectLike<T>>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+        if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
 
@@ -158,7 +158,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return super.deferredUpdate(setter);
     }
     public deferredUpsert(item: FlatObjectLike<T>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+        if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
 

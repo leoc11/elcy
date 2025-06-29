@@ -1,12 +1,12 @@
 import { ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, StringKeyOf } from "../../Common/Type";
 
 export interface IRelationOption<TSource, TTarget> extends IAdditionalRelationOption {
     name?: string;
-    propertyName?: keyof TSource;
+    propertyName?: StringKeyOf<TSource>;
     // used for sql foreign key constraint name
     relationKeyName?: string;
-    relationKeys?: Array<keyof TSource | ((source: TSource) => any)>;
+    relationKeys?: Array<StringKeyOf<TSource> | ((source: TSource) => any)>;
     relationType: RelationshipType | "one?";
     sourceType?: IObjectType<TSource>;
     targetType: IObjectType<TTarget>;

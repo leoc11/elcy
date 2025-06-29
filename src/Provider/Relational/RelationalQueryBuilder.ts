@@ -1,13 +1,10 @@
-import "reflect-metadata";
-import { NullConstructor } from "../../Common/Constant";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { DeleteMode, TimeZoneHandling } from "../../Common/StringType";
-import { ArrayView, GenericType, ValueType } from "../../Common/Type";
+import { ArrayView, GenericType, SetterObj, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -30,7 +27,6 @@ import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 import { isColumnExp, isEntityExp, isNotNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
@@ -67,7 +63,7 @@ import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
-import { SystemParameterExpression } from "../../ExpressionBuilder/Expression/SystemParameterExpression";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -497,7 +493,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return this.enclose(column.dataPropertyName);
     }
-    protected getDeleteQuery<T>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getDeleteQuery<T extends object = object>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: deleteExp,
@@ -526,7 +522,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             result = this.getUpdateQuery(updateQuery, param.option, param.parameters);
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
-            const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, deleteExp.entity.type);
+            const entityMeta = getEntityMetadata(deleteExp.entity.type);
             const relations = entityMeta.relations.where((o) => o.isMaster);
             result = result.concat(relations.selectMany((o) => {
                 const isManyToMany = o.completeRelationType === "many-many";

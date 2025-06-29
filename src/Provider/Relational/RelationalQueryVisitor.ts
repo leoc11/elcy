@@ -1,6 +1,5 @@
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { ElementType, GenericType, IObjectType, MethodKey, StringKeyOf, ValueType } from "../../Common/Type";
-import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -36,6 +35,7 @@ import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+import { getColumnMetadata, getRelationMetadata } from "../../MetaData/MetaDataMapper";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryTranslatorItem } from "../../Query/IQueryTranslatorItem";
 import { IQueryVisitor } from "../../Query/IQueryVisitor";
@@ -43,6 +43,7 @@ import { IQueryVisitParameter } from "../../Query/IQueryVisitParameter";
 import { NamingStrategy } from "../../Query/NamingStrategy";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { IncludeRelation } from "../../Queryable/Interface/IncludeRelation";
+import { ISelectRelation } from "../../Queryable/Interface/ISelectRelation";
 import { JoinRelation } from "../../Queryable/Interface/JoinRelation";
 import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation";
 import { Queryable } from "../../Queryable/Queryable";
@@ -283,7 +284,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isEntityExp(objectOperand)) {
             let column = objectOperand.columns.first((c) => c.propertyName === exp.memberName) as IColumnExpression<T, V>;
             if (!column && objectOperand instanceof EntityExpression) {
-                const computedColumnMeta: IColumnMetaData<T, V> = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, exp.memberName);
+                const computedColumnMeta: IColumnMetaData<T, V> = getColumnMetadata(objectOperand.type, exp.memberName);
                 if (computedColumnMeta instanceof ComputedColumnMetaData) {
                     const result = this.visitFunction((computedColumnMeta as ComputedColumnMetaData<T, V>).functionExpression.clone(), [objectOperand], { selectExpression: param.selectExpression });
                     if (result instanceof EntityExpression || result instanceof SelectExpression) {
@@ -334,7 +335,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
             }
 
-            const relationMeta: IBaseRelationMetaData<T, V & object> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, exp.memberName);
+            const relationMeta: IBaseRelationMetaData<T, V & object> = getRelationMetadata(objectOperand.type as IObjectType<T>, exp.memberName);
             if (relationMeta) {
                 const targetType = relationMeta.target.type;
                 const entityExp = new EntityExpression(targetType, this.newAlias());
@@ -440,7 +441,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
         if (objectOperand instanceof SelectExpression) {
             const objectOperandSelect = objectOperand as SelectExpression<ElementType<T> & object>;
-            let selectOperand = objectOperandSelect;
+            let selectOperand = objectOperandSelect as SelectExpression<any, ElementType<R>>;
             switch (exp.methodName) {
                 case "groupBy": {
                     if (param.scope === "include" || param.scope === "project") {
@@ -519,7 +520,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                 }
                                 const fnExp = new FunctionExpression(objExp, [paramExp]);
                                 const groupByMethodExp = new MethodCallExpression(selectExp, "groupBy", [fnExp]);
-                                const groupByExp = this.visit(groupByMethodExp, param) as GroupByExpression;
+                                const groupByExp = this.visit(groupByMethodExp, param) as unknown as GroupByExpression<ElementType<T> & object, unknown>;
                                 selectOperand = groupByExp;
                             }
                             else if (isEntityExp(selectExp)) {
@@ -527,7 +528,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                 // if child select did not have parent relation, that means that
                                 // child select is replacement for current param.selectExpression
                                 if (!childExp.parentRelation && selectOperand.parentRelation) {
-                                    const parentRel = selectOperand.parentRelation;
+                                    const parentRel = selectOperand.parentRelation as ISelectRelation<any, R & object>;
                                     childExp.parentRelation = parentRel;
                                     parentRel.child = childExp;
                                     const replaceMap = new Map<IExpression, IExpression>([[selectOperand, childExp]]);
@@ -584,10 +585,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                     }
                                 }
                                 else if (selectExp instanceof TernaryExpression) {
-                                    // TODO
+                                    // TODO:
                                 }
                                 else {
-                                    const column = new ComputedColumnExpression(selectOperand.entity, selectExp, this.newAlias("column"));
+                                    const column = new ComputedColumnExpression(selectOperand.entity, selectExp as IExpression<R & ValueType>, this.newAlias("column"));
                                     selectOperand.itemExpression = column;
                                     selectOperand.selects = [column];
                                 }
@@ -1843,9 +1844,9 @@ const joinToInclude = <TChild, TParent>(childExp: SelectExpression<TChild>, pare
     return includeRel;
 };
 
-const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExclusive?: boolean) => {
+const reverseJoin = <TE1 extends object, TE2 extends object, T1 = unknown, T2 = unknown>(childExp: SelectExpression<TE1, T1>, root?: SelectExpression<TE2, T2>, isExclusive?: boolean) => {
     if (root instanceof GroupedExpression) {
-        root = root.groupByExp;
+        root = (root as GroupedExpression<TE1, unknown, T1>).groupByExp;
     }
     if (childExp === root) {
         return childExp;

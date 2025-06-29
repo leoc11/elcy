@@ -1,5 +1,5 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
+import { StringKeyOf, ValueType } from "../../Common/Type";
 import { IRelationOption } from "../../Decorator/Option/IRelationOption";
 import { Enumerable } from "../../Enumerable/Enumerable";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
@@ -7,9 +7,10 @@ import { ColumnMetaData } from "../ColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { getColumnMetadata, getEntityMetadata, setColumnMetadata } from "../MetaDataMapper";
 import { RelationDataMetaData } from "./RelationDataMetaData";
 
-export class RelationMetaData<TSource = any, TTarget = any> implements IRelationMetaData<TSource, TTarget> {
+export class RelationMetaData<TSource extends object = object, TTarget extends object = object> implements IRelationMetaData<TSource, TTarget> {
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
@@ -28,22 +29,22 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
         }
         this.propertyName = relationOption.propertyName;
 
-        this.source = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
+        this.source = getEntityMetadata(relationOption.sourceType);
 
         if (relationOption.targetType) {
-            this.target = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
+            this.target = getEntityMetadata(relationOption.targetType);
         }
 
         this.relationColumns = Enumerable.from(relationOption.relationKeys).select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
             .select((o) => {
-                let col = Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>;
+                let col = getColumnMetadata(relationOption.sourceType, o);
                 if (!col) {
                     // either column will be defined later or column is not mapped.
-                    col = new ColumnMetaData<TSource>();
+                    col = new ColumnMetaData<TSource, any>();
                     col.entity = this.source;
                     col.columnName = o;
                     col.nullable = this.nullable || this.deleteOption === "SET NULL";
-                    Reflect.defineMetadata(columnMetaKey, col, relationOption.sourceType, o);
+                    setColumnMetadata(relationOption.sourceType, o, col);
                 }
                 col.isReadOnly = true;
                 return col;
@@ -54,10 +55,10 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
     public isMaster: boolean;
     public name: string;
     public nullable?: boolean;
-    public propertyName: keyof TSource;
-    public relationColumns: Array<IColumnMetaData<TSource>> = [];
+    public propertyName: StringKeyOf<TSource>;
+    public relationColumns: Array<IColumnMetaData<TSource, ValueType>> = [];
     public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
-    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    public relationMaps: Map<IColumnMetaData<TSource, ValueType>, IColumnMetaData<TTarget, ValueType>>;
     public relationType: RelationshipType;
     public reverseRelation: IRelationMetaData<TTarget, TSource>;
     public source: IEntityMetaData<TSource>;
@@ -104,7 +105,7 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
                         this.relationColumns = [this.fullName + "_" + this.target.type.name + "_Id" as any];
                     }
                     else {
-                        this.relationColumns = this.relationColumns.concat(this.source.primaryKeys);
+                        this.relationColumns = this.relationColumns.concat(this.source.primaryKeys as IColumnMetaData<TSource, ValueType>[]);
                     }
                 }
                 for (let i = 0, len = this.relationColumns.length; i < len; i++) {

@@ -32,7 +32,7 @@ export interface IEntityMetaData<TE extends object = object, TBase extends objec
     name: string;
     primaryKeys: Array<IColumnMetaData<TE>>;
     priority?: number;
-    relations?: Array<IRelationMetaData<TE>>;
+    relations?: Array<IRelationMetaData<TE, any>>;
     schema?: string;
     type: IObjectType<TE>;
     updateGeneratedColumns?: Array<IColumnMetaData<TE>>;

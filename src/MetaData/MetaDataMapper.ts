@@ -20,6 +20,7 @@ export function setColumnMetadata<TE extends object, K extends StringKeyOf<TE>, 
 export function getRelationMetadata<TE extends object, K extends StringKeyOf<TE>, T extends TE[K] & object = TE[K] & object>(constructor: IObjectType<TE>, propertyKey: K): IRelationMetaData<TE, T> {
     return Reflect.getOwnMetadata(relationMetaKey, constructor, propertyKey);
 }
-export function setRelationMetadata<TE extends object, K extends StringKeyOf<TE>, T extends object & TE[K] = TE[K] & object>(constructor: IObjectType<TE>, propertyKey: K, metadata: IRelationMetaData<TE, T>): void {
+// T = TE[K]
+export function setRelationMetadata<TE extends object, K extends StringKeyOf<TE>, T extends object = object>(constructor: IObjectType<TE>, propertyKey: K, metadata: IRelationMetaData<TE, T>): void {
     Reflect.defineMetadata(relationMetaKey, metadata, constructor, propertyKey);
 }

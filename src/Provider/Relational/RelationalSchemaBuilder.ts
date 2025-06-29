@@ -6,7 +6,6 @@ import { IObjectType } from "../../Common/Type";
 import { IConnection } from "../../Connection/IConnection";
 import { Uuid } from "../../Data/Uuid";
 import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
@@ -27,6 +26,7 @@ import { IConstraintMetaData } from "../../MetaData/Interface/IConstraintMetaDat
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
+import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
 import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
@@ -184,7 +184,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             comment: "You might lost your data"
         }];
     }
-    public async getSchemaQuery(entityTypes: IObjectType[]): Promise<ISchemaQuery> {
+    public async getSchemaQuery(entityTypes: IObjectType<object>[]): Promise<ISchemaQuery> {
         let commitQueries: IQuery[] = [];
         let rollbackQueries: IQuery[] = [];
 
@@ -194,7 +194,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         })).first().rows;
         const defaultSchema = defSchemaResult.first().SCHEMA;
 
-        const schemas = entityTypes.select((o) => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData).toArray();
+        const schemas = entityTypes.select((o) => getEntityMetadata(o)).toArray();
 
         for (const schema of schemas) {
             if (!schema.schema) {

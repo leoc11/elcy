@@ -1,5 +1,4 @@
 import { IObjectType } from "../../Common/Type";
-import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../Interface/IConstraintMetaData";
@@ -7,9 +6,10 @@ import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IIndexMetaData } from "../Interface/IIndexMetaData";
 import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
+import { getColumnMetadata } from "../MetaDataMapper";
 import { InheritanceMetaData } from "./InheritanceMetaData";
 
-export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = unknown> implements IRelationDataMetaData<TType, TSource, TTarget> {
+export class RelationDataMetaData<TType extends object = object, TSource extends object = object, TTarget extends object = object> implements IRelationDataMetaData<TType, TSource, TTarget> {
     public get completeRelationType() {
         return this.sourceRelationMeta.completeRelationType;
     }
@@ -28,8 +28,8 @@ export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = 
         this.relationName = relationOption.relationName;
 
         // TODO: possible failed coz relationOption.targetType / sourceType may undefined|string
-        this.sourceRelationColumns = relationOption.sourceRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
-        this.targetRelationColumns = relationOption.targetRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
+        this.sourceRelationColumns = relationOption.sourceRelationKeys.map((o) => getColumnMetadata(relationOption.type, o));
+        this.targetRelationColumns = relationOption.targetRelationKeys.map((o) => getColumnMetadata(relationOption.type, o));
         this.type = relationOption.type;
     }
     public columns: Array<IColumnMetaData<TType>> = [];
@@ -70,7 +70,7 @@ export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = 
             const sourceKey = this.sourceRelationMeta.relationColumns[i];
             this.sourceRelationMaps.set(dataKey, sourceKey);
             if (isManyToMany) {
-                this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey as IColumnMetaData);
+                this.sourceRelationMeta.relationMaps.set(sourceKey, dataKey as any);
             }
         }
         for (let i = 0; i < len; i++) {
@@ -78,7 +78,7 @@ export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = 
             const targetKey = this.targetRelationMeta.relationColumns[i];
             this.targetRelationMaps.set(dataKey, targetKey);
             if (isManyToMany) {
-                this.targetRelationMeta.relationMaps.set(targetKey, dataKey as IColumnMetaData);
+                this.targetRelationMeta.relationMaps.set(targetKey, dataKey as any);
             }
         }
     }
