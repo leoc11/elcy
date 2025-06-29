@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { NullConstructor } from "../../Common/Constant";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { DeleteMode, TimeZoneHandling } from "../../Common/StringType";
@@ -66,7 +67,7 @@ import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
-import Decimal from "decimal.js-light";
+import { SystemParameterExpression } from "../../ExpressionBuilder/Expression/SystemParameterExpression";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -221,7 +222,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (input === null && column.nullable) {
             return null;
         }
-
         switch (column.type as any) {
             case Boolean:
                 result = Boolean(input);
@@ -230,22 +230,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 result = Number.parseFloat(input);
                 if (!isFinite(result)) {
                     result = column.nullable ? null : 0;
-                }
-                break;
-            case BigInt:
-                try {
-                    result = BigInt(input);
-                }
-                catch {
-                    result = column.nullable ? null : BigInt(0);
-                }
-                break;
-            case Decimal:
-                try {
-                    result = new Decimal(input);
-                }
-                catch {
-                    result = column.nullable ? null : new Decimal(0);
                 }
                 break;
             case String:

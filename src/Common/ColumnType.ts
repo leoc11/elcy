@@ -1,23 +1,11 @@
 /**
- * bigint Column types with length
- */
-export type BigIntLengthColumnType = "bigint"; // mysql, postgres, mssql, sqlite
-
-/**
- * bigint Column types
- */
-export type BigIntColumnType = BigIntLengthColumnType
- | "int8" // postgres, sqlite
- | "unsigned big int"; // sqlite
-
- /**
  * int Column types with length
  */
 export type IntLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
     | "tinyint" // mysql, mssql, sqlite
     | "smallint" // mysql, postgres, mssql, oracle, sqlite
     | "mediumint" // mysql, sqlite
-    | BigIntLengthColumnType; // mysql, postgres, mssql, sqlite
+    | "bigint"; // mysql, postgres, mssql, sqlite
 
 /**
  * int Column types
@@ -25,8 +13,9 @@ export type IntLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlit
 export type IntColumnType = IntLengthColumnType
     | "int2" // postgres, sqlite
     | "int4" // postgres
+    | "int8" // postgres, sqlite
     | "integer" // postgres, oracle, sqlite
-    | BigIntColumnType; // sqlite
+    | "unsigned big int"; // sqlite
 
 export type RealColumnType = "float" // mysql, mssql, oracle, sqlite
     | "real" | "float4" // mysql, postgres, mssql, oracle, sqlite
