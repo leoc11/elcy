@@ -35,7 +35,7 @@ export function Column<TE extends object = object, K extends StringKeyOf<TE> = S
 
         const pk = entityMetaData.primaryKeys.find((o) => o.propertyName === metadata.propertyName);
         if (pk) {
-            entityMetaData.primaryKeys.delete(pk);
+            arrayDelete(entityMetaData.primaryKeys, pk);
             entityMetaData.primaryKeys.push(metadata);
         }
 

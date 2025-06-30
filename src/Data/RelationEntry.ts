@@ -1,6 +1,6 @@
 import type { StringKeyOf } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable";
-import { hasFlags, isNotNull } from "../Helper/Util";
+import { arrayAdd, arrayDelete, hasFlags, isNotNull } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
@@ -17,14 +17,14 @@ export class RelationEntry<TE1 extends object = object, TE2 extends object = obj
                 case RelationState.Added: {
                     const typedAddEntries = dbContext.relationEntries.add.get(this.slaveRelation);
                     if (typedAddEntries) {
-                        typedAddEntries.delete(this);
+                        arrayDelete(typedAddEntries, this);
                     }
                     break;
                 }
                 case RelationState.Deleted: {
                     const typedEntries = dbContext.relationEntries.delete.get(this.slaveRelation);
                     if (typedEntries) {
-                        typedEntries.delete(this);
+                        arrayDelete(typedEntries, this);
                     }
                     break;
                 }
@@ -135,7 +135,7 @@ export class RelationEntry<TE1 extends object = object, TE2 extends object = obj
                 relationVal = [];
                 this.slaveEntry.entity[this.slaveRelation.propertyName] = relationVal as TE1[StringKeyOf<TE1>];
             }
-            relationVal.add(this.masterEntry.entity);
+            arrayAdd(relationVal, this.masterEntry.entity);
         }
 
         // apply master relation property
@@ -149,7 +149,7 @@ export class RelationEntry<TE1 extends object = object, TE2 extends object = obj
                 relationVal = [];
                 this.masterEntry.entity[masterRelation.propertyName] = relationVal as TE2[StringKeyOf<TE2>];
             }
-            relationVal.add(this.slaveEntry.entity);
+            arrayAdd(relationVal, this.slaveEntry.entity);
         }
 
         if (this.slaveRelation.completeRelationType !== "many-many") {
@@ -171,7 +171,7 @@ export class RelationEntry<TE1 extends object = object, TE2 extends object = obj
         else {
             const relationVal = this.slaveEntry.entity[this.slaveRelation.propertyName] as TE2[];
             if (Array.isArray(relationVal)) {
-                relationVal.delete(this.masterEntry.entity);
+                arrayDelete(relationVal, this.masterEntry.entity);
             }
         }
 
@@ -183,7 +183,7 @@ export class RelationEntry<TE1 extends object = object, TE2 extends object = obj
         else {
             const relationVal = this.masterEntry.entity[masterRelation.propertyName] as TE1[];
             if (Array.isArray(relationVal)) {
-                relationVal.delete(this.slaveEntry.entity);
+                arrayDelete(relationVal, this.slaveEntry.entity);
             }
         }
 

@@ -1,3 +1,4 @@
+import { arrayDelete } from "../Helper/Util";
 import { IEventDispacher, IEventHandler } from "./IEventHandler";
 
 export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
@@ -7,7 +8,7 @@ export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, s
             handlers.push(handler);
         },
         delete: (handler) => {
-            handlers.delete(handler);
+            arrayDelete(handlers, handler);
         }
     };
     const eventDispacher = function (args: TArgs) {

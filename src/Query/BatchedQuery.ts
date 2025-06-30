@@ -1,4 +1,5 @@
 import { QueryType } from "../Common/Enum";
+import { arrayDelete } from "../Helper/Util";
 import { IQuery } from "./IQuery";
 
 export class BatchedQuery implements IQuery {
@@ -47,7 +48,7 @@ export class BatchedQuery implements IQuery {
         }
     }
     public remove(query: IQuery) {
-        this._queries.delete(query);
+        arrayDelete(this._queries, query);
         this._isBuildComplete = false;
     }
     protected buildQuery() {

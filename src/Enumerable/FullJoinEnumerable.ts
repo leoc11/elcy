@@ -1,3 +1,4 @@
+import { arrayDelete } from "../Helper/Util";
 import { defaultResultFn, Enumerable } from "./Enumerable";
 
 export class FullJoinEnumerable<T = unknown, T2 = unknown, R = unknown> extends Enumerable<R> {
@@ -12,7 +13,7 @@ export class FullJoinEnumerable<T = unknown, T2 = unknown, R = unknown> extends 
                 if (this.relation(value1, value2)) {
                     hasMatch = true;
                     yield this.resultSelector(value1, value2);
-                    array2.delete(value2);
+                    arrayDelete(array2, value2);
                 }
             }
 

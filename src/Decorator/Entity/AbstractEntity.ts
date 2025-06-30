@@ -6,6 +6,7 @@ import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
+import { arrayDelete } from "../../Helper/Util";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
@@ -72,7 +73,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                         }
                         else {
                             if (existing) {
-                                entityMetadata.columns.delete(existing);
+                                arrayDelete(entityMetadata.columns, existing);
                             }
                             inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }

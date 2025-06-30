@@ -1,6 +1,7 @@
 import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
 import { EventHandlerFactory } from "../Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
+import { arrayDelete } from "../Helper/Util";
 import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { DbSet } from "./DbSet";
@@ -19,7 +20,7 @@ export class EmbeddedEntityEntry<T extends object = object, TP extends object = 
             if (isUnchanged) {
                 const embeddedEntries = dbContext.modifiedEmbeddedEntries.get(this.metaData);
                 if (embeddedEntries) {
-                    embeddedEntries.delete(this);
+                    arrayDelete(embeddedEntries, this);
                 }
             }
             else if (isModified) {

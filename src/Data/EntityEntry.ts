@@ -6,6 +6,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
+import { arrayDelete } from "../Helper/Util";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
 import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
@@ -33,21 +34,21 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries) {
-                        typedAddEntries.delete(this);
+                        arrayDelete(typedAddEntries, this);
                     }
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this);
+                        arrayDelete(typedEntries, this);
                     }
                     break;
                 }
                 case EntityState.Modified: {
                     const typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this);
+                        arrayDelete(typedEntries, this);
                     }
                     break;
                 }
@@ -189,7 +190,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                         relEntities.forEach((o) => o[relMeta.reverseRelation.propertyName] = null);
                     }
                     else {
-                        relEntities.forEach((o) => (o[relMeta.reverseRelation.propertyName] as T[]).delete(this.entity));
+                        relEntities.forEach((o) => arrayDelete(o[relMeta.reverseRelation.propertyName] as T[], this.entity));
                     }
 
                     // apply delete option

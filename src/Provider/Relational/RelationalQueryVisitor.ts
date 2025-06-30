@@ -30,7 +30,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
-import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { arrayAdd, arrayDelete, isColumnExp, isEntityExp, isNativeFunction, isNotNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
@@ -173,12 +173,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.leftOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.leftOperand);
+                arrayDelete(param.selectExpression.paramExps, exp.leftOperand);
                 exp.leftOperand = exp.leftOperand.valueExp;
                 hasParam = true;
             }
             if (exp.rightOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.rightOperand);
+                arrayDelete(param.selectExpression.paramExps, exp.rightOperand);
                 exp.rightOperand = exp.rightOperand.valueExp;
                 hasParam = true;
             }
@@ -228,7 +228,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             let hasParam = false;
             exp.params = exp.params.select((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(o);
+                    arrayDelete(param.selectExpression.paramExps, o);
                     hasParam = true;
                     return o.valueExp;
                 }
@@ -263,7 +263,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             exp.params = exp.params.select((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(o);
+                    arrayDelete(param.selectExpression.paramExps, o);
                     return o.valueExp;
                 }
                 return o;
@@ -297,7 +297,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
             if (column) {
                 if (param.scope === "project" && objectOperand.select) {
-                    objectOperand.select.selects.add(column);
+                    arrayAdd(objectOperand.select.selects, column);
                 }
                 return column;
             }
@@ -400,7 +400,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
         }
         else if (objectOperand instanceof SqlParameterExpression) {
-            param.selectExpression.paramExps.delete(objectOperand);
+            arrayDelete(param.selectExpression.paramExps, objectOperand);
             exp.objectOperand = objectOperand.valueExp;
             return param.selectExpression.addSqlParameter(exp);
         }
@@ -425,7 +425,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             // Execute in app if all parameter is available.
             if (isExpressionSafe) {
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(exp.objectOperand);
+                    arrayDelete(param.selectExpression.paramExps, exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
                     return param.selectExpression.addSqlParameter(exp);
                 }
@@ -468,7 +468,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         reverseJoin(childSelectExp, selectOperand, true);
                         // remove relation to groupBy expression.
                         const parentRel = childSelectExp.parentRelation as JoinRelation<any, R & object>;
-                        parentRel.parent.joins.delete(parentRel);
+                        arrayDelete(parentRel.parent.joins, parentRel);
                     }
                     else if (isColumnExp(selectExp)) {
                         key = selectExp;
@@ -665,7 +665,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     if (isSubSelect) {
                         item = this.visit(item, param);
                         objectOperandSelect.distinct = true;
-                        objectOperandSelect.parentRelation.parent.joins.delete(objectOperandSelect.parentRelation as any);
+                        arrayDelete(objectOperandSelect.parentRelation.parent.joins, objectOperandSelect.parentRelation as any);
                         objectOperandSelect.parentRelation = null;
                         return new MethodCallExpression(objectOperandSelect, "contains", [item]);
                     }
@@ -723,7 +723,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         selectOperand.addJoin(newSelect, relationExp, "INNER");
                         selectOperand.paging = {};
                         if (pagingJoin) {
-                            selectOperand.joins.delete(pagingJoin);
+                            arrayDelete(selectOperand.joins, pagingJoin);
                         }
                     }
 
@@ -788,7 +788,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (parentRel && parentRel.isManyToManyRelation) {
                             // alter relation to: parent -> bridge -> groupExp
                             const parentSelect = parentRel.parent;
-                            parentSelect.joins.delete(parentRel);
+                            arrayDelete(parentSelect.joins, parentRel);
 
                             const bridge = new SelectExpression(parentSelect.entity.clone());
                             this.setDefaultBehaviour(bridge);
@@ -820,7 +820,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             groupedBridge.isAggregate = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
-                            groupedBridge.selects.add(bridgeColumn);
+                            arrayAdd(groupedBridge.selects, bridgeColumn);
 
                             return bridgeColumn;
                         }
@@ -882,7 +882,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (parentRel && parentRel.isManyToManyRelation) {
                             // alter relation to: parent -> bridge -> groupExp
                             const parentSelect = parentRel.parent;
-                            parentSelect.joins.delete(parentRel);
+                            arrayDelete(parentSelect.joins, parentRel);
 
                             const bridge = new SelectExpression(parentSelect.entity.clone());
                             this.setDefaultBehaviour(bridge);
@@ -914,7 +914,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             groupedBridge.isAggregate = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
-                            groupedBridge.selects.add(bridgeColumn);
+                            arrayAdd(groupedBridge.selects, bridgeColumn);
 
                             return bridgeColumn;
                         }
@@ -976,7 +976,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (parentRel && parentRel.isManyToManyRelation) {
                             // alter relation to: parent -> bridge -> groupExp
                             const parentSelect = parentRel.parent;
-                            parentSelect.joins.delete(parentRel);
+                            arrayDelete(parentSelect.joins, parentRel);
 
                             const bridge = new SelectExpression(parentSelect.entity.clone());
                             this.setDefaultBehaviour(bridge);
@@ -1018,7 +1018,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             groupedBridge.isAggregate = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
-                            groupedBridge.selects.add(bridgeColumn);
+                            arrayAdd(groupedBridge.selects, bridgeColumn);
 
                             return new StrictEqualExpression(bridgeColumn, new ValueExpression(1));
                         }
@@ -1481,13 +1481,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             if (isExpressionSafe) {
                 let hasParam = false;
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    param.selectExpression.paramExps.delete(exp.objectOperand);
+                    arrayDelete(param.selectExpression.paramExps, exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
                     hasParam = true;
                 }
                 exp.params = exp.params.select((o) => {
                     if (o instanceof SqlParameterExpression) {
-                        param.selectExpression.paramExps.delete(o);
+                        arrayDelete(param.selectExpression.paramExps, o);
                         hasParam = true;
                         return o.valueExp;
                     }
@@ -1594,18 +1594,18 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                         }
                         const include = embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
-                        embeddedSelect.includes.delete(include);
+                        arrayDelete(embeddedSelect.includes, include);
                         includes.push(include);
                     }
                     else {
                         const include = joinToInclude(valExp, embeddedSelect, prop, "many");
-                        embeddedSelect.includes.delete(include);
+                        arrayDelete(embeddedSelect.includes, include);
                         includes.push(include);
                     }
                 }
                 else {
                     const include = joinToInclude(valExp, embeddedSelect, prop, "many");
-                    embeddedSelect.includes.delete(include);
+                    arrayDelete(embeddedSelect.includes, include);
                     includes.push(include);
                 }
             }
@@ -1621,13 +1621,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                     }
                     const include = embeddedSelect.addInclude(prop, childSelectExp, relation, "one");
-                    embeddedSelect.includes.delete(include);
+                    arrayDelete(embeddedSelect.includes, include);
                     includes.push(include);
                 }
                 else {
                     const childSelectExp = valExp.select;
                     const include = joinToInclude(childSelectExp, embeddedSelect, prop, "one");
-                    embeddedSelect.includes.delete(include);
+                    arrayDelete(embeddedSelect.includes, include);
                     includes.push(include);
                 }
             }
@@ -1776,17 +1776,17 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.logicalOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.logicalOperand);
+                arrayDelete(param.selectExpression.paramExps, exp.logicalOperand);
                 exp.logicalOperand = exp.logicalOperand.valueExp;
                 hasParam = true;
             }
             if (exp.trueOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.trueOperand);
+                arrayDelete(param.selectExpression.paramExps, exp.trueOperand);
                 exp.trueOperand = exp.trueOperand.valueExp;
                 hasParam = true;
             }
             if (exp.falseOperand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.falseOperand);
+                arrayDelete(param.selectExpression.paramExps, exp.falseOperand);
                 exp.falseOperand = exp.falseOperand.valueExp;
                 hasParam = true;
             }
@@ -1803,7 +1803,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         const isExpressionSafe = this.isSafe(exp.operand);
         if (isExpressionSafe) {
             if (exp.operand instanceof SqlParameterExpression) {
-                param.selectExpression.paramExps.delete(exp.operand);
+                arrayDelete(param.selectExpression.paramExps, exp.operand);
                 exp.operand = exp.operand.valueExp;
                 return param.selectExpression.addSqlParameter(exp);
             }
@@ -1827,7 +1827,7 @@ const joinToInclude = <TChild, TParent>(childExp: SelectExpression<TChild>, pare
     let parentRel = childExp.parentRelation as JoinRelation<TParent, TChild>;
     while (parentRel && (parentRel as any).name === undefined && parentRel.parent !== parentExp) {
         const nextRel = parentRel.parent.parentRelation as JoinRelation<any, any>;
-        parentRel.parent.joins.delete(parentRel);
+        arrayDelete(parentRel.parent.joins, parentRel);
         parentRel.child.addJoin(parentRel.parent, parentRel.relation, "INNER");
         if (!parentRel) {
             break;
@@ -1839,7 +1839,7 @@ const joinToInclude = <TChild, TParent>(childExp: SelectExpression<TChild>, pare
         return null;
     }
 
-    parentExp.joins.delete(parentRel);
+    arrayDelete(parentExp.joins, parentRel);
     const includeRel = parentExp.addInclude(name, childExp, parentRel.relation, relationType, parentRel.isEmbedded);
     return includeRel;
 };
@@ -1862,7 +1862,7 @@ const reverseJoin = <TE1 extends object, TE2 extends object, T1 = unknown, T2 = 
     for (const joinRel of joinRels) {
         const parent = joinRel.parent;
         const child = joinRel.child;
-        parent.joins.delete(joinRel);
+        arrayDelete(parent.joins, joinRel);
         if (joinRel.isEmbedded) {
             // turn parent into child by using all child selects and includes.
             const cloneMap = new Map();

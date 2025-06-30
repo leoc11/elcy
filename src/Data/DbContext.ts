@@ -19,7 +19,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { isValue } from "../Helper/Util";
+import { arrayDelete, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
@@ -343,7 +343,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 if (res) {
                     cacheQuery.buildQuery(queryBuilder);
                     cacheQuery.resolve(res);
-                    deferredQueries.delete(cacheQuery);
+                    arrayDelete(deferredQueries, cacheQuery);
                 }
             }
         }

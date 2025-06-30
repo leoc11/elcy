@@ -24,7 +24,7 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { isColumnExp, isEntityExp, isNotNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
+import { arrayDelete, isColumnExp, isEntityExp, isNotNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
@@ -848,7 +848,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 else {
                     // create relation data (clone select join clone child)
-                    selectExp.includes.delete(include);
+                    arrayDelete(selectExp.includes, include);
                     const cloneEntity = selectExp.entity.clone();
                     cloneEntity.isRelationData = true;
                     const relationData = new SelectExpression(cloneEntity);

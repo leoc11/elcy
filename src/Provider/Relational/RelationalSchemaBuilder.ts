@@ -9,7 +9,7 @@ import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
-import { clone, isNotNull } from "../../Helper/Util";
+import { arrayAdd, arrayDelete, clone, isNotNull } from "../../Helper/Util";
 import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { CheckConstraintMetaData } from "../../MetaData/CheckConstraintMetaData";
@@ -423,7 +423,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                     break;
                 case "CHECK":
                 case "UNIQUE":
-                    entity.constraints.add(constraintData.meta);
+                    arrayAdd(entity.constraints, constraintData.meta);
                     break;
             }
         }
@@ -811,7 +811,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         const oldColumns = oldSchema.columns.where((o) => !!o.columnName).toArray();
         let columnMetas = schema.columns.where((o) => !!o.columnName).select((o) => {
             const oldCol = oldColumns.first((c) => c.columnName.toLowerCase() === o.columnName.toLowerCase());
-            oldColumns.delete(oldCol);
+            arrayDelete(oldColumns, oldCol);
             return {
                 columnSchema: o,
                 oldColumnSchema: oldCol
@@ -865,7 +865,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         const oldIndices = oldSchema.indices.slice(0);
         let indexMap = schema.indices.select((o) => {
             const oldIndex = oldIndices.first((c) => c.name === o.name);
-            oldIndices.delete(oldIndex);
+            arrayDelete(oldIndices, oldIndex);
             return ({
                 index: o,
                 oldIndex: oldIndex

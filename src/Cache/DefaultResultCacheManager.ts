@@ -1,4 +1,5 @@
 import { QueuedTimeout } from "../Common/QueuedTimeout";
+import { arrayDelete } from "../Helper/Util";
 import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheItem } from "./ICacheItem";
 import { ICacheOption } from "./ICacheOption";
@@ -43,7 +44,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                     for (const tag of item.tags) {
                         const keyList = this._tagMap.get(tag);
                         if (keyList) {
-                            keyList.delete(key);
+                            arrayDelete(keyList, key);
                         }
                     }
                 }

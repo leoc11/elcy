@@ -1,3 +1,4 @@
+import { arrayDelete } from "../Helper/Util";
 import { SortedArray } from "./SortedArray";
 
 interface IQueuedTimeoutItem<T = unknown> {
@@ -18,7 +19,7 @@ export class QueuedTimeout<T> {
                 if (timeoutItem.item !== item) {
                     const existing = this.queue.where((o) => o.item === item).first();
                     if (existing) {
-                        this.queue.delete(existing);
+                        arrayDelete(this.queue, existing);
                     }
                     return;
                 }

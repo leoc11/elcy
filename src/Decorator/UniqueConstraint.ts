@@ -5,6 +5,7 @@ import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { UniqueConstraintMetaData } from "../MetaData/UniqueConstraintMetaData";
 import { IUniqueConstraintOption } from "./Option/IUniqueConstraintOption";
 import { getColumnMetadata, getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
+import { arrayDelete } from "../Helper/Util";
 
 export function UniqueConstraint<TE extends object>(option?: IUniqueConstraintOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
 export function UniqueConstraint<TE extends object>(properties: Array<PropertySelector<TE>>): ClassDecorator & PropertyDecorator & MethodDecorator;
@@ -48,7 +49,7 @@ export function UniqueConstraint<TE extends object>(optionOrPropertiesOrName?: I
 
         let checkMetaData = entityMetaData.constraints.find((o) => o instanceof UniqueConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
-            entityMetaData.constraints.delete(checkMetaData);
+            arrayDelete(entityMetaData.constraints, checkMetaData);
         }
         const columns = Enumerable.from(option.properties)
             .select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))

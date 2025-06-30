@@ -7,7 +7,7 @@ import { EntityState } from "../Data/EntityState";
 import { DBEventEmitter } from "../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
 import { IEnumerable } from "../Enumerable/IEnumerable";
-import { hashCode, isValueType } from "../Helper/Util";
+import { arrayAdd, hashCode, isValueType } from "../Helper/Util";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { RelationDataMetaData } from "../MetaData/Relation/RelationDataMetaData";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
@@ -139,7 +139,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
                 if (isResult) {
                     if (isGroup) {
-                        results.add(entity);
+                        arrayAdd(results, entity);
                     }
                     else {
                         results.push(entity);

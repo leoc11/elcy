@@ -1,6 +1,7 @@
 import { IObjectType, PropertySelector, StringKeyOf } from "../Common/Type";
 import { Enumerable } from "../Enumerable/Enumerable.internal";
 import { FunctionHelper } from "../Helper/FunctionHelper";
+import { arrayDelete } from "../Helper/Util";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";
 import { IndexMetaData } from "../MetaData/IndexMetaData";
@@ -62,7 +63,7 @@ export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: I
         }
         let indexMetaData = entityMetaData.indices.first((o) => o.name === option.name);
         if (indexMetaData) {
-            entityMetaData.indices.delete(indexMetaData);
+            arrayDelete(entityMetaData.indices, indexMetaData);
         }
         const map = Enumerable.from(entityMetaData.columns).toMap(o => o.propertyName);
         const keys = keyStrings.map(o => map.get(o));
