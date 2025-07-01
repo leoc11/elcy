@@ -1,4 +1,4 @@
-import { ColumnTypeMapKey } from "../../Common/ColumnType";
+import { ColumnType, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { ReferenceOption } from "../../Common/StringType";
@@ -15,6 +15,12 @@ import { IQuery } from "../../Query/IQuery";
 import { IQueryResult } from "../../Query/IQueryResult";
 import { RelationalSchemaBuilder } from "../Relational/RelationalSchemaBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
+
+type TablePragma = { tbl_name: string, sql: string };
+type TableInfoPragma = { dflt_value: string, name: string, notnull: number, type: ColumnType, pk: number };
+type IndexPragma = { origin: "c" | "u", name: string, unique: string };
+type IndexInfoPragma = { seqno: number, name: string };
+type FKPragma = { table: string, seq: number, key: string, from: string, to: string, on_update: string, on_delete: string };
 
 export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
     public columnTypeMap = new Map<ColumnTypeMapKey, ICompleteColumnType<SqliteColumnType>>([
@@ -66,7 +72,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             query: `SELECT * FROM "sqlite_master" WHERE type='table' AND tbl_name IN (${tableNames})`,
             type: QueryType.DQL
         });
-        const tableSchemas = schemaDatas[0] as IQueryResult<any>;
+        const tableSchemas = schemaDatas[0] as IQueryResult<TablePragma>;
 
         // convert all schema to entityMetaData for comparison
         const result: { [key: string]: IEntityMetaData<any> } = {};
@@ -88,8 +94,9 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 query: `PRAGMA TABLE_INFO("${entity.name}")`,
                 type: QueryType.DQL
             });
+            const tablePrama = columnSchemas.first() as IQueryResult<TableInfoPragma>;
 
-            for (const columnSchema of columnSchemas.first().rows) {
+            for (const columnSchema of tablePrama.rows) {
                 const defaultExpression: string = columnSchema.dflt_value;
                 const column: IColumnMetaData = {
                     columnName: columnSchema.name,
@@ -117,9 +124,10 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 query: `PRAGMA INDEX_LIST("${entity.name}")`,
                 type: QueryType.DQL
             });
+            const indexPrama = indexSchemas.first() as IQueryResult<IndexPragma>;
 
             // index
-            for (const indexSchema of indexSchemas.first().rows.where((o) => o.origin === "c")) {
+            for (const indexSchema of indexPrama.rows.where((o) => o.origin === "c")) {
                 const indexName = indexSchema.name;
                 const index: IIndexMetaData = {
                     name: indexName,
@@ -132,15 +140,16 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                     query: `PRAGMA INDEX_INFO("${indexName}")`,
                     type: QueryType.DQL
                 });
+                const indexInfoPragma = indexInfos.first() as IQueryResult<IndexInfoPragma>;
 
-                index.keys = indexInfos.first().rows.orderBy([(o) => o.seqno])
+                index.keys = indexInfoPragma.rows.orderBy([(o) => o.seqno])
                     .select((o) => entity.columns.first((c) => c.columnName === o.name))
                     .where((o) => !!o)
                     .toArray();
             }
 
             // unique constraint
-            for (const constaintSchema of indexSchemas.first().rows.where((o) => o.origin === "u")) {
+            for (const constaintSchema of indexPrama.rows.where((o) => o.origin === "u")) {
                 const constaintName = constaintSchema.name;
                 const constraintMeta: IConstraintMetaData = {
                     name: constaintName,
@@ -152,8 +161,9 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                     query: `PRAGMA INDEX_INFO("${constaintName}")`,
                     type: QueryType.DQL
                 });
+                const indexInfoPragma = indexInfos.first() as IQueryResult<IndexInfoPragma>;
 
-                constraintMeta.columns = indexInfos.first().rows.orderBy([(o) => o.seqno])
+                constraintMeta.columns = indexInfoPragma.rows.orderBy([(o) => o.seqno])
                     .select((o) => entity.columns.first((c) => c.columnName === o.name))
                     .where((o) => !!o)
                     .toArray();
@@ -208,7 +218,9 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 query: `PRAGMA FOREIGN_KEY_LIST("${entityName}")`,
                 type: QueryType.DQL
             });
-            for (const relationSchema of foreignKeySchemas[0].rows.orderBy([(o) => o.table], [(o) => o.seq]).groupBy((o) => o.table)) {
+            const foreignKeyPragma = foreignKeySchemas.first() as IQueryResult<FKPragma>;
+
+            for (const relationSchema of foreignKeyPragma.rows.orderBy([(o) => o.table], [(o) => o.seq]).groupBy((o) => o.table)) {
                 const source = result[entityName]; // orderdetail
                 const target = result[relationSchema.key]; // order
                 const relationName = `${entityName}_${relationSchema.key}`;
@@ -217,8 +229,8 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 const targetCols = relationSchema.select((o) => target.columns.first((c) => c.columnName === o.to)).where((o) => !!o).toArray();
                 const relationType = targetCols.all((o) => target.primaryKeys.contains(o)) ? "one" : "many";
 
-                const updateOption: ReferenceOption = relationSchema.first().on_update.toUpperCase();
-                const deleteOption: ReferenceOption = relationSchema.first().on_delete.toUpperCase();
+                const updateOption = relationSchema.first().on_update.toUpperCase() as ReferenceOption;
+                const deleteOption = relationSchema.first().on_delete.toUpperCase() as ReferenceOption;
                 const fkRelation: IRelationMetaData = {
                     source: source,
                     target: target,
@@ -266,20 +278,20 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
     }
     protected updateEntitySchema<T extends object>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
         let result: IQuery[] = [];
-        const isColumnsEquals = (cols1: IColumnMetaData[], cols2: IColumnMetaData[]) => {
+        const isColumnsEquals = (cols1: IColumnMetaData<T>[], cols2: IColumnMetaData<T>[]) => {
             return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
         };
-        const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
+        const isIndexEquals = (index1: IIndexMetaData<T>, index2: IIndexMetaData<T>) => {
             return !!index1.unique === !!index2.unique && isColumnsEquals(index1.keys, index1.keys);
         };
-        const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
-            const check1 = cons1 as ICheckConstraintMetaData;
-            const check2 = cons2 as ICheckConstraintMetaData;
+        const isConstraintEquals = (cons1: IConstraintMetaData<T>, cons2: IConstraintMetaData<T>) => {
+            const check1 = cons1 as ICheckConstraintMetaData<T>;
+            const check2 = cons2 as ICheckConstraintMetaData<T>;
             const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
             const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
             return checkDef1 === checkDef2 && isColumnsEquals(cons1.columns, cons2.columns);
         };
-        const isColumnEquals = (col1: IColumnMetaData, col2: IColumnMetaData) => {
+        const isColumnEquals = (col1: IColumnMetaData<T>, col2: IColumnMetaData<T>) => {
             return this.columnDeclaration(col1, "add") !== this.columnDeclaration(col2, "add");
         };
 

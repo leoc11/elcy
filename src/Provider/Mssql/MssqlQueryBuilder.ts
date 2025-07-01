@@ -180,7 +180,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
         return super.toPropertyValue(input, column);
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+    protected getPagingQueryString<T extends object>(select: SelectExpression<T>, take: number, skip: number): string {
         let result = "";
         if (select.orders.length <= 0) {
             result += "ORDER BY (SELECT NULL)" + this.newLine();

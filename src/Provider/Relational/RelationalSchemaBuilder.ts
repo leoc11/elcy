@@ -2,7 +2,7 @@ import { ColumnType, ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/Colu
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { ReferenceOption } from "../../Common/StringType";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, ValueType } from "../../Common/Type";
 import { IConnection } from "../../Connection/IConnection";
 import { Uuid } from "../../Data/Uuid";
 import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
@@ -42,10 +42,20 @@ import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
 import { RelationalQueryBuilder } from "./RelationalQueryBuilder";
 
+type TableSchema = {TABLE_SCHEMA: string, TABLE_NAME: string};
+type ColumnSchema = TableSchema & { COLUMN_DEFAULT: string, COLUMN_NAME: string, 
+    IS_NULLABLE: string, DATA_TYPE: ColumnType, CHARACTER_SET_NAME: string, 
+    COLLATION_NAME: string, CHARACTER_MAXIMUM_LENGTH: number,
+    DATETIME_PRECISION: number, NUMERIC_SCALE: number, NUMERIC_PRECISION: number, IS_IDENTITY: boolean };
+type ConstraintSchema = TableSchema & { CONSTRAINT_NAME: string, CONSTRAINT_TYPE: string, CHECK_CLAUSE: string };
+type ConstraintColumnSchema = TableSchema & { CONSTRAINT_NAME: string, COLUMN_NAME: string };
+type FKSchema = TableSchema & { CONSTRAINT_NAME: string, UNIQUE_CONSTRAINT_NAME: string, UPDATE_RULE: ReferenceOption, DELETE_RULE: ReferenceOption };
+type IndexSchema = TableSchema & { INDEX_NAME: string, IS_UNIQUE: boolean, COLUMN_NAME: string };
+
 const isColumnsEquals = <TE extends object>(cols1: IColumnMetaData<TE>[], cols2: IColumnMetaData<TE>[]) => {
     return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
 };
-const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
+const isIndexEquals = <TE extends object>(index1: IIndexMetaData<TE>, index2: IIndexMetaData<TE>) => {
     return !!index1.unique === !!index2.unique && isColumnsEquals(index1.keys, index1.keys);
 };
 
@@ -54,14 +64,14 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     public connection: IConnection;
     public option: ISchemaBuilderOption = {};
     public readonly queryBuilder: RelationalQueryBuilder;
-    public addColumn(columnMeta: IColumnMetaData): IQuery[] {
+    public addColumn<TE extends object, T>(columnMeta: IColumnMetaData<TE, T>): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ADD ${this.columnDeclaration(columnMeta, "add")}`;
         return [{
             query,
             type: QueryType.DDL
         }];
     }
-    public addConstraint(constraintMeta: IConstraintMetaData): IQuery[] {
+    public addConstraint<TE extends object>(constraintMeta: IConstraintMetaData<TE>): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(constraintMeta.entity)}` +
             ` ADD CONSTRAINT ${this.constraintDeclaration(constraintMeta)}`;
         return [{
@@ -69,7 +79,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             type: QueryType.DDL
         }];
     }
-    public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
+    public addDefaultContraint<TE extends object, T>(columnMeta: IColumnMetaData<TE, T>): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(columnMeta.entity)} ALTER COLUMN ${this.queryBuilder.enclose(columnMeta.columnName)}` +
             ` SET DEFAULT ${this.defaultValue(columnMeta)}`;
         return [{
@@ -77,7 +87,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             type: QueryType.DDL
         }];
     }
-    public addForeignKey(relationMeta: IRelationMetaData): IQuery[] {
+    public addForeignKey<TSource extends object, TTarget extends object>(relationMeta: IRelationMetaData<TSource, TTarget>): IQuery[] {
         const result: IQuery[] = [];
         if (relationMeta.reverseRelation) {
             result.push({
@@ -313,12 +323,12 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         });
 
         const schemaDatas = await this.connection.query(batchedQuery);
-        const tableSchemas = schemaDatas[0] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
-        const columnSchemas = schemaDatas[1] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string, COLUMN_DEFAULT: string, COLUMN_NAME: string, IS_NULLABLE: string, DATA_TYPE: ColumnType, CHARACTER_SET_NAME: string, COLLATION_NAME: string, CHARACTER_MAXIMUM_LENGTH: number }>;
-        const constriantSchemas = schemaDatas[3] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
-        const constraintColumnSchemas = schemaDatas[6] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
-        const foreignKeySchemas = schemaDatas[4];
-        const indexSchemas = schemaDatas[7] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
+        const tableSchemas = schemaDatas[0] as IQueryResult<TableSchema>;
+        const columnSchemas = schemaDatas[1] as IQueryResult<ColumnSchema>;
+        const constriantSchemas = schemaDatas[3] as IQueryResult<ConstraintSchema>;
+        const constraintColumnSchemas = schemaDatas[6] as IQueryResult<ConstraintColumnSchema>;
+        const foreignKeySchemas = schemaDatas[4] as IQueryResult<FKSchema>;
+        const indexSchemas = schemaDatas[7] as IQueryResult<IndexSchema>;
 
         // convert all schema to entityMetaData for comparison
         const result: { [key: string]: IEntityMetaData<any> } = {};
@@ -439,7 +449,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 source: foreignKey.meta.entity,
                 target: null,
                 fullName: relationName,
-                relationColumns: foreignKey.meta.columns,
+                relationColumns: foreignKey.meta.columns as IColumnMetaData<object, ValueType>[],
                 isMaster: false,
                 relationType: relationType,
                 relationMaps: new Map(),
@@ -454,7 +464,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                     source: targetConstraint.meta.entity,
                     target: foreignKey.meta.entity,
                     fullName: relationName,
-                    relationColumns: targetConstraint.meta.columns,
+                    relationColumns: targetConstraint.meta.columns as IColumnMetaData<object, ValueType>[],
                     isMaster: true,
                     relationType: "one",
                     reverseRelation: fkRelation,
@@ -528,7 +538,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         if (columnMeta.nullable !== true) {
             result += " NOT NULL";
         }
-        if (type !== "alter" && (columnMeta as IntegerColumnMetaData).autoIncrement) {
+        if (type !== "alter" && (columnMeta as IntegerColumnMetaData<TE>).autoIncrement) {
             result += " IDENTITY(1,1)";
         }
         if (type === "create" && columnMeta.description) {
@@ -633,8 +643,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     }
     protected constraintDeclaration<TE extends object>(constraintMeta: IConstraintMetaData<TE>) {
         let result = "";
-        if ((constraintMeta as ICheckConstraintMetaData).definition) {
-            const checkConstriant = constraintMeta as ICheckConstraintMetaData;
+        if ((constraintMeta as ICheckConstraintMetaData<TE>).definition) {
+            const checkConstriant = constraintMeta as ICheckConstraintMetaData<TE>;
             const definition = checkConstriant.getDefinitionString(this.queryBuilder);
             result = `CONSTRAINT ${this.queryBuilder.enclose(constraintMeta.name)} CHECK (${definition})`;
         }
@@ -715,7 +725,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     protected entityName<TE extends object>(entityMeta: IEntityMetaData<TE>) {
         return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(entityMeta.name)}`;
     }
-    protected foreignKeyDeclaration<TE extends object>(relationMeta: IRelationMetaData<TE>) {
+    protected foreignKeyDeclaration<TSource extends object, TTarget extends object>(relationMeta: IRelationMetaData<TSource, TTarget>) {
         const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
@@ -843,10 +853,10 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             result = result.union(this.addPrimaryKey(schema));
         }
 
-        const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
+        const isConstraintEquals = <TE extends object>(cons1: IConstraintMetaData<TE>, cons2: IConstraintMetaData<TE>) => {
             if (cons1 instanceof CheckConstraintMetaData || cons2 instanceof CheckConstraintMetaData) {
-                const check1 = cons1 as ICheckConstraintMetaData;
-                const check2 = cons2 as ICheckConstraintMetaData;
+                const check1 = cons1 as ICheckConstraintMetaData<TE>;
+                const check2 = cons2 as ICheckConstraintMetaData<TE>;
                 const checkDef1 = !check1.definition ? undefined : check1.getDefinitionString(this.queryBuilder);
                 const checkDef2 = !check2.definition ? undefined : check2.getDefinitionString(this.queryBuilder);
                 return this.normalizeCheckDefinition(checkDef1) === this.normalizeCheckDefinition(checkDef2);
