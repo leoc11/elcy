@@ -1,16 +1,14 @@
-import { IObjectType, StringKeyOf } from "../../Common/Type";
-import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { getColumnMetadata, setColumnMetadata } from "../../MetaData/MetaDataMapper";
+import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
+import { ValueType } from "../../Common/Type";
+import { ClassPropertyDecorator } from "../Type";
 
-export function NullableColumn(): PropertyDecorator & MethodDecorator {
-    return <TE extends object = object>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
-        let columnMetaData = getColumnMetadata(target.constructor as IObjectType<TE>, propertyKey);
-        if (columnMetaData == null) {
-            columnMetaData = new ColumnMetaData<TE, any>();
+export function NullableColumn<TE extends object = object, T extends ValueType = ValueType>(): ClassPropertyDecorator<TE, T> {
+    return (_: any, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
+        const columns = context.metadata.columns as IColumnMetaData<TE>[];
+        const column = columns.find(o => o.propertyName == context.name);
+        if (!column) {
+            throw new Error("Need to register column first");
         }
-        columnMetaData.nullable = true;
-        setColumnMetadata(target.constructor as IObjectType<TE>, propertyKey, columnMetaData);
-
-        return descriptor;
+        column.nullable = true;
     };
 }

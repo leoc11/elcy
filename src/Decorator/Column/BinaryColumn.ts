@@ -1,10 +1,11 @@
 import { GenericType } from "../../Common/Type";
 import { BinaryColumnMetaData } from "../../MetaData/BinaryColumnMetaData";
 import { IBinaryColumnOption } from "../Option/IBinaryColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function BinaryColumn(option?: IBinaryColumnOption): PropertyDecorator & MethodDecorator;
-export function BinaryColumn(optionOrType?: GenericType<ArrayBufferView> | IBinaryColumnOption, name?: string, defaultValue?: () => ArrayBufferView): PropertyDecorator & MethodDecorator {
+export function BinaryColumn<TE extends object, T extends ArrayBufferView>(option?: IBinaryColumnOption): ClassPropertyDecorator<TE, T>;
+export function BinaryColumn<TE extends object, T extends ArrayBufferView>(optionOrType?: GenericType<ArrayBufferView> | IBinaryColumnOption, name?: string, defaultValue?: () => ArrayBufferView): ClassPropertyDecorator<TE, T> {
     let option: IBinaryColumnOption;
     if (optionOrType && typeof optionOrType !== "function") {
         option = optionOrType;
@@ -21,5 +22,5 @@ export function BinaryColumn(optionOrType?: GenericType<ArrayBufferView> | IBina
             option.default = defaultValue;
         }
     }
-    return Column<any, any, ArrayBufferView>(BinaryColumnMetaData, option);
+    return Column<TE, T>(BinaryColumnMetaData as any, option);
 }

@@ -1,39 +1,14 @@
 {
-    "version": "2.1.1",
-    "compileOnSave": false,
+    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "allowUnreachableCode": false,
-        "moduleResolution": "node",
-        "module": "ESNext",
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": false,
-        "sourceMap": true,
-        "target": "ES6",
-        "lib": [
-            "es6"
-        ],
-        "types": [
-            "node"
-        ],
-        "outDir": "build",
-        "rootDir": "",
-        "noEmit": true,
-        "emitDecoratorMetadata": false,
-        "experimentalDecorators": true,
-        "declaration": true,
-        "stripInternal": true,
-        "pretty": true,
-        // "strict": true,
-        "removeComments": false,
-        "noImplicitAny": false,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
-        "strictNullChecks": false,
-        "strictBindCallApply": true,
-        "strictFunctionTypes": false,
-        "strictPropertyInitialization": false,
+        "composite": true,
+        "outDir": "dist",
+        "baseUrl": ".", // important for paths
+        "paths": {
+            "@elcy/enumerable": [
+                "../enumerable/src"
+            ] // map the package name to source folder
+        }
     },
     "include": [
         "test",

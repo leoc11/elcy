@@ -1,11 +1,12 @@
 import { DateColumnType } from "../../Common/ColumnType";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function DateColumn(option?: IDateColumnOption): PropertyDecorator & MethodDecorator;
-export function DateColumn(name: string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator & MethodDecorator;
-export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => Date): PropertyDecorator & MethodDecorator {
+export function DateColumn<TE extends object, T extends Date>(option?: IDateColumnOption): ClassPropertyDecorator<TE, T>;
+export function DateColumn<TE extends object, T extends Date>(name: string, dbtype?: DateColumnType, defaultValue?: () => Date): ClassPropertyDecorator<TE, T>;
+export function DateColumn<TE extends object, T extends Date>(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => Date): ClassPropertyDecorator<TE, T> {
     let option: IDateColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -20,5 +21,5 @@ export function DateColumn(optionOrName?: IDateColumnOption | string, dbtype?: D
         option = optionOrName;
     }
 
-    return Column<any, any, Date>(DateColumnMetaData, option);
+    return Column<TE, T>(DateColumnMetaData as any, option);
 }

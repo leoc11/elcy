@@ -1,5 +1,5 @@
 import { DbContext } from "../Data/DbContext";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { hashCode } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
@@ -39,7 +39,7 @@ export class DeferredQuery<T = unknown> {
             return this.value;
         }
         // if being resolved.
-        if (!this.dbContext.deferredQueries.contains(this)) {
+        if (!this.dbContext.deferredQueries.includes(this)) {
             return new Promise<T>((resolve) => {
                 this.resolver = resolve;
             });

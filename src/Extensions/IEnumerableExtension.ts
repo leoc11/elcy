@@ -1,4 +1,4 @@
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 
 declare global {
     interface Array<T> {

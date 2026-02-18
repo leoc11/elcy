@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { ElementType, GenericType, IObjectType, MethodKey, StringKeyOf, ValueType } from "../../Common/Type";
 import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
@@ -281,7 +282,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         }
 
         if (isEntityExp(objectOperand)) {
-            let column = objectOperand.columns.first((c) => c.propertyName === exp.memberName) as IColumnExpression<T, V>;
+            let column = objectOperand.columns.find((c) => c.propertyName === exp.memberName) as IColumnExpression<T, V>;
             if (!column && objectOperand instanceof EntityExpression) {
                 const computedColumnMeta: IColumnMetaData<T, V> = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, exp.memberName);
                 if (computedColumnMeta instanceof ComputedColumnMetaData) {
@@ -399,7 +400,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
         }
         else if (objectOperand instanceof SqlParameterExpression) {
-            param.selectExpression.paramExps.delete(objectOperand);
+            ArrayExtension.delete(param.selectExpression.paramExps, objectOperand);
             exp.objectOperand = objectOperand.valueExp;
             return param.selectExpression.addSqlParameter(exp);
         }

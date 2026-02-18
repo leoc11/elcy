@@ -1,9 +1,10 @@
 import { DecimalColumnMetaData } from "../../MetaData/DecimalColumnMetaData";
 import { IDecimalColumnOption } from "../Option/IDecimalColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function DecimalColumn(option?: IDecimalColumnOption): PropertyDecorator & MethodDecorator;
-export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defaultValue?: () => number): PropertyDecorator & MethodDecorator {
+export function DecimalColumn<TE extends object, T extends number>(option?: IDecimalColumnOption): ClassPropertyDecorator<TE, T>;
+export function DecimalColumn<TE extends object, T extends number>(optionOrName?: string | IDecimalColumnOption, defaultValue?: () => number): ClassPropertyDecorator<TE, T> {
     let option: IDecimalColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -16,5 +17,5 @@ export function DecimalColumn(optionOrName?: string | IDecimalColumnOption, defa
             option.default = defaultValue;
         }
     }
-    return Column<any, any, number>(DecimalColumnMetaData, option);
+    return Column<TE, T>(DecimalColumnMetaData as any, option);
 }

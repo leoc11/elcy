@@ -1,5 +1,5 @@
 {
-  "name": "elcy",
+  "name": "@elcy/core",
   "private": true,
   "type": "module",
   "version": "0.2.0",
@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com/leoc11/elcy",
   "dependencies": {
+    "@elcy/enumerable": "workspace:*",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
@@ -46,8 +47,10 @@
     "eslint-plugin-jsdoc": "^50.7.1",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^5.4.1",
+    "magic-string": "^0.30.17",
     "prettier": "^3.5.3",
     "sinon": "^20.0.0",
+    "ts-morph": "^26.0.0",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.34.0",
     "vitest": "^3.2.2"

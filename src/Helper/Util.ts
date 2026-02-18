@@ -177,6 +177,7 @@ export const isValue = (data: any): data is ValueType => {
 export const isValueType = (type: GenericType) => {
     switch (type) {
         case Number:
+        case BigInt:
         case String:
         case Date:
         case TimeSpan:

@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import type { OrderDirection } from "../../Common/StringType";
 import type { IObjectType, ValueType } from "../../Common/Type";
 import { entityMetaKey } from "../../Decorator/DecoratorKey";
@@ -15,9 +16,9 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     public get columns(): Array<IColumnExpression<T, ValueType>> {
         if (!this._columns) {
             if (this.metaData) {
-                this._columns = this.metaData.columns
+                this._columns = Enumerable.from(this.metaData.columns)
                     .where((o) => !(o instanceof ComputedColumnMetaData))
-                    .select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.contains(o)))
+                    .select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.includes(o)))
                     .toArray();
             }
             else {
@@ -61,7 +62,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     public get primaryColumns(): Array<IColumnExpression<T, ValueType>> {
         if (!this._primaryColumns) {
             if (this.metaData) {
-                this._primaryColumns = this.metaData.primaryKeys.select((o) => this.columns.first((c) => c.columnName === o.columnName)).toArray();
+                this._primaryColumns = this.metaData.primaryKeys.map((o) => this.columns.find((c) => c.columnName === o.columnName));
             }
             else {
                 this._primaryColumns = [];
@@ -81,6 +82,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
         if (this.metaData) {
             this.name = this.metaData.name;
+            this.schema = this.metaData.schema;
             this.entityTypes = [this.metaData.type];
         }
         else {
@@ -89,6 +91,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public readonly entityTypes: IObjectType[];
     public name: string;
+    public schema?: string;
     public select?: SelectExpression<T>;
     private _columns: Array<IColumnExpression<T>>;
     private _defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;

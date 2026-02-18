@@ -1,3 +1,11 @@
+import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { HavingJoinRelation } from "src/Queryable/Interface/HavingJoinRelation";
+import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
+import { ComputedColumnExpression } from "src/Queryable/QueryExpression/ComputedColumnExpression";
+import { GroupByExpression } from "src/Queryable/QueryExpression/GroupByExpression";
 import { ColumnGeneration, QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, IObjectType } from "../../Common/Type";
@@ -6,7 +14,7 @@ import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { isNotNull } from "../../Helper/Util";
+import { isNotNull, mapReplaceExp } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { DbFunction } from "../../Query/DbFunction";
@@ -110,6 +118,161 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         this.indent--;
         queryCommand.query = queryCommand.query.slice(0, -1);
 
+        return result;
+    }
+
+    protected override getSelectQuery<T extends object>(selectExp: SelectExpression<T>, option: IQueryOption, parameters: IQueryParameterMap, skipInclude = false): IQuery[] {
+        let result: IQuery[] = [];
+        const param: IQueryBuilderParameter = {
+            queryExpression: selectExp,
+            parameters: parameters,
+            option: option
+        };
+
+        // subselect should not have include
+        if (selectExp.isSubSelect) {
+            skipInclude = true;
+        }
+
+        const take = this.extractValue(selectExp.paging.take, param) || 0;
+        const skip = this.extractValue(selectExp.paging.skip, param) || 0;
+
+        const distinct = selectExp.distinct ? " DISTINCT" : "";
+        const top = skip <= 0 && take > 0 ? " TOP " + take : "";
+
+        const selects = selectExp.projectedColumns
+            .select((o) => {
+                let colStr = "";
+                if (o instanceof ComputedColumnExpression) {
+                    colStr = this.toOperandString(o.expression, param);
+                }
+                else {
+                    colStr = this.enclose(o.entity.alias) + "." + this.enclose(o.columnName);
+                }
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            })
+            .toArray()
+            .join("," + this.newLine(1, false));
+
+        const entityQ = this.getEntityQueryString(selectExp.entity, param);
+
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !selectExp.joins.ofType(HavingJoinRelation).any()) {
+            const clone = selectExp.clone();
+            clone.entity.alias = "rel_" + clone.entity.alias;
+            clone.isAggregate = true;
+            clone.distinct = true;
+            clone.selects = clone.resolvedGroupBy.slice();
+
+            let relation: IExpression<boolean>;
+            for (const col of selectExp.resolvedGroupBy) {
+                const cloneCol = clone.resolvedGroupBy.first((o) => o.dataPropertyName === col.dataPropertyName);
+                const logicalExp = new StrictEqualExpression(col, cloneCol);
+                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+            }
+
+            const joinRel = clone.parentRelation = new JoinRelation(selectExp, clone, relation, "INNER");
+            selectExp.joins.push(joinRel);
+        }
+
+        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation, param);
+
+        let selectQuerySuffix = "";
+        if (selectExp.where) {
+            param.state = "column-declared";
+            selectQuerySuffix += this.newLine() + "WHERE " + this.toLogicalString(selectExp.where, param);
+            param.state = "";
+        }
+
+        if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
+            if (selectExp.groupBy.length > 0) {
+                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.select((o) => this.getColumnQueryString(o, param)).toArray().join(", ");
+            }
+            if (selectExp.having) {
+                selectQuerySuffix += this.newLine() + "HAVING " + this.toLogicalString(selectExp.having, param);
+            }
+        }
+
+        if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation))) {
+            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.select((c) => this.toString(c.column, param) + " " + c.direction).toArray().join(", ");
+        }
+
+        if (skip > 0) {
+            selectQuerySuffix += this.newLine() + this.getPagingQueryString(selectExp, take, skip);
+        }
+
+        const selectQuery = `SELECT${distinct}${top} ${selects}`
+            + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
+
+        if (!skipInclude) {
+            // select each include as separated query as it more beneficial for performance
+            for (const include of selectExp.resolvedIncludes) {
+                if (!include.isManyToManyRelation) {
+                    result = result.concat(this.getSelectQuery(include.child, param.option, param.parameters));
+                }
+                else {
+                    // create relation data (clone select join clone child)
+                    selectExp.includes.delete(include);
+                    const cloneEntity = selectExp.entity.clone();
+                    cloneEntity.isRelationData = true;
+                    const relationData = new SelectExpression(cloneEntity);
+                    cloneEntity.alias = "rel_" + cloneEntity.alias;
+
+                    const childSelect = include.child;
+
+                    const joinChildSelect = childSelect.clone();
+                    joinChildSelect.entity.alias = "rel_" + joinChildSelect.entity.alias;
+
+                    const relDataCloneMap = new Map();
+                    mapReplaceExp(relDataCloneMap, childSelect, joinChildSelect);
+                    mapReplaceExp(relDataCloneMap, selectExp, relationData);
+                    relationData.includes = [];
+                    relationData.addJoin(joinChildSelect, include.relation.clone(relDataCloneMap), "INNER");
+                    relationData.selects = [];
+                    relationData.itemExpression = new ObjectValueExpression({});
+                    relationData.distinct = true;
+
+                    // Bridge to Child relation
+                    let bridgeChildRelation: IExpression<boolean>;
+                    for (const childCol of childSelect.primaryKeys) {
+                        const bridgeCol = relationData.allColumns.first((o) => o.columnName === childCol.columnName);
+                        relationData.selects.push(bridgeCol);
+                        const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
+                        bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
+                    }
+                    relationData.addInclude(include.name, childSelect, bridgeChildRelation, "one");
+
+                    // Parent to Bridge relation
+                    let parentBridgeRelation: IExpression<boolean>;
+                    const cloneMap = new Map();
+                    mapReplaceExp(cloneMap, selectExp.entity, relationData.entity);
+                    for (const parentCol of selectExp.primaryKeys) {
+                        let bridgeCol = relationData.allColumns.first((o) => o.columnName === parentCol.columnName);
+                        if (!bridgeCol) {
+                            bridgeCol = parentCol.clone(cloneMap);
+                        }
+                        relationData.selects.push(bridgeCol);
+                        const logicalExp = new StrictEqualExpression(parentCol, bridgeCol);
+                        parentBridgeRelation = parentBridgeRelation ? new AndExpression(parentBridgeRelation, logicalExp) : logicalExp;
+                    }
+                    selectExp.addInclude(include.name, relationData, parentBridgeRelation, "many");
+
+                    result = result.concat(this.getSelectQuery(relationData, param.option, param.parameters));
+                }
+            }
+        }
+
+        // select include before parent, coz result parser will parse include first before parent.
+        // this way it will be much more easier to implement async iterator.
+        result.push({
+            query: selectQuery,
+            type: QueryType.DQL,
+            parameters: this.getParameter(param)
+        });
         return result;
     }
 

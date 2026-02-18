@@ -1,5 +1,5 @@
 import type { ElementType, GenericType, IObjectType, MethodKey, MethodReturnType } from "../../Common/Type";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
 import { IExpression } from "./IExpression";

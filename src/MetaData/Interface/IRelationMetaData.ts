@@ -1,6 +1,6 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { StringKeyOf, ValueType } from "../../Common/Type";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IEntityMetaData } from "./IEntityMetaData";

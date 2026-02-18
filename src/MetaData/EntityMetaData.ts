@@ -21,13 +21,13 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
         return !!this.descriminatorMember;
     }
     public get hasIncrementPrimary(): boolean {
-        return this.primaryKeys.any((o) => (o as any as IntegerColumnMetaData).autoIncrement);
+        return this.primaryKeys.findIndex((o) => (o as any as IntegerColumnMetaData).autoIncrement) !== -1;
     }
 
     public get insertGeneratedColumns() {
-        return this.columns.where((o) => {
+        return this.columns.filter((o) => {
             return (o.generation & ColumnGeneration.Insert) as any;
-        }).toArray();
+        });
     }
     public get priority(): number {
         let priority = 1;
@@ -39,9 +39,9 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
         return priority;
     }
     public get updateGeneratedColumns() {
-        return this.columns.where((o) => {
+        return this.columns.filter((o) => {
             return (o.generation & ColumnGeneration.Update) as any;
-        }).toArray();
+        });
     }
     constructor(public type: IObjectType<TE>, name?: string) {
         this.inheritance = new InheritanceMetaData();
@@ -131,6 +131,12 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
         }
         if (typeof entityMeta.concurrencyMode !== "undefined") {
             this.concurrencyMode = entityMeta.concurrencyMode;
+        }
+        if (typeof entityMeta.name !== "undefined") {
+            this.name = entityMeta.name;
+        }
+        if (typeof entityMeta.schema !== "undefined") {
+            this.schema = entityMeta.schema;
         }
     }
 }

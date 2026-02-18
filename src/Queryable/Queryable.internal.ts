@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
@@ -456,7 +457,7 @@ export abstract class Queryable<T = unknown> {
         const paramId = new ParameterExpression("id", id.constructor as any);
         let andExp: IExpression<boolean>;
         if (isValueType) {
-            andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys.first().propertyName), paramId);
+            andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys?.[0]?.propertyName), paramId);
         }
         else {
             for (const pk of dbSet.primaryKeys) {
@@ -522,8 +523,8 @@ export abstract class Queryable<T = unknown> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => {
                 let i = 0;
-                result = result.where(() => (query.queries[i++].type & QueryType.DQL) && true).toArray();
-                return queryCache.resultParser.parse(result, this.dbContext).first();
+                result = result.filter(() => (query.queries[i++].type & QueryType.DQL) && true);
+                return queryCache.resultParser.parse(result, this.dbContext)?.[0];
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
@@ -1056,6 +1057,9 @@ export abstract class Queryable<T = unknown> {
             }
             else if (val instanceof Function) {
                 subQueryCacheKey += hashCode(val.toString());
+            }
+            else if (val instanceof FunctionExpression) {
+                subQueryCacheKey += val.hashCode();
             }
         }
 

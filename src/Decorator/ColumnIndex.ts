@@ -1,5 +1,5 @@
 import { IObjectType, PropertySelector, StringKeyOf } from "../Common/Type";
-import { Enumerable } from "../Enumerable/Enumerable.internal";
+import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";

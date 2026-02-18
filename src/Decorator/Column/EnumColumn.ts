@@ -1,11 +1,12 @@
 import { IEnumType } from "../../Common/Type";
 import { EnumColumnMetaData } from "../../MetaData/EnumColumnMetaData";
 import { IEnumColumnOption } from "../Option/IEnumColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T>): PropertyDecorator & MethodDecorator;
-export function EnumColumn<T extends string | number>(options: IEnumType<any> | T[], defaultValue?: () => T): PropertyDecorator & MethodDecorator;
-export function EnumColumn<T extends string | number>(options: IEnumColumnOption<T> | IEnumType<any> | T[], defaultValue?: () => T): PropertyDecorator & MethodDecorator {
+export function EnumColumn<TE extends object, T extends string | number>(options: IEnumColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function EnumColumn<TE extends object, T extends string | number>(options: IEnumType<any> | T[], defaultValue?: () => T): ClassPropertyDecorator<TE, T>;
+export function EnumColumn<TE extends object, T extends string | number>(options: IEnumColumnOption<T> | IEnumType<any> | T[], defaultValue?: () => T): ClassPropertyDecorator<TE, T> {
     let option: IEnumColumnOption<T> = { type: String as any };
     if (!Array.isArray(options) && (options as IEnumColumnOption<T>).options) {
         option = options;
@@ -44,5 +45,5 @@ export function EnumColumn<T extends string | number>(options: IEnumColumnOption
         }
     }
     option.options = valueOptions;
-    return Column<any, any, string | number>(EnumColumnMetaData, option);
+    return Column<TE, T>(EnumColumnMetaData<TE, T>, option);
 }

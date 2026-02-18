@@ -1,13 +1,12 @@
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
 import { Column } from "./Column";
-import { IObjectType, StringKeyOf } from "../../Common/Type";
-import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
+import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 
 // TODO: casecade soft delete.
-export function DeletedColumn<TE extends object = object>(option: IBooleanColumnOption): PropertyDecorator & MethodDecorator;
-export function DeletedColumn<TE extends object = object>(name?: string): PropertyDecorator & MethodDecorator;
-export function DeletedColumn<TE extends object = object>(optionOrName?: IBooleanColumnOption | string): PropertyDecorator & MethodDecorator {
+export function DeletedColumn<TE extends object = object, T extends boolean = boolean>(option: IBooleanColumnOption): ClassPropertyDecorator<TE, T>;
+export function DeletedColumn<TE extends object = object, T extends boolean = boolean>(name?: string): ClassPropertyDecorator<TE, T>;
+export function DeletedColumn<TE extends object = object, T extends boolean = boolean>(optionOrName?: IBooleanColumnOption | string): ClassPropertyDecorator<TE, T> {
     let option: IBooleanColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -20,13 +19,9 @@ export function DeletedColumn<TE extends object = object>(optionOrName?: IBoolea
     option.default = () => false;
     option.isReadOnly = true;
     
-    const columnDecorator = Column<any, any, boolean>(BooleanColumnMetaData, option);
-    return <T = boolean>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
-        let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, boolean>(target.constructor as IObjectType<TE>, propertyKey) as BooleanColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
-        entityMetaData.deletedColumn = metadata;
-
-        return descriptorResult;
+    const columnDecorator = Column<TE, T>(BooleanColumnMetaData as any, option);
+    return (value: unknown | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
+        columnDecorator(value as any, context as any);
+        context.metadata.deletedColumn = context.name;
     };
 }

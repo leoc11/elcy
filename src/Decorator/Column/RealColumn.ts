@@ -1,10 +1,11 @@
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
 import { IRealColumnOption } from "../Option/IRealColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function RealColumn(option?: IRealColumnOption): PropertyDecorator & MethodDecorator;
-export function RealColumn(name?: string, defaultValue?: () => number): PropertyDecorator & MethodDecorator;
-export function RealColumn(optionOrName?: string | IRealColumnOption, defaultValue?: () => number): PropertyDecorator & MethodDecorator {
+export function RealColumn<TE extends object, T extends number>(option?: IRealColumnOption): ClassPropertyDecorator<TE, T>;
+export function RealColumn<TE extends object, T extends number>(name?: string, defaultValue?: () => number): ClassPropertyDecorator<TE, T>;
+export function RealColumn<TE extends object, T extends number>(optionOrName?: string | IRealColumnOption, defaultValue?: () => number): ClassPropertyDecorator<TE, T> {
     let option: IRealColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -17,5 +18,5 @@ export function RealColumn(optionOrName?: string | IRealColumnOption, defaultVal
             option.default = defaultValue;
         }
     }
-    return Column<any, any, number>(RealColumnMetaData, option);
+    return Column<TE, T>(RealColumnMetaData as any, option);
 }

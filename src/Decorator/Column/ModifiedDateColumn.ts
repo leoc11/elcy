@@ -1,16 +1,15 @@
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { ColumnGeneration } from "../../Common/Enum";
 import { TimeZoneHandling } from "../../Common/StringType";
-import { IObjectType, StringKeyOf } from "../../Common/Type";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
-import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { DbFunction } from "../../Query/DbFunction";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function ModifiedDateColumn<TE extends object = object>(option?: IDateTimeColumnOption): PropertyDecorator & MethodDecorator;
-export function ModifiedDateColumn<TE extends object = object>(name: string, dbtype: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator & MethodDecorator;
-export function ModifiedDateColumn<TE extends object = object>(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): PropertyDecorator & MethodDecorator {
+export function ModifiedDateColumn<TE extends object, T extends Date>(option?: IDateTimeColumnOption): ClassPropertyDecorator<TE, T>;
+export function ModifiedDateColumn<TE extends object, T extends Date>(name: string, dbtype: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): ClassPropertyDecorator<TE, T>;
+export function ModifiedDateColumn<TE extends object, T extends Date>(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, timeZoneHandling?: TimeZoneHandling): ClassPropertyDecorator<TE, T> {
     let option: IDateTimeColumnOption = {};
     if (optionOrName) {
         if (typeof optionOrName === "string") {
@@ -32,13 +31,9 @@ export function ModifiedDateColumn<TE extends object = object>(optionOrName?: ID
     option.isReadOnly = true;
     option.generation = ColumnGeneration.Insert | ColumnGeneration.Update;
 
-    const columnDecorator = Column<any, any, Date>(DateTimeColumnMetaData, option);
-    return <T = Date>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
-        let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, Date>(target.constructor as IObjectType<TE>, propertyKey) as DateTimeColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
-        entityMetaData.modifiedDateColumn = metadata;
-
-        return descriptorResult;
+    const columnDecorator = Column<TE, T>(DateTimeColumnMetaData as any, option);
+    return (target: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
+        columnDecorator(target as any, context as any);
+        context.metadata.modifiedDateColumn = context.name;
     };
 }

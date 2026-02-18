@@ -6,7 +6,7 @@ import { EntityEntry } from "../Data/EntityEntry";
 import { EntityState } from "../Data/EntityState";
 import { DBEventEmitter } from "../Data/Event/DbEventEmitter";
 import { IDBEventListener } from "../Data/Event/IDBEventListener";
-import { IEnumerable } from "../Enumerable/IEnumerable";
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { hashCode, isValueType } from "../Helper/Util";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
@@ -72,15 +72,15 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 resolveCache.column = select.selects.first();
             }
             else {
-                let primaryColumns = select.entity.primaryColumns.where((o) => o.columnName !== "__index");
+                let primaryColumns = Enumerable.from(select.entity.primaryColumns).where((o) => o.columnName !== "__index");
                 resolveCache.primaryColumns = primaryColumns;
                 resolveCache.columns = select.selects;
 
                 if (resolveCache.dbSet) {
-                    resolveCache.primaryColumns = primaryColumns = primaryColumns.union(select.resolvedSelects.where((o) => resolveCache.dbSet.primaryKeys.any((c) => c.propertyName === o.propertyName)));
+                    resolveCache.primaryColumns = primaryColumns = primaryColumns.union(select.resolvedSelects.where((o) => resolveCache.dbSet.primaryKeys.some((c) => c.propertyName === o.propertyName)));
                     primaryColumns.enableCache = true;
 
-                    const columns = select.selects.union(select.relationColumns);
+                    const columns = Enumerable.from(select.selects).union(select.relationColumns);
                     columns.enableCache = true;
                     resolveCache.columns = columns;
                 }
@@ -115,7 +115,7 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 continue;
             }
 
-            const data = queryResult.rows;
+            const data = Enumerable.from(queryResult.rows);
             if (!data.any()) {
                 continue;
             }
@@ -204,16 +204,8 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                         entity[include.name] = [];
                     }
 
-                    let relationMeta: IRelationMetaData<TType>;
-                    if (dbSet && include.child.entity.isRelationData) {
-                        relationMeta = dbSet.metaData.relations.first((o) => o.propertyName === include.name);
-                    }
                     for (const data of relationValue) {
                         entity[include.name].push(data.entity);
-                        if (relationMeta) {
-                            const relationEntry = entry.getRelation(relationMeta.propertyName, data.entry);
-                            relationEntry.relationData = data.data.entity;
-                        }
                     }
                 }
                 else {

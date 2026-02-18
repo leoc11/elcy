@@ -2,7 +2,7 @@ import { ClassBase } from "../../Common/Constant";
 import { InheritanceType } from "../../Common/Enum";
 import { OrderDirection } from "../../Common/StringType";
 import { IObjectType, ValueType } from "../../Common/Type";
-import { IOrderDefinition } from "../../Enumerable/Interface/IOrderDefinition";
+import { IOrderDefinition } from "@elcy/enumerable";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";

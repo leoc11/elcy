@@ -1,16 +1,14 @@
-import { ColumnMetaData } from "../../MetaData/ColumnMetaData";
-import { getColumnMetadata, setColumnMetadata } from "../../MetaData/MetaDataMapper";
-import { IObjectType, StringKeyOf } from "../../Common/Type";
+import { ValueType } from "../../Common/Type";
+import { ClassPropertyDecorator } from "../Type";
+import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
-export function ColumnDescription<TE extends object = object>(description: string): PropertyDecorator & MethodDecorator {
-    return <T>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
-        let columnMetaData = getColumnMetadata(target.constructor as IObjectType<TE>, propertyKey);
-        if (columnMetaData == null) {
-            columnMetaData = new ColumnMetaData();
+export function ColumnDescription<TE extends object = object, T extends ValueType = ValueType>(description: string): ClassPropertyDecorator<TE, T> {
+    return (_: any, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
+        const columns = context.metadata.columns as IColumnMetaData<TE>[];
+        const column = columns.find(o => o.propertyName == context.name);
+        if (!column) {
+            throw new Error("Need to register column first");
         }
-        columnMetaData.description = description;
-        setColumnMetadata(target.constructor as IObjectType<TE>, propertyKey, columnMetaData);
-
-        return descriptor;
+        column.description = description;
     };
 }

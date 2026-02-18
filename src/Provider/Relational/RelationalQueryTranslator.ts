@@ -1,4 +1,4 @@
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { AdditionAssignmentExpression } from "../../ExpressionBuilder/Expression/AdditionAssignmentExpression";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";

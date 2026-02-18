@@ -3,6 +3,7 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityExpression } from "./IEntityExpression";
 
+// TODO: should be implemented as uninary expression
 export interface IColumnExpression<TE extends object = object, T = ValueType> extends IExpression<T> {
     alias?: string;
     columnMeta?: IColumnMetaData<TE, T>;

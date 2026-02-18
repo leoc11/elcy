@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { JoinType, OrderDirection } from "../../Common/StringType";
 import { FlatObjectLike, IObjectType, SetterObj } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
@@ -19,7 +20,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
+export class UpdateExpression<T extends object = object> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
     }
@@ -44,9 +45,9 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>);
-    constructor(select: SelectExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>);
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>) {
+    constructor(entity: IEntityExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>, returnings?: Array<IColumnExpression<T>>);
+    constructor(select: SelectExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>, returnings?: Array<IColumnExpression<T>>);
+    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, setter: (() => FlatObjectLike<T>) | SetterObj<T>, returnings?: Array<IColumnExpression<T>>) {
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
         } else {
@@ -59,7 +60,11 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
             setter = (setterFn.body as ObjectValueExpression<FlatObjectLike<T>>).object;
         }
         this.setter = setter;
+        if (returnings) {
+            this.returnings = returnings;
+        }
     }
+    public returnings: Array<IColumnExpression<T>> = [];
     public select: SelectExpression<T>;
     public setter: SetterObj<T> = {};
     public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
@@ -108,10 +113,10 @@ export class UpdateExpression<T = unknown> implements IQueryExpression<void> {
     }
 }
 
-export const updateItemExp = <T>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
+export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
-    const modifiedColumns = entry.getModifiedProperties().select((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where((o) => !!o);
+    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).select((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where((o) => !!o);
 
     for (const o of modifiedColumns) {
         const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);

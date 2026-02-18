@@ -1,9 +1,10 @@
 import { BooleanColumnMetaData } from "../../MetaData/BooleanColumnMetaData";
 import { IBooleanColumnOption } from "../Option/IBooleanColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function BooleanColumn(option?: IBooleanColumnOption): PropertyDecorator & MethodDecorator;
-export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defaultValue?: () => boolean): PropertyDecorator & MethodDecorator {
+export function BooleanColumn<TE extends object, T extends boolean>(option?: IBooleanColumnOption): ClassPropertyDecorator<TE, boolean>;
+export function BooleanColumn<TE extends object, T extends boolean>(optionOrName?: IBooleanColumnOption | string, defaultValue?: () => boolean): ClassPropertyDecorator<TE, T> {
     let option: IBooleanColumnOption;
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -17,5 +18,5 @@ export function BooleanColumn(optionOrName?: IBooleanColumnOption | string, defa
             option.default = defaultValue;
         }
     }
-    return Column<any, any, boolean>(BooleanColumnMetaData, option);
+    return Column<TE, T>(BooleanColumnMetaData<TE> as any, option);
 }

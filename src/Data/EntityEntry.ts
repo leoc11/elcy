@@ -1,20 +1,17 @@
+import { Enumerable } from "@elcy/enumerable";
 import { FlatObjectLike, KeysExceptType, KeysType, StringKeyOf, ValueType } from "../Common/Type";
-import { propertyChangeDispatherMetaKey, propertyChangeHandlerMetaKey, relationChangeDispatherMetaKey, relationChangeHandlerMetaKey } from "../Decorator/DecoratorKey";
-import { EventHandlerFactory } from "../Event/EventHandlerFactory";
-import { IEventDispacher, IEventHandler } from "../Event/IEventHandler";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { EmbeddedRelationMetaData } from "../MetaData/EmbeddedColumnMetaData";
-import { IChangeEventParam, IRelationChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
+import { IChangeEventParam } from "../MetaData/Interface/IChangeEventParam";
 import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { DbSet } from "./DbSet";
+import { trackEntity } from "./EntityChangeTracker";
 import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
-import { RelationEntry } from "./RelationEntry";
-import { RelationState } from "./RelationState";
 
 export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public get isCompletelyLoaded() {
@@ -90,34 +87,16 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     }
     constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
         this._state = EntityState.Detached;
-
-        let propertyChangeHandler = entity[propertyChangeHandlerMetaKey as Extract<keyof T, symbol>] as IEventHandler<T, IChangeEventParam<T>>;
-        if (!propertyChangeHandler) {
-            let propertyChangeDispatcher: IEventDispacher<IChangeEventParam<T>>;
-            [propertyChangeHandler, propertyChangeDispatcher] = EventHandlerFactory<T, IChangeEventParam<T>>(entity);
-            entity[propertyChangeHandlerMetaKey] = propertyChangeHandler;
-            entity[propertyChangeDispatherMetaKey] = propertyChangeDispatcher;
-        }
-        propertyChangeHandler.add((source: T, args: IChangeEventParam<T>) => this.onPropertyChanged(args));
-
-        let relationChangeHandler = entity[relationChangeHandlerMetaKey as Extract<keyof T, symbol>] as IEventHandler<T, IRelationChangeEventParam>;
-        if (!relationChangeHandler) {
-            let relationChangeDispatcher: IEventDispacher<IRelationChangeEventParam>;
-            [relationChangeHandler, relationChangeDispatcher] = EventHandlerFactory<T, IRelationChangeEventParam>(entity);
-            entity[relationChangeHandlerMetaKey] = relationChangeHandler;
-            entity[relationChangeDispatherMetaKey] = relationChangeDispatcher;
-        }
-        relationChangeHandler.add((source: T, args: IRelationChangeEventParam) => this.onRelationChanged(args));
+        trackEntity(entity, (_: T, args: IChangeEventParam<T>) => this.onPropertyChanged(args));
     }
 
     //#endregion
 
     public enableTrackChanges = true;
-    public relationMap: { [relationName in StringKeyOf<T>]?: Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>> } = {};
     private _originalValues: Map<StringKeyOf<T>, unknown> = new Map();
     private _state: EntityState;
     public acceptChanges(...properties: Array<KeysType<T, ValueType>>) {
-        if (properties && this.state !== EntityState.Modified) {
+        if (properties.length && this.state !== EntityState.Modified) {
             return;
         }
 
@@ -137,30 +116,41 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                     this._originalValues.clear();
                 }
 
-                for (const prop of acceptedProperties.intersect(this.metaData.primaryKeys.select((o) => o.propertyName))) {
+                for (const prop of Enumerable.from(acceptedProperties).intersect(Enumerable.from(this.metaData.primaryKeys).select((o) => o.propertyName))) {
                     // reflect update option
                     const relations = this.metaData.relations
-                        .where((rel) => rel.isMaster && rel.relationColumns.any((o) => o.propertyName === prop)
+                        .where((rel) => rel.isMaster && rel.relationColumns.some((o) => o.propertyName === prop)
                             && (rel.updateOption === "CASCADE" || rel.updateOption === "SET NULL" || rel.updateOption === "SET DEFAULT"));
                     for (const rel of relations) {
-                        const relationData = this.relationMap[rel.propertyName];
-                        if (!relationData) {
+                        let childEntities: unknown[] = [];
+                        if (rel.relationType === "one") {
+                            const childEntity = this.entity[rel.propertyName];
+                            if (childEntity) {
+                                childEntities = [childEntity];
+                            }
+                        }
+                        else {
+                            childEntities = this.entity[rel.propertyName] as [];
+                        }
+
+                        if (!childEntities.length) {
                             continue;
                         }
-                        const col = rel.relationColumns.first((o) => o.propertyName === prop);
+
+                        const col = rel.relationColumns.find((o) => o.propertyName === prop);
                         const rCol = rel.relationMaps.get(col);
-                        for (const relEntry of relationData.values() as MapIterator<RelationEntry<unknown, T>>) {
+                        for (const childEntity of childEntities) {
                             switch (rel.updateOption) {
                                 case "CASCADE": {
-                                    relEntry.slaveEntry[rCol.propertyName as string] = this.entity[prop];
+                                    childEntity[rCol.propertyName as string] = this.entity[prop];
                                     break;
                                 }
                                 case "SET NULL": {
-                                    relEntry.slaveEntry[rCol.propertyName as string] = null;
+                                    childEntity[rCol.propertyName as string] = null;
                                     break;
                                 }
                                 case "SET DEFAULT": {
-                                    relEntry.slaveEntry[rCol.propertyName as string] = rCol ? ExpressionExecutor.execute(rCol.defaultExp) : null;
+                                    childEntity[rCol.propertyName as string] = rCol?.defaultExp ? ExpressionExecutor.execute(rCol.defaultExp) : null;
                                     break;
                                 }
                             }
@@ -176,55 +166,64 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
             case EntityState.Deleted: {
                 this.state = EntityState.Detached;
 
-                for (const relMeta of this.dbSet.metaData.relations) {
-                    let relEntities: unknown[] = [];
+                for (const relMeta of this.metaData.relations) {
+                    let childEntities: object[] = [];
                     const relProp = this.entity[relMeta.propertyName];
                     if (Array.isArray(relProp)) {
-                        relEntities = relEntities.concat(this.entity[relMeta.propertyName]);
+                        childEntities = relProp.slice();
                     }
                     else if (relProp) {
-                        relEntities = [relProp];
+                        childEntities = [relProp as object];
                     }
+
+                    if (!childEntities.length) {
+                        continue;
+                    }
+
                     if (relMeta.reverseRelation.relationType === "one") {
-                        relEntities.forEach((o) => o[relMeta.reverseRelation.propertyName] = null);
+                        childEntities.forEach((o) => o[relMeta.reverseRelation.propertyName as any] = null);
                     }
                     else {
-                        relEntities.forEach((o) => (o[relMeta.reverseRelation.propertyName] as T[]).delete(this.entity));
+                        childEntities.forEach((o) => (o[relMeta.reverseRelation.propertyName] as T[]).delete(this.entity));
+                    }
+
+                    if (!(relMeta.isMaster && (relMeta.updateOption === "CASCADE" || relMeta.updateOption === "SET NULL" || relMeta.updateOption === "SET DEFAULT"))) {
+                        continue;
+                    }
+
+                    const relCols = Enumerable.from(relMeta.relationMaps)
+                        .where(o => this.metaData.primaryKeys.includes(o[0]))
+                        .select(o => o[1]);
+                    if (!relCols.any()) {
+                        continue;
                     }
 
                     // apply delete option
-                    const relations = this.metaData.relations
-                        .where((o) => o.isMaster
-                            && (o.updateOption === "CASCADE" || o.updateOption === "SET NULL" || o.updateOption === "SET DEFAULT"));
-
-                    for (const o of relations) {
-                        const relEntryMap = this.relationMap[o.propertyName];
-                        if (!relEntryMap) {
+                    for (const childEntity of childEntities) {
+                        const childEntry = this.dbSet.dbContext.entry(childEntity as object);
+                        if (childEntry.state === EntityState.Detached) {
                             continue;
                         }
-                        for (const relEntry of relEntryMap.values()) {
-                            switch (o.updateOption) {
-                                case "CASCADE": {
-                                    relEntry.slaveEntry.state = EntityState.Deleted;
-                                    (relEntry.slaveEntry as EntityEntry).acceptChanges();
-                                    break;
+
+                        switch (relMeta.updateOption) {
+                            case "CASCADE": {
+                                childEntry.state = EntityState.Deleted;
+                                childEntry.acceptChanges();
+                                break;
+                            }
+                            case "SET NULL": {
+                                for (const col of relCols) {
+                                    childEntity[col.propertyName as string] = null;
                                 }
-                                case "SET NULL": {
-                                    for (const rCol of (relEntry.slaveRelation as IRelationMetaData<object, T>).mappedRelationColumns) {
-                                        relEntry.slaveEntry[rCol.propertyName as string] = null;
-                                        relEntry.slaveEntry.acceptChanges(rCol.propertyName);
-                                    }
-                                    break;
+                                childEntry.acceptChanges(...relCols.select(o => o.propertyName));
+                                break;
+                            }
+                            case "SET DEFAULT": {
+                                for (const col of relCols) {
+                                    childEntity[col.propertyName as string] = col?.defaultExp ? ExpressionExecutor.execute(col.defaultExp) : null;
                                 }
-                                case "SET DEFAULT": {
-                                    for (const rCol of (relEntry.slaveRelation as IRelationMetaData<object, T>).mappedRelationColumns) {
-                                        if (rCol.defaultExp) {
-                                            relEntry.slaveEntry[rCol.propertyName as string] = ExpressionExecutor.execute(rCol.defaultExp);
-                                            relEntry.slaveEntry.acceptChanges(rCol.propertyName);
-                                        }
-                                    }
-                                    break;
-                                }
+                                childEntry.acceptChanges(...relCols.select(o => o.propertyName));
+                                break;
                             }
                         }
                     }
@@ -265,25 +264,6 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     }
 
     //#region Relations
-    public getRelation<T2 extends object>(propertyName: StringKeyOf<T>, relatedEntry: EntityEntry<T2>): RelationEntry<T, T2> | RelationEntry<T2, T> {
-        const relationMeta: IRelationMetaData<T, T2> = this.metaData.relations.first((o) => o.propertyName === propertyName);
-        let relGroup = this.relationMap[propertyName] as unknown as Map<EntityEntry<T2>, RelationEntry<T, T2> | RelationEntry<T2, T>>;
-        if (!relGroup) {
-            relGroup = new Map();
-            this.relationMap[propertyName] = relGroup as unknown as Map<EntityEntry, RelationEntry<T> | RelationEntry<unknown, T>>;
-        }
-        let relEntry = relGroup.get(relatedEntry);
-        if (!relEntry) {
-            if (relationMeta.isMaster) {
-                relEntry = relatedEntry.getRelation(relationMeta.reverseRelation.propertyName, this);
-            }
-            else {
-                relEntry = new RelationEntry(this, relatedEntry, relationMeta);
-            }
-            relGroup.set(relatedEntry, relEntry);
-        }
-        return relEntry;
-    }
     public isPropertyModified(prop: StringKeyOf<T>) {
         return this._originalValues.has(prop);
     }
@@ -389,47 +369,14 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         }
         this.state = this._originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
     }
-    protected onRelationChanged(param: IRelationChangeEventParam<T>) {
-        for (let item of param.entities) {
-            if (item === undefined && param.relation.relationType === "one") {
-                // undefined means relation may exist or not, so check related entity from context
-                item = this.relatedEntity(param.relation as IRelationMetaData<T, object, "one">);
-                if (!item) {
-                    continue;
-                }
-            }
-            const entry = this.dbSet.dbContext.entry(item as object);
-            const relationEntry = this.getRelation(param.relation.propertyName, entry);
-
-            if (this.enableTrackChanges) {
-                switch (param.type) {
-                    case "add": {
-                        if (relationEntry.state !== RelationState.Unchanged) {
-                            relationEntry.add();
-                        }
-                        break;
-                    }
-                    case "del":
-                        if (relationEntry.state !== RelationState.Detached) {
-                            relationEntry.delete();
-                        }
-                        break;
-                }
-            }
-            else {
-                relationEntry.state = RelationState.Unchanged;
-            }
-        }
-    }
     protected onPropertyChanged(param: IChangeEventParam<T>) {
-        if (this.dbSet.primaryKeys.contains(param.column)) {
+        if (this.dbSet.primaryKeys.includes(param.column)) {
             // primary key changed, update dbset entry dictionary.
             this.dbSet.updateEntryKey(this);
         }
 
         if (param.oldValue !== param.newValue && param.column instanceof EmbeddedRelationMetaData) {
             const embeddedDbSet = this.dbSet.dbContext.set(param.column.target.type);
-
             void import("./EmbeddedEntityEntry").then(o => new o.EmbeddedEntityEntry(embeddedDbSet, param.newValue as object, this));
         }
 

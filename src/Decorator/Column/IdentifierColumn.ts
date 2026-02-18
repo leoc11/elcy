@@ -1,11 +1,12 @@
 import { Uuid } from "../../Data/Uuid";
 import { IdentifierColumnMetaData } from "../../MetaData/IdentifierColumnMetaData";
 import { IIdentityColumnOption } from "../Option/IIdentityColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function IdentifierColumn(option?: IIdentityColumnOption): MethodDecorator & PropertyDecorator;
-export function IdentifierColumn(name: string, defaultValue?: () => Uuid): MethodDecorator & PropertyDecorator;
-export function IdentifierColumn(optionOrName?: string | IIdentityColumnOption, defaultValue?: () => Uuid): MethodDecorator & PropertyDecorator {
+export function IdentifierColumn<TE extends object, T extends Uuid>(option?: IIdentityColumnOption): ClassPropertyDecorator<TE, T>;
+export function IdentifierColumn<TE extends object, T extends Uuid>(name: string, defaultValue?: () => Uuid): ClassPropertyDecorator<TE, T>;
+export function IdentifierColumn<TE extends object, T extends Uuid>(optionOrName?: string | IIdentityColumnOption, defaultValue?: () => Uuid): ClassPropertyDecorator<TE, T> {
     let option: IIdentityColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -18,5 +19,5 @@ export function IdentifierColumn(optionOrName?: string | IIdentityColumnOption, 
             option.default = defaultValue;
         }
     }
-    return Column<any, any, Uuid>(IdentifierColumnMetaData, option);
+    return Column<TE, T>(IdentifierColumnMetaData as any, option);
 }

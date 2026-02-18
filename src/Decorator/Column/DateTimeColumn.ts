@@ -2,11 +2,12 @@ import { DateTimeColumnType } from "../../Common/ColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function DateTimeColumn(option?: IDateTimeColumnOption): PropertyDecorator & MethodDecorator;
-export function DateTimeColumn(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator;
-export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator {
+export function DateTimeColumn<TE extends object, T extends Date>(option?: IDateTimeColumnOption): ClassPropertyDecorator<TE, T>;
+export function DateTimeColumn<TE extends object, T extends Date>(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, T>;
+export function DateTimeColumn<TE extends object, T extends Date>(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling):ClassPropertyDecorator<TE, T> {
     let option: IDateTimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -24,5 +25,5 @@ export function DateTimeColumn(optionOrName?: IDateTimeColumnOption | string, db
         option = optionOrName;
     }
 
-    return Column<any, any, Date>(DateTimeColumnMetaData, option);
+    return Column<TE, T>(DateTimeColumnMetaData as any, option);
 }

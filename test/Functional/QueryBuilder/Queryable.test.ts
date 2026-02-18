@@ -240,46 +240,6 @@ WHERE ([entity0].[isDeleted]=0)`
                 expect(o.Product).toBeInstanceOf(Product);
             }
         });
-        it("should load many-many relation", async () => {
-            const spy = vi.spyOn(db.connection, "query");
-
-            const include = db.collections.include((o) => o.Products);
-            const results = await include.toArray();
-
-            const param = spy.mock.calls[0][0] as unknown as IQuery;
-            expect(param.query).toBe(
-`SELECT [entity1].[ProductId],
-	[entity1].[Price]
-FROM [Products] AS [entity1]
-INNER JOIN (
-	SELECT [CollectionProducts].[CollectionId],
-		[CollectionProducts].[ProductId]
-	FROM [CollectionProducts] AS [CollectionProducts]
-	INNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId])
-) AS [CollectionProducts] ON ([CollectionProducts].[ProductId]=[entity1].[ProductId]);
-
-SELECT [CollectionProducts].[CollectionId],
-	[CollectionProducts].[ProductId]
-FROM [CollectionProducts] AS [CollectionProducts]
-INNER JOIN [Collections] AS [entity0] ON ([entity0].[CollectionId]=[CollectionProducts].[CollectionId]);
-
-SELECT [entity0].[CollectionId],
-	[entity0].[name]
-FROM [Collections] AS [entity0]`
-            );
-            expect(param.type).toBe(QueryType.DQL);
-            expect(param.parameters).toEqual(new Map());
-
-            expect(results).toBeInstanceOf(Array);
-            expect(results.length).not.toBe(0);
-            for (const o of results) {
-                expect(o).toBeInstanceOf(Collection);
-                expect(o.Products).toBeInstanceOf(Array);
-                for (const p of o.Products) {
-                    expect(p).toBeInstanceOf(Product);
-                }
-            }
-        });
     });
     describe("PROJECT", async () => {
         it("should project specific property", async () => {

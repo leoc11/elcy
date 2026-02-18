@@ -1,7 +1,7 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationOption } from "../../Decorator/Option/IRelationOption";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { ColumnMetaData } from "../ColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";

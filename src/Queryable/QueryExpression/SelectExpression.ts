@@ -1,6 +1,6 @@
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { ElementType, GenericType, IObjectType, ValueType } from "../../Common/Type";
-import { Enumerable } from "../../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { IEnumerable } from "../../Enumerable/IEnumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -72,7 +72,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
 
     public get relationColumns(): IEnumerable<IColumnExpression<TE>> {
         // Include Relation Columns are used later for hydration
-        let relations = this.includes.where((o) => !o.isEmbedded).selectMany((o) => o.parentColumns);
+        let relations = Enumerable.from(this.includes).where((o) => !o.isEmbedded).selectMany((o) => o.parentColumns);
         if (this.parentRelation) {
             // relation column might cames from child join columns
             relations = relations.union(this.parentRelation.childColumns);
@@ -80,7 +80,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         return relations;
     }
     public get resolvedIncludes(): IEnumerable<IncludeRelation<TE, any>> {
-        return this.includes.selectMany((o) => {
+        return Enumerable.from(this.includes).selectMany((o) => {
             if (o.isEmbedded) {
                 return o.child.resolvedIncludes as unknown as IEnumerable<IncludeRelation<TE, any>>;
             }
@@ -91,13 +91,13 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
     }
     public get resolvedJoins(): IEnumerable<JoinRelation<TE>> {
         let joins = Enumerable.from(this.joins);
-        for (const include of this.includes.where((o) => o.isEmbedded)) {
+        for (const include of Enumerable.from(this.includes).where((o) => o.isEmbedded)) {
             joins = joins.union(include.child.resolvedJoins as unknown as IEnumerable<JoinRelation<TE>>);
         }
         return joins;
     }
     public get resolvedSelects(): IEnumerable<IColumnExpression<any, ValueType>> {
-        let selects = this.selects.asEnumerable();
+        let selects = Enumerable.from(this.selects);
         for (const include of this.includes) {
             if (include.isEmbedded) {
                 const cloneMap = new Map();
@@ -131,7 +131,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
                 this.paramExps = entity.paramExps.slice(0);
             }
             else {
-                this.selects = entity.columns.where((o) => o.columnMeta && o.columnMeta.isProjected).toArray();
+                this.selects = entity.columns.filter((o) => o.columnMeta && o.columnMeta.isProjected);
             }
             entity.select = this as unknown as SelectExpression<TE, TE>;
         }
@@ -221,36 +221,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
             if (relationMeta.completeRelationType === "many-many") {
-                // add bridge (a.k.a relation data) and include child select to it.
-                const relDataEntityExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                const relDataExp = new SelectExpression(relDataEntityExp);
-
-                // predicate that identify relation between bridge and child.
-                let bridgeRelation: IExpression<boolean>;
-                let bridgeRelationMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                for (const [relColMeta, parentColMeta] of bridgeRelationMap) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
-                    const relationCol = relDataExp.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-
-                    const logicalExp = new StrictEqualExpression(parentCol, relationCol);
-                    bridgeRelation = bridgeRelation ? new AndExpression(bridgeRelation, logicalExp) : logicalExp;
-                }
-
-                this.addInclude(name, relDataExp, bridgeRelation, "many");
-
-                // add relation from this to bridge.
-                bridgeRelationMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                bridgeRelation = null;
-                for (const [relColMeta, childColMeta] of bridgeRelationMap) {
-                    const bridgeCol = relDataEntityExp.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-
-                    const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
-                    bridgeRelation = bridgeRelation ? new AndExpression(bridgeRelation, logicalExp) : logicalExp;
-                }
-
-                const result = relDataExp.addInclude(name, child, bridgeRelation, "one");
-                return result;
+                throw new Error("many-many relation not supported");
             }
 
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
@@ -288,37 +259,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
             if (relationMeta.completeRelationType === "many-many") {
-                // add bridge (a.k.a relation data) and join child select to it.
-                const relDataEntityExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                const relDataExp = new SelectExpression(relDataEntityExp);
-                relDataExp.distinct = true;
-
-                // predicate that identify relation between bridge and child.
-                let bridgeRelation: IExpression<boolean>;
-                let bridgeRelationMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                for (const [relColMeta, parentColMeta] of bridgeRelationMap) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
-                    const relationCol = relDataExp.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-
-                    const logicalExp = new StrictEqualExpression(parentCol, relationCol);
-                    bridgeRelation = bridgeRelation ? new AndExpression(bridgeRelation, logicalExp) : logicalExp;
-                }
-
-                this.addJoin(relDataExp, bridgeRelation, "LEFT");
-
-                // add relation from this to bridge.
-                bridgeRelationMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                bridgeRelation = null;
-                for (const [relColMeta, childColMeta] of bridgeRelationMap) {
-                    const bridgeCol = relDataEntityExp.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-
-                    const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
-                    bridgeRelation = bridgeRelation ? new AndExpression(bridgeRelation, logicalExp) : logicalExp;
-                }
-
-                const result = relDataExp.addJoin(child, bridgeRelation, "INNER");
-                return result;
+                throw new Error("many-many relation not supported");
             }
 
             const isReverse = relationMeta.source.type !== this.entity.type;

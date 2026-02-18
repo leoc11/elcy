@@ -14,7 +14,7 @@ import { StringTemplateExpression } from "./Expression/StringTemplateExpression"
 import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 
 interface SyntaticParameter {
     index: number;
@@ -43,6 +43,7 @@ const globalObjectMaps = new Map<string, unknown>([
     // Constructor/ Type
     ["Error", Error],
     ["Number", Number],
+    ["BigInt", BigInt],
     ["Math", Math],
     ["Date", Date],
     ["String", String],
@@ -227,7 +228,13 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                 return createKeywordExpression(param, token);
             }
             case LexicalTokenType.Number: {
-                expression = new ValueExpression(Number.parseFloat(token.data as string));
+                const datas = token.data as string;
+                if (datas[datas.length - 1] === 'n') {
+                    expression = new ValueExpression(BigInt(datas.slice(0, -1)));
+                }
+                else {
+                    expression = new ValueExpression(Number.parseFloat(datas));
+                }
                 param.index++;
                 break;
             }

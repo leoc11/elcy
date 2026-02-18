@@ -238,7 +238,7 @@ describe("DEFERRED QUERY", () => {
         it("should wait for result if it being executed", async () => {
             const db2 = new MyDb();
             mockContext(db2);
-            const collection = db.collections.include((o) => o.Products).deferredToArray();
+            const collection = db.collections.deferredToArray();
             // remove deferred query from context to emulate it state as waiting for execution to complete
             db2.deferredQueries = db.deferredQueries.splice(0);
             const c = db2.orders.deferredCount();

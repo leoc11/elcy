@@ -1,4 +1,4 @@
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { IObjectType, PropertySelector, StringKeyOf } from "../Common/Type";
 import { FunctionHelper } from "../Helper/FunctionHelper";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";

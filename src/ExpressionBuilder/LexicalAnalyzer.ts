@@ -1,5 +1,5 @@
 import { operators } from "./IOperator";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 
 interface ILexicalPointer {
     index: number;
@@ -163,6 +163,11 @@ function analyzeLexicalNumber(pointer: ILexicalPointer, input: string): ILexical
             if (input[pointer.index + 1] === "-") {
                 data += input[pointer.index++];
             }
+        }
+        else if (char === "n") {
+            data += char;
+            pointer.index++;
+            break;
         }
         else if ((char >= "0" && char <= "9") || char === ".") {
             data += char;

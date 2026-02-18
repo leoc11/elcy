@@ -1,8 +1,5 @@
 import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
-import { Enumerable } from "../Enumerable/Enumerable";
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
-import { IEnumerable } from "../Enumerable/IEnumerable";
-import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
+import { IEnumerable, Enumerable, GroupedEnumerable, IOrderDefinition } from "@elcy/enumerable";
 
 declare global {
     // tslint:disable-next-line:interface-name
@@ -34,7 +31,7 @@ declare global {
         min(fn?: (item: T) => number): number;
         ofType<TR>(type: GenericType<TR>): Enumerable<TR>;
         orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
-        pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metric: TM): Enumerable<TResult>;
+        pivot<T, TD extends { [key: string]: (item: T) => ValueType }, TM extends { [key: string]: (item: T[]) => ValueType }>(dimensions: TD, metrics: TM): Enumerable<Pivot<T, TD, TM>>;
         rightJoin<T2, TResult>(array2: IEnumerable<T2>, relation: (item: T, item2: T2) => boolean, resultSelector: (item1: T | null, item2: T2) => TResult): Enumerable<TResult>;
         select<TReturn>(type: IObjectType<TReturn>, selector: ((item: T) => TReturn)): Enumerable<TReturn>;
         select<TReturn>(selector: ((item: T) => TReturn)): Enumerable<TReturn>;

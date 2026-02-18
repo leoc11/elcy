@@ -5,7 +5,7 @@ import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "./IDriver";
 import { PooledConnection } from "./PooledConnection";
 import { PooledConnectionManager } from "./PooledConnectionManager";
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 
 export class ReplicationConnectionManager<T extends DbType = DbType> implements IConnectionManager<T> {
     public get driver() {

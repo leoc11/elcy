@@ -1,10 +1,11 @@
 import { IntegerColumnMetaData } from "../../MetaData/IntegerColumnMetaData";
 import { INumericColumnOption } from "../Option/INumericColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function IntegerColumn(option?: INumericColumnOption): PropertyDecorator & MethodDecorator;
-export function IntegerColumn(name?: string, defaultValue?: () => number): PropertyDecorator & MethodDecorator;
-export function IntegerColumn(optionOrName?: string | INumericColumnOption, defaultValue?: () => number): PropertyDecorator & MethodDecorator {
+export function IntegerColumn<TE extends object, T extends (number | undefined)>(option?: INumericColumnOption): ClassPropertyDecorator<TE, T>;
+export function IntegerColumn<TE extends object, T extends (number | undefined)>(name?: string, defaultValue?: () => number): ClassPropertyDecorator<TE, T>;
+export function IntegerColumn<TE extends object, T extends (number | undefined)>(optionOrName?: string | INumericColumnOption, defaultValue?: () => number): ClassPropertyDecorator<TE, T> {
     let option: INumericColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -22,5 +23,5 @@ export function IntegerColumn(optionOrName?: string | INumericColumnOption, defa
         throw new Error("Auto increment cannot has default value");
     }
 
-    return Column<any, any, number>(IntegerColumnMetaData, option);
+    return Column<TE, T>(IntegerColumnMetaData as any, option);
 }

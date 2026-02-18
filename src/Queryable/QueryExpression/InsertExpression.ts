@@ -1,7 +1,8 @@
-import { GenericType, IObjectType } from "../../Common/Type";
+import { Enumerable } from "@elcy/enumerable";
+import { GenericType, IObjectType, SetterObj } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { IEnumerable } from "@elcy/enumerable";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { MemberAccessExpression } from "../../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
@@ -14,12 +15,12 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-export class InsertExpression<T = unknown> implements IQueryExpression<void> {
+export class InsertExpression<T extends object = object> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
-            this._columns = this.entity.metaData.columns
+            this._columns = Enumerable.from(this.entity.metaData.columns)
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
+                .select((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
         }
         return this._columns;
     }
@@ -27,11 +28,16 @@ export class InsertExpression<T = unknown> implements IQueryExpression<void> {
     public get type() {
         return undefined as GenericType<void>;
     }
-    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<SetterObj<T>>, columns?: Array<IColumnExpression<T>>) {
+    constructor(public readonly entity: IEntityExpression<T>, public readonly values: Array<SetterObj<T>>, columns?: Array<IColumnExpression<T>>, returnings?: Array<IColumnExpression<T>>) {
         if (columns) {
             this._columns = columns;
         }
+        if (returnings) {
+            this.returnings = returnings;
+        }
     }
+
+    public returnings: Array<IColumnExpression<T>> = [];
     public paramExps: SqlParameterExpression[] = [];
     private _columns: Array<IColumnExpression<T>>;
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertExpression<T> {

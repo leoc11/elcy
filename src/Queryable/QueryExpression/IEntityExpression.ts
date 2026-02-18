@@ -13,6 +13,7 @@ export interface IEntityExpression<T extends object = object> extends IExpressio
     entityTypes: IObjectType[];
     isRelationData?: boolean;
     name: string;
+    schema?: string;
     primaryColumns: Array<IColumnExpression<T>>;
     select?: SelectExpression<T, any>;
     type: GenericType<T>;

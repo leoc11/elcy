@@ -3,11 +3,12 @@ import { TimeZoneHandling } from "../../Common/StringType";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { ITimeColumnOption } from "../Option/ITimeColumnOption";
+import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function TimeColumn(option?: ITimeColumnOption): PropertyDecorator & MethodDecorator;
-export function TimeColumn(name: string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator;
-export function TimeColumn(optionOrName?: ITimeColumnOption | string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): PropertyDecorator & MethodDecorator {
+export function TimeColumn<TE extends object, T extends TimeSpan>(option?: ITimeColumnOption): ClassPropertyDecorator<TE, T>;
+export function TimeColumn<TE extends object, T extends TimeSpan>(name: string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, T>;
+export function TimeColumn<TE extends object, T extends TimeSpan>(optionOrName?: ITimeColumnOption | string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, T> {
     let option: ITimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -25,5 +26,5 @@ export function TimeColumn(optionOrName?: ITimeColumnOption | string, dbtype?: T
         option = optionOrName;
     }
 
-    return Column<any, any, TimeSpan>(TimeColumnMetaData, option);
+    return Column<TE, T>(TimeColumnMetaData as any, option);
 }

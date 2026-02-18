@@ -71,39 +71,7 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
             if (relationMeta.completeRelationType === "many-many") {
-                // include to relationSelect
-                let relMap = (relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                const relationDatExp = new EntityExpression(relationMeta.relationData.type, relationMeta.relationData.name, true);
-                const relationDelete = new DeleteExpression(relationDatExp, this.deleteMode);
-                for (const [relColMeta, parentColMeta] of relMap) {
-                    const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
-                    const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const logicalExp = new StrictEqualExpression(parentCol, relationCol);
-                    relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
-                }
-                relationDelete.parentRelation = {
-                    child: relationDelete,
-                    parent: this,
-                    relations: relations
-                };
-                this.includes.push(relationDelete.parentRelation as any);
-
-                // include child to relationSelect
-                relations = null;
-                relMap = (!relationMeta.isMaster ? relationMeta.relationData.sourceRelationMaps : relationMeta.relationData.targetRelationMaps);
-                for (const [relColMeta, childColMeta] of relMap) {
-                    const relationCol = relationDelete.entity.columns.first((o) => o.propertyName === relColMeta.propertyName);
-                    const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
-                    const logicalExp = new StrictEqualExpression(relationCol, childCol);
-                    relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
-                }
-                child.parentRelation = {
-                    child,
-                    parent: relationDelete,
-                    relations: relations
-                };
-                relationDelete.includes.push(child.parentRelation as any);
-                return child.parentRelation as IDeleteIncludeRelation<T, TChild>;
+                throw new Error("many-many relation not supported");
             }
 
             relations = null;

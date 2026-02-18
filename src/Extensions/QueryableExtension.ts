@@ -1,4 +1,4 @@
-import { Enumerable } from "../Enumerable/Enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { Queryable } from "../Queryable/Queryable";
 
 declare global {
@@ -15,7 +15,7 @@ Array.prototype.project = function <T>(this: T[]): T[] {
     return this;
 };
 
-declare module "../Enumerable/Enumerable" {
+declare module "@elcy/enumerable" {
     interface Enumerable<T> {
         include(...includes: Array<(item: T) => unknown>): Enumerable<T>;
         project(...includes: Array<(item: T) => unknown>): Enumerable<T>;

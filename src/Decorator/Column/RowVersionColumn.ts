@@ -1,11 +1,10 @@
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { IRowVersionColumnOption } from "../Option/IRowVersionColumnOption";
 import { Column } from "./Column";
-import { IObjectType, StringKeyOf } from "../../Common/Type";
-import { getColumnMetadata, getEntityMetadata } from "../../MetaData/MetaDataMapper";
+import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 
-export function RowVersionColumn(option?: IRowVersionColumnOption): PropertyDecorator & MethodDecorator;
-export function RowVersionColumn(optionOrName?: IRowVersionColumnOption | string, defaultValue?: () => string): PropertyDecorator & MethodDecorator {
+export function RowVersionColumn<TE extends object, T extends Uint8Array>(option?: IRowVersionColumnOption): ClassPropertyDecorator<TE, T>;
+export function RowVersionColumn<TE extends object, T extends Uint8Array>(optionOrName?: IRowVersionColumnOption | string, defaultValue?: () => string): ClassPropertyDecorator<TE, T> {
     let option: IRowVersionColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -19,16 +18,9 @@ export function RowVersionColumn(optionOrName?: IRowVersionColumnOption | string
         }
     }
     
-    const columnDecorator = Column<any, any, Uint8Array>(RowVersionColumnMetaData, option);
-    return <TE extends object = object, T = Uint8Array>(target: TE, propertyKey: StringKeyOf<TE>, descriptor?: TypedPropertyDescriptor<T>) => {
-        let descriptorResult = columnDecorator(target, propertyKey, descriptor);
-        const metadata = getColumnMetadata<TE, any, Uint8Array>(target.constructor as IObjectType<TE>, propertyKey) as RowVersionColumnMetaData<TE>;
-        const entityMetaData = getEntityMetadata(target.constructor as IObjectType<TE>);
-        entityMetaData.versionColumn = metadata;
-        if (!entityMetaData.concurrencyMode) {
-            entityMetaData.concurrencyMode = "OPTIMISTIC VERSION";
-        }
-
-        return descriptorResult;
+    const columnDecorator = Column<TE, T>(RowVersionColumnMetaData as any, option);
+    return (target: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
+        columnDecorator(target as any, context as any);
+        context.metadata.versionColumn = context.name;
     };
 }

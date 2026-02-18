@@ -1,22 +1,22 @@
 /**
- * int Column types with length
+ * int Column types
  */
-export type IntLengthColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
+export type IntColumnType = "int" // mysql, postgres, mssql, oracle, sqlite
     | "tinyint" // mysql, mssql, sqlite
     | "smallint" // mysql, postgres, mssql, oracle, sqlite
     | "mediumint" // mysql, sqlite
-    | "bigint"; // mysql, postgres, mssql, sqlite
-
-/**
- * int Column types
- */
-export type IntColumnType = IntLengthColumnType
     | "int2" // postgres, sqlite
     | "int4" // postgres
+    | "integer"; // postgres, oracle, sqlite
+
+/**
+ * BigInt Column types
+ */
+export type BigIntColumnType = "bigint" // mysql, postgres, mssql, sqlite
     | "int8" // postgres, sqlite
-    | "integer" // postgres, oracle, sqlite
     | "unsigned big int"; // sqlite
 
+    
 export type RealColumnType = "float" // mysql, mssql, oracle, sqlite
     | "real" | "float4" // mysql, postgres, mssql, oracle, sqlite
     | "double precision" | "float8" // postgres, oracle, sqlite
@@ -50,8 +50,8 @@ export type DateTimeColumnType = "datetime" // mssql, mysql, sqlite
  * Time column types
  */
 export type TimeColumnType = "time"; // mysql, postgres, mssql
-    // | "time with time zone" // postgres
-    // | "time without time zone"; // postgres
+// | "time with time zone" // postgres
+// | "time without time zone"; // postgres
 
 export type IntervalColumnType = "interval year" // oracle
     | "interval day" // oracle
@@ -168,10 +168,10 @@ export type ColumnType = IntColumnType
     | EnumColumnType
     | OtherColumnType;
 
-export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "Decimal" | "Real" | "Binary"
+export type ColumnTypeGroup = "String" | "Boolean" | "Integer" | "BigInt" | "Decimal" | "Real" | "Binary"
     | "Serialize" | "Date" | "Time" | "DateTime" | "Enum" | "Identifier" | "RowVersion";
 export type DefaultColumnTypeMapKey = "defaultString" | "defaultBoolean" | "defaultInteger"
-| "defaultDecimal" | "defaultReal" | "defaultBinary" | "defaultSerialize"
-| "defaultDate" | "defaultTime" | "defaultDateTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
+    | "defaultDecimal" | "defaultReal" | "defaultBinary" | "defaultSerialize"
+    | "defaultDate" | "defaultTime" | "defaultDateTime" | "defaultEnum" | "defaultIdentifier" | "defaultRowVersion";
 
 export type ColumnTypeMapKey = ColumnType | DefaultColumnTypeMapKey;
