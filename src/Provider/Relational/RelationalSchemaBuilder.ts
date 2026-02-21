@@ -28,7 +28,6 @@ import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { IIndexMetaData } from "../../MetaData/Interface/IIndexMetaData";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RealColumnMetaData } from "../../MetaData/RealColumnMetaData";
-import { RelationDataMetaData } from "../../MetaData/Relation/RelationDataMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { SerializeColumnMetaData } from "../../MetaData/SerializeColumnMetaData";
 import { StringColumnMetaData } from "../../MetaData/StringColumnMetaData";
@@ -194,7 +193,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         let commitQueries: IQuery[] = [];
         let rollbackQueries: IQuery[] = [];
 
-        const defSchemaResult = (await this.connection.query<{SCHEMA: string}>({
+        const defSchemaResult = (await this.connection.query<{ SCHEMA: string }>({
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
         })).find(() => true).rows;
@@ -319,12 +318,12 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         });
 
         const schemaDatas = await this.connection.query(batchedQuery);
-        const tableSchemas = schemaDatas[0] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
-        const columnSchemas = schemaDatas[1] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string, COLUMN_DEFAULT: string, COLUMN_NAME: string, IS_NULLABLE: string, DATA_TYPE: ColumnType, CHARACTER_SET_NAME: string, COLLATION_NAME: string, CHARACTER_MAXIMUM_LENGTH: number }>;
-        const constriantSchemas = schemaDatas[3] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
-        const constraintColumnSchemas = schemaDatas[6] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
+        const tableSchemas = schemaDatas[0] as IQueryResult<{ TABLE_SCHEMA: string, TABLE_NAME: string }>;
+        const columnSchemas = schemaDatas[1] as IQueryResult<{ TABLE_SCHEMA: string, TABLE_NAME: string, COLUMN_DEFAULT: string, COLUMN_NAME: string, IS_NULLABLE: string, DATA_TYPE: ColumnType, CHARACTER_SET_NAME: string, COLLATION_NAME: string, CHARACTER_MAXIMUM_LENGTH: number }>;
+        const constriantSchemas = schemaDatas[3] as IQueryResult<{ TABLE_SCHEMA: string, TABLE_NAME: string }>;
+        const constraintColumnSchemas = schemaDatas[6] as IQueryResult<{ TABLE_SCHEMA: string, TABLE_NAME: string }>;
         const foreignKeySchemas = schemaDatas[4];
-        const indexSchemas = schemaDatas[7] as IQueryResult<{TABLE_SCHEMA: string, TABLE_NAME: string}>;
+        const indexSchemas = schemaDatas[7] as IQueryResult<{ TABLE_SCHEMA: string, TABLE_NAME: string }>;
 
         // convert all schema to entityMetaData for comparison
         const result: { [key: string]: IEntityMetaData<any> } = {};
@@ -707,17 +706,10 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     }
 
     protected dropAllOldRelations<TE extends object>(schema: IEntityMetaData<TE>, oldSchema: IEntityMetaData<TE>): IQuery[] {
-        const isRelationData = schema instanceof RelationDataMetaData || oldSchema instanceof RelationDataMetaData;
-        if (isRelationData) {
-            // TODO
-            return [];
-        }
-        else {
-            const relations = schema.relations.filter((o) => !o.isMaster);
-            return oldSchema.relations.filter((o) => !o.isMaster)
-                .filter((o) => !relations.some((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
-                .flatMap((o) => this.dropForeignKey(o));
-        }
+        const relations = schema.relations.filter((o) => !o.isMaster);
+        return oldSchema.relations.filter((o) => !o.isMaster)
+            .filter((o) => !relations.some((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+            .flatMap((o) => this.dropForeignKey(o));
     }
     protected entityName<TE extends object>(entityMeta: IEntityMetaData<TE>) {
         return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(entityMeta.name)}`;

@@ -4,7 +4,6 @@ import { Enumerable } from "@elcy/enumerable";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
-import { RelationDataMetaData } from "./RelationDataMetaData";
 
 export class RelationMetaData<TSource extends object = object, TTarget extends object = object> implements IRelationMetaData<TSource, TTarget> {
     public get completeRelationType(): CompleteRelationshipType {
@@ -42,7 +41,6 @@ export class RelationMetaData<TSource extends object = object, TTarget extends o
     public nullable?: boolean;
     public propertyName: keyof TSource;
     public relationColumns: Array<IColumnMetaData<TSource>> = [];
-    public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
     public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     public relationType: RelationshipType;
     public reverseRelation: IRelationMetaData<TTarget, TSource>;

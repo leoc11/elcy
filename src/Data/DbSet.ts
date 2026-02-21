@@ -9,7 +9,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { hashCode, isNotNull, isNull, isValue } from "../Helper/Util";
+import { hashCode, isNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";

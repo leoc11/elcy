@@ -10,7 +10,6 @@ import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { hashCode, isValueType } from "../Helper/Util";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
-import { RelationDataMetaData } from "../MetaData/Relation/RelationDataMetaData";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
 import { EntityExpression } from "../Queryable/QueryExpression/EntityExpression";
 import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpression";
@@ -88,16 +87,14 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
 
                 if (select.entity instanceof EntityExpression && select.entity.metaData) {
                     const metaData = select.entity.metaData;
-                    if (!(metaData instanceof RelationDataMetaData)) {
-                        resolveCache.reverseRelationMap = new Map();
-                        for (const include of select.includes) {
-                            const relationMeta = metaData.relations.find((o) => o.propertyName === include.name);
-                            let reverseRelation: IRelationMetaData;
-                            if (relationMeta) {
-                                reverseRelation = relationMeta.reverseRelation;
-                            }
-                            resolveCache.reverseRelationMap.set(include, reverseRelation);
+                    resolveCache.reverseRelationMap = new Map();
+                    for (const include of select.includes) {
+                        const relationMeta = metaData.relations.find((o) => o.propertyName === include.name);
+                        let reverseRelation: IRelationMetaData;
+                        if (relationMeta) {
+                            reverseRelation = relationMeta.reverseRelation;
                         }
+                        resolveCache.reverseRelationMap.set(include, reverseRelation);
                     }
                 }
             }
