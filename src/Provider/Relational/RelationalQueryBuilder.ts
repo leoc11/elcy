@@ -66,7 +66,7 @@ import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
-import { SystemParameterExpression } from "../../ExpressionBuilder/Expression/SystemParameterExpression";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -457,7 +457,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return this.nullString();
     }
     protected booleanString(value: boolean) {
-        return value ? "1" : "0";
+        return value ? "true" : "false";
     }
     protected dateTimeString(value: Date): string {
         return this.stringString(toDateTimeString(value));
@@ -483,17 +483,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 const commandExp = param.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.contains(column))) {
+                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
                         return this.toOperandString(column.expression, param);
                     }
                     return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
                 }
                 else {
-                    let childSelect = commandExp.resolvedJoins.select((o) => o.child).first((selectExp) => selectExp.allSelects.any((o) => o.entity.alias === column.entity.alias));
+                    let childSelect = commandExp.resolvedJoins.map((o) => o.child).find((selectExp) => selectExp.allSelects.some((o) => o.entity.alias === column.entity.alias));
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
-                    const useAlias = !commandExp.selects.contains(column);
+                    const useAlias = !commandExp.selects.includes(column);
                     return this.enclose(childSelect.entity.alias) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
@@ -502,7 +502,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return this.enclose(column.dataPropertyName);
     }
-    protected getDeleteQuery<T>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getDeleteQuery<T extends object>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: deleteExp,
@@ -532,8 +532,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
             const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, deleteExp.entity.type);
-            const relations = entityMeta.relations.where((o) => o.isMaster);
-            result = result.concat(relations.selectMany((o) => {
+            const relations = entityMeta.relations.filter((o) => o.isMaster);
+            result = result.concat(relations.flatMap((o) => {
                 if (o.completeRelationType === "many-many") {
                     throw new Error("many-many relation not supported");
                 }
@@ -577,11 +577,11 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     default:
                         return [];
                 }
-            }).toArray());
+            }));
         }
         else {
             let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias)}` +
-                this.newLine() + `FROM ${this.enclose(deleteExp.entity.name)} AS ${this.enclose(deleteExp.entity.alias)}` +
+                this.newLine() + `FROM ${this.entityName(deleteExp.entity)} AS ${this.enclose(deleteExp.entity.alias)}` +
                 this.getJoinQueryString(deleteExp.joins, param);
             if (deleteExp.where) {
                 selectQuery += this.newLine() + "WHERE " + this.toLogicalString(deleteExp.where, param);
@@ -597,23 +597,23 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         const replaceMap = new Map();
         for (const col of deleteExp.entity.columns) {
-            const cloneCol = clone.entity.columns.first((c) => c.columnName === col.columnName);
+            const cloneCol = clone.entity.columns.find((c) => c.columnName === col.columnName);
             replaceMap.set(col, cloneCol);
         }
-        const includedDeletes = deleteExp.includes.selectMany((o) => {
+        const includedDeletes = deleteExp.includes.flatMap((o) => {
             const child = o.child.clone();
             for (const col of o.child.entity.columns) {
-                const cloneChildCol = child.entity.columns.first((c) => c.columnName === col.columnName);
+                const cloneChildCol = child.entity.columns.find((c) => c.columnName === col.columnName);
                 replaceMap.set(col, cloneChildCol);
             }
-            const relations = o.relations.clone(replaceMap);
+            const relations = o.relation.clone(replaceMap);
             child.addJoin(clone.select, relations, "INNER");
             if (clone.select.where) {
                 child.addWhere(clone.select.where);
                 clone.select.where = null;
             }
             return this.getDeleteQuery(child, param.option, param.parameters);
-        }).toArray();
+        });
         result = result.concat(includedDeletes);
         return result;
     }
@@ -656,7 +656,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         };
 
         const selectString = this.getSelectQueryString(insertIntoExp.select, param, true);
-        const columns = insertIntoExp.columns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        const columns = insertIntoExp.columns.map((o) => this.enclose(o.columnName)).join(",");
         const selectQuery = `INSERT INTO ${this.entityName(insertIntoExp.entity)} (${columns})` + this.newLine() + selectString;
         result.push({
             query: selectQuery,
@@ -724,15 +724,14 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (insertExp.returnings.length) {
             queryCommand.query += `${this.newLine()}RETURNING ${insertExp.returnings.map(o => this.enclose(o.columnName)).join(",")}`
         }
-        
+
         return result;
     }
     protected getJoinQueryString<T>(joins: IEnumerable<JoinRelation<T, any>>, param?: IQueryBuilderParameter): string {
         let result = "";
-        joins = Enumerable.from(joins);
-        if (joins.any()) {
+        if (joins.some(() => true)) {
             result += this.newLine();
-            result += joins.select((o) => {
+            result += Enumerable.from(joins).map((o) => {
                 const childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, param)
                     : "(" + this.newLine(1) + this.getSelectQueryString(o.child, param, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
 
@@ -758,8 +757,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     protected getParameter(param: IQueryBuilderParameter) {
         const paramObj = new Map<string, any>();
         const qparams = Enumerable.from(param.queryExpression.paramExps)
-            .where(o => !o.isSystem)
-            .select((o) => param.parameters.get(o)).where((o) => !!o);
+            .filter(o => !o.isSystem)
+            .map((o) => param.parameters.get(o)).filter((o) => !!o);
         for (const o of qparams) {
             paramObj.set(o.name, o.value);
         }
@@ -768,6 +767,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     protected getParentJoinQueryString<T>(parentRel: ISelectRelation, param?: IQueryBuilderParameter) {
         if (!(parentRel instanceof IncludeRelation)) {
             return "";
+        }
+
+        let parentRelation = parentRel;
+        while (parentRelation) {
+            ArrayExtension.add(parentRel.child.paramExps, ...parentRel.parent.paramExps);
+            parentRelation = parentRelation.parent?.parentRelation;
         }
 
         let parent = parentRel.parent;
@@ -785,7 +790,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             parameters: parameters,
             option: option
         };
-
         // subselect should not have include
         if (selectExp.isSubSelect) {
             skipInclude = true;
@@ -795,8 +799,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const skip = this.extractValue(selectExp.paging.skip, param) || 0;
 
         const distinct = selectExp.distinct ? " DISTINCT" : "";
-        const selects = selectExp.projectedColumns
-            .select((o) => {
+        const selects = Enumerable.from(selectExp.projectedColumns)
+            .map((o) => {
                 let colStr = "";
                 if (o instanceof ComputedColumnExpression) {
                     colStr = this.toOperandString(o.expression, param);
@@ -816,7 +820,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         const entityQ = this.getEntityQueryString(selectExp.entity, param);
 
-        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !selectExp.joins.ofType(HavingJoinRelation).any()) {
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
             const clone = selectExp.clone();
             clone.entity.alias = "rel_" + clone.entity.alias;
             clone.isAggregate = true;
@@ -825,7 +829,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
             let relation: IExpression<boolean>;
             for (const col of selectExp.resolvedGroupBy) {
-                const cloneCol = clone.resolvedGroupBy.first((o) => o.dataPropertyName === col.dataPropertyName);
+                const cloneCol = clone.resolvedGroupBy.find((o) => o.dataPropertyName === col.dataPropertyName);
                 const logicalExp = new StrictEqualExpression(col, cloneCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
@@ -845,7 +849,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
             if (selectExp.groupBy.length > 0) {
-                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.select((o) => this.getColumnQueryString(o, param)).toArray().join(", ");
+                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.map((o) => this.getColumnQueryString(o, param)).join(", ");
             }
             if (selectExp.having) {
                 selectQuerySuffix += this.newLine() + "HAVING " + this.toLogicalString(selectExp.having, param);
@@ -853,7 +857,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
 
         if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation))) {
-            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.select((c) => this.toString(c.column, param) + " " + c.direction).toArray().join(", ");
+            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
         }
 
         if (skip > 0 || take > 0) {
@@ -871,7 +875,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 else {
                     // create relation data (clone select join clone child)
-                    selectExp.includes.delete(include);
+                    ArrayExtension.delete(selectExp.includes, include);
                     const cloneEntity = selectExp.entity.clone();
                     cloneEntity.isRelationData = true;
                     const relationData = new SelectExpression(cloneEntity);
@@ -894,7 +898,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     // Bridge to Child relation
                     let bridgeChildRelation: IExpression<boolean>;
                     for (const childCol of childSelect.primaryKeys) {
-                        const bridgeCol = relationData.allColumns.first((o) => o.columnName === childCol.columnName);
+                        const bridgeCol = relationData.allColumns.find((o) => o.columnName === childCol.columnName);
                         relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
                         bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
@@ -906,7 +910,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     const cloneMap = new Map();
                     mapReplaceExp(cloneMap, selectExp.entity, relationData.entity);
                     for (const parentCol of selectExp.primaryKeys) {
-                        let bridgeCol = relationData.allColumns.first((o) => o.columnName === parentCol.columnName);
+                        let bridgeCol = relationData.allColumns.find((o) => o.columnName === parentCol.columnName);
                         if (!bridgeCol) {
                             bridgeCol = parentCol.clone(cloneMap);
                         }
@@ -933,17 +937,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
     protected getSelectQueryString(select: SelectExpression, param?: IQueryBuilderParameter, skipInclude = false): string {
         let result = "";
-        result += this.getSelectQuery(select, param.option, param.parameters, skipInclude).select((o) => o.query).toArray().join(";" + this.newLine() + this.newLine());
+        result += this.getSelectQuery(select, param.option, param.parameters, skipInclude).map((o) => o.query).join(";" + this.newLine() + this.newLine());
         return result;
     }
     protected getTempTableQuery<T>(entityExp: IEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
-        const columnDefinition = entityExp.columns.select((c) => {
+        const columnDefinition = entityExp.columns.map((c) => {
             const colTypeFactory = this.valueTypeMap.get(c.type);
-            const maxValue = values.select((o) => o[c.propertyName]).max();
+            const maxValue = Enumerable.from(values).map((o) => o[c.propertyName]).max();
             const colType = colTypeFactory(maxValue);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
-        }).toArray().join("," + this.newLine(1, false));
+        }).join("," + this.newLine(1, false));
 
         const query = `CREATE TABLE ${entityExp.name}` +
             `${this.newLine()}(` +
@@ -1029,24 +1033,24 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             `USING (SELECT ${pkValues.join(", ")}) AS _VAL ON ${joinString.join(" AND ")}` + this.newLine() +
             `WHEN MATCHED THEN` + this.newLine(1);
 
-        const updateString = upsertExp.updateColumns.select((column) => {
+        const updateString = Enumerable.from(upsertExp.updateColumns).map((column) => {
             const value = upsertExp.setter[column.propertyName];
             if (!value) {
                 return null;
             }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(value, param)}`;
-        }).where((o) => !!o).toArray().join(`,${this.newLine(1, false)}`);
+        }).filter((o) => !!o).toArray().join(`,${this.newLine(1, false)}`);
 
         upsertQuery += `UPDATE SET ${updateString}` + this.newLine(-1) +
             `WHEN NOT MATCHED THEN` + this.newLine(1);
 
-        const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
+        const colString = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).join(",");
         const insertQuery = `INSERT (${colString})` + this.newLine() +
-            `VALUES (${upsertExp.insertColumns.select((o) => {
+            `VALUES (${upsertExp.insertColumns.map((o) => {
                 const valueExp = upsertExp.setter[o.propertyName];
                 return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-            }).toArray().join(",")})`;
+            }).join(",")})`;
 
         upsertQuery += insertQuery;
         this.indent--;
@@ -1072,9 +1076,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected isSimpleSelect(exp: SelectExpression) {
         return !(exp instanceof GroupByExpression) && !exp.where && exp.joins.length === 0
-            && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.all((c) => exp.entity.columns.contains(c)))
+            && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.every((c) => exp.entity.columns.includes(c)))
             && !exp.paging.skip && !exp.paging.take
-            && exp.selects.all((c) => !c.alias);
+            && exp.selects.every((c) => !c.alias);
     }
     protected nullString() {
         return "NULL";
@@ -1170,9 +1174,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
 
-        if (!isNotNull(paramValue.value)) {
-            return this.nullString();
-        }
         return "@" + paramValue.name;
     }
     protected toValueString(expression: ValueExpression<any>, param?: IQueryBuilderParameter): string {

@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { IObjectType, StringKeyOf } from "../Common/Type";
 import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { CheckConstraintMetaData } from "../MetaData/CheckConstraintMetaData";
@@ -37,7 +38,7 @@ export function CheckContraint<TE extends object = object>(optionOrCheckOrName: 
 
         let checkMetaData = entityMetaData.constraints.find((o) => o instanceof CheckConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
-            entityMetaData.constraints.delete(checkMetaData);
+            ArrayExtension.delete(entityMetaData.constraints, checkMetaData);
         }
         checkMetaData = new CheckConstraintMetaData(option.name, entityMetaData, option.check);
         entityMetaData.constraints.push(checkMetaData);

@@ -61,7 +61,7 @@ export class FunctionCallExpression<T = unknown> implements IExpression<T> {
             replaceMap = new Map();
         }
         const fnExpression = resolveClone(this.fnExpression, replaceMap);
-        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.map((o) => resolveClone(o, replaceMap));
         const clone = new FunctionCallExpression(fnExpression, params);
         replaceMap.set(this, clone);
         return clone;

@@ -12,10 +12,12 @@ import { DbSet } from "./DbSet";
 import { trackEntity } from "./EntityChangeTracker";
 import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 
 export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.all((o) => this.entity[o.propertyName] !== undefined);
+        return this.dbSet.metaData.columns.every((o) => this.entity[o.propertyName] !== undefined);
     }
     public get metaData(): IEntityMetaData<T> {
         return this.dbSet.metaData;
@@ -30,21 +32,21 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries) {
-                        typedAddEntries.delete(this);
+                        ArrayExtension.delete(typedAddEntries, this);
                     }
                     break;
                 }
                 case EntityState.Deleted: {
                     const typedEntries = dbContext.entityEntries.delete.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this);
+                        ArrayExtension.delete(typedEntries, this);
                     }
                     break;
                 }
                 case EntityState.Modified: {
                     const typedEntries = dbContext.entityEntries.update.get(this.metaData);
                     if (typedEntries) {
-                        typedEntries.delete(this);
+                        ArrayExtension.delete(typedEntries, this);
                     }
                     break;
                 }
@@ -103,7 +105,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         switch (this.state) {
             case EntityState.Modified: {
                 let acceptedProperties: Array<StringKeyOf<T>> = [];
-                if (properties) {
+                if (properties.length) {
                     for (const prop of properties) {
                         const isDeleted = this._originalValues.delete(prop);
                         if (isDeleted) {
@@ -116,10 +118,10 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                     this._originalValues.clear();
                 }
 
-                for (const prop of Enumerable.from(acceptedProperties).intersect(Enumerable.from(this.metaData.primaryKeys).select((o) => o.propertyName))) {
+                for (const prop of Enumerable.from(acceptedProperties).intersect(Enumerable.from(this.metaData.primaryKeys).map((o) => o.propertyName))) {
                     // reflect update option
                     const relations = this.metaData.relations
-                        .where((rel) => rel.isMaster && rel.relationColumns.some((o) => o.propertyName === prop)
+                        .filter((rel) => rel.isMaster && rel.relationColumns.some((o) => o.propertyName === prop)
                             && (rel.updateOption === "CASCADE" || rel.updateOption === "SET NULL" || rel.updateOption === "SET DEFAULT"));
                     for (const rel of relations) {
                         let childEntities: unknown[] = [];
@@ -184,7 +186,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                         childEntities.forEach((o) => o[relMeta.reverseRelation.propertyName as any] = null);
                     }
                     else {
-                        childEntities.forEach((o) => (o[relMeta.reverseRelation.propertyName] as T[]).delete(this.entity));
+                        childEntities.forEach((o) => ArrayExtension.delete(o[relMeta.reverseRelation.propertyName] as T[], this.entity));
                     }
 
                     if (!(relMeta.isMaster && (relMeta.updateOption === "CASCADE" || relMeta.updateOption === "SET NULL" || relMeta.updateOption === "SET DEFAULT"))) {
@@ -192,9 +194,9 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                     }
 
                     const relCols = Enumerable.from(relMeta.relationMaps)
-                        .where(o => this.metaData.primaryKeys.includes(o[0]))
-                        .select(o => o[1]);
-                    if (!relCols.any()) {
+                        .filter(o => this.metaData.primaryKeys.includes(o[0]))
+                        .map(o => o[1]);
+                    if (!relCols.some()) {
                         continue;
                     }
 
@@ -215,14 +217,14 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                                 for (const col of relCols) {
                                     childEntity[col.propertyName as string] = null;
                                 }
-                                childEntry.acceptChanges(...relCols.select(o => o.propertyName));
+                                childEntry.acceptChanges(...relCols.map(o => o.propertyName));
                                 break;
                             }
                             case "SET DEFAULT": {
                                 for (const col of relCols) {
                                     childEntity[col.propertyName as string] = col?.defaultExp ? ExpressionExecutor.execute(col.defaultExp) : null;
                                 }
-                                childEntry.acceptChanges(...relCols.select(o => o.propertyName));
+                                childEntry.acceptChanges(...relCols.map(o => o.propertyName));
                                 break;
                             }
                         }
@@ -270,10 +272,10 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelation(...relations: Array<(entity: T) => unknown>) {
+    public async loadRelation(...relations: Array<(entity: QueryableChain<T>) => unknown>) {
         const paramExp = new ParameterExpression("o", this.dbSet.type);
-        const projected = this.dbSet.primaryKeys.select((o) => new FunctionExpression<T[StringKeyOf<T>] & ValueType, T>(new MemberAccessExpression(paramExp, o.propertyName), [paramExp])).toArray();
-        await this.dbSet.project(...projected).include(...relations).find(this.getPrimaryValues());
+        const projected = this.dbSet.primaryKeys.map((o) => new FunctionExpression<T[StringKeyOf<T>] & ValueType, T>(new MemberAccessExpression(paramExp, o.propertyName), [paramExp]));
+        await this.dbSet.project(...projected).loads(...relations).find(this.getPrimaryValues());
     }
 
     /**
@@ -287,12 +289,12 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
 
     public buildRelation(...relations: Array<KeysExceptType<T, ValueType> | IRelationMetaData<T>>) {
         let relationMetas = this.metaData.relations;
-        if (relations.any()) {
+        if (relations.some(() => true)) {
             if (typeof relations[0] === "object") {
                 relationMetas = relations as IRelationMetaData[];
             }
             else {
-                relationMetas = relationMetas.where((o) => (relations as Array<keyof T>).contains(o.propertyName)).toArray();
+                relationMetas = relationMetas.filter((o) => (relations as Array<keyof T>).includes(o.propertyName));
             }
         }
 
@@ -319,7 +321,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                 if (propVal === undefined) {
                     return undefined;
                 }
-                enumerable = enumerable.where((o) => o[tCol.propertyName] === propVal);
+                enumerable = enumerable.filter((o) => o[tCol.propertyName] === propVal);
             }
             return enumerable.toArray();
         }

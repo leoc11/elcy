@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { SortedArray } from "./SortedArray";
 
 interface IQueuedTimeoutItem<T = unknown> {
@@ -16,9 +17,9 @@ export class QueuedTimeout<T> {
             if (item) {
                 const timeoutItem = this.queue[0];
                 if (timeoutItem.item !== item) {
-                    const existing = this.queue.where((o) => o.item === item).first();
+                    const existing = this.queue.find((o) => o.item === item);
                     if (existing) {
-                        this.queue.delete(existing);
+                        ArrayExtension.delete(this.queue, existing);
                     }
                     return;
                 }
@@ -60,7 +61,7 @@ export class QueuedTimeout<T> {
     public setTimeout(item?: T, timeOut?: Date) {
         let timeoutItem: IQueuedTimeoutItem<T>;
         if (item) {
-            if (!this.queue.any((o) => o.item === item)) {
+            if (!this.queue.some((o) => o.item === item)) {
                 timeoutItem = { item: item, timeOut: timeOut ? timeOut.getTime() : Infinity };
                 this.queue.push(timeoutItem);
             }

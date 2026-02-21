@@ -18,7 +18,7 @@ export class InstantiationExpression<T = unknown> implements IExpression<T> {
             replaceMap = new Map();
         }
         const typeOperand = resolveClone(this.typeOperand, replaceMap);
-        const params = this.params.select((o) => resolveClone(o, replaceMap)).toArray();
+        const params = this.params.map((o) => resolveClone(o, replaceMap));
         const clone = new InstantiationExpression(typeOperand, params);
         replaceMap.set(this, clone);
         return clone;

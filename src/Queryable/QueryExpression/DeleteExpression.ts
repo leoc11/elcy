@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { DeleteMode, JoinType, OrderDirection } from "../../Common/StringType";
 import { IObjectType } from "../../Common/Type";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -10,14 +11,10 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQueryExpression } from "./IQueryExpression";
+import { IQueryExpression, IQueryIncludeRelation } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IDeleteIncludeRelation<T = unknown, TChild = unknown> {
-    child: DeleteExpression<TChild>;
-    parent: IQueryExpression<T>;
-    relations: IExpression<boolean>;
-}
+export interface IDeleteIncludeRelation<T = unknown, TChild = unknown> extends IQueryIncludeRelation<T, TChild, DeleteExpression<TChild>> {}
 export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
@@ -76,8 +73,8 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
 
             relations = null;
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
-                const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
+                const parentCol = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
+                const childCol = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
             }
@@ -88,7 +85,7 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
         child.parentRelation = {
             child,
             parent: this,
-            relations: relations
+            relation: relations
         };
         this.includes.push(child.parentRelation as IDeleteIncludeRelation<T, unknown>);
         return child.parentRelation as IDeleteIncludeRelation<T, TChild>;
@@ -111,13 +108,13 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
         return clone;
     }
     public getEffectedEntities(): IObjectType[] {
-        return this.entity.entityTypes
-            .union(
+        return Enumerable.from(this.entity.entityTypes)
+            .concat(
                 this.entity.metaData.relations
-                    .where((o) => o.isMaster && (o.reverseRelation.deleteOption !== "NO ACTION" && o.reverseRelation.deleteOption !== "RESTRICT"))
-                    .select((o) => o.target.type)
+                    .filter((o) => o.isMaster && (o.reverseRelation.deleteOption !== "NO ACTION" && o.reverseRelation.deleteOption !== "RESTRICT"))
+                    .map((o) => o.target.type)
             )
-            .union(this.includes.selectMany((o) => o.child.getEffectedEntities())).distinct().toArray();
+            .concat(this.includes.flatMap((o) => o.child.getEffectedEntities())).distinct().toArray();
     }
     public hashCode() {
         return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));

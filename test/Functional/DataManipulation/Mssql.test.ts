@@ -202,7 +202,7 @@ describe("DATA MANIPULATION", () => {
         it("should bulk insert", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const effected = await db.autoParents.where((o) => o.details.count() <= 0).select(AutoDetail, (o) => ({
+            const effected = await db.autoParents.filter((o) => o.details.count() <= 0).map(AutoDetail, (o) => ({
                 description: "Detail of parent " + o.id
             })).insertInto(AutoDetail);
 
@@ -258,7 +258,7 @@ WHERE ([entity0].[id]=@param0)`,
         });
         it("should bulk update entity", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const effected = await db.autoParents.where((o) => o.id === 1).update({
+            const effected = await db.autoParents.filter((o) => o.id === 1).update({
                 name: "Updated",
                 isDefault: (o) => !o.isDefault
             });
@@ -552,7 +552,7 @@ WHERE [entity0].[id] IN (@param0)`,
         });
         it("should bulk delete with include (soft delete)", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const effected = await db.autoParents.include((o) => o.details).delete((o) => o.id === 1);
+            const effected = await db.autoParents.loads((o) => o.details).delete((o) => o.id === 1);
 
             expect(spy).toHaveBeenCalledOnce();
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -574,8 +574,8 @@ WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
         });
         it("should bulk delete with include (hard delete)", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const effected = await db.autoParents.include((o) => o.details)
-                .where((o) => o.id === 1)
+            const effected = await db.autoParents.loads((o) => o.details)
+                .filter((o) => o.id === 1)
                 .delete("hard");
 
             expect(spy).toHaveBeenCalledOnce();
@@ -596,8 +596,8 @@ WHERE (([entity0].[isDeleted]=0) AND ([entity0].[id]=1))`
             expect(effected).toBeGreaterThan(0);
         });
         it("should fail soft delete for not supported entity", async () => {
-            const promise = db.autoParents.include((o) => o.details)
-                .where((o) => o.id === 1)
+            const promise = db.autoParents.loads((o) => o.details)
+                .filter((o) => o.id === 1)
                 .delete("soft");
 
             await expect(promise).rejects.toThrow("'AutoDetail' did not support 'Soft' delete");

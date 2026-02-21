@@ -1,7 +1,7 @@
 import { RelationshipType } from "../../Common/StringType";
 import { ValueType } from "../../Common/Type";
-import { GroupedEnumerable } from "../../Enumerable/GroupedEnumerable";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
+import { IEnumerable } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
@@ -112,11 +112,11 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     }
     public get resolvedGroupBy() {
         if (isEntityExp(this.key)) {
-            const keyEntities = Array.from(this.key.select.allSelects.select((o) => o.entity));
+            const keyEntities = Array.from(this.key.select.allSelects.map((o) => o.entity));
             const groupBy = this.groupBy.slice();
-            for (const column of this.selects.ofType(ComputedColumnExpression).where((o) => !groupBy.any((g) => g.dataPropertyName === o.dataPropertyName))) {
+            for (const column of Enumerable.from(this.selects).ofType(ComputedColumnExpression).filter((o) => !groupBy.some((g) => g.dataPropertyName === o.dataPropertyName))) {
                 visitExpression(column.expression, (exp: IColumnExpression<any>) => {
-                    if (isColumnExp(exp) && keyEntities.contains(exp.entity)) {
+                    if (isColumnExp(exp) && keyEntities.includes(exp.entity)) {
                         groupBy.push(exp);
                     }
                 });
@@ -146,14 +146,14 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         return join;
     }
     public get resolvedSelects(): IEnumerable<IColumnExpression<any, ValueType>> {
-        let selects = this.isAggregate ? this.selects.asEnumerable() : this.itemSelect.selects.asEnumerable();
+        let selects = Enumerable.from(this.isAggregate ? this.selects : this.itemSelect.selects);
         for (const include of this.includes) {
             if (include.isEmbedded) {
                 const cloneMap = new Map();
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in emdedded relation
-                const childSelects = include.child.resolvedSelects.select((o: IColumnExpression<any, ValueType>) => {
-                    let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
+                const childSelects = include.child.resolvedSelects.map((o: IColumnExpression<any, ValueType>) => {
+                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName);
                     if (!curCol) {
                         curCol = o.clone(cloneMap);
                     }
@@ -209,7 +209,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 if (keyParentRel) {
                     let relation: IExpression<boolean>;
                     for (const col of this.groupBy) {
-                        const childCol = selectExp.projectedColumns.first((o) => o.propertyName as string === col.propertyName);
+                        const childCol = selectExp.projectedColumns.find((o) => o.propertyName as string === col.propertyName);
                         const logicalExp = new StrictEqualExpression(col, childCol);
                         relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
                     }
@@ -242,7 +242,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         replaceMap.set(this, clone);
         selectClone.groupByExp = clone;
         clone.having = resolveClone(this.having, replaceMap);
-        clone.selects = this.selects.select((o) => resolveClone(o, replaceMap)).toArray();
+        clone.selects = this.selects.map((o) => resolveClone(o, replaceMap));
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
         clone.isAggregate = this.isAggregate;
         return clone;
@@ -255,7 +255,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     }
     public hashCode() {
         let code: number = super.hashCode();
-        code = hashCodeAdd(hashCode("GROUPBY", code), this.groupBy.select((o) => o.hashCode()).sum());
+        code = hashCodeAdd(hashCode("GROUPBY", code), Enumerable.from(this.groupBy).map((o) => o.hashCode()).sum());
         if (this.having) {
             code = hashCodeAdd(this.having.hashCode(), code);
         }
@@ -264,11 +264,11 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     public toString() {
         return `GroupBy({
 Entity:${this.entity.toString()},
-Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
+Select:${this.selects.map((o) => o.toString()).join(",")},
 Where:${this.where ? this.where.toString() : ""},
-Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
-Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")},
-Group:${this.groupBy.select((o) => o.toString()).toArray().join(",")},
+Join:${this.joins.map((o) => o.child.toString()).join(",")},
+Include:${this.includes.map((o) => o.child.toString()).join(",")},
+Group:${this.groupBy.map((o) => o.toString()).join(",")},
 Having:${this.having ? this.having.toString() : ""}
 })`;
     }

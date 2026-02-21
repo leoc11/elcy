@@ -22,5 +22,4 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     ]);
 
     //#endregion
-
 }

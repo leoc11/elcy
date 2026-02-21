@@ -1,6 +1,6 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
 import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
-import { IRelationOption } from "../../Decorator/Option/IRelationOption";
+import { IRelationData, IRelationOption } from "../../Decorator/Option/IRelationOption";
 import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "../../Helper/FunctionHelper";
 import { ColumnMetaData } from "../ColumnMetaData";
@@ -9,45 +9,34 @@ import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { RelationDataMetaData } from "./RelationDataMetaData";
 
-export class RelationMetaData<TSource = any, TTarget = any> implements IRelationMetaData<TSource, TTarget> {
+export class RelationMetaData<TSource extends object = object, TTarget extends object = object> implements IRelationMetaData<TSource, TTarget> {
     public get completeRelationType(): CompleteRelationshipType {
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
     public get mappedRelationColumns(): Enumerable {
         return this.relationColumns.intersect(this.source.columns);
     }
-    constructor(relationOption: IRelationOption<TSource, TTarget>, isMaster: boolean) {
-        this.name = relationOption.name;
-        this.isMaster = isMaster;
-        if (relationOption.relationType === "one?") {
+    constructor(option: IRelationData<TSource, TTarget>) {
+        this.name = option.name;
+        this.isMaster = option.isMaster;
+        this.propertyName = option.propertyName;
+        this.source = option.metaData;
+
+        if (!option.isMaster) {
+            this.target = option.targetMetaData;
+            this.relationColumns = Array.from(option.relationMap.keys());
             this.relationType = "one";
-            this.nullable = true;
-        }
-        else {
-            this.relationType = relationOption.relationType;
-        }
-        this.propertyName = relationOption.propertyName;
+            this.nullable = this.relationColumns.every(o => o.nullable);
+            this.relationMaps = option.relationMap;
+            this.fullName = option.relationKeyName;
 
-        this.source = Reflect.getOwnMetadata(entityMetaKey, relationOption.sourceType);
-
-        if (relationOption.targetType) {
-            this.target = Reflect.getOwnMetadata(entityMetaKey, relationOption.targetType);
+            if (!this.nullable && (this.deleteOption === "SET NULL" || this.updateOption === "SET NULL")) {
+                throw new Error(`Relation ${this.name} option is "SET NULL" but relation is not nullable`);
+            }
+            if (this.relationColumns.some((o) => !o.defaultExp && !o.nullable) && (this.deleteOption === "SET DEFAULT" || this.updateOption === "SET DEFAULT")) {
+                throw new Error(`Relation ${this.name} option is "SET DEFAULT" but has column without default and not nullable`);
+            }
         }
-
-        this.relationColumns = Enumerable.from(relationOption.relationKeys).select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
-            .select((o) => {
-                let col = Reflect.getOwnMetadata(columnMetaKey, relationOption.sourceType, o) as IColumnMetaData<TSource>;
-                if (!col) {
-                    // either column will be defined later or column is not mapped.
-                    col = new ColumnMetaData<TSource>();
-                    col.entity = this.source;
-                    col.columnName = o;
-                    col.nullable = this.nullable || this.deleteOption === "SET NULL";
-                    Reflect.defineMetadata(columnMetaKey, col, relationOption.sourceType, o);
-                }
-                col.isReadOnly = true;
-                return col;
-            }).toArray();
     }
     public deleteOption?: ReferenceOption;
     public fullName: string;
@@ -57,75 +46,35 @@ export class RelationMetaData<TSource = any, TTarget = any> implements IRelation
     public propertyName: keyof TSource;
     public relationColumns: Array<IColumnMetaData<TSource>> = [];
     public relationData: RelationDataMetaData<any, TSource, TTarget> | RelationDataMetaData<any, TTarget, TSource>;
-    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData>;
+    public relationMaps: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     public relationType: RelationshipType;
     public reverseRelation: IRelationMetaData<TTarget, TSource>;
     public source: IEntityMetaData<TSource>;
     public target: IEntityMetaData<TTarget>;
     public updateOption?: ReferenceOption;
     public completeRelation(reverseRelation: IRelationMetaData<TTarget, TSource>) {
-        if (this.isMaster) {
-            this.relationMaps = new Map();
-            reverseRelation.relationMaps = new Map();
+        if (!this.isMaster) {
+            return;
+        }
 
-            this.reverseRelation = reverseRelation;
-            this.reverseRelation.reverseRelation = this;
-            // set each target for to make sure no problem
-            this.target = this.reverseRelation.source;
-            this.reverseRelation.target = this.source;
-            this.reverseRelation.isMaster = false;
+        this.relationMaps = Enumerable.from(reverseRelation.relationMaps).toMap(o => o[1], o => o[0]);
+        this.relationColumns = Array.from(this.relationMaps.keys());
+        this.relationType = reverseRelation.source.primaryKeys.every(o => reverseRelation.relationColumns.includes(o)) ? "one" : "many";
+        this.nullable = this.relationType === "one";
+        this.reverseRelation = reverseRelation;
+        this.target = reverseRelation.source;
 
-            // validate nullable
-            if (typeof this.reverseRelation.nullable !== "boolean") {
-                this.reverseRelation.nullable = this.reverseRelation.relationColumns.every((o) => o.nullable);
-            }
-            else if (this.reverseRelation.nullable && this.reverseRelation.relationColumns.any((o) => !o.nullable)) {
-                throw new Error(`Relation ${this.name} is nullable but it's dependent column is not nullable`);
-            }
-
-            // Validate relation option.
-            if (this.reverseRelation.deleteOption === "SET NULL" || this.reverseRelation.updateOption === "SET NULL") {
-                if (!this.reverseRelation.nullable) {
-                    throw new Error(`Relation ${this.reverseRelation.name} option is "SET NULL" but relation is not nullable`);
-                }
-            }
-            if (this.reverseRelation.deleteOption === "SET DEFAULT" || this.reverseRelation.updateOption === "SET DEFAULT") {
-                if (this.reverseRelation.relationColumns.any((o) => !o.defaultExp && !o.nullable)) {
-                    throw new Error(`Relation ${this.name} option is "SET DEFAULT" but has column without default and not nullable`);
-                }
-            }
-
-            if (this.completeRelationType !== "many-many") {
-                // set relation maps. Many to Many relation map will be set by RelationData
-                if (this.relationColumns.length <= 0) {
-                    // set default value.
-                    if (this.relationType === "many" && this.reverseRelation.relationType === "one") {
-                        // this is a foreignkey
-                        this.relationColumns = [this.fullName + "_" + this.target.type.name + "_Id" as any];
-                    }
-                    else {
-                        this.relationColumns = this.relationColumns.concat(this.source.primaryKeys);
-                    }
-                }
-                for (let i = 0, len = this.relationColumns.length; i < len; i++) {
-                    const col = this.relationColumns[i];
-                    const reverseCol = this.reverseRelation.relationColumns[i];
-                    if (!reverseCol.type) {
-                        // reverseCol is a non-mapped column
-                        reverseCol.type = col.type;
-                        reverseCol.columnType = col.columnType;
-                        (reverseCol as any).scale = (col as any).scale;
-                        (reverseCol as any).length = (col as any).length;
-                        (reverseCol as any).precision = (col as any).precision;
-                    }
-
-                    this.relationMaps.set(col, reverseCol);
-                    this.reverseRelation.relationMaps.set(reverseCol, col);
-                }
+        // Validate relation option.
+        if (this.reverseRelation.deleteOption === "SET DEFAULT" || this.reverseRelation.updateOption === "SET DEFAULT") {
+            if (this.reverseRelation.relationColumns.some((o) => !o.defaultExp && !o.nullable)) {
+                throw new Error(`Relation ${this.name} option is "SET DEFAULT" but has column without default and not nullable`);
             }
         }
-        else {
-            reverseRelation.completeRelation(this);
+
+        reverseRelation.reverseRelation = this;
+        if (!reverseRelation.fullName) {
+            reverseRelation.fullName = `${reverseRelation.name}_${reverseRelation.target.name}_${reverseRelation.source.name}`;
         }
+        this.fullName = reverseRelation.fullName;
     }
 }

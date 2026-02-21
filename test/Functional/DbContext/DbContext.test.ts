@@ -139,7 +139,7 @@ describe("DBCONTEXT", () => {
         it("should load multiple relations", async () => {
             const entity = new Order({ OrderId: Uuid.new() });
             const entry = db.attach(entity);
-            await entry.loadRelation((o) => o.OrderDetails.include((od) => od.Product));
+            await entry.loadRelation((o) => o.OrderDetails.map((od) => od.Product));
             expect(entity).to.has.property("OrderDetails").that.is.an("array").and.not.empty;
             for (const o of entity.OrderDetails) {
                 expect(o).toBeInstanceOf(OrderDetail);
@@ -156,10 +156,10 @@ describe("DBCONTEXT", () => {
             db.queryCacheManagerFactory = null;
         });
         it("should cached query", async () => {
-            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orderDetails.take(100).filter((o) => o.GrossSales > 10000).map((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             groupBy.toString();
             const queryCache = db.queryCacheManager.get(groupBy.hashCode());
@@ -175,10 +175,10 @@ describe("DBCONTEXT", () => {
             expect(cache).not.undefined;
         });
         it("should used cached query for same query", async () => {
-            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orderDetails.take(100).filter((o) => o.GrossSales > 10000).map((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const spy = vi.spyOn(groupBy, "buildQuery");
             groupBy.toString();
@@ -193,10 +193,10 @@ describe("DBCONTEXT", () => {
             db.resultCacheManagerFactory = null;
         });
         it("should cached result", async () => {
-            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orderDetails.take(100).filter((o) => o.GrossSales > 10000).map((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const deferredQuery = groupBy.deferredToArray();
             await deferredQuery.execute();
@@ -204,10 +204,10 @@ describe("DBCONTEXT", () => {
             expect(resultCache).not.equal(null);
         });
         it("should used cached result for same query", async () => {
-            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orderDetails.take(100).filter((o) => o.GrossSales > 10000).map((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const spy = vi.spyOn(db, "executeQueries");
             await groupBy.toArray();

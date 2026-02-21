@@ -32,13 +32,13 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: ((item: S) => Iterable<T>);
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S>;
-        const methodExpression = new MethodCallExpression(objectOperand, "selectMany", [this.selector.clone()]);
+        const methodExpression = new MethodCallExpression(objectOperand, "flatMap", [this.selector.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("SELECTMANY", this.parent.hashCode()), this.selector.hashCode());
+        return hashCodeAdd(hashCode("FLATMAP", this.parent.hashCode()), this.selector.hashCode());
     }
 }

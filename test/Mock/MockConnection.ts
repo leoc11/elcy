@@ -3,7 +3,7 @@ import { IsolationLevel } from "../../src/Common/StringType";
 import { IConnection } from "../../src/Connection/IConnection";
 import { TimeSpan } from "../../src/Data/TimeSpan";
 import { Uuid } from "../../src/Data/Uuid";
-import { IEnumerable } from "../../src/Enumerable/IEnumerable";
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { EventHandlerFactory } from "../../src/Event/EventHandlerFactory";
 import { IEventDispacher, IEventHandler } from "../../src/Event/IEventHandler";
 import { EqualExpression } from "../../src/ExpressionBuilder/Expression/EqualExpression";
@@ -73,13 +73,13 @@ export class MockConnection implements IConnection {
     }
     public generateQueryResult() {
         return this.deferredQueries
-            .selectMany((deferred) => {
+            .flatMap((deferred) => {
                 const command = deferred.command;
-                const tvps = command.paramExps.where((o) => o instanceof SqlTableValueParameterExpression).toArray();
+                const tvps = command.paramExps.filter((o) => o instanceof SqlTableValueParameterExpression);
                 const skipCount = tvps.length;
                 if (command instanceof InsertIntoExpression) {
                     let i = 0;
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
@@ -187,7 +187,7 @@ export class MockConnection implements IConnection {
 
                     const generatedResults = Array.from(map.values());
                     let index = 0;
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
@@ -207,22 +207,24 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof InsertExpression) {
                     let i = 0;
-                    const generatedColumns = command.entity.columns.where((o) => isNotNull(o.columnMeta))
-                        .where((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp).toArray();
+                    const generatedColumns = Enumerable.from(command.entity.columns)
+                        .filter((o) => isNotNull(o.columnMeta))
+                        .filter((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
+                        .toArray();
 
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
                         i++;
                         if (query.type & QueryType.DQL) {
-                            const rows = command.values.select((o) => {
+                            const rows = command.values.map((o) => {
                                 const val: { [key in any]: any } = {};
                                 for (const col of generatedColumns) {
                                     val[col.dataPropertyName] = this.generateValue(col);
                                 }
                                 return val;
-                            }).toArray();
+                            });
                             result.rows = rows;
                         }
                         if (query.type & QueryType.DML) {
@@ -242,7 +244,7 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof UpdateExpression) {
                     let i = 0;
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
@@ -261,7 +263,7 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof DeleteExpression) {
                     let i = 0;
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
@@ -279,9 +281,9 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpsertExpression) {
-                    const dmlCount = deferred.queries.where((o) => (o.type & QueryType.DML) !== 0).count();
+                    const dmlCount = Enumerable.from(deferred.queries).filter((o) => (o.type & QueryType.DML) !== 0).count();
                     let i = 0;
-                    return deferred.queries.select((query) => {
+                    return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
@@ -300,7 +302,7 @@ export class MockConnection implements IConnection {
                 }
 
                 return [];
-            }).toArray();
+            });
     }
     public generateValue(column: IColumnExpression) {
         if (column.columnMeta) {
@@ -433,7 +435,7 @@ export class MockConnection implements IConnection {
         const results = [selectExp];
         for (let i = 0; i < results.length; i++) {
             const select = results[i];
-            const addition = select.resolvedIncludes.select((o) => o.child).toArray().reverse();
+            const addition = Enumerable.from(select.resolvedIncludes).map((o) => o.child).toArray().reverse();
             results.splice(i + 1, 0, ...addition);
         }
         return results;
@@ -444,7 +446,7 @@ export class MockConnection implements IConnection {
             defaultValue = this.extractValue(deferred, select.paging.take);
         }
         else {
-            const takeJoin = select.joins.first((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
+            const takeJoin = select.joins.find((o) => o instanceof PagingJoinRelation) as PagingJoinRelation;
             if (takeJoin) {
                 if (takeJoin.end) {
                     defaultValue = this.extractValue(deferred, takeJoin.end);

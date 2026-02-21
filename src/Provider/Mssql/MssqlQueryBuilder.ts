@@ -30,6 +30,8 @@ import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpressi
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
+import { Enumerable } from "@elcy/enumerable";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -63,10 +65,12 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             parameters: parameters,
             queryExpression: insertExp
         };
-        const colString = insertExp.columns.select((o) => this.enclose(o.columnName)).toArray().join(", ");
-        let output = insertExp.entity.columns.where((o) => isNotNull(o.columnMeta))
-            .where((o) => (o.columnMeta.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta.defaultExp)
-            .select((o) => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`).toArray().join(", ");
+        const colString = insertExp.columns.map((o) => this.enclose(o.columnName)).join(", ");
+        let output = Enumerable.from(insertExp.entity.columns).filter((o) => isNotNull(o.columnMeta))
+            .filter((o) => (o.columnMeta.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta.defaultExp)
+            .map((o) => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`)
+            .toArray()
+            .join(", ");
         if (output) {
             output = " OUTPUT " + output;
         }
@@ -140,8 +144,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         const distinct = selectExp.distinct ? " DISTINCT" : "";
         const top = skip <= 0 && take > 0 ? " TOP " + take : "";
 
-        const selects = selectExp.projectedColumns
-            .select((o) => {
+        const selects = Enumerable.from(selectExp.projectedColumns)
+            .map((o) => {
                 let colStr = "";
                 if (o instanceof ComputedColumnExpression) {
                     colStr = this.toOperandString(o.expression, param);
@@ -161,7 +165,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         const entityQ = this.getEntityQueryString(selectExp.entity, param);
 
-        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !selectExp.joins.ofType(HavingJoinRelation).any()) {
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
             const clone = selectExp.clone();
             clone.entity.alias = "rel_" + clone.entity.alias;
             clone.isAggregate = true;
@@ -170,7 +174,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
             let relation: IExpression<boolean>;
             for (const col of selectExp.resolvedGroupBy) {
-                const cloneCol = clone.resolvedGroupBy.first((o) => o.dataPropertyName === col.dataPropertyName);
+                const cloneCol = clone.resolvedGroupBy.find((o) => o.dataPropertyName === col.dataPropertyName);
                 const logicalExp = new StrictEqualExpression(col, cloneCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
@@ -190,7 +194,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
             if (selectExp.groupBy.length > 0) {
-                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.select((o) => this.getColumnQueryString(o, param)).toArray().join(", ");
+                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.map((o) => this.getColumnQueryString(o, param)).join(", ");
             }
             if (selectExp.having) {
                 selectQuerySuffix += this.newLine() + "HAVING " + this.toLogicalString(selectExp.having, param);
@@ -198,7 +202,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
 
         if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation))) {
-            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.select((c) => this.toString(c.column, param) + " " + c.direction).toArray().join(", ");
+            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
         }
 
         if (skip > 0) {
@@ -216,7 +220,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 }
                 else {
                     // create relation data (clone select join clone child)
-                    selectExp.includes.delete(include);
+                    ArrayExtension.delete(selectExp.includes, include);
                     const cloneEntity = selectExp.entity.clone();
                     cloneEntity.isRelationData = true;
                     const relationData = new SelectExpression(cloneEntity);
@@ -239,7 +243,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                     // Bridge to Child relation
                     let bridgeChildRelation: IExpression<boolean>;
                     for (const childCol of childSelect.primaryKeys) {
-                        const bridgeCol = relationData.allColumns.first((o) => o.columnName === childCol.columnName);
+                        const bridgeCol = relationData.allColumns.find((o) => o.columnName === childCol.columnName);
                         relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
                         bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
@@ -251,7 +255,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                     const cloneMap = new Map();
                     mapReplaceExp(cloneMap, selectExp.entity, relationData.entity);
                     for (const parentCol of selectExp.primaryKeys) {
-                        let bridgeCol = relationData.allColumns.first((o) => o.columnName === parentCol.columnName);
+                        let bridgeCol = relationData.allColumns.find((o) => o.columnName === parentCol.columnName);
                         if (!bridgeCol) {
                             bridgeCol = parentCol.clone(cloneMap);
                         }
@@ -285,12 +289,12 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             queryExpression: updateExp
         };
 
-        const setQuery = Object.keys(updateExp.setter).select((o: keyof T) => {
+        const setQuery = Object.keys(updateExp.setter).map((o: keyof T) => {
             const value = updateExp.setter[o];
             const valueStr = this.toOperandString(value, param);
-            const column = updateExp.entity.columns.first((c) => c.propertyName === o);
+            const column = updateExp.entity.columns.find((c) => c.propertyName === o);
             return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-        }).toArray();
+        });
 
         if (updateExp.entity.metaData) {
             if (updateExp.entity.metaData.modifiedDateColumn) {
@@ -353,5 +357,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
         }
         return result;
+    }
+    protected override booleanString(value: boolean) {
+        return value ? "1" : "0";
     }
 }

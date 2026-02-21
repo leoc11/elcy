@@ -5,6 +5,7 @@ import { AbstractEntityMetaData } from "../MetaData/AbstractEntityMetaData";
 import { UniqueConstraintMetaData } from "../MetaData/UniqueConstraintMetaData";
 import { IUniqueConstraintOption } from "./Option/IUniqueConstraintOption";
 import { getColumnMetadata, getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export function UniqueConstraint<TE extends object>(option?: IUniqueConstraintOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
 export function UniqueConstraint<TE extends object>(properties: Array<PropertySelector<TE>>): ClassDecorator & PropertyDecorator & MethodDecorator;
@@ -33,8 +34,7 @@ export function UniqueConstraint<TE extends object>(optionOrPropertiesOrName?: I
         }
         else {
             option.properties = option.properties
-                .select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
-                .toArray();
+                .map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o));
         }
 
         if (!option.name) {
@@ -48,12 +48,12 @@ export function UniqueConstraint<TE extends object>(optionOrPropertiesOrName?: I
 
         let checkMetaData = entityMetaData.constraints.find((o) => o instanceof UniqueConstraintMetaData && o.name === option.name);
         if (checkMetaData) {
-            entityMetaData.constraints.delete(checkMetaData);
+            ArrayExtension.delete(entityMetaData.constraints, checkMetaData);
         }
         const columns = Enumerable.from(option.properties)
-            .select((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
-            .select((o) => getColumnMetadata(entityMetaData.type, o))
-            .where((o) => !!o)
+            .map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o))
+            .map((o) => getColumnMetadata(entityMetaData.type, o))
+            .filter((o) => !!o)
             .toArray();
         checkMetaData = new UniqueConstraintMetaData(option.name, entityMetaData, columns);
         entityMetaData.constraints.push(checkMetaData);

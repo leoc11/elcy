@@ -38,13 +38,13 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         if (this.type !== Object) {
             params.unshift(new ValueExpression(this.type));
         }
-        const methodExpression = new MethodCallExpression(objectOperand, "select", params);
+        const methodExpression = new MethodCallExpression(objectOperand, "map", params);
         const visitParam: IQueryVisitParameter<S> = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression<T>;
         result.parentRelation = null;
         return result;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("SELECT", this.parent.hashCode()), this.selector.hashCode());
+        return hashCodeAdd(hashCode("MAP", this.parent.hashCode()), this.selector.hashCode());
     }
 }

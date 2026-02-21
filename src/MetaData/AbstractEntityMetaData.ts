@@ -17,14 +17,14 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
 export class AbstractEntityMetaData<TE extends TBase, TBase extends object = object> implements IEntityMetaData<TE, TBase> {
     public get insertGeneratedColumns() {
-        return this.columns.where((o) => {
+        return this.columns.filter((o) => {
             return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
-        }).toArray();
+        });
     }
     public get updateGeneratedColumns() {
-        return this.columns.where((o) => {
+        return this.columns.filter((o) => {
             return (o.generation & ColumnGeneration.Update) as any;
-        }).toArray();
+        });
     }
 
     constructor(public type: IObjectType<TE>, name?: string) {

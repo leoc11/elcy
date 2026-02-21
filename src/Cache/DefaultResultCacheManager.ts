@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { QueuedTimeout } from "../Common/QueuedTimeout";
 import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheItem } from "./ICacheItem";
@@ -17,7 +18,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
     }
     public async get(key: string): Promise<IQueryResult[]> {
         const res = await this.gets(key);
-        return res.first();
+        return res.find(() => true);
     }
     public gets(...keys: string[]): Promise<IQueryResult[][]> {
         return Promise.resolve(keys.map((key) => {
@@ -32,7 +33,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
             }
 
             return item ? item.data : null;
-        }).toArray());
+        }));
     }
     public remove(...keys: string[]): Promise<void> {
         for (const key of keys) {
@@ -43,7 +44,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
                     for (const tag of item.tags) {
                         const keyList = this._tagMap.get(tag);
                         if (keyList) {
-                            keyList.delete(key);
+                            ArrayExtension.delete(keyList, key);
                         }
                     }
                 }

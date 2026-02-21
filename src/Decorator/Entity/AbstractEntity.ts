@@ -14,6 +14,7 @@ import { getEntityMetadata, setColumnMetadata, setEntityMetadata } from "../../M
 import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumnMetaData";
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
 import { IEntityOption } from "../Option/IEntityOption";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(option: IEntityOption<T>): ClassDecorator;
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
@@ -63,7 +64,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                 }
                 if (isInheritance) {
                     for (const parentColumnMeta of parentMetaData.columns) {
-                        const existing = entityMetadata.columns.first((o) => o.propertyName === parentColumnMeta.propertyName);
+                        const existing = entityMetadata.columns.find((o) => o.propertyName === parentColumnMeta.propertyName);
                         let inheritedColumnMeta: IColumnMetaData<T>;
                         if (parentColumnMeta instanceof ComputedColumnMetaData) {
                             if (!existing) {
@@ -72,7 +73,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                         }
                         else {
                             if (existing) {
-                                entityMetadata.columns.delete(existing);
+                                ArrayExtension.delete(entityMetadata.columns, existing);
                             }
                             inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }
@@ -83,7 +84,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                         }
                     }
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
-                        const additionProperties = entityMetadata.columns.where((o) => parentMetaData.columns.all((p) => p.propertyName !== o.propertyName));
+                        const additionProperties = entityMetadata.columns.filter((o) => parentMetaData.columns.every((p) => p.propertyName !== o.propertyName));
                         for (const columnMeta of additionProperties) {
                             // TODO
                             parentMetaData.columns.push(columnMeta as unknown as IColumnMetaData<TParent>);
@@ -91,17 +92,17 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                     }
 
                     if (parentMetaData.primaryKeys.length > 0) {
-                        entityMetadata.primaryKeys = parentMetaData.primaryKeys.select((o) => entityMetadata.columns.first((p) => p.propertyName === o.propertyName)).toArray();
+                        entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.columns.find((p) => p.propertyName === o.propertyName));
                     }
 
                     if (parentMetaData.createDateColumn) {
-                        entityMetadata.createDateColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
+                        entityMetadata.createDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
                     }
                     if (parentMetaData.modifiedDateColumn) {
-                        entityMetadata.modifiedDateColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
+                        entityMetadata.modifiedDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
                     }
                     if (parentMetaData.deletedColumn) {
-                        entityMetadata.deletedColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
+                        entityMetadata.deletedColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
                     }
                     if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders) {
                         entityMetadata.defaultOrders = parentMetaData.defaultOrders;

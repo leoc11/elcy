@@ -25,13 +25,13 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
                             (this._type as GenericType<number>) = Number;
                             break;
                         }
-                        case "contains":
-                        case "any":
-                        case "all": {
+                        case "includes":
+                        case "some":
+                        case "every": {
                             (this._type as GenericType<boolean>) = Boolean;
                             break;
                         }
-                        case "first": {
+                        case "find": {
                             this._type = this.objectOperand.itemType as GenericType<T>;
                             break;
                         }

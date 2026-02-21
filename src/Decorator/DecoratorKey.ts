@@ -36,7 +36,7 @@ export const relationChangeDispatherMetaKey = Symbol("relation-change-dispatcher
 // ManyToOne | ScalarNavigation | OneRelationship
 
 // Computed
-// ComputedProperty. o => o.Orders.count() support custom relationship with select statement. o=>o.Orders.First(), o=>o.ORders.where();
+// ComputedProperty. o => o.Orders.count() support custom relationship with select statement. o=>o.Orders.find(), o=>o.Orders.filter();
 
 // validation
 // Nullable | MaxLength | Enum

@@ -4,11 +4,6 @@
         "composite": true,
         "outDir": "dist",
         "baseUrl": ".", // important for paths
-        "paths": {
-            "@elcy/enumerable": [
-                "../enumerable/src"
-            ] // map the package name to source folder
-        }
     },
     "include": [
         "test",

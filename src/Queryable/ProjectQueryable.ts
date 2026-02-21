@@ -12,7 +12,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export class ProjectQueryable<T> extends Queryable<T> {
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters)).toArray();
+            this._selectors = this.selectorsFn.map((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters));
         }
 
         return this._selectors;
@@ -39,6 +39,6 @@ export class ProjectQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
-        return hashCodeAdd(hashCode("PROJECT", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));
+        return hashCodeAdd(hashCode("PROJECT", this.parent.hashCode()), this.selectors.reduce((r, o) => r + o.hashCode(), 0));
     }
 }

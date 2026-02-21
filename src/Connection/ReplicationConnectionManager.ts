@@ -48,7 +48,7 @@ export class ReplicationConnectionManager<T extends DbType = DbType> implements 
         return res;
     }
     public async getConnection(writable?: boolean): Promise<PooledConnection> {
-        const manager = writable ? this.masterConnectionManager : Enumerable.from(this.replicaConnectionManagers).orderBy([(o) => o.connectionCount]).first();
+        const manager = writable ? this.masterConnectionManager : Enumerable.from(this.replicaConnectionManagers).orderBy([(o) => o.connectionCount]).find();
         return await manager.getConnection();
     }
 }

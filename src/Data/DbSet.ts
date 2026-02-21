@@ -3,7 +3,6 @@ import { DeleteMode } from "../Common/StringType";
 import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "@elcy/enumerable";
-import type { IEnumerable } from "@elcy/enumerable";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -11,7 +10,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
-import { hashCode, isNotNull, isValue } from "../Helper/Util";
+import { hashCode, isNotNull, isNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
@@ -32,8 +31,8 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     public get dbContext(): DbContext {
         return this._dbContext;
     }
-    public get local(): IEnumerable<T> {
-        return Enumerable.from(this.dictionary).select((o) => o[1].entity);
+    public get local(): Enumerable<T> {
+        return Enumerable.from(this.dictionary).map((o) => o[1].entity);
     }
     public get metaData() {
         if (!this._metaData) {
@@ -120,7 +119,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => Enumerable.from(result).sum((o) => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -130,7 +129,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         const setterObj: { [key in keyof T]?: T[key] | ((item: T) => ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
         for (const prop in setter) {
-            const primaryCol = this.metaData.primaryKeys.first((o) => o.propertyName === prop);
+            const primaryCol = this.metaData.primaryKeys.find((o) => o.propertyName === prop);
             if (primaryCol) {
                 const val = setter[primaryCol.propertyName];
                 if (!val) {
@@ -178,12 +177,14 @@ export class DbSet<T extends object = object> extends Queryable<T> {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => result.sum((o) => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => Enumerable.from(result).sum((o) => o.effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
     public entry(entity: T | FlatObjectLike<T>) {
+        debugger;
         const key = this.getKey(entity);
+        debugger;
         let entry = this.dictionary.get(key);
         if (entry) {
             if (entry.entity !== entity) {
@@ -203,11 +204,23 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         }
         return entry;
     }
-    public async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean) {
-        let entity = forceReload ? null : this.findLocal(id);
-        if (!entity) {
-            entity = await super.find(id);
+    public async find(predicate?: (item: T) => boolean): Promise<T>;
+    public async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean): Promise<T>;
+    public async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: T) => boolean), forceReload?: boolean) {
+        let entity: T;
+        if (!idOrPredicate) {
+            entity = await super.find();
         }
+        else if (idOrPredicate instanceof Function) {
+            entity = await super.find(idOrPredicate);
+        }
+        else {
+            entity = forceReload ? null : this.findLocal(idOrPredicate);
+            if (!entity) {
+                entity = await super.find(idOrPredicate);
+            }
+        }
+        
         return entity;
     }
     public findLocal(id: ValueType | FlatObjectLike<T>): T {
@@ -216,6 +229,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return entry ? entry.entity : undefined;
     }
     public getKey(id: ValueType | FlatObjectLike<T>): string {
+        debugger;
         if (!isNotNull(id)) {
             throw new Error("Parameter cannot be null");
         }
@@ -227,7 +241,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         let useReference = false;
         for (const o of this.primaryKeys) {
             const val = id[o.propertyName];
-            if (!val) {
+            if (isNull(val)) {
                 if (o.generation & ColumnGeneration.Insert) {
                     useReference = true;
                 }
@@ -262,10 +276,10 @@ export class DbSet<T extends object = object> extends Queryable<T> {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.first().propertyName] = primaryValue as T[StringKeyOf<T>];
+            entity[this.primaryKeys.find(() => true).propertyName] = primaryValue as T[StringKeyOf<T>];
         }
         else {
-            if (this.primaryKeys.any((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
+            if (this.primaryKeys.some((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
                 throw new Error(`Primary keys is required`);
             }
 

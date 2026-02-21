@@ -9,7 +9,7 @@ mockContext(db);
 describe("DEFERRED QUERY", () => {
     describe("TO ARRAY", async () => {
         it("should work", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredToArray();
             // do something here.
             const a = await deferred.execute();
 
@@ -18,7 +18,7 @@ describe("DEFERRED QUERY", () => {
             expect(a[0]).toBeInstanceOf(Order);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredToArray();
             await db.orders.count();
             const a = deferred.value;
             expect(a).toBeInstanceOf(Array);
@@ -26,7 +26,7 @@ describe("DEFERRED QUERY", () => {
             expect(a[0]).toBeInstanceOf(Order);
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredToArray();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredToArray();
             // emulate the resolved value.
             deferred.value = [];
             const a = await deferred.execute();
@@ -36,20 +36,20 @@ describe("DEFERRED QUERY", () => {
     });
     describe("COUNT", async () => {
         it("should work", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredCount();
             // do something here.
             const a = await deferred.execute();
 
             expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredCount();
             await db.orders.count();
             const a = deferred.value;
             expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.include((o) => o.OrderDetails).deferredCount();
+            const deferred = db.orders.loads((o) => o.OrderDetails).deferredCount();
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -144,90 +144,90 @@ describe("DEFERRED QUERY", () => {
             expect(a).toBe(Infinity);
         });
     });
-    describe("ALL", async () => {
+    describe("EVERY", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredAll((o) => o.TotalAmount < 1000000000);
+            const deferred = db.orders.deferredEvery((o) => o.TotalAmount < 1000000000);
             // do something here.
             const a = await deferred.execute();
 
             expect(typeof a).toBe("boolean");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredEvery((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
             expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredAll((o) => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredEvery((o) => o.TotalAmount > 100000);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
             expect(a).toBe(true);
         });
     });
-    describe("ANY", async () => {
+    describe("SOME", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredAny((o) => o.TotalAmount < 1000000000);
+            const deferred = db.orders.deferredSome((o) => o.TotalAmount < 1000000000);
             // do something here.
             const a = await deferred.execute();
 
             expect(a).toBe(true);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredAny((o) => o.TotalAmount > 100000);
+            const deferred = db.orders.deferredSome((o) => o.TotalAmount > 100000);
             await db.orders.count();
             const a = deferred.value;
             expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredAny((o) => o.TotalAmount < 0);
+            const deferred = db.orders.deferredSome((o) => o.TotalAmount < 0);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
             expect(a).toBe(true);
         });
     });
-    describe("FIRST", async () => {
+    describe("FIND", async () => {
         it("should work", async () => {
-            const deferred = db.orders.deferredFirst();
+            const deferred = db.orders.deferredFind();
             // do something here.
             const a = await deferred.execute();
 
             expect(a).toBeInstanceOf(Order);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.deferredFirst();
+            const deferred = db.orders.deferredFind();
             await db.orders.count();
             const a = deferred.value;
 
             expect(a).toBeInstanceOf(Order);
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.deferredFirst();
+            const deferred = db.orders.deferredFind();
             // emulate the resolved value.
             deferred.value = null;
             const a = await deferred.execute();
             expect(a).to.be.equal(null);
         });
     });
-    describe("CONTAINS", async () => {
+    describe("INCLUDES", async () => {
         it("should work", async () => {
-            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(10000);
+            const deferred = db.orders.map((o) => o.TotalAmount).deferredIncludes(10000);
             // do something here.
             const a = await deferred.execute();
 
             expect(typeof a).toBe("boolean");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(10000);
+            const deferred = db.orders.map((o) => o.TotalAmount).deferredIncludes(10000);
             await db.orders.count();
             const a = deferred.value;
 
             expect(typeof a).toBe("boolean");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.orders.select((o) => o.TotalAmount).deferredContains(-20);
+            const deferred = db.orders.map((o) => o.TotalAmount).deferredIncludes(-20);
             // emulate the resolved value.
             deferred.value = true;
             const a = await deferred.execute();
@@ -251,9 +251,9 @@ describe("DEFERRED QUERY", () => {
             expect(typeof c.value).toBe("number");
         });
         it("should execute several query in batch", async () => {
-            const sum = db.orders.select((o) => o.TotalAmount).deferredSum();
-            const any = db.orders.deferredAny((o) => o.TotalAmount < 1000000000);
-            const array = db.orders.include((o) => o.OrderDetails).deferredToArray();
+            const sum = db.orders.map((o) => o.TotalAmount).deferredSum();
+            const any = db.orders.deferredSome((o) => o.TotalAmount < 1000000000);
+            const array = db.orders.loads((o) => o.OrderDetails).deferredToArray();
             // do something here.
             await any.execute();
 
@@ -264,10 +264,10 @@ describe("DEFERRED QUERY", () => {
         });
         it("should not have overlaping parameter issue", async () => {
             let value = 10000;
-            const any1 = db.orders.parameter({ value }).where((o) => o.TotalAmount < value).deferredToArray();
+            const any1 = db.orders.parameter({ value }).filter((o) => o.TotalAmount < value).deferredToArray();
 
             value = 10;
-            const any2 = db.orders.parameter({ value }).where((o) => o.TotalAmount < value).deferredToArray();
+            const any2 = db.orders.parameter({ value }).filter((o) => o.TotalAmount < value).deferredToArray();
 
             await any2.execute();
 

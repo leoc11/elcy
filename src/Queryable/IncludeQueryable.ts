@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -11,7 +12,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export class IncludeQueryable<T> extends Queryable<T> {
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters)).toArray();
+            this._selectors = this.selectorsFn.map((o) => ExpressionBuilder.parse(o, [this.parent.type], this.parameters));
         }
 
         return this._selectors;
@@ -33,11 +34,11 @@ export class IncludeQueryable<T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
         const selectors = this.selectors.map((o) => o.clone());
-        const methodExpression = new MethodCallExpression(objectOperand, "include", selectors);
+        const methodExpression = new MethodCallExpression(objectOperand, "loads", selectors);
         const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
-        return hashCodeAdd(hashCode("INCLUDE", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));
+        return hashCodeAdd(hashCode("LOADS", this.parent.hashCode()), Enumerable.from(this.selectors).sum((o) => o.hashCode()));
     }
 }

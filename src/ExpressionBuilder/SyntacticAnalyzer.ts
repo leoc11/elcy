@@ -80,7 +80,7 @@ const globalObjectMaps = new Map<string, unknown>([
 const [prefixOperators, postfixOperators] = Enumerable.from(operators)
     .groupBy(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix)
     .orderBy([o => o.key, "DESC"])
-    .select(d => d.toMap((o) => o.identifier));
+    .map(d => d.toMap((o) => o.identifier));
 export class SyntacticAnalyzer {
     public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }) {
         if (!userParameters) {

@@ -26,7 +26,6 @@ export class DeferredQuery<T = unknown> {
     public buildQuery(queryBuilder: IQueryBuilder) {
         const timer = Diagnostic.timer();
         this._queries = queryBuilder.toQuery(this.command, this.parameters, this.queryOption);
-
         if (Diagnostic.enabled) {
             Diagnostic.debug(this, `Build Query.`, this._queries);
             Diagnostic.trace(this, `Build Query time: ${timer.time()}ms`);
@@ -49,7 +48,7 @@ export class DeferredQuery<T = unknown> {
         return this.value;
     }
     public hashCode() {
-        return this.command.hashCode() + Enumerable.from(this.parameters).select((o) => hashCode((o[1].value || "NULL").toString())).sum();
+        return this.command.hashCode() + Enumerable.from(this.parameters).map((o) => hashCode((o[1].value || "NULL").toString())).sum();
     }
     public resolve(result: IQueryResult[]) {
         this.value = this.resultParser(result, this._queries);
@@ -59,6 +58,6 @@ export class DeferredQuery<T = unknown> {
         }
     }
     public toString() {
-        return this.buildQuery(this.dbContext.queryBuilder).select((o) => o.query).toArray().join(";\n\n");
+        return this.buildQuery(this.dbContext.queryBuilder).map((o) => o.query).join(";\n\n");
     }
 }

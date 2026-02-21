@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { GenericType, IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
@@ -16,11 +17,11 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 export class UpsertExpression<T extends object = object> implements IQueryExpression<void> {
     public get insertColumns(): Array<IColumnExpression<T, T[StringKeyOf<T>]>> {
         if (!this._insertColumns) {
-            this._insertColumns = this.relations
-                .selectMany((o) => o.relationColumns)
+            this._insertColumns = Enumerable.from(this.relations)
+                .flatMap((o) => o.relationColumns)
                 .union(this.entity.metaData.columns)
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .select((o) => this.entity.columns.first((c) => c.propertyName === o.propertyName)).toArray();
+                .map((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
         }
 
         return this._insertColumns;
@@ -28,7 +29,7 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
     public get relations(): Array<IRelationMetaData<T, T[StringKeyOf<T>] & object>> {
         if (!this._relations) {
             this._relations = this.entity.metaData.relations
-                .where((o) => !o.nullable && !o.isMaster && o.relationType === "one").toArray();
+                .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one");
         }
         return this._relations;
     }
@@ -37,7 +38,7 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
     }
     public get updateColumns(): Array<IColumnExpression<T>> {
         if (!this._updateColumns) {
-            this._updateColumns = this.insertColumns.where((o) => !o.isPrimary).toArray();
+            this._updateColumns = this.insertColumns.filter((o) => !o.isPrimary);
         }
 
         return this._updateColumns;
@@ -47,7 +48,7 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
     }
 
     public get where(): IExpression<boolean> {
-        return this.entity.primaryColumns.select((o) => {
+        return this.entity.primaryColumns.map((o) => {
             const valueExp = this.setter[o.propertyName];
             return new StrictEqualExpression(o, valueExp);
         }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item);

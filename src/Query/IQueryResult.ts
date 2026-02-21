@@ -1,4 +1,4 @@
-import { IEnumerable } from "../Enumerable/IEnumerable";
+import { IEnumerable } from "@elcy/enumerable";
 
 export interface IQueryResult<T = unknown> {
     effectedRows?: number;

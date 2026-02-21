@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { IEventDispacher, IEventEmitter, IEventHandler } from "./IEventHandler";
 
 export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
@@ -7,7 +8,7 @@ export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, s
             handlers.push(handler);
         },
         delete: (handler) => {
-            handlers.delete(handler);
+            ArrayExtension.delete(handlers, handler);
         }
     };
     const eventDispacher = function (args: TArgs) {

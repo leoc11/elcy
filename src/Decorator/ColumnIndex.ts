@@ -6,6 +6,7 @@ import { ComputedColumnMetaData } from "../MetaData/ComputedColumnMetaData";
 import { IndexMetaData } from "../MetaData/IndexMetaData";
 import { getEntityMetadata, setEntityMetadata } from "../MetaData/MetaDataMapper";
 import { IIndexOption } from "./Option/IIndexOption";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export function ColumnIndex<TE extends object = object>(option?: IIndexOption<TE>): ClassDecorator & PropertyDecorator & MethodDecorator;
 export function ColumnIndex<TE extends object = object>(name: string, unique?: boolean): ClassDecorator & PropertyDecorator & MethodDecorator;
@@ -60,9 +61,9 @@ export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: I
         if (entityMetaData == null) {
             entityMetaData = new AbstractEntityMetaData(entConstructor);
         }
-        let indexMetaData = entityMetaData.indices.first((o) => o.name === option.name);
+        let indexMetaData = entityMetaData.indices.find((o) => o.name === option.name);
         if (indexMetaData) {
-            entityMetaData.indices.delete(indexMetaData);
+            ArrayExtension.delete(entityMetaData.indices, indexMetaData);
         }
         const map = Enumerable.from(entityMetaData.columns).toMap(o => o.propertyName);
         const keys = keyStrings.map(o => map.get(o));
@@ -76,8 +77,8 @@ export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: I
         }
 
         const computedColumn = allColumns
-            .where(o => o instanceof ComputedColumnMetaData && !o.columnName)
-            .first();
+            .filter(o => o instanceof ComputedColumnMetaData && !o.columnName)
+            .find();
         if (computedColumn) {
             throw new Error(`"${computedColumn.propertyName}" cannot be indexed because it's a computed properties`);
         }

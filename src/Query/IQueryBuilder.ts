@@ -1,7 +1,7 @@
 import { ICompleteColumnType } from "../Common/ICompleteColumnType";
 import { ValueType } from "../Common/Type";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
-import { IEnumerable } from "../Enumerable/IEnumerable";
+import { IEnumerable } from "@elcy/enumerable";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";

@@ -83,10 +83,10 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
                     else if (this.parent.entity === colExp.entity) {
                         this._parentColumns.push(colExp);
                     }
-                    else if (this.child.allSelects.select((o) => o.entity).contains(colExp.entity)) {
+                    else if (this.child.allSelects.map((o) => o.entity).includes(colExp.entity)) {
                         this._childColumns.push(colExp);
                     }
-                    else if (this.parent.allSelects.select((o) => o.entity).contains(colExp.entity)) {
+                    else if (this.parent.allSelects.map((o) => o.entity).includes(colExp.entity)) {
                         this._parentColumns.push(colExp);
                     }
                 }
@@ -96,10 +96,10 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
             });
 
             if (!this._isManyManyRelation) {
-                const childPks = this.child.allSelects.selectMany((o) => o.primaryKeys);
-                const parentPks = this.parent.allSelects.selectMany((o) => o.primaryKeys);
+                const childPks = this.child.allSelects.flatMap((o) => o.primaryKeys);
+                const parentPks = this.parent.allSelects.flatMap((o) => o.primaryKeys);
                 childPks.enableCache = parentPks.enableCache = true;
-                this._isManyManyRelation = this._childColumns.any((o) => !childPks.contains(o)) && this._parentColumns.any((o) => !parentPks.contains(o));
+                this._isManyManyRelation = this._childColumns.some((o) => !childPks.includes(o)) && this._parentColumns.some((o) => !parentPks.includes(o));
             }
         }
     }

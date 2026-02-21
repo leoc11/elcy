@@ -8,6 +8,7 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { DbFunction } from "../../../src/Query/DbFunction";
+import { Enumerable } from "@elcy/enumerable";
 // import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
 const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
@@ -35,11 +36,11 @@ afterEach(() => {
     db.closeConnection();
 });
 describe("QUERYABLE", async () => {
-    describe("INCLUDE", async () => {
+    describe("LOADS", async () => {
         it("should eager load list navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const include = db.orders.include((o) => o.OrderDetails);
+            const include = db.orders.loads((o) => o.OrderDetails);
             const results = await include.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -66,7 +67,7 @@ FROM [Orders] AS [entity0]`
             expect(results.length).toBeGreaterThan(0);
             for (const o of results) {
                 expect(o).toBeInstanceOf(Order);
-                const properties = orderMeta.columns.select((o) => o.propertyName).toArray();
+                const properties = orderMeta.columns.map((o) => o.propertyName);
                 for (const property of properties) {
                     expect(o).toHaveProperty(property as any);
                     expect(o[property]).not.toBeNull();
@@ -74,7 +75,7 @@ FROM [Orders] AS [entity0]`
                 expect(o.OrderDetails).toBeInstanceOf(Array);
                 for (const od of o.OrderDetails) {
                     expect(od).toBeInstanceOf(OrderDetail);
-                    const odProps = orderDetailMeta.columns.select((o) => o.propertyName).toArray();
+                    const odProps = orderDetailMeta.columns.map((o) => o.propertyName);
                     for (const prop of odProps) {
                         expect(od).toHaveProperty(prop as any);
                         expect(od[prop]).not.toBeNull();
@@ -85,7 +86,7 @@ FROM [Orders] AS [entity0]`
         it("should support nested include", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const include = db.orders.include((o) => o.OrderDetails.include((od) => od.Product));
+            const include = db.orders.loads((o) => o.OrderDetails.map((od) => od.Product));
             const results = await include.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -139,7 +140,7 @@ FROM [Orders] AS [entity0]`
         it("should eager load scalar navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const include = db.orderDetails.include((o) => o.Order);
+            const include = db.orderDetails.loads((o) => o.Order);
             const results = await include.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -183,7 +184,7 @@ WHERE ([entity0].[isDeleted]=0)`
         it("should eager load 2 navigation properties at once", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const include = db.orderDetails.include((o) => o.Order, (o) => o.Product);
+            const include = db.orderDetails.loads((o) => o.Order, (o) => o.Product);
             const results = await include.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -265,11 +266,11 @@ FROM [Orders] AS [entity0]`
             }
         });
     });
-    describe("SELECT", async () => {
+    describe("MAP", async () => {
         it("should return specific property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => o.OrderDate);
+            const select = db.orders.map((o) => o.OrderDate);
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -290,7 +291,7 @@ FROM [Orders] AS [entity0]`
         it("should return an object", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
+            const select = db.orders.map((o) => ({
                 date: o.OrderDate,
                 amount: o.TotalAmount + 1.2
             }));
@@ -316,7 +317,7 @@ FROM [Orders] AS [entity0]`
         it("should return a value from scalar navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orderDetails.select((o) => ({
+            const select = db.orderDetails.map((o) => ({
                 date: o.Order.OrderDate
             }));
             const results = await select.toArray();
@@ -342,7 +343,7 @@ WHERE ([entity0].[isDeleted]=0)`
         it("should return an object with list navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
+            const select = db.orders.map((o) => ({
                 ods: o.OrderDetails
             }));
             const results = await select.toArray();
@@ -378,7 +379,7 @@ FROM [Orders] AS [entity0]`
         it("should return an object with scalar navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orderDetails.select((o) => ({
+            const select = db.orderDetails.map((o) => ({
                 prod: o.Product
             }));
             const results = await select.toArray();
@@ -412,8 +413,8 @@ WHERE ([entity0].[isDeleted]=0)`
         it("should return an value from list navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
-                simpleOrderDetails: o.OrderDetails.select((od) => ({
+            const select = db.orders.map((o) => ({
+                simpleOrderDetails: o.OrderDetails.map((od) => ({
                     name: od.name
                 })).toArray()
             }));
@@ -447,8 +448,8 @@ FROM [Orders] AS [entity0]`
         it("should return a scalar navigation property of list navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
-                simpleOrderDetails: o.OrderDetails.select((od) => ({
+            const select = db.orders.map((o) => ({
+                simpleOrderDetails: o.OrderDetails.map((od) => ({
                     prod: od.Product
                 })).toArray()
             }));
@@ -494,8 +495,8 @@ FROM [Orders] AS [entity0]`
         it("should support self select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
-                simpleOrderDetails: o.OrderDetails.select((od) => ({
+            const select = db.orders.map((o) => ({
+                simpleOrderDetails: o.OrderDetails.map((od) => ({
                     od: od,
                     Price: od.Product.Price
                 })).toArray()
@@ -554,7 +555,7 @@ FROM [Orders] AS [entity0]`
             // TODO: could be improve with groupBy
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => o.OrderDetails);
+            const select = db.orders.map((o) => o.OrderDetails);
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -587,9 +588,9 @@ WHERE ([entity1].[isDeleted]=0)`
         it("should select array with where in property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orders.select((o) => ({
-                sum: o.OrderDetails.where((p) => p.quantity > 2).sum((o) => o.quantity),
-                ods: o.OrderDetails.where((p) => p.quantity <= 1)
+            const select = db.orders.map((o) => ({
+                sum: o.OrderDetails.filter((p) => p.quantity > 2).sum((o) => o.quantity),
+                ods: o.OrderDetails.filter((p) => p.quantity <= 1)
             }));
             const results = await select.toArray();
 
@@ -643,17 +644,17 @@ LEFT JOIN (
                 }
             }
 
-            const isAllEmpty = results.all((o) => !o.ods.any());
+            const isAllEmpty = results.every((o) => !o.ods.some(() => true));
             expect(isAllEmpty).not.true;
         });
         it("should work in chain", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const select = db.orderDetails.select((o) => ({
+            const select = db.orderDetails.map((o) => ({
                 test: o.Order.TotalAmount
-            })).select((o) => ({
+            })).map((o) => ({
                 test3: o.test
-            })).where((o) => o.test3 > 10000);
+            })).filter((o) => o.test3 > 10000);
             const results = await select.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -679,7 +680,7 @@ WHERE (([entity0].[isDeleted]=0) AND ([entity1].[TotalAmount]>10000))`
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.selectMany((o) => o.OrderDetails);
+            const order = db.orders.flatMap((o) => o.OrderDetails);
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -708,7 +709,7 @@ WHERE ([entity1].[isDeleted]=0)`
         it("select many with nested select to entity", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.selectMany((o) => o.OrderDetails.select((o) => o.Product));
+            const order = db.orders.flatMap((o) => o.OrderDetails.map((o) => o.Product));
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -743,7 +744,7 @@ INNER JOIN [Orders] AS [entity0]
         it("select many with nested select to related entity property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.selectMany((o) => o.OrderDetails.select((o) => o.Product.Price));
+            const order = db.orders.flatMap((o) => o.OrderDetails.map((o) => o.Product.Price));
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -778,7 +779,7 @@ INNER JOIN [Orders] AS [entity0]
         it("select many with nested select to many relation", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.where((o) => o.TotalAmount > 10000).selectMany((o) => o.OrderDetails.select((o) => o.OrderDetailProperties));
+            const order = db.orders.filter((o) => o.TotalAmount > 10000).flatMap((o) => o.OrderDetails.map((o) => o.OrderDetailProperties));
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -818,13 +819,13 @@ INNER JOIN (
                 expect(o).toBeInstanceOf(Array);
             }
 
-            const isAllEmpty = results.all((o) => !o.any());
+            const isAllEmpty = results.every((o) => !o.some(() => true));
             expect(isAllEmpty).toBe(false);
         });
         it("should worked in chain", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.selectMany((o) => o.OrderDetails).selectMany((o) => o.OrderDetailProperties);
+            const order = db.orders.flatMap((o) => o.OrderDetails).flatMap((o) => o.OrderDetailProperties);
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -861,7 +862,7 @@ INNER JOIN (
         it("nested selectMany", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.selectMany((o) => o.OrderDetails.selectMany((o) => o.OrderDetailProperties));
+            const order = db.orders.flatMap((o) => o.OrderDetails.flatMap((o) => o.OrderDetailProperties));
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -896,11 +897,11 @@ INNER JOIN [Orders] AS [entity0]
             }
         });
     });
-    describe("WHERE", async () => {
+    describe("FILTER", async () => {
         it("should add where clause", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orders.where((o) => o.TotalAmount <= 10000);
+            const where = db.orders.filter((o) => o.TotalAmount <= 10000);
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -924,7 +925,7 @@ WHERE ([entity0].[TotalAmount]<=10000)`
         it("should filter included list", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orders.include((o) => o.OrderDetails.where((od) => od.Product.Price <= 15000));
+            const where = db.orders.loads((o) => o.OrderDetails.filter((od) => od.Product.Price <= 15000));
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -963,8 +964,8 @@ FROM [Orders] AS [entity0]`
         it("should be supported in select statement", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orders.select((o) => ({
-                ods: o.OrderDetails.where((od) => od.Product.Price <= 15000)
+            const where = db.orders.map((o) => ({
+                ods: o.OrderDetails.filter((od) => od.Product.Price <= 15000)
             }));
             const results = await where.toArray();
 
@@ -1001,7 +1002,7 @@ FROM [Orders] AS [entity0]`
         it("could be used more than once in chain", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orderDetails.where((o) => o.Product.Price <= 15000).where((o) => DbFunction.like(o.name, "%a%"));
+            const where = db.orderDetails.filter((o) => o.Product.Price <= 15000).filter((o) => DbFunction.like(o.name, "%a%"));
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1030,9 +1031,9 @@ WHERE ((([entity0].[isDeleted]=0) AND ([entity1].[Price]<=15000)) AND ([entity0]
         it("should work with groupBy", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orders.where((o) => o.TotalAmount > 20000).groupBy((o) => o.OrderDate)
-                .where((o) => o.count() >= 1)
-                .select((o) => o.key).where((o) => o.getDate() > 15).orderBy([(o) => o]);
+            const where = db.orders.filter((o) => o.TotalAmount > 20000).groupBy((o) => o.OrderDate)
+                .filter((o) => o.count() >= 1)
+                .map((o) => o.key).filter((o) => o.getDate() > 15).orderBy([(o) => o]);
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1056,7 +1057,7 @@ ORDER BY [entity0].[OrderDate] ASC`
         it("should filter with navigation property", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const where = db.orderDetailProperties.where((o) => o.OrderDetail.Order.TotalAmount > 10000);
+            const where = db.orderDetailProperties.filter((o) => o.OrderDetail.Order.TotalAmount > 10000);
             const results = await where.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1240,7 +1241,7 @@ ORDER BY [entity0].[Quantity] ASC`
         it("could be used in include", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.include((o) => o.OrderDetails.orderBy([(od) => od.Product.Price, "DESC"]));
+            const order = db.orders.loads((o) => o.OrderDetails.orderBy([(od) => od.Product.Price, "DESC"]));
             const results = await order.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1281,7 +1282,7 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const order = db.orders.select((o) => ({
+            const order = db.orders.map((o) => ({
                 ods: o.OrderDetails.orderBy([(o) => o.quantity]).toArray()
             }));
             const results = await order.toArray();
@@ -1317,11 +1318,11 @@ FROM [Orders] AS [entity0]`
             }
         });
     });
-    describe("ANY", async () => {
+    describe("SOME", async () => {
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const result = await db.orders.any();
+            const result = await db.orders.some();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
             expect(param.query).toBe(
@@ -1336,9 +1337,9 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const any = db.orders.select((o) => ({
+            const any = db.orders.map((o) => ({
                 order: o,
-                hasDetail: o.OrderDetails.any((od) => od.Product.Price < 20000)
+                hasDetail: o.OrderDetails.some((od) => od.Product.Price < 20000)
             }));
             const results = await any.toArray();
 
@@ -1401,7 +1402,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const any = db.orders.where((o) => o.OrderDetails.any());
+            const any = db.orders.filter((o) => o.OrderDetails.some(() => true));
             const results = await any.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1430,11 +1431,11 @@ WHERE ([entity1].[column0] IS NOT NULL)`
             }
         });
     });
-    describe("ALL", async () => {
+    describe("EVERY", async () => {
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const result = await db.orders.all((o) => o.TotalAmount <= 20000);
+            const result = await db.orders.every((o) => o.TotalAmount <= 20000);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
             expect(param.query).toBe(
@@ -1452,9 +1453,9 @@ WHERE NOT(
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const all = db.orders.select((o) => ({
+            const all = db.orders.map((o) => ({
                 order: o,
-                hasDetail: o.OrderDetails.all((od) => od.Product.Price < 20000)
+                hasDetail: o.OrderDetails.every((od) => od.Product.Price < 20000)
             }));
             const results = await all.toArray();
 
@@ -1521,7 +1522,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const all = db.orders.where((o) => o.OrderDetails.all((od) => od.Product.Price <= 20000));
+            const all = db.orders.filter((o) => o.OrderDetails.every((od) => od.Product.Price <= 20000));
             const results = await all.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1572,7 +1573,7 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const max = db.orders.select((o) => ({
+            const max = db.orders.map((o) => ({
                 order: o,
                 maxProductPrice: o.OrderDetails.max((od) => od.Product.Price)
             }));
@@ -1645,7 +1646,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const max = db.orders.where((o) => o.OrderDetails.max((od) => od.Product.Price) > 20000);
+            const max = db.orders.filter((o) => o.OrderDetails.max((od) => od.Product.Price) > 20000);
             const results = await max.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1704,7 +1705,7 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const min = db.orders.select((o) => ({
+            const min = db.orders.map((o) => ({
                 order: o,
                 minProductPrice: o.OrderDetails.min((od) => od.Product.Price)
             }));
@@ -1777,7 +1778,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const min = db.orders.where((o) => o.OrderDetails.min((od) => od.Product.Price) > 20000);
+            const min = db.orders.filter((o) => o.OrderDetails.min((od) => od.Product.Price) > 20000);
             const results = await min.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1836,7 +1837,7 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const avg = db.orders.select((o) => ({
+            const avg = db.orders.map((o) => ({
                 order: o,
                 avgProductPrice: o.OrderDetails.avg((od) => od.Product.Price)
             }));
@@ -1909,7 +1910,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const avg = db.orders.where((o) => o.OrderDetails.avg((od) => od.Product.Price) > 20000);
+            const avg = db.orders.filter((o) => o.OrderDetails.avg((od) => od.Product.Price) > 20000);
             const results = await avg.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -1968,7 +1969,7 @@ FROM [Orders] AS [entity0]`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const sum = db.orders.select((o) => ({
+            const sum = db.orders.map((o) => ({
                 order: o,
                 sumProductPrice: o.OrderDetails.sum((od) => od.Product.Price * od.quantity)
             }));
@@ -2023,7 +2024,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const sum = db.orders.where((o) => o.OrderDetails.sum((od) => od.quantity) > 3);
+            const sum = db.orders.filter((o) => o.OrderDetails.sum((od) => od.quantity) > 3);
             const results = await sum.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2056,7 +2057,7 @@ WHERE ([entity1].[column0]>3)`
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const count = db.orders.where((o) => o.OrderDetails.sum((od) => od.quantity) > 3);
+            const count = db.orders.filter((o) => o.OrderDetails.sum((od) => od.quantity) > 3);
             const result = await count.count();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2081,7 +2082,7 @@ WHERE ([entity1].[column0]>3)`
         it("could be used in select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const count = db.orders.select((o) => ({
+            const count = db.orders.map((o) => ({
                 order: o,
                 countDetails: o.OrderDetails.count()
             }));
@@ -2132,7 +2133,7 @@ LEFT JOIN (
         it("could be used in where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const count = db.orders.where((o) => o.OrderDetails.count() > 3);
+            const count = db.orders.filter((o) => o.OrderDetails.count() > 3);
             const results = await count.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2163,10 +2164,10 @@ WHERE ([entity1].[column0]>3)`
         it("could be used in select with different filter", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const count = db.orders.groupBy((o) => ({ month: o.OrderDate.getMonth() })).select((o) => ({
-                qty: o.selectMany((o) => o.OrderDetails).select((o) => o.quantity).sum(),
-                bc: o.where((o) => o.TotalAmount > 20000).count(),
-                cd: o.where((o) => o.TotalAmount <= 20000).count()
+            const count = db.orders.groupBy((o) => ({ month: o.OrderDate.getMonth() })).map((o) => ({
+                qty: o.flatMap((o) => o.OrderDetails).map((o) => o.quantity).sum(),
+                bc: o.filter((o) => o.TotalAmount > 20000).count(),
+                cd: o.filter((o) => o.TotalAmount <= 20000).count()
             }));
             const results = await count.toArray();
 
@@ -2268,7 +2269,7 @@ ORDER BY [entity0].[TotalAmount] DESC`
         it("should work in include", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const take = db.orders.include((o) => o.OrderDetails.orderBy([(o) => o.quantity]).take(10).skip(1).take(2).skip(1));
+            const take = db.orders.loads((o) => o.OrderDetails.orderBy([(o) => o.quantity]).take(10).skip(1).take(2).skip(1));
             const results = await take.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2312,7 +2313,7 @@ FROM [Orders] AS [entity0]`
 
             expect(results).toBeInstanceOf(Array);
             expect(results.length).toBeGreaterThan(0);;
-            const any = results.any((o) => o.OrderDetails.count() > 1);
+            const any = results.some((o) => o.OrderDetails.count() > 1);
             expect(typeof any).toBe("boolean");
             expect(any).toBe(false);
         });
@@ -2320,7 +2321,7 @@ FROM [Orders] AS [entity0]`
             const spy = vi.spyOn(db.connection, "query");
 
             const take = db.orders.
-                include((o) => o.OrderDetails
+                loads((o) => o.OrderDetails
                     .orderBy([(o) => o.quantity, "DESC"])
                     .take(5).skip(1)
                     .orderBy([(o) => o.name])
@@ -2440,16 +2441,16 @@ FROM [Orders] AS [entity0]`
 
             expect(results).toBeInstanceOf(Array);
             expect(results.length).toBeGreaterThan(0);;
-            const any = results.any((o) => o.OrderDetails.count() > 3);
+            const any = results.some((o) => o.OrderDetails.count() > 3);
             expect(typeof any).toBe("boolean");
             expect(any).toBe(false);
         });
     });
-    describe("FIRST", async () => {
+    describe("FIND", async () => {
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const result = await db.orders.first();
+            const result = await db.orders.find();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
             expect(param.query).toBe(
@@ -2467,7 +2468,7 @@ FROM [Orders] AS [entity0]`
         it("should work with where", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const result = await db.orders.where((o) => o.OrderDate < new Date()).first((o) => o.TotalAmount > 20000);
+            const result = await db.orders.filter((o) => o.OrderDate < new Date()).find((o) => o.TotalAmount > 20000);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
             expect(param.query).toBe(
@@ -2486,7 +2487,7 @@ WHERE (([entity0].[OrderDate]<getdate()) AND ([entity0].[TotalAmount]>20000))`
         it("should work with select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const first = db.orders.select((o) => ({
+            const first = db.orders.map((o) => ({
                 order: o,
                 lastAddedItem: o.OrderDetails.orderBy([(o) => o.CreatedDate, "DESC"]).first()
             }));
@@ -2550,7 +2551,7 @@ FROM [Orders] AS [entity0]`);
         it("should work", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const distinct = db.orders.select((o) => o.TotalAmount).distinct();
+            const distinct = db.orders.map((o) => o.TotalAmount).distinct();
             const results = await distinct.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2571,9 +2572,9 @@ FROM [Orders] AS [entity0]`
         it("should work with select", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const distinct = db.orders.select((o) => ({
+            const distinct = db.orders.map((o) => ({
                 order: o,
-                quantities: o.OrderDetails.select((p) => p.quantity).distinct().toArray()
+                quantities: o.OrderDetails.map((p) => p.quantity).distinct().toArray()
             }));
             const results = await distinct.toArray();
 
@@ -2611,10 +2612,10 @@ FROM [Orders] AS [entity0]`
         });
     });
     describe("GROUP BY", async () => {
-        it("groupBy.(o => o.column).select(o => o.key)", async () => {
+        it("groupBy.(o => o.column).map(o => o.key)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate).select((o) => o.key);
+            const groupBy = db.orders.groupBy((o) => o.OrderDate).map((o) => o.key);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2632,10 +2633,10 @@ GROUP BY [entity0].[OrderDate]`
                 expect(o).toBeInstanceOf(Date);
             }
         });
-        it("groupBy.(o => o.column).select(o => o.key.method())", async () => {
+        it("groupBy.(o => o.column).map(o => o.key.method())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate).select((o) => o.key.getDate());
+            const groupBy = db.orders.groupBy((o) => o.OrderDate).map((o) => o.key.getDate());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2653,10 +2654,10 @@ GROUP BY [entity0].[OrderDate]`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy.(o => o.column).select(o => o.count())", async () => {
+        it("groupBy.(o => o.column).map(o => o.count())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate).select((o) => o.count());
+            const groupBy = db.orders.groupBy((o) => o.OrderDate).map((o) => o.count());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2674,10 +2675,10 @@ GROUP BY [entity0].[OrderDate]`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy.(o => o.column + o.column).select(o => o.key)", async () => {
+        it("groupBy.(o => o.column + o.column).map(o => o.key)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate() + o.OrderDate.getFullYear()).select((o) => o.key);
+            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate() + o.OrderDate.getFullYear()).map((o) => o.key);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2695,13 +2696,13 @@ GROUP BY (DAY([entity0].[OrderDate])+YEAR([entity0].[OrderDate]))`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy.(o => o.column + o.column).select(o => {column: o.key, count: o.count(), sum: o.sum()})", async () => {
+        it("groupBy.(o => o.column + o.column).map(o => {column: o.key, count: o.count(), sum: o.sum()})", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate() + o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate() + o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const results = await groupBy.toArray();
 
@@ -2768,10 +2769,10 @@ WHERE ([entity0].[isDeleted]=0)`
         it("groupBy computed column complex 1", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetails.take(100).where((o) => o.GrossSales > 10000).select((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).select((o) => ({
+            const groupBy = db.orderDetails.take(100).filter((o) => o.GrossSales > 10000).map((o) => o.Order).groupBy((o) => o.OrderDate.getFullYear()).map((o) => ({
                 dateYear: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
+                sum: o.filter((o) => o.TotalAmount < 10000).sum((o) => o.TotalAmount)
             }));
             const results = await groupBy.toArray();
 
@@ -2816,10 +2817,10 @@ GROUP BY YEAR([entity2].[OrderDate])`
                 expect(typeof o.sum).toBe("number");
             }
         });
-        it("groupBy.(o => o.column.method()).select(o => o.toArray())", async () => {
+        it("groupBy.(o => o.column.method()).map(o => o.toArray())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate()).select((o) => o.toArray());
+            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate()).map((o) => o.toArray());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2848,10 +2849,10 @@ INNER JOIN (
                 }
             }
         });
-        it("groupBy.(o => o.column.method()).select(o => ({items: o}))", async () => {
+        it("groupBy.(o => o.column.method()).map(o => ({items: o}))", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate()).select((o) => ({
+            const groupBy = db.orders.groupBy((o) => o.OrderDate.getDate()).map((o) => ({
                 details: o.toArray()
             }));
             const results = await groupBy.toArray();
@@ -2885,10 +2886,10 @@ GROUP BY DAY([entity0].[OrderDate])`
                 }
             }
         });
-        it("groupBy.(o => o.toOneRelation).select(o => o.key)", async () => {
+        it("groupBy.(o => o.toOneRelation).map(o => o.key)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetails.where((o) => o.quantity > 1).groupBy((o) => o.Order).select((o) => o.key);
+            const groupBy = db.orderDetails.filter((o) => o.quantity > 1).groupBy((o) => o.Order).map((o) => o.key);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2914,10 +2915,10 @@ INNER JOIN (
                 expect(o).toBeInstanceOf(Order);
             }
         });
-        it("groupBy.(o => o.toOneRelation).select(o => o.key.column.method())", async () => {
+        it("groupBy.(o => o.toOneRelation).map(o => o.key.column.method())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetails.groupBy((o) => o.Order).select((o) => o.key.OrderDate.getDate());
+            const groupBy = db.orderDetails.groupBy((o) => o.Order).map((o) => o.key.OrderDate.getDate());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2938,10 +2939,10 @@ GROUP BY [entity0].[OrderId], [entity1].[OrderDate]`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy.(o => o.toOneRelation).select(o => o.count())", async () => {
+        it("groupBy.(o => o.toOneRelation).map(o => o.count())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetails.groupBy((o) => o.Order).select((o) => o.count());
+            const groupBy = db.orderDetails.groupBy((o) => o.Order).map((o) => o.count());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2960,10 +2961,10 @@ GROUP BY [entity0].[OrderId]`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy.(o => o.toOneRelation.toOneRelation).select(o => o.key.column)", async () => {
+        it("groupBy.(o => o.toOneRelation.toOneRelation).map(o => o.key.column)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail.Order).select((o) => o.key.OrderDate);
+            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail.Order).map((o) => o.key.OrderDate);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -2999,13 +3000,13 @@ INNER JOIN (
                 expect(o).toBeInstanceOf(Date);
             }
         });
-        it("groupBy.(o => o.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
+        it("groupBy.(o => o.toOneRelation).map(o => {col: o.key, count: o.count(), sum: o.filter().sum()})", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetails.groupBy((o) => o.Order).select((o) => ({
+            const groupBy = db.orderDetails.groupBy((o) => o.Order).map((o) => ({
                 order: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.quantity > 1).sum((o) => o.quantity)
+                sum: o.filter((o) => o.quantity > 1).sum((o) => o.quantity)
             }));
             const results = await groupBy.toArray();
 
@@ -3056,7 +3057,7 @@ GROUP BY [entity0].[OrderId]`
                 expect(typeof o.sum).toBe("number");
             }
         });
-        it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key)", async () => {
+        it("groupBy(o => ({obj: {prop: o.col} })).map(o => o.key)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
@@ -3064,7 +3065,7 @@ GROUP BY [entity0].[OrderId]`
                     pid: o.ProductId
                 },
                 Quantity: o.quantity * 2
-            })).select((o) => o.key);
+            })).map((o) => o.key);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3086,7 +3087,7 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
                 expect(typeof o.Quantity).toBe("number");
             }
         });
-        it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj)", async () => {
+        it("groupBy(o => ({obj: {prop: o.col} })).map(o => o.key.obj)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
@@ -3094,7 +3095,7 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
                     pid: o.ProductId
                 },
                 Quantity: o.quantity * 2
-            })).select((o) => o.key.obj);
+            })).map((o) => o.key.obj);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3113,7 +3114,7 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
                 expect(o.pid).toBeInstanceOf(Uuid);
             }
         });
-        it("groupBy(o => ({obj: {prop: o.col} })).select(o => o.key.obj.prop)", async () => {
+        it("groupBy(o => ({obj: {prop: o.col} })).map(o => o.key.obj.prop)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
@@ -3121,7 +3122,7 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
                     pid: o.ProductId
                 },
                 Quantity: o.quantity * 2
-            })).select((o) => o.key.obj.pid);
+            })).map((o) => o.key.obj.pid);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3140,13 +3141,13 @@ GROUP BY ([entity0].[Quantity]*2), [entity0].[ProductId]`
                 expect(o).toBeInstanceOf(Uuid);
             }
         });
-        it("groupBy(o => o.toOneRelation.toOneRelation).select(o => {col: o.key, count: o.count(), sum: o.where().sum()})", async () => {
+        it("groupBy(o => o.toOneRelation.toOneRelation).map(o => {col: o.key, count: o.count(), sum: o.filter().sum()})", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail.Order).select((o) => ({
+            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail.Order).map((o) => ({
                 order: o.key,
                 count: o.count(),
-                sum: o.where((o) => o.amount < 20000).sum((o) => o.amount)
+                sum: o.filter((o) => o.amount < 20000).sum((o) => o.amount)
             }));
             const results = await groupBy.toArray();
 
@@ -3219,10 +3220,10 @@ GROUP BY [entity1].[OrderId]`
                 expect(typeof o.sum).toBe("number");
             }
         });
-        it("groupBy(o => o.toOneRelation).select(o => o.key.toOneRelation)", async () => {
+        it("groupBy(o => o.toOneRelation).map(o => o.key.toOneRelation)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail).select((o) => o.key.Order);
+            const groupBy = db.orderDetailProperties.groupBy((o) => o.OrderDetail).map((o) => o.key.Order);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3259,13 +3260,13 @@ INNER JOIN (
                 expect(o).toBeInstanceOf(Order);
             }
         });
-        it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key)", async () => {
+        it("groupBy(o => ({col: o.column, col: o.column*2 })).map(o => o.key)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
                 productid: o.ProductId,
                 Quantity: o.quantity * 2
-            })).select((o) => o.key);
+            })).map((o) => o.key);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3286,13 +3287,13 @@ GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
                 expect(typeof o.Quantity).toBe("number");
             }
         });
-        it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.count())", async () => {
+        it("groupBy(o => ({col: o.column, col: o.column*2 })).map(o => o.count())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
                 productid: o.ProductId,
                 Quantity: o.quantity * 2
-            })).select((o) => o.count());
+            })).map((o) => o.count());
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3311,13 +3312,13 @@ GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => o.key.col)", async () => {
+        it("groupBy(o => ({col: o.column, col: o.column*2 })).map(o => o.key.col)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
                 productid: o.ProductId,
                 Quantity: o.quantity * 2
-            })).select((o) => o.key.Quantity);
+            })).map((o) => o.key.Quantity);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3336,20 +3337,20 @@ GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
                 expect(typeof o).toBe("number");
             }
         });
-        it("groupBy(o => ({col: o.column, col: o.column*2 })).select(o => ({ col: { col: col }}))", async () => {
+        it("groupBy(o => ({col: o.column, col: o.column*2 })).map(o => ({ col: { col: col }}))", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
                 productid: o.ProductId,
                 Quantity: o.quantity * 2
-            })).select((o) => ({
+            })).map((o) => ({
                 data: {
                     pid: o.key.productid,
                     qty: o.key.Quantity,
                     avg: o.avg((o) => o.quantity)
                 },
                 count: o.count(),
-                sum: o.where((o) => o.quantity > 1).sum((o) => o.quantity)
+                sum: o.filter((o) => o.quantity > 1).sum((o) => o.quantity)
             }));
             const results = await groupBy.toArray();
 
@@ -3384,20 +3385,20 @@ GROUP BY [entity0].[ProductId], ([entity0].[Quantity]*2)`
                 expect(o.data).have.keys(["pid", "qty", "avg"]);
             }
         });
-        it("groupBy(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column })).select(o => ({ col: { col: col }}))", async () => {
+        it("groupBy(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column })).map(o => ({ col: { col: col }}))", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetails.groupBy((o) => ({
                 date: o.Order.OrderDate.getDate(),
                 price: o.Product.Price
-            })).select((o) => ({
+            })).map((o) => ({
                 data: {
                     day: o.key.date,
                     price: o.key.price,
                     avg: o.avg((o) => o.quantity)
                 },
                 count: o.count(),
-                sum: o.where((o) => o.quantity > 1).sum((o) => o.quantity)
+                sum: o.filter((o) => o.quantity > 1).sum((o) => o.quantity)
             }));
             const results = await groupBy.toArray();
 
@@ -3436,12 +3437,12 @@ GROUP BY DAY([entity1].[OrderDate]), [entity2].[Price]`
                 expect(o.data).have.keys(["day", "price", "avg"]);
             }
         });
-        it("groupBy.(o => ({col: o.toOneRelation })).select(o => o.key).select(o => o.col.name)", async () => {
+        it("groupBy.(o => ({col: o.toOneRelation })).map(o => o.key).map(o => o.col.name)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
             const groupBy = db.orderDetailProperties.groupBy((o) => ({
                 od: o.OrderDetail
-            })).select((o) => o.key).select((o) => o.od.name);
+            })).map((o) => o.key).map((o) => o.od.name);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3469,8 +3470,8 @@ WHERE ([entity1].[isDeleted]=0)`
         it("groupBy.(o => o.column.method())", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const groupBy = db.orders.where((o) => o.TotalAmount > 20000).groupBy((o) => o.OrderDate.getDate())
-                .where((o) => o.count() > 3);
+            const groupBy = db.orders.filter((o) => o.TotalAmount > 20000).groupBy((o) => o.OrderDate.getDate())
+                .filter((o) => o.count() > 3);
             const results = await groupBy.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3719,7 +3720,7 @@ FROM [Orders] AS [entity0]`
         });
         it("should support self select and keep defined includes", async () => {
             const spy = vi.spyOn(db.connection, "query");
-            const results = await db.orders.include((o) => o.OrderDetails).toMap((o) => o.OrderId, (o) => o);
+            const results = await db.orders.loads((o) => o.OrderDetails).toMap((o) => o.OrderId, (o) => o);
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
             expect(param.query).toBe(
@@ -3780,7 +3781,7 @@ FROM [Orders] AS [entity0]`
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3826,8 +3827,8 @@ WHERE ([entity1].[Quantity]>1)`
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate,
-                propertyNames: o2.OrderDetailProperties.select((o) => o.name).toArray()
-            })).where((o) => o.quantity > 1);
+                propertyNames: o2.OrderDetailProperties.map((o) => o.name).toArray()
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3907,7 +3908,7 @@ WHERE ([entity1].[Quantity]>1)`
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3953,7 +3954,7 @@ WHERE ([entity1].[Quantity]>1)`
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -3996,10 +3997,10 @@ WHERE ([entity1].[Quantity]>1)`
             const spy = vi.spyOn(db.connection, "query");
             const join = db.orders.groupJoin(db.orderDetails, (o1, o2) => o1.OrderId === o2.OrderId, (o1, o2) => ({
                 quantity: o2.sum((d) => d.quantity),
-                names: o2.select((d) => d.name).toArray(),
+                names: o2.map((d) => d.name).toArray(),
                 price: o2.sum((d) => d.Product.Price),
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4101,7 +4102,7 @@ WHERE ([entity2].[column0]>1)`
                 name: o2.name,
                 price: o2.Product.Price,
                 date: o1.OrderDate
-            })).where((o) => o.quantity > 1);
+            })).filter((o) => o.quantity > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4145,7 +4146,7 @@ WHERE ([entity1].[Quantity]>1)`
             const spy = vi.spyOn(db.connection, "query");
             const greatest = db.orders.orderBy([(o) => o.TotalAmount, "DESC"]).take(5);
             const worst = db.orders.orderBy([(o) => o.TotalAmount, "ASC"]).take(5);
-            const join = greatest.union(worst).where((o) => o.OrderDetails.count() > 1);
+            const join = greatest.union(worst).filter((o) => o.OrderDetails.count() > 1);
             const results = await join.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4301,8 +4302,8 @@ ORDER BY [entity0].[TotalAmount] DESC`
                     month: (o) => o.OrderDate.getMonth()
                 },
                 {
-                    total: (o) => o.sum((o) => o.TotalAmount),
-                    qty: (o) => o.selectMany((o) => o.OrderDetails).select((o) => o.quantity).sum()
+                    total: (o) => Enumerable.from(o).sum((o) => o.TotalAmount),
+                    qty: (o) => Enumerable.from(o).flatMap((o) => o.OrderDetails).map((o) => o.quantity).sum()
                 });
             const results = await pivot.toArray();
 
@@ -4343,8 +4344,8 @@ GROUP BY (MONTH([entity0].[OrderDate]) - 1)`
                     month: (o) => o.OrderDate.getMonth()
                 }, {
                 total: (o) => o.sum((o) => o.TotalAmount),
-                qty: (o) => o.selectMany((o) => o.OrderDetails).select((o) => o.quantity).sum()
-            }).where((o) => o.month >= 10);
+                qty: (o) => o.flatMap((o) => o.OrderDetails).map((o) => o.quantity).sum()
+            }).filter((o) => o.month >= 10);
             const results = await pivot.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4383,7 +4384,7 @@ HAVING ((MONTH([entity0].[OrderDate]) - 1)>=10)`
             const spy = vi.spyOn(db.connection, "query");
 
             const paramObj = { now: (new Date()).addYears(-1) };
-            const parameter = db.orders.parameter({ paramObj }).where((o) => o.OrderDate < paramObj.now);
+            const parameter = db.orders.parameter({ paramObj }).filter((o) => o.OrderDate < paramObj.now);
             const results = await parameter.toArray();
 
             expect(spy).toHaveBeenCalledOnce();
@@ -4408,7 +4409,7 @@ WHERE ([entity0].[OrderDate]<@param0)`
             const spy = vi.spyOn(db.connection, "query");
 
             const paramObj = { now: new Date() };
-            const parameter = db.orders.parameter({ paramObj }).where((o) => o.OrderDate.getDate() !== paramObj.now.getDate());
+            const parameter = db.orders.parameter({ paramObj }).filter((o) => o.OrderDate.getDate() !== paramObj.now.getDate());
             const results = await parameter.toArray();
 
             expect(spy).toHaveBeenCalledOnce();
@@ -4432,7 +4433,7 @@ WHERE (DAY([entity0].[OrderDate])<>@param0)`
         it("should be computed in query", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const parameter = db.orders.where((o) => o.OrderDate < new Date());
+            const parameter = db.orders.filter((o) => o.OrderDate < new Date());
             const results = await parameter.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4456,7 +4457,7 @@ WHERE ([entity0].[OrderDate]<getdate())`
             const spy = vi.spyOn(db.connection, "query");
 
             const fn = (o: Order) => o.TotalAmount / o.OrderDetails.count();
-            const parameter = await db.orders.parameter({ fn }).select((o) => fn(o));
+            const parameter = await db.orders.parameter({ fn }).map((o) => fn(o));
             const results = await parameter.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4487,7 +4488,7 @@ LEFT JOIN (
 
             const multi = 10;
             const fn = (o: Order) => o.TotalAmount * multi / o.OrderDetails.count();
-            const parameter = await db.orders.parameter({ fn, multi }).select((o) => fn(o));
+            const parameter = await db.orders.parameter({ fn, multi }).map((o) => fn(o));
             const results = await parameter.toArray();
 
             expect(spy).toHaveBeenCalledOnce();
@@ -4519,7 +4520,7 @@ LEFT JOIN (
             for (let i = 0; i < 2; i++) {
                 fn = i % 2 === 0 ? (o: number) => o + 1 : (o: number) => o - 1;
                 const where = await db.orders.parameter({ fn })
-                    .select((o) => fn(o.TotalAmount));
+                    .map((o) => fn(o.TotalAmount));
                 db.connection = await db.getConnection();
                 const spy = vi.spyOn(db.connection, "query");
 
@@ -4551,7 +4552,7 @@ FROM [Orders] AS [entity0]`
             let spy = vi.spyOn(db.connection, "query");
 
             let dd = new Date();
-            let avg = db.orders.parameter({ dd }).where((o) => o.OrderDate === dd);
+            let avg = db.orders.parameter({ dd }).filter((o) => o.OrderDate === dd);
             let results = await avg.toArray();
 
             expect(spy).toHaveBeenCalledOnce();
@@ -4576,7 +4577,7 @@ WHERE ([entity0].[OrderDate]=@param0)`
             spy = vi.spyOn(db.connection, "query");
 
             dd = null;
-            avg = db.orders.parameter({ dd }).where((o) => o.OrderDate === dd);
+            avg = db.orders.parameter({ dd }).filter((o) => o.OrderDate === dd);
             results = await avg.toArray();
 
             expect(spy).toHaveBeenCalledOnce();
@@ -4602,8 +4603,8 @@ WHERE ([entity0].[OrderDate] IS NULL)`
         it("should work in where (CONTAINS)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const ad = db.orderDetails.where((o) => o.quantity > 5).asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.select((od) => od.OrderId).contains(o.OrderId));
+            const ad = db.orderDetails.filter((o) => o.quantity > 5).asSubquery();
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.map((od) => od.OrderId).includes(o.OrderId));
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4630,8 +4631,8 @@ WHERE [entity0].[OrderId] IN (
         it("should work in where (Aggregate comparation)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const ad = db.orderDetails.where((o) => o.quantity > 5).asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.where((od) => od.OrderId === o.OrderId).max((o) => o.quantity) > 10);
+            const ad = db.orderDetails.filter((o) => o.quantity > 5).asSubquery();
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.filter((od) => od.OrderId === o.OrderId).max((o) => o.quantity) > 10);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4662,8 +4663,8 @@ WHERE ([entity1].[column0]>10)`
         it("should work in where (ANY)", async () => {
             const spy = vi.spyOn(db.connection, "query");
 
-            const ad = db.orderDetails.where((o) => o.quantity > 5).asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.any((od) => od.OrderId === o.OrderId));
+            const ad = db.orderDetails.filter((o) => o.quantity > 5).asSubquery();
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.some((od) => od.OrderId === o.OrderId));
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4695,7 +4696,7 @@ WHERE ([entity1].[column0] IS NOT NULL)`
             const spy = vi.spyOn(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.where((od) => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.filter((od) => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -4726,8 +4727,8 @@ WHERE ([entity1].[column0]>1)`
             const spy = vi.spyOn(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => o.TotalAmount <= 20000).select((o) => ({
-                orderDetails: ad.where((od) => od.OrderId === o.OrderId).toArray()
+            const subQuery = db.orders.parameter({ ad }).filter((o) => o.TotalAmount <= 20000).map((o) => ({
+                orderDetails: ad.filter((od) => od.OrderId === o.OrderId).toArray()
             }));
             const results = await subQuery.toArray();
 
@@ -4769,8 +4770,8 @@ WHERE ([entity0].[TotalAmount]<=20000)`
             const spy = vi.spyOn(db.connection, "query");
 
             const ad = db.orderDetails.asSubquery();
-            const subQuery = db.orders.parameter({ ad }).where((o) => o.TotalAmount <= 20000).select((o) => ({
-                orderDetails: ad.where((od) => od.OrderId === o.OrderId).count()
+            const subQuery = db.orders.parameter({ ad }).filter((o) => o.TotalAmount <= 20000).map((o) => ({
+                orderDetails: ad.filter((od) => od.OrderId === o.OrderId).count()
             }));
             const results = await subQuery.toArray();
 
@@ -4803,9 +4804,9 @@ WHERE ([entity0].[TotalAmount]<=20000)`
 
             const ad = db.orders.orderBy([(o) => o.TotalAmount, "ASC"]);
             const ads = ad.asSubquery();
-            const subQuery = ad.parameter({ ads }).select((o) => ({
+            const subQuery = ad.parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                Count: ads.where((od) => o.TotalAmount >= od.TotalAmount).count()
+                Count: ads.filter((od) => o.TotalAmount >= od.TotalAmount).count()
             }));
             const results = await subQuery.toArray();
 
@@ -4846,10 +4847,10 @@ ORDER BY [entity0].[TotalAmount] ASC`
 
             const ad = db.orders.orderBy([(o) => o.OrderDate, "DESC"]);
             const ads = ad.asSubquery();
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 OrderId: o.OrderId,
                 TotalAmount: o.TotalAmount,
-                Accumulated: ads.where((od) => od.OrderDate >= o.OrderDate).sum((o) => o.TotalAmount)
+                Accumulated: ads.filter((od) => od.OrderDate >= o.OrderDate).sum((o) => o.TotalAmount)
             }));
             const results = await subQuery.toArray();
 
@@ -4893,9 +4894,9 @@ ORDER BY [entity0].[OrderDate] DESC`
 
             const ad = db.orders.orderBy([(o) => o.TotalAmount, "ASC"]);
             const ads = ad.asSubquery();
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                IsNotLowest: ads.where((od) => o.TotalAmount > od.TotalAmount).any()
+                IsNotLowest: ads.filter((od) => o.TotalAmount > od.TotalAmount).some()
             }));
             const results = await subQuery.toArray();
 
@@ -4947,9 +4948,9 @@ ORDER BY [entity0].[TotalAmount] ASC`
 
             const ad = db.orders.orderBy([(o) => o.TotalAmount, "DESC"]);
             const ads = ad.asSubquery();
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                IsHighest: ads.all((od) => o.TotalAmount >= od.TotalAmount)
+                IsHighest: ads.every((od) => o.TotalAmount >= od.TotalAmount)
             }));
             const results = await subQuery.toArray();
 
@@ -5014,7 +5015,7 @@ ORDER BY [entity0].[TotalAmount] DESC`
                     constructor: OrderDetail,
                     OrderId: Uuid
                 }
-            }).where((o) => ad.select((od) => od.OrderId).contains(o.OrderId));
+            }).filter((o) => ad.map((od) => od.OrderId).includes(o.OrderId));
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -5054,7 +5055,7 @@ DROP TABLE #ad1`
             const ad: OrderDetail[] = [
                 new OrderDetail({ OrderDetailId: "648F644D-EB4A-4200-91AD-13694EEF1CAB", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E58", name: "Product 1", quantity: 1, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
             ];
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.where((od) => od.OrderId === o.OrderId).max((o) => o.quantity) > 10);
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.filter((od) => od.OrderId === o.OrderId).max((o) => o.quantity) > 10);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -5103,7 +5104,7 @@ DROP TABLE #ad1`
             const ad: OrderDetail[] = [
                 new OrderDetail({ OrderDetailId: "648F644D-EB4A-4200-91AD-13694EEF1CAB", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E58", name: "Product 1", quantity: 1, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
             ];
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.any((od) => od.OrderId === o.OrderId));
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.some((od) => od.OrderId === o.OrderId));
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -5153,7 +5154,7 @@ DROP TABLE #ad1`
             const ad: OrderDetail[] = [
                 new OrderDetail({ OrderDetailId: "648F644D-EB4A-4200-91AD-13694EEF1CAB", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E58", name: "Product 1", quantity: 1, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
             ];
-            const subQuery = db.orders.parameter({ ad }).where((o) => ad.where((od) => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
+            const subQuery = db.orders.parameter({ ad }).filter((o) => ad.filter((od) => od.quantity > 1 && od.OrderId === o.OrderId).count() > 1);
             const results = await subQuery.toArray();
 
             const param = spy.mock.calls[0][0] as unknown as IQuery;
@@ -5203,8 +5204,8 @@ DROP TABLE #ad1`
             const ad: OrderDetail[] = [
                 new OrderDetail({ OrderDetailId: "E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E59", name: "Product 2", quantity: 2, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
             ];
-            const subQuery = db.orders.parameter({ ad }).where((o) => o.TotalAmount <= 20000).select((o) => ({
-                orderDetails: ad.where((od) => od.OrderId === o.OrderId).toArray()
+            const subQuery = db.orders.parameter({ ad }).filter((o) => o.TotalAmount <= 20000).map((o) => ({
+                orderDetails: ad.filter((od) => od.OrderId === o.OrderId)
             }));
             const results = await subQuery.toArray();
 
@@ -5263,8 +5264,8 @@ DROP TABLE #ad1`
             const ad: OrderDetail[] = [
                 new OrderDetail({ OrderDetailId: "E4EB9FA2-C834-40BA-A1C7-8109EEFD0FC6", OrderId: "C7438661-DD97-4099-A370-053A72F4C706", ProductId: "BE019609-99E0-4EF5-85BB-AD90DC302E59", name: "Product 2", quantity: 2, CreatedDate: "2017-02-22T23:03:39.737Z", isDeleted: false })
             ];
-            const subQuery = db.orders.parameter({ ad }).where((o) => o.TotalAmount <= 20000).select((o) => ({
-                orderDetails: ad.where((od) => od.OrderId === o.OrderId).count()
+            const subQuery = db.orders.parameter({ ad }).filter((o) => o.TotalAmount <= 20000).map((o) => ({
+                orderDetails: ad.filter((od) => od.OrderId === o.OrderId).count()
             }));
             const results = await subQuery.toArray();
 
@@ -5316,9 +5317,9 @@ DROP TABLE #ad1`
                 new Order({ OrderId: "57CE0F63-AFD3-4A04-A07E-0392C87AE381", TotalAmount: 13200, OrderDate: "2017-01-19T02:08:41.530Z" }),
                 new Order({ OrderId: "C7438661-DD97-4099-A370-053A72F4C706", TotalAmount: 71000, OrderDate: "2017-02-22T23:03:39.447Z" })
             ];
-            const subQuery = ad.parameter({ ads }).select((o) => ({
+            const subQuery = ad.parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                Count: ads.where((od) => o.TotalAmount >= od.TotalAmount).count()
+                Count: ads.filter((od) => o.TotalAmount >= od.TotalAmount).count()
             }));
             const results = await subQuery.toArray();
 
@@ -5376,10 +5377,10 @@ DROP TABLE #ads1`
                 new Order({ OrderId: "C7438661-DD97-4099-A370-053A72F4C706", TotalAmount: 71000, OrderDate: "2017-02-22T23:03:39.447Z" }),
                 new Order({ OrderId: "57CE0F63-AFD3-4A04-A07E-0392C87AE381", TotalAmount: 13200, OrderDate: "2017-01-19T02:08:41.530Z" })
             ];
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 OrderId: o.OrderId,
                 TotalAmount: o.TotalAmount,
-                Accumulated: ads.where((od) => od.OrderDate >= o.OrderDate).sum((o) => o.TotalAmount)
+                Accumulated: Enumerable.from(ads).filter((od) => od.OrderDate >= o.OrderDate).sum((o) => o.TotalAmount)
             }));
             const results = await subQuery.toArray();
 
@@ -5436,13 +5437,13 @@ DROP TABLE #ads2`
             const spy = vi.spyOn(db.connection, "query");
 
             const ad = db.orders.orderBy([(o) => o.TotalAmount, "ASC"]);
-            const ads = [
+            const ads = Enumerable.from([
                 new Order({ OrderId: "57CE0F63-AFD3-4A04-A07E-0392C87AE381", TotalAmount: 13200, OrderDate: "2017-01-19T02:08:41.530Z" }),
                 new Order({ OrderId: "C7438661-DD97-4099-A370-053A72F4C706", TotalAmount: 71000, OrderDate: "2017-02-22T23:03:39.447Z" })
-            ];
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            ]);
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                IsNotLowest: ads.where((od) => o.TotalAmount > od.TotalAmount).any()
+                IsNotLowest: ads.filter((od) => o.TotalAmount > od.TotalAmount).some()
             }));
             const results = await subQuery.toArray();
 
@@ -5511,9 +5512,9 @@ DROP TABLE #ads2`
                 new Order({ OrderId: "C7438661-DD97-4099-A370-053A72F4C706", TotalAmount: 71000, OrderDate: "2017-02-22T23:03:39.447Z" }),
                 new Order({ OrderId: "57CE0F63-AFD3-4A04-A07E-0392C87AE381", TotalAmount: 13200, OrderDate: "2017-01-19T02:08:41.530Z" })
             ];
-            const subQuery = ad.take(10).parameter({ ads }).select((o) => ({
+            const subQuery = ad.take(10).parameter({ ads }).map((o) => ({
                 TotalAmount: o.TotalAmount,
-                IsHighest: ads.all((od) => o.TotalAmount >= od.TotalAmount)
+                IsHighest: ads.every((od) => o.TotalAmount >= od.TotalAmount)
             }));
             const results = await subQuery.toArray();
 
@@ -5617,51 +5618,51 @@ FROM [OrderDetails] AS [entity0]`
     //     // TODO
     //     it("test 1", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
+    //         const ternary = db.orders.map(o => ({
     //             item: o.TotalAmount > 20000 ? 20000 : o.TotalAmount
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 2", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
+    //         const ternary = db.orderDetails.map(o => ({
     //             item: o.quantity === 1 ? o.Order : null
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 3", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
+    //         const ternary = db.orderDetails.map(o => ({
     //             item: o.quantity === 1 ? o.Order : { OrderId: o.OrderId }
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 4", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
+    //         const ternary = db.orders.map(o => ({
     //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails : null
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 5", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
+    //         const ternary = db.orders.map(o => ({
     //             item: o.OrderDate.getDate() === 1 ? o.OrderDetails.first() : o.OrderDate
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 6", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orderDetails.select(o => ({
+    //         const ternary = db.orderDetails.map(o => ({
     //             item: o.quantity === 1 ? o.OrderDetailProperties : o.Product
     //         }));
     //         const results = await ternary.toArray();
     //     });
     //     it("test 7", async () => {
     //         const spy = vi.spyOn(db.connection, "query");
-    //         const ternary = db.orders.select(o => ({
+    //         const ternary = db.orders.map(o => ({
     //             item: o.OrderDetails
-    //         })).select(o => o.item.count());
+    //         })).map(o => o.item.count());
     //         const results = await ternary.toArray();
     //     });
     // });

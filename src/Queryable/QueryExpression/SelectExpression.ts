@@ -1,7 +1,7 @@
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { ElementType, GenericType, IObjectType, ValueType } from "../../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { IEnumerable } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
@@ -31,7 +31,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
             const child = join.child;
             columns = columns.union(child.entity.columns).union(child.resolvedSelects);
         }
-        for (const include of this.includes.where((o) => o.isEmbedded)) {
+        for (const include of this.includes.filter((o) => o.isEmbedded)) {
             const child = include.child;
             columns = columns.union(child.entity.columns).union(child.resolvedSelects);
         }
@@ -41,7 +41,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
      * All select expressions used.
      */
     public get allSelects(): IEnumerable<SelectExpression<any, any>> {
-        return Enumerable.from<SelectExpression<any, any>>([this]).union(this.joins.selectMany((o) => o.child.allSelects));
+        return Enumerable.from<SelectExpression<any, any>>([this]).union(Enumerable.from(this.joins).flatMap((o) => o.child.allSelects));
     }
     public get itemType(): GenericType<T> {
         return this.itemExpression.type;
@@ -55,7 +55,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         }
 
         if (this.distinct) {
-            return this.relationColumns.union(this.resolvedSelects);
+            return this.relationColumns.concat(this.resolvedSelects);
         }
 
         // primary column used in hydration to identify an entity.
@@ -72,7 +72,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
 
     public get relationColumns(): IEnumerable<IColumnExpression<TE>> {
         // Include Relation Columns are used later for hydration
-        let relations = Enumerable.from(this.includes).where((o) => !o.isEmbedded).selectMany((o) => o.parentColumns);
+        let relations = Enumerable.from(this.includes).filter((o) => !o.isEmbedded).flatMap((o) => o.parentColumns);
         if (this.parentRelation) {
             // relation column might cames from child join columns
             relations = relations.union(this.parentRelation.childColumns);
@@ -80,7 +80,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         return relations;
     }
     public get resolvedIncludes(): IEnumerable<IncludeRelation<TE, any>> {
-        return Enumerable.from(this.includes).selectMany((o) => {
+        return Enumerable.from(this.includes).flatMap((o) => {
             if (o.isEmbedded) {
                 return o.child.resolvedIncludes as unknown as IEnumerable<IncludeRelation<TE, any>>;
             }
@@ -91,7 +91,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
     }
     public get resolvedJoins(): IEnumerable<JoinRelation<TE>> {
         let joins = Enumerable.from(this.joins);
-        for (const include of Enumerable.from(this.includes).where((o) => o.isEmbedded)) {
+        for (const include of Enumerable.from(this.includes).filter((o) => o.isEmbedded)) {
             joins = joins.union(include.child.resolvedJoins as unknown as IEnumerable<JoinRelation<TE>>);
         }
         return joins;
@@ -103,8 +103,8 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
                 const cloneMap = new Map();
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in embedded relation
-                const childSelects = include.child.resolvedSelects.select((o) => {
-                    let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName);
+                const childSelects = include.child.resolvedSelects.map((o) => {
+                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName);
                     if (!curCol) {
                         curCol = o.clone(cloneMap) as any;
                     }
@@ -225,8 +225,8 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
             }
 
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.first((o) => o.propertyName === parentColMeta.propertyName);
-                const childCol = child.entity.columns.first((o) => o.propertyName === childColMeta.propertyName);
+                const parentCol = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
+                const childCol = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
@@ -250,7 +250,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
     public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<TE, TChild>, type?: JoinType): JoinRelation<TE, TChild>;
     public addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<TE, TChild>;
     public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<TE, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
-        const existingRelation = this.joins.first((o) => o.child === child);
+        const existingRelation = this.joins.find((o) => o.child === child);
         if (existingRelation) {
             return existingRelation;
         }
@@ -265,8 +265,8 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
             const isReverse = relationMeta.source.type !== this.entity.type;
             const relType = isReverse ? relationMeta.reverseRelation.relationType : relationMeta.relationType;
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.first((o) => o.propertyName === (isReverse ? childColMeta : parentColMeta).propertyName);
-                const childCol = child.entity.columns.first((o) => o.propertyName === (isReverse ? parentColMeta : childColMeta).propertyName);
+                const parentCol = this.entity.columns.find((o) => o.propertyName === (isReverse ? childColMeta : parentColMeta).propertyName);
+                const childCol = child.entity.columns.find((o) => o.propertyName === (isReverse ? parentColMeta : childColMeta).propertyName);
 
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
@@ -340,30 +340,30 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         const itemExpression = resolveClone(this.itemExpression, replaceMap);
         const clone = new SelectExpression(entity, itemExpression);
         replaceMap.set(this, clone);
-        clone.selects = this.selects.select((o) => resolveClone(o, replaceMap)).toArray();
-        clone.orders = this.orders.select((o) => ({
+        clone.selects = this.selects.map((o) => resolveClone(o, replaceMap));
+        clone.orders = this.orders.map((o) => ({
             column: resolveClone(o.column, replaceMap),
             direction: o.direction
-        })).toArray();
+        }));
 
-        clone.joins = this.joins.select((o) => {
+        clone.joins = this.joins.map((o) => {
             return o.clone(replaceMap);
-        }).toArray();
+        });
 
-        clone.includes = this.includes.select((o) => {
+        clone.includes = this.includes.map((o) => {
             return o.clone(replaceMap);
-        }).toArray();
+        });
 
         clone.distinct = this.distinct;
         clone.where = resolveClone(this.where, replaceMap);
-        clone.paramExps = this.paramExps.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
+        clone.paramExps = this.paramExps.map((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o);
         Object.assign(clone.paging, this.paging);
         return clone;
     }
     public getEffectedEntities(): IObjectType[] {
-        return this.entity.entityTypes
-            .union(this.joins.selectMany((o) => o.child.getEffectedEntities()))
-            .union(this.includes.selectMany((o) => o.child.getEffectedEntities()))
+        return Enumerable.from(this.entity.entityTypes)
+            .union(this.joins.flatMap((o) => o.child.getEffectedEntities()))
+            .union(this.includes.flatMap((o) => o.child.getEffectedEntities()))
             .distinct().toArray();
     }
     public getItemExpression(): IExpression {
@@ -373,13 +373,13 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         return this.entity;
     }
     public hashCode() {
-        let code: number = hashCode("SELECT", hashCode(this.entity.name, this.distinct ? 1 : 0));
-        code = hashCodeAdd(code, this.selects.select((o) => o.hashCode()).sum());
+        let code: number = hashCode("MAP", hashCode(this.entity.name, this.distinct ? 1 : 0));
+        code = hashCodeAdd(code, Enumerable.from(this.selects).map((o) => o.hashCode()).sum());
         if (this.where) {
             code = hashCodeAdd(this.where.hashCode(), code);
         }
-        code = hashCodeAdd(code, this.joins.sum((o) => o.child.hashCode()));
-        code = hashCodeAdd(code, this.includes.sum((o) => o.child.hashCode()));
+        code = hashCodeAdd(code, Enumerable.from(this.joins).sum((o) => o.child.hashCode()));
+        code = hashCodeAdd(code, Enumerable.from(this.includes).sum((o) => o.child.hashCode()));
         return code;
     }
     public setOrder(orders: IOrderExpression[]): void;
@@ -397,10 +397,10 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
     public toString(): string {
         return `Select({
 Entity:${this.entity.toString()},
-Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
+Select:${this.selects.map((o) => o.toString()).join(",")},
 Where:${this.where ? this.where.toString() : ""},
-Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
-Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
+Join:${this.joins.map((o) => o.child.toString()).join(",")},
+Include:${this.includes.map((o) => o.child.toString()).join(",")}
 })`;
     }
     //#endregion

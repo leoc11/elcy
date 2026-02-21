@@ -102,27 +102,27 @@ Elcy used Linq-like syntax to read data from database. Example:
         const db = new MyDb();
 
         // select top 10 order with Amount > 10 order by amount desc.
-        const orders = await db.orders.take(10).where(o => o.Amount > 10).orderBy([o => o.Amount, "DESC"]).toArray();
+        const orders = await db.orders.take(10).filter(o => o.Amount > 10).orderBy([o => o.Amount, "DESC"]).toArray();
 
         // count all orders
         const count = await db.orders.count();
         
         // where with parameter
         const maxAmount = 10;
-        const count = await db.orders.parameters({ maxAmount }).where(o => o.Amount < maxAmount).count();
+        const count = await db.orders.parameters({ maxAmount }).filter(o => o.Amount < maxAmount).count();
     }
 )();
 ```
 
 Below are the supported query expression syntax:
-- `where(predicate: (item: T) => boolean): Queryable<T>`
+- `filter(predicate: (item: T) => boolean): Queryable<T>`
 - `distinct(): Queryable<T>`
 - `include(...includes: Array<(item: T) => any>): Queryable<T>`
 - `orderBy(...selectors: IQueryableOrderDefinition<T>[]): Queryable<T>`
 - `skip(skip: number): Queryable<T>`
 - `take(take: number): Queryable<T>`
-- `select<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>`
-- `selectMany<TReturn>(selector: (item: T) => TReturn[]): Queryable<TReturn>`
+- `map<TReturn>(selector: ((item: T) => TReturn)): Queryable<TReturn>`
+- `flatMap<TReturn>(selector: (item: T) => TReturn[]): Queryable<TReturn>`
 - `groupBy<K>(keySelector: (item: T) => K): Queryable<IGroupArray<T, K>>`: limitation. groupBy(..).toArray() will not work.
 - `union(array2: Queryable<T>, isUnionAll?: boolean): Queryable<T>`
 - `intersect(array2: Queryable<T>): Queryable<T>`
@@ -135,7 +135,7 @@ Below are the supported query expression syntax:
 - `avg()`
 - `all()`
 - `any()`
-- `first()`
+- `find()`
 - `innerJoin`: *not yet supported*
 - `rightJoin`: *not yet supported*
 - `leftJoin`: *not yet supported*
@@ -171,7 +171,7 @@ Update
     async() => {
         const db = new MyDb();
 
-        const order = db.orders.first();
+        const order = db.orders.find();
         order.Amount += 1;
         
         await db.saveChanges();
@@ -185,7 +185,7 @@ Delete
     async() => {
         const db = new MyDb();
 
-        const order = db.orders.first();
+        const order = db.orders.find();
         db.delete(order);
         await db.saveChanges();
     }

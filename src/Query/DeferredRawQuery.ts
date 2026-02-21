@@ -43,7 +43,7 @@ export class DeferredRawQuery<T = unknown> extends DeferredQuery<T> {
         return this.value;
     }
     public hashCode() {
-        return this.command.hashCode() + Enumerable.from(this.parameters).select((o) => hashCode((o[1].value || "NULL").toString())).sum();
+        return this.command.hashCode() + Enumerable.from(this.parameters).map((o) => hashCode((o[1].value || "NULL").toString())).sum();
     }
     public resolve(result: IQueryResult[]) {
         this.value = this.resultParser(result, this.queries);

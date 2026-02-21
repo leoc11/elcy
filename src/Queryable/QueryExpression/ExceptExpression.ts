@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { GenericType, IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
@@ -9,7 +10,7 @@ export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
         super(subSelect, type);
         this.subSelect2.isSubSelect = true;
         this.paramExps = this.paramExps.concat(subSelect2.paramExps);
-        this.entityTypes = this.subSelect.entity.entityTypes.concat(this.subSelect2.entity.entityTypes).distinct().toArray();
+        this.entityTypes = Enumerable.from(this.subSelect.entity.entityTypes).concat(this.subSelect2.entity.entityTypes).distinct().toArray();
     }
     public readonly entityTypes: IObjectType[];
     public clone(replaceMap?: Map<IExpression, IExpression>) {

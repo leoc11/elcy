@@ -10,12 +10,12 @@ import { SelectExpression } from "./SelectExpression";
 export class CustomEntityExpression<T extends object = object> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.columns.where((o) => o.isPrimary).toArray();
+            this._primaryColumns = this.columns.filter((o) => o.isPrimary);
         }
         return this._primaryColumns;
     }
     constructor(public name: string, columns: IColumnExpression<T>[], public readonly type: GenericType<T>, public alias: string, public defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> = []) {
-        this.columns = columns.select((o) => {
+        this.columns = columns.map((o) => {
             const clone = o.clone();
             clone.entity = this;
             if (clone.alias) {
@@ -23,7 +23,7 @@ export class CustomEntityExpression<T extends object = object> implements IEntit
                 clone.alias = null;
             }
             return clone;
-        }).toArray();
+        });
     }
     public columns: IColumnExpression<T>[];
     public entityTypes: IObjectType[] = [];
@@ -36,7 +36,7 @@ export class CustomEntityExpression<T extends object = object> implements IEntit
         }
         const clone = new CustomEntityExpression(this.name, [], this.type, this.alias);
         replaceMap.set(this, clone);
-        clone.columns = this.columns.select((o) => resolveClone(o, replaceMap)).toArray();
+        clone.columns = this.columns.map((o) => resolveClone(o, replaceMap));
         return clone;
     }
     public hashCode() {

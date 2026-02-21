@@ -21,6 +21,7 @@ import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { DateTimeColumnMetaData } from "src/MetaData/DateTimeColumnMetaData";
 import { RowVersionColumnMetaData } from "src/MetaData/RowVersionColumnMetaData";
 import { proxyEntityType } from "src/Data/EntityChangeTracker";
+import { BooleanColumnMetaData } from "src/MetaData/BooleanColumnMetaData";
 
 export function Entity<TE extends object>(option: IEntityOption<TE>): ClassDecorator<TE>;
 export function Entity<TE extends object>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TE>;
@@ -52,7 +53,7 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
         const entityMetadata = new EntityMetaData(proxyType, option.name);
         entityMetadata.schema = option.schema;
         entityMetadata.columns = columns;
-        
+
         const entityMet = getEntityMetadata(proxyType);
         if (entityMet) {
             entityMetadata.applyOption(entityMet);
@@ -91,6 +92,13 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
             }
         }
 
+        if (context.metadata.deletedColumn) {
+            const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.deletedColumn);
+            if (column instanceof BooleanColumnMetaData) {
+                entityMetadata.deletedColumn = column;
+            }
+        }
+
         if (context.metadata.versionColumn) {
             const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.versionColumn);
             if (column instanceof RowVersionColumnMetaData) {
@@ -103,14 +111,14 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
         }
 
         if (option.defaultOrders) {
-            entityMetadata.defaultOrders = option.defaultOrders.select((o) => {
+            entityMetadata.defaultOrders = option.defaultOrders.map((o) => {
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: Array<IExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
                 itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, TE> : ExpressionBuilder.parse<ValueType, TE>(selector, [type]));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
-            }).toArray();
+            });
         }
 
         if (!option.allowInheritance) {
@@ -139,7 +147,7 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
             }
             if (isInheritance) {
                 for (const parentColumnMeta of parentMetaData.columns) {
-                    let columnMeta = entityMetadata.columns.first((p) => p.propertyName === parentColumnMeta.propertyName);
+                    let columnMeta = entityMetadata.columns.find((p) => p.propertyName === parentColumnMeta.propertyName);
                     if (parentColumnMeta instanceof ComputedColumnMetaData) {
                         if (columnMeta) {
                             if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
@@ -171,23 +179,32 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
                 }
 
                 if (parentMetaData.primaryKeys.length > 0) {
-                    entityMetadata.primaryKeys = parentMetaData.primaryKeys.select((o) => entityMetadata.columns.first((p) => p.propertyName === o.propertyName)).toArray();
+                    entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.columns.find((p) => p.propertyName === o.propertyName));
                 }
 
                 if (parentMetaData.createDateColumn) {
-                    entityMetadata.createDateColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
+                    entityMetadata.createDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
                 }
                 if (parentMetaData.modifiedDateColumn) {
-                    entityMetadata.modifiedDateColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
+                    entityMetadata.modifiedDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
                 }
                 if (parentMetaData.deletedColumn) {
-                    entityMetadata.deletedColumn = entityMetadata.columns.first((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
+                    entityMetadata.deletedColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
                 }
                 if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders) {
                     entityMetadata.defaultOrders = parentMetaData.defaultOrders;
                 }
             }
         }
+
+        let relationHandlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (Array.isArray(relationHandlers)) {
+            for (const handler of relationHandlers) {
+                handler(entityMetadata);
+            }
+        }
+
+
         setEntityMetadata(proxyType, entityMetadata);
 
         return proxyType;

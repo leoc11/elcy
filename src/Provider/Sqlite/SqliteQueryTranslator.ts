@@ -36,7 +36,7 @@ sqliteQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param
  * DbFunction
  */
 sqliteQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `LAST_INSERT_ROWID()`, () => true);
-sqliteQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `COALESCE(${exp.params.select((o) => qb.toString(o, param)).toArray().join(", ")})`);
+sqliteQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `COALESCE(${exp.params.map((o) => qb.toString(o, param)).join(", ")})`);
 
 /**
  * Math
@@ -47,8 +47,8 @@ sqliteQueryTranslator.registerMethod(Math, "floor", (qb, exp, param) => `CAST(${
 sqliteQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CAST(ROUND(${qb.toString(exp.params[0], param)} + 0.5) AS INT)`);
 sqliteQueryTranslator.registerMethod(Math, "random", () => "ABS(RANDOM()/9223372036854789000)");
 sqliteQueryTranslator.registerMethod(Math, "round", (qb, exp, param) => `ROUND(${qb.toString(exp.params[0], param)}, 0)`);
-sqliteQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => `MAX(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`);
-sqliteQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => `MIN(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`);
+sqliteQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => `MAX(${exp.params.map((o) => qb.toString(o, param)).join(",")})`);
+sqliteQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => `MIN(${exp.params.map((o) => qb.toString(o, param)).join(",")})`);
 
 sqliteQueryTranslator.registerMethod(Math, "acos", null);
 sqliteQueryTranslator.registerMethod(Math, "asin", null);
@@ -77,7 +77,7 @@ sqliteQueryTranslator.registerMethod(Math, "trunc", null);
  * TODO: localeCompare,match,normalize,padEnd,padStart,search,slice
  */
 sqliteQueryTranslator.registerMethod(String.prototype, "charAt", (qb, exp, param) => `SUBSTR(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)} + 1, 1)`);
-sqliteQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} || ${exp.params.select((p) => qb.toString(p, param)).toArray().join(" || ")}`);
+sqliteQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} || ${exp.params.map((p) => qb.toString(p, param)).join(" || ")}`);
 sqliteQueryTranslator.registerMethod(String.prototype, "endsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE (${qb.valueString("%")} || ${qb.toString(exp.params[0], param)}))`);
 sqliteQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, param) => {
     if (exp.params.length > 1) {

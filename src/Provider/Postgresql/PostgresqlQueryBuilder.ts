@@ -1,7 +1,7 @@
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQuery } from "src/Query/IQuery";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, SetterObj } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
@@ -19,6 +19,13 @@ import { IQueryParameterMap } from "src/Query/IQueryParameter";
 import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression";
 import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
+import { DeleteMode } from "src/Common/StringType";
+import { entityMetaKey } from "src/Decorator";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
+import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
+import { EntityExpression } from "src/Queryable/QueryExpression/EntityExpression";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -47,21 +54,31 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         }
     }
 
-    protected override mergeQueries(queries: IEnumerable<IQuery>): IQuery[] {
+    public override mergeQueries(queries: IEnumerable<IQuery>): IQuery[] {
         // only able to support merged for query without parameter
         return Enumerable.from(queries).toArray();
     }
 
+    protected override getParameter(param: IQueryBuilderParameter) {
+        const paramObj = new Map<string, any>();
+        const qparams = param.queryExpression.paramExps
+            .filter(o => !o.isSystem);
+        for (const [k, p] of param.parameters) {
+            if (!qparams.includes(k)) {
+                continue;
+            }
+            paramObj.set(p.name, p.value);
+        }
+        
+        return paramObj;
+    }
     protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderParameter): string {
         const paramValue = param.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
 
-        if (!isNotNull(paramValue.value)) {
-            return this.nullString();
-        }
-        const indexMap = Enumerable.from(param.parameters.values()).select(o => o.name).distinct().toArray();
+        const indexMap = Enumerable.from(param.parameters).map(o => o[1].name).distinct().toArray();
         const index = indexMap.indexOf(paramValue.name);
         return `$${index + 1}`;
     }
@@ -118,7 +135,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             this.newLine() + `SET ${setQuery.join(", ")}`;
 
         if (firstJoin) {
-            updateQuery += this.newLine() + `FROM ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
+            updateQuery += this.newLine() + `FROM ${this.entityName(firstJoin.child.entity)} AS ${this.enclose(firstJoin.child.entity.alias)}` +
                 this.getJoinQueryString(joins, param);
         }
         if (whereQueries.length) {
@@ -135,6 +152,136 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             parameters: this.getParameter(param)
         });
 
+        return result;
+    }
+
+    protected getDeleteQuery<T extends object>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+        let result: IQuery[] = [];
+        const param: IQueryBuilderParameter = {
+            queryExpression: deleteExp,
+            parameters: parameters,
+            option: option
+        };
+
+        let deleteStrategy: DeleteMode;
+        if (deleteExp.deleteMode) {
+            deleteStrategy = this.extractValue(deleteExp.deleteMode, param);
+        }
+
+        if (!deleteStrategy) {
+            deleteStrategy = deleteExp.entity.deleteColumn ? "soft" : "hard";
+        }
+        else if (deleteStrategy === "soft" && !deleteExp.entity.deleteColumn) {
+            // if entity did not support soft delete, then abort.
+            throw new Error(`'${deleteExp.entity.name}' did not support 'Soft' delete`);
+        }
+
+        if (deleteStrategy === "soft") {
+            // if soft delete, set delete column to true
+            const set: SetterObj<T> = {};
+            set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true) as any;
+            const updateQuery = new UpdateExpression(deleteExp.select, set);
+            result = this.getUpdateQuery(updateQuery, param.option, param.parameters);
+
+            // apply delete option rule. coz soft delete delete option will not handled by db.
+            const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, deleteExp.entity.type);
+            const relations = entityMeta.relations.filter((o) => o.isMaster);
+            result = result.concat(relations.flatMap((o) => {
+                if (o.completeRelationType === "many-many") {
+                    throw new Error("many-many relation not supported");
+                }
+
+                const target = o.target;
+                const deleteOption = o.reverseRelation.deleteOption;
+                const relationColumns = o.reverseRelation.relationColumns;
+                const child = new SelectExpression(new EntityExpression(target.type, target.type.name));
+                child.addJoin(deleteExp.select, o.reverseRelation, "INNER");
+                switch (deleteOption) {
+                    case "CASCADE": {
+                        const childDelete = new DeleteExpression(child, deleteExp.deleteMode);
+                        if (childDelete.entity.deleteColumn && !param.option.includeSoftDeleted) {
+                            childDelete.addWhere(new StrictEqualExpression(childDelete.entity.deleteColumn, new ValueExpression(false)));
+                        }
+                        return this.getDeleteQuery(childDelete, param.option, param.parameters);
+                    }
+                    case "SET NULL": {
+                        const setOption: { [key: string]: IExpression<any> } = {};
+                        for (const col of relationColumns) {
+                            setOption[col.propertyName] = new ValueExpression(null);
+                        }
+                        const childUpdate = new UpdateExpression(child, setOption);
+                        return this.getUpdateQuery(childUpdate, param.option, param.parameters);
+                    }
+                    case "SET DEFAULT": {
+                        const setOption: { [key: string]: IExpression<any> } = {};
+                        for (const col of o.reverseRelation.relationColumns) {
+                            if (col.defaultExp) {
+                                setOption[col.columnName] = col.defaultExp.body;
+                            }
+                            else {
+                                setOption[col.columnName] = new ValueExpression(null);
+                            }
+                        }
+                        const childUpdate = new UpdateExpression(child, setOption);
+                        return this.getUpdateQuery(childUpdate, param.option, param.parameters);
+                    }
+                    case "NO ACTION":
+                    case "RESTRICT":
+                    default:
+                        return [];
+                }
+            }));
+        }
+        else {
+
+            let firstJoin: JoinRelation<T> = null;
+            const whereQueries: string[] = [];
+            let joins = deleteExp.joins.slice();
+            if (joins.length) {
+                firstJoin = joins.shift();
+                whereQueries.push(this.toLogicalString(firstJoin.relation, param));
+            }
+            if (deleteExp.where) {
+                whereQueries.push(this.toLogicalString(deleteExp.where, param));
+            }
+            let deleteQuery = `DELETE FROM ${this.entityName(deleteExp.entity)} AS ${this.enclose(deleteExp.entity.alias)}`;
+            if (firstJoin) {
+                deleteQuery += this.newLine() + `USING ${this.entityName(firstJoin.child.entity)} AS ${this.enclose(firstJoin.child.entity.alias)}` +
+                    this.getJoinQueryString(joins, param);
+            }
+            if (whereQueries.length) {
+                deleteQuery += this.newLine() + "WHERE " + whereQueries.join(" AND ");
+            }
+
+            result.push({
+                query: deleteQuery,
+                type: QueryType.DML,
+                parameters: this.getParameter(param)
+            });
+        }
+
+        const clone = deleteExp.clone();
+
+        const replaceMap = new Map();
+        for (const col of deleteExp.entity.columns) {
+            const cloneCol = clone.entity.columns.find((c) => c.columnName === col.columnName);
+            replaceMap.set(col, cloneCol);
+        }
+        const includedDeletes = deleteExp.includes.flatMap((o) => {
+            const child = o.child.clone();
+            for (const col of o.child.entity.columns) {
+                const cloneChildCol = child.entity.columns.find((c) => c.columnName === col.columnName);
+                replaceMap.set(col, cloneChildCol);
+            }
+            const relations = o.relation.clone(replaceMap);
+            child.addJoin(clone.select, relations, "INNER");
+            if (clone.select.where) {
+                child.addWhere(clone.select.where);
+                clone.select.where = null;
+            }
+            return this.getDeleteQuery(child, param.option, param.parameters);
+        });
+        result = result.concat(includedDeletes);
         return result;
     }
 }

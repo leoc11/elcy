@@ -145,8 +145,8 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         return columnType;
     }
     protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
-        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const columns = relationMeta.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;

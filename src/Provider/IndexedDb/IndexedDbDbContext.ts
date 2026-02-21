@@ -8,7 +8,7 @@ export abstract class IndexedDbDbContext extends DbContext {
         if (!isClearCache) {
             result = this._cachedDbSets.get(type);
         }
-        if (!result && this.entityTypes.contains(type)) {
+        if (!result && this.entityTypes.includes(type)) {
             result = new DbSet(type, this);
             this._cachedDbSets.set(type, result);
         }

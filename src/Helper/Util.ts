@@ -52,7 +52,7 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
         }
         const projectedCol = selectExp2.projectedColumns;
         for (const col of selectExp1.projectedColumns) {
-            const tCol = projectedCol.first((o) => o.propertyName === col.propertyName);
+            const tCol = projectedCol.find((o) => o.propertyName === col.propertyName);
             if (tCol) {
                 replaceMap.set(col, tCol);
             }
@@ -62,7 +62,7 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
         const entityExp1 = sourceExp as IEntityExpression;
         const entityExp2 = targetExp as IEntityExpression;
         for (const col of entityExp1.columns) {
-            const tCol = entityExp2.columns.first((o) => o.propertyName === col.propertyName);
+            const tCol = entityExp2.columns.find((o) => o.propertyName === col.propertyName);
             if (tCol) {
                 replaceMap.set(col, tCol);
             }
@@ -200,8 +200,9 @@ export const isValueType = (type: GenericType) => {
             return false;
     }
 };
-export const isNotNull = (value: any) => {
-    return value !== null && value !== undefined;
+export const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
+export const isNull = (value: any) => {
+    return value == null;
 };
 export const isNativeFunction = (fn: Function) => {
     return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
@@ -328,7 +329,7 @@ export const hasFlags = function (value: number, flag: number): boolean {
 };
 export const arrayAdd = function <T>(array: T[], ...items: T[]) {
     for (const item of items) {
-        if (!array.contains(item)) {
+        if (!array.includes(item)) {
             array.push(item);
         }
     }

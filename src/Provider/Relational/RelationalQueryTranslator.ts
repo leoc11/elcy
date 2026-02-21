@@ -94,27 +94,27 @@ relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, p
  * TODO: CHANGE TO QUERYABLE/ENUMERABLE
  * SelectExpression
  */
-relationalQueryTranslator.registerMethod(SelectExpression.prototype, "all" as any, (qb, exp, param) => `NOT EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
-relationalQueryTranslator.registerMethod(SelectExpression.prototype, "any" as any, (qb, exp, param) => `EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
+relationalQueryTranslator.registerMethod(SelectExpression.prototype, "every" as any, (qb, exp, param) => `NOT EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
+relationalQueryTranslator.registerMethod(SelectExpression.prototype, "some" as any, (qb, exp, param) => `EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "count" as any, (qb, exp, param) => `COUNT(${qb.toString(exp.params[0], param)})`);
 const aggregateTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "sum" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "min" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "max" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "avg" as any, aggregateTranslator);
-relationalQueryTranslator.registerMethod(SelectExpression.prototype, "contains" as any, (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
+relationalQueryTranslator.registerMethod(SelectExpression.prototype, "includes" as any, (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
 
 /**
  * Array
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
-relationalQueryTranslator.registerMethod(Array.prototype, "contains", (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN ${qb.toString(exp.objectOperand, param)}`);
+relationalQueryTranslator.registerMethod(Array.prototype, "includes", (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN ${qb.toString(exp.objectOperand, param)}`);
 
 /**
  * Enumerable
  * TODO: contains,concat,copyWithin,every,fill,filter,find,findIndex,forEach,indexOf,join,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,toString,unshift,valueOf
  */
-relationalQueryTranslator.registerMethod(Enumerable.prototype, "contains", (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
+relationalQueryTranslator.registerMethod(Enumerable.prototype, "includes", (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
 
 /**
  * Math
@@ -140,7 +140,7 @@ relationalQueryTranslator.registerMethod(Math, "pow", (qb, exp, param) => `POWER
 relationalQueryTranslator.registerMethod(Math, "random", () => "RAND()", () => true);
 relationalQueryTranslator.registerMethod(Math, "round", (qb, exp, param) => `ROUND(${qb.toString(exp.params[0], param)}, 0)`);
 relationalQueryTranslator.registerMethod(Math, "expm1", (qb, exp, param) => `(EXP(${qb.toString(exp.params[0], param)}) - 1)`);
-relationalQueryTranslator.registerMethod(Math, "hypot", (qb, exp, param) => `SQRT(${exp.params.select((p) => `POWER(${qb.toString(p, param)}, 2)`).toArray().join(" + ")})`);
+relationalQueryTranslator.registerMethod(Math, "hypot", (qb, exp, param) => `SQRT(${exp.params.map((p) => `POWER(${qb.toString(p, param)}, 2)`).join(" + ")})`);
 relationalQueryTranslator.registerMethod(Math, "log1p", (qb, exp, param) => `LOG(1 + ${qb.toString(exp.params[0], param)})`);
 relationalQueryTranslator.registerMethod(Math, "log2", (qb, exp, param) => `LOG(${qb.toString(exp.params[0], param)}, 2)`);
 relationalQueryTranslator.registerMethod(Math, "sinh", (qb, exp, param) => `((EXP(${qb.toString(exp.params[0], param)}) - EXP(-${qb.toString(exp.params[0], param)})) / 2)`);
@@ -151,13 +151,13 @@ relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
-    return `GREATEST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
+    return `GREATEST(${exp.params.map((o) => qb.toString(o, param)).join(",")})`;
 });
 relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
-    return `LEAST(${exp.params.select((o) => qb.toString(o, param)).toArray().join(",")})`;
+    return `LEAST(${exp.params.map((o) => qb.toString(o, param)).join(",")})`;
 });
 /**
  * String
@@ -165,7 +165,7 @@ relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
  */
 relationalQueryTranslator.registerMethod(String.prototype, "charAt", (qb, exp, param) => `SUBSTRING(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)} + 1, 1)`);
 relationalQueryTranslator.registerMethod(String.prototype, "charCodeAt", (qb, exp, param) => `UNICODE(SUBSTRING(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)} + 1, 1))`);
-relationalQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `CONCAT(${qb.toString(exp.objectOperand, param)}, ${exp.params.select((p) => qb.toString(p, param)).toArray().join(", ")})`);
+relationalQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `CONCAT(${qb.toString(exp.objectOperand, param)}, ${exp.params.map((p) => qb.toString(p, param)).join(", ")})`);
 relationalQueryTranslator.registerMethod(String.prototype, "endsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE CONCAT(${qb.valueString("%")}, ${qb.toString(exp.params[0], param)}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "includes", (qb, exp, param) =>
     exp.params.length > 1

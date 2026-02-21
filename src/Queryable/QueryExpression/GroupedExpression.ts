@@ -1,5 +1,5 @@
 import type { JoinType } from "../../Common/StringType";
-import type { IEnumerable } from "../../Enumerable/IEnumerable";
+import { Enumerable, type IEnumerable } from "@elcy/enumerable";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import type { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import type { IColumnExpression } from "./IColumnExpression";
@@ -25,8 +25,8 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                     if (parentRel.isEmbedded) {
                         const cloneMap = new Map();
                         mapReplaceExp(cloneMap, entityExp, this.entity);
-                        const childSelects = childSelectExp.resolvedSelects.select((o) => {
-                            let curCol = this.entity.columns.first((c) => c.propertyName === o.propertyName as string && c.constructor === o.constructor);
+                        const childSelects = Enumerable.from(childSelectExp.resolvedSelects).map((o) => {
+                            let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName as string && c.constructor === o.constructor);
                             if (!curCol) {
                                 curCol = o.clone(cloneMap) as any;
                             }
@@ -103,17 +103,17 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
         }
 
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
-        clone.selects = this.selects.select((o) => resolveClone(o, replaceMap)).toArray();
-        clone.orders = this.orders.select((o) => ({
+        clone.selects = this.selects.map((o) => resolveClone(o, replaceMap));
+        clone.orders = this.orders.map((o) => ({
             column: resolveClone(o.column, replaceMap),
             direction: o.direction
-        })).toArray();
+        }));
 
-        clone.joins = this.joins.select((o) => o.clone(replaceMap)).toArray();
-        clone.includes = this.includes.select((o) => o.clone(replaceMap)).toArray();
+        clone.joins = this.joins.map((o) => o.clone(replaceMap));
+        clone.includes = this.includes.map((o) => o.clone(replaceMap));
 
         clone.where = resolveClone(this.where, replaceMap);
-        clone.paramExps = this.paramExps.select((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o).toArray();
+        clone.paramExps = this.paramExps.map((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o);
         Object.assign(clone.paging, this.paging);
         return clone;
     }
@@ -123,10 +123,10 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
     public toString() {
         return `Grouped({
 Entity:${this.entity.toString()},
-Select:${this.selects.select((o) => o.toString()).toArray().join(",")},
+Select:${this.selects.map((o) => o.toString()).join(",")},
 Where:${this.where ? this.where.toString() : ""},
-Join:${this.joins.select((o) => o.child.toString()).toArray().join(",")},
-Include:${this.includes.select((o) => o.child.toString()).toArray().join(",")}
+Join:${this.joins.map((o) => o.child.toString()).join(",")},
+Include:${this.includes.map((o) => o.child.toString()).join(",")}
 })`;
     }
 }

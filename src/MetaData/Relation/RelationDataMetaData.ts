@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { IObjectType } from "../../Common/Type";
 import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
@@ -14,7 +15,7 @@ export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = 
         return this.sourceRelationMeta.completeRelationType;
     }
     public get primaryKeys() {
-        return this.sourceRelationColumns.union(this.targetRelationColumns).toArray();
+        return Enumerable.from(this.sourceRelationColumns).union(this.targetRelationColumns).toArray();
     }
     public get source() {
         return this.sourceRelationMeta.source;

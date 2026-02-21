@@ -27,7 +27,7 @@ relationalQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CEIL
  * String
  * TODO: localeCompare,match,normalize,padEnd,padStart,search,slice
  */
-mssqlQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${exp.params.select((p) => qb.toString(p, param)).toArray().join("+")}`);
+mssqlQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${exp.params.map((p) => qb.toString(p, param)).join("+")}`);
 mssqlQueryTranslator.registerMethod(String.prototype, "endsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE ${qb.valueString("%")}+${qb.toString(exp.params[0], param)})`);
 mssqlQueryTranslator.registerMethod(String.prototype, "includes", (qb, exp, param) =>
     exp.params.length > 1
@@ -38,18 +38,18 @@ mssqlQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, pa
 
 mssqlQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `${qb.toOperandString(exp.leftOperand, param)}+${qb.toOperandString(exp.rightOperand, param)}`);
 mssqlQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `scope_identity()`, () => true);
-mssqlQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `coalesce(${exp.params.select((o) => qb.toString(o, param)).toArray().join(", ")})`);
+mssqlQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `coalesce(${exp.params.map((o) => qb.toString(o, param)).join(", ")})`);
 relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
-    return `(SELECT MAX(V) FROM (VALUES ${exp.params.select((o) => `(${qb.toString(o, param)})`).toArray().join(",")}) AS value(V))`;
+    return `(SELECT MAX(V) FROM (VALUES ${exp.params.map((o) => `(${qb.toString(o, param)})`).join(",")}) AS value(V))`;
 });
 relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
-    return `(SELECT MIN(V) FROM (VALUES ${exp.params.select((o) => `(${qb.toString(o, param)})`).toArray().join(",")}) AS value(V))`;
+    return `(SELECT MIN(V) FROM (VALUES ${exp.params.map((o) => `(${qb.toString(o, param)})`).join(",")}) AS value(V))`;
 });
 
 relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);

@@ -116,7 +116,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
 export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
-    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).select((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).where((o) => !!o);
+    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).map((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).filter((o) => !!o);
 
     for (const o of modifiedColumns) {
         const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);
@@ -135,7 +135,7 @@ export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, 
             queryParameters.set(parameter, { value: entity[versionCol.propertyName] });
             updateExp.paramExps.push(parameter);
 
-            const colExp = updateExp.entity.columns.first((c) => c.propertyName === versionCol.propertyName);
+            const colExp = updateExp.entity.columns.find((c) => c.propertyName === versionCol.propertyName);
             const compExp = new StrictEqualExpression(colExp, parameter);
             updateExp.addWhere(compExp);
             break;
@@ -145,7 +145,7 @@ export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, 
                 const parameter = new SqlParameterExpression(new ParameterExpression("", col.type), col);
                 queryParameters.set(parameter, { value: entry.getOriginalValue(col.propertyName) });
                 updateExp.paramExps.push(parameter);
-                const colExp = updateExp.entity.columns.first((c) => c.propertyName === col.propertyName);
+                const colExp = updateExp.entity.columns.find((c) => c.propertyName === col.propertyName);
                 const compExp = new StrictEqualExpression(colExp, parameter);
                 updateExp.addWhere(compExp);
             }

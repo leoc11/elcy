@@ -22,7 +22,7 @@ export abstract class ColumnMetaData<TE extends object, T = unknown> implements 
         return this._defaultExp;
     }
     public get isPrimaryColumn(): boolean {
-        return this.entity.primaryKeys.contains(this);
+        return this.entity.primaryKeys.includes(this);
     }
     constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
         if (typeof type !== "undefined") {

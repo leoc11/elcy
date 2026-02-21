@@ -17,8 +17,8 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
         if (!this._columns) {
             if (this.metaData) {
                 this._columns = Enumerable.from(this.metaData.columns)
-                    .where((o) => !(o instanceof ComputedColumnMetaData))
-                    .select((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.includes(o)))
+                    .filter((o) => !(o instanceof ComputedColumnMetaData))
+                    .map((o) => new ColumnExpression(this, o, this.metaData.primaryKeys.includes(o)))
                     .toArray();
             }
             else {
@@ -43,7 +43,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.deletedColumn.propertyName) as IColumnExpression<T, boolean>;
+            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.deletedColumn.propertyName) as IColumnExpression<T, boolean>;
         }
         return this._deleteColumn;
     }
@@ -55,7 +55,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get modifiedColumn() {
         if (typeof this._modifiedColumn === "undefined") {
-            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName) as IColumnExpression<T, Date>;
+            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName) as IColumnExpression<T, Date>;
         }
         return this._modifiedColumn;
     }
@@ -75,7 +75,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get versionColumn() {
         if (typeof this._versionColumn === "undefined") {
-            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.first((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<T, Uint8Array>;
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<T, Uint8Array>;
         }
         return this._versionColumn;
     }
@@ -106,14 +106,14 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
         }
         const clone = new EntityExpression(this.type, this.alias);
         replaceMap.set(this, clone);
-        clone.columns = this.columns.select((o) => {
-            let cloneCol = clone.columns.first((c) => c.propertyName === o.propertyName);
+        clone.columns = this.columns.map((o) => {
+            let cloneCol = clone.columns.find((c) => c.propertyName === o.propertyName);
             if (!cloneCol) {
                 cloneCol = resolveClone(o, replaceMap);
             }
             replaceMap.set(o, cloneCol);
             return cloneCol;
-        }).toArray();
+        });
         clone.name = this.name;
         return clone;
     }

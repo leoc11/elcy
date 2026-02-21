@@ -20,7 +20,7 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
         if (!this._columns && this.entity instanceof EntityExpression) {
             this._columns = Enumerable.from(this.entity.metaData.columns)
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .select((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
+                .map((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
         }
         return this._columns;
     }
@@ -45,14 +45,14 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
             replaceMap = new Map();
         }
         const entity = resolveClone(this.entity, replaceMap);
-        const columns = this.columns.select((o) => resolveClone(o, replaceMap)).toArray();
-        const values = this.values.select((o) => {
+        const columns = this.columns.map((o) => resolveClone(o, replaceMap));
+        const values = this.values.map((o) => {
             const item: SetterObj<T> = {};
             for (const prop in o) {
                 item[prop] = resolveClone(o[prop], replaceMap);
             }
             return item;
-        }).toArray();
+        });
         const clone = new InsertExpression(entity, values, columns);
         replaceMap.set(this, clone);
         return clone;
@@ -61,7 +61,7 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
         return this.entity.entityTypes;
     }
     public hashCode() {
-        return hashCode("INSERT", hashCode(this.entity.name, this.values.select((o) => {
+        return hashCode("INSERT", hashCode(this.entity.name, Enumerable.from(this.values).map((o) => {
             let hash = 0;
             for (const prop in o) {
                 hash += hashCode(prop, o[prop].hashCode());

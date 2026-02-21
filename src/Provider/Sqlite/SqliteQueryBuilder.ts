@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType } from "../../Common/Type";
@@ -40,19 +41,19 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             return this.getUpsertQueryOlder(upsertExp, option, parameters);
         }
 
-        const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
-        const valueString = upsertExp.insertColumns.select((o) => {
+        const colString = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const valueString = upsertExp.insertColumns.map((o) => {
             const valueExp = upsertExp.setter[o.propertyName];
             return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-        }).toArray().join(",");
-        const primaryColString = upsertExp.entity.primaryColumns.select((o) => this.enclose(o.columnName)).toArray().join(",");
-        const updateString = upsertExp.updateColumns.select((column) => {
+        }).join(",");
+        const primaryColString = upsertExp.entity.primaryColumns.map((o) => this.enclose(o.columnName)).join(",");
+        const updateString = Enumerable.from(upsertExp.updateColumns).map((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
             if (!valueExp) {
                 return null;
             }
             return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
-        }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
+        }).filter((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const queryCommand: IQuery = {
             query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine()
@@ -69,12 +70,12 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             queryExpression: upsertExp
         };
 
-        const colString = upsertExp.insertColumns.select((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.insertColumns.select((o) => {
+            `VALUES (${upsertExp.insertColumns.map((o) => {
                 const valueExp = upsertExp.setter[o.propertyName];
                 return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-            }).toArray().join(",")})`;
+            }).join(",")})`;
 
         const queryCommand: IQuery = {
             query: insertQuery,
@@ -84,14 +85,14 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
         const result: IQuery[] = [queryCommand];
 
-        const updateString = upsertExp.updateColumns.select((column) => {
+        const updateString = Enumerable.from(upsertExp.updateColumns).map((column) => {
             const valueExp = upsertExp.setter[column.propertyName];
             if (!valueExp) {
                 return null;
             }
 
             return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
-        }).where((o) => !!o).toArray().join(`,${this.newLine(1)}`);
+        }).filter((o) => !!o).toArray().join(`,${this.newLine(1)}`);
 
         const updateCommand: IQuery = {
             query: `UPDATE ${this.getEntityQueryString(upsertExp.entity, param)} SET ${updateString} WHERE ${this.toLogicalString(upsertExp.where, param)}`,

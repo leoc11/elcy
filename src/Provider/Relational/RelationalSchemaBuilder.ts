@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { ColumnType, ColumnTypeGroup, ColumnTypeMapKey } from "../../Common/ColumnType";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
@@ -41,9 +42,10 @@ import { ISchemaBuilder } from "../../Query/ISchemaBuilder";
 import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
 import { RelationalQueryBuilder } from "./RelationalQueryBuilder";
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 const isColumnsEquals = <TE extends object>(cols1: IColumnMetaData<TE>[], cols2: IColumnMetaData<TE>[]) => {
-    return cols1.length === cols2.length && cols1.all((o) => cols2.any((p) => p.columnName === o.columnName));
+    return cols1.length === cols2.length && cols1.every((o) => cols2.some((p) => p.columnName === o.columnName));
 };
 const isIndexEquals = (index1: IIndexMetaData, index2: IIndexMetaData) => {
     return !!index1.unique === !!index2.unique && isColumnsEquals(index1.keys, index1.keys);
@@ -89,7 +91,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         return result;
     }
     public addIndex<TE extends object>(indexMeta: IIndexMetaData<TE>): IQuery[] {
-        const columns = indexMeta.keys.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+        const columns = indexMeta.keys.map((o) => this.queryBuilder.enclose(o.columnName)).join(",");
         const query = `CREATE${indexMeta.unique ? " UNIQUE" : ""} INDEX ${indexMeta.name} ON ${this.entityName(indexMeta.entity)} (${columns})`;
         return [{
             query,
@@ -111,8 +113,12 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public createTable<TE extends object>(entityMetaData: IEntityMetaData<TE>, name?: string): IQuery[] {
-        const columnDefinitions = entityMetaData.columns.where((o) => !!o.columnName).select((o) => this.columnDeclaration(o, "create")).toArray().join("," + this.queryBuilder.newLine(1, false));
-        const constraints = (entityMetaData.constraints || []).select((o) => this.constraintDeclaration(o)).toArray().join("," + this.queryBuilder.newLine(1, false));
+        const columnDefinitions = Enumerable.from(entityMetaData.columns)
+            .filter((o) => !!o.columnName)
+            .map((o) => this.columnDeclaration(o, "create"))
+            .toArray()
+            .join("," + this.queryBuilder.newLine(1, false));
+        const constraints = (entityMetaData.constraints || []).map((o) => this.constraintDeclaration(o)).join("," + this.queryBuilder.newLine(1, false));
         let tableName = this.entityName(entityMetaData);
         if (name) {
             const oldName = entityMetaData.name;
@@ -191,10 +197,10 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         const defSchemaResult = (await this.connection.query<{SCHEMA: string}>({
             query: `SELECT SCHEMA_NAME() AS ${this.queryBuilder.enclose("SCHEMA")}`,
             type: QueryType.DQL
-        })).first().rows;
-        const defaultSchema = defSchemaResult.first().SCHEMA;
+        })).find(() => true).rows;
+        const defaultSchema = defSchemaResult.find(() => true).SCHEMA;
 
-        const schemas = entityTypes.select((o) => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData).toArray();
+        const schemas = entityTypes.map((o) => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData);
 
         for (const schema of schemas) {
             if (!schema.schema) {
@@ -203,7 +209,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         }
 
         const oldSchemas = await this.loadSchemas(schemas);
-        const schemaMaps = schemas.fullJoin(oldSchemas, (o1, o2) => o1.schema.toLowerCase() === o2.schema.toLowerCase() && o1.name.toLowerCase() === o2.name.toLowerCase(), (o1, o2) => ({
+        const schemaMaps = Enumerable.from(schemas).fullJoin(oldSchemas, (o1, o2) => o1.schema?.toLowerCase() === o2.schema?.toLowerCase() && o1.name.toLowerCase() === o2.name.toLowerCase(), (o1, o2) => ({
             schema: o1,
             oldSchema: o2
         }));
@@ -227,19 +233,19 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 postRollbackQueries = postRollbackQueries.concat(this.addAllNewRelations(oldSchema, schema));
             }
             else if (!oldSchema) {
-                preRollbackQueries = preRollbackQueries.concat(schema.relations.where((o) => !o.isMaster).selectMany((o) => this.dropForeignKey(o)).toArray());
+                preRollbackQueries = preRollbackQueries.concat(Enumerable.from(schema.relations).filter((o) => !o.isMaster).flatMap((o) => this.dropForeignKey(o)).toArray());
                 rollbackQueries = rollbackQueries.concat(this.dropTable(schema));
 
                 commitQueries = commitQueries.concat(this.createEntitySchema(schema));
-                postCommitQueries = postCommitQueries.concat(schema.relations.where((o) => !o.isMaster).selectMany((o) => this.addForeignKey(o)).toArray());
+                postCommitQueries = postCommitQueries.concat(Enumerable.from(schema.relations).filter((o) => !o.isMaster).flatMap((o) => this.addForeignKey(o)).toArray());
             }
             else {
                 if (this.option.removeUnmappedEntites) {
-                    preRollbackQueries = preRollbackQueries.concat(oldSchema.relations.where((o) => !o.isMaster).selectMany((o) => this.dropForeignKey(o)).toArray());
+                    preRollbackQueries = preRollbackQueries.concat(Enumerable.from(schema.relations).filter((o) => !o.isMaster).flatMap((o) => this.dropForeignKey(o)).toArray());
                     rollbackQueries = rollbackQueries.concat(this.dropTable(oldSchema));
 
                     commitQueries = commitQueries.concat(this.createEntitySchema(oldSchema));
-                    postCommitQueries = postCommitQueries.concat(oldSchema.relations.where((o) => !o.isMaster).selectMany((o) => this.addForeignKey(o)).toArray());
+                    postCommitQueries = postCommitQueries.concat(Enumerable.from(schema.relations).filter((o) => !o.isMaster).flatMap((o) => this.addForeignKey(o)).toArray());
                 }
             }
         }
@@ -250,8 +256,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         };
     }
     public async loadSchemas(entities: Array<IEntityMetaData<any>>) {
-        const schemaGroups = entities.groupBy((o) => o.schema).toArray();
-        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.select((o) => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.select((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})`;
+        const schemaGroups = Enumerable.from(entities).groupBy((o) => o.schema).toArray();
+        const tableFilters = `TABLE_CATALOG = '${this.connection.database}' AND (${schemaGroups.map((o) => `TABLE_SCHEMA = '${o.key}' AND TABLE_NAME IN (${o.map((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).join(") OR (")})`;
 
         const batchedQuery = new BatchedQuery();
         // table schema
@@ -307,7 +313,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.tables t on t.object_id = i.object_id` +
                 ` join ${this.queryBuilder.enclose(this.connection.database)}.sys.schemas s on t.schema_id = s.schema_id` +
                 ` where i.is_primary_key = 0 and i.is_unique_constraint = 0 AND t.is_ms_shipped = 0` +
-                ` and (${schemaGroups.select((o) => `s.name = '${o.key}' AND t.name IN (${o.select((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).toArray().join(") OR (")})` +
+                ` and (${schemaGroups.map((o) => `s.name = '${o.key}' AND t.name IN (${o.map((p) => this.queryBuilder.valueString(p.name)).toArray().join(",")})`).join(") OR (")})` +
                 ` order by [TABLE_SCHEMA], [TABLE_NAME], [INDEX_NAME]`,
             type: QueryType.DQL
         });
@@ -415,7 +421,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             const column = constraint.COLUMN_NAME;
 
             const constraintData = constraints[name];
-            const columnMeta = entity.columns.first((o) => o.columnName === column);
+            const columnMeta = entity.columns.find((o) => o.columnName === column);
             constraintData.meta.columns.push(columnMeta);
             switch (constraintData.type) {
                 case "PRIMARY KEY":
@@ -423,7 +429,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                     break;
                 case "CHECK":
                 case "UNIQUE":
-                    entity.constraints.add(constraintData.meta);
+                    ArrayExtension.add(entity.constraints, constraintData.meta);
                     break;
             }
         }
@@ -431,7 +437,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             const relationName = relationSchema.CONSTRAINT_NAME;
             const foreignKey = constraints[relationName];
             const targetConstraint = constraints[relationSchema.UNIQUE_CONSTRAINT_NAME];
-            const relationType = foreignKey.meta.columns.all((o) => foreignKey.meta.entity.primaryKeys.contains(o)) ? "one" : "many";
+            const relationType = foreignKey.meta.columns.every((o) => foreignKey.meta.entity.primaryKeys.includes(o)) ? "one" : "many";
 
             const updateOption: ReferenceOption = relationSchema.UPDATE_RULE;
             const deleteOption: ReferenceOption = relationSchema.DELETE_RULE;
@@ -474,7 +480,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         for (const indexSchema of indexSchemas.rows) {
             const entity = result[indexSchema.TABLE_SCHEMA + "." + indexSchema.TABLE_NAME];
             const indexName = indexSchema.INDEX_NAME;
-            let index = entity.indices.first((o) => o.name === indexName);
+            let index = entity.indices.find((o) => o.name === indexName);
             if (!index) {
                 index = {
                     name: indexName,
@@ -485,13 +491,13 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 };
                 entity.indices.push(index);
             }
-            const column = entity.columns.first((o) => o.columnName === indexSchema.COLUMN_NAME);
+            const column = entity.columns.find((o) => o.columnName === indexSchema.COLUMN_NAME);
             if (column) {
                 index.keys.push(column);
             }
         }
 
-        return Object.keys(result).select((o) => result[o]).toArray();
+        return Object.keys(result).map((o) => result[o]);
     }
     public renameColumn<TE extends object>(columnMeta: IColumnMetaData<TE>, newName: string): IQuery[] {
         const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
@@ -508,14 +514,14 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         }];
     }
     protected addAllMasterRelations<TE extends object>(entityMeta: IEntityMetaData<TE>): IQuery[] {
-        return entityMeta.relations.where((o) => o.isMaster)
-            .selectMany((o) => this.addForeignKey(o.reverseRelation)).toArray();
+        return entityMeta.relations.filter((o) => o.isMaster)
+            .flatMap((o) => this.addForeignKey(o.reverseRelation));
     }
     protected addAllNewRelations<TE extends object>(schema: IEntityMetaData<TE>, oldSchema: IEntityMetaData<TE>): IQuery[] {
-        const oldRelations = oldSchema.relations.where((o) => !o.isMaster).toArray();
-        return schema.relations.where((o) => !o.isMaster && !!o.reverseRelation)
-            .where((o) => !oldRelations.any((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
-            .selectMany((o) => this.addForeignKey(o)).toArray();
+        const oldRelations = oldSchema.relations.filter((o) => !o.isMaster);
+        return schema.relations.filter((o) => !o.isMaster && !!o.reverseRelation)
+            .filter((o) => !oldRelations.some((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+            .flatMap((o) => this.addForeignKey(o));
     }
     protected columnDeclaration<TE extends object>(columnMeta: IColumnMetaData<TE>, type: "alter" | "create" | "add" = "alter") {
         let result = `${this.queryBuilder.enclose(columnMeta.columnName)} ${this.queryBuilder.columnTypeString(this.columnType(columnMeta))}`;
@@ -639,15 +645,14 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             result = `CONSTRAINT ${this.queryBuilder.enclose(constraintMeta.name)} CHECK (${definition})`;
         }
         else {
-            const columns = constraintMeta.columns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+            const columns = constraintMeta.columns.map((o) => this.queryBuilder.enclose(o.columnName)).join(",");
             result = `CONSTRAINT ${this.queryBuilder.enclose(constraintMeta.name)} UNIQUE (${columns})`;
         }
         return result;
     }
     protected createEntitySchema<TE extends object>(schema: IEntityMetaData<TE>): IQuery[] {
         return this.createTable(schema)
-            .union(schema.indices.selectMany((o) => this.addIndex(o)))
-            .toArray();
+            .concat(schema.indices.flatMap((o) => this.addIndex(o)));
     }
     protected defaultValue<TE extends object>(columnMeta: IColumnMetaData<TE>) {
         if (columnMeta.defaultExp) {
@@ -695,8 +700,10 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         throw new Error(`${columnMeta.columnType} not supported`);
     }
     protected dropAllMasterRelations<TE extends object>(entityMeta: IEntityMetaData<TE>): IQuery[] {
-        return entityMeta.relations.where((o) => o.isMaster)
-            .selectMany((o) => this.dropForeignKey(o.reverseRelation)).toArray();
+        return Enumerable.from(entityMeta.relations)
+            .filter((o) => o.isMaster)
+            .flatMap((o) => this.dropForeignKey(o.reverseRelation))
+            .toArray();
     }
 
     protected dropAllOldRelations<TE extends object>(schema: IEntityMetaData<TE>, oldSchema: IEntityMetaData<TE>): IQuery[] {
@@ -706,18 +713,18 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             return [];
         }
         else {
-            const relations = schema.relations.where((o) => !o.isMaster).toArray();
-            return oldSchema.relations.where((o) => !o.isMaster)
-                .where((o) => !relations.any((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
-                .selectMany((o) => this.dropForeignKey(o)).toArray();
+            const relations = schema.relations.filter((o) => !o.isMaster);
+            return oldSchema.relations.filter((o) => !o.isMaster)
+                .filter((o) => !relations.some((or) => isColumnsEquals(o.relationColumns, or.relationColumns) && isColumnsEquals(o.reverseRelation.relationColumns, or.reverseRelation.relationColumns)))
+                .flatMap((o) => this.dropForeignKey(o));
         }
     }
     protected entityName<TE extends object>(entityMeta: IEntityMetaData<TE>) {
         return `${entityMeta.schema ? this.queryBuilder.enclose(entityMeta.schema) + "." : ""}${this.queryBuilder.enclose(entityMeta.name)}`;
     }
     protected foreignKeyDeclaration<TE extends object>(relationMeta: IRelationMetaData<TE>) {
-        const columns = relationMeta.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
-        const referenceColumns = relationMeta.reverseRelation.relationColumns.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(", ");
+        const columns = relationMeta.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
+        const referenceColumns = relationMeta.reverseRelation.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +
             ` FOREIGN KEY (${columns})` +
             ` REFERENCES ${this.entityName(relationMeta.target)} (${referenceColumns})`;
@@ -803,26 +810,26 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     }
     protected primaryKeyDeclaration<TE extends object>(entityMeta: IEntityMetaData<TE>) {
         const pkName = "PK_" + entityMeta.name;
-        const columnQuery = entityMeta.primaryKeys.select((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+        const columnQuery = entityMeta.primaryKeys.map((o) => this.queryBuilder.enclose(o.columnName)).join(",");
 
         return `CONSTRAINT ${this.queryBuilder.enclose(pkName)} PRIMARY KEY (${columnQuery})`;
     }
     protected updateEntitySchema<TE extends object>(schema: IEntityMetaData<TE>, oldSchema: IEntityMetaData<TE>) {
-        const oldColumns = oldSchema.columns.where((o) => !!o.columnName).toArray();
-        let columnMetas = schema.columns.where((o) => !!o.columnName).select((o) => {
-            const oldCol = oldColumns.first((c) => c.columnName.toLowerCase() === o.columnName.toLowerCase());
-            oldColumns.delete(oldCol);
+        const oldColumns = oldSchema.columns.filter((o) => !!o.columnName);
+        let columnMetas = schema.columns.filter((o) => !!o.columnName).map((o) => {
+            const oldCol = oldColumns.find((c) => c.columnName.toLowerCase() === o.columnName.toLowerCase());
+            ArrayExtension.delete(oldColumns, oldCol);
             return {
                 columnSchema: o,
                 oldColumnSchema: oldCol
             };
         });
-        columnMetas = columnMetas.union(oldColumns.select((o) => ({
+        columnMetas = columnMetas.concat(oldColumns.map((o) => ({
             columnSchema: null,
             oldColumnSchema: o
         })));
 
-        let result = columnMetas.selectMany((o) => {
+        let result = columnMetas.flatMap((o) => {
             if (o.columnSchema && o.oldColumnSchema) {
                 return this.getColumnChanges(o.columnSchema, o.oldColumnSchema);
             }
@@ -839,8 +846,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
 
         // primary key changes
         if (!isColumnsEquals(schema.primaryKeys, oldSchema.primaryKeys)) {
-            result = result.union(this.dropPrimaryKey(oldSchema));
-            result = result.union(this.addPrimaryKey(schema));
+            result = result.concat(this.dropPrimaryKey(oldSchema));
+            result = result.concat(this.addPrimaryKey(schema));
         }
 
         const isConstraintEquals = (cons1: IConstraintMetaData, cons2: IConstraintMetaData) => {
@@ -855,30 +862,30 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             return isColumnsEquals(cons1.columns, cons2.columns);
         };
         // remove old constraint
-        result = result.union(oldSchema.constraints.where((o) => !schema.constraints.any((or) => isConstraintEquals(o, or)))
-            .selectMany((o) => this.dropConstraint(o)));
+        result = result.concat(oldSchema.constraints.filter((o) => !schema.constraints.some((or) => isConstraintEquals(o, or)))
+            .flatMap((o) => this.dropConstraint(o)));
         // add new constraint
-        result = result.union(schema.constraints.where((o) => !oldSchema.constraints.any((or) => isConstraintEquals(o, or)))
-            .selectMany((o) => this.addConstraint(o)));
+        result = result.concat(schema.constraints.filter((o) => !oldSchema.constraints.some((or) => isConstraintEquals(o, or)))
+            .flatMap((o) => this.addConstraint(o)));
 
         // index
         const oldIndices = oldSchema.indices.slice(0);
-        let indexMap = schema.indices.select((o) => {
-            const oldIndex = oldIndices.first((c) => c.name === o.name);
-            oldIndices.delete(oldIndex);
+        let indexMap = schema.indices.map((o) => {
+            const oldIndex = oldIndices.find((c) => c.name === o.name);
+            ArrayExtension.delete(oldIndices, oldIndex);
             return ({
                 index: o,
                 oldIndex: oldIndex
             });
         });
-        indexMap = indexMap.union(oldIndices.select((o) => ({
+        indexMap = indexMap.concat(oldIndices.map((o) => ({
             index: null,
             oldIndex: o
         })));
-        const indicesResults = indexMap.selectMany((o) => {
+        const indicesResults = indexMap.flatMap((o) => {
             if (o.index && o.oldIndex) {
                 if (!isIndexEquals(o.index, o.oldIndex)) {
-                    return this.dropIndex(o.oldIndex).union(this.addIndex(o.index));
+                    return this.dropIndex(o.oldIndex).concat(this.addIndex(o.index));
                 }
             }
             else if (o.index) {
@@ -890,14 +897,14 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             return [];
         });
 
-        result = result.union(indicesResults);
-        return result.toArray();
+        result = result.concat(indicesResults);
+        return result;
     }
 
     // protected rebuildEntitySchema<T>(schema: IEntityMetaData<T>, oldSchema: IEntityMetaData<T>) {
-    //     const columnMetas = schema.columns.select(o => ({
+    //     const columnMetas = schema.columns.map(o => ({
     //         columnSchema: o,
-    //         oldColumnSchema: oldSchema.columns.first(c => c.columnName === o.columnName)
+    //         oldColumnSchema: oldSchema.columns.find(c => c.columnName === o.columnName)
     //     }));
     //     let result: IQuery[] = [];
     //     const cloneSchema = Object.assign({}, schema);
@@ -909,8 +916,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
     //         type: QueryType.DCL
     //     });
     //     // copy value
-    //     const newColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.columnSchema.columnName)).toArray().join(",");
-    //     const copyColumns = columnMetas.where(o => !!o.oldColumnSchema).select(o => this.queryBuilder.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
+    //     const newColumns = columnMetas.filter(o => !!o.oldColumnSchema).map(o => this.queryBuilder.enclose(o.columnSchema.columnName)).toArray().join(",");
+    //     const copyColumns = columnMetas.filter(o => !!o.oldColumnSchema).map(o => this.queryBuilder.enclose(o.oldColumnSchema.columnName)).toArray().join(",");
     //     result.push({
     //         query: `INSERT INTO ${this.entityName(cloneSchema)} (${newColumns}) SELECT ${copyColumns} FROM ${this.entityName(oldSchema)} WITH (HOLDLOCK TABLOCKX)`,
     //         type: QueryType.DML

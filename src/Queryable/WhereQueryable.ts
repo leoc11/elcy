@@ -31,11 +31,11 @@ export class WhereQueryable<T> extends Queryable<T> {
     protected readonly predicateFn: (item: T) => boolean;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "where", [this.predicate.clone()]);
+        const methodExpression = new MethodCallExpression(objectOperand, "filter", [this.predicate.clone()]);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("WHERE", this.parent.hashCode()), this.predicate.hashCode());
+        return hashCodeAdd(hashCode("FILTER", this.parent.hashCode()), this.predicate.hashCode());
     }
 }

@@ -1,13 +1,10 @@
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
+import { IQueryIncludeRelation } from "../QueryExpression/IQueryExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 
-export interface ISelectRelation<T extends object = object, TChild extends object = object> {
-    child: SelectExpression<TChild, any>;
+export interface ISelectRelation<T extends object = object, TChild extends object = object> extends IQueryIncludeRelation<T, TChild, SelectExpression<TChild>, SelectExpression<T>> {
     childColumns: IColumnExpression<TChild>[];
     isEmbedded?: boolean;
-    parent: SelectExpression<T, any>;
     parentColumns: IColumnExpression<T>[];
-    relation: IExpression<boolean>;
     type: any;
 }

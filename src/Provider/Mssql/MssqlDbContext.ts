@@ -1,7 +1,7 @@
 import { QueryType } from "../../Common/Enum";
 import { FlatObjectLike } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
-import { IEnumerable } from "../../Enumerable/IEnumerable";
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { DeferredQuery } from "../../Query/DeferredQuery";
 import { IQuery } from "../../Query/IQuery";
@@ -33,14 +33,14 @@ export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
         super.getInsertQueries
         const results: DeferredQuery[] = [];
 
-        if (!entries.any()) {
+        if (!entries.some(() => true)) {
             return results;
         }
 
         const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
         const relations = entityMeta.relations
-            .where((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
-        const columns = relations.selectMany((o) => o.relationColumns)
+            .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
+        const columns = Enumerable.from(relations).flatMap((o) => o.relationColumns)
             .union(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 

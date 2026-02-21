@@ -34,8 +34,7 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
 
     protected override getInsertQueries<T extends object>(entityMeta: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> {
         const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> = [];
-        entries = Enumerable.from(entries);
-        if (!entries.any()) {
+        if (!entries.some(() => true)) {
             return results;
         }
 
@@ -44,8 +43,8 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
         }
         const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
         const relations = Enumerable.from(entityMeta.relations)
-            .where((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
-        const columns = relations.selectMany((o) => o.relationColumns)
+            .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
+        const columns = relations.flatMap((o) => o.relationColumns)
             .union(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns).distinct();
 
@@ -55,16 +54,16 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
             insertEntryExp(insertExp, entry, columns, relations, queryParameters);
         }
 
-        let generatedColumns = Enumerable.from(entityMeta.insertGeneratedColumns).union(Enumerable.from(entityMeta.columns).where((o) => !!o.defaultExp));
-        const hasGeneratedColumn = generatedColumns.any();
+        let generatedColumns = Enumerable.from(entityMeta.insertGeneratedColumns).union(Enumerable.from(entityMeta.columns).filter((o) => !!o.defaultExp));
+        const hasGeneratedColumn = generatedColumns.some();
         if (hasGeneratedColumn) {
-            insertExp.returnings = generatedColumns.select(o => new ColumnExpression(insertExp.entity, o)).toArray();
+            insertExp.returnings = generatedColumns.map(o => new ColumnExpression(insertExp.entity, o)).toArray();
         }
 
         const insertQuery = new DeferredQuery(this, insertExp, queryParameters, (queryRes) => {
             return {
                 effectedRows: Enumerable.from(queryRes).sum((o) => o.effectedRows),
-                rows: Enumerable.from(queryRes).selectMany((o) => o.rows)
+                rows: Enumerable.from(queryRes).flatMap((o) => o.rows)
             } as IQueryResult<FlatObjectLike<T>>;
         }, option);
         results.push(insertQuery);
@@ -73,8 +72,7 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
 
     protected override getUpdateQueries<T extends object>(entityMetaData: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> {
         const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> = [];
-        entries = Enumerable.from(entries);
-        if (!entries.any()) {
+        if (!entries.some(() => true)) {
             return results;
         }
 
@@ -83,9 +81,6 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
         }
 
         const entityExp = new EntityExpression(entityMetaData.type, visitor.newAlias());
-
-        const autoUpdateColumns = Enumerable.from(entityMetaData.updateGeneratedColumns);
-        const hasUpdateColumn = autoUpdateColumns.any();
         for (const entry of entries) {
             const updateExp = new UpdateExpression(entityExp, {});
             const queryParameters: IQueryParameterMap = new Map();
@@ -111,7 +106,7 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
                 }
                 return {
                     effectedRows: effectedRows,
-                    rows: Enumerable.from(queryRes).selectMany((o) => o.rows)
+                    rows: Enumerable.from(queryRes).flatMap((o) => o.rows)
                 } as IQueryResult<FlatObjectLike<T>>;
             }, option);
             results.push(updateQuery);

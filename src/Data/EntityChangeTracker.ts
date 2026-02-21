@@ -40,14 +40,15 @@ export function proxyEntityType<TE extends object>(type: IObjectType<TE>, column
                 },
                 set(target, prop, val, receiver) {
                     const m = trackMap.get(proxyInstance) as unknown as IEventEmitter<TE, IChangeEventParam<TE>>;
-                    if (m) {
+                    const column = columnMetaMap.get(prop);
+                    if (m && column) {
                         const oldValue = Reflect.get(target, prop, receiver);
                         const result = Reflect.set(target, prop, val, receiver);
                         if (!isEqual(oldValue, val)) {
                             m.emit({
                                 newValue: val,
                                 oldValue: oldValue,
-                                column: columnMetaMap.get(prop)
+                                column: column
                             });
                         }
                         return result;

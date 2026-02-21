@@ -44,7 +44,7 @@ class DbFunctionConstruct {
         throw new CodedError(1, "Unsupported operation");
     }
     public coalesce<T>(...items: T[]): T {
-        return items.first((o) => o !== undefined && o !== null);
+        return items.find((o) => o !== undefined && o !== null);
     }
     public like(input: string, pattern: string, escape = "\\"): boolean {
         const regex = toRegExp(pattern || "", escape);

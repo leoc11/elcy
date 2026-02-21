@@ -1,3 +1,4 @@
+import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { QueryType } from "../Common/Enum";
 import { IQuery } from "./IQuery";
 
@@ -47,7 +48,7 @@ export class BatchedQuery implements IQuery {
         }
     }
     public remove(query: IQuery) {
-        this._queries.delete(query);
+        ArrayExtension.delete(this._queries, query);
         this._isBuildComplete = false;
     }
     protected buildQuery() {

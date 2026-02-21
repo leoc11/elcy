@@ -44,7 +44,7 @@ export class CheckConstraintMetaData<TE extends object> implements ICheckConstra
         const entityExp = new EntityExpression(this.entity.type, entityParamExp.name);
         replaceExpression(fnExp.body, (exp) => {
             if (exp instanceof MemberAccessExpression && exp.objectOperand === entityParamExp) {
-                const columnMeta = this.entity.columns.first((o) => o.propertyName === exp.memberName);
+                const columnMeta = this.entity.columns.find((o) => o.propertyName === exp.memberName);
                 if (columnMeta instanceof ComputedColumnMetaData) {
                     const fnExpClone = columnMeta.functionExpression.clone();
                     replaceExpression(fnExpClone, (exp2) => exp2 === fnExpClone.params[0] ? entityParamExp : exp2);

@@ -1,5 +1,5 @@
 import { Pivot, ValueType } from "../Common/Type";
-import { IEnumerable } from "../Enumerable/IEnumerable";
+import { IEnumerable } from "@elcy/enumerable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -12,11 +12,12 @@ import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { QueryableChain } from "./Interface/QueryableChain";
 
 export type TExpObject<T> = FunctionExpression<SetterObj<T>>;
 export class PivotQueryable<T,
-    TD extends { [key: string]: (o: T) => ValueType },
-    TM extends { [key: string]: (o: IEnumerable<T>) => ValueType }>
+    TD extends { [key: string]: (o: QueryableChain<T>) => ValueType },
+    TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>
     extends Queryable<Pivot<T, TD, TM>> {
     protected get dimensions() {
         if (!this._dimensions && this.dimensionFn) {

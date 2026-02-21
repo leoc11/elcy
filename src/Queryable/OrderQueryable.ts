@@ -17,14 +17,14 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export class OrderQueryable<T> extends Queryable<T> {
     protected get selectors() {
         if (!this._selectors && this.selectorsFn) {
-            this._selectors = this.selectorsFn.select((o) => {
+            this._selectors = this.selectorsFn.map((o) => {
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: Array<IExpression<((...param: T[]) => ValueType) | OrderDirection>> = [];
                 itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, T> : ExpressionBuilder.parse<ValueType, T>(selector, [this.parent.type], this.parameters));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
-            }).toArray();
+            });
         }
         return this._selectors;
     }
@@ -51,6 +51,6 @@ export class OrderQueryable<T> extends Queryable<T> {
         return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("ORDERBY", this.parent.hashCode()), this.selectors.sum((o) => o.hashCode()));
+        return hashCodeAdd(hashCode("ORDERBY", this.parent.hashCode()), this.selectors.reduce((r, o) => r + o.hashCode(), 0));
     }
 }
