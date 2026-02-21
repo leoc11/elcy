@@ -33,8 +33,7 @@
   },
   "homepage": "https://github.com/leoc11/elcy",
   "dependencies": {
-    "@elcy/enumerable": "workspace:*",
-    "reflect-metadata": "^0.2.2"
+    "@elcy/enumerable": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

@@ -154,7 +154,6 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
     private parseEntity<TType>(select: SelectExpression<TType>, row: any, resolveCache: IResolveData<TType>, resolveMap: IResolveMap, dbContext?: DbContext, itemMap?: Map<number, IResolvedRelationData | IResolvedRelationData[]>, dbEventEmitter?: DBEventEmitter<TType>) {
         let entity: any;
         let entry: EntityEntry<TType>;
-debugger;
         const parentRelation = select.parentRelation as IncludeRelation;
         const reverseRelationMap = resolveCache.reverseRelationMap;
         const dbSet = resolveCache.dbSet;

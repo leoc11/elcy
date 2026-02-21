@@ -1,10 +1,9 @@
 import "../../../src/Startup";
-import {describe, it, expect, beforeEach, afterEach, vi} from "vitest";
+import {describe, it, expect, beforeEach, afterEach} from "vitest";
 import { QueryType } from "../../../src/Common/Enum";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { ColumnIndex } from "../../../src/Decorator/ColumnIndex";
-import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { BinaryColumnMetaData } from "../../../src/MetaData/BinaryColumnMetaData";
 import { CheckConstraintMetaData } from "../../../src/MetaData/CheckConstraintMetaData";
 import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaData";
@@ -17,6 +16,7 @@ import { SchemaContext } from "./Entities/SchemaContext";
 import { SubSchema } from "./Entities/SubSchema";
 import { Enumerable } from "@elcy/enumerable";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 const db = new SchemaContext();
 mockContext(db);
@@ -71,7 +71,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
     describe("COLUMN", () => {
         it("should add new column", async () => {
             // add simple and identity column
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema);
             const binaryCol = new BinaryColumnMetaData<any>(Uint8Array);
             binaryCol.columnName = "binary";
             binaryCol.propertyName = "binary";
@@ -93,7 +93,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             });
         });
         it("should update column", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const columnMeta = entityMetaData.columns.find((o) => o.columnName === "binary") as BinaryColumnMetaData;
 
             columnMeta.default = () => new Uint8Array([0, 12, 40, 12, 0]);
@@ -123,7 +123,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
         });
         it("should update column 2", async () => {
             // remove default, column type, identity, nullable, and options
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const columnMeta = entityMetaData.columns.find((o) => o.columnName === "binary") as BinaryColumnMetaData;
 
             columnMeta.default = null;
@@ -150,7 +150,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             }));
         });
         it("should update column 3", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const columnMeta = entityMetaData.columns.find((o) => o.columnName === "binary") as BinaryColumnMetaData;
 
             columnMeta.default = null;
@@ -177,7 +177,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             });
         });
         it("should remove column", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const columnMeta = entityMetaData.columns.find((o) => o.columnName === "binary") as BinaryColumnMetaData;
             ArrayExtension.delete(entityMetaData.columns, columnMeta);
 
@@ -196,7 +196,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             });
         });
         it("should change auto increement column", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const columnMeta = Enumerable.from(entityMetaData.columns).ofType(IntegerColumnMetaData).filter((o) => o.autoIncrement).find();
             columnMeta.autoIncrement = false;
 
@@ -246,11 +246,11 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             });
 
             // remove added index
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             entityMetaData.indices.length--;
         });
         it("should remove index", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const index = entityMetaData.indices.find(() => true);
             ArrayExtension.delete(entityMetaData.indices, index);
 
@@ -274,7 +274,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
     describe("CHECK CONSTRAINT", () => {
         it("should update check", async () => {
             // index defined in entity and column
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData<Schema, any>;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData<Schema, any>;
             const check = Enumerable.from(entityMetaData.constraints).ofType<CheckConstraintMetaData<Schema>>(CheckConstraintMetaData).find((o) => o.name === "Schema_entity_check");
             const modifiedCheck = new CheckConstraintMetaData(check.name, check.entity, (entity: Schema) => entity.decimal < entity.integer);
             ArrayExtension.delete(entityMetaData.constraints, check);
@@ -300,7 +300,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             ArrayExtension.delete(entityMetaData.constraints, modifiedCheck);
         });
         it("should remove check", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const check = Enumerable.from(entityMetaData.constraints).ofType(CheckConstraintMetaData).find((o) => o.name !== "Schema_entity_check");
             ArrayExtension.delete(entityMetaData.constraints, check);
 
@@ -323,7 +323,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
     });
     describe("UNIQUE CONSTRAINT", () => {
         it("should update unique", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const unique = Enumerable.from(entityMetaData.constraints).ofType(UniqueConstraintMetaData).find((o) => o.name === "Schema_entity_unique");
             const modifiedUnique = new UniqueConstraintMetaData(unique.name, unique.entity, unique.columns.slice(1));
             ArrayExtension.delete(entityMetaData.constraints, unique);
@@ -349,7 +349,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             ArrayExtension.delete(entityMetaData.constraints, modifiedUnique);
         });
         it("should remove unique", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const unique = Enumerable.from(entityMetaData.constraints).ofType(UniqueConstraintMetaData).first((o) => o.name !== "Schema_entity_unique");
             ArrayExtension.delete(entityMetaData.constraints, unique);
 
@@ -372,7 +372,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
     });
     describe("RELATION", () => {
         it("should update relation", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, Schema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(Schema) as IEntityMetaData;
             const relationMeta = entityMetaData.relations.find(() => true);
             const oldRelCols = relationMeta.relationColumns;
             relationMeta.relationColumns = entityMetaData.columns.filter((o) => o.columnName === "primaryKey");
@@ -398,7 +398,7 @@ describe("SCHEMA BUILDER - MSSQL", () => {
             relationMeta.completeRelation(relationMeta.reverseRelation);
         });
         it("should remove fk", async () => {
-            const entityMetaData = Reflect.getOwnMetadata(entityMetaKey, SubSchema) as IEntityMetaData;
+            const entityMetaData = getEntityMetadata(SubSchema) as IEntityMetaData;
             const relationMeta = entityMetaData.relations.find((o) => !o.isMaster);
             ArrayExtension.delete(entityMetaData.relations, relationMeta);
 

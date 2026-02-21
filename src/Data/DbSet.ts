@@ -1,7 +1,6 @@
 import { ColumnGeneration } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
 import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { Enumerable } from "@elcy/enumerable";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -26,6 +25,7 @@ import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression"
 import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 export class DbSet<T extends object = object> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -36,7 +36,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     }
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type) as EntityMetaData<T>;
+            this._metaData = getEntityMetadata(this.type) as EntityMetaData<T>;
         }
         return this._metaData;
     }
@@ -92,7 +92,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         }
     }
     public deferredInsert(...items: Array<FlatObjectLike<T>>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+        if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
 
@@ -157,7 +157,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return super.deferredUpdate(setter);
     }
     public deferredUpsert(item: FlatObjectLike<T>) {
-        if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+        if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
 
@@ -182,9 +182,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return query;
     }
     public entry(entity: T | FlatObjectLike<T>) {
-        debugger;
         const key = this.getKey(entity);
-        debugger;
         let entry = this.dictionary.get(key);
         if (entry) {
             if (entry.entity !== entity) {
@@ -229,8 +227,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return entry ? entry.entity : undefined;
     }
     public getKey(id: ValueType | FlatObjectLike<T>): string {
-        debugger;
-        if (!isNotNull(id)) {
+        if (isNull(id)) {
             throw new Error("Parameter cannot be null");
         }
         if (isValue(id)) {

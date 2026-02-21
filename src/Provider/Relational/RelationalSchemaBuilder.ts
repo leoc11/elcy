@@ -7,7 +7,6 @@ import { IObjectType } from "../../Common/Type";
 import { IConnection } from "../../Connection/IConnection";
 import { Uuid } from "../../Data/Uuid";
 import { RowVersionColumn } from "../../Decorator/Column/RowVersionColumn";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
@@ -43,6 +42,7 @@ import { ISchemaBuilderOption } from "../../Query/ISchemaBuilderOption";
 import { ISchemaQuery } from "../../Query/ISchemaQuery";
 import { RelationalQueryBuilder } from "./RelationalQueryBuilder";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 const isColumnsEquals = <TE extends object>(cols1: IColumnMetaData<TE>[], cols2: IColumnMetaData<TE>[]) => {
     return cols1.length === cols2.length && cols1.every((o) => cols2.some((p) => p.columnName === o.columnName));
@@ -190,7 +190,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             comment: "You might lost your data"
         }];
     }
-    public async getSchemaQuery(entityTypes: IObjectType[]): Promise<ISchemaQuery> {
+    public async getSchemaQuery(entityTypes: IObjectType<object>[]): Promise<ISchemaQuery> {
         let commitQueries: IQuery[] = [];
         let rollbackQueries: IQuery[] = [];
 
@@ -200,7 +200,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         })).find(() => true).rows;
         const defaultSchema = defSchemaResult.find(() => true).SCHEMA;
 
-        const schemas = entityTypes.map((o) => Reflect.getOwnMetadata(entityMetaKey, o) as IEntityMetaData);
+        const schemas = entityTypes.map((o) => getEntityMetadata(o));
 
         for (const schema of schemas) {
             if (!schema.schema) {

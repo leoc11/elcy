@@ -55,14 +55,14 @@ import { EmbeddedEntityEntryMap } from "./EmbeddedEntityEntryMap";
 import { DeferredRawQuery } from "src/Query/DeferredRawQuery";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
-const connectionManagerKey = Symbol("connectionManagerKey");
-const queryCacheManagerKey = Symbol("queryCacheManagerKey");
-const resultCacheManagerKey = Symbol("resultCacheManagerKey");
+const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
+const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
+const resultCacheManagerMap = new WeakMap<Function, IResultCacheManager>();
 
 export abstract class DbContext<TDB extends DbType = DbType> implements IDBEventListener<unknown> {
     public get connectionManager() {
         if (!this._connectionManager) {
-            this._connectionManager = Reflect.getOwnMetadata(connectionManagerKey, this.constructor) as IConnectionManager<TDB>;
+            this._connectionManager = connectionManagerMap.get(this.constructor);
             if (!this._connectionManager) {
                 const conManagerOrDriver = this.factory();
                 if ((conManagerOrDriver as IConnectionManager<TDB>).getAllConnections) {
@@ -72,7 +72,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const driver = conManagerOrDriver as IDriver<TDB>;
                     this._connectionManager = new DefaultConnectionManager(driver);
                 }
-                Reflect.defineMetadata(connectionManagerKey, this._connectionManager, this.constructor);
+                connectionManagerMap.set(this.constructor, this._connectionManager);
             }
         }
 
@@ -85,10 +85,10 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     }
     public get queryCacheManager() {
         if (!this._queryCacheManager && this.queryCacheManagerFactory) {
-            this._queryCacheManager = Reflect.getOwnMetadata(queryCacheManagerKey, this.constructor) as IQueryCacheManager;
+            this._queryCacheManager = queryCacheManagerMap.get(this.constructor) as IQueryCacheManager;
             if (!this._queryCacheManager) {
                 this._queryCacheManager = this.queryCacheManagerFactory();
-                Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
+                queryCacheManagerMap.set(this.constructor, this._queryCacheManager);
             }
         }
 
@@ -102,10 +102,10 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     }
     public get resultCacheManager() {
         if (!this._resultCacheManager && this.resultCacheManagerFactory) {
-            this._resultCacheManager = Reflect.getOwnMetadata(resultCacheManagerKey, this.constructor) as IResultCacheManager;
+            this._resultCacheManager = resultCacheManagerMap.get(this.constructor);
             if (!this._resultCacheManager) {
                 this._resultCacheManager = this.resultCacheManagerFactory();
-                Reflect.defineMetadata(queryCacheManagerKey, this._queryCacheManager, this.constructor);
+                resultCacheManagerMap.set(this.constructor, this._resultCacheManager);
             }
         }
 

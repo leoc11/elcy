@@ -1,9 +1,6 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { columnMetaKey, entityMetaKey } from "../../Decorator/DecoratorKey";
-import { IRelationData, IRelationOption } from "../../Decorator/Option/IRelationOption";
+import { IRelationData } from "../../Decorator/Option/IRelationOption";
 import { Enumerable } from "@elcy/enumerable";
-import { FunctionHelper } from "../../Helper/FunctionHelper";
-import { ColumnMetaData } from "../ColumnMetaData";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IEntityMetaData } from "../Interface/IEntityMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
@@ -14,7 +11,7 @@ export class RelationMetaData<TSource extends object = object, TTarget extends o
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
     public get mappedRelationColumns(): Enumerable {
-        return this.relationColumns.intersect(this.source.columns);
+        return Enumerable.from(this.relationColumns).intersect(this.source.columns);
     }
     constructor(option: IRelationData<TSource, TTarget>) {
         this.name = option.name;

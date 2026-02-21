@@ -6,7 +6,6 @@ import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
-import { isNotNull } from "src/Helper/Util";
 import { IQueryBuilderParameter } from "src/Query/IQueryBuilderParameter";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
 import { QueryType } from "src/Common/Enum";
@@ -20,7 +19,6 @@ import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression
 import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { DeleteMode } from "src/Common/StringType";
-import { entityMetaKey } from "src/Decorator";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
@@ -184,7 +182,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             result = this.getUpdateQuery(updateQuery, param.option, param.parameters);
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
-            const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, deleteExp.entity.type);
+            const entityMeta: IEntityMetaData<T> = deleteExp.entity.metaData;
             const relations = entityMeta.relations.filter((o) => o.isMaster);
             result = result.concat(relations.flatMap((o) => {
                 if (o.completeRelationType === "many-many") {

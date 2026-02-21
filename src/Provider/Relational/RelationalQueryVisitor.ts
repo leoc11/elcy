@@ -1,7 +1,6 @@
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { JoinType, OrderDirection, RelationshipType } from "../../Common/StringType";
 import { ElementType, GenericType, IObjectType, MethodKey, StringKeyOf, ValueType } from "../../Common/Type";
-import { columnMetaKey, relationMetaKey } from "../../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../../Error/QueryBuilderError";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -62,6 +61,7 @@ import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpressi
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression";
 import { Enumerable } from "@elcy/enumerable";
+import { getColumnMetadata, getRelationMetadata } from "src/MetaData/MetaDataMapper";
 
 export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
@@ -284,7 +284,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isEntityExp(objectOperand)) {
             let column = objectOperand.columns.find((c) => c.propertyName === exp.memberName) as IColumnExpression<T, V>;
             if (!column && objectOperand instanceof EntityExpression) {
-                const computedColumnMeta: IColumnMetaData<T, V> = Reflect.getOwnMetadata(columnMetaKey, objectOperand.type, exp.memberName);
+                const computedColumnMeta: IColumnMetaData<T, V> = getColumnMetadata(objectOperand.type, exp.memberName);
                 if (computedColumnMeta instanceof ComputedColumnMetaData) {
                     const result = this.visitFunction((computedColumnMeta as ComputedColumnMetaData<T, V>).functionExpression.clone(), [objectOperand], { selectExpression: param.selectExpression });
                     if (result instanceof EntityExpression || result instanceof SelectExpression) {
@@ -335,7 +335,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
             }
 
-            const relationMeta: IBaseRelationMetaData<T, V & object> = Reflect.getOwnMetadata(relationMetaKey, objectOperand.type, exp.memberName);
+            const relationMeta: IBaseRelationMetaData<T, V & object> = getRelationMetadata(objectOperand.type, exp.memberName);
             if (relationMeta) {
                 const targetType = relationMeta.target.type;
                 const entityExp = new EntityExpression(targetType, this.newAlias());

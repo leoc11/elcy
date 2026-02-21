@@ -2,9 +2,8 @@ import { Enumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, GenericType, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, GenericType, IObjectType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../ExpressionBuilder/Expression/EqualExpression";
@@ -19,7 +18,6 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
 import { hashCode, hashCodeAdd, isNotNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryParameterMap } from "../Query/IQueryParameter";
@@ -32,6 +30,7 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 export abstract class Queryable<T = unknown> {
     public get dbContext(): DbContext {
@@ -272,7 +271,7 @@ export abstract class Queryable<T = unknown> {
                 paramStr = item.toString();
             }
             else {
-                const entityMeta = Reflect.getOwnMetadata(entityMetaKey, this.type) as IEntityMetaData<T>;
+                const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
                 if (entityMeta) {
                     const primaryItem = {} as T;
                     for (const o of entityMeta.primaryKeys) {
@@ -415,7 +414,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type)) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -559,7 +558,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type)) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -969,7 +968,7 @@ export abstract class Queryable<T = unknown> {
         }
 
         if (!queryCache) {
-            if (!Reflect.getOwnMetadata(entityMetaKey, this.type)) {
+            if (!getEntityMetadata(this.type)) {
                 throw new Error(`Only entity supported`);
             }
 

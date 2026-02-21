@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { DeleteMode, TimeZoneHandling } from "../../Common/StringType";
@@ -6,7 +5,6 @@ import { ArrayView, GenericType, SetterObj, ValueType } from "../../Common/Type"
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -67,6 +65,7 @@ import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpressi
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -531,7 +530,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             result = this.getUpdateQuery(updateQuery, param.option, param.parameters);
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
-            const entityMeta: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, deleteExp.entity.type);
+            const entityMeta: IEntityMetaData<T> = getEntityMetadata(deleteExp.entity.type);
             const relations = entityMeta.relations.filter((o) => o.isMaster);
             result = result.concat(relations.flatMap((o) => {
                 if (o.completeRelationType === "many-many") {

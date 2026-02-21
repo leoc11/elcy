@@ -1,6 +1,5 @@
 import { Enumerable } from "@elcy/enumerable";
 import { IObjectType } from "../../Common/Type";
-import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IRelationDataOption } from "../../Decorator/Option/IRelationDataOption";
 import { IColumnMetaData } from "../Interface/IColumnMetaData";
 import { IConstraintMetaData } from "../Interface/IConstraintMetaData";
@@ -9,8 +8,9 @@ import { IIndexMetaData } from "../Interface/IIndexMetaData";
 import { IRelationDataMetaData } from "../Interface/IRelationDataMetaData";
 import { IRelationMetaData } from "../Interface/IRelationMetaData";
 import { InheritanceMetaData } from "./InheritanceMetaData";
+import { getColumnMetadata } from "../MetaDataMapper";
 
-export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = unknown> implements IRelationDataMetaData<TType, TSource, TTarget> {
+export class RelationDataMetaData<TType extends object = object, TSource = unknown, TTarget = unknown> implements IRelationDataMetaData<TType, TSource, TTarget> {
     public get completeRelationType() {
         return this.sourceRelationMeta.completeRelationType;
     }
@@ -29,8 +29,8 @@ export class RelationDataMetaData<TType = unknown, TSource = unknown, TTarget = 
         this.relationName = relationOption.relationName;
 
         // TODO: possible failed coz relationOption.targetType / sourceType may undefined|string
-        this.sourceRelationColumns = relationOption.sourceRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
-        this.targetRelationColumns = relationOption.targetRelationKeys.map((o) => Reflect.getOwnMetadata(columnMetaKey, relationOption.type, o));
+        this.sourceRelationColumns = relationOption.sourceRelationKeys.map((o) => getColumnMetadata(relationOption.type, o));
+        this.targetRelationColumns = relationOption.targetRelationKeys.map((o) => getColumnMetadata(relationOption.type, o));
         this.type = relationOption.type;
     }
     public columns: Array<IColumnMetaData<TType>> = [];

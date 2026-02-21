@@ -1,12 +1,11 @@
-import "reflect-metadata";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
-import { entityMetaKey, relationMetaKey } from "../DecoratorKey";
 import { IRelationData, IRelationOption } from "../Option/IRelationOption";
 import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "src/Helper/FunctionHelper";
 import { IObjectType } from "src/Common/Type";
+import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
 
 export function Relationship<TE extends object>(name: string): ClassPropertyDecorator<TE>;
 export function Relationship<TE extends object, T extends object>(type: IObjectType<T>, option: IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined>;
@@ -27,7 +26,7 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
                     name: name
                 };
                 const parentRelationMeta = new RelationMetaData(parentData);
-                Reflect.defineMetadata(relationMetaKey, parentRelationMeta, parentData.metaData.type, parentData.propertyName);
+                setRelationMetadata(parentData.metaData.type, parentData.propertyName, parentRelationMeta);
                 entityMeta.relations.push(parentRelationMeta);
             });
         }
@@ -45,7 +44,7 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
             }
 
             handlers.push((entityMeta) => {
-                const targetMetaData: IEntityMetaData<T> = Reflect.getOwnMetadata(entityMetaKey, targetType);
+                const targetMetaData = getEntityMetadata(targetType);
                 const relationMap = Enumerable.from(option.relationMap).map(([chilProp, parentProp]) => {
                     const childPropName = typeof chilProp === "string" ? chilProp : FunctionHelper.propertyName(chilProp);
                     const childColumn = entityMeta.columns.find(o => o.propertyName === childPropName);
@@ -64,7 +63,7 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
                     relationMap: relationMap,
                 };
                 const childRelationMeta = new RelationMetaData(childData);
-                Reflect.defineMetadata(relationMetaKey, childRelationMeta, childData.metaData.type, childData.propertyName);
+                setRelationMetadata(childData.metaData.type, childData.propertyName, childRelationMeta);
                 entityMeta.relations.push(childRelationMeta);
 
                 const parentRelationMeta = targetMetaData.relations.find(o => o.name === option.name && o.isMaster && !o.target);

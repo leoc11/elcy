@@ -1,7 +1,6 @@
 import { Enumerable } from "@elcy/enumerable";
 import type { OrderDirection } from "../../Common/StringType";
 import type { IObjectType, ValueType } from "../../Common/Type";
-import { entityMetaKey } from "../../Decorator/DecoratorKey";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
@@ -11,6 +10,7 @@ import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
 export class EntityExpression<T extends object = object> implements IEntityExpression<T> {
     public get columns(): Array<IColumnExpression<T, ValueType>> {
@@ -49,7 +49,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = Reflect.getOwnMetadata(entityMetaKey, this.type);
+            this._metaData = getEntityMetadata(this.type);
         }
         return this._metaData;
     }

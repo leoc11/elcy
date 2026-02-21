@@ -2,7 +2,6 @@ import { ClassBase } from "../Common/Constant";
 import { ColumnGeneration } from "../Common/Enum";
 import { OrderDirection } from "../Common/StringType";
 import { GenericType, IObjectType, ValueType } from "../Common/Type";
-import { entityMetaKey } from "../Decorator/DecoratorKey";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { isNotNull } from "../Helper/Util";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
@@ -13,6 +12,7 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IConstraintMetaData } from "./Interface/IConstraintMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
+import { getEntityMetadata } from "./MetaDataMapper";
 import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
 export class AbstractEntityMetaData<TE extends TBase, TBase extends object = object> implements IEntityMetaData<TE, TBase> {
@@ -36,9 +36,9 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
             this.name = type.name;
         }
 
-        const parentType = Reflect.getPrototypeOf(this.type) as GenericType<TBase>;
+        const parentType = Reflect.getPrototypeOf(this.type) as IObjectType<TBase>;
         if (parentType !== ClassBase) {
-            const parentMetaData: IEntityMetaData<any> = Reflect.getOwnMetadata(entityMetaKey, parentType);
+            const parentMetaData: IEntityMetaData<any> = getEntityMetadata(parentType);
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance) {
                 this.parentType = parentType;
             }

@@ -2,7 +2,6 @@ import { Enumerable } from "@elcy/enumerable";
 import { JoinType, OrderDirection } from "../../Common/StringType";
 import { FlatObjectLike, IObjectType, SetterObj } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
-import { columnMetaKey } from "../../Decorator/DecoratorKey";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
 import { ParameterExpression } from "../../ExpressionBuilder/Expression/ParameterExpression";
@@ -20,6 +19,7 @@ import { IOrderExpression } from "./IOrderExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+import { getColumnMetadata } from "src/MetaData/MetaDataMapper";
 export class UpdateExpression<T extends object = object> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
@@ -116,7 +116,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
 export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
-    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).map((o) => Reflect.getMetadata(columnMetaKey, entityMeta.type, o) as IColumnMetaData<T>).filter((o) => !!o);
+    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).map((o) => getColumnMetadata(entityMeta.type, o) as IColumnMetaData<T>).filter((o) => !!o);
 
     for (const o of modifiedColumns) {
         const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);

@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryType } from "../../../src/Common/Enum";
 import { Uuid } from "../../../src/Data/Uuid";
-import { entityMetaKey } from "../../../src/Decorator/DecoratorKey";
 import { IEntityMetaData } from "../../../src/MetaData/Interface/IEntityMetaData";
 import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
-import { Collection, Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
+import { Order, OrderDetail, OrderDetailProperty, Product } from "../../Common/Model";
 import { MyDb } from "../../Common/MyDb";
 import { DbFunction } from "../../../src/Query/DbFunction";
 import { Enumerable } from "@elcy/enumerable";
+import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 // import { MssqlDriver } from "elcy-tedious/MssqlDriver";
 
-const orderDetailMeta = Reflect.getOwnMetadata(entityMetaKey, OrderDetail) as IEntityMetaData;
-const orderMeta = Reflect.getOwnMetadata(entityMetaKey, Order) as IEntityMetaData;
+const orderDetailMeta = getEntityMetadata(OrderDetail);
+const orderMeta = getEntityMetadata(Order) as IEntityMetaData;
 
 const db = new MyDb(
     // () => new MssqlDriver({
