@@ -4,7 +4,7 @@ import { IEntityMetaData } from "./Interface/IEntityMetaData";
 // tslint:disable-next-line:ban-types
 export class BooleanColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, boolean> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(Boolean, entityMeta);
+        super(entityMeta, Boolean);
     }
     public columnType: BooleanColumnType = "boolean";
 }

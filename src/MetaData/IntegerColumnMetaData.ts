@@ -1,11 +1,12 @@
+import { GenericType } from "src/Common/Type";
 import { IntColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class IntegerColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
-    constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(Number, entityMeta);
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<number>) {
+        super(entityMeta, Number);
     }
     public autoIncrement: boolean;
     public columnType: IntColumnType = "int";

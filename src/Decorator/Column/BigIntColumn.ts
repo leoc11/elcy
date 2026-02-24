@@ -3,9 +3,9 @@ import { IBigIntColumnOption } from "../Option/IBigIntColumnOption";
 import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function BigIntColumn<TE extends object, T extends bigint>(option?: IBigIntColumnOption): ClassPropertyDecorator<TE, T>;
-export function BigIntColumn<TE extends object, T extends bigint>(name?: string, defaultValue?: () => bigint): ClassPropertyDecorator<TE, T>;
-export function BigIntColumn<TE extends object, T extends bigint>(optionOrName?: string | IBigIntColumnOption, defaultValue?: () => bigint): ClassPropertyDecorator<TE, T> {
+export function BigIntColumn<TE extends object>(option?: IBigIntColumnOption): ClassPropertyDecorator<TE, bigint>;
+export function BigIntColumn<TE extends object>(name?: string, defaultValue?: () => bigint): ClassPropertyDecorator<TE, bigint>;
+export function BigIntColumn<TE extends object>(optionOrName?: string | IBigIntColumnOption, defaultValue?: () => bigint): ClassPropertyDecorator<TE, bigint> {
     let option: IBigIntColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -23,5 +23,5 @@ export function BigIntColumn<TE extends object, T extends bigint>(optionOrName?:
         throw new Error("Auto increment cannot has default value");
     }
 
-    return Column<TE, T>(BigIntColumnMetaData as any, option);
+    return Column<TE, bigint>(BigInt, BigIntColumnMetaData, option);
 }

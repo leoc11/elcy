@@ -151,6 +151,7 @@ export type OtherColumnType = "rowid" // oracle
  * Any column type column can be.
  */
 export type ColumnType = IntColumnType
+    | BigIntColumnType
     | DecimalColumnType
     | RealColumnType
     | DateColumnType

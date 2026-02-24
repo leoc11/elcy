@@ -1,14 +1,20 @@
-import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { ValueType } from "../../Common/Type";
 import { ClassPropertyDecorator } from "../Type";
 
-export function NullableColumn<TE extends object = object, T extends ValueType = ValueType>(): ClassPropertyDecorator<TE, T> {
-    return (_: any, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
-        const columns = context.metadata.columns as IColumnMetaData<TE>[];
-        const column = columns.find(o => o.propertyName == context.name);
-        if (!column) {
-            throw new Error("Need to register column first");
+export function NullableColumn<TE extends object = object>(): ClassPropertyDecorator<TE, ValueType> {
+    return (_: any, context: ClassFieldDecoratorContext<TE, ValueType> | ClassAccessorDecoratorContext<TE, ValueType>) => {
+        let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (!Array.isArray(columnHandlers)) {
+            context.metadata.columns = columnHandlers = [];
         }
-        column.nullable = true;
+        columnHandlers.push((entityMeta) => {
+            const column = entityMeta.columns.find(o => o.propertyName === context.name);
+            if (!column) {
+                throw new Error("Please register column first");
+            }
+
+            column.nullable = true;
+        });
     };
 }

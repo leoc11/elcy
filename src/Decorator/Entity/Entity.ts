@@ -18,10 +18,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { getEntityMetadata, setColumnMetadata, setEntityMetadata } from "../../MetaData/MetaDataMapper";
 import { ClassDecorator } from "../Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
-import { DateTimeColumnMetaData } from "src/MetaData/DateTimeColumnMetaData";
-import { RowVersionColumnMetaData } from "src/MetaData/RowVersionColumnMetaData";
 import { proxyEntityType } from "src/Data/EntityChangeTracker";
-import { BooleanColumnMetaData } from "src/MetaData/BooleanColumnMetaData";
 
 export function Entity<TE extends object>(option: IEntityOption<TE>): ClassDecorator<TE>;
 export function Entity<TE extends object>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TE>;
@@ -46,70 +43,22 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
             option.name = type.name;
         }
 
-        const columns = context.metadata.columns as IColumnMetaData<TE, any>[];
-        const proxyType = proxyEntityType(type, columns) as TC;
-        const computedColumnMap = (context.metadata.computedColumnMap || new Map()) as Map<StringKeyOf<TE>, (o: TE) => any>;
-        const primaryKeys = context.metadata.primaryKeys as Set<string | Symbol>;
+        const proxyType = proxyEntityType(type) as TC;
         const entityMetadata = new EntityMetaData(proxyType, option.name);
         entityMetadata.schema = option.schema;
-        entityMetadata.columns = columns;
 
         const entityMet = getEntityMetadata(proxyType);
         if (entityMet) {
             entityMetadata.applyOption(entityMet);
         }
 
-        for (const column of columns) {
-            if (computedColumnMap.has(column.propertyName)) {
-                throw new Error(`Cannot re-declare column: ${column.propertyName}`);
-            }
-            setColumnMetadata(proxyType, column.propertyName, column);
-            if (primaryKeys?.has(column.propertyName)) {
-                entityMetadata.primaryKeys.push(column);
-            }
-            column.entity = entityMetadata;
-        }
-
-        for (const [propertyKey, fn] of computedColumnMap) {
-            const fnExp = ExpressionBuilder.parse(fn, [type]);
-            const column = new ComputedColumnMetaData(entityMetadata, fnExp, propertyKey);
-            column.entity = entityMetadata;
-            entityMetadata.columns.push(column);
-            setColumnMetadata(proxyType, propertyKey, column);
-        }
-
-        if (context.metadata.createdDateColumn) {
-            const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.createdDateColumn);
-            if (column instanceof DateTimeColumnMetaData) {
-                entityMetadata.createDateColumn = column;
+        let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (Array.isArray(columnHandlers)) {
+            for (const handler of columnHandlers) {
+                handler(entityMetadata);
             }
         }
-
-        if (context.metadata.modifiedDateColumn) {
-            const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.modifiedDateColumn);
-            if (column instanceof DateTimeColumnMetaData) {
-                entityMetadata.modifiedDateColumn = column;
-            }
-        }
-
-        if (context.metadata.deletedColumn) {
-            const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.deletedColumn);
-            if (column instanceof BooleanColumnMetaData) {
-                entityMetadata.deletedColumn = column;
-            }
-        }
-
-        if (context.metadata.versionColumn) {
-            const column = entityMetadata.columns.find(o => o.propertyName == context.metadata.versionColumn);
-            if (column instanceof RowVersionColumnMetaData) {
-                entityMetadata.versionColumn = column;
-
-                if (!entityMetadata.concurrencyMode) {
-                    entityMetadata.concurrencyMode = "OPTIMISTIC VERSION";
-                }
-            }
-        }
-
+        
         if (option.defaultOrders) {
             entityMetadata.defaultOrders = option.defaultOrders.map((o) => {
                 const selector = o[0];

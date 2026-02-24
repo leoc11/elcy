@@ -24,7 +24,7 @@ export abstract class ColumnMetaData<TE extends object, T = unknown> implements 
     public get isPrimaryColumn(): boolean {
         return this.entity.primaryKeys.includes(this);
     }
-    constructor(type?: GenericType<T>, entityMeta?: IEntityMetaData<TE>) {
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<T>) {
         if (typeof type !== "undefined") {
             this.type = type;
         }

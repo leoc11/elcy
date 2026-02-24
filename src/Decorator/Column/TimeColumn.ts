@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { TimeColumnType } from "../../Common/ColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
 import { TimeSpan } from "../../Data/TimeSpan";
@@ -6,9 +7,9 @@ import { ITimeColumnOption } from "../Option/ITimeColumnOption";
 import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function TimeColumn<TE extends object, T extends TimeSpan>(option?: ITimeColumnOption): ClassPropertyDecorator<TE, T>;
-export function TimeColumn<TE extends object, T extends TimeSpan>(name: string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, T>;
-export function TimeColumn<TE extends object, T extends TimeSpan>(optionOrName?: ITimeColumnOption | string, dbtype?: TimeColumnType, defaultValue?: () => TimeSpan, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, T> {
+export function TimeColumn<TE extends object, T extends TimeSpan | Temporal.PlainTime>(option?: ITimeColumnOption): ClassPropertyDecorator<TE, TimeSpan | Temporal.PlainTime>;
+export function TimeColumn<TE extends object, T extends TimeSpan | Temporal.PlainTime>(name: string, dbtype?: TimeColumnType, defaultValue?: () => T, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, TimeSpan | Temporal.PlainTime>;
+export function TimeColumn<TE extends object, T extends TimeSpan | Temporal.PlainTime>(optionOrName?: ITimeColumnOption | string, dbtype?: TimeColumnType, defaultValue?: () => T, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, TimeSpan | Temporal.PlainTime> {
     let option: ITimeColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -26,5 +27,5 @@ export function TimeColumn<TE extends object, T extends TimeSpan>(optionOrName?:
         option = optionOrName;
     }
 
-    return Column<TE, T>(TimeColumnMetaData as any, option);
+    return Column<TE, TimeSpan | Temporal.PlainTime>(option.type ?? Temporal.PlainTime, TimeColumnMetaData, option);
 }

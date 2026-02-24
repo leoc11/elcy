@@ -1,9 +1,10 @@
 import { StringColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
+import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class StringColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, string> {
-    constructor() {
-        super(String);
+    constructor(entityMeta: IEntityMetaData<TE>) {
+        super(entityMeta, String);
     }
     public columnType: StringColumnType = "nvarchar";
     public length?: number;

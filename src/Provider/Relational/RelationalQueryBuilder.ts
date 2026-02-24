@@ -24,7 +24,7 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { fillZero, isColumnExp, isEntityExp, isNotNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
+import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -66,6 +66,17 @@ import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpressi
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
+
+let Temporal: typeof import("@js-temporal/polyfill").Temporal;
+let Decimal: typeof import("decimal.js").default;
+(async () => {
+  try {
+    Temporal = (await import('@js-temporal/polyfill')).Temporal;
+  } catch {}
+  try {
+    Decimal = (await import('decimal.js')).default;
+  } catch {}
+})();
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -217,7 +228,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     //#region Value Convert
     public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
         let result: any;
-        if (input === null && column.nullable) {
+        if (isNull(input) && column.nullable) {
             return null;
         }
         switch (column.type as any) {
@@ -278,6 +289,24 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
 
                 result = new (column.type as any)(input.buffer ? input.buffer : input);
+                break;
+            }
+            case Temporal?.Instant: {
+                const date = new Date(input);
+                result = Temporal.Instant.fromEpochMilliseconds(date.getTime());
+                break;
+            }
+            case Temporal?.PlainDate: {
+                const date = new Date(input);
+                result = new Temporal.PlainDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+                break;
+            }
+            case Temporal?.PlainTime: {
+                result = Temporal.PlainTime.from(String(input));
+                break;
+            }
+            case Decimal: {
+                result = new Decimal(String(input));
                 break;
             }
             default:
@@ -421,39 +450,52 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
     //#region Value
     public valueString(value: ValueType): string {
-        if (isNotNull(value)) {
-            switch (value.constructor) {
-                case Number:
-                    return this.numberString(value as number);
-                case BigInt:
-                    return this.bigIntString(value as bigint);
-                case Boolean:
-                    return this.booleanString(value as boolean);
-                case String:
-                    return this.stringString(value as string);
-                case Date:
-                    return this.dateTimeString(value as Date);
-                case TimeSpan:
-                    return this.timeString(value as TimeSpan);
-                case Uuid:
-                    return this.identifierString(value as Uuid);
-                case ArrayBuffer:
-                case Uint8Array:
-                case Uint16Array:
-                case Uint32Array:
-                case Int8Array:
-                case Int16Array:
-                case Int32Array:
-                case Uint8ClampedArray:
-                case Float32Array:
-                case Float64Array:
-                case DataView:
-                    return toHexaString(value as (ArrayBuffer | ArrayView));
-                default:
-                    throw new Error(`type "${value.constructor.name}" not supported`);
-            }
+        if (isNull(value)) {
+            return this.nullString();
         }
-        return this.nullString();
+
+        switch (value.constructor) {
+            case Number:
+                return this.numberString(value as number);
+            case BigInt:
+                return this.bigIntString(value as bigint);
+            case Boolean:
+                return this.booleanString(value as boolean);
+            case String:
+                return this.stringString(value as string);
+            case Date:
+                return this.dateTimeString(value as Date);
+            case TimeSpan:
+                return this.timeString(value as TimeSpan);
+            case Uuid:
+                return this.identifierString(value as Uuid);
+            case ArrayBuffer:
+            case Uint8Array:
+            case Uint16Array:
+            case Uint32Array:
+            case Int8Array:
+            case Int16Array:
+            case Int32Array:
+            case Uint8ClampedArray:
+            case Float32Array:
+            case Float64Array:
+            case DataView:
+                return toHexaString(value as (ArrayBuffer | ArrayView));
+            case Temporal.Instant: {
+                return this.stringString((value as Temporal.Instant).toString());
+            }
+            case Temporal.PlainDate: {
+                return this.stringString((value as Temporal.PlainDate).toString());
+            }
+            case Temporal.PlainTime: {
+                return this.stringString((value as Temporal.PlainTime).toString());
+            }
+            case Decimal: {
+                return this.stringString((value as Decimal).toFixed());
+            }
+            default:
+                throw new Error(`type "${value.constructor.name}" not supported`);
+        }
     }
     protected booleanString(value: boolean) {
         return value ? "true" : "false";

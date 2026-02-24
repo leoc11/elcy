@@ -77,6 +77,17 @@ const globalObjectMaps = new Map<string, unknown>([
     ["DbFunction", DbFunction]
 ]);
 
+(async () => {
+  try {
+    const Temporal = (await import('@js-temporal/polyfill')).Temporal;
+    globalObjectMaps.set("Temporal", Temporal);
+  } catch {}
+  try {
+    const Decimal = (await import('decimal.js')).default;
+    globalObjectMaps.set("Decimal", Decimal);
+  } catch {}
+})();
+
 const [prefixOperators, postfixOperators] = Enumerable.from(operators)
     .groupBy(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix)
     .orderBy([o => o.key, "DESC"])

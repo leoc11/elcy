@@ -353,3 +353,24 @@ relationalQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, param) =>
 });
 relationalQueryTranslator.registerMethod(DbFunction, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
 relationalQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
+
+(async () => {
+  try {
+    const Temporal = (await import('@js-temporal/polyfill')).Temporal;
+    relationalQueryTranslator.registerMethod(Temporal.Instant, "compare", (qb, exp, param) => {
+        const param1 = qb.toString(exp.params[0], param);
+        const param2 = qb.toString(exp.params[2], param);
+        return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
+    });
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate, "compare", (qb, exp, param) => {
+        const param1 = qb.toString(exp.params[0], param);
+        const param2 = qb.toString(exp.params[2], param);
+        return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
+    });
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime, "compare", (qb, exp, param) => {
+        const param1 = qb.toString(exp.params[0], param);
+        const param2 = qb.toString(exp.params[2], param);
+        return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
+    });
+  } catch {}
+})();

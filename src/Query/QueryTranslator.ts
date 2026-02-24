@@ -1,3 +1,4 @@
+import { InstantiationExpression } from "src/ExpressionBuilder/Expression/InstantiationExpression";
 import { GenericType, IObjectType } from "../Common/Type";
 import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
@@ -65,7 +66,7 @@ export class QueryTranslator {
         };
         map[""] = translateItem;
     }
-    public registerType<T, TExp extends IExpression<GenericType<T>>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerType<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(type);
         if (!map) {
             map = {};

@@ -1,11 +1,13 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { DateTimeColumnType } from "../Common/ColumnType";
 import { TimeZoneHandling } from "../Common/StringType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
+import { GenericType } from "src/Common/Type";
 
-export class DateTimeColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, Date> {
-    constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(Date, entityMeta);
+export class DateTimeColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, Date | Temporal.Instant> {
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<Date | Temporal.Instant>) {
+        super(entityMeta, type ?? Date);
     }
     public columnType: DateTimeColumnType = "datetime";
     public isCreatedDate?: boolean;

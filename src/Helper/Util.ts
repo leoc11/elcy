@@ -201,7 +201,7 @@ export const isValueType = (type: GenericType) => {
     }
 };
 export const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
-export const isNull = (value: any) => {
+export const isNull = (value: any): value is null => {
     return value == null;
 };
 export const isNativeFunction = (fn: Function) => {

@@ -1,14 +1,15 @@
-import { IntColumnType } from "../Common/ColumnType";
+import { GenericType } from "src/Common/Type";
+import { BigIntColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class BigIntColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, bigint> {
-    constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(BigInt, entityMeta);
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<bigint>) {
+        super(entityMeta, type ?? BigInt);
     }
     public autoIncrement: boolean;
-    public columnType: IntColumnType = "bigint";
+    public columnType: BigIntColumnType = "bigint";
     public size?: number;
     public applyOption(columnMeta: BigIntColumnMetaData<TE>) {
         if (typeof columnMeta.autoIncrement !== "undefined") {

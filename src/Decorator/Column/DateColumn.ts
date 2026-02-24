@@ -1,12 +1,13 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { DateColumnType } from "../../Common/ColumnType";
 import { DateColumnMetaData } from "../../MetaData/DateColumnMetaData";
 import { IDateColumnOption } from "../Option/IDateColumnOption";
 import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function DateColumn<TE extends object, T extends Date>(option?: IDateColumnOption): ClassPropertyDecorator<TE, T>;
-export function DateColumn<TE extends object, T extends Date>(name: string, dbtype?: DateColumnType, defaultValue?: () => Date): ClassPropertyDecorator<TE, T>;
-export function DateColumn<TE extends object, T extends Date>(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => Date): ClassPropertyDecorator<TE, T> {
+export function DateColumn<TE extends object, T extends Date | Temporal.PlainDate>(option?: IDateColumnOption): ClassPropertyDecorator<TE, Date | Temporal.PlainDate>;
+export function DateColumn<TE extends object, T extends Date | Temporal.PlainDate>(name: string, dbtype?: DateColumnType, defaultValue?: () => T): ClassPropertyDecorator<TE, Date | Temporal.PlainDate>;
+export function DateColumn<TE extends object, T extends Date | Temporal.PlainDate>(optionOrName?: IDateColumnOption | string, dbtype?: DateColumnType, defaultValue?: () => T): ClassPropertyDecorator<TE, Date | Temporal.PlainDate> {
     let option: IDateColumnOption = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
@@ -21,5 +22,5 @@ export function DateColumn<TE extends object, T extends Date>(optionOrName?: IDa
         option = optionOrName;
     }
 
-    return Column<TE, T>(DateColumnMetaData as any, option);
+    return Column<TE, Date | Temporal.PlainDate>(option.type ?? Date, DateColumnMetaData, option);
 }
