@@ -415,8 +415,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 return this.toInstantiationString(expression, param);
             case expression instanceof RawSqlExpression:
                 return this.toRawSqlString(expression, param);
-            case expression instanceof RawEntityExpression:
-                return this.toRawSqlString(expression, param);
             case expression instanceof SelectExpression:
                 return this.getSelectQueryString(expression, param) /*+ (expression.isSubSelect ? "" : ";")*/;
             default: {
@@ -674,9 +672,15 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             entityQ = this.getSelectQueryString(entity.subSelect, param);
         }
         else if (entity instanceof RawEntityExpression) {
-            entityQ = `(${entity.sqlStatement})`;
+            entityQ = `(${entity.sqlTemplateStrings.reduce((res, str, i) => {
+                let paramName = "";
+                if (entity.parameters.length > i) {
+                    paramName = this.toSqlParameterString(entity.parameters[i], param);
         }
-        else{
+                return res + str + paramName;
+            }, "")})`;
+        }
+        else {
             entityQ = this.entityName(entity);
         }
 

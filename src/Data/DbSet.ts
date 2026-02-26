@@ -182,8 +182,8 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public fromSql(rawQuery: string, parameters?: { [key: string]: unknown }): Queryable<T> {
-        return new RawQueryable(this, rawQuery);
+    public fromSql(strings: TemplateStringsArray, ...values: ValueType[]): Queryable<T> {
+        return new RawQueryable(this, strings, values);
     }
     public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);
