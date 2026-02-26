@@ -66,16 +66,17 @@ import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpressi
 import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
+import { RawEntityExpression } from "src/Queryable/QueryExpression/RawEntityExpression";
 
 let Temporal: typeof import("@js-temporal/polyfill").Temporal;
 let Decimal: typeof import("decimal.js").default;
 (async () => {
-  try {
-    Temporal = (await import('@js-temporal/polyfill')).Temporal;
-  } catch {}
-  try {
-    Decimal = (await import('decimal.js')).default;
-  } catch {}
+    try {
+        Temporal = (await import('@js-temporal/polyfill')).Temporal;
+    } catch { }
+    try {
+        Decimal = (await import('decimal.js')).default;
+    } catch { }
 })();
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
@@ -395,38 +396,31 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return result;
     }
     public toString<T = any>(expression: IExpression<T>, param?: IQueryBuilderParameter): string {
-        let result = "";
-        switch (expression.constructor) {
-            case MemberAccessExpression:
-                result = this.toMemberAccessString(expression as any, param);
-                break;
-            case MethodCallExpression:
-                result = this.toMethodCallString(expression as any, param);
-                break;
-            case FunctionCallExpression:
-                result = this.toFunctionCallString(expression as any, param);
-                break;
-            case SqlTableValueParameterExpression:
-            case SqlParameterExpression:
-                result = this.toSqlParameterString(expression as any, param);
-                break;
-            case ArrayValueExpression:
-                result = this.toArrayString(expression as any, param);
-                break;
-            case ValueExpression:
-                result = this.toValueString(expression as any, param);
-                break;
-            case InstantiationExpression:
-                result = this.toInstantiationString(expression as any, param);
-                break;
-            case RawSqlExpression:
-                result = this.toRawSqlString(expression as RawSqlExpression, param);
-                break;
+        switch (true) {
+            case expression instanceof MemberAccessExpression:
+                return this.toMemberAccessString(expression, param);
+            case expression instanceof MethodCallExpression:
+                return this.toMethodCallString(expression, param);
+            case expression instanceof FunctionCallExpression:
+                return this.toFunctionCallString(expression, param);
+            case expression instanceof SqlTableValueParameterExpression:
+                return this.toSqlParameterString(expression as any, param);
+            case expression instanceof SqlParameterExpression:
+                return this.toSqlParameterString(expression, param);
+            case expression instanceof ArrayValueExpression:
+                return this.toArrayString(expression, param);
+            case expression instanceof ValueExpression:
+                return this.toValueString(expression, param);
+            case expression instanceof InstantiationExpression:
+                return this.toInstantiationString(expression, param);
+            case expression instanceof RawSqlExpression:
+                return this.toRawSqlString(expression, param);
+            case expression instanceof RawEntityExpression:
+                return this.toRawSqlString(expression, param);
+            case expression instanceof SelectExpression:
+                return this.getSelectQueryString(expression, param) /*+ (expression.isSubSelect ? "" : ";")*/;
             default: {
-                if (expression instanceof SelectExpression) {
-                    return this.getSelectQueryString(expression, param) /*+ (expression.isSubSelect ? "" : ";")*/;
-                }
-                else if (isColumnExp(expression)) {
+                if (isColumnExp(expression)) {
                     return this.getColumnQueryString(expression, param);
                 }
                 else if (isEntityExp(expression)) {
@@ -441,10 +435,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 else if ((expression as IUnaryOperatorExpression).operand) {
                     return this.toOperatorString(expression as any, param);
                 }
-                throw new Error(`Expression ${expression.toString()} not supported`);
             }
         }
-        return result;
+
+        throw new Error(`Expression ${expression.toString()} not supported`);
     }
     //#endregion
 
@@ -659,27 +653,34 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return result;
     }
     protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
+        let entityQ = "";
         if (entity instanceof IntersectExpression) {
-            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
+            entityQ = "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
                 this.newLine() + "INTERSECT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
         }
         else if (entity instanceof UnionExpression) {
             const isUnionAll = this.extractValue(entity.isUnionAll, param) || false;
-            return "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
+            entityQ = "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
                 this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
         }
         else if (entity instanceof ExceptExpression) {
-            return "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect, param) +
+            entityQ = "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect, param) +
                 this.newLine() + "EXCEPT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ") AS " + this.enclose(entity.alias);
+                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            return this.getSelectQueryString(entity.subSelect, param) + " AS " + this.enclose(entity.alias);
+            entityQ = this.getSelectQueryString(entity.subSelect, param);
+        }
+        else if (entity instanceof RawEntityExpression) {
+            entityQ = `(${entity.sqlStatement})`;
+        }
+        else{
+            entityQ = this.entityName(entity);
         }
 
-        return this.entityName(entity) + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
+        return entityQ + (entity.alias ? " AS " + this.enclose(entity.alias) : "");
     }
     protected entityName<T extends object>(entityExp: IEntityExpression<T>) {
         let schemaString = "";
