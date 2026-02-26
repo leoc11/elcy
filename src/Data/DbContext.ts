@@ -167,37 +167,37 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         const entries: EntityEntry<T>[] = [];
         for (const entity of entities) {
-        const entry = this.entry(entity);
+            const entry = this.entry(entity);
             entries.push(entry);
-        if (entry.state !== EntityState.Detached) {
+            if (entry.state !== EntityState.Detached) {
                 continue;
-        }
+            }
 
-        entry.state = EntityState.Unchanged;
-        if (all) {
-            for (const relation of entry.metaData.relations) {
-                if (relation.relationType === "one") {
-                    const relEntity = entity[relation.propertyName];
-                    if (relEntity) {
-                        this.attach(relEntity as object, true);
+            entry.state = EntityState.Unchanged;
+            if (all) {
+                for (const relation of entry.metaData.relations) {
+                    if (relation.relationType === "one") {
+                        const relEntity = entity[relation.propertyName];
+                        if (relEntity) {
+                            this.attach(relEntity as object, true);
+                        }
                     }
-                }
-                else {
-                    const relEntities = entity[relation.propertyName];
-                    if (Array.isArray(relEntities)) {
-                        for (const itemEntity of relEntities) {
-                            this.attach(itemEntity, true);
+                    else {
+                        const relEntities = entity[relation.propertyName];
+                        if (Array.isArray(relEntities)) {
+                            for (const itemEntity of relEntities) {
+                                this.attach(itemEntity, true);
+                            }
                         }
                     }
                 }
-            }
-            for (const relation of entry.metaData.embeds) {
-                const relEntity = entity[relation.propertyName];
-                if (relEntity && typeof relEntity == "object") {
-                    const relEntry = this.attach(relEntity, true);
-                    if (relEntry) {
-                        entity[relation.propertyName] = relEntry.entity;
-                    }
+                for (const relation of entry.metaData.embeds) {
+                    const relEntity = entity[relation.propertyName];
+                    if (relEntity && typeof relEntity == "object") {
+                        const relEntry = this.attach(relEntity, true);
+                        if (relEntry) {
+                            entity[relation.propertyName] = relEntry.entity;
+                        }
                     }
                 }
             }
@@ -215,11 +215,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         const entries: EntityEntry<T>[] = [];
         for (const entity of entities) {
-        const entry = this.entry(entity);
+            const entry = this.entry(entity);
             entries.push(entry);
-        if (entry.state !== EntityState.Detached) {
-            entry.state = EntityState.Detached;
-        }
+            if (entry.state !== EntityState.Detached) {
+                entry.state = EntityState.Detached;
+            }
         }
         return isSingle ? entries[0] : entries;
     }
@@ -233,11 +233,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         const entries: EntityEntry<T>[] = [];
         for (const entity of entities) {
-        const entry = this.attach(entity);
+            const entry = this.attach(entity);
             entries.push(entry);
-        if (entry) {
-            entry.add();
-        }
+            if (entry) {
+                entry.add();
+            }
         }
         return isSingle ? entries[0] : entries;
     }
@@ -261,11 +261,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         const entries: EntityEntry<T>[] = [];
         for (const entity of entities) {
-        const entry = this.attach(entity);
+            const entry = this.attach(entity);
             entries.push(entry);
-        if (entry) {
-            entry.delete();
-        }
+            if (entry) {
+                entry.delete();
+            }
         }
         return isSingle ? entries[0] : entries;
     }
@@ -364,7 +364,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         // db has parameter size limit and query size limit.
         const paramPrefix = queryBuilder.namingStrategy.getAlias("param");
         let i = 0;
-        for (const [key, p] of deferredQueries.flatMap((o) => o.parameters)) {
+        for (const [key, p] of deferredQueries.flatMap((o) => Array.from(o.parameters.entries()))) {
             p.name = paramPrefix + i++;
             p.value = queryBuilder.toParameterValue(p.value, key.column);
         }

@@ -98,7 +98,6 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
             if (!this._isManyManyRelation) {
                 const childPks = this.child.allSelects.flatMap((o) => o.primaryKeys);
                 const parentPks = this.parent.allSelects.flatMap((o) => o.primaryKeys);
-                childPks.enableCache = parentPks.enableCache = true;
                 this._isManyManyRelation = this._childColumns.some((o) => !childPks.includes(o)) && this._parentColumns.some((o) => !parentPks.includes(o));
             }
         }

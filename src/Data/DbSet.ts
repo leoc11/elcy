@@ -218,7 +218,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
                     return item;
                 })
                 .toArray();
-            this.dbContext.add(entities);
+            this.dbContext.attach(entities);
             return entities;
         }, {});
         this.dbContext.deferredQueries.push(query);
