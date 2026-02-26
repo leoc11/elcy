@@ -1140,21 +1140,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (exp.methodName === "skip") {
                             if (selectOperand.paging.take) {
                                 selectOperand.paging.take = this.visit(new SubstractionExpression(selectOperand.paging.take, paramExp), param);
-                                if (selectOperand.paging.take instanceof SqlParameterExpression) {
-                                    selectOperand.paging.take.isSystem = true;
-                                }
                                 paramExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
                             }
                             selectOperand.paging.skip = this.visit(selectOperand.paging.skip ? new AdditionExpression(selectOperand.paging.skip, paramExp) : paramExp, param);
-                            if (selectOperand.paging.skip instanceof SqlParameterExpression) {
-                                selectOperand.paging.skip.isSystem = true;
-                            }
                         }
                         else {
                             selectOperand.paging.take = this.visit(selectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [selectOperand.paging.take, paramExp]) : paramExp, param);
-                            if (selectOperand.paging.take instanceof SqlParameterExpression) {
-                                selectOperand.paging.take.isSystem = true;
-                            }
                         }
                     }
                     else {

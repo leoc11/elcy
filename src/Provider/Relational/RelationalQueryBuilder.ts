@@ -676,7 +676,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 let paramName = "";
                 if (entity.parameters.length > i) {
                     paramName = this.toSqlParameterString(entity.parameters[i], param);
-        }
+                }
                 return res + str + paramName;
             }, "")})`;
         }
@@ -792,12 +792,22 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
+    protected getPagingQueryString(select: SelectExpression): string {
         let result = "";
-        if (take > 0) {
-            result += "LIMIT " + take + " ";
+        if (select.orders.length <= 0) {
+            if (select.distinct) {
+                result += `${this.newLine()}ORDER BY ${this.toString(select.projectedColumns.find(o => true))}`;
+            }
+            else {
+                result += `${this.newLine()}ORDER BY (SELECT NULL)`;
+            }
         }
-        result += "OFFSET " + skip;
+        if (select.paging.skip) {
+            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip)} ROWS`;
+        }
+        if (select.paging.take) {
+            result += `${this.newLine()}FETCH NEXT ${this.toString(select.paging.take)} ROWS ONLY`;
+        }
         return result;
     }
     protected getParameter(param: IQueryBuilderParameter) {
@@ -840,9 +850,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (selectExp.isSubSelect) {
             skipInclude = true;
         }
-
-        const take = this.extractValue(selectExp.paging.take, param) || 0;
-        const skip = this.extractValue(selectExp.paging.skip, param) || 0;
 
         const distinct = selectExp.distinct ? " DISTINCT" : "";
         const selects = Enumerable.from(selectExp.projectedColumns)
@@ -902,12 +909,13 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             }
         }
 
-        if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation))) {
+        const hasPagination = selectExp.paging.skip || selectExp.paging.take;
+        if (selectExp.orders.length > 0 && (hasPagination || !(selectExp.parentRelation instanceof JoinRelation))) {
             selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
         }
 
-        if (skip > 0 || take > 0) {
-            selectQuerySuffix += this.newLine() + this.getPagingQueryString(selectExp, take, skip);
+        if (hasPagination) {
+            selectQuerySuffix += this.getPagingQueryString(selectExp);
         }
 
         const selectQuery = `SELECT${distinct} ${selects}`

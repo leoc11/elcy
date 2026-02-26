@@ -138,12 +138,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             skipInclude = true;
         }
 
-        const take = this.extractValue(selectExp.paging.take, param) || 0;
-        const skip = this.extractValue(selectExp.paging.skip, param) || 0;
-
         const distinct = selectExp.distinct ? " DISTINCT" : "";
-        const top = skip <= 0 && take > 0 ? " TOP " + take : "";
-
         const selects = Enumerable.from(selectExp.projectedColumns)
             .map((o) => {
                 let colStr = "";
@@ -201,15 +196,16 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             }
         }
 
-        if (selectExp.orders.length > 0 && (skip > 0 || take > 0 || !(selectExp.parentRelation instanceof JoinRelation))) {
+        const hasPaging = selectExp.paging.skip || selectExp.paging.take;
+        if (selectExp.orders.length > 0 && (hasPaging || !(selectExp.parentRelation instanceof JoinRelation))) {
             selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.orders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
         }
 
-        if (skip > 0) {
-            selectQuerySuffix += this.newLine() + this.getPagingQueryString(selectExp, take, skip);
+        if (hasPaging) {
+            selectQuerySuffix += this.getPagingQueryString(selectExp);
         }
 
-        const selectQuery = `SELECT${distinct}${top} ${selects}`
+        const selectQuery = `SELECT${distinct} ${selects}`
             + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
 
         if (!skipInclude) {
@@ -346,17 +342,6 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             return new (column.type as IObjectType<T>)(input.buffer ? input.buffer : input);
         }
         return super.toPropertyValue(input, column);
-    }
-    protected getPagingQueryString(select: SelectExpression, take: number, skip: number): string {
-        let result = "";
-        if (select.orders.length <= 0) {
-            result += "ORDER BY (SELECT NULL)" + this.newLine();
-        }
-        result += "OFFSET " + skip + " ROWS";
-        if (take > 0) {
-            result += this.newLine() + "FETCH NEXT " + take + " ROWS ONLY";
-        }
-        return result;
     }
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";

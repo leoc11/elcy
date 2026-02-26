@@ -67,7 +67,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             }
             paramObj.set(p.name, p.value);
         }
-        
+
         return paramObj;
     }
     protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderParameter): string {
