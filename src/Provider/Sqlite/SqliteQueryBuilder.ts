@@ -14,6 +14,7 @@ import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpressi
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
+import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 
 export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -100,6 +101,16 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DML
         };
         result.push(updateCommand);
+        return result;
+    }
+    protected override getPagingQueryString(select: SelectExpression): string {
+        let result = "";
+        if (select.paging.take) {
+            result += `${this.newLine()}LIMIT ${this.toString(select.paging.take)}`;
+        }
+        if (select.paging.skip) {
+            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip)}`;
+        }
         return result;
     }
 }
