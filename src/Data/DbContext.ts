@@ -157,10 +157,20 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
         return set.entry(entity);
     }
-    public attach<T extends object>(entity: T, all = false) {
+    public attach<T extends object>(entity: T, all?: boolean): EntityEntry<T>;
+    public attach<T extends object>(entities: T[], all?: boolean): EntityEntry<T>[];
+    public attach<T extends object>(entities: T | T[], all = false) {
+        let isSingle = false;
+        if (!Array.isArray(entities)) {
+            isSingle = true;
+            entities = [entities];
+        }
+        const entries: EntityEntry<T>[] = [];
+        for (const entity of entities) {
         const entry = this.entry(entity);
+            entries.push(entry);
         if (entry.state !== EntityState.Detached) {
-            return entry;
+                continue;
         }
 
         entry.state = EntityState.Unchanged;
@@ -188,25 +198,48 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     if (relEntry) {
                         entity[relation.propertyName] = relEntry.entity;
                     }
+                    }
                 }
             }
         }
 
-        return entry;
+        return isSingle ? entries[0] : entries;
     }
-    public detach<T extends object>(entity: T) {
+    public detach<T extends object>(entity: T): EntityEntry<T>;
+    public detach<T extends object>(entities: T[]): EntityEntry<T>[];
+    public detach<T extends object>(entities: T | T[]) {
+        let isSingle = false;
+        if (!Array.isArray(entities)) {
+            isSingle = true;
+            entities = [entities];
+        }
+        const entries: EntityEntry<T>[] = [];
+        for (const entity of entities) {
         const entry = this.entry(entity);
+            entries.push(entry);
         if (entry.state !== EntityState.Detached) {
             entry.state = EntityState.Detached;
         }
-        return entry;
+        }
+        return isSingle ? entries[0] : entries;
     }
-    public add<T extends object>(entity: T) {
+    public add<T extends object>(entity: T): EntityEntry<T>;
+    public add<T extends object>(entities: T[]): EntityEntry<T>[];
+    public add<T extends object>(entities: T | T[]): EntityEntry<T> | EntityEntry<T>[] {
+        let isSingle = false;
+        if (!Array.isArray(entities)) {
+            isSingle = true;
+            entities = [entities];
+        }
+        const entries: EntityEntry<T>[] = [];
+        for (const entity of entities) {
         const entry = this.attach(entity);
+            entries.push(entry);
         if (entry) {
             entry.add();
         }
-        return entry;
+        }
+        return isSingle ? entries[0] : entries;
     }
     public update<T extends object>(entity: T, originalValues?: FlatObjectLike<T>) {
         const entry = this.attach(entity);
@@ -218,12 +251,23 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         return entry;
     }
-    public delete<T extends object>(entity: T) {
+    public delete<T extends object>(entity: T): EntityEntry<T>;
+    public delete<T extends object>(entities: T[]): EntityEntry<T>[];
+    public delete<T extends object>(entities: T | T[]) {
+        let isSingle = false;
+        if (!Array.isArray(entities)) {
+            isSingle = true;
+            entities = [entities];
+        }
+        const entries: EntityEntry<T>[] = [];
+        for (const entity of entities) {
         const entry = this.attach(entity);
+            entries.push(entry);
         if (entry) {
             entry.delete();
         }
-        return entry;
+        }
+        return isSingle ? entries[0] : entries;
     }
     //#endregion
     public clear() {
@@ -294,15 +338,15 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     }
     public async executeDeferred(deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) {
-            deferredQueries = Enumerable.from(this.deferredQueries.splice(0));
+            deferredQueries = this.deferredQueries.splice(0);
         }
 
         const queryBuilder = this.queryBuilder;
 
         // check cached
         if (this.resultCacheManager) {
-            deferredQueries = Enumerable.from(deferredQueries).toArray();
-            const cacheQueries = deferredQueries.filter((o) => o.command instanceof SelectExpression && o.queryOption.resultCache !== "none");
+            const deferredArray = ArrayExtension.asArray(deferredQueries);
+            const cacheQueries = deferredArray.filter((o) => o.command instanceof SelectExpression && o.queryOption.resultCache !== "none");
             const cachedResults = await this.resultCacheManager.gets(...cacheQueries.map((o) => o.hashCode().toString()));
             let index = 0;
             for (const cacheQuery of cacheQueries) {
@@ -310,12 +354,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 if (res) {
                     cacheQuery.buildQuery(queryBuilder);
                     cacheQuery.resolve(res);
-                    ArrayExtension.delete(deferredQueries, cacheQuery);
+                    ArrayExtension.delete(deferredArray, cacheQuery);
                 }
             }
+            deferredQueries = deferredArray;
         }
-
-        deferredQueries = Enumerable.from(deferredQueries);
 
         // analyze parameters
         // db has parameter size limit and query size limit.
@@ -488,7 +531,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             await this.executeDeferred(Enumerable.from(deleteQueries).flatMap((o) => o[1]));
 
             const allInsertQueries = identityInsertQueries
-                .union(nonIdentityInsertQueries, true);
+                .concat(nonIdentityInsertQueries);
             allInsertQueries.enableCache = true;
             // execute all identity insert queries
             let i = 0;
@@ -496,7 +539,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 await this.executeDeferred(queries);
 
                 i++;
-                const values = Enumerable.from(queries).flatMap((o) => o.value.rows);
+                const values = queries.flatMap((o) => o.value.rows);
                 const transformer = new ExpressionExecutor(values as { [key: number]: unknown });
                 for (const dQ of allInsertQueries.skip(i).flatMap((o) => o[1])) {
                     for (const [k, p] of Enumerable.from(dQ.parameters).filter(([, param]) => param.name === entityMeta.name)) {
@@ -506,7 +549,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
 
             const allQueries = nonIdentityInsertQueries.flatMap((o) => o[1])
-                .union(Enumerable.from(updateQueries.values()).flatMap((o) => o), true);
+                .concat(Enumerable.from(updateQueries.values()).flatMap((o) => o));
             await this.executeDeferred(allQueries);
 
             // accept delete changes.
@@ -568,9 +611,9 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
         });
 
-        const deferreds = Enumerable.from(insertQueries.values())
-            .union(Enumerable.from(updateQueries.values()), true)
-            .union(Enumerable.from(deleteQueries.values()), true);
+        const deferreds = Enumerable.from<DeferredQuery<IQueryResult>[]>(insertQueries.values())
+            .concat(updateQueries.values())
+            .concat(deleteQueries.values());
         return deferreds.flatMap((o) => o).sum((o) => o.value.effectedRows);
     }
 

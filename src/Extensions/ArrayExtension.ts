@@ -1,3 +1,5 @@
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
+
 export class ArrayExtension {
     static delete<T>(array: T[], ...items: T[]) {
         for (const item of items) {
@@ -13,5 +15,12 @@ export class ArrayExtension {
                 array.push(item);
             }
         }
+    }
+    static asArray<T>(array: IEnumerable<T>): T[] {
+        if (Array.isArray(array)) {
+            return array;
+        }
+
+        return Enumerable.from(array).toArray();
     }
 }

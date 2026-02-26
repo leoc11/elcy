@@ -1,4 +1,4 @@
-import { ColumnGeneration } from "../Common/Enum";
+import { ColumnGeneration, QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
 import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
@@ -26,6 +26,8 @@ import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
+import { DeferredRawQuery } from "src/Query/DeferredRawQuery";
+import { IQuery } from "src/Query/IQuery";
 
 export class DbSet<T extends object = object> extends Queryable<T> {
     public get dbContext(): DbContext {
@@ -181,6 +183,47 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
+    public async fromSql(rawQuery: string, parameters?: { [key: string]: unknown }) {
+        const query = this.deferredFromSql(rawQuery, parameters);
+        return await query.execute();
+    }
+    public deferredFromSql(rawQuery: string, parameters?: { [key: string]: unknown }) {
+        const queryCommand: IQuery = {
+            query: rawQuery,
+            type: QueryType.DQL,
+            parameters: new Map()
+        };
+        const command: IQueryExpression = {
+            paramExps: [],
+            type: Array,
+            itemType: this.type,
+            clone: () => command,
+            hashCode: () => 0,
+            getEffectedEntities: () => []
+        };
+        if (parameters) {
+            for (const prop in parameters) {
+                const value = parameters[prop];
+                queryCommand.parameters.set(prop, value);
+            }
+        }
+        const query = new DeferredRawQuery(this.dbContext, queryCommand, command, new Map(), (result) => {
+            const entities = Enumerable.from(result)
+                .flatMap((o) => o.rows)
+                .map((o: T) => {
+                    let item: T = new (this.type)();
+                    for (const prop in o) {
+                        item[prop] = o[prop];
+                    }
+                    return item;
+                })
+                .toArray();
+            this.dbContext.add(entities);
+            return entities;
+        }, {});
+        this.dbContext.deferredQueries.push(query);
+        return query;
+    }
     public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);
         let entry = this.dictionary.get(key);
@@ -218,7 +261,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
                 entity = await super.find(idOrPredicate);
             }
         }
-        
+
         return entity;
     }
     public findLocal(id: ValueType | FlatObjectLike<T>): T {
