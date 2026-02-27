@@ -27,7 +27,7 @@ import type { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import type { IQuery } from "../Query/IQuery";
 import type { IQueryBuilder } from "../Query/IQueryBuilder";
-import type { IQueryOption } from "../Query/IQueryOption";
+import type { IQueryOption, ISaveChangesOption } from "../Query/IQueryOption";
 import type { IQueryParameterMap } from "../Query/IQueryParameter";
 import type { IQueryResult } from "../Query/IQueryResult";
 import type { IQueryResultParser } from "../Query/IQueryResultParser";
@@ -48,12 +48,12 @@ import { upsertEntryExp, UpsertExpression } from "../Queryable/QueryExpression/U
 import { DbSet } from "./DbSet";
 import { EntityEntry } from "./EntityEntry";
 import { EntityState } from "./EntityState";
-import { EntityEntryMap } from "./EntityEntryMap";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import type { IDBEventListener } from "./Event/IDBEventListener";
 import { EmbeddedEntityEntryMap } from "./EmbeddedEntityEntryMap";
 import { DeferredRawQuery } from "src/Query/DeferredRawQuery";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { EntityChangeMap } from "./EntityChangeMap";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -115,23 +115,18 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         if (factory) {
             this.factory = factory;
         }
-        this.entityEntries = {
-            add: new EntityEntryMap(),
-            delete: new EntityEntryMap(),
-            update: new EntityEntryMap()
-        };
         this.entityTypes = types;
     }
     public afterDelete?: <T>(entity: T, param: IDeleteEventParam) => void;
     public afterLoad?: <T>(entity: T) => void;
     public afterSave?: <T>(entity: T, param: ISaveEventParam) => void;
     public beforeDelete?: <T>(entity: T, param: IDeleteEventParam) => boolean;
+    public beforeSave?: <T>(entity: T, param: ISaveEventParam) => boolean;
 
     //#region DB Event Listener
-    public beforeSave?: <T>(entity: T, param: ISaveEventParam) => boolean;
     public connection?: IConnection;
     public deferredQueries: DeferredQuery[] = [];
-    public entityEntries: { [key in "add" | "update" | "delete"]: EntityEntryMap };
+    public entityEntries = new EntityChangeMap();
     public readonly entityTypes: Array<IObjectType>;
     public modifiedEmbeddedEntries: EmbeddedEntityEntryMap = new EmbeddedEntityEntryMap();
     protected readonly factory: () => IConnectionManager<TDB> | IDriver<TDB>;
@@ -272,9 +267,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     //#endregion
     public clear() {
         this.modifiedEmbeddedEntries.clear();
-        this.entityEntries.delete.clear();
-        this.entityEntries.add.clear();
-        this.entityEntries.update.clear();
+        this.entityEntries.reset();
         for (const [, dbSet] of this._cachedDbSets) {
             dbSet.clear();
         }
@@ -458,7 +451,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     //#endregion
 
     //#region Update
-    public async saveChanges(options?: IQueryOption): Promise<number> {
+    public async saveChanges(options?: ISaveChangesOption): Promise<number> {
+        if (!this.entityEntries.hasChanges()) {
+            return 0;
+        }
+
         const insertQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult<object>>>> = new Map();
         const updateQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult<object>>>> = new Map();
         const deleteQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult>>> = new Map();
@@ -552,7 +549,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 .concat(Enumerable.from(updateQueries.values()).flatMap((o) => o));
             await this.executeDeferred(allQueries);
 
-            // accept delete changes.
+            // emit delete changes.
             for (const [entityMeta] of deleteQueries) {
                 const eventEmitter = getEventEmitter(entityMeta, this);
                 const entityEntries = orderedEntityDelete.get(entityMeta);
@@ -560,7 +557,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     type: deleteMode ? deleteMode : entityMeta.deletedColumn ? "soft" : "hard"
                 };
                 for (const entry of entityEntries) {
-                    entry.acceptChanges();
                     eventEmitter.emitAfterDeleteEvent(deleteParam, entry);
                 }
             }
@@ -584,7 +580,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                             }
                         }
                     }
-                    entityEntry.acceptChanges();
                     eventEmitter.emitAfterSaveEvent({ type: "insert" }, entityEntry);
                 }
             }
@@ -605,16 +600,44 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                             }
                         }
                     }
-                    entityEntry.acceptChanges();
                     eventEmitter.emitAfterSaveEvent({ type: "update" }, entityEntry);
                 }
             }
+
+            if (options?.acceptAllChangesOnSuccess !== false) {
+                this.acceptAllChanges();
+            }
         });
 
-        const deferreds = Enumerable.from<DeferredQuery<IQueryResult>[]>(insertQueries.values())
+        const effectedRow = Enumerable.from<DeferredQuery<IQueryResult>[]>(insertQueries.values())
             .concat(updateQueries.values())
-            .concat(deleteQueries.values());
-        return deferreds.flatMap((o) => o).sum((o) => o.value.effectedRows);
+            .concat(deleteQueries.values())
+            .flatMap(o => o)
+            .sum(o => o.value.effectedRows);
+
+        return effectedRow;
+    }
+    protected acceptAllChanges() {
+        const deletedEntities = Enumerable.from(this.entityEntries.delete)
+            .orderBy([(o) => o[0].priority, "ASC"])
+            .flatMap(o => o[1]);
+        for (const entry of deletedEntities) {
+            entry.acceptChanges();
+        }
+
+        const addedEntities = Enumerable.from(this.entityEntries.add)
+            .orderBy([(o) => o[0].priority, "ASC"])
+            .flatMap(o => o[1]);
+        for (const entry of addedEntities) {
+            entry.acceptChanges();
+        }
+        
+        const updatedEntities = Enumerable.from(this.entityEntries.update)
+            .orderBy([(o) => o[0].priority, "ASC"])
+            .flatMap(o => o[1]);
+        for (const entry of updatedEntities) {
+            entry.acceptChanges();
+        }
     }
 
     //#region Entity Tracker

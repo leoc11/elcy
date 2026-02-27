@@ -1,5 +1,5 @@
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
-import { IEventDispacher, IEventEmitter, IEventHandler } from "./IEventHandler";
+import { IAsyncEventEmitter, IEventDispacher, IEventEmitter, IEventHandler } from "./IEventHandler";
 
 export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): [IEventHandler<TSource, TArgs>, IEventDispacher<TArgs>] => {
     const handlers: Array<(source: TSource, args: TArgs) => boolean | void> = [];
@@ -31,9 +31,39 @@ export const eventEmitterFactory = <TSource, TArgs = unknown>(source: TSource, s
         remove: (handler) => {
             handlers.delete(handler);
         },
+        isEmpty: () => {
+            return !!handlers.size;
+        },
+        clear: () => {
+            handlers.clear();
+        },
         emit: (args: TArgs) => {
             for (const handler of handlers) {
                 if (handler(source, args) === false && stopOnFalse) {
+                    break;
+                }
+            }
+        }
+    };
+};
+export const asyncEventEmitterFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): IAsyncEventEmitter<TSource, TArgs> => {
+    const handlers = new Set<(source: TSource, args: TArgs) => Promise<boolean> | Promise<void>>();
+    return {
+        add: (handler) => {
+            handlers.add(handler);
+        },
+        remove: (handler) => {
+            handlers.delete(handler);
+        },
+        isEmpty: () => {
+            return !!handlers.size;
+        },
+        clear: () => {
+            handlers.clear();
+        },
+        emit: async (args: TArgs) => {
+            for (const handler of handlers) {
+                if (await handler(source, args) === false && stopOnFalse) {
                     break;
                 }
             }

@@ -10,6 +10,9 @@ export class EntityEntryMap implements Iterable<[IEntityMetaData, EntityEntry[]]
     public get<T extends object>(entityMeta: IEntityMetaData<T>): EntityEntry<T>[] | undefined {
         return this.map.get(entityMeta) as EntityEntry<T>[] | undefined;
     }
+    public empty() {
+        return this.map.size === 0;
+    }
     public clear() {
         this.map.clear();
     }

@@ -22,3 +22,6 @@ export interface IQueryOption {
     // batchSize?: number;
     // batchDelay?: number;
 }
+export interface ISaveChangesOption extends IQueryOption {
+    acceptAllChangesOnSuccess?: boolean;
+}
