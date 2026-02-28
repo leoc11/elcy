@@ -1,4 +1,4 @@
-import type { IObjectType } from "../../Common/Type";
+import { EntityMetaData } from "src/MetaData/EntityMetaData";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { EntityExpression } from "./EntityExpression";
@@ -6,8 +6,14 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export class RawEntityExpression<T extends object = object> extends EntityExpression<T> {
     public readonly parameters: SqlParameterExpression<unknown>[] = [];
-    constructor(public readonly type: IObjectType<T>, public alias: string, public readonly sqlTemplateStrings: TemplateStringsArray) {
-        super(type, alias);
+    constructor(metaData: EntityMetaData<T>, public alias: string, public readonly sqlTemplateStrings: TemplateStringsArray) {
+        super(metaData.type, alias);
+        this._rawMetaData = metaData;
+    }
+
+    private _rawMetaData: EntityMetaData<T>;
+    public override get metaData() {
+        return this._rawMetaData;
     }
     public addParameter(paramExp: SqlParameterExpression<unknown>) {
         this.parameters.push(paramExp);
@@ -16,7 +22,7 @@ export class RawEntityExpression<T extends object = object> extends EntityExpres
         if (!replaceMap) {
             replaceMap = new Map();
         }
-        const clone = new RawEntityExpression(this.type, this.alias, this.sqlTemplateStrings);
+        const clone = new RawEntityExpression(this.metaData, this.alias, this.sqlTemplateStrings);
         replaceMap.set(this, clone);
         clone.columns = this.columns.map((o) => {
             let cloneCol = clone.columns.find((c) => c.propertyName === o.propertyName);

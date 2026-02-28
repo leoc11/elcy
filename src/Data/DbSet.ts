@@ -184,7 +184,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return query;
     }
     public fromSql(strings: TemplateStringsArray, ...values: ValueType[]): Queryable<T> {
-        return new RawQueryable(this, strings, values);
+        return new RawQueryable(strings, values, this);
     }
     public entry(entity: T | FlatObjectLike<T>) {
         const key = this.getKey(entity);

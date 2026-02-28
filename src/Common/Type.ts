@@ -29,12 +29,22 @@ export type MethodReturnType<T, K extends StringKeyOf<T>> = T[K] extends (...arg
 export type SetterObj<T> = { [K in StringKeyOf<T>]?: IExpression<T[K] & ValueType> }
 
 export type Merge<T1, T2> = {
-    [K in StringKeyOf<T1> | StringKeyOf<T2>]: 
-        K extends StringKeyOf<T1>
-        ? K extends StringKeyOf<T2>
-            ? T1[K] | T2[K]
-            : T1[K]
-        : K extends StringKeyOf<T2>
-            ? T2[K]
-            : never;
+    [K in StringKeyOf<T1> | StringKeyOf<T2>]:
+    K extends StringKeyOf<T1>
+    ? K extends StringKeyOf<T2>
+    ? T1[K] | T2[K]
+    : T1[K]
+    : K extends StringKeyOf<T2>
+    ? T2[K]
+    : never;
+};
+
+export type RawSchema = Record<string, GenericType<any>>;
+export type RawSchemaType<T extends RawSchema> = {
+    [K in keyof T]: T[K] extends NumberConstructor ? number
+    : T[K] extends StringConstructor ? string
+    : T[K] extends BooleanConstructor ? boolean
+    : T[K] extends BigIntConstructor ? bigint
+    : T[K] extends DateConstructor ? Date
+    : T[K] extends GenericType<infer U> ? U : never;
 };

@@ -4,20 +4,60 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { RawEntityExpression } from "./QueryExpression/RawEntityExpression";
-import { IObjectType } from "src/Common/Type";
-import { DbSet } from "src/Data/DbSet";
-import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
+import { GenericType, IObjectType, RawSchema, StringKeyOf, ValueType } from "../Common/Type";
+import { DbSet } from "../Data/DbSet";
+import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
+import { DeleteMode } from "../Common/StringType";
+import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
+import { QueryableChain } from "./Interface/QueryableChain";
+import { DeferredQuery } from "../Query/DeferredQuery";
+import { EntityMetaData } from "../MetaData/EntityMetaData";
+import { DbContext } from "../Data/DbContext";
+import { CustomColumnMetaData } from "../MetaData/CustomColumnMetaData";
 
 export class RawQueryable<T extends object> extends Queryable<T> {
     declare public type: IObjectType<T>;
-    public readonly values: any[];
-    constructor(parent: DbSet<T>, public readonly sqlTemplateStrings: TemplateStringsArray, values: any[]) {
-        super(parent.type, parent);
-        this.values = values;
+    constructor(sqlTemplateStrings: TemplateStringsArray, values: any[], dbSet: DbSet<T>);
+    constructor(sqlTemplateStrings: TemplateStringsArray, values: any[], objectType: RawSchema, context: DbContext);
+    constructor(public readonly sqlTemplateStrings: TemplateStringsArray, public readonly values: any[], objectTypeOrDbSet: RawSchema | DbSet<T>, context?: DbContext) {
+        let dbSet: DbSet<T>;
+        let objectType: Record<string, GenericType<ValueType>>;
+        if (objectTypeOrDbSet instanceof DbSet) {
+            dbSet = objectTypeOrDbSet;
+            context = dbSet.dbContext;
+        }
+        else {
+            objectType = objectTypeOrDbSet;
+        }
+        super(dbSet?.type ?? Object as unknown as IObjectType<T>, dbSet as any);
+        this._dbContext = context;
+        this.isView = !dbSet;
+        if (dbSet) {
+            this._metaData = dbSet.metaData;
+        }
+        else if (objectType) {
+            const objectMetaData = new EntityMetaData(this.type);
+            for (const prop in objectType) {
+                const columnMeta = new CustomColumnMetaData(objectMetaData, objectType[prop]);
+                columnMeta.propertyName = prop as StringKeyOf<T>;
+                columnMeta.columnName = String(prop);
+                columnMeta.nullable = true;
+                columnMeta.isProjected = true;
+                objectMetaData.columns.push(columnMeta);
+            }
+            this._metaData = objectMetaData;
+        }
     }
 
+    protected isView: boolean;
+    private _dbContext: DbContext;
+    public get dbContext(): DbContext {
+        return this._dbContext;
+    }
+
+    private _metaData: EntityMetaData<T>;
     public flatQueryParameter(param?: { index: number }) {
-        const flatParam = this.parent.flatQueryParameter(param);
+        const flatParam = this.parent?.flatQueryParameter(param) ?? {};
         for (const prop in this.values) {
             flatParam[`${param.index}:${prop}`] = this.values[prop];
         }
@@ -32,7 +72,7 @@ export class RawQueryable<T extends object> extends Queryable<T> {
             const paramExp = new ParameterExpression(`${visitor.parameterIndex}:${prop}`, this.values[prop]?.constructor);
             valueParameters.push(paramExp);
         }
-        const entityExp = new RawEntityExpression(this.type, visitor.newAlias(), this.sqlTemplateStrings);
+        const entityExp = new RawEntityExpression(this._metaData, visitor.newAlias(), this.sqlTemplateStrings);
         const result = new SelectExpression(entityExp);
         for (const paramExp of valueParameters) {
             const sqlParamExp = result.addSqlParameter(paramExp);

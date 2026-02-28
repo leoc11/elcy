@@ -2,7 +2,7 @@ import type { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import type { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { QueryType } from "../Common/Enum";
 import type { DbType, DeleteMode, IsolationLevel } from "../Common/StringType";
-import type { FlatObjectLike, GenericType, IObjectType } from "../Common/Type";
+import type { FlatObjectLike, GenericType, IObjectType, RawSchema, RawSchemaType, ValueType } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import type { IConnection } from "../Connection/IConnection";
 import type { IConnectionManager } from "../Connection/IConnectionManager";
@@ -54,6 +54,8 @@ import { EmbeddedEntityEntryMap } from "./EmbeddedEntityEntryMap";
 import { DeferredRawQuery } from "src/Query/DeferredRawQuery";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { EntityChangeMap } from "./EntityChangeMap";
+import { RawQueryable } from "src/Queryable/RawQueryable";
+import { IRawQueryView } from "./Interface/IRawQueryView";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -283,6 +285,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             this.connection = null;
             await con.close();
         }
+    }
+
+    raw<TSchema extends RawSchema>(schema: TSchema): IRawQueryView<TSchema> {
+        return {
+            fromSql: (strings: TemplateStringsArray, ...values: ValueType[]): RawQueryable<RawSchemaType<TSchema>> => {
+                return new RawQueryable<RawSchemaType<TSchema>>(strings, values, schema, this);
+            }
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -631,7 +641,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         for (const entry of addedEntities) {
             entry.acceptChanges();
         }
-        
+
         const updatedEntities = Enumerable.from(this.entityEntries.update)
             .orderBy([(o) => o[0].priority, "ASC"])
             .flatMap(o => o[1]);
