@@ -46,6 +46,7 @@ export class MemberAccessExpression<TE extends object, K extends StringKeyOf<TE>
         this._type = type;
     }
     public itemType?: GenericType;
+    public isOptional?: boolean;
     private _type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
@@ -53,15 +54,14 @@ export class MemberAccessExpression<TE extends object, K extends StringKeyOf<TE>
         }
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const clone = new MemberAccessExpression<TE, K, T>(objectOperand, this.memberName);
+        clone.isOptional = this.isOptional;
         replaceMap.set(this, clone);
         return clone;
     }
     public hashCode() {
-        return hashCode("." + this.memberName, this.objectOperand.hashCode());
+        return hashCode(`${this.isOptional ? "?" : ""}.${this.memberName}`, this.objectOperand.hashCode());
     }
     public toString(): string {
-        let result = this.objectOperand.toString();
-        result += "." + this.memberName;
-        return result;
+        return `${this.objectOperand}${this.isOptional ? "?" : ""}.${this.memberName}`;
     }
 }

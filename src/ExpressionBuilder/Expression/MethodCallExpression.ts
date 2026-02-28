@@ -70,6 +70,7 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
         }
     }
     public methodName: K;
+    public isOptional?: boolean;
     private _type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
@@ -78,19 +79,16 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
         const objectOperand = resolveClone(this.objectOperand, replaceMap);
         const params = this.params.map((o) => resolveClone(o, replaceMap));
         const clone = new MethodCallExpression(objectOperand, this.methodName, params, this.type);
+        clone.isOptional = this.isOptional;
         replaceMap.set(this, clone);
         return clone;
     }
     public hashCode() {
-        let hash = hashCode("." + this.methodName, this.objectOperand.hashCode());
+        let hash = hashCode(`${this.isOptional ? "?" : ""}.${this.methodName}`, this.objectOperand.hashCode());
         this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
     }
     public toString(): string {
-        const paramStr = [];
-        for (const param of this.params) {
-            paramStr.push(param.toString());
-        }
-        return this.objectOperand.toString() + "." + this.methodName + "(" + paramStr.join(", ") + ")";
+        return `${this.objectOperand}${this.isOptional ? "?" : ""}.${this.methodName}(${this.params.join(", ")})`;
     }
 }

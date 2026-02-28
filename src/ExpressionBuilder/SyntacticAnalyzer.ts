@@ -78,14 +78,14 @@ const globalObjectMaps = new Map<string, unknown>([
 ]);
 
 (async () => {
-  try {
-    const Temporal = (await import('@js-temporal/polyfill')).Temporal;
-    globalObjectMaps.set("Temporal", Temporal);
-  } catch {}
-  try {
-    const Decimal = (await import('decimal.js')).default;
-    globalObjectMaps.set("Decimal", Decimal);
-  } catch {}
+    try {
+        const Temporal = (await import('@js-temporal/polyfill')).Temporal;
+        globalObjectMaps.set("Temporal", Temporal);
+    } catch { }
+    try {
+        const Decimal = (await import('decimal.js')).default;
+        globalObjectMaps.set("Decimal", Decimal);
+    } catch { }
 })();
 
 const [prefixOperators, postfixOperators] = Enumerable.from(operators)
@@ -193,7 +193,9 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             if (operator.identifier === "(") {
                                 const params = createParamExpression(param, tokens, ")");
                                 if (expression instanceof MemberAccessExpression) {
-                                    expression = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);
+                                    const mcExp = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);
+                                    mcExp.isOptional = expression.isOptional;
+                                    expression = mcExp;
                                 }
                                 else {
                                     expression = new FunctionCallExpression(expression as IExpression<() => unknown>, params.items);
@@ -201,13 +203,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                 continue;
                             }
                             const operand = createExpression(param, tokens, undefined, operator);
-                            if (operator.identifier === ".") {
-                                const memberName = operand.toString();
-                                expression = new MemberAccessExpression(expression as IExpression<object>, memberName as never);
-                            }
-                            else {
-                                expression = operator.expressionFactory(expression, operand);
-                            }
+                            expression = operator.expressionFactory(expression, operand);
                             break;
                         }
                         case OperatorType.Ternary: {
