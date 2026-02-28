@@ -1,3 +1,4 @@
+import { Enumerable } from "@elcy/enumerable";
 import { IObjectType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -21,14 +22,14 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     }
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn) {
-            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, Enumerable], this.parameters);
         }
         return this._resultSelector;
     }
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T, item2: T2[]) => R), public type: IObjectType<R> = Object as any) {
+    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T, item2: Enumerable<T2>) => R), public type: IObjectType<R> = Object as any) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relationShip instanceof FunctionExpression) {
@@ -48,7 +49,7 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
         }
     }
     protected readonly relationFn: (item: T, item2: T2) => boolean;
-    protected readonly resultSelectorFn: (item1: T, item2: T2[]) => R;
+    protected readonly resultSelectorFn: (item1: T, item2: Enumerable<T2>) => R;
     private _relation: FunctionExpression<boolean>;
     private _resultSelector: FunctionExpression<R>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {

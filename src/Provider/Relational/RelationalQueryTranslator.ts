@@ -54,6 +54,10 @@ export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"
 relationalQueryTranslator.registerFn(parseInt, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS INT)`);
 relationalQueryTranslator.registerFn(parseFloat, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS FLOAT)`);
 relationalQueryTranslator.registerFn(isNaN, (qb, exp, param) => `ISNUMERIC(${qb.toString(exp.params[0], param)}) = 0`);
+relationalQueryTranslator.registerFn(Number, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS DOUBLE PRECISION)`);
+relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS nvarchar(max))`);
+relationalQueryTranslator.registerFn(Boolean, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS boolean)`);
+relationalQueryTranslator.registerFn(BigInt, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as BIGINT)`);
 
 //#endregion
 

@@ -204,8 +204,9 @@ export const isNotNull = <T>(value: T | null | undefined): value is T => value !
 export const isNull = (value: any): value is null => {
     return value == null;
 };
+const toString = Function.prototype.toString;
 export const isNativeFunction = (fn: Function) => {
-    return fn.toString().indexOf("=>") < 0 && !("prototype" in fn);
+    return fn.toString().indexOf("=>") < 0 && toString.call(fn).includes("[native code]");
 };
 export const clone = <T>(source: T, isDeep = false) => {
     if (!source) return source;

@@ -1,5 +1,5 @@
 import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
-import { GroupedEnumerable } from "@elcy/enumerable";
+import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
 import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "./Queryable.internal";
 import { CrossJoinQueryable } from "./CrossJoinQueryable";
@@ -51,9 +51,9 @@ declare module "./Queryable" {
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2[]>): Queryable<TResult>;
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: QueryableChain<T>, item2: QueryableChain<T2[]>) => TResult)): Queryable<TResult>;
 
-        loads(...includes: Array<FunctionExpression<unknown, T>>): Queryable<T>;
-        loads(...includes: Array<(item: QueryableChain<T>) => unknown>): Queryable<T>;
-        loads(...includes: Array<FunctionExpression<unknown, T> | ((item: QueryableChain<T>) => unknown)>): Queryable<T>;
+        loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never : TLoad, T>>): Queryable<T>;
+        loads<TLoad extends object>(...includes: Array<(item: QueryableChain<T>) => TLoad extends ValueType ? never : TLoad>): Queryable<T>;
+        loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never : TLoad, T> | ((item: QueryableChain<T>) => TLoad extends ValueType ? never : TLoad)>): Queryable<T>;
 
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2>): Queryable<TResult>;
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
@@ -152,7 +152,7 @@ Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: F
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {
     return new DistinctQueryable(this);
 };
-Queryable.prototype.groupJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: T, item2: T2[]) => TResult)): Queryable<TResult> {
+Queryable.prototype.groupJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: T, item2: Enumerable<T2>) => TResult)): Queryable<TResult> {
     return new GroupJoinQueryable(this, array2, relation, resultSelector);
 };
 Queryable.prototype.innerJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2> | ((item1: T, item2: T2) => TResult)): Queryable<TResult> {
@@ -190,7 +190,7 @@ Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<
 Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>(this: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);
 };
-Queryable.prototype.loads = function <T>(this: Queryable<T>, ...includes: FunctionExpression<unknown, T>[] | Array<(item: T) => unknown>): Queryable<T> {
+Queryable.prototype.loads = function <T, TLoad extends object>(this: Queryable<T>, ...includes: FunctionExpression<TLoad extends ValueType ? never : TLoad, T>[] | Array<(item: T) => TLoad extends ValueType ? never : TLoad>): Queryable<T> {
     return new IncludeQueryable(this, includes);
 };
 Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: FunctionExpression<ValueType, T>[] | Array<(item: T) => ValueType>): Queryable<T> {
