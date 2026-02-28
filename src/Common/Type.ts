@@ -12,7 +12,7 @@ export type Pivot<T,
     TD extends { [key: string]: (item: QueryableChain<T>) => ValueType },
     TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>
     = { [key in StringKeyOf<TD>]: ReturnType<TD[key]> } & { [key in StringKeyOf<TM>]: ReturnType<TM[key]> };
-export type GenericType<T = unknown> = { (...values: unknown[]): T; } | IObjectType<T>;
+export type GenericType<T = unknown, Args extends any[] = any[]> = { (...values: Args): T; } | IObjectType<T>;
 export type ObjectLike<T> = { [key in keyof T]?: T[key] };
 export type FlatObjectLike<T> = { [key in keyof T]?: T[key] & ValueType };
 export type PropertySelector<TE> = StringKeyOf<TE> | ((source: TE) => ValueType | undefined);
@@ -39,7 +39,7 @@ export type Merge<T1, T2> = {
     : never;
 };
 
-export type RawSchema = Record<string, GenericType<any>>;
+export type RawSchema = Record<string, GenericType<ValueType>>;
 export type RawSchemaType<T extends RawSchema> = {
     [K in keyof T]: T[K] extends NumberConstructor ? number
     : T[K] extends StringConstructor ? string
