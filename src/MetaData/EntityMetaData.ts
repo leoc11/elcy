@@ -29,14 +29,19 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
             return (o.generation & ColumnGeneration.Insert) as any;
         });
     }
+    private _priority?: number;
     public get priority(): number {
-        let priority = 1;
-        for (const relation of this.relations) {
-            if (!relation.isMaster && !relation.nullable) {
-                priority += relation.target.priority + 1;
+        if (typeof this._priority !== "number") {
+            let priority = 1;
+            for (const relation of this.relations) {
+                if (!relation.isMaster && !relation.nullable) {
+                    priority += relation.target.priority + 1;
+                }
             }
+            this._priority = priority;
         }
-        return priority;
+        
+        return this._priority;
     }
     public get updateGeneratedColumns() {
         return this.columns.filter((o) => {

@@ -2,7 +2,7 @@ import type { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import type { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { QueryType } from "../Common/Enum";
 import type { DbType, DeleteMode, IsolationLevel } from "../Common/StringType";
-import type { FlatObjectLike, GenericType, IObjectType, RawSchema, RawSchemaType, ValueType } from "../Common/Type";
+import type { FlatObjectLike, IObjectType, RawSchema, RawSchemaType, ValueType } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import type { IConnection } from "../Connection/IConnection";
 import type { IConnectionManager } from "../Connection/IConnectionManager";
@@ -18,7 +18,6 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { StrictEqualExpression } from "../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IntegerColumnMetaData } from "../MetaData/IntegerColumnMetaData";
 import type { IDeleteEventParam } from "../MetaData/Interface/IDeleteEventParam";
@@ -51,7 +50,6 @@ import { EntityState } from "./EntityState";
 import { DBEventEmitter } from "./Event/DbEventEmitter";
 import type { IDBEventListener } from "./Event/IDBEventListener";
 import { EmbeddedEntityEntryMap } from "./EmbeddedEntityEntryMap";
-import { DeferredRawQuery } from "src/Query/DeferredRawQuery";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { EntityChangeMap } from "./EntityChangeMap";
 import { RawQueryable } from "src/Queryable/RawQueryable";
@@ -298,47 +296,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     // -------------------------------------------------------------------------
     // Query Function
     // -------------------------------------------------------------------------
-    public deferredFromSql<T = object>(rawQuery: string, parameters?: { [key: string]: unknown }, type?: GenericType<T>) {
-        if (!type) {
-            type = Object;
-        }
-        const queryCommand: IQuery = {
-            query: rawQuery,
-            type: QueryType.DQL,
-            parameters: new Map()
-        };
-        const command: IQueryExpression = {
-            paramExps: [],
-            type: Array,
-            itemType: type,
-            clone: () => command,
-            hashCode: () => 0,
-            getEffectedEntities: () => []
-        };
-        if (parameters) {
-            for (const prop in parameters) {
-                const value = parameters[prop];
-                queryCommand.parameters.set(prop, value);
-            }
-        }
-        const query = new DeferredRawQuery(this, queryCommand, command, new Map(), (result) => Enumerable.from(result)
-            .flatMap((o) => o.rows)
-            .map((o: T) => {
-                let item: T = new (type as IObjectType<T>)();
-                if (isValue(item)) {
-                    item = (o as { [key: string]: T })[Object.keys(o)[0]];
-                }
-                else {
-                    for (const prop in o) {
-                        item[prop] = o[prop];
-                    }
-                }
-                return item;
-            })
-            .toArray(), {});
-        this.deferredQueries.push(query);
-        return query;
-    }
     public async executeDeferred(deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) {
             deferredQueries = this.deferredQueries.splice(0);
@@ -429,10 +386,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             await this.closeConnection(con);
         }
         return results;
-    }
-    public async fromSql<T>(rawQuery: string, parameters?: { [key: string]: unknown }, type?: GenericType<T>): Promise<T[]> {
-        const query = this.deferredFromSql(rawQuery, parameters, type);
-        return await query.execute();
     }
     public async getConnection(writable?: boolean) {
         const con = this.connection ? this.connection : await this.connectionManager.getConnection(writable);
