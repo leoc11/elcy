@@ -208,6 +208,9 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                     }
                                     continue;
                                 }
+                                else if (nextToken.type === LexicalTokenType.Operator && nextToken.data === "[") {
+                                    throw "element access not supported";
+                                }
                             }
                             else if (operator.identifier === "(") {
                                 const params = createParamExpression(param, tokens, ")");
@@ -221,6 +224,10 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                 }
                                 continue;
                             }
+                            else if (operator.identifier === "[") {
+                                throw "element access not supported";
+                            }
+                            
                             const operand = createExpression(param, tokens, undefined, operator);
                             expression = operator.expressionFactory(expression, operand);
                             break;
