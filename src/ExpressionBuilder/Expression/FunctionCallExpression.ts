@@ -55,6 +55,7 @@ export class FunctionCallExpression<T = unknown> implements IExpression<T> {
     public fnExpression: IExpression<(...params: unknown[]) => T>;
     public functionName: string;
     public params: IExpression[];
+    public isOptionalCall?: boolean;
     private _type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
@@ -67,7 +68,7 @@ export class FunctionCallExpression<T = unknown> implements IExpression<T> {
         return clone;
     }
     public hashCode() {
-        let hash = hashCode(this.functionName);
+        let hash = hashCode(`${this.functionName}${this.isOptionalCall ? "?." : ""}`);
         this.params.forEach((o, i) => hash = hashCodeAdd(hash, hashCodeAdd(i, o.hashCode())));
         return hash;
     }
@@ -76,6 +77,6 @@ export class FunctionCallExpression<T = unknown> implements IExpression<T> {
         for (const param of this.params) {
             paramStr.push(param.toString());
         }
-        return this.functionName + "(" + paramStr.join(", ") + ")";
+        return `${this.functionName}${this.isOptionalCall ? "?." : ""}(${paramStr.join(", ")})`;
     }
 }

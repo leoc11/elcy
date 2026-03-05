@@ -190,7 +190,26 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             break;
                         }
                         case OperatorType.Binary: {
-                            if (operator.identifier === "(") {
+                            if (operator.identifier === "?.") {
+                                const nextToken = tokens[param.index];
+                                if (nextToken.type === LexicalTokenType.Operator && nextToken.data === "(") {
+                                    param.index++;
+                                    const params = createParamExpression(param, tokens, ")");
+                                    if (expression instanceof MemberAccessExpression) {
+                                        const mcExp = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);
+                                        mcExp.isOptional = expression.isOptional;
+                                        mcExp.isOptionalCall = true;
+                                        expression = mcExp;
+                                    }
+                                    else {
+                                        const fcExp = new FunctionCallExpression(expression as IExpression<() => unknown>, params.items);
+                                        fcExp.isOptionalCall = true;
+                                        expression = fcExp;
+                                    }
+                                    continue;
+                                }
+                            }
+                            else if (operator.identifier === "(") {
                                 const params = createParamExpression(param, tokens, ")");
                                 if (expression instanceof MemberAccessExpression) {
                                     const mcExp = new MethodCallExpression(expression.objectOperand, expression.memberName, params.items);

@@ -1,3 +1,4 @@
+import { isNull } from "src/Helper/Util";
 import { MethodKey, MethodReturnType, StringKeyOf } from "../Common/Type";
 import { SqlParameterExpression } from "../Queryable/QueryExpression/SqlParameterExpression";
 import { SqlTableValueParameterExpression } from "../Queryable/QueryExpression/SqlTableValueParameterExpression";
@@ -140,7 +141,7 @@ export class ExpressionExecutor {
             case expression instanceof LessThanExpression:
                 return this.executeLessThan(expression) as T;
             case expression instanceof MemberAccessExpression:
-                return this.executeMemberAccess(expression as MemberAccessExpression<unknown, StringKeyOf<unknown>, T & never>);
+                return this.executeMemberAccess(expression as MemberAccessExpression<object, StringKeyOf<object>, T & object[StringKeyOf<object>]>);
             case expression instanceof MethodCallExpression:
                 return this.executeMethodCall(expression as MethodCallExpression<unknown, MethodKey<unknown>, T & never>);
             case expression instanceof ModulusAssignmentExpression:
@@ -325,6 +326,10 @@ export class ExpressionExecutor {
             params.push(this.execute(param));
         }
         const fn = this.execute(expression.fnExpression);
+        if (expression.isOptionalCall && isNull(fn)) {
+            return undefined;
+        }
+
         return fn(...params);
     }
     protected executeGreaterEqual(expression: GreaterEqualExpression) {
@@ -362,8 +367,13 @@ export class ExpressionExecutor {
     protected executeLessThan(expression: LessThanExpression) {
         return this.execute(expression.leftOperand) < this.execute(expression.rightOperand);
     }
-    protected executeMemberAccess<TE, K extends StringKeyOf<TE>>(expression: MemberAccessExpression<TE, K>) {
-        return this.execute(expression.objectOperand)[expression.memberName];
+    protected executeMemberAccess<TE extends object, K extends StringKeyOf<TE>>(expression: MemberAccessExpression<TE, K>) {
+        const obj = this.execute(expression.objectOperand);
+        if (expression.isOptional && isNull(obj)) {
+            return undefined;
+        }
+
+        return obj[expression.memberName];
     }
     protected executeMethodCall<TE, K extends MethodKey<TE>, T extends MethodReturnType<TE, K>>(expression: MethodCallExpression<TE, K, T>): T {
         const params = [];
@@ -372,7 +382,15 @@ export class ExpressionExecutor {
         }
 
         const obj = this.execute(expression.objectOperand);
+        if (expression.isOptional && isNull(obj)) {
+            return undefined;
+        }
+
         const method = obj[expression.methodName] as TE[K] & ((...params: unknown[]) => T);
+        if (expression.isOptionalCall && isNull(method)) {
+            return undefined;
+        }
+
         return method.apply(obj, params);
     }
     protected executeModulus(expression: ModulusExpression) {
