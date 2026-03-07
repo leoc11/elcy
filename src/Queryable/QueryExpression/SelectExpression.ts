@@ -241,7 +241,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
             relation = relationMetaOrRelations as IExpression<boolean>;
         }
 
-        const includeRel = new IncludeRelation(this as unknown as SelectExpression<TE>, child, name, type, relation);
+    const includeRel = new IncludeRelation(this as unknown as SelectExpression<TE>, child, name, type, relation);
         includeRel.isEmbedded = isEmbedded;
         child.parentRelation = includeRel as IncludeRelation<any, TChild>;
         this.includes.push(includeRel as IncludeRelation<TE, any>);

@@ -1,4 +1,4 @@
-import { GroupedEnumerable } from "../Enumerable/GroupedEnumerable";
+import { DeferredQuery } from "src/Query/DeferredQuery";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -8,6 +8,7 @@ import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
+import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
 
 export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     protected get keySelector() {
@@ -40,5 +41,17 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     }
     public hashCode() {
         return hashCodeAdd(hashCode("GROUPBY", this.parent.hashCode()), this.keySelector ? this.keySelector.hashCode() : 0);
+    }
+    override deferredToEnumerable(): DeferredQuery<Enumerable<GroupedEnumerable<K, T>>> {
+        throw new Error("not supported");
+    }
+    override deferredToArray(): DeferredQuery<GroupedEnumerable<K, T>[]> {
+        throw new Error("not supported");
+    }
+    override deferredToSet(): DeferredQuery<Set<GroupedEnumerable<K, T>>> {
+        throw new Error("not supported");
+    }
+    override deferredToMap<K, V>(keySelector: (item: any) => K, valueSelector?: (item: any) => V): DeferredQuery<Map<K, V>> {
+        throw new Error("not supported");
     }
 }

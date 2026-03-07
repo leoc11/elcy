@@ -33,9 +33,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     public get dbContext(): DbContext {
         return this._dbContext;
     }
-    public get local(): Enumerable<T> {
-        return Enumerable.from(this.dictionary).map((o) => o[1].entity);
-    }
+
     public get metaData() {
         if (!this._metaData) {
             this._metaData = getEntityMetadata(this.type) as EntityMetaData<T>;
@@ -52,7 +50,8 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         super(type);
         this._dbContext = dbContext;
     }
-    protected dictionary: Map<string, EntityEntry<T>> = new Map();
+    protected readonly dictionary: Map<string, EntityEntry<T>> = new Map();
+    public readonly local: Enumerable<T> = Enumerable.from(this.dictionary).map((o) => o[1].entity);
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<T>;
     public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
@@ -61,7 +60,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return result;
     }
     public clear() {
-        this.dictionary = new Map();
+        this.dictionary.clear();
     }
     // simple delete.
     public deferredDelete(mode: DeleteMode): DeferredQuery<number>;

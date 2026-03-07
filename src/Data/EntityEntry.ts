@@ -358,10 +358,13 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         else if (this.isPropertyModified(property)) {
             this._originalValues.set(property, value);
         }
-        else {
+        else if (this.enableTrackChanges) {
             this.enableTrackChanges = false;
             this.entity[property] = value;
             this.enableTrackChanges = true;
+        }
+        else {
+            this.entity[property] = value;
         }
     }
     public setOriginalValues(originalValues: FlatObjectLike<T>) {

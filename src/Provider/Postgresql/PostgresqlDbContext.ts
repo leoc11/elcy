@@ -14,7 +14,6 @@ import { EntityExpression } from "src/Queryable/QueryExpression/EntityExpression
 import { InsertExpression, insertEntryExp } from "src/Queryable/QueryExpression/InsertExpression";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
 import { NamingStrategy } from "../../Query/NamingStrategy";
-import { POJOQueryResultParser } from "../../Query/POJOQueryResultParser";
 import { RelationalDbContext } from "../Relational/RelationalDbContext";
 import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { PostgresqlQueryBuilder } from "./PostgresqlQueryBuilder";
@@ -23,11 +22,12 @@ import { PostgresqlSchemaBuilder } from "./PostgresqlSchemaBuilder";
 import { ColumnExpression } from "src/Queryable/QueryExpression/ColumnExpression";
 import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
 import { UpdateExpression, updateItemExp } from "src/Queryable/QueryExpression/UpdateExpression";
+import { QueryResultParser } from "src/Query/QueryResultParser";
 
 export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresql"> {
     protected namingStrategy = new NamingStrategy();
     protected queryBuilderType = PostgresqlQueryBuilder;
-    protected queryResultParserType = POJOQueryResultParser;
+    protected queryResultParserType = QueryResultParser;
     protected queryVisitorType = RelationalQueryVisitor;
     protected schemaBuilderType = PostgresqlSchemaBuilder;
     protected translator = postgresqlQueryTranslator;

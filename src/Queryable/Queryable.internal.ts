@@ -1,4 +1,4 @@
-import { Enumerable } from "@elcy/enumerable";
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
@@ -33,7 +33,7 @@ import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { QueryableChain } from "./Interface/QueryableChain";
 
-export abstract class Queryable<T = unknown> {
+export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, any> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
@@ -51,6 +51,10 @@ export abstract class Queryable<T = unknown> {
             this.parent = parent;
         }
     }
+    async *[Symbol.asyncIterator](): AsyncIterator<T, any, any> {
+        yield* await this.toEnumerable();
+    }
+    
     protected parent: Queryable;
     public async every(predicate: (item: QueryableChain<T>) => boolean) {
         const query = this.deferredEvery(predicate);
@@ -785,7 +789,7 @@ export abstract class Queryable<T = unknown> {
     //#endregion
 
     //#region deferred
-    public deferredToArray() {
+    private deferredToIterable<TResult>(resultParser: (data: IEnumerable<T>) => TResult) {
         let queryCache: IQueryCache<T>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
@@ -833,63 +837,20 @@ export abstract class Queryable<T = unknown> {
             (result) => {
                 let i = 0;
                 result = result.filter(() => query.queries[i++].type === QueryType.DQL);
-                return queryCache.resultParser.parse(result, this.dbContext);
+                const data = queryCache.resultParser.parse(result, this.dbContext);
+                return resultParser(data);
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
+    public deferredToEnumerable() {
+        return this.deferredToIterable(o => Enumerable.from(o));
+    }
+    public deferredToArray() {
+        return this.deferredToIterable(o => Array.from(o));
+    }
     public deferredToSet() {
-        let queryCache: IQueryCache<T>;
-        let cacheKey: number;
-        const timer = Diagnostic.timer();
-        const cacheManager = this.dbContext.queryCacheManager;
-
-        const flatParams = this.flatQueryParameter({ index: 0 });
-        if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams);
-            if (Diagnostic.enabled) {
-                Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
-            }
-
-            queryCache = cacheManager.get<T>(cacheKey);
-            if (Diagnostic.enabled) {
-                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
-                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
-            }
-        }
-
-        const queryBuilder = this.dbContext.queryBuilder;
-        if (!queryCache) {
-            const visitor = this.dbContext.queryVisitor;
-            visitor.queryOption = this.queryOption;
-            visitor.setParameter(flatParams);
-            const commandQuery = this.buildQuery(visitor);
-            if (Diagnostic.enabled) {
-                Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
-            }
-
-            queryCache = {
-                commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
-            };
-            if (!this.queryOption.noQueryCache && cacheManager) {
-                cacheManager.set(cacheKey, queryCache);
-            }
-        }
-
-        const params = this.buildParameter(queryCache.commandQuery, flatParams);
-        if (Diagnostic.enabled) {
-            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
-        }
-
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => {
-                let i = 0;
-                result = result.filter(() => query.queries[i++].type === QueryType.DQL);
-                return new Set(queryCache.resultParser.parse(result, this.dbContext));
-            }, this.queryOption);
-        this.dbContext.deferredQueries.push(query);
-        return query;
+        return this.deferredToIterable(o => new Set(o));
     }
     public deferredToMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V) {
         if (!valueSelector) {
@@ -1059,6 +1020,10 @@ export abstract class Queryable<T = unknown> {
     }
     public async sum(selector?: (item: QueryableChain<T>) => number) {
         const query = this.deferredSum(selector);
+        return await query.execute();
+    }
+    public async toEnumerable(): Promise<Enumerable<T>> {
+        const query = this.deferredToEnumerable();
         return await query.execute();
     }
     public async toArray(): Promise<T[]> {

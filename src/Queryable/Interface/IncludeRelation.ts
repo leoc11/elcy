@@ -1,3 +1,4 @@
+import { ValueType } from "src/Common/Type";
 import { RelationshipType } from "../../Common/StringType";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
@@ -7,6 +8,7 @@ import { resolveClone, visitExpression } from "../../Helper/Util";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
+import { Enumerable } from "@elcy/enumerable";
 
 export class IncludeRelation<T extends object = object, TChild extends object = object> implements ISelectRelation<T, TChild> {
     public get childColumns() {
@@ -69,10 +71,12 @@ export class IncludeRelation<T extends object = object, TChild extends object = 
         clone.isEmbedded = this.isEmbedded;
         return clone;
     }
-    public * relationMap() {
-        for (let i = 0, len = this.parentColumns.length; i < len; i++) {
-            yield [this.parentColumns[i], this.childColumns[i]];
+    public relationMap() {
+        if (this.isEmbedded) {
+            return Enumerable.from(this.parent.primaryKeys).map(o => [o, o] as unknown as [IColumnExpression<T, ValueType>, IColumnExpression<TChild, ValueType>]);
         }
+
+        return Enumerable.range(0, this.parentColumns.length - 1).map(o => [this.parentColumns[o], this.childColumns[o]] as [IColumnExpression<T, ValueType>, IColumnExpression<TChild, ValueType>]);
     }
 
     private analyzeRelation() {
