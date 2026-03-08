@@ -1,0 +1,45 @@
+- connection pooling. PooledConnectionManager. (ok)
+- refactor DB Event Listener.
+- connection manager: support replication. (ReplicationConnectionManager). (ok)
+- computed column (virtual/persisted).
+- inheritance.
+- Tree relationship.
+- Embedded column.
+- Json column.
+- relationship data full support.
+- Date column : DatetimeCOlumn/DateColumn/TimeColumn (ok)
+- Date time/time parameter should be converted to utc if it was used against utc column.
+- for update query, cek ex: string column max length, the auto truncate?
+ 
+- test
+ - groupJoin, innerJoin, leftJoin, rightJoin, innerJoin (ok)
+ - project (ok)
+
+- update datetime to utc. (ok)
+- included deleted option.
+- allow queryable to queryable. (ok)
+- support array of object parameter. (ok)
+- remove chai as promised
+
+- unsigned integer and decimal/real
+- postgresql rowversion: xmin vs oid // https://www.postgresql.org/docs/9.1/static/ddl-system-columns.html
+
+- graphql: join-monster (ok)
+
+
+- change update: update({[key: string]: ValueType | (item: T) => ValueType }) (ok)
+- insert: insert({[key: string]: ValueType}); (ok)
+- take - skip should not be passed as parameter to driver. (ok)
+- consider using custom entity for select objectvalue.
+- consider nested property/object to include. (will fix if nested item and parent is Entity Object)
+
+- index: support column direction and included columns
+- order/sort: support defined column with column name string.
+
+- SchemaBuilder:
+    - SchemaBuilder Option.
+
+- Query Builder:
+     - Query parameter name.
+
+- Repository

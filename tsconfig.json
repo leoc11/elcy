@@ -1,18 +1,8 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-        "composite": true,
-        "outDir": "dist",
-        "baseUrl": ".", // important for paths
-    },
-    "include": [
-        "test",
-        "src",
-        "app.ts"
-    ],
-    "exclude": [
-        "build",
-        "node_modules",
-        "**/node_modules/*"
+    "extends": "./tsconfig.base.json",
+    "references": [
+      { "path": "./packages/elcy-core" },
+      { "path": "./packages/enumerable" },
+      { "path": "./packages/elcy-transform" }
     ]
 }

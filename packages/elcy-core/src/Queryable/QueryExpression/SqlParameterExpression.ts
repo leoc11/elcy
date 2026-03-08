@@ -1,0 +1,26 @@
+import { GenericType, ValueType } from "../../Common/Type";
+import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import { resolveClone } from "../../Helper/Util";
+import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
+
+export class SqlParameterExpression<T = ValueType> implements IExpression<T> {
+    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<any, T>) { }
+    public type: GenericType<T>;
+    public isSystem?: boolean;
+    public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
+        const valueGetter = resolveClone(this.valueExp, replaceMap);
+        const clone = new SqlParameterExpression(valueGetter, this.column);
+        clone.isSystem = this.isSystem;
+        replaceMap.set(this, clone);
+        return clone;
+    }
+    public hashCode() {
+        return this.valueExp.hashCode();
+    }
+    public toString(): string {
+        return this.valueExp.toString();
+    }
+}
