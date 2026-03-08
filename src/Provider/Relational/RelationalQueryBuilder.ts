@@ -723,7 +723,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             option: option
         };
 
-        const colString = insertExp.columns.map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
+        const colString = Enumerable.from(insertExp.columns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
         const insertQuery = `INSERT INTO ${this.entityName(insertExp.entity)}(${colString}) VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,

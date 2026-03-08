@@ -42,7 +42,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             return this.getUpsertQueryOlder(upsertExp, option, parameters);
         }
 
-        const colString = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
         const valueString = upsertExp.insertColumns.map((o) => {
             const valueExp = upsertExp.setter[o.propertyName];
             return valueExp ? this.toString(valueExp, param) : "DEFAULT";
@@ -71,7 +71,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             queryExpression: upsertExp
         };
 
-        const colString = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).reduce("", (acc, item) => acc ? acc + "," + item : item);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
         const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
             `VALUES (${upsertExp.insertColumns.map((o) => {
                 const valueExp = upsertExp.setter[o.propertyName];

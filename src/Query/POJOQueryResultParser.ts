@@ -77,11 +77,13 @@ export class POJOQueryResultParser<T> implements IQueryResultParser<T> {
                 resolveCache.columns = select.selects;
 
                 if (resolveCache.dbSet) {
-                    resolveCache.primaryColumns = primaryColumns = primaryColumns.union(select.resolvedSelects.filter((o) => resolveCache.dbSet.primaryKeys.some((c) => c.propertyName === o.propertyName)));
-                    primaryColumns.enableCache = true;
+                    resolveCache.primaryColumns = primaryColumns = primaryColumns
+                        .union(select.resolvedSelects.filter((o) => resolveCache.dbSet.primaryKeys.some((c) => c.propertyName === o.propertyName)))
+                        .enableCache(true);
 
-                    const columns = Enumerable.from(select.selects).union(select.relationColumns);
-                    columns.enableCache = true;
+                    const columns = Enumerable.from(select.selects)
+                        .union(select.relationColumns)
+                        .enableCache(true);
                     resolveCache.columns = columns;
                 }
 

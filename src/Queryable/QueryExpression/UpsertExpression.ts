@@ -51,7 +51,7 @@ export class UpsertExpression<T extends object = object> implements IQueryExpres
         return this.entity.primaryColumns.map((o) => {
             const valueExp = this.setter[o.propertyName];
             return new StrictEqualExpression(o, valueExp);
-        }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item);
+        }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item, null);
     }
     constructor(public readonly entity: EntityExpression<T>, public readonly setter: SetterObj<T>) {
     }

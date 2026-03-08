@@ -486,8 +486,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             await this.executeDeferred(Enumerable.from(deleteQueries).flatMap((o) => o[1]));
 
             const allInsertQueries = identityInsertQueries
-                .concat(nonIdentityInsertQueries);
-            allInsertQueries.enableCache = true;
+                .concat(nonIdentityInsertQueries).enableCache(true);
+
             // execute all identity insert queries
             let i = 0;
             for (const [entityMeta, queries] of identityInsertQueries) {
