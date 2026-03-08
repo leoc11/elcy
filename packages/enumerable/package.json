@@ -8,22 +8,21 @@
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "scripts": {
-    "build": "bun run build:js && bun run build:type",
-    "build:js": "bun build src/index.ts --outdir dist",
-    "build:type": "bun tsc --emitDeclarationOnly --outdir dist",
-    "test": "bun run test:ts && bun run test:type",
-    "test:watch": "concurrently \"bun run test:ts:watch\" \"bun run test:type:watch\"",
-    "test:type": "bun tsc --noEmit",
-    "test:ts": "bun test",
-    "test:type:watch": "bun tsc --noEmit --watch",
-    "test:ts:watch": "bun test --watch",
-    "lint": "bun eslint ./src",
-    "lint:fix": "bun eslint ./src --fix"
+    "build": "bun run build:js && bun run build:js.min && bun run build:type",
+    "build:js": "bun build src/index.ts --outdir dist --sourcemap=linked --target=node --format=esm --entry-naming=[dir]/[name].js",
+    "build:js.min": "bun build src/index.ts --outdir dist --sourcemap=linked --target=node --format=esm --minify --entry-naming=[dir]/[name].js",
+    "build:type": "bun tsc --emitDeclarationOnly --skipLibCheck --outdir dist",
+    "test": "bun run test:unit && bun run test:type && bun run test:lint && bun run test:fmt",
+    "test:unit": "bun test ./test --coverage",
+    "test:type": "bun test --include ./test/*.test-d.ts",
+    "test:lint": "bun eslint ./src --fix",
+    "test:fmt": "prettier --check './*.{mjs,js,ts,md,json,html}' './{src,test}/{,**/}*.{mjs,js,ts,md,json,html}'",
+    "test:watch": "bun test --include ./test/*.{test-d,test}.ts --watch",
+    "fmt": "prettier --write './*.{mjs,js,ts,md,json,html}' './{src,test}/{,**/}*.{mjs,js,ts,md,json,html}'"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -37,7 +36,6 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.4.0",
-    "magic-string": "^0.30.21",
     "prettier": "^3.8.1",
     "typescript-eslint": "^8.56.1"
   }

@@ -33,7 +33,9 @@
   },
   "homepage": "https://github.com/leoc11/elcy",
   "dependencies": {
-    "@elcy/enumerable": "workspace:*",
+    "@elcy/enumerable": "workspace:*"
+  },
+  "peerDependencies": {
     "@js-temporal/polyfill": "^0.5.1",
     "decimal.js": "^10.6.0"
   },
