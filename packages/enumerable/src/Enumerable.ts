@@ -284,6 +284,8 @@ Enumerable.prototype.pivot = function <
     return o.key;
   });
 };
+
+export { Enumerable };
 const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
 export const keyComparer = <T = unknown>(a: T, b: T) => {
   let result = a === b;
@@ -322,5 +324,3 @@ export const defaultResultFn = <T = unknown, T2 = unknown, R = unknown>(
   }
   return result as R;
 };
-
-export { Enumerable };
