@@ -9,3 +9,13 @@ describe("IEnumerable", () => {
     expectTypeOf<Enumerable<unknown>>().toExtend<IEnumerable<unknown>>();
   });
 });
+describe("Enumerable", () => {
+  test("should cast", () => {
+    const item: Enumerable = Enumerable.from([]) as any;
+    expectTypeOf(item.cast<number>()).toExtend<Enumerable<number>>();
+  });
+  test("should cast oftype", () => {
+    const item: Enumerable = Enumerable.from([]) as any;
+    expectTypeOf(item.ofType<number>(Number)).toExtend<Enumerable<number>>();
+  });
+});

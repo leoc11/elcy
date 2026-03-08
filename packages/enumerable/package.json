@@ -16,12 +16,14 @@
     "build:js": "bun build src/index.ts --outdir dist --sourcemap=linked --target=node --format=esm --entry-naming=[dir]/[name].js",
     "build:js.min": "bun build src/index.ts --outdir dist --sourcemap=linked --target=node --format=esm --minify --entry-naming=[dir]/[name].js",
     "build:type": "bun tsc --emitDeclarationOnly --skipLibCheck --outdir dist",
-    "test": "bun run test:unit && bun run test:type && bun run test:lint && bun run test:fmt",
+    "test": "bun run test:unit && bun run test:type",
     "test:unit": "bun test ./test --coverage",
     "test:type": "bun test --include ./test/*.test-d.ts",
-    "test:lint": "bun eslint ./src --fix",
-    "test:fmt": "prettier --check './*.{mjs,js,ts,md,json,html}' './{src,test}/{,**/}*.{mjs,js,ts,md,json,html}'",
     "test:watch": "bun test --include ./test/*.{test-d,test}.ts --watch",
+    "check": "bun run check:tsc && bun run check:lint && bun run check:fmt",
+    "check:tsc": "bun tsc --noEmit --skipLibCheck",
+    "check:lint": "bun eslint ./src --fix",
+    "check:fmt": "prettier --check './*.{mjs,js,ts,md,json,html}' './{src,test}/{,**/}*.{mjs,js,ts,md,json,html}'",
     "fmt": "prettier --write './*.{mjs,js,ts,md,json,html}' './{src,test}/{,**/}*.{mjs,js,ts,md,json,html}'"
   },
   "devDependencies": {

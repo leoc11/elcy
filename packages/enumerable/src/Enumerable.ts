@@ -203,7 +203,7 @@ Enumerable.prototype.groupJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (item1: T, item2: T2[]) => TResult = defaultResultFn,
+  resultSelector: (item1: T, item2: T2[]) => TResult,
 ): Enumerable<TResult> {
   return new GroupJoinEnumerable(
     this,
