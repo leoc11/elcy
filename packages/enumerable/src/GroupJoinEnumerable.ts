@@ -1,4 +1,4 @@
-import { defaultResultFn, Enumerable } from "./Enumerable";
+import { Enumerable } from "./Enumerable";
 
 export class GroupJoinEnumerable<
   T = unknown,
@@ -12,7 +12,7 @@ export class GroupJoinEnumerable<
     protected readonly resultSelector: (
       item1: T,
       item2: T2[],
-    ) => R = defaultResultFn,
+    ) => R,
   ) {
     super();
   }
