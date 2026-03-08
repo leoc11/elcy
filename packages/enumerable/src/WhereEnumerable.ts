@@ -1,14 +1,17 @@
 import { Enumerable } from "./Enumerable";
 
 export class WhereEnumerable<T = unknown> extends Enumerable<T> {
-    constructor(protected readonly parent: Enumerable<T>, protected readonly predicate: (item: T) => boolean) {
-        super();
+  constructor(
+    protected readonly parent: Enumerable<T>,
+    protected readonly predicate: (item: T) => boolean,
+  ) {
+    super();
+  }
+  protected *generator() {
+    for (const value of this.parent) {
+      if (this.predicate(value)) {
+        yield value;
+      }
     }
-    protected *generator() {
-        for (const value of this.parent) {
-            if (this.predicate(value)) {
-                yield value;
-            }
-        }
-    }
+  }
 }
