@@ -1,0 +1,44 @@
+{
+  "name": "@elcy/enumerable",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun run build:js && bun run build:type",
+    "build:js": "bun build src/index.ts --outdir dist",
+    "build:type": "bun tsc --emitDeclarationOnly --outdir dist",
+    "test": "bun run test:ts && bun run test:type",
+    "test:watch": "concurrently \"bun run test:ts:watch\" \"bun run test:type:watch\"",
+    "test:type": "bun tsc --noEmit",
+    "test:ts": "bun test",
+    "test:type:watch": "bun tsc --noEmit --watch",
+    "test:ts:watch": "bun test --watch",
+    "lint": "bun eslint ./src",
+    "lint:fix": "bun eslint ./src --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.19.15",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^50.8.0",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.4.0",
+    "magic-string": "^0.30.21",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.56.1"
+  }
+}
