@@ -1,5 +1,5 @@
 import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
-import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
+import { Enumerable, GroupedEnumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "./Queryable.internal";
 import { CrossJoinQueryable } from "./CrossJoinQueryable";
@@ -47,9 +47,9 @@ declare module "./Queryable" {
         groupBy<K>(keySelector: FunctionExpression<K, T>): Queryable<GroupedEnumerable<K, T>>;
         groupBy<K>(keySelector: FunctionExpression<K, T> | ((item: QueryableChain<T>) => K)): Queryable<GroupedEnumerable<K, T>>;
 
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: QueryableChain<T2[]>) => TResult): Queryable<TResult>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult): Queryable<TResult>;
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2[]>): Queryable<TResult>;
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: QueryableChain<T>, item2: QueryableChain<T2[]>) => TResult)): Queryable<TResult>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult)): Queryable<TResult>;
 
         loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never : TLoad, T>>): Queryable<T>;
         loads<TLoad extends object>(...includes: Array<(item: QueryableChain<T>) => TLoad extends ValueType ? never : TLoad>): Queryable<T>;
@@ -72,9 +72,9 @@ declare module "./Queryable" {
 
         parameter(params: { [key: string]: unknown }): Queryable<T>;
 
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>(dimensions: TExpObject<TD>, metrics: TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>(dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TExpObject<TD>, metrics: TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
 
         project(...includes: Array<(item: QueryableChain<T>) => ValueType>): Queryable<T>;
         project(...includes: FunctionExpression<ValueType, T>[]): Queryable<T>;
@@ -88,9 +88,9 @@ declare module "./Queryable" {
         map<TReturn>(type: IObjectType<TReturn>, selector: FunctionExpression<TReturn, T> | ((item: QueryableChain<T>) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
         map<TReturn>(typeOrSelector: FunctionExpression<TReturn, T> | IObjectType<TReturn> | ((item: QueryableChain<T>) => TReturn), selector?: ((item: QueryableChain<T>) => TReturn)): Queryable<TReturn>;
 
-        flatMap<TReturn>(selector: (item: QueryableChain<T>) => Iterable<TReturn>, type?: GenericType<TReturn>): Queryable<TReturn>;
-        flatMap<TReturn>(selector: FunctionExpression<Iterable<TReturn>, T>, type?: GenericType<TReturn>): Queryable<TReturn>;
-        flatMap<TReturn>(selector: FunctionExpression<Iterable<TReturn>, T> | ((item: QueryableChain<T>) => Iterable<TReturn>), type?: GenericType<TReturn>): Queryable<TReturn>;
+        flatMap<TReturn>(selector: (item: QueryableChain<T>) => IEnumerable<TReturn>, type?: GenericType<TReturn>): Queryable<TReturn>;
+        flatMap<TReturn>(selector: FunctionExpression<IEnumerable<TReturn>, T>, type?: GenericType<TReturn>): Queryable<TReturn>;
+        flatMap<TReturn>(selector: FunctionExpression<IEnumerable<TReturn>, T> | ((item: QueryableChain<T>) => IEnumerable<TReturn>), type?: GenericType<TReturn>): Queryable<TReturn>;
 
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
@@ -120,7 +120,7 @@ Queryable.prototype.parameter = function <T>(params: { [key: string]: unknown })
 Queryable.prototype.option = function <T>(option: IQueryOption): Queryable<T> {
     return new OptionQueryable(this, option);
 };
-Queryable.prototype.flatMap = function <T, TReturn>(this: Queryable<T>, selector: FunctionExpression<Iterable<TReturn>, T> | ((item: T) => Iterable<TReturn>), type?: GenericType<TReturn>): Queryable<TReturn> {
+Queryable.prototype.flatMap = function <T, TReturn>(this: Queryable<T>, selector: FunctionExpression<IEnumerable<TReturn>, T> | ((item: T) => IEnumerable<TReturn>), type?: GenericType<TReturn>): Queryable<TReturn> {
     return new SelectManyQueryable(this, selector, type);
 };
 Queryable.prototype.filter = function <T>(this: Queryable<T>, predicate: FunctionExpression<boolean, T> | ((item: T) => boolean)): Queryable<T> {
@@ -187,7 +187,7 @@ Queryable.prototype.intersect = function <T>(this: Queryable<T>, array2: Queryab
 Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
     return new ExceptQueryable(this, array2);
 };
-Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: QueryableChain<T[]>) => ValueType }>(this: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>> {
+Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(this: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);
 };
 Queryable.prototype.loads = function <T, TLoad extends object>(this: Queryable<T>, ...includes: FunctionExpression<TLoad extends ValueType ? never : TLoad, T>[] | Array<(item: T) => TLoad extends ValueType ? never : TLoad>): Queryable<T> {

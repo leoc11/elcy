@@ -86,7 +86,7 @@ describe("ENUMERABLE", () => {
       const distincts = items.groupJoin(
         [1, 5],
         (o, o2) => o % 2 === o2 % 2,
-        (o1, o2s) => (o1 ? o1 : 0) + (o2s.reduce((r, o) => r + o, 0)),
+        (o1, o2s) => (o1 ? o1 : 0) + (o2s.sum()),
       );
       let index1 = 0;
       for (const { } of distincts) {
@@ -634,7 +634,7 @@ describe("ENUMERABLE", () => {
       const distincts = items.pivot({
         modulo: o => o % 2
       }, {
-        max: o => Enumerable.from(o).max()
+        max: o => o.max()
       });
       let index1 = 0;
       for (const { } of distincts) {

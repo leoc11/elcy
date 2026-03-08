@@ -1,4 +1,5 @@
 import { Enumerable } from "./Enumerable";
+import { IEnumerable } from "./IEnumerable";
 
 export class SelectManyEnumerable<
   T = unknown,
@@ -6,7 +7,7 @@ export class SelectManyEnumerable<
 > extends Enumerable<K> {
   constructor(
     protected readonly parent: Enumerable<T>,
-    protected readonly selector: (item: T) => K[] | Enumerable<K>,
+    protected readonly selector: (item: T) => IEnumerable<K>,
   ) {
     super();
   }

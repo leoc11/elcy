@@ -38,7 +38,7 @@ declare module "./Enumerable" {
     groupJoin<T2, TResult>(
       array2: IEnumerable<T2>,
       relation: (item: T, item2: T2) => boolean,
-      resultSelector: (item1: T, item2: T2[]) => TResult,
+      resultSelector: (item1: T, item2: Enumerable<T2>) => TResult,
     ): Enumerable<TResult>;
     innerJoin<T2, TResult>(
       array2: IEnumerable<T2>,
@@ -54,7 +54,7 @@ declare module "./Enumerable" {
     orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
     pivot<
       TD extends { [key: string]: (item: T) => unknown },
-      TM extends { [key: string]: (item: T[]) => unknown },
+      TM extends { [key: string]: (item: Enumerable<T>) => unknown },
     >(
       dimensions: TD,
       metrics: TM,
@@ -89,7 +89,7 @@ Enumerable.prototype.map = function <T, TReturn>(
 };
 Enumerable.prototype.flatMap = function <T, TReturn>(
   this: Enumerable<T>,
-  selector: (item: T) => TReturn[] | Enumerable<TReturn>,
+  selector: (item: T) => IEnumerable<TReturn>,
 ): Enumerable<TReturn> {
   return new SelectManyEnumerable(this, selector);
 };
@@ -203,7 +203,7 @@ Enumerable.prototype.groupJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (item1: T, item2: T2[]) => TResult,
+  resultSelector: (item1: T, item2: Enumerable<T2>) => TResult,
 ): Enumerable<TResult> {
   return new GroupJoinEnumerable(
     this,
@@ -255,7 +255,7 @@ Enumerable.prototype.except = function <T>(
 Enumerable.prototype.pivot = function <
   T,
   TD extends { [key: string]: (item: T) => unknown },
-  TM extends { [key: string]: (item: T[]) => unknown },
+  TM extends { [key: string]: (item: Enumerable<T>) => unknown },
 >(
   this: Enumerable<T>,
   dimensions: TD,
@@ -275,7 +275,7 @@ Enumerable.prototype.pivot = function <
   }).map((o) => {
     for (const key in metrics) {
       if (o.key) {
-        o.key[key] = metrics[key](o.toArray()) as Pivot<T, TD, TM>[Extract<
+        o.key[key] = metrics[key](o) as Pivot<T, TD, TM>[Extract<
           keyof TM,
           string
         >];
