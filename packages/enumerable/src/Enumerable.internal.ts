@@ -184,7 +184,6 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return rel;
   }
   protected *generator() {
-    console.log("triggered");
     for (const value of this.parent) {
       yield value as T;
     }
