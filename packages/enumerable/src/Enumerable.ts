@@ -148,7 +148,7 @@ Enumerable.prototype.innerJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (item1: T, item2: T2) => TResult = defaultResultFn,
+  resultSelector: (item1: T, item2: T2) => TResult,
 ): Enumerable<TResult> {
   return new InnerJoinEnumerable(
     this,
@@ -161,7 +161,7 @@ Enumerable.prototype.leftJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (item1: T, item2: T2 | null) => TResult = defaultResultFn,
+  resultSelector: (item1: T, item2: T2 | null) => TResult,
 ): Enumerable<TResult> {
   return new LeftJoinEnumerable(
     this,
@@ -174,7 +174,7 @@ Enumerable.prototype.rightJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (item1: T | null, item2: T2) => TResult = defaultResultFn,
+  resultSelector: (item1: T | null, item2: T2) => TResult,
 ): Enumerable<TResult> {
   return new RightJoinEnumerable(
     this,
@@ -187,10 +187,7 @@ Enumerable.prototype.fullJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
   relation: (item: T, item2: T2) => boolean,
-  resultSelector: (
-    item1: T | null,
-    item2: T2 | null,
-  ) => TResult = defaultResultFn,
+  resultSelector: (item1: T | null, item2: T2 | null) => TResult,
 ): Enumerable<TResult> {
   return new FullJoinEnumerable(
     this,
@@ -215,10 +212,7 @@ Enumerable.prototype.groupJoin = function <T, T2, TResult>(
 Enumerable.prototype.crossJoin = function <T, T2, TResult>(
   this: Enumerable<T>,
   array2: IEnumerable<T2>,
-  resultSelector: (
-    item1: T | null,
-    item2: T2 | null,
-  ) => TResult = defaultResultFn,
+  resultSelector: (item1: T | null, item2: T2 | null) => TResult,
 ): Enumerable<TResult> {
   return new CrossJoinEnumerable(this, Enumerable.from(array2), resultSelector);
 };
@@ -306,21 +300,4 @@ export const keyComparer = <T = unknown>(a: T, b: T) => {
     }
   }
   return result;
-};
-export const defaultResultFn = <T = unknown, T2 = unknown, R = unknown>(
-  item1: T | null,
-  item2: T2 | null,
-): R => {
-  const result = {} as Partial<Record<string, unknown>>;
-  if (item2) {
-    for (const prop in item2) {
-      result[prop] = item2[prop];
-    }
-  }
-  if (item1) {
-    for (const prop in item1) {
-      result[prop] = item1[prop];
-    }
-  }
-  return result as R;
 };
