@@ -39,31 +39,31 @@ declare module "./Queryable" {
         distinct(): Queryable<T>;
         except(array2: Queryable<T>): Queryable<T>;
 
-        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, null | T | T2>): Queryable<TResult>;
-        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
-        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, null | T | T2> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
+        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, null | T | T2>): Queryable<TResult>;
+        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
+        fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, null | T | T2> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
 
         groupBy<K>(keySelector: (item: QueryableChain<T>) => K): Queryable<GroupedEnumerable<K, T>>;
         groupBy<K>(keySelector: FunctionExpression<K, T>): Queryable<GroupedEnumerable<K, T>>;
         groupBy<K>(keySelector: FunctionExpression<K, T> | ((item: QueryableChain<T>) => K)): Queryable<GroupedEnumerable<K, T>>;
 
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult): Queryable<TResult>;
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2[]>): Queryable<TResult>;
-        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult)): Queryable<TResult>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult): Queryable<TResult>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | T2[]>): Queryable<TResult>;
+        groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, T | T2[]> | ((item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult)): Queryable<TResult>;
 
         loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never : TLoad, T>>): Queryable<T>;
         loads<TLoad extends object>(...includes: Array<(item: QueryableChain<T>) => TLoad extends ValueType ? never : TLoad>): Queryable<T>;
         loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never : TLoad, T> | ((item: QueryableChain<T>) => TLoad extends ValueType ? never : TLoad)>): Queryable<T>;
 
-        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2>): Queryable<TResult>;
-        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
-        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | T2> | ((item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
+        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | T2>): Queryable<TResult>;
+        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
+        innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, T | T2> | ((item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
 
         intersect(array2: Queryable<T>): Queryable<T>;
 
-        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | T2 | null>): Queryable<TResult>;
-        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T>, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
-        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2> | null) => boolean), resultSelector?: FunctionExpression<TResult, T | T2> | ((item1: QueryableChain<T>, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
+        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | T2 | null>): Queryable<TResult>;
+        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
+        leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2> | null) => boolean), resultSelector: FunctionExpression<TResult, T | T2> | ((item1: QueryableChain<T>, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
 
         option(option: IQueryOption): Queryable<T>;
 
@@ -80,9 +80,9 @@ declare module "./Queryable" {
         project(...includes: FunctionExpression<ValueType, T>[]): Queryable<T>;
         project(...includes: FunctionExpression<ValueType, T>[] | Array<(item: QueryableChain<T>) => ValueType>): Queryable<T>;
 
-        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector?: FunctionExpression<TResult, T | null | T2>): Queryable<TResult>;
-        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector?: (item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
-        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector?: FunctionExpression<TResult, T | null | T2> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
+        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | null | T2>): Queryable<TResult>;
+        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
+        rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, T | null | T2> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
 
         map<TReturn>(selector: FunctionExpression<TReturn, T> | ((item: QueryableChain<T>) => TReturn)): Queryable<TReturn>;
         map<TReturn>(type: IObjectType<TReturn>, selector: FunctionExpression<TReturn, T> | ((item: QueryableChain<T>) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<TReturn>;
@@ -152,22 +152,22 @@ Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: F
 Queryable.prototype.distinct = function <T>(this: Queryable<T>): Queryable<T> {
     return new DistinctQueryable(this);
 };
-Queryable.prototype.groupJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2[]> | ((item1: T, item2: Enumerable<T2>) => TResult)): Queryable<TResult> {
+Queryable.prototype.groupJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<TResult, T | T2[]> | ((item1: T, item2: Enumerable<T2>) => TResult)): Queryable<TResult> {
     return new GroupJoinQueryable(this, array2, relation, resultSelector);
 };
-Queryable.prototype.innerJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2> | ((item1: T, item2: T2) => TResult)): Queryable<TResult> {
+Queryable.prototype.innerJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<TResult, T | T2> | ((item1: T, item2: T2) => TResult)): Queryable<TResult> {
     return new InnerJoinQueryable(this, array2, relation, resultSelector);
 };
-Queryable.prototype.leftJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | T2 | null> | ((item1: T, item2: T2 | null) => TResult)): Queryable<TResult> {
+Queryable.prototype.leftJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<TResult, T | T2 | null> | ((item1: T, item2: T2 | null) => TResult)): Queryable<TResult> {
     return new LeftJoinQueryable(this, array2, relation, resultSelector);
 };
-Queryable.prototype.rightJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, T | null | T2> | ((item1: T | null, item2: T2) => TResult)): Queryable<TResult> {
+Queryable.prototype.rightJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<TResult, T | null | T2> | ((item1: T | null, item2: T2) => TResult)): Queryable<TResult> {
     return new RightJoinQueryable(this, array2, relation, resultSelector);
 };
-Queryable.prototype.fullJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<TResult, null | T | T2> | ((item1: T | null, item2: T2 | null) => TResult)): Queryable<TResult> {
+Queryable.prototype.fullJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<TResult, null | T | T2> | ((item1: T | null, item2: T2 | null) => TResult)): Queryable<TResult> {
     return new FullJoinQueryable(this, array2, relation, resultSelector);
 };
-Queryable.prototype.crossJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, resultSelector?: FunctionExpression<TResult, null | T | T2> | ((item1: T | null, item2: T2 | null) => TResult)): Queryable<TResult> {
+Queryable.prototype.crossJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, resultSelector: FunctionExpression<TResult, null | T | T2> | ((item1: T | null, item2: T2 | null) => TResult)): Queryable<TResult> {
     return new CrossJoinQueryable(this, array2, resultSelector);
 };
 Queryable.prototype.union = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {

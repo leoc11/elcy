@@ -29,7 +29,7 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T, item2: Enumerable<T2>) => R), public type: IObjectType<R> = Object as any) {
+    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R> | ((item1: T, item2: Enumerable<T2>) => R), public type: IObjectType<R> = Object as any) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relationShip instanceof FunctionExpression) {

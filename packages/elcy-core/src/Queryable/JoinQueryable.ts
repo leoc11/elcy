@@ -37,7 +37,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(protected joinType: JoinType, parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector?: FunctionExpression<R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> | ObjectConstructor = Object) {
+    constructor(protected joinType: JoinType, parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> | ObjectConstructor = Object) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relation instanceof FunctionExpression) {
