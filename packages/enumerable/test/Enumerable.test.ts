@@ -1,11 +1,11 @@
 import { describe, it, expect } from "bun:test";
 import { Enumerable } from "../src/Enumerable";
 import { GroupByIterator } from "../src/GroupByIterator";
-import { GroupedEnumerable } from "../src";
+import { GroupedEnumerable, IEnumerableCache } from "../src";
 
 describe("ENUMERABLE", () => {
   const items = Enumerable.from([
-    1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7
+    1, 5, 3, 0, 0, 0, 1, 8, 5, 5, 9, 0, 2, 6, 4, 8, 7,
   ]);
   const items2 = Enumerable.from([
     [1, 2],
@@ -17,15 +17,38 @@ describe("ENUMERABLE", () => {
     { position: 1, value: 1 },
     { position: 3, value: 1 },
   ]);
+  describe("FROM", () => {
+    it("should work", () => {
+      const arrayEnum = Enumerable.from([1, 2, 3]);
+      expect(arrayEnum.count()).toBe(3);
+      expect(arrayEnum.toArray()).toEqual([1, 2, 3]);
+
+      const setEnum = Enumerable.from(new Set([1, 2, 3]));
+      expect(setEnum.count()).toBe(3);
+      expect(setEnum.toArray()).toEqual([1, 2, 3]);
+
+      const mapEnum = Enumerable.from(
+        new Map([
+          ["key", 1],
+          ["value", 2],
+        ]),
+      );
+      expect(mapEnum.count()).toBe(2);
+      expect(mapEnum.toArray()).toEqual([
+        ["key", 1],
+        ["value", 2],
+      ]);
+    });
+  });
   describe("DISTINCT", () => {
     it("should work", () => {
       const distincts = items.distinct();
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -40,11 +63,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.except([1, 5]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -63,11 +86,11 @@ describe("ENUMERABLE", () => {
         (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0),
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -86,14 +109,14 @@ describe("ENUMERABLE", () => {
       const distincts = items.groupJoin(
         [1, 5],
         (o, o2) => o % 2 === o2 % 2,
-        (o1, o2s) => (o1 ? o1 : 0) + (o2s.sum()),
+        (o1, o2s) => (o1 ? o1 : 0) + o2s.sum(),
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -103,7 +126,7 @@ describe("ENUMERABLE", () => {
       expect(array).toBeInstanceOf(Array);
       expect(array).toHaveLength(index1);
       expect(array).toEqual([
-        7, 11, 9, 0, 0, 0, 7, 8, 11, 11, 15, 0, 2, 6, 4, 8, 13
+        7, 11, 9, 0, 0, 0, 7, 8, 11, 11, 15, 0, 2, 6, 4, 8, 13,
       ]);
     });
   });
@@ -114,11 +137,11 @@ describe("ENUMERABLE", () => {
         (o1, o2) => o1 + o2,
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -133,11 +156,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.groupBy((o) => o % 2);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -153,7 +176,7 @@ describe("ENUMERABLE", () => {
       let firstGroup: GroupedEnumerable<string, number>;
       const groups = source.groupBy((o) => String(o % 3));
       for (const group of groups) {
-        for (const { } of group) {
+        for (const {} of group) {
           iterateCount++;
         }
         firstGroup = group;
@@ -161,14 +184,22 @@ describe("ENUMERABLE", () => {
       }
 
       expect(iterateCount).toBe(4);
-      const sourceResult = (source as unknown as { cache: { result: number[] } }).cache.result;
-      const groupByIterator: GroupByIterator<number, number> = (firstGroup as any).iterator;
+      const sourceResult = (
+        source as unknown as { cache: { result: number[] } }
+      ).cache.result;
+      const groupByIterator: GroupByIterator<number, number> = (
+        firstGroup as any
+      ).iterator;
       expect(sourceResult).toBeArrayOfSize(11);
       expect(groupByIterator.isDone).toBe(true);
       expect(groupByIterator.result).toBeArrayOfSize(3);
 
-      const groupCacheResult = (firstGroup as unknown as { cache: { result: number[] } }).cache.result;
-      expect(groupByIterator.groupResultMap.get(String(firstGroup.key))).toBe(groupCacheResult);
+      const groupCacheResult = (
+        firstGroup as unknown as { cache: { result: number[] } }
+      ).cache.result;
+      expect(groupByIterator.groupResultMap.get(String(firstGroup.key))).toBe(
+        groupCacheResult,
+      );
     });
     it("should group by object", () => {
       const source = Enumerable.range(0, 10);
@@ -179,7 +210,7 @@ describe("ENUMERABLE", () => {
       for (const group of groups) {
         groupList.push(group);
         let iterateCount = 0;
-        for (const { } of group) {
+        for (const {} of group) {
           iterateCount++;
         }
         groupItemCounts.push(iterateCount);
@@ -188,11 +219,11 @@ describe("ENUMERABLE", () => {
 
       expect(groupCount).toBe(3);
       expect(groupItemCounts).toEqual([4, 4, 3]);
-      expect(groupList.map(o => o.key.modulo)).toEqual([0, 1, 2]);
+      expect(groupList.map((o) => o.key.modulo)).toEqual([0, 1, 2]);
     });
     it("should group by class", () => {
       class Modulo {
-        constructor(public readonly modulo: number) { }
+        constructor(public readonly modulo: number) {}
         public method() {
           return this.modulo;
         }
@@ -205,7 +236,7 @@ describe("ENUMERABLE", () => {
       for (const group of groups) {
         groupList.push(group);
         let iterateCount = 0;
-        for (const { } of group) {
+        for (const {} of group) {
           iterateCount++;
         }
         groupItemCounts.push(iterateCount);
@@ -214,7 +245,7 @@ describe("ENUMERABLE", () => {
 
       expect(groupCount).toBe(3);
       expect(groupItemCounts).toEqual([4, 4, 3]);
-      expect(groupList.map(o => o.key.modulo)).toEqual([0, 1, 2]);
+      expect(groupList.map((o) => o.key.modulo)).toEqual([0, 1, 2]);
     });
     it("should group by date", () => {
       const source = Enumerable.range(0, 10);
@@ -225,7 +256,7 @@ describe("ENUMERABLE", () => {
       for (const group of groups) {
         groupList.push(group);
         let iterateCount = 0;
-        for (const { } of group) {
+        for (const {} of group) {
           iterateCount++;
         }
         groupItemCounts.push(iterateCount);
@@ -234,7 +265,7 @@ describe("ENUMERABLE", () => {
 
       expect(groupCount).toBe(3);
       expect(groupItemCounts).toEqual([4, 4, 3]);
-      expect(groupList.map(o => o.key.getTime())).toEqual([0, 1, 2]);
+      expect(groupList.map((o) => o.key.getTime())).toEqual([0, 1, 2]);
     });
     it("should group by primitive", () => {
       const source = Enumerable.range(0, 10);
@@ -245,7 +276,7 @@ describe("ENUMERABLE", () => {
       for (const group of groups) {
         groupList.push(group);
         let iterateCount = 0;
-        for (const { } of group) {
+        for (const {} of group) {
           iterateCount++;
         }
         groupItemCounts.push(iterateCount);
@@ -254,7 +285,7 @@ describe("ENUMERABLE", () => {
 
       expect(groupCount).toBe(3);
       expect(groupItemCounts).toEqual([4, 4, 3]);
-      expect(groupList.map(o => o.key)).toEqual([0, 1, 2]);
+      expect(groupList.map((o) => o.key)).toEqual([0, 1, 2]);
     });
   });
   describe("INNERJOIN", () => {
@@ -265,11 +296,11 @@ describe("ENUMERABLE", () => {
         (o1, o2) => o1 + o2,
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -284,11 +315,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.intersect([2, 11]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -308,11 +339,11 @@ describe("ENUMERABLE", () => {
         (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0),
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -329,11 +360,11 @@ describe("ENUMERABLE", () => {
     it("should sort by asc", () => {
       const distincts = items.orderBy([(o) => o]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -348,11 +379,11 @@ describe("ENUMERABLE", () => {
     it("should sort by desc", () => {
       const distincts = items.orderBy([(o) => o, "DESC"]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -370,11 +401,11 @@ describe("ENUMERABLE", () => {
         [(o) => o.value, "DESC"],
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -398,11 +429,11 @@ describe("ENUMERABLE", () => {
         (o1, o2) => (o1 ? o1 : 0) + (o2 ? o2 : 0),
       );
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -417,11 +448,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.map((o) => o % 2);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -438,11 +469,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items2.flatMap((o) => o);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -457,11 +488,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.skip(10).take(2);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -477,11 +508,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items.slice(10, 2);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -497,11 +528,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items2.union([[5, 6]]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -519,11 +550,11 @@ describe("ENUMERABLE", () => {
     it("should only include unique", () => {
       const distincts = items.union([0, 8, 7, 100]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -539,11 +570,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = items2.concat([[5, 6]]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -561,11 +592,11 @@ describe("ENUMERABLE", () => {
     it("should include duplicate", () => {
       const distincts = items.concat([0, 8, 7, 100], [100]);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
       const array = distincts.toArray();
@@ -581,11 +612,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const where = items.filter((o) => o % 2 === 0);
       let index1 = 0;
-      for (const { } of where) {
+      for (const {} of where) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of where) {
+      for (const {} of where) {
         index2++;
       }
       const array = where.toArray();
@@ -597,11 +628,11 @@ describe("ENUMERABLE", () => {
     it("should apply multiple filter", () => {
       const where = items.filter((o) => o % 2 === 0).filter((o) => o <= 2);
       let index1 = 0;
-      for (const { } of where) {
+      for (const {} of where) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of where) {
+      for (const {} of where) {
         index2++;
       }
       const array = where.toArray();
@@ -616,11 +647,11 @@ describe("ENUMERABLE", () => {
     it("should work", () => {
       const distincts = (items as Enumerable<unknown>).cast<number>();
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
 
@@ -629,28 +660,222 @@ describe("ENUMERABLE", () => {
       expect(index1).toBe(index2);
     });
   });
-  describe("PIVOT", () => {
+  describe("OFTYPE", () => {
     it("should work", () => {
-      const distincts = items.pivot({
-        modulo: o => o % 2
-      }, {
-        max: o => o.max()
-      });
+      const distincts = Enumerable.from([
+        1,
+        "1",
+        2,
+        new Date(2),
+        3,
+        true,
+      ]).ofType(Number);
       let index1 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index1++;
       }
       let index2 = 0;
-      for (const { } of distincts) {
+      for (const {} of distincts) {
         index2++;
       }
 
       const array = distincts.toArray();
-      expect(index1).toBe(items.groupBy(o => o % 2).count());
+      expect(index1).toBe(3);
+      expect(index1).toBe(index2);
+      expect(array).toEqual([1, 2, 3]);
+    });
+  });
+  describe("PIVOT", () => {
+    it("should work", () => {
+      const distincts = items.pivot(
+        {
+          modulo: (o) => o % 2,
+        },
+        {
+          max: (o) => o.max(),
+        },
+      );
+      let index1 = 0;
+      for (const {} of distincts) {
+        index1++;
+      }
+      let index2 = 0;
+      for (const {} of distincts) {
+        index2++;
+      }
+
+      const array = distincts.toArray();
+      expect(index1).toBe(items.groupBy((o) => o % 2).count());
       expect(index1).toBe(index2);
       expect(array).toBeInstanceOf(Array);
       expect(array).toHaveLength(index1);
-      expect(array).toEqual([{ modulo: 1, max: 9 }, { modulo: 0, max: 8 }]);
+      expect(array).toEqual([
+        { modulo: 1, max: 9 },
+        { modulo: 0, max: 8 },
+      ]);
+    });
+  });
+  describe("CACHE", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      let cache: IEnumerableCache<number> = (enums as any).cache;
+      expect(cache?.enabled).not.toBe(true);
+      expect(cache?.result).not.toBeArray();
+
+      const cachedEnums = enums.enableCache(true);
+      cache = (enums as any).cache;
+      expect(cachedEnums).toBe(enums);
+      expect(cache.enabled).toBe(true);
+      expect(cache.result).not.toBeArray();
+
+      let index1 = 0;
+      for (const {} of enums) {
+        index1++;
+      }
+      expect(cache.enabled).toBe(true);
+      expect(cache.result).toBeArray();
+
+      let index2 = 0;
+      for (const {} of enums) {
+        index2++;
+      }
+
+      const array = enums.toArray();
+
+      expect(index1).toBe(cache.result.length);
+      expect(index1).toBe(index2);
+      expect(array).toBeInstanceOf(Array);
+      expect(array).toHaveLength(index1);
+      expect(array).toEqual(cache.result);
+    });
+  });
+  describe("AVG", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      const avg = enums.avg();
+      const sum = enums.sum();
+      const count = enums.count();
+      expect(avg).toBe(sum / count);
+    });
+    it("should work with selector", () => {
+      const enums = items.filter((o) => o > 5);
+      const avg = enums.avg((o) => o + 1);
+      const sum = enums.sum((o) => o + 1);
+      const count = enums.count();
+      expect(avg).toBe(sum / count);
+    });
+    it("should return 0 when empty", () => {
+      const enums = items.filter((o) => o > 100);
+      const avg = enums.avg();
+      const sum = enums.sum();
+      const count = enums.count();
+
+      expect(sum).toBe(0);
+      expect(count).toBe(0);
+      expect(avg).toBe(null);
+    });
+  });
+  describe("MAX", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      const max = enums.max();
+      const maxMath = Math.max.call(Math, ...enums);
+      expect(max).toBe(maxMath);
+    });
+    it("should work with selector", () => {
+      const enums = items.filter((o) => o > 5);
+      const max = enums.max((o) => o + 1);
+      const maxMath = Math.max.call(Math, ...enums.map((o) => o + 1));
+      expect(max).toBe(maxMath);
+    });
+    it("should return 0 when empty", () => {
+      const enums = items.filter((o) => o > 100);
+      const max = enums.max();
+      const count = enums.count();
+
+      expect(count).toBe(0);
+      expect(max).toBe(null);
+    });
+  });
+  describe("MIN", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      const min = enums.min();
+      const minMath = Math.min.call(Math, ...enums);
+      expect(min).toBe(minMath);
+    });
+    it("should work with selector", () => {
+      const enums = items.filter((o) => o > 5);
+      const min = enums.min((o) => o + 1);
+      const minMath = Math.min.call(Math, ...enums.map((o) => o + 1));
+      expect(min).toBe(minMath);
+    });
+    it("should return 0 when empty", () => {
+      const enums = items.filter((o) => o > 100);
+      const min = enums.min();
+      const count = enums.count();
+
+      expect(count).toBe(0);
+      expect(min).toBe(null);
+    });
+  });
+  describe("INCLUDES", () => {
+    it("should work", () => {
+      let include = items.includes(0);
+      let some = items.some((o) => o === 0);
+      expect(include).toBe(some);
+      expect(include).toBe(true);
+
+      include = items.includes(Infinity);
+      some = items.some((o) => o === Infinity);
+      expect(include).toBe(some);
+      expect(include).toBe(false);
+    });
+  });
+  describe("EACH", () => {
+    it("should work", () => {
+      let loopCount = 0;
+      let loops = [];
+      items.each((o) => {
+        loops.push(o);
+        loopCount++;
+      });
+
+      const array = items.toArray();
+      expect(loopCount).toBe(array.length);
+      expect(loops).toEqual(array);
+    });
+  });
+  describe("FIND", () => {
+    it("should work", () => {
+      let item = items.find((o) => o === 5);
+      expect(item).toBe(5);
+
+      item = items.find();
+      expect(item).toBe(1);
+
+      item = items.find((o) => o < -1);
+      expect(item).toBe(undefined);
+    });
+  });
+  describe("TOMAP", () => {
+    it("should work", () => {
+      const map1 = items.toMap((o) => o?.toString());
+      const map2 = items.toMap(
+        (o) => o?.toString(),
+        (o) => o,
+      );
+      expect(map1.size).toBe(items.distinct().count());
+      expect(map1).toEqual(map2);
+    });
+  });
+  describe("TOSET", () => {
+    it("should work", () => {
+      const set1 = items.toSet();
+      const array = items.toArray();
+      const set2 = new Set(array);
+      expect(set1.size).toBe(items.distinct().count());
+      expect(set1).toEqual(set2);
     });
   });
 });

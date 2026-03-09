@@ -11,7 +11,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
         }
         this.cache.enabled = true;
       } else if (this.cache) {
-        this.cache.enabled = false;
+        this.cache = undefined;
       }
     }
 
@@ -76,14 +76,14 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return false;
   }
-  public avg(selector?: (item: T) => number): number {
+  public avg(selector?: (item: T) => number): number | null {
     let sum = 0;
     let count = 0;
     for (const item of this) {
       sum += selector ? selector(item) : (item as number);
       count++;
     }
-    return sum / count;
+    return count === 0 ? null : sum / count;
   }
   public includes(item: T): boolean {
     for (const it of this) {
@@ -119,7 +119,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return undefined;
   }
   public max(selector?: (item: T) => number): number {
-    let max = -Infinity;
+    let max = null;
     for (const item of this) {
       const num = selector ? selector(item) : (item as number);
       if (max < num) {
@@ -129,7 +129,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return max;
   }
   public min(selector?: (item: T) => number): number {
-    let min = Infinity;
+    let min = null;
     for (const item of this) {
       const num = selector ? selector(item) : (item as number);
       if (!min || min > num) {
@@ -140,7 +140,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
     return this.filter(
-      (o) => o instanceof type,
+      (o) => o instanceof type || o?.constructor === type,
     ) as unknown as Enumerable<TType>;
   }
   public reduce<R = T>(
@@ -167,6 +167,9 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
 
     return Array.from(this);
   }
+  public toSet(): Set<T> {
+    return new Set(this);
+  }
   public toMap<K, V = T>(
     keySelector: (item: T) => K,
     valueSelector?: (item: T) => V,
@@ -181,6 +184,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return rel;
   }
   protected *generator() {
+    console.log("triggered");
     for (const value of this.parent) {
       yield value as T;
     }
