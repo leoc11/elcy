@@ -64,7 +64,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const query = this.deferredSome(predicate);
         return await query.execute();
     }
-    public async avg(selector?: (item: QueryableChain<T>) => number) {
+    public async avg(selector?: (item: QueryableChain<T>) => number): Promise<number | null> {
         const query = this.deferredAvg(selector);
         return await query.execute();
     }
@@ -205,7 +205,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredAvg(selector?: (item: QueryableChain<T>) => number) {
+    public deferredAvg(selector?: (item: QueryableChain<T>) => number): DeferredQuery<number | null> {
         let queryCache: IQueryCache<number>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
