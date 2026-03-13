@@ -67,6 +67,7 @@ import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawEntityExpression } from "src/Queryable/QueryExpression/RawEntityExpression";
+import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
 
 let Temporal: typeof import("@js-temporal/polyfill").Temporal;
 let Decimal: typeof import("decimal.js").default;
@@ -652,21 +653,25 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
         let entityQ = "";
-        if (entity instanceof IntersectExpression) {
-            entityQ = "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
-                this.newLine() + "INTERSECT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
+        if (entity instanceof UnionExpression) {
+            entityQ = `(${this.newLine(1)}` +
+                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}UNION${this.newLine()}`) +
+                `${this.newLine(-1)})`;
         }
-        else if (entity instanceof UnionExpression) {
-            const isUnionAll = this.extractValue(entity.isUnionAll, param) || false;
-            entityQ = "(" + this.newLine(1) + this.getSelectQueryString(entity.subSelect, param) +
-                this.newLine() + "UNION" + (isUnionAll ? " ALL" : "") +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
+        else if (entity instanceof IntersectExpression) {
+            entityQ = `(${this.newLine(1)}` +
+                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}INTERSECT${this.newLine()}`) +
+                `${this.newLine(-1)})`;
         }
         else if (entity instanceof ExceptExpression) {
-            entityQ = "(" + this.newLine(+1) + this.getSelectQueryString(entity.subSelect, param) +
-                this.newLine() + "EXCEPT" +
-                this.newLine() + this.getSelectQueryString(entity.subSelect2, param) + this.newLine(-1) + ")";
+            entityQ = `(${this.newLine(1)}` +
+                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}EXCEPT${this.newLine()}`) +
+                `${this.newLine(-1)})`;
+        }
+        else if (entity instanceof ConcatExpression) {
+            entityQ = `(${this.newLine(1)}` +
+                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}UNION ALL${this.newLine()}`) +
+                `${this.newLine(-1)})`;
         }
         else if (entity instanceof ProjectionEntityExpression) {
             entityQ = this.getSelectQueryString(entity.subSelect, param);
@@ -783,8 +788,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
                 let joinStr = `${o.type} JOIN ${childString}`;
                 if (o.relation) {
-                    const joinString = this.toString(o.relation, param);
-                    joinStr += this.newLine(1, false) + `ON ${joinString}`;
+                    joinStr += ` ON ${this.toString(o.relation, param)}`;
                 }
 
                 return joinStr;
