@@ -819,6 +819,30 @@ describe("ENUMERABLE", () => {
       expect(min).toBe(null);
     });
   });
+  describe("Join", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5).map(o => String(o));
+      const join = enums.join(",");
+      const arrayJoin = enums.toArray().join(",");
+      expect(join).toBe(arrayJoin);
+    });
+    it("should work without separator", () => {
+      const enums = items.filter((o) => o > 5).map(o => String(o));
+      const join = enums.join();
+      const arrayJoin = enums.toArray().join();
+      expect(join).toBe(arrayJoin);
+    });
+    it("should return empty string when empty", () => {
+      const enums = items.filter((o) => o > 100).map(o => String(o));
+      const count = enums.count();
+      expect(count).toBe(0);
+
+      const join = enums.join();
+      const arrayJoin = enums.toArray().join();
+      expect(join).toBe("");
+      expect(join).toBe(arrayJoin);
+    });
+  });
   describe("INCLUDES", () => {
     it("should work", () => {
       let include = items.includes(0);

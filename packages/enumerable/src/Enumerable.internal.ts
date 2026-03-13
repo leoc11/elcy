@@ -149,8 +149,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return count === 0 ? null : sum / count;
   }
-  public join: T extends string ? (separator?: string) => string : never = ((separator: string = ''): string => {
-    let str: string = null;
+  public join: T extends string ? (separator?: string) => string : never = ((separator: string = ','): string => {
+    let str: string = "";
     for (const item of this) {
       str += `${str ? separator : ""}${item}`;
     }

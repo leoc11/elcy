@@ -19,6 +19,7 @@ import { SkipEnumerable } from "./SkipEnumerable";
 import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
+import { ConcatEnumerable } from "./ConcatEnumerable";
 
 declare module "./Enumerable" {
   interface Enumerable<T> {
@@ -28,7 +29,6 @@ declare module "./Enumerable" {
       resultSelector: (item1: T, item2: T2) => TResult,
     ): Enumerable<TResult>;
     distinct(selector?: (item: T) => unknown): Enumerable<T>;
-    except(array2: IEnumerable<T>): Enumerable<T>;
     fullJoin<T2, TResult>(
       array2: IEnumerable<T2>,
       relation: (item: T, item2: T2) => boolean,
@@ -45,7 +45,6 @@ declare module "./Enumerable" {
       relation: (item: T, item2: T2) => boolean,
       resultSelector: (item1: T, item2: T2) => TResult,
     ): Enumerable<TResult>;
-    intersect(array2: IEnumerable<T>): Enumerable<T>;
     leftJoin<T2, TResult>(
       array2: IEnumerable<T2>,
       relation: (item: T, item2: T2) => boolean,
@@ -70,9 +69,11 @@ declare module "./Enumerable" {
     ): Enumerable<TReturn>;
     skip(skip: number): Enumerable<T>;
     take(take: number): Enumerable<T>;
-    slice(skip: number, take: number): Enumerable<T>;
-    union(array2: IEnumerable<T>): Enumerable<T>;
-    concat(...items: Iterable<T>[]): Enumerable<T>;
+    slice(skip: number, take?: number): Enumerable<T>;
+    union(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
+    intersect(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
+    except(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
+    concat(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
     filter(predicate: (item: T) => boolean): Enumerable<T>;
   }
 }
@@ -218,33 +219,27 @@ Enumerable.prototype.crossJoin = function <T, T2, TResult>(
 };
 Enumerable.prototype.union = function <T>(
   this: Enumerable<T>,
-  array2: IEnumerable<T>,
+  ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new UnionEnumerable(this, Enumerable.from(array2));
+  return new UnionEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
 };
 Enumerable.prototype.concat = function <T>(
   this: Enumerable<T>,
-  ...items: Iterable<T>[]
+  ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  let result: Enumerable<T> = this;
-  for (const item of items) {
-    result = new UnionEnumerable(result, Enumerable.from(item), true);
-  }
-
-  return result;
+  return new ConcatEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
 };
 Enumerable.prototype.intersect = function <T>(
   this: Enumerable<T>,
-  array2: IEnumerable<T>,
+  ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new IntersectEnumerable(this, Enumerable.from(array2));
+  return new IntersectEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
 };
 Enumerable.prototype.except = function <T>(
   this: Enumerable<T>,
-  array2: IEnumerable<T>,
+  ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new ExceptEnumerable(this, Enumerable.from(array2));
+  return new ExceptEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
 };
 Enumerable.prototype.pivot = function <
   T,
