@@ -922,6 +922,87 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         return column;
                     }
                 }
+                case "join": {
+                    if (param.scope === "loads" || param.scope === "project") {
+                        throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+                    let columnExp = selectOperand.selects.slice(0, 1).map((o) => {
+                        if (o instanceof ComputedColumnExpression) {
+                            return o.expression;
+                        }
+                        return o;
+                    }).find(o => true);
+
+                    const aggregateExp = new MethodCallExpression(selectOperand as unknown as IExpression<T>, exp.methodName, [columnExp, exp.params[0]], String);
+                    const parentRel = selectOperand.parentRelation as JoinRelation;
+                    if (param.scope === "queryable") {
+                        // call from queryable
+                        const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column"));
+                        objectOperand.selects = [column];
+                        objectOperand.distinct = true;
+                        return objectOperand;
+                    }
+                    else if (selectOperand instanceof GroupByExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
+                        return aggregateExp;
+                    }
+                    else {
+                        // any is used on related entity. change query to groupby.
+                        const objExp = new ObjectValueExpression({});
+                        if (parentRel) {
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
+                            }
+                        }
+
+                        const groupExp = new GroupByExpression(selectOperand, objExp);
+                        groupExp.isAggregate = true;
+                        const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column"));
+                        column.isNullable = false;
+                        groupExp.selects.push(column);
+
+                        if (parentRel && parentRel.isManyToManyRelation) {
+                            // alter relation to: parent -> bridge -> groupExp
+                            const parentSelect = parentRel.parent;
+                            ArrayExtension.delete(parentSelect.joins, parentRel);
+
+                            const bridge = new SelectExpression(parentSelect.entity.clone());
+                            this.setDefaultBehaviour(bridge);
+                            bridge.entity.alias = this.newAlias();
+                            bridge.selects = [];
+
+                            const replaceMap = new Map();
+                            mapReplaceExp(replaceMap, parentSelect.entity, bridge.entity);
+                            mapKeepExp(replaceMap, groupExp);
+                            // relation bridge -> groupExp
+                            bridge.addJoin(groupExp, parentRel.relation.clone(replaceMap), parentRel.type);
+
+                            // group the bridge so it could be easily join to parent
+                            const bridgeAggreateExp = new MethodCallExpression(bridge as unknown as IExpression<T>, exp.methodName, [column], Number);
+                            const bridgeColumn = new ComputedColumnExpression(bridge.entity, bridgeAggreateExp, this.newAlias("column"));
+                            bridgeColumn.isNullable = false;
+
+                            const groupKey = new ObjectValueExpression({});
+                            // add join from parent to bridge
+                            let bridgeParentRelation: IExpression<boolean>;
+                            for (const primaryCol of bridge.entity.primaryColumns) {
+                                groupKey.object[primaryCol.propertyName] = primaryCol;
+                                const pCol = parentSelect.projectedColumns.find((o) => o.columnName === primaryCol.columnName);
+                                const logicalExp = new StrictEqualExpression(primaryCol, pCol);
+                                bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
+                            }
+
+                            const groupedBridge = new GroupByExpression(bridge, groupKey);
+                            groupedBridge.isAggregate = true;
+
+                            parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
+                            ArrayExtension.add(groupedBridge.selects, bridgeColumn);
+
+                            return bridgeColumn;
+                        }
+
+                        return column;
+                    }
+                }
                 case "every":
                 case "some": {
                     if (param.scope === "loads" || param.scope === "project") {
@@ -1308,8 +1389,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                     return selectOperand;
                 }
-                case "slice":
-                case "concat": {
+                case "slice": {
                     throw new Error(`TODO '${exp.methodName}'`);
                 }
                 case "innerJoin":

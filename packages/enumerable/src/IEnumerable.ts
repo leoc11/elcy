@@ -8,8 +8,9 @@ export interface IEnumerable<T> extends Iterable<T> {
   some(predicate: (item: T) => boolean): boolean;
   includes(item: T): boolean;
   slice(skip: number, take?: number): IEnumerable<T>;
-  find(predicate: (item: T) => boolean): T;
+  find(predicate: (item: T) => boolean): T | undefined;
   concat(...items: (Iterable<T> | ConcatArray<T>)[]): IEnumerable<T>;
+  join(separator?: string): string;
   reduce<R = T>(
     callbackfn: (previousValue: R, currentValue: T) => R,
     initialValue?: R,

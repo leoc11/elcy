@@ -54,7 +54,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     async *[Symbol.asyncIterator](): AsyncIterator<T, any, any> {
         yield* await this.toEnumerable();
     }
-    
+
     protected parent: Queryable;
     public async every(predicate: (item: QueryableChain<T>) => boolean) {
         const query = this.deferredEvery(predicate);
@@ -62,10 +62,6 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     }
     public async some(predicate?: (item: QueryableChain<T>) => boolean) {
         const query = this.deferredSome(predicate);
-        return await query.execute();
-    }
-    public async avg(selector?: (item: QueryableChain<T>) => number): Promise<number | null> {
-        const query = this.deferredAvg(selector);
         return await query.execute();
     }
 
@@ -117,7 +113,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
@@ -202,64 +198,6 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (result) => result.find(() => true).rows.some(() => true), this.queryOption);
-        this.dbContext.deferredQueries.push(query);
-        return query;
-    }
-    public deferredAvg(selector?: (item: QueryableChain<T>) => number): DeferredQuery<number | null> {
-        let queryCache: IQueryCache<number>;
-        let cacheKey: number;
-        const timer = Diagnostic.timer();
-        const cacheManager = this.dbContext.queryCacheManager;
-
-        const flatParams = this.flatQueryParameter({ index: 0 });
-        if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "AVG", selector ? hashCode(selector.toString()) : undefined);
-            if (Diagnostic.enabled) {
-                Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
-            }
-
-            queryCache = cacheManager.get<number>(cacheKey);
-            if (Diagnostic.enabled) {
-                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
-                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
-            }
-        }
-
-        const queryBuilder = this.dbContext.queryBuilder;
-        if (!queryCache) {
-            const visitor = this.dbContext.queryVisitor;
-            visitor.queryOption = this.queryOption;
-            visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
-            commandQuery.includes = [];
-            const metParams = [];
-            if (selector) {
-                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "avg", metParams);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
-            if (Diagnostic.enabled) {
-                Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
-            }
-
-            queryCache = {
-                commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
-            };
-            if (!this.queryOption.noQueryCache && cacheManager) {
-                cacheManager.set(cacheKey, queryCache);
-            }
-        }
-
-        const params = this.buildParameter(queryCache.commandQuery, flatParams);
-        if (Diagnostic.enabled) {
-            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
-        }
-
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -612,9 +550,10 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMax(selector?: (item: QueryableChain<T>) => number) {
+    public deferredMax(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
         let queryCache: IQueryCache<number>;
         let cacheKey: number;
+        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -670,9 +609,10 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMin(selector?: (item: QueryableChain<T>) => number) {
+    public deferredMin(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
         let queryCache: IQueryCache<number>;
         let cacheKey: number;
+        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
@@ -728,12 +668,12 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSum(selector?: (item: QueryableChain<T>) => number) {
+    public deferredSum(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
         let queryCache: IQueryCache<number>;
         let cacheKey: number;
+        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
             cacheKey = this.cacheKey(flatParams, "SUM", selector ? hashCode(selector.toString()) : undefined);
@@ -786,6 +726,119 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
+    public deferredAvg(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]): DeferredQuery<number | null> {
+        let queryCache: IQueryCache<number>;
+        let cacheKey: number;
+        const selector = args[0];
+        const timer = Diagnostic.timer();
+        const cacheManager = this.dbContext.queryCacheManager;
+
+        const flatParams = this.flatQueryParameter({ index: 0 });
+        if (!this.queryOption.noQueryCache && cacheManager) {
+            cacheKey = this.cacheKey(flatParams, "AVG", selector ? hashCode(selector.toString()) : undefined);
+            if (Diagnostic.enabled) {
+                Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+            }
+
+            queryCache = cacheManager.get<number>(cacheKey);
+            if (Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
+        const queryBuilder = this.dbContext.queryBuilder;
+        if (!queryCache) {
+            const visitor = this.dbContext.queryVisitor;
+            visitor.queryOption = this.queryOption;
+            visitor.setParameter(flatParams);
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            commandQuery.includes = [];
+            const metParams = [];
+            if (selector) {
+                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
+            }
+            const methodExpression = new MethodCallExpression(commandQuery, "avg", metParams);
+            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, param);
+            commandQuery = param.selectExpression;
+            if (Diagnostic.enabled) {
+                Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
+            }
+
+            queryCache = {
+                commandQuery: commandQuery,
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
+            };
+            if (!this.queryOption.noQueryCache && cacheManager) {
+                cacheManager.set(cacheKey, queryCache);
+            }
+        }
+
+        const params = this.buildParameter(queryCache.commandQuery, flatParams);
+        if (Diagnostic.enabled) {
+            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        }
+
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+        this.dbContext.deferredQueries.push(query);
+        return query;
+    }
+    public deferredJoin: T extends string ? (separator?: string) => DeferredQuery<string> : never = ((separator: string = "") => {
+        let queryCache: IQueryCache<string>;
+        let cacheKey: number;
+        const timer = Diagnostic.timer();
+        const cacheManager = this.dbContext.queryCacheManager;
+
+        const flatParams = this.flatQueryParameter({ index: 0 });
+        if (!this.queryOption.noQueryCache && cacheManager) {
+            cacheKey = this.cacheKey(flatParams, "JOIN", hashCode(separator));
+            if (Diagnostic.enabled) {
+                Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
+            }
+
+            queryCache = cacheManager.get<string>(cacheKey);
+            if (Diagnostic.enabled) {
+                Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
+                Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
+            }
+        }
+
+        if (!queryCache) {
+            const visitor = this.dbContext.queryVisitor;
+            visitor.queryOption = this.queryOption;
+            visitor.setParameter(flatParams);
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            commandQuery.includes = [];
+            const methodExpression = new MethodCallExpression(commandQuery, "join", [new ValueExpression(separator)], String);
+            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, param);
+            commandQuery = param.selectExpression;
+            if (Diagnostic.enabled) {
+                Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
+            }
+
+            const queryBuilder = this.dbContext.queryBuilder;
+            queryCache = {
+                commandQuery: commandQuery,
+                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
+            };
+            if (!this.queryOption.noQueryCache && cacheManager) {
+                cacheManager.set(cacheKey, queryCache);
+            }
+        }
+
+        const params = this.buildParameter(queryCache.commandQuery, flatParams);
+        if (Diagnostic.enabled) {
+            Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
+        }
+
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
+            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+        this.dbContext.deferredQueries.push(query);
+        return query;
+    }) as any;
     //#endregion
 
     //#region deferred
@@ -1010,18 +1063,26 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }
-    public async max(selector?: (item: QueryableChain<T>) => number) {
-        const query = this.deferredMax(selector);
+    public async max(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
+        const query = this.deferredMax(...args);
         return await query.execute();
     }
-    public async min(selector?: (item: QueryableChain<T>) => number) {
-        const query = this.deferredMin(selector);
+    public async min(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
+        const query = this.deferredMin(...args);
         return await query.execute();
     }
-    public async sum(selector?: (item: QueryableChain<T>) => number) {
-        const query = this.deferredSum(selector);
+    public async sum(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
+        const query = this.deferredSum(...args);
         return await query.execute();
     }
+    public async avg(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]): Promise<number | null> {
+        const query = this.deferredAvg(...args);
+        return await query.execute();
+    }
+    public join: T extends string ? (separator?: string) => Promise<string> : never = (async (separator: string = "") => {
+        const query = this.deferredJoin(separator);
+        return await query.execute();
+    }) as any;
     public async toEnumerable(): Promise<Enumerable<T>> {
         const query = this.deferredToEnumerable();
         return await query.execute();

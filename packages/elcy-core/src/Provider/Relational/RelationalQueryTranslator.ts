@@ -106,6 +106,7 @@ relationalQueryTranslator.registerMethod(SelectExpression.prototype, "sum" as an
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "min" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "max" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "avg" as any, aggregateTranslator);
+relationalQueryTranslator.registerMethod(SelectExpression.prototype, "join" as any, (qb, exp, param) => `STRING_AGG(${qb.toString(exp.params[0], param)}, ${qb.toString(exp.params[1], param)})`);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "includes" as any, (qb, exp, param) => `${qb.toString(exp.params[0], param)} IN (${qb.newLine(1, true)}${qb.toString(exp.objectOperand, param)}${qb.newLine(-1, true)})`);
 
 /**
