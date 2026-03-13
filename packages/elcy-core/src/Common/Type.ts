@@ -1,4 +1,4 @@
-import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import type { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 import type { TimeSpan } from "../Data/TimeSpan";
 import type { Uuid } from "../Data/Uuid";
 import type { IExpression } from "../ExpressionBuilder/Expression/IExpression";

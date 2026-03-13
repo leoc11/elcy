@@ -548,7 +548,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 (result) => {
                     let i = 0;
                     result = result.filter(() => (query.queries[i++].type & QueryType.DQL) && true);
-                    return queryCache.resultParser.parse(result, this.dbContext)?.[0];
+                    return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).find();
                 }, this.queryOption);
             this.dbContext.deferredQueries.push(query);
             return query;

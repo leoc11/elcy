@@ -7,6 +7,8 @@ import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"));
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
+relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
+
 postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()");
 
 postgresqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG(10, EXP(1))");

@@ -1,6 +1,6 @@
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { IObjectType, PropertySelector } from "../../Common/Type";
+import { PropertySelector } from "../../Common/Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 
 export interface IRelationData<TSource extends object, TTarget extends object> {
@@ -19,7 +19,7 @@ export interface IRelationData<TSource extends object, TTarget extends object> {
     updateOption?: ReferenceOption;
 }
 export interface IRelationOption<TSource, TTarget> extends IAdditionalRelationOption {
-    name: string;
+    name?: string;
     relationMap: Map<PropertySelector<TSource>, PropertySelector<TTarget>>;
     // used for sql foreign key constraint name
     relationKeyName?: string;

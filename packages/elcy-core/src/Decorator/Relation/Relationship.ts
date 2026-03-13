@@ -7,11 +7,11 @@ import { FunctionHelper } from "src/Helper/FunctionHelper";
 import { IObjectType } from "src/Common/Type";
 import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
 
-export function Relationship<TE extends object>(name: string): ClassPropertyDecorator<TE>;
+export function Relationship<TE extends object>(entity: string, name?: string): ClassPropertyDecorator<TE>;
 export function Relationship<TE extends object, T extends object>(type: IObjectType<T>, option: IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined>;
-export function Relationship<TE extends object, T extends object>(nameOrType: string | IObjectType<T>, option?: IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined> {
-    if (typeof nameOrType === "string") {
-        const name = nameOrType;
+export function Relationship<TE extends object, T extends object>(entityOrType: string | IObjectType<T>, nameOrOption?: string | IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined> {
+    if (typeof entityOrType === "string") {
+        const entity = entityOrType;
         return (_: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T | undefined> | ClassAccessorDecoratorContext<TE, T | undefined>) => {
             let handlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
             if (!Array.isArray(handlers)) {
@@ -19,11 +19,12 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
             }
 
             handlers.push((entityMeta) => {
+                const name = nameOrOption as string ?? entityMeta.type.name;
                 const parentData: IRelationData<TE, T> = {
                     isMaster: true,
                     metaData: entityMeta,
                     propertyName: context.name as keyof TE,
-                    name: name
+                    name: `${entity?.toLocaleLowerCase()}_${name?.toLocaleLowerCase()}`
                 };
                 const parentRelationMeta = new RelationMetaData(parentData);
                 setRelationMetadata(parentData.metaData.type, parentData.propertyName, parentRelationMeta);
@@ -32,7 +33,11 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
         }
     }
     else {
-        const targetType = nameOrType;
+        const targetType = entityOrType;
+        const option = nameOrOption as IRelationOption<TE, T>;
+        if (!option.name) {
+            option.name = targetType.name;
+        }
         if (!option.relationKeyName) {
             option.relationKeyName = `fk_${option.name}`;
         }
@@ -66,7 +71,15 @@ export function Relationship<TE extends object, T extends object>(nameOrType: st
                 setRelationMetadata(childData.metaData.type, childData.propertyName, childRelationMeta);
                 entityMeta.relations.push(childRelationMeta);
 
-                const parentRelationMeta = targetMetaData.relations.find(o => o.name === option.name && o.isMaster && !o.target);
+                let parentRelationMeta = targetMetaData.relations.find(o => o.name === `${entityMeta?.type?.name?.toLocaleLowerCase()}_${option.name?.toLocaleLowerCase()}` && o.isMaster && !o.target);
+                if (!parentRelationMeta) {
+                    parentRelationMeta = new RelationMetaData({
+                        isMaster: true,
+                        metaData: targetMetaData,
+                        propertyName: undefined,
+                        name: option.name
+                    }) as any;
+                }
                 parentRelationMeta.completeRelation(childRelationMeta);
             });
         }

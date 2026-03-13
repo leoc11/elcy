@@ -84,6 +84,7 @@ export type StringColumnType = "character varying" // postgres
     | "native character" // sqlite
     | "varchar" // mysql, postgres, mssql, sqlite
     | "char" // mysql, postgres, mssql, oracle
+    | "text" // postgres
     | "nchar" // mssql, oracle, sqlite
     | "varchar2" // oracle
     | "nvarchar2"; // oracle, sqlite

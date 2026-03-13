@@ -1,5 +1,4 @@
-import { Pivot, ValueType } from "../Common/Type";
-import { IEnumerable } from "@elcy/enumerable";
+import { Pivot, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
