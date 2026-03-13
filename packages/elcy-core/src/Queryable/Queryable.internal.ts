@@ -785,7 +785,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredJoin: T extends string ? (separator?: string) => DeferredQuery<string> : never = ((separator: string = "") => {
+    public deferredJoin: T extends string ? (separator?: string) => DeferredQuery<string> : never = ((separator: string = ",") => {
         let queryCache: IQueryCache<string>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
@@ -1079,7 +1079,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const query = this.deferredAvg(...args);
         return await query.execute();
     }
-    public join: T extends string ? (separator?: string) => Promise<string> : never = (async (separator: string = "") => {
+    public join: T extends string ? (separator?: string) => Promise<string> : never = (async (separator: string = ",") => {
         const query = this.deferredJoin(separator);
         return await query.execute();
     }) as any;
