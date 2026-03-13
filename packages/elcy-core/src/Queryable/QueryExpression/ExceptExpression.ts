@@ -5,28 +5,33 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class ExceptExpression<T> extends ProjectionEntityExpression<T> {
-    constructor(public readonly subSelect: SelectExpression<T>, public readonly subSelect2: SelectExpression, type?: GenericType<T>) {
-        super(subSelect, type);
-        this.subSelect2.isSubSelect = true;
-        this.paramExps = this.paramExps.concat(subSelect2.paramExps);
-        this.entityTypes = Enumerable.from(this.subSelect.entity.entityTypes).concat(this.subSelect2.entity.entityTypes).distinct().toArray();
+export class ExceptExpression<T extends object> extends ProjectionEntityExpression<T> {
+    constructor(type?: GenericType<T>, ...subSelects: [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]) {
+        super(subSelects[0], type);
+        let entityTypes = Enumerable.from<IObjectType>([]);
+        for (const subSelect of subSelects) {
+            subSelect.isSubSelect = true;
+            this.paramExps = this.paramExps.concat(subSelect.paramExps);
+            entityTypes = entityTypes.concat(subSelect.entity.entityTypes);
+        }
+        this.entityTypes = entityTypes.distinct().toArray();
+        this.subSelects = subSelects;
     }
+    public subSelects: SelectExpression<T>[];
     public readonly entityTypes: IObjectType[];
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
         }
-        const select = resolveClone(this.subSelect, replaceMap);
-        const select2 = resolveClone(this.subSelect2, replaceMap);
-        const clone = new ExceptExpression(select, select2, this.type);
+        const subSelects = this.subSelects.map(o => resolveClone(o, replaceMap));
+        const clone = new ExceptExpression(this.type, ...subSelects as [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]);
         replaceMap.set(this, clone);
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("EXCEPT", this.subSelect.hashCode()), this.subSelect2.hashCode());
+        return this.subSelects.reduceRight((r, o, i) => i === 0 ? o.hashCode() : hashCodeAdd(hashCode("EXCEPT", r), o.hashCode()), 0);
     }
     public toString(): string {
-        return `Except(${this.subSelect.toString()}, ${this.subSelect2.toString()})`;
+        return `Except(${this.subSelects.map(o => o.toString()).join(", ")})`;
     }
 }

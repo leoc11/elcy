@@ -835,7 +835,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true) ?? "", this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }) as any;

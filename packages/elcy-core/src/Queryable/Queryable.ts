@@ -29,6 +29,7 @@ import { IOrderDefinition } from "@elcy/enumerable";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { OrderDirection } from "../Common/StringType";
 import { QueryableChain } from "./Interface/QueryableChain";
+import { ConcatQueryable } from "./ConcatQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -37,7 +38,6 @@ declare module "./Queryable" {
         crossJoin<T2, TResult>(array2: Queryable<T2>, resultSelector?: FunctionExpression<TResult, null | T | T2> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
 
         distinct(): Queryable<T>;
-        except(array2: Queryable<T>): Queryable<T>;
 
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, null | T | T2>): Queryable<TResult>;
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
@@ -58,8 +58,6 @@ declare module "./Queryable" {
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | T2>): Queryable<TResult>;
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, T | T2> | ((item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
-
-        intersect(array2: Queryable<T>): Queryable<T>;
 
         leftJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, T | T2>, resultSelector: FunctionExpression<TResult, T | T2 | null>): Queryable<TResult>;
         leftJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
@@ -95,8 +93,11 @@ declare module "./Queryable" {
         skip(skip: number): Queryable<T>;
         take(take: number): Queryable<T>;
         slice(skip: number, take?: number): Queryable<T>;
-        union(array2: Queryable<T>): Queryable<T>;
-        concat(...array2: Queryable<T>[]): Queryable<T>;
+
+        union(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
+        intersect(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
+        except(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
+        concat(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
 
         filter(predicate: (item: QueryableChain<T>) => boolean): Queryable<T>;
         filter(predicate: FunctionExpression<boolean, T>): Queryable<T>;
@@ -143,7 +144,7 @@ Queryable.prototype.slice = function <T>(this: Queryable<T>, skip: number, take?
     if (typeof take === "number" && take > 0) {
         result = new TakeQueryable(result, take);
     }
-    
+
     return result;
 };
 Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: FunctionExpression<K, T> | ((item: T) => K)): Queryable<GroupedEnumerable<K, T>> {
@@ -170,22 +171,17 @@ Queryable.prototype.fullJoin = function <T, T2, TResult>(this: Queryable<T>, arr
 Queryable.prototype.crossJoin = function <T, T2, TResult>(this: Queryable<T>, array2: Queryable<T2>, resultSelector: FunctionExpression<TResult, null | T | T2> | ((item1: T | null, item2: T2 | null) => TResult)): Queryable<TResult> {
     return new CrossJoinQueryable(this, array2, resultSelector);
 };
-Queryable.prototype.union = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
-    return new UnionQueryable(this, array2);
+Queryable.prototype.union = function <T>(this: Queryable<T>, ...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T> {
+    return new UnionQueryable(this, ...items);
 };
-Queryable.prototype.concat = function <T>(this: Queryable<T>, ...items: Queryable<T>[]): Queryable<T> {
-    let result: Queryable<T> = this;
-    for (const item of items) {
-        result = new UnionQueryable(result, item, true);
-    }
-
-    return result;
+Queryable.prototype.concat = function <T>(this: Queryable<T>, ...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T> {
+    return new ConcatQueryable(this, ...items);
 };
-Queryable.prototype.intersect = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
-    return new IntersectQueryable(this, array2);
+Queryable.prototype.intersect = function <T>(this: Queryable<T>, ...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T> {
+    return new IntersectQueryable(this, ...items);
 };
-Queryable.prototype.except = function <T>(this: Queryable<T>, array2: Queryable<T>): Queryable<T> {
-    return new ExceptQueryable(this, array2);
+Queryable.prototype.except = function <T>(this: Queryable<T>, ...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T> {
+    return new ExceptQueryable(this, ...items);
 };
 Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(this: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);

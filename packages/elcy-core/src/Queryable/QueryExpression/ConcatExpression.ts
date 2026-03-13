@@ -5,7 +5,7 @@ import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class UnionExpression<T extends object> extends ProjectionEntityExpression<T> {
+export class ConcatExpression<T extends object> extends ProjectionEntityExpression<T> {
     constructor(type?: GenericType<T>, ...subSelects: [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]) {
         super(subSelects[0], type);
         let entityTypes = Enumerable.from<IObjectType>([]);
@@ -24,14 +24,14 @@ export class UnionExpression<T extends object> extends ProjectionEntityExpressio
             replaceMap = new Map();
         }
         const subSelects = this.subSelects.map(o => resolveClone(o, replaceMap));
-        const clone = new UnionExpression(this.type, ...subSelects as [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]);
+        const clone = new ConcatExpression(this.type, ...subSelects as [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]);
         replaceMap.set(this, clone);
         return clone;
     }
     public hashCode() {
-        return this.subSelects.reduceRight((r, o, i) => i === 0 ? o.hashCode() : hashCodeAdd(hashCode("UNION", r), o.hashCode()), 0);
+        return this.subSelects.reduceRight((r, o, i) => i === 0 ? o.hashCode() : hashCodeAdd(hashCode("CONCAT", r), o.hashCode()), 0);
     }
     public toString(): string {
-        return `Union(${this.subSelects.map(o => o.toString()).join(", ")})`;
+        return `Concat(${this.subSelects.map(o => o.toString()).join(", ")})`;
     }
 }

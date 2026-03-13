@@ -1,42 +1,46 @@
+import type { IQueryVisitor } from "../Query/IQueryVisitor";
+import type { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import type { IQueryExpression } from "./QueryExpression/IQueryExpression";
+import type { SelectExpression } from "./QueryExpression/SelectExpression";
+import type { MethodKey } from "src/Common/Type";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { hashCode } from "../Helper/Util";
-import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
-import { IQueryExpression } from "./QueryExpression/IQueryExpression";
-import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class UnionQueryable<T> extends Queryable<T> {
     public get parameters() {
         if (!this._parameters) {
             this._parameters = {};
-            Object.assign(this._parameters, this.parent2.parameters);
-            Object.assign(this._parameters, this.parent.parameters);
+            for (const parent of this.parents) {
+                Object.assign(this._parameters, parent.parameters);
+            }
         }
         return this._parameters;
     }
-    constructor(parent: Queryable<T>, parent2: Queryable<T>, public readonly isUnionAll = false) {
-        super(parent.type, parent);
-        this.parent2 = parent2.parameter({ union: isUnionAll });
+    constructor(...parents: [Queryable<T>, Queryable<T>, ...Queryable<T>[]]) {
+        const parent = parents[0];
+        super(parent.type, parent as Queryable);
+        this.parents = parents;
     }
-    protected readonly parent2: Queryable<T>;
+    protected readonly parents: Queryable<T>[];
     private _parameters: { [key: string]: unknown };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "union", [childOperand, new ParameterExpression<boolean>("union", Boolean)]);
+        const parentOperands = this.parents.map(o => o.buildQuery(queryVisitor) as SelectExpression<T>);
+        const objectOperand = parentOperands[0];
+        const childOperands = parentOperands.slice(1);
+        const methodExpression = new MethodCallExpression(parentOperands[0], "union" as MethodKey<T[]>, childOperands);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         const resut = queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
         return resut;
     }
     public flatQueryParameter(param?: { index: number }) {
-        const flatParam = this.parent.flatQueryParameter(param);
-        const flatParam2 = this.parent2.flatQueryParameter(param);
-        Object.assign(flatParam, flatParam2);
+        let flatParam: Record<string, unknown> = {};
+        for (const parent of this.parents) {
+            Object.assign(flatParam, parent.flatQueryParameter(param));
+        }
         return flatParam;
     }
     public hashCode() {
-        return hashCode("UNION", this.parent.hashCode() + this.parent2.hashCode());
+        return hashCode("UNION", this.parents.reduce((r, o) => o.hashCode(), 0));
     }
 }
