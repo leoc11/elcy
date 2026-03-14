@@ -1,9 +1,7 @@
 import { Enumerable } from "./Enumerable";
 
 export class ConcatEnumerable<T = unknown> extends Enumerable<T> {
-  constructor(
-    ...parents: [Enumerable<T>, Enumerable<T>, ...Enumerable<T>[]]
-  ) {
+  constructor(...parents: [Enumerable<T>, Enumerable<T>, ...Enumerable<T>[]]) {
     super(parents[0]);
     this.parents = parents;
   }

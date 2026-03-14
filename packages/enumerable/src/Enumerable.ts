@@ -198,25 +198,49 @@ Enumerable.prototype.union = function <T>(
   this: Enumerable<T>,
   ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new UnionEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
+  return new UnionEnumerable(
+    this,
+    ...(items.map((o) => Enumerable.from(o)) as [
+      Enumerable<T>,
+      ...Enumerable<T>[],
+    ]),
+  );
 };
 Enumerable.prototype.concat = function <T>(
   this: Enumerable<T>,
   ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new ConcatEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
+  return new ConcatEnumerable(
+    this,
+    ...(items.map((o) => Enumerable.from(o)) as [
+      Enumerable<T>,
+      ...Enumerable<T>[],
+    ]),
+  );
 };
 Enumerable.prototype.intersect = function <T>(
   this: Enumerable<T>,
   ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new IntersectEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
+  return new IntersectEnumerable(
+    this,
+    ...(items.map((o) => Enumerable.from(o)) as [
+      Enumerable<T>,
+      ...Enumerable<T>[],
+    ]),
+  );
 };
 Enumerable.prototype.except = function <T>(
   this: Enumerable<T>,
   ...items: [Iterable<T>, ...Iterable<T>[]]
 ): Enumerable<T> {
-  return new ExceptEnumerable(this, ...items.map(o => Enumerable.from(o)) as [Enumerable<T>, ...Enumerable<T>[]]);
+  return new ExceptEnumerable(
+    this,
+    ...(items.map((o) => Enumerable.from(o)) as [
+      Enumerable<T>,
+      ...Enumerable<T>[],
+    ]),
+  );
 };
 Enumerable.prototype.pivot = function <
   T,

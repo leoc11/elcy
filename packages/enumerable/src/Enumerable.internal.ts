@@ -109,7 +109,11 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return undefined;
   }
-  public max(...args: T extends number ? [selector?: (item: T) => number] : [selector: (item: T) => number]): number {
+  public max(
+    ...args: T extends number
+      ? [selector?: (item: T) => number]
+      : [selector: (item: T) => number]
+  ): number {
     let max = null;
     const selector = args[0];
     for (const item of this) {
@@ -120,7 +124,11 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return max;
   }
-  public min(...args: T extends number ? [selector?: (item: T) => number] : [selector: (item: T) => number]): number {
+  public min(
+    ...args: T extends number
+      ? [selector?: (item: T) => number]
+      : [selector: (item: T) => number]
+  ): number {
     let min = null;
     const selector = args[0];
     for (const item of this) {
@@ -131,7 +139,11 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return min;
   }
-  public sum(...args: T extends number ? [selector?: (item: T) => number] : [selector: (item: T) => number]): number {
+  public sum(
+    ...args: T extends number
+      ? [selector?: (item: T) => number]
+      : [selector: (item: T) => number]
+  ): number {
     let sum = 0;
     const selector = args[0];
     for (const item of this) {
@@ -139,7 +151,11 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return sum;
   }
-  public avg(...args: T extends number ? [selector?: (item: T) => number] : [selector: (item: T) => number]): number | null {
+  public avg(
+    ...args: T extends number
+      ? [selector?: (item: T) => number]
+      : [selector: (item: T) => number]
+  ): number | null {
     let sum = 0;
     let count = 0;
     const selector = args[0];
@@ -149,13 +165,15 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return count === 0 ? null : sum / count;
   }
-  public join: T extends string ? (separator?: string) => string : never = ((separator: string = ','): string => {
+  public join: T extends string ? (separator?: string) => string : never = ((
+    separator: string = ",",
+  ): string => {
     let str: string = "";
     for (const item of this) {
       str += `${str ? separator : ""}${item}`;
     }
     return str;
-  }) as any;
+  }) as T extends string ? (separator?: string) => string : never;
   public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
     return this.filter(
       (o) => o instanceof type || o?.constructor === type,
@@ -221,7 +239,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     iterator._accessCount++;
     try {
       let index = 0;
-      for (; ;) {
+      for (;;) {
         const isDone = this.cache.isDone;
         const len = this.cache.result.length;
         while (len > index) {
