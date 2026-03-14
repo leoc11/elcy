@@ -496,7 +496,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 i++;
                 const values = queries.flatMap((o) => o.value.rows);
                 const transformer = new ExpressionExecutor(values as { [key: number]: unknown });
-                for (const dQ of allInsertQueries.skip(i).flatMap((o) => o[1])) {
+                for (const dQ of allInsertQueries.slice(i).flatMap((o) => o[1])) {
                     for (const [k, p] of Enumerable.from(dQ.parameters).filter(([, param]) => param.name === entityMeta.name)) {
                         p.value = transformer.execute(k.valueExp);
                     }

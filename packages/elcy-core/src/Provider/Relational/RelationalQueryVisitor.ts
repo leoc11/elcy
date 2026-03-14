@@ -63,6 +63,7 @@ import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression
 import { Enumerable } from "@elcy/enumerable";
 import { getColumnMetadata, getRelationMetadata } from "src/MetaData/MetaDataMapper";
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
+import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 
 export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
@@ -449,6 +450,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
                     const parentRelation = objectOperand.parentRelation;
                     const selectorFn = exp.params[0] as FunctionExpression<R>;
                     const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
@@ -629,6 +634,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return objectOperand;
                 }
                 case "filter": {
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
                     if (param.scope === "select-object" && selectOperand instanceof GroupedExpression) {
                         const entityExp = (selectOperand as GroupedExpression<T>).entity.clone();
                         entityExp.alias = this.newAlias();
@@ -658,6 +667,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     // TODO: dbset1.filter(o => dbset2.map(c => c.column).includes(o.column)); use inner join for this
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
                     }
 
                     let item = exp.params[0] as IExpression<ElementType<T>>;
@@ -695,15 +708,24 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+                    
                     objectOperand.distinct = true;
                     return objectOperand;
                 }
                 case "orderBy": {
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
                     let pagingJoin: PagingJoinRelation;
                     if (param.scope !== "queryable") {
                         pagingJoin = Enumerable.from(objectOperand.joins).ofType(PagingJoinRelation).find();
                     }
-                    const hasPaging = pagingJoin || objectOperand.paging.take || objectOperand.paging.skip;
+
+                    const hasPaging = pagingJoin;
                     if (hasPaging) {
                         const cloneMap = new Map();
                         const includes = selectOperand.includes;
@@ -753,6 +775,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 case "count": {
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
                     }
 
                     const countExp = new MethodCallExpression(objectOperand as IExpression<T>, exp.methodName, objectOperand.entity.primaryColumns, Number);
@@ -835,6 +861,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 case "min": {
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
                     }
 
                     if (exp.params.length > 0) {
@@ -927,6 +957,11 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
                     let columnExp = selectOperand.selects.slice(0, 1).map((o) => {
                         if (o instanceof ComputedColumnExpression) {
                             return o.expression;
@@ -1008,6 +1043,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 case "some": {
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
                     }
 
                     const isAny = exp.methodName === "some";
@@ -1114,6 +1153,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
                     if (exp.params.length > 0) {
                         const predicateFn = exp.params[0] as FunctionExpression;
                         const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
@@ -1195,9 +1238,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                     return selectOperand.entity;
                 }
-                case "skip":
-                case "take": {
-                    let paramExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
+                case "slice": {
+                    let startExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
+                    let endExp: IExpression<number>;
+                    if (exp.params.length > 1) {
+                        endExp = exp.params.length > 1 ? this.visit(exp.params[1] as ParameterExpression<number>, param) : undefined;
+                    }
+
                     if (param.scope === "queryable") {
                         if (objectOperand instanceof GroupByExpression && !objectOperand.isAggregate) {
                             // join to select that will page result by group instead of item.
@@ -1219,20 +1266,19 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             objectOperand.addJoin(selectExp, relation, "INNER");
                         }
 
-                        if (exp.methodName === "skip") {
-                            if (selectOperand.paging.take) {
-                                selectOperand.paging.take = this.visit(new SubstractionExpression(selectOperand.paging.take, paramExp), param);
-                                paramExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
-                            }
-                            selectOperand.paging.skip = this.visit(selectOperand.paging.skip ? new AdditionExpression(selectOperand.paging.skip, paramExp) : paramExp, param);
+                        if (selectOperand.paging.take) {
+                            selectOperand.paging.take = this.visit<number>(new SubstractionExpression(selectOperand.paging.take, startExp), param);
+                            startExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
                         }
-                        else {
-                            selectOperand.paging.take = this.visit(selectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [selectOperand.paging.take, paramExp]) : paramExp, param);
+                        selectOperand.paging.skip = this.visit(selectOperand.paging.skip ? new AdditionExpression(selectOperand.paging.skip, startExp) : startExp, param);
+
+                        if (endExp) {
+                            selectOperand.paging.take = this.visit(selectOperand.paging.take ? new MethodCallExpression(new ValueExpression(Math), "min", [selectOperand.paging.take, endExp]) : endExp, param);
                         }
                     }
                     else {
-                        let takeJoinRel = Enumerable.from(objectOperand.joins).ofType(PagingJoinRelation).find();
-                        if (!takeJoinRel) {
+                        let pagingJoinRel = Enumerable.from(objectOperand.joins).ofType(PagingJoinRelation).find();
+                        if (!pagingJoinRel) {
                             const entityExp = objectOperand.entity;
                             const filterer = (objectOperand as SelectExpression).clone();
                             filterer.entity.alias = this.newAlias();
@@ -1299,27 +1345,25 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                 joinRelation = joinRelation ? new AndExpression(joinRelation, logicalExp) : logicalExp;
                             }
 
-                            takeJoinRel = new PagingJoinRelation(objectOperand, innerGroupExp, joinRelation, "INNER");
-                            objectOperand.joins.push(takeJoinRel);
-                            innerGroupExp.parentRelation = takeJoinRel;
+                            pagingJoinRel = new PagingJoinRelation(objectOperand, innerGroupExp, joinRelation, "INNER");
+                            objectOperand.joins.push(pagingJoinRel);
+                            innerGroupExp.parentRelation = pagingJoinRel;
                         }
 
-                        const groupExp = takeJoinRel.child as GroupByExpression;
+                        const groupExp = pagingJoinRel.child as GroupByExpression;
                         const countExp = (Enumerable.from(groupExp.selects).except(groupExp.groupBy).find() as ComputedColumnExpression).expression;
 
-                        if (exp.methodName === "skip") {
-                            takeJoinRel.start = this.visit(takeJoinRel.start ? new AdditionExpression(takeJoinRel.start, paramExp) : paramExp, param);
-                        }
-                        else {
-                            takeJoinRel.end = this.visit(takeJoinRel.start ? new AdditionExpression(takeJoinRel.start, paramExp) : paramExp, param);
+                        pagingJoinRel.start = this.visit(pagingJoinRel.start ? new AdditionExpression(pagingJoinRel.start, startExp) : startExp, param);
+                        if (endExp) {
+                            pagingJoinRel.end = this.visit(pagingJoinRel.start ? new AdditionExpression(pagingJoinRel.start, endExp) : endExp, param);
                         }
 
                         groupExp.having = null;
-                        if (takeJoinRel.start) {
-                            groupExp.having = new GreaterThanExpression(countExp, takeJoinRel.start);
+                        if (pagingJoinRel.start) {
+                            groupExp.having = new GreaterThanExpression(countExp, pagingJoinRel.start);
                         }
-                        if (takeJoinRel.end) {
-                            const takeLogicalExp = new LessEqualExpression(countExp, takeJoinRel.end);
+                        if (pagingJoinRel.end) {
+                            const takeLogicalExp = new LessEqualExpression(countExp, pagingJoinRel.end);
                             groupExp.having = groupExp.having ? new AndExpression(groupExp.having, takeLogicalExp) : takeLogicalExp;
                         }
                     }
@@ -1390,9 +1434,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         param.selectExpression = selectOperand;
                     }
                     return selectOperand;
-                }
-                case "slice": {
-                    throw new Error(`TODO '${exp.methodName}'`);
                 }
                 case "innerJoin":
                 case "leftJoin":
@@ -1481,7 +1522,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
-                    const parentRelation = objectOperand.parentRelation;
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
 
                     const dimensions = exp.params[0] as FunctionExpression;
                     const metrics = exp.params[1] as FunctionExpression;
@@ -2003,3 +2046,21 @@ const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExcl
     }
     return childExp;
 };
+const createProjectionSelect = <T>(selectExp: SelectExpression<T>) => {
+    const parentRelation = selectExp.parentRelation;
+    const projectEntityExp = new ProjectionEntityExpression(selectExp);
+    const projectedSelectExp = new SelectExpression<T>(projectEntityExp);
+    projectedSelectExp.selects = projectEntityExp.selectedColumns.slice(0);
+    if (parentRelation) {
+        const replaceMap = new Map();
+        for (const oriCol of parentRelation.childColumns) {
+            const col = projectedSelectExp.selects.find(o => o.columnName === col.columnName);
+            replaceMap.set(oriCol, col);
+        }
+        parentRelation.relation = resolveClone(parentRelation.relation, replaceMap);
+        parentRelation.child = projectedSelectExp;
+        projectedSelectExp.parentRelation = parentRelation;
+    }
+
+    return projectedSelectExp;
+}

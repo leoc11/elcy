@@ -3,14 +3,15 @@ import { OrderDirection } from "../../Common/StringType";
 import { GenericType, IObjectType, ValueType } from "../../Common/Type";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, hashCodeAdd } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
-export abstract class ProjectionEntityExpression<T extends object = object> implements IEntityExpression<T> {
+export class ProjectionEntityExpression<T extends object> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.filter((o) => o.isPrimary);
@@ -32,7 +33,7 @@ export abstract class ProjectionEntityExpression<T extends object = object> impl
         this.name = subSelect.entity.name;
         this.columns = Enumerable.from(subSelect.projectedColumns).map((o) => {
             const col = new ColumnExpression<T, ValueType>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMeta = o.columnMeta;
+            col.columnMeta = o.columnMeta as unknown as IColumnMetaData<T, ValueType>;
             return col;
         }).toArray();
         // TODO
@@ -51,7 +52,17 @@ export abstract class ProjectionEntityExpression<T extends object = object> impl
     public readonly type: GenericType<T>;
     private _primaryColumns: IColumnExpression<T>[];
     private _selectedColumns: IColumnExpression<T>[];
-    public abstract clone(replaceMap?: Map<IExpression, IExpression>): ProjectionEntityExpression<T>;
+
+    public clone(replaceMap?: Map<IExpression, IExpression>) {
+        if (!replaceMap) {
+            replaceMap = new Map();
+        }
+
+        const subSelect = resolveClone(this.subSelect, replaceMap);
+        const clone = new ProjectionEntityExpression(subSelect, this.type);
+        replaceMap.set(this, clone);
+        return clone;
+    }
     public hashCode() {
         return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.reduce((r, o) => r + o.hashCode(), 0));
     }

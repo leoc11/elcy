@@ -20,8 +20,6 @@ import { ProjectQueryable } from "./ProjectQueryable";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
 import { SelectQueryable } from "./SelectQueryable";
-import { SkipQueryable } from "./SkipQueryable";
-import { TakeQueryable } from "./TakeQueryable";
 import { UnionQueryable } from "./UnionQueryable";
 import { WhereQueryable } from "./WhereQueryable";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
@@ -30,6 +28,7 @@ import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValue
 import { OrderDirection } from "../Common/StringType";
 import { QueryableChain } from "./Interface/QueryableChain";
 import { ConcatQueryable } from "./ConcatQueryable";
+import { SliceQueryable } from "./SliceQueryable";
 
 declare module "./Queryable" {
     interface Queryable<T> {
@@ -90,9 +89,7 @@ declare module "./Queryable" {
         flatMap<TReturn>(selector: FunctionExpression<IEnumerable<TReturn>, T>, type?: GenericType<TReturn>): Queryable<TReturn>;
         flatMap<TReturn>(selector: FunctionExpression<IEnumerable<TReturn>, T> | ((item: QueryableChain<T>) => IEnumerable<TReturn>), type?: GenericType<TReturn>): Queryable<TReturn>;
 
-        skip(skip: number): Queryable<T>;
-        take(take: number): Queryable<T>;
-        slice(skip: number, take?: number): Queryable<T>;
+        slice(start: number, end?: number): Queryable<T>;
 
         union(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
         intersect(...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T>;
@@ -130,22 +127,8 @@ Queryable.prototype.filter = function <T>(this: Queryable<T>, predicate: Functio
 Queryable.prototype.orderBy = function <T>(this: Queryable<T>, ...selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> | Array<IOrderDefinition<T>>): Queryable<T> {
     return new OrderQueryable(this, ...selectors);
 };
-Queryable.prototype.skip = function <T>(this: Queryable<T>, skip: number): Queryable<T> {
-    return new SkipQueryable(this, skip);
-};
-Queryable.prototype.take = function <T>(this: Queryable<T>, take: number): Queryable<T> {
-    return new TakeQueryable(this, take);
-};
-Queryable.prototype.slice = function <T>(this: Queryable<T>, skip: number, take?: number): Queryable<T> {
-    let result = this;
-    if (typeof skip === "number" && skip > 0) {
-        result = new SkipQueryable(result, skip);
-    }
-    if (typeof take === "number" && take > 0) {
-        result = new TakeQueryable(result, take);
-    }
-
-    return result;
+Queryable.prototype.slice = function <T>(this: Queryable<T>, start: number, end?: number): Queryable<T> {
+    return new SliceQueryable(this, start, end);
 };
 Queryable.prototype.groupBy = function <T, K>(this: Queryable<T>, keySelector: FunctionExpression<K, T> | ((item: T) => K)): Queryable<GroupedEnumerable<K, T>> {
     return new GroupByQueryable(this, keySelector);

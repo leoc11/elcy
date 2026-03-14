@@ -3,8 +3,8 @@ import { resolveClone } from "../../Helper/Util";
 import { JoinRelation } from "./JoinRelation";
 
 export class PagingJoinRelation<T = any, TChild = any> extends JoinRelation<T, TChild> {
-    public end: IExpression<boolean>;
-    public start: IExpression<boolean>;
+    public end: IExpression<number>;
+    public start: IExpression<number>;
     public clone(replaceMap: Map<IExpression, IExpression>) {
         const child = resolveClone(this.child, replaceMap);
         const parent = resolveClone(this.parent, replaceMap);
