@@ -62,6 +62,7 @@ import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParam
 import { UnionExpression } from "../../Queryable/QueryExpression/UnionExpression";
 import { Enumerable } from "@elcy/enumerable";
 import { getColumnMetadata, getRelationMetadata } from "src/MetaData/MetaDataMapper";
+import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
 
 export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
@@ -1327,59 +1328,60 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
                 case "union":
                 case "intersect":
-                case "except": {
-                    if (param.scope === "loads" || param.scope === "project") {
-                        throw new Error(`${param.scope} did not support ${exp.methodName}`);
-                    }
-
-                    const parentRelation = objectOperand.parentRelation;
-                    const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
-                    const childSelectOperand: SelectExpression = this.visit(exp.params[0], visitParam) as any;
-                    param.selectExpression = visitParam.selectExpression;
-
-                    let entityExp: IEntityExpression;
-                    switch (exp.methodName) {
-                        case "union":
-                            const isUnionAllExp = this.visit(exp.params[1] as ParameterExpression<boolean>, param);
-                            if (isUnionAllExp instanceof SqlParameterExpression) {
-                                isUnionAllExp.isSystem = true;
-                            }
-                            entityExp = new UnionExpression(selectOperand, childSelectOperand, isUnionAllExp);
-                            break;
-                        case "intersect":
-                            entityExp = new IntersectExpression(selectOperand, childSelectOperand);
-                            break;
-                        case "except":
-                            entityExp = new ExceptExpression(selectOperand, childSelectOperand);
-                            break;
-                    }
-                    selectOperand = new SelectExpression(entityExp);
-                    this.setDefaultBehaviour(selectOperand);
-                    if (parentRelation) {
-                        parentRelation.child = selectOperand;
-                        selectOperand.parentRelation = parentRelation;
-                    }
-                    else {
-                        param.selectExpression = selectOperand;
-                    }
-                    return selectOperand;
-                }
+                case "except":
                 case "concat": {
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
-                    const parentRelation = objectOperand.parentRelation;
-                    const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
-                    const childSelectOperands: SelectExpression[] = exp.params.map(px => this.visit(px, visitParam) as any);
+                    const visitParam: IQueryVisitParameter = { selectExpression: param.selectExpression, scope: exp.methodName };
+                    if (param.scope === "select-object" && visitParam.selectExpression.parentRelation) {
+                        visitParam.selectExpression = visitParam.selectExpression.parentRelation.parent;
+                    }
+                    const childSelectOperands: [SelectExpression<ElementType<T> & object>, ...SelectExpression<ElementType<T> & object>[]] = exp.params.map(px => {
+                        const childOp = this.visit(px, { ...visitParam }) as SelectExpression<ElementType<T> & object>;
+                        if (childOp.parentRelation) {
+                            ArrayExtension.add(childOp.selects, ...childOp.parentRelation.childColumns);
+                            switch (true) {
+                                case childOp.parentRelation instanceof JoinRelation: {
+                                    ArrayExtension.delete(childOp.parentRelation.parent.joins, childOp.parentRelation);
+                                    break;
+                                }
+                                case childOp.parentRelation instanceof IncludeRelation: {
+                                    ArrayExtension.delete(childOp.parentRelation.parent.includes, childOp.parentRelation);
+                                    break;
+                                }
+                            }
+                            childOp.parentRelation = null;
+                        }
+
+                        return childOp;
+                    }) as [SelectExpression<ElementType<T> & object>, ...SelectExpression<ElementType<T> & object>[]];
                     param.selectExpression = visitParam.selectExpression;
 
-                    let entityExp: IEntityExpression = selectOperand;
-                    for (const childOp of childSelectOperands) {
-                        entityExp = new UnionExpression(entityExp as any, childOp, new ValueExpression(true));
+                    const parentRelation = objectOperand.parentRelation;
+                    if (selectOperand.parentRelation) {
+                        ArrayExtension.add(selectOperand.selects, ...selectOperand.parentRelation.childColumns);
+                        selectOperand.parentRelation = null;
+                    }
+                    let entityExp: UnionExpression<ElementType<T> & object>;
+                    switch (exp.methodName) {
+                        case "concat":
+                            entityExp = new ConcatExpression<ElementType<T> & object>(undefined as GenericType<ElementType<T> & object>, selectOperand, ...childSelectOperands);
+                            break;
+                        case "union":
+                            entityExp = new UnionExpression<ElementType<T> & object>(undefined as GenericType<ElementType<T> & object>, selectOperand, ...childSelectOperands);
+                            break;
+                        case "intersect":
+                            entityExp = new IntersectExpression<ElementType<T> & object>(undefined as GenericType<ElementType<T> & object>, selectOperand, ...childSelectOperands);
+                            break;
+                        case "except":
+                            entityExp = new ExceptExpression<ElementType<T> & object>(undefined as GenericType<ElementType<T> & object>, selectOperand, ...childSelectOperands);
+                            break;
                     }
                     selectOperand = new SelectExpression(entityExp);
-                    this.setDefaultBehaviour(selectOperand);
+                    selectOperand.selects = entityExp.selectedColumns.slice(0);
+
                     if (parentRelation) {
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
