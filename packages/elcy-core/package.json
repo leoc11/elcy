@@ -1,0 +1,59 @@
+{
+  "name": "@elcy/core",
+  "private": true,
+  "type": "module",
+  "version": "0.2.0",
+  "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "tsc:watch": "tsc --noEmit --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ./src",
+    "lint-fix": "eslint ./src --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leoc11/elcy.git"
+  },
+  "tags": [
+    "orm",
+    "typescript",
+    "typescript-orm",
+    "mssql",
+    "sql-server"
+  ],
+  "author": {
+    "name": "Leo Chandra",
+    "email": "leo.chandra11@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leoc11/elcy/issues"
+  },
+  "homepage": "https://github.com/leoc11/elcy",
+  "dependencies": {
+    "@elcy/enumerable": "workspace:*",
+    "@js-temporal/polyfill": "^0.5.1",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@types/node": "^22.15.30",
+    "@types/sinon": "^17.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-jsdoc": "^50.7.1",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-prettier": "^5.4.1",
+    "magic-string": "^0.30.17",
+    "prettier": "^3.5.3",
+    "sinon": "^20.0.0",
+    "ts-morph": "^26.0.0",
+    "ts-node": "^10.9.2",
+    "typescript-eslint": "^8.34.0",
+    "vitest": "^3.2.2"
+  }
+}

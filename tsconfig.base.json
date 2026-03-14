@@ -1,0 +1,44 @@
+{
+    "compilerOptions": {
+        "allowUnreachableCode": false,
+        "moduleResolution": "node",
+        "module": "ESNext",
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "experimentalDecorators": false,
+        "sourceMap": true,
+        "inlineSources": true,
+        "target": "ES6",
+        "lib": [
+            "es6"
+        ],
+        "types": [
+            "node"
+        ],
+        "outDir": "build",
+        "rootDir": ".",
+        "baseUrl": ".",
+        "declaration": true,
+        "stripInternal": true,
+        "pretty": true,
+        // "strict": true,
+        "skipLibCheck": true,
+        "removeComments": false,
+        "noImplicitAny": false,
+        "allowSyntheticDefaultImports": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "strictNullChecks": false,
+        "strictBindCallApply": true,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": false,
+    },
+    "exclude": [
+        "build",
+        "dist",
+        "node_modules",
+        "**/node_modules/*"
+    ]
+}

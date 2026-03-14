@@ -1,5 +1,2 @@
-# Dependency directories
-node_modules/
-
-# build directory
-build/
+!packages
+!packages/*
