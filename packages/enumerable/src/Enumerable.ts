@@ -15,11 +15,10 @@ import { OrderEnumerable } from "./OrderEnumerable";
 import { RightJoinEnumerable } from "./RightJoinEnumerable";
 import { SelectEnumerable } from "./SelectEnumerable";
 import { SelectManyEnumerable } from "./SelectManyEnumerable";
-import { SkipEnumerable } from "./SkipEnumerable";
-import { TakeEnumerable } from "./TakeEnumerable";
 import { UnionEnumerable } from "./UnionEnumerable";
 import { WhereEnumerable } from "./WhereEnumerable";
 import { ConcatEnumerable } from "./ConcatEnumerable";
+import { SliceEnumerable } from "./SliceEnumerable";
 
 declare module "./Enumerable" {
   interface Enumerable<T> {
@@ -67,9 +66,7 @@ declare module "./Enumerable" {
     flatMap<TReturn>(
       selector: (item: T) => Iterable<TReturn>,
     ): Enumerable<TReturn>;
-    skip(skip: number): Enumerable<T>;
-    take(take: number): Enumerable<T>;
-    slice(skip: number, take?: number): Enumerable<T>;
+    slice(start: number, end?: number): Enumerable<T>;
     union(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
     intersect(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
     except(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
@@ -106,32 +103,12 @@ Enumerable.prototype.orderBy = function <T>(
 ): Enumerable<T> {
   return new OrderEnumerable(this, ...selectors);
 };
-Enumerable.prototype.skip = function <T>(
-  this: Enumerable<T>,
-  skip: number,
-): Enumerable<T> {
-  return new SkipEnumerable(this, skip);
-};
-Enumerable.prototype.take = function <T>(
-  this: Enumerable<T>,
-  take: number,
-): Enumerable<T> {
-  return new TakeEnumerable(this, take);
-};
 Enumerable.prototype.slice = function <T>(
   this: Enumerable<T>,
-  skip: number,
-  take: number,
+  start: number,
+  end?: number,
 ): Enumerable<T> {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  let result: Enumerable<T> = this;
-  if (typeof skip === "number" && skip > 0) {
-    result = result.skip(skip);
-  }
-  if (typeof take === "number") {
-    result = result.take(take);
-  }
-  return result;
+  return new SliceEnumerable(this, start, end);
 };
 Enumerable.prototype.groupBy = function <T, K>(
   this: Enumerable<T>,

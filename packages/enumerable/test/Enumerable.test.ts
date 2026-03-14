@@ -484,29 +484,9 @@ describe("ENUMERABLE", () => {
       expect(array).toEqual([1, 2, 3, 4]);
     });
   });
-  describe("SKIP TAKE", () => {
-    it("should work", () => {
-      const distincts = items.skip(10).take(2);
-      let index1 = 0;
-      for (const {} of distincts) {
-        index1++;
-      }
-      let index2 = 0;
-      for (const {} of distincts) {
-        index2++;
-      }
-      const array = distincts.toArray();
-
-      expect(index1).toBe(2);
-      expect(index1).toBe(index2);
-      expect(array).toBeInstanceOf(Array);
-      expect(array).toHaveLength(index1);
-      expect(array).toEqual([9, 0]);
-    });
-  });
   describe("SLICE", () => {
     it("should work", () => {
-      const distincts = items.slice(10, 2);
+      const distincts = items.slice(10, 12);
       let index1 = 0;
       for (const {} of distincts) {
         index1++;
@@ -516,12 +496,10 @@ describe("ENUMERABLE", () => {
         index2++;
       }
       const array = distincts.toArray();
-
+      const expectedArray = items.toArray().slice(10, 12);
       expect(index1).toBe(2);
       expect(index1).toBe(index2);
-      expect(array).toBeInstanceOf(Array);
-      expect(array).toHaveLength(index1);
-      expect(array).toEqual([9, 0]);
+      expect(array).toEqual(expectedArray);
     });
   });
   describe("UNION", () => {
