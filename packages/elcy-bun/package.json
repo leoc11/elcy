@@ -1,0 +1,24 @@
+{
+  "name": "@elcy/bunsql-driver",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "Bun.sql Driver for Elcy ORM",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "elcy",
+    "sqlite",
+    "sqlite3",
+    "driver"
+  ],
+  "author": {
+    "name": "Leo Chandra",
+    "email": "leo.chandra11@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@elcy/core": "workspace:*"
+  }
+}
