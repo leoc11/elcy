@@ -119,8 +119,16 @@ function analyzeLexicalIdentifier(pointer: ILexicalPointer, input: string): ILex
         (char >= "0" && char <= "9") || char === "_" || char === "$");
 
     const data = input.slice(start, pointer.index);
-    const type = keywordOperators.includes(data) ? LexicalTokenType.Operator :
-        keywords.includes(data) ? LexicalTokenType.Keyword : LexicalTokenType.Identifier;
+    let type = LexicalTokenType.Identifier;
+    // if it part of memberaccess then it's identifier
+    if (input[start - 1] !== ".") {
+        if (keywordOperators.includes(data)) {
+            type = LexicalTokenType.Operator;
+        }
+        else if (keywords.includes(data)) {
+            type = LexicalTokenType.Keyword;
+        }
+    }
 
     return {
         data: data,
