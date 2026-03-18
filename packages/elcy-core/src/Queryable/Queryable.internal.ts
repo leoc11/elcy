@@ -31,7 +31,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
-import { QueryableChain } from "./Interface/QueryableChain";
+import { QueryableChain, Unchain } from "./Interface/QueryableChain";
 
 export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, any> {
     public get dbContext(): DbContext {
@@ -971,7 +971,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             (result) => {
                 let i = 0;
                 result = result.filter(() => query.queries[i++].type === QueryType.DQL);
-                return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).toMap((o) => o.Key, (o) => o.Value);
+                return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).toMap((o) => o.Key as Unchain<K>, (o) => o.Value as Unchain<V>);
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
@@ -1095,7 +1095,9 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const query = this.deferredToSet();
         return await query.execute();
     }
-    public async toMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V): Promise<Map<K, V>> {
+    public async toMap<K>(keySelector: (item: QueryableChain<T>) => K): Promise<Map<Unchain<K>, Unchain<T>>>;
+    public async toMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector: (item: QueryableChain<T>) => V): Promise<Map<Unchain<K>, Unchain<V>>>;
+    public async toMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V): Promise<Map<Unchain<K>, Unchain<V>>> {
         const query = this.deferredToMap(keySelector, valueSelector);
         return await query.execute();
     }
