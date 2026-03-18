@@ -11,7 +11,7 @@ import { IExpression } from "../../src/ExpressionBuilder/Expression/IExpression"
 import { StrictEqualExpression } from "../../src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../src/ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../../src/ExpressionBuilder/ExpressionExecutor";
-import { isNotNull, visitExpression } from "../../src/Helper/Util";
+import { isColumnExp, isNotNull, visitExpression } from "../../src/Helper/Util";
 import { IntegerColumnMetaData } from "../../src/MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../../src/MetaData/StringColumnMetaData";
 import { BatchedQuery } from "../../src/Query/BatchedQuery";
@@ -30,6 +30,13 @@ import { SqlParameterExpression } from "../../src/Queryable/QueryExpression/SqlP
 import { SqlTableValueParameterExpression } from "../../src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { UpdateExpression } from "../../src/Queryable/QueryExpression/UpdateExpression";
 import { UpsertExpression } from "../../src/Queryable/QueryExpression/UpsertExpression";
+import { Temporal } from "../../src/Data/Temporal";
+import { Decimal } from "../../src/Data/Decimal";
+
+import { LessThanExpression } from "../../src/ExpressionBuilder/Expression/LessThanExpression";
+import { GreaterThanExpression } from "../../src/ExpressionBuilder/Expression/GreaterThanExpression";
+import { GreaterEqualExpression } from "../../src/ExpressionBuilder/Expression/GreaterEqualExpression";
+import { LessEqualExpression } from "../../src/ExpressionBuilder/Expression/LessEqualExpression";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
@@ -106,11 +113,17 @@ export class MockConnection implements IConnection {
                         const rows: any[] = [];
                         map.set(select, rows);
 
-                        const propValueMap = {};
+                        const equalValueMap = {};
+                        const minValueMap = {};
+                        const maxValueMap = {};
                         if (select.where) {
                             visitExpression(select.where, (exp) => {
-                                if (exp instanceof EqualExpression || exp instanceof StrictEqualExpression) {
+                                const isEqual = exp instanceof EqualExpression || exp instanceof StrictEqualExpression;
+                                const isGt = exp instanceof GreaterThanExpression || exp instanceof GreaterEqualExpression;
+                                const isLt = exp instanceof LessThanExpression || exp instanceof LessEqualExpression;
+                                if (isEqual || isGt || isLt) {
                                     if (exp.leftOperand instanceof ColumnExpression && exp.leftOperand.entity.type === select.entity.type) {
+                                        const valueMap = isEqual ? equalValueMap : isGt ? minValueMap : maxValueMap;
                                         let value = null;
                                         if (exp.rightOperand instanceof ValueExpression) {
                                             value = exp.rightOperand.value;
@@ -120,10 +133,11 @@ export class MockConnection implements IConnection {
                                         }
 
                                         if (value) {
-                                            propValueMap[exp.leftOperand.propertyName] = value;
+                                            valueMap[exp.leftOperand.propertyName] = value;
                                         }
                                     }
                                     else if (exp.rightOperand instanceof ColumnExpression && exp.rightOperand.entity.type === select.entity.type) {
+                                        const valueMap = isEqual ? equalValueMap : isGt ? maxValueMap : minValueMap;
                                         let value = null;
                                         if (exp.leftOperand instanceof ValueExpression) {
                                             value = exp.leftOperand.value;
@@ -132,7 +146,7 @@ export class MockConnection implements IConnection {
                                             value = deferred.parameters.get(exp.leftOperand).value;
                                         }
                                         if (value) {
-                                            propValueMap[exp.rightOperand.propertyName] = value;
+                                            valueMap[exp.rightOperand.propertyName] = value;
                                         }
                                     }
                                 }
@@ -156,16 +170,12 @@ export class MockConnection implements IConnection {
                                 for (let i = 0; i < numberOfRecord; i++) {
                                     const item = {} as any;
                                     for (const o of select.projectedColumns) {
-                                        item[o.dataPropertyName] = this.generateValue(o);
+                                        item[o.dataPropertyName] = this.getBoundedValue(o, equalValueMap, minValueMap, maxValueMap);
                                     }
-                                    for (const prop in propValueMap) {
-                                        item[prop] = propValueMap[prop];
-                                    }
-                                    rows.push(item);
-
                                     for (const [parentCol, entityCol] of relMap) {
                                         item[entityCol.propertyName] = parent[parentCol.propertyName];
                                     }
+                                    rows.push(item);
                                 }
                             }
                         }
@@ -175,13 +185,33 @@ export class MockConnection implements IConnection {
                             for (let i = 0; i < numberOfRecord; i++) {
                                 const item = {} as any;
                                 for (const o of select.projectedColumns) {
-                                    item[o.dataPropertyName] = this.generateValue(o);
-                                }
-                                for (const prop in propValueMap) {
-                                    item[prop] = propValueMap[prop];
+                                    item[o.dataPropertyName] = this.getBoundedValue(o, equalValueMap, minValueMap, maxValueMap);
                                 }
                                 rows.push(item);
                             }
+                        }
+
+                        if (select.resolvedOrders.some(o => isColumnExp(o.column))) {
+                            rows.sort((o1, o2) => {
+                                for (const order of select.resolvedOrders.filter(o => isColumnExp(o.column))) {
+                                    const columnExp = order.column as IColumnExpression;
+                                    if (o1[columnExp.columnName] === o2[columnExp.columnName]) {
+                                        continue;
+                                    }
+
+                                    switch (order.direction) {
+                                        case "DESC": {
+                                            return o1[columnExp.columnName] > o2[columnExp.columnName] ? -1 : 1;
+                                        }
+                                        case "ASC":
+                                        default: {
+                                            return o1[columnExp.columnName] > o2[columnExp.columnName] ? 1 : -1;
+                                        }
+                                    }
+                                }
+
+                                return 0;
+                            });
                         }
                     }
 
@@ -304,6 +334,21 @@ export class MockConnection implements IConnection {
                 return [];
             });
     }
+    public getBoundedValue(column: IColumnExpression, equalMap: Record<string, any>, minMap: Record<string, any>, maxMap: Record<string, any>) {
+        if (column.dataPropertyName in equalMap) {
+            return equalMap[column.dataPropertyName];
+        }
+
+        const value = this.generateValue(column);
+        if (column.dataPropertyName in minMap && value < minMap[column.dataPropertyName]) {
+            return minMap[column.dataPropertyName];
+        }
+        if (column.dataPropertyName in maxMap && value > maxMap[column.dataPropertyName]) {
+            return maxMap[column.dataPropertyName];
+        }
+
+        return value;
+    }
     public generateValue(column: IColumnExpression) {
         if (column.columnMeta) {
             const columnMeta = column.columnMeta;
@@ -315,13 +360,36 @@ export class MockConnection implements IConnection {
         switch (column.type) {
             case Uuid:
                 return Uuid.new().toString();
-            case Number:
+            case Number: {
                 let fix = 2;
                 if (column.columnMeta && column.columnMeta instanceof IntegerColumnMetaData) {
                     fix = 0;
                 }
 
                 return Number((Math.random() * 10000 + 1).toFixed(fix));
+            }
+            case BigInt: {
+                return crypto.getRandomValues(new BigUint64Array(1))[0];
+            }
+            case Decimal: {
+                return new Decimal(Math.random());
+            }
+            case Temporal.Instant: {
+                const nowNS = Temporal.Now.instant().epochNanoseconds;
+                const rand = BigInt(Math.round(Math.random() * 31622400000000000 * 2) - 31622400000000000);
+                return new Temporal.Instant(nowNS + rand).toString();
+            }
+            case Temporal.PlainDate: {
+                return Temporal.Now.plainDateISO().add({ days: Math.round(Math.random() * 3650 * 2) - 3650 }).toString();
+            }
+            case Temporal.PlainTime: {
+                return new Temporal.PlainTime(
+                    Math.floor(Math.random() * 24),
+                    Math.floor(Math.random() * 60),
+                    Math.floor(Math.random() * 60),
+                    Math.floor(Math.random() * 1000)
+                ).toString();
+            }
             case String: {
                 let result = "";
                 let number = Math.random() * 100 + 1;
@@ -343,7 +411,7 @@ export class MockConnection implements IConnection {
             }
             case TimeSpan: {
                 const number = Math.round(Math.random() * 86400000);
-                return new TimeSpan(number);
+                return new TimeSpan(number).toString();
             }
             case Boolean: {
                 return Boolean(Math.round(Math.random()));

@@ -5,7 +5,7 @@ import { EntityEntry } from "../Data/EntityEntry";
 import { EntityState } from "../Data/EntityState";
 import { DBEventEmitter } from "../Data/Event/DbEventEmitter";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
-import { isNull, isValue, isValueType } from "../Helper/Util";
+import { isColumnExp, isNull, isValue, isValueType } from "../Helper/Util";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IRelationMetaData } from "../MetaData/Interface/IRelationMetaData";
 import { IncludeRelation } from "../Queryable/Interface/IncludeRelation";
@@ -16,6 +16,8 @@ import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryResult } from "./IQueryResult";
 import { IQueryResultParser } from "./IQueryResultParser";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
+import { GroupByExpression } from "src/Queryable/QueryExpression/GroupByExpression";
+import { IGroupArray } from "src/Common/IGroupArray";
 
 type ParserFunction<T = unknown> = (dbContext: DbContext, parseMap: Map<SelectExpression, ParserFunction>, id?: Record<string, ValueType>) => Generator<T, unknown, unknown>;
 function compare(obj: object, id: Record<string, ValueType>) {
@@ -34,7 +36,7 @@ function getRelationKey(data: object, props?: string[]) {
     if (!Array.isArray(props)) {
         return "";
     }
-    return props.reduce((res, o) => res + data[o], "");
+    return props.map((o) => data[o]).join("|");
 }
 const getColumnValue = <TE extends object, T>(column: IColumnExpression<TE, T>, data: any, dbContext?: DbContext) => {
     const columnMeta: IColumnMetaData<any, any> = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
@@ -54,20 +56,26 @@ const setColumnValue = <TE extends object = object, TType extends TE[StringKeyOf
     entity[column.propertyName] = value;
 }
 class SelectExpressionParserFactory<TE extends object, T> {
-    constructor(public readonly selectExp: SelectExpression<TE, T>) {
-        this.isValue = isValueType(selectExp.itemType);
-        this.columns = selectExp.selects;
-        this.primaryColumns = selectExp.entity.primaryColumns.filter((o) => o.columnName !== "__index");
-        const entityMetaData = getEntityMetadata(selectExp.itemType as unknown as IObjectType<TE>);
+    public readonly itemSelectExp: SelectExpression<T, TE>;
+    constructor(public readonly selectExp: SelectExpression<T, TE>) {
+        this.itemSelectExp = selectExp;
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate) {
+            this.itemSelectExp = selectExp.itemSelect;
+        }
+
+        this.isValue = isValueType(this.itemSelectExp.itemType);
+        this.columns = this.itemSelectExp.selects;
+        this.primaryColumns = this.itemSelectExp.entity.primaryColumns.filter((o) => o.columnName !== "__index");
+        const entityMetaData = getEntityMetadata(this.itemSelectExp.itemType as unknown as IObjectType<TE>);
         if (entityMetaData) {
-            this.columns = this.columns.concat(Array.from(selectExp.relationColumns));
-            this.primaryColumns = this.primaryColumns.concat(Array.from(selectExp.resolvedSelects).filter((o) => entityMetaData.primaryKeys.some((c) => c.propertyName === o.propertyName)));
+            this.columns = this.columns.concat(Array.from(this.itemSelectExp.relationColumns));
+            this.primaryColumns = this.primaryColumns.concat(Array.from(this.itemSelectExp.resolvedSelects).filter((o) => entityMetaData.primaryKeys.some((c) => c.propertyName === o.propertyName)));
         }
 
         this.relationMap = new Map();
-        if (selectExp.entity instanceof EntityExpression && selectExp.entity.metaData) {
-            const metaData = selectExp.entity.metaData;
-            for (const include of selectExp.includes) {
+        if (this.itemSelectExp.entity instanceof EntityExpression && this.itemSelectExp.entity.metaData) {
+            const metaData = this.itemSelectExp.entity.metaData;
+            for (const include of this.itemSelectExp.includes) {
                 const relationMeta = metaData.relations.find((o) => o.propertyName === include.name);
                 if (relationMeta) {
                     this.relationMap.set(include, relationMeta.reverseRelation);
@@ -86,8 +94,8 @@ class SelectExpressionParserFactory<TE extends object, T> {
                 return getColumnValue(column as IColumnExpression<TE, T>, row, dbContext);
             }
         }
-        
-        let data = new (this.selectExp.itemType as IObjectType<T & TE>)();
+
+        let data = new (this.itemSelectExp.itemType as IObjectType<T & TE>)();
         let entry: EntityEntry<T & TE>;
         // load existing entity
         if (dbSet) {
@@ -115,11 +123,11 @@ class SelectExpressionParserFactory<TE extends object, T> {
         }
 
         // load relations
-        for (const include of this.selectExp.includes) {
+        for (const include of this.itemSelectExp.includes) {
             const parser = parseMap.get(include.child);
-            const relId = {};
+            const relId: Record<string, unknown> = {};
             for (const [col, childCol] of include.relationMap()) {
-                relId[childCol.propertyName as string] = data[col.propertyName as string];
+                relId[childCol.columnName] = row[col.columnName];
             }
             const childEntities = Enumerable.from(parser(dbContext, parseMap, relId));
             if (include.isEmbedded) {
@@ -182,28 +190,38 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
         const source = Enumerable.from(queryResult.rows)[Symbol.iterator]();
         const context = this;
+        const selectExp = this.selectExp;
+        const isGroup = this.selectExp instanceof GroupByExpression && !this.selectExp.isAggregate;
+        const embeddedParserMap: Record<string, SelectExpressionParserFactory<object, unknown>> = {};
+        if (isGroup) {
+            const keyRelation = (this.selectExp as GroupByExpression).keyRelation;
+            if (keyRelation && keyRelation.isEmbedded) {
+                embeddedParserMap[keyRelation.name] = new SelectExpressionParserFactory(keyRelation.child);
+            }
+        }
         const generator: ParserFunction<T> = function* (dbContext: DbContext, parseMap: Map<SelectExpression, ParserFunction>, id?: Record<string, ValueType>) {
-            const idKey = isNull(id) ? "" : getRelationKey(id, Object.keys(id));
-            if (Array.isArray(groupedDataMap[idKey])) {
-                for (const res of groupedDataMap[idKey]) {
+            let idKey = isNull(id) ? "" : getRelationKey(id, Object.keys(id));
+            if (Array.isArray(groupedDataMap.get(idKey))) {
+                for (const res of groupedDataMap.get(idKey)) {
                     yield res;
                 }
             }
-            const dbSet = dbContext.set(context.selectExp.itemType as unknown as IObjectType<T & TE>);
+            const dbSet = dbContext.set(context.itemSelectExp.itemType as unknown as IObjectType<T & TE>);
             let dbEventEmitter: DBEventEmitter<T & TE>;
             if (dbSet) {
                 dbEventEmitter = new DBEventEmitter<T & TE>(dbSet.metaData, dbContext);
             }
 
-            if (Array.isArray(groupedRawMap[idKey])) {
-                const rawRows = groupedRawMap[idKey];
-                groupedRawMap[idKey] = undefined;
+            if (Array.isArray(groupedRawMap.get(idKey))) {
+                const rawRows = groupedRawMap.get(idKey);
+                groupedRawMap.delete(idKey);
                 for (const row of rawRows) {
                     const item: T = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
                     const groupId = getRelationKey(row, isNull(id) ? [] : Object.keys(id));
-                    let groupDatas: T[] = groupedDataMap[groupId];
+                    let groupDatas: T[] = groupedDataMap.get(groupId);
                     if (!Array.isArray(groupDatas)) {
-                        groupedDataMap[groupId] = groupDatas = [];
+                        groupDatas = [];
+                        groupedDataMap.set(groupId, groupDatas);
                     }
                     groupDatas.push(item);
                     yield item;
@@ -217,30 +235,81 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
                 if (iterResult) {
                     const row = iterResult.value;
-                    let compareResult = 0;
-                    if (id) {
-                        compareResult = compare(row, id);
-                    }
-                    if (compareResult === 1) {
-                        return;
-                    }
-                    if (compareResult === -1) {
-                        const groupId = getRelationKey(row, isNull(id) ? [] : Object.keys(id));
-                        let groupDatas: any[] = groupedRawMap[groupId];
-                        if (!Array.isArray(groupDatas)) {
-                            groupedRawMap[groupId] = groupDatas = [];
+                    if (isGroup) {
+                        const groupSelectExp = selectExp as unknown as GroupByExpression<TE, unknown, T>;
+                        if (!id) {
+                            id = {};
+                            for (const col of groupSelectExp.groupBy) {
+                                id[col.columnName] = row[col.columnName];
+                            }
+                            idKey = getRelationKey(id, Object.keys(id));
                         }
-                        groupDatas.push(row);
-                    }
-                    else if (compareResult === 0) {
-                        const item: T = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
-                        const groupId = getRelationKey(row, isNull(id) ? [] : Object.keys(id));
-                        let groupDatas: T[] = groupedDataMap[groupId];
-                        if (!Array.isArray(groupDatas)) {
-                            groupedDataMap[groupId] = groupDatas = [];
+                        const compareResult = compare(row, id);
+                        if (compareResult === 1) {
+                            const groupData = groupedDataMap.get(idKey) as IGroupArray<any, any>;
+                            const keyExp = groupSelectExp.key;
+                            if (groupSelectExp.keyRelation) {
+                                if (groupSelectExp.keyRelation.isEmbedded) {
+                                    const parserFactory = embeddedParserMap[groupSelectExp.keyRelation.name];
+                                    const parser = parserFactory.getGenerator({
+                                        rows: [row]
+                                    });
+                                    const childEntities = Enumerable.from(parser(dbContext, parseMap));
+                                    groupData[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
+                                }
+                                else {
+                                    const parser = parseMap.get(groupSelectExp.keyRelation.child);
+                                    const childEntities = Enumerable.from(parser(dbContext, parseMap, id));
+                                    groupData[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
+                                }
+                            }
+                            else if (isColumnExp(keyExp)) {
+                                groupData.key = getColumnValue(keyExp, row, dbContext);
+                            }
+
+                            id = null;
+                            yield groupData as T;
                         }
-                        groupDatas.push(item);
-                        yield item;
+                        if (compareResult === -1) {
+                            throw "unexpected";
+                        }
+                        if (compareResult === 0) {
+                            const item: T = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
+                            let groupDatas: T[] = groupedDataMap.get(idKey);
+                            if (!Array.isArray(groupDatas)) {
+                                groupDatas = [];
+                                groupedDataMap.set(idKey, groupDatas);
+                            }
+                            groupDatas.push(item);
+                        }
+                    }
+                    else {
+                        let compareResult = 0;
+                        if (id) {
+                            compareResult = compare(row, id);
+                        }
+                        if (compareResult === 1) {
+                            return;
+                        }
+                        if (compareResult === -1) {
+                            const groupId = getRelationKey(row, isNull(id) ? [] : Object.keys(id));
+                            let groupDatas: any[] = groupedRawMap.get(groupId);
+                            if (!Array.isArray(groupDatas)) {
+                                groupDatas = [];
+                                groupedRawMap.set(groupId, groupDatas);
+                            }
+                            groupDatas.push(row);
+                        }
+                        else if (compareResult === 0) {
+                            const item: T = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
+                            let groupDatas: T[] = groupedDataMap.get(idKey);
+                            if (!Array.isArray(groupDatas)) {
+                                groupDatas = [];
+                                groupedDataMap.set(idKey, groupDatas);
+                            }
+                            groupDatas.push(item);
+                            yield item;
+                        }
                     }
                 }
 
