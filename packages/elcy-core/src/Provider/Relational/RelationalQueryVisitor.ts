@@ -801,8 +801,15 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression({});
                         if (parentRel) {
-                            for (const relCol of parentRel.childColumns) {
-                                objExp.object[relCol.propertyName] = relCol;
+                            if (param.scope === "select-object") {
+                                for (const relCol of parentRel.childColumns) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
+                            }
+                            else {
+                                for (const relCol of parentRel.parent.primaryKeys) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
@@ -899,8 +906,15 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression({});
                         if (parentRel) {
-                            for (const relCol of parentRel.childColumns) {
-                                objExp.object[relCol.propertyName] = relCol;
+                            if (param.scope === "select-object") {
+                                for (const relCol of parentRel.childColumns) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
+                            }
+                            else {
+                                for (const relCol of parentRel.parent.primaryKeys) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
@@ -984,8 +998,15 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression({});
                         if (parentRel) {
-                            for (const relCol of parentRel.childColumns) {
-                                objExp.object[relCol.propertyName] = relCol;
+                            if (param.scope === "select-object") {
+                                for (const relCol of parentRel.childColumns) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
+                            }
+                            else {
+                                for (const relCol of parentRel.parent.primaryKeys) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
                             }
                         }
 
@@ -1083,8 +1104,15 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression({});
                         if (parentRel) {
-                            for (const relCol of parentRel.childColumns) {
-                                objExp.object[relCol.propertyName] = relCol;
+                            if (param.scope === "select-object") {
+                                for (const relCol of parentRel.childColumns) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
+                            }
+                            else {
+                                for (const relCol of parentRel.parent.primaryKeys) {
+                                    objExp.object[relCol.propertyName] = relCol;
+                                }
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
