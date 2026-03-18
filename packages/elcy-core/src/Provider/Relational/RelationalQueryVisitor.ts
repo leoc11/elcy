@@ -285,7 +285,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
         if (isEntityExp(objectOperand)) {
             let column = objectOperand.columns.find((c) => c.propertyName === exp.memberName) as IColumnExpression<T, V>;
-            if (!column && objectOperand instanceof EntityExpression) {
+            if (!column) {
                 const computedColumnMeta: IColumnMetaData<T, V> = getColumnMetadata(objectOperand.type, exp.memberName);
                 if (computedColumnMeta instanceof ComputedColumnMetaData) {
                     const result = this.visitFunction((computedColumnMeta as ComputedColumnMetaData<T, V>).functionExpression.clone(), [objectOperand], { selectExpression: param.selectExpression });
