@@ -788,7 +788,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression): string {
+    protected getPagingQueryString(select: SelectExpression, param?: IQueryBuilderParameter): string {
         let result = "";
         if (select.orders.length <= 0) {
             if (select.distinct) {
@@ -799,10 +799,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             }
         }
         if (select.paging.skip) {
-            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip)} ROWS`;
+            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip, param)} ROWS`;
         }
         if (select.paging.take) {
-            result += `${this.newLine()}FETCH NEXT ${this.toString(select.paging.take)} ROWS ONLY`;
+            result += `${this.newLine()}FETCH NEXT ${this.toString(select.paging.take, param)} ROWS ONLY`;
         }
         return result;
     }
@@ -911,7 +911,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
 
         if (hasPagination) {
-            selectQuerySuffix += this.getPagingQueryString(selectExp);
+            selectQuerySuffix += this.getPagingQueryString(selectExp, param);
         }
 
         const selectQuery = `SELECT${distinct} ${selects}`

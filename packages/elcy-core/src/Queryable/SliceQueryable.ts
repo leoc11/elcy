@@ -9,8 +9,11 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 
 export class SliceQueryable<T> extends Queryable<T> {
     constructor(parent: Queryable<T>, protected readonly start: number, protected readonly end?: number) {
-        const parentParam = parent.parameter({ skip: start, take: typeof end === "number" ? end - start : undefined });
-        super(parent.type, parentParam as Queryable);
+        const pagingVariable: Record<string, number> = { skip: start };
+        if (typeof end === "number") {
+            pagingVariable.take = end - start;
+        }
+        super(parent.type, parent.parameter(pagingVariable) as Queryable);
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
