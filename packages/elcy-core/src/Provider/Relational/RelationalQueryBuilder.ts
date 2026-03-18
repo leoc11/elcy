@@ -519,7 +519,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
-                    const useAlias = !commandExp.selects.includes(column);
+                    const useAlias = !commandExp.projectedColumns.includes(column);
                     return this.enclose(childSelect.entity.alias) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
@@ -850,13 +850,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const distinct = selectExp.distinct ? " DISTINCT" : "";
         const selects = Enumerable.from(selectExp.projectedColumns)
             .map((o) => {
-                let colStr = "";
-                if (o instanceof ComputedColumnExpression) {
-                    colStr = this.toOperandString(o.expression, param);
-                }
-                else {
-                    colStr = this.enclose(o.entity.alias) + "." + this.enclose(o.columnName);
-                }
+                let colStr = this.getColumnQueryString(o, param);
                 // NOTE: computed column should always has alias
                 if (o.alias) {
                     colStr += " AS " + this.enclose(o.alias);
