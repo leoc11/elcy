@@ -19,7 +19,7 @@ export class DistinctQueryable<T> extends Queryable<T> {
         this._selector = value;
     }
     constructor(public readonly parent: Queryable<T>) {
-        super(parent.type, parent);
+        super(parent.type, parent as Queryable);
     }
     protected readonly selectorFn?: (item: T) => any;
     private _selector?: FunctionExpression;

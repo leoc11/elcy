@@ -1,4 +1,3 @@
-import { DeferredQuery } from "src/Query/DeferredQuery";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -8,7 +7,7 @@ import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
+import { GroupedEnumerable } from "@elcy/enumerable";
 
 export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     protected get keySelector() {
