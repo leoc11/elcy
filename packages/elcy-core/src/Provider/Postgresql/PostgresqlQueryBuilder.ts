@@ -24,11 +24,13 @@ import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEq
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { EntityExpression } from "src/Queryable/QueryExpression/EntityExpression";
+import { postgresqlQueryTranslator } from "./PostgresqlQueryTranslator";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
         maxParameters: 34464
     };
+    public override translator = postgresqlQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType>([
         [Uuid, () => ({ columnType: "uuid", group: "Identifier" })],
         [BigInt, () => ({ columnType: "bigint", group: "Integer" })],
@@ -70,7 +72,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
         return paramObj;
     }
-    protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderParameter): string {
+    protected override toSqlParameterString(expression: SqlParameterExpression, param: IQueryBuilderParameter): string {
         const paramValue = param.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);

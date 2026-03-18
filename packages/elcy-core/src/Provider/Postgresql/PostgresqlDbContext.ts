@@ -30,7 +30,7 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
     protected queryResultParserType = QueryResultParser;
     protected queryVisitorType = RelationalQueryVisitor;
     protected schemaBuilderType = PostgresqlSchemaBuilder;
-    protected translator = postgresqlQueryTranslator;
+    protected override translator = postgresqlQueryTranslator;
 
     protected override getInsertQueries<T extends object>(entityMeta: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> {
         const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> = [];
