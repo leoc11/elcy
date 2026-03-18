@@ -155,7 +155,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                                         const typeExp = createExpression(param, tokens, null, operator) as ValueExpression<IObjectType>;
                                         const paramToken = tokens[param.index];
                                         let params: IExpression[] = [];
-                                        if (paramToken.type === LexicalTokenType.Operator && paramToken.data === "(") {
+                                        if (paramToken?.type === LexicalTokenType.Operator && paramToken.data === "(") {
                                             param.index++;
                                             const exp = createParamExpression(param, tokens, ")");
                                             params = exp.items;
