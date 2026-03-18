@@ -4,7 +4,6 @@ import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
 import { IEnumerable } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, hashCodeAdd, isColumnExp, isEntityExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { IncludeRelation } from "../Interface/IncludeRelation";
 import { JoinRelation } from "../Interface/JoinRelation";
@@ -207,16 +206,16 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 const selectExp = key.select;
                 const keyParentRel = selectExp.parentRelation;
                 if (keyParentRel) {
-                    let relation: IExpression<boolean>;
-                    for (const col of this.groupBy) {
-                        const childCol = selectExp.projectedColumns.find((o) => o.propertyName as string === col.propertyName);
-                        const logicalExp = new StrictEqualExpression(col, childCol);
-                        relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                    const replaceMap = new Map();
+                    for (const oriCol of keyParentRel.parentColumns) {
+                        const col = this.projectedColumns.find(o => o.columnName === oriCol.columnName);
+                        replaceMap.set(oriCol, col);
                     }
+                    const relation = resolveClone(keyParentRel.relation, replaceMap);
                     this.addKeyRelation(selectExp, relation, "one");
                     this.keyRelation.isEmbedded = keyParentRel.isEmbedded;
                 }
-            }   
+            }
         }
     }
 

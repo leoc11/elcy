@@ -471,7 +471,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             throw new Error(`groupBy did not support selector which return itselft.`);
                         }
 
-                        reverseJoin(childSelectExp, selectOperand, true);
+                        reverseJoin(this, childSelectExp, selectOperand, true);
                         // remove relation to groupBy expression.
                         const parentRel = childSelectExp.parentRelation as JoinRelation<any, R & object>;
                         ArrayExtension.delete(parentRel.parent.joins, parentRel);
@@ -517,7 +517,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         if (exp.methodName === "map") {
                             if (selectExp instanceof SelectExpression) {
                                 // group result by relation to parent.
-                                reverseJoin(selectExp, selectOperand, cloneObjectOperand);
+                                reverseJoin(this, selectExp, selectOperand, cloneObjectOperand);
 
                                 const objExp = new ObjectValueExpression({});
                                 const paramExp = new ParameterExpression("o", selectExp.itemType);
@@ -548,7 +548,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                 }
                                 else {
                                     // return child select and add current select expression as a join relation.
-                                    selectOperand = reverseJoin(childExp, selectOperand, cloneObjectOperand);
+                                    selectOperand = reverseJoin(this, childExp, selectOperand, cloneObjectOperand);
                                 }
                             }
                             else {
@@ -582,7 +582,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                     }
                                     else {
                                         let colExp = selectExp as IColumnExpression;
-                                        selectOperand = reverseJoin(selectExp.entity.select, selectOperand, cloneObjectOperand);
+                                        selectOperand = reverseJoin(this, selectExp.entity.select, selectOperand, cloneObjectOperand);
                                         if (selectExp.entity !== selectOperand.entity) {
                                             colExp = selectOperand.allColumns.find((o) => o.dataPropertyName === colExp.dataPropertyName);
                                         }
@@ -604,7 +604,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             if (!(selectExp instanceof SelectExpression)) {
                                 throw new Error(`Queryable<${objectOperand.itemType.name}>.flatMap required selector with array or queryable or enumerable return value.`);
                             }
-                            selectOperand = reverseJoin(selectExp, selectOperand, cloneObjectOperand);
+                            selectOperand = reverseJoin(this, selectExp, selectOperand, cloneObjectOperand);
                         }
 
                         if (!selectOperand.isSubSelect) {
@@ -664,7 +664,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return selectOperand;
                 }
                 case "includes": {
-                    // TODO: dbset1.filter(o => dbset2.map(c => c.column).includes(o.column)); use inner join for this
                     if (param.scope === "loads" || param.scope === "project") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
@@ -711,7 +710,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     if (selectOperand.paging.skip) {
                         selectOperand = createProjectionSelect(selectOperand);
                     }
-                    
+
                     objectOperand.distinct = true;
                     return objectOperand;
                 }
@@ -1427,6 +1426,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     selectOperand.selects = entityExp.selectedColumns.slice(0);
 
                     if (parentRelation) {
+                        const replaceMap = new Map();
+                        for (const oriCol of parentRelation.childColumns) {
+                            const col = selectOperand.selects.find(o => o.columnName === oriCol.columnName);
+                            replaceMap.set(oriCol, col);
+                        }
+                        parentRelation.relation = resolveClone(parentRelation.relation, replaceMap);
                         parentRelation.child = selectOperand;
                         selectOperand.parentRelation = parentRelation;
                     }
@@ -1989,7 +1994,7 @@ const joinToInclude = <TChild, TParent>(childExp: SelectExpression<TChild>, pare
     return includeRel;
 };
 
-const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExclusive?: boolean) => {
+const reverseJoin = (qv: RelationalQueryVisitor, childExp: SelectExpression, root?: SelectExpression, isExclusive?: boolean) => {
     if (root instanceof GroupedExpression) {
         root = root.groupByExp;
     }
@@ -2037,11 +2042,22 @@ const reverseJoin = (childExp: SelectExpression, root?: SelectExpression, isExcl
             }
         }
         else {
-            joinRel.child.addJoin(parent, joinRel.relation, "INNER", joinRel.isEmbedded);
+            const replaceMap = new Map();
+            for (const col of joinRel.parentColumns) {
+                replaceMap.set(col.entity, col.entity);
+                const newCol = col.clone(replaceMap);
+                if (!newCol.alias) {
+                    newCol.alias = qv.newAlias("column");
+                }
+            }
+
+            const relationExp = resolveClone(joinRel.relation, replaceMap);
+            child.addJoin(parent, relationExp, "INNER", joinRel.isEmbedded);
         }
     }
     childExp.parentRelation = rootRel;
     if (rootRel) {
+        ArrayExtension.add(childExp.selects, ...rootRel.childColumns);
         rootRel.child = childExp;
     }
     return childExp;
@@ -2054,7 +2070,7 @@ const createProjectionSelect = <T>(selectExp: SelectExpression<T>) => {
     if (parentRelation) {
         const replaceMap = new Map();
         for (const oriCol of parentRelation.childColumns) {
-            const col = projectedSelectExp.selects.find(o => o.columnName === col.columnName);
+            const col = projectedSelectExp.selects.find(o => o.columnName === oriCol.columnName);
             replaceMap.set(oriCol, col);
         }
         parentRelation.relation = resolveClone(parentRelation.relation, replaceMap);
