@@ -3,11 +3,11 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 export class RealColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
     constructor(entityMeta?: IEntityMetaData<TE>) {
-        super(Number, entityMeta);
+        super(entityMeta, Number);
     }
-    public columnType: RealColumnType = "real";
+    public override columnType: RealColumnType = "real";
     public size?: number;
-    public applyOption(columnMeta: RealColumnMetaData<TE>) {
+    public override applyOption(columnMeta: RealColumnMetaData<TE>) {
         if (typeof columnMeta.size !== "undefined") {
             this.size = columnMeta.size;
         }

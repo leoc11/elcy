@@ -7,11 +7,11 @@ export class DecimalColumnMetaData<TE extends object = object> extends ColumnMet
     constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<string | number | Decimal>) {
         super(entityMeta, type ?? String);
     }
-    public columnType: DecimalColumnType = "decimal";
+    public override columnType: DecimalColumnType = "decimal";
     public precision?: number;
     public scale?: number;
 
-    public applyOption(columnMeta: DecimalColumnMetaData<TE>) {
+    public override applyOption(columnMeta: DecimalColumnMetaData<TE>) {
         if (typeof columnMeta.scale !== "undefined") {
             this.scale = columnMeta.scale;
         }

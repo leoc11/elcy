@@ -6,8 +6,8 @@ import { ComputedColumnMetaData } from "src/MetaData/ComputedColumnMetaData";
 import { setColumnMetadata } from "src/MetaData/MetaDataMapper";
 
 // TODO: types: Persisted, Virtual, Query
-export function ComputedColumn<TE extends object = object>(fn: (o: TE) => ValueType): ClassAccessorDecorator<TE, ValueType> {
-    return (accessor: ClassAccessor<ValueType>, context: ClassAccessorDecoratorContext<TE, ValueType>) => {
+export function ComputedColumn<TE extends object = object, T extends ValueType = ValueType>(fn: (o: TE) => T): ClassAccessorDecorator<TE, T> {
+    return (accessor: ClassAccessor<T>, context: ClassAccessorDecoratorContext<TE, T>) => {
         let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
         if (!Array.isArray(columnHandlers)) {
             context.metadata.columns = columnHandlers = [];
@@ -25,11 +25,11 @@ export function ComputedColumn<TE extends object = object>(fn: (o: TE) => ValueT
         });
 
         return {
-            get() {
-                let value = accessor.get();
+            get(this: TE) {
+                let value = accessor.get.call(this);
                 if (typeof value === "undefined") {
-                    value = fn(this as TE);
-                    accessor.set(value);
+                    value = fn(this);
+                    accessor.set.call(this, value);
                 }
 
                 return value;

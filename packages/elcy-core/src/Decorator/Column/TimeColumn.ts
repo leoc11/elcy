@@ -27,5 +27,5 @@ export function TimeColumn<TE extends object, T extends TimeSpan | Temporal.Plai
         option = optionOrName;
     }
 
-    return Column<TE, TimeSpan | Temporal.PlainTime>(option.type ?? Temporal.PlainTime, TimeColumnMetaData, option);
+    return Column<TE, TimeSpan | Temporal.PlainTime>(option.type ?? TimeSpan, TimeColumnMetaData, option);
 }

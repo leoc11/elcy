@@ -4,9 +4,9 @@ import { ISerializeColumnOption } from "../Option/ISerializateColumnOption";
 import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
 
-export function SerializeColumn<TE extends object, T extends object>(option?: ISerializeColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function SerializeColumn<TE extends object, T extends object>(option: ISerializeColumnOption<T>): ClassPropertyDecorator<TE, T>;
 export function SerializeColumn<TE extends object, T extends object>(type: GenericType<T>, name?: string, defaultValue?: () => T): ClassPropertyDecorator<TE, T>;
-export function SerializeColumn<TE extends object, T extends object>(optionOrType?: GenericType<T> | ISerializeColumnOption<T>, name?: string, defaultValue?: () => T): ClassPropertyDecorator<TE, T> {
+export function SerializeColumn<TE extends object, T extends object>(optionOrType: GenericType<T> | ISerializeColumnOption<T>, name?: string, defaultValue?: () => T): ClassPropertyDecorator<TE, T> {
     let option: ISerializeColumnOption<T>;
     if (optionOrType && typeof optionOrType !== "function") {
         option = optionOrType;

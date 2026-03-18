@@ -9,9 +9,9 @@ export class IntegerColumnMetaData<TE extends object = object> extends ColumnMet
         super(entityMeta, Number);
     }
     public autoIncrement: boolean;
-    public columnType: IntColumnType = "int";
+    public override columnType: IntColumnType = "int";
     public size?: number;
-    public applyOption(columnMeta: IntegerColumnMetaData<TE>) {
+    public override applyOption(columnMeta: IntegerColumnMetaData<TE>) {
         if (typeof columnMeta.autoIncrement !== "undefined") {
             this.autoIncrement = columnMeta.autoIncrement;
         }

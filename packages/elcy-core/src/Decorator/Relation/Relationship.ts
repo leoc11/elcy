@@ -4,12 +4,12 @@ import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "src/Helper/FunctionHelper";
-import { IObjectType } from "src/Common/Type";
+import { IObjectType, PropertySelector } from "src/Common/Type";
 import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
 
 export function Relationship<TE extends object>(entity: string, name?: string): ClassPropertyDecorator<TE>;
-export function Relationship<TE extends object, T extends object>(type: IObjectType<T>, option: IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined>;
-export function Relationship<TE extends object, T extends object>(entityOrType: string | IObjectType<T>, nameOrOption?: string | IRelationOption<TE, T>): ClassPropertyDecorator<TE, T | undefined> {
+export function Relationship<TE extends object, T extends object>(type: IObjectType<T>, option: IRelationOption<TE, T> | Map<PropertySelector<TE>, PropertySelector<T>>): ClassPropertyDecorator<TE, T | undefined>;
+export function Relationship<TE extends object, T extends object>(entityOrType: string | IObjectType<T>, nameOrOption?: string | IRelationOption<TE, T> | Map<PropertySelector<TE>, PropertySelector<T>>): ClassPropertyDecorator<TE, T | undefined> {
     if (typeof entityOrType === "string") {
         const entity = entityOrType;
         return (_: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T | undefined> | ClassAccessorDecoratorContext<TE, T | undefined>) => {
@@ -34,7 +34,15 @@ export function Relationship<TE extends object, T extends object>(entityOrType: 
     }
     else {
         const targetType = entityOrType;
-        const option = nameOrOption as IRelationOption<TE, T>;
+        let option: IRelationOption<TE, T>;
+        if (nameOrOption instanceof Map) {
+            option = {
+                relationMap: nameOrOption
+            };
+        }
+        else {
+            option = nameOrOption as IRelationOption<TE, T>;
+        }
         if (!option.name) {
             option.name = targetType.name;
         }
@@ -54,7 +62,7 @@ export function Relationship<TE extends object, T extends object>(entityOrType: 
                     const childPropName = typeof chilProp === "string" ? chilProp : FunctionHelper.propertyName(chilProp);
                     const childColumn = entityMeta.columns.find(o => o.propertyName === childPropName);
                     const parentPropName = typeof parentProp === "string" ? parentProp : FunctionHelper.propertyName(parentProp);
-                    const parentColumn = entityMeta.columns.find(o => o.propertyName === parentPropName);
+                    const parentColumn = targetMetaData.columns.find(o => o.propertyName === parentPropName);
 
                     return [childColumn, parentColumn];
                 }).toMap(o => o[0], o => o[1]);
