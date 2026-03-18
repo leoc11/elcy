@@ -2,7 +2,6 @@ import { InstantiationExpression } from "src/ExpressionBuilder/Expression/Instan
 import { GenericType, IObjectType } from "../Common/Type";
 import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
-import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";

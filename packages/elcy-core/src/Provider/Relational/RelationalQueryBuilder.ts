@@ -68,17 +68,8 @@ import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawEntityExpression } from "src/Queryable/QueryExpression/RawEntityExpression";
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
-
-let Temporal: typeof import("@js-temporal/polyfill").Temporal;
-let Decimal: typeof import("decimal.js").default;
-(async () => {
-    try {
-        Temporal = (await import('@js-temporal/polyfill')).Temporal;
-    } catch { }
-    try {
-        Decimal = (await import('decimal.js')).default;
-    } catch { }
-})();
+import { Temporal } from "src/Data/Temporal";
+import { Decimal } from "src/Data/Decimal";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -233,24 +224,25 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (isNull(input) && column.nullable) {
             return null;
         }
-        switch (column.type as any) {
-            case Boolean:
+        const type = column.type as GenericType;
+        switch (true) {
+            case type === Boolean:
                 result = Boolean(input);
                 break;
-            case BigInt: {
+            case type === BigInt: {
                 result = BigInt(input);
                 break;
             }
-            case Number:
+            case type === Number:
                 result = Number.parseFloat(input);
                 if (!isFinite(result)) {
                     result = column.nullable ? null : 0;
                 }
                 break;
-            case String:
+            case type === String:
                 result = input ? input.toString() : input;
                 break;
-            case Date: {
+            case type === Date: {
                 result = new Date(input);
                 const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling === "utc") {
@@ -258,7 +250,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 break;
             }
-            case TimeSpan: {
+            case type === TimeSpan: {
                 result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
                 const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none") {
@@ -266,24 +258,24 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 break;
             }
-            case Uuid: {
+            case type === Uuid: {
                 result = input ? new Uuid(input.toString()) : Uuid.empty;
                 break;
             }
-            case ArrayBuffer: {
+            case type === ArrayBuffer: {
                 result = input.buffer ? input.buffer : input;
                 break;
             }
-            case Uint8Array:
-            case Uint16Array:
-            case Uint32Array:
-            case Int8Array:
-            case Int16Array:
-            case Int32Array:
-            case Uint8ClampedArray:
-            case Float32Array:
-            case Float64Array:
-            case DataView: {
+            case type === Uint8Array:
+            case type === Uint16Array:
+            case type === Uint32Array:
+            case type === Int8Array:
+            case type === Int16Array:
+            case type === Int32Array:
+            case type === Uint8ClampedArray:
+            case type === Float32Array:
+            case type === Float64Array:
+            case type === DataView: {
                 if (typeof input === "number") {
                     const dataView = new DataView(new ArrayBuffer(4));
                     dataView.setUint32(0, input);
@@ -293,21 +285,21 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 result = new (column.type as any)(input.buffer ? input.buffer : input);
                 break;
             }
-            case Temporal?.Instant: {
+            case Temporal && type === Temporal?.Instant: {
                 const date = new Date(input);
                 result = Temporal.Instant.fromEpochMilliseconds(date.getTime());
                 break;
             }
-            case Temporal?.PlainDate: {
+            case Temporal && type === Temporal?.PlainDate: {
                 const date = new Date(input);
                 result = new Temporal.PlainDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
                 break;
             }
-            case Temporal?.PlainTime: {
+            case Temporal && type === Temporal.PlainTime: {
                 result = Temporal.PlainTime.from(String(input));
                 break;
             }
-            case Decimal: {
+            case Decimal && type === Decimal: {
                 result = new Decimal(String(input));
                 break;
             }

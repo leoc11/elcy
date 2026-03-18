@@ -1,3 +1,4 @@
+import { Uuid } from "src/Data/Uuid";
 import { NullConstructor } from "../Common/Constant";
 import { GenericType, IObjectType } from "../Common/Type";
 import { DbFunction } from "../Query/DbFunction";
@@ -15,6 +16,9 @@ import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
 import { Enumerable } from "@elcy/enumerable";
+import { TimeSpan } from "src/Data/TimeSpan";
+import { Temporal } from "src/Data/Temporal";
+import { Decimal } from "src/Data/Decimal";
 
 interface SyntaticParameter {
     index: number;
@@ -74,19 +78,19 @@ const globalObjectMaps = new Map<string, unknown>([
     ["false", false],
 
     // Helper
-    ["DbFunction", DbFunction]
+    ["DbFunction", DbFunction],
+
+    // data model
+    ["Uuid", Uuid],
+    ["TimeSpan", TimeSpan]
 ]);
 
-(async () => {
-    try {
-        const Temporal = (await import('@js-temporal/polyfill')).Temporal;
-        globalObjectMaps.set("Temporal", Temporal);
-    } catch { }
-    try {
-        const Decimal = (await import('decimal.js')).default;
-        globalObjectMaps.set("Decimal", Decimal);
-    } catch { }
-})();
+if (Temporal) {
+    globalObjectMaps.set("Temporal", Temporal);
+}
+if (Decimal) {
+    globalObjectMaps.set("Decimal", Decimal);
+}
 
 const [prefixOperators, postfixOperators] = Enumerable.from(operators)
     .groupBy(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix)
@@ -227,7 +231,7 @@ function createExpression(param: SyntaticParameter, tokens: ILexicalToken[], exp
                             else if (operator.identifier === "[") {
                                 throw "element access not supported";
                             }
-                            
+
                             const operand = createExpression(param, tokens, undefined, operator);
                             expression = operator.expressionFactory(expression, operand);
                             break;

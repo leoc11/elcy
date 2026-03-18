@@ -1,3 +1,4 @@
+import { Decimal } from "src/Data/Decimal";
 import { ArrayView, GenericType, ValueType } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
@@ -10,6 +11,7 @@ import { GroupByExpression } from "../Queryable/QueryExpression/GroupByExpressio
 import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpression";
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
+import { Temporal } from "src/Data/Temporal";
 export const toHexaString = function (binary: ArrayBuffer | ArrayView): string {
     if (binary instanceof ArrayBuffer) {
         let hexaString = Array.from(new Uint8Array(binary))
@@ -174,30 +176,36 @@ export const isColumnExp = (data: IExpression): data is IColumnExpression => {
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);
 };
+
 export const isValueType = (type: GenericType) => {
-    switch (type) {
-        case Number:
-        case BigInt:
-        case String:
-        case Date:
-        case TimeSpan:
-        case Uuid:
-        case Boolean:
-        case ArrayBuffer:
+    switch (true) {
+        case type === Number:
+        case type === BigInt:
+        case type === String:
+        case type === Date:
+        case type === TimeSpan:
+        case type === Uuid:
+        case type === Boolean:
+        case type === ArrayBuffer:
         // TypedArray
-        case Uint8Array:
-        case Uint16Array:
-        case Uint32Array:
-        case Int8Array:
-        case Int16Array:
-        case Int32Array:
-        case Uint8ClampedArray:
-        case Float32Array:
-        case Float64Array:
-        case DataView:
+        case type === Uint8Array:
+        case type === Uint16Array:
+        case type === Uint32Array:
+        case type === Int8Array:
+        case type === Int16Array:
+        case type === Int32Array:
+        case type === Uint8ClampedArray:
+        case type === Float32Array:
+        case type === Float64Array:
+        case type === DataView:
+        case Decimal && type === Decimal:
+        case Temporal && type === Temporal.Instant:
+        case Temporal && type === Temporal.PlainDate:
+        case Temporal && type === Temporal.PlainTime:
             return true;
-        default:
+        default: {
             return false;
+        }
     }
 };
 export const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
