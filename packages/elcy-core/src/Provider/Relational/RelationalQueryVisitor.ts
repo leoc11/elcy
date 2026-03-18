@@ -1622,6 +1622,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             throw new Error(`${exp.methodName} not supported on expression`);
         }
         else {
+            exp.params = exp.params.map((o) => this.visit(o, { selectExpression: param.selectExpression }));
             if (objectOperand instanceof ValueExpression) {
                 const value = objectOperand.value;
                 if (value === Enumerable) {
@@ -1634,7 +1635,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
             
             const isObjectOperandSafe = this.isSafe(objectOperand);
-            exp.params = exp.params.map((o) => this.visit(o, { selectExpression: param.selectExpression }));
             const isExpressionSafe = isObjectOperandSafe && exp.params.every((o) => this.isSafe(o));
 
             let objectOperandValue: any;

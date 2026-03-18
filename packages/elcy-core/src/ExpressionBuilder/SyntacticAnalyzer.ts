@@ -81,6 +81,7 @@ const globalObjectMaps = new Map<string, unknown>([
     ["DbFunction", DbFunction],
 
     // data model
+    ["Enumerable", Enumerable],
     ["Uuid", Uuid],
     ["TimeSpan", TimeSpan]
 ]);
