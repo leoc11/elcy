@@ -33,16 +33,16 @@ export function proxyEntityType<TE extends object>(type: IObjectType<TE>): IObje
         construct(target, args, newTarget) {
             const instance = Reflect.construct(target, args, newTarget);
             const proxyInstance = new Proxy(instance, {
-                get(target, prop, receiver) {
+                get(target, prop) {
                     if (prop === "constructor") {
                         return proxyType;
                     }
-                    return Reflect.get(target, prop, receiver);
+                    return Reflect.get(target, prop, target);
                 },
-                set(target, prop, val, receiver) {
+                set(target, prop, val) {
                     const m = trackMap.get(proxyInstance) as unknown as IEventEmitter<TE, IChangeEventParam<TE>>;
                     if (!m) {
-                        return Reflect.set(target, prop, val, receiver);
+                        return Reflect.set(target, prop, val, target);
                     }
 
                     if (!(columnMetaMap instanceof Map)) {
@@ -52,11 +52,11 @@ export function proxyEntityType<TE extends object>(type: IObjectType<TE>): IObje
 
                     const column = columnMetaMap.get(prop);
                     if (!column) {
-                        return Reflect.set(target, prop, val, receiver);
+                        return Reflect.set(target, prop, val, target);
                     }
 
-                    const oldValue = Reflect.get(target, prop, receiver);
-                    const result = Reflect.set(target, prop, val, receiver);
+                    const oldValue = Reflect.get(target, prop, target);
+                    const result = Reflect.set(target, prop, val, target);
                     if (!isEqual(oldValue, val)) {
                         m.emit({
                             newValue: val,
