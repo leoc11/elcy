@@ -239,7 +239,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     iterator._accessCount++;
     try {
       let index = 0;
-      for (;;) {
+      for (; ;) {
         const isDone = this.cache.isDone;
         const len = this.cache.result.length;
         while (len > index) {

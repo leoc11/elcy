@@ -1,0 +1,7442 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`QUERYABLE LOADS should eager load list navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE LOADS should support nested include 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."rowVersion",
+	"entity2"."t2Name",
+	"entity2"."t2Number"
+FROM "fixture"."Table2s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."bigint",
+			"entity0"."binary",
+			"entity0"."boolean",
+			"entity0"."date",
+			"entity0"."plainDate",
+			"entity0"."dateTime",
+			"entity0"."instant",
+			"entity0"."decimal",
+			"entity0"."decimalNumber",
+			"entity0"."decimalDecimal",
+			"entity0"."deleted",
+			"entity0"."identifier",
+			"entity0"."identifierString",
+			"entity0"."integer",
+			"entity0"."real",
+			"entity0"."string",
+			"entity0"."time",
+			"entity0"."plainTime",
+			"entity0"."createdDate",
+			"entity0"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+	ORDER BY "entity1"."table1Id" ASC
+) AS "entity1" ON ("entity1"."table2Id"="entity2"."id")
+ORDER BY "entity2"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE LOADS should eager load scalar navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN "Table1Manies" AS "entity0" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer"
+FROM "Table1Manies" AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE LOADS should eager load 2 navigation properties at once 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN "Table1_Table2s" AS "entity0" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."rowVersion",
+	"entity2"."t2Name",
+	"entity2"."t2Number"
+FROM "fixture"."Table2s" AS "entity2"
+INNER JOIN "Table1_Table2s" AS "entity0" ON ("entity0"."table2Id"="entity2"."id")
+ORDER BY "entity2"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table2Id",
+	"entity0"."option12"
+FROM "Table1_Table2s" AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return specific property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."dateTime"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return an object 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."createdDate" AS "column0",
+	("entity0"."decimalNumber"+1.2) AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return a value from scalar navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."plainDate" AS "column0"
+FROM "Table1Manies" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return an object with list navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return an object with scalar navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."number"
+FROM "Table1One" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return an value from list navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name" AS "column0"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should return a scalar navigation property of list navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."rowVersion",
+	"entity2"."t2Name",
+	"entity2"."t2Number"
+FROM "fixture"."Table2s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."id"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+	ORDER BY "entity1"."table1Id" ASC
+) AS "entity1" ON ("entity1"."table2Id"="entity2"."id")
+ORDER BY "entity2"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id"
+FROM "Table1_Table2s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should support self select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."table1Id",
+	"entity2"."table2Id",
+	"entity2"."option12"
+FROM "Table1_Table2s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity3"."rowVersion" AS "column0"
+	FROM "Table1_Table2s" AS "entity1"
+	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
+	INNER JOIN (
+		SELECT "entity0"."id"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+	ORDER BY "entity1"."table1Id" ASC
+) AS "entity1" ON (("entity2"."table1Id"="entity1"."table1Id") AND ("entity2"."table2Id"="entity1"."table2Id"))
+ORDER BY "entity2"."table1Id" ASC, "entity2"."table2Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity3"."rowVersion" AS "column0"
+FROM "Table1_Table2s" AS "entity1"
+LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should select array 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column0",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."column0"="entity1"."table1Id")
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should select array with where in property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."table1Id",
+	"entity2"."name",
+	"entity2"."integer"
+FROM "Table1Manies" AS "entity2"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity1"."column0" AS "column1"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity1"."table1Id",
+			SUM("entity1"."integer") AS "column0"
+		FROM "Table1Manies" AS "entity1"
+		WHERE ("entity1"."integer">2)
+		GROUP BY "entity1"."table1Id"
+	) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity2"."integer"<=1)
+ORDER BY "entity2"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."column0" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		SUM("entity1"."integer") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">2)
+	GROUP BY "entity1"."table1Id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAP should work in chain 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."bigint" AS "column0"
+FROM "Table1Manies" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."bigint">10000)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column0",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."column0"="entity1"."table1Id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP select many with nested select to entity 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."rowVersion",
+	"entity2"."t2Name",
+	"entity2"."t2Number",
+	"entity1"."table1Id"
+FROM "fixture"."Table2s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."table2Id" AS "column0",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column1",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."column1"="entity1"."table1Id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP select many with nested select to related entity property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."t3Number"
+FROM "fixture"."Table3s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."id",
+		"entity1"."table3Id" AS "column0",
+		"entity1"."table1Id",
+		"entity1"."table3Id",
+		"entity1"."option13"
+	FROM "Table1_Table3s" AS "entity1"
+) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column1",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."column1"="entity1"."table1Id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP select many with nested select to many relation 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity3"."id",
+	"entity3"."table2Id",
+	"entity3"."table3Id",
+	"entity3"."option13",
+	"entity1"."table1Id"
+FROM "Table1_Table3s" AS "entity3"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity2"."id" AS "column0",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+) AS "entity1" ON ("entity1"."column0"="entity3"."table2Id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column1",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">10000))
+) AS "entity0" ON ("entity0"."column1"="entity1"."table1Id")
+ORDER BY "entity3"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP should worked in chain 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity3"."id",
+	"entity3"."table2Id",
+	"entity3"."table3Id",
+	"entity3"."option13"
+FROM "Table1_Table3s" AS "entity3"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity2"."id" AS "column1",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."id" AS "column0",
+			"entity0"."bigint",
+			"entity0"."binary",
+			"entity0"."boolean",
+			"entity0"."date",
+			"entity0"."plainDate",
+			"entity0"."dateTime",
+			"entity0"."instant",
+			"entity0"."decimal",
+			"entity0"."decimalNumber",
+			"entity0"."decimalDecimal",
+			"entity0"."deleted",
+			"entity0"."identifier",
+			"entity0"."identifierString",
+			"entity0"."integer",
+			"entity0"."real",
+			"entity0"."string",
+			"entity0"."time",
+			"entity0"."plainTime",
+			"entity0"."createdDate",
+			"entity0"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity0"."column0"="entity1"."table1Id")
+	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+) AS "entity1" ON ("entity1"."column1"="entity3"."table2Id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FLATMAP nested selectMany 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity3"."id",
+	"entity3"."table2Id",
+	"entity3"."table3Id",
+	"entity3"."option13",
+	"entity1"."table1Id"
+FROM "Table1_Table3s" AS "entity3"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity2"."id" AS "column0",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+) AS "entity1" ON ("entity1"."column0"="entity3"."table2Id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column1",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."column1"="entity1"."table1Id")"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FILTER should add where clause 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."bigint"<=10000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FILTER should filter included list 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity2"."t2Number"<=15000)
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FILTER should be supported in select statement 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity2"."t2Number"<=15000)
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FILTER could be used more than once in chain 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer"
+FROM "Table1Manies" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+WHERE (("entity1"."real"<=15000) AND ("entity0"."name" LIKE '%a%'))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."decimalNumber" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY by related entity 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table2Id",
+	"entity0"."option12"
+FROM "Table1_Table2s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+ORDER BY "entity1"."real" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY by computed column 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer"
+FROM "Table1Manies" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+ORDER BY ("entity0"."integer"*"entity1"."integer") DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY should used last defined order 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer"
+FROM "Table1Manies" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+ORDER BY "entity0"."integer" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY could be used in include 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC, "entity2"."t2Name" DESC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SOME should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT true AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY "column0"
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SOME could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		(
+		CASE WHEN (("entity2"."column0" IS NOT NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column1"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			true AS "column0"
+		FROM "Table1_Table2s" AS "entity2"
+		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+		WHERE ("entity3"."t2Number"<20000)
+		GROUP BY "entity2"."table1Id"
+	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	(
+	CASE WHEN (("entity2"."column0" IS NOT NULL)) 
+	THEN true
+	ELSE false
+	END
+) AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		true AS "column0"
+	FROM "Table1_Table2s" AS "entity2"
+	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+	WHERE ("entity3"."t2Number"<20000)
+	GROUP BY "entity2"."table1Id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SOME could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		true AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE EVERY should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT false AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND NOT(
+	("entity0"."real"<=20000)
+))
+ORDER BY "column0"
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE EVERY could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		(
+		CASE WHEN (("entity2"."column0" IS NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column1"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			false AS "column0"
+		FROM "Table1_Table2s" AS "entity2"
+		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+		WHERE NOT(
+			("entity3"."t2Number"<20000)
+		)
+		GROUP BY "entity2"."table1Id"
+	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	(
+	CASE WHEN (("entity2"."column0" IS NULL)) 
+	THEN true
+	ELSE false
+	END
+) AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		false AS "column0"
+	FROM "Table1_Table2s" AS "entity2"
+	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+	WHERE NOT(
+		("entity3"."t2Number"<20000)
+	)
+	GROUP BY "entity2"."table1Id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE EVERY could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		false AS "column0"
+	FROM "Table1_Table3s" AS "entity1"
+	LEFT JOIN "fixture"."Table3s" AS "entity2" ON ("entity1"."table3Id"="entity2"."id")
+	WHERE NOT(
+		("entity2"."t3Number"<=20000)
+	)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NULL))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAX should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT MAX("entity0"."decimalNumber") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAX could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity3"."column1" AS "column2"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			MAX("entity3"."t2Number") AS "column1"
+		FROM "fixture"."Table2s" AS "entity3"
+		INNER JOIN (
+			SELECT "entity2"."table1Id",
+				"entity2"."table2Id",
+				"entity2"."table2Id" AS "column0",
+				"entity2"."option12"
+			FROM "Table1_Table2s" AS "entity2"
+		) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+		GROUP BY "entity2"."table1Id"
+	) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity3"."column1" AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		MAX("entity3"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity3"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table2Id",
+			"entity2"."table2Id" AS "column0",
+			"entity2"."option12"
+		FROM "Table1_Table2s" AS "entity2"
+	) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+	GROUP BY "entity2"."table1Id"
+) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MAX could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		MAX("entity2"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity2"
+	INNER JOIN (
+		SELECT "entity1"."table1Id",
+			"entity1"."table2Id",
+			"entity1"."table2Id" AS "column0",
+			"entity1"."option12"
+		FROM "Table1_Table2s" AS "entity1"
+	) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity2"."column1">20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MIN should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT MIN("entity0"."real") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MIN could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity3"."column1" AS "column2"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			MIN("entity3"."t2Number") AS "column1"
+		FROM "fixture"."Table2s" AS "entity3"
+		INNER JOIN (
+			SELECT "entity2"."table1Id",
+				"entity2"."table2Id",
+				"entity2"."table2Id" AS "column0",
+				"entity2"."option12"
+			FROM "Table1_Table2s" AS "entity2"
+		) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+		GROUP BY "entity2"."table1Id"
+	) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity3"."column1" AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		MIN("entity3"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity3"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table2Id",
+			"entity2"."table2Id" AS "column0",
+			"entity2"."option12"
+		FROM "Table1_Table2s" AS "entity2"
+	) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+	GROUP BY "entity2"."table1Id"
+) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE MIN could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		MIN("entity2"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity2"
+	INNER JOIN (
+		SELECT "entity1"."table1Id",
+			"entity1"."table2Id",
+			"entity1"."table2Id" AS "column0",
+			"entity1"."option12"
+		FROM "Table1_Table2s" AS "entity1"
+	) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity2"."column1">20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE AVG should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT AVG("entity0"."integer") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE AVG could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity3"."column1" AS "column2"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			AVG("entity3"."t2Number") AS "column1"
+		FROM "fixture"."Table2s" AS "entity3"
+		INNER JOIN (
+			SELECT "entity2"."table1Id",
+				"entity2"."table2Id",
+				"entity2"."table2Id" AS "column0",
+				"entity2"."option12"
+			FROM "Table1_Table2s" AS "entity2"
+		) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+		GROUP BY "entity2"."table1Id"
+	) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity3"."column1" AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		AVG("entity3"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity3"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table2Id",
+			"entity2"."table2Id" AS "column0",
+			"entity2"."option12"
+		FROM "Table1_Table2s" AS "entity2"
+	) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+	GROUP BY "entity2"."table1Id"
+) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE AVG could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		AVG("entity2"."t2Number") AS "column1"
+	FROM "fixture"."Table2s" AS "entity2"
+	INNER JOIN (
+		SELECT "entity1"."table1Id",
+			"entity1"."table2Id",
+			"entity1"."table2Id" AS "column0",
+			"entity1"."option12"
+		FROM "Table1_Table2s" AS "entity1"
+	) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity2"."column1">20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUM should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT SUM(("entity0"."integer"+"entity0"."decimalNumber")) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUM could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity2"."column1" AS "column2"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			SUM(("entity3"."t2Number"*"entity4"."computed")) AS "column1"
+		FROM "Table1_Table2s" AS "entity2"
+		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+		LEFT JOIN (
+			SELECT "entity4"."id",
+				"entity4"."bigint",
+				"entity4"."binary",
+				"entity4"."boolean",
+				"entity4"."date",
+				"entity4"."plainDate",
+				"entity4"."dateTime",
+				"entity4"."instant",
+				"entity4"."decimal",
+				"entity4"."decimalNumber",
+				"entity4"."decimalDecimal",
+				"entity4"."deleted",
+				"entity4"."identifier",
+				"entity4"."identifierString",
+				"entity4"."integer",
+				"entity4"."real",
+				"entity4"."string",
+				"entity4"."time",
+				"entity4"."plainTime",
+				"entity4"."createdDate",
+				"entity4"."modifiedDate"
+			FROM "fixture"."Table1s" AS "entity4"
+			WHERE ("entity4"."deleted"=false)
+		) AS "entity4" ON ("entity2"."table1Id"="entity4"."id")
+		GROUP BY "entity2"."table1Id"
+	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."column1" AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		SUM(("entity3"."t2Number"*"entity4"."computed")) AS "column1"
+	FROM "Table1_Table2s" AS "entity2"
+	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+	LEFT JOIN (
+		SELECT "entity4"."id",
+			"entity4"."bigint",
+			"entity4"."binary",
+			"entity4"."boolean",
+			"entity4"."date",
+			"entity4"."plainDate",
+			"entity4"."dateTime",
+			"entity4"."instant",
+			"entity4"."decimal",
+			"entity4"."decimalNumber",
+			"entity4"."decimalDecimal",
+			"entity4"."deleted",
+			"entity4"."identifier",
+			"entity4"."identifierString",
+			"entity4"."integer",
+			"entity4"."real",
+			"entity4"."string",
+			"entity4"."time",
+			"entity4"."plainTime",
+			"entity4"."createdDate",
+			"entity4"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity4"
+		WHERE ("entity4"."deleted"=false)
+	) AS "entity4" ON ("entity2"."table1Id"="entity4"."id")
+	GROUP BY "entity2"."table1Id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE COUNT should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT COUNT("entity0"."table1Id") AS "column1"
+FROM "Table1_Table2s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity0"."table1Id",
+		"entity0"."table2Id",
+		SUM("entity1"."number") AS "column0"
+	FROM "Table1_Table2_Manies" AS "entity1"
+	GROUP BY "entity0"."table1Id", "entity0"."table2Id"
+) AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
+WHERE ("entity1"."column0">3)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE COUNT could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity2"."column0" AS "column1"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			COUNT("entity2"."id") AS "column0"
+		FROM "Table1Manies" AS "entity2"
+		GROUP BY "entity2"."table1Id"
+	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."column0" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	GROUP BY "entity2"."table1Id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE COUNT could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">3))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SLICE should work in include 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity2"."id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	INNER JOIN "Table1Manies" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer">"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
+	GROUP BY "entity2"."id"
+	HAVING ((COUNT("entity2"."id")>2) AND (COUNT("entity2"."id")<=3))
+) AS "entity2" ON ("entity1"."id"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC, "entity1"."integer" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FIND should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY (SELECT NULL)
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FIND should work with where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ((("entity0"."deleted"=false) AND ("entity0"."instant"<'2026-03-16T14:20:41.266841263Z')) AND ("entity0"."integer">20000))
+ORDER BY (SELECT NULL)
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FIND should work with select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."table1Id",
+	"entity2"."name",
+	"entity2"."integer"
+FROM "Table1Manies" AS "entity2"
+INNER JOIN (
+	SELECT "entity3"."id",
+		COUNT("entity3"."id") AS "column0"
+	FROM "Table1Manies" AS "entity3"
+	INNER JOIN "Table1Manies" AS "entity4" ON (("entity4"."table1Id"="entity3"."table1Id") AND (("entity4"."integer"<"entity3"."integer") OR (("entity4"."integer"="entity3"."integer") AND ("entity4"."id">="entity3"."id"))))
+	GROUP BY "entity3"."id"
+	HAVING (COUNT("entity3"."id")<=1)
+) AS "entity3" ON ("entity2"."id"="entity3"."id")
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity2"."table1Id")
+ORDER BY "entity2"."table1Id" ASC, "entity2"."integer" DESC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT "entity0"."decimalNumber"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT should work with select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity1"."id"="entity0"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DISTINCT "entity2"."table1Id",
+	"entity2"."integer"
+FROM "Table1Manies" AS "entity2"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity2"."table1Id")
+ORDER BY "entity2"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column).map(o => o.key) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."dateTime"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."dateTime"
+ORDER BY "entity0"."dateTime" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column).map(o => o.key.method()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DAY("entity0"."date") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."date"
+ORDER BY "entity0"."date" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."dateTime"
+ORDER BY "entity0"."dateTime" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column + o.column).map(o => o.key) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime"))
+ORDER BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column + o.column).map(o => {column: o.key, count: o.count(), sum: o.sum()}) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) AS "column0",
+	COUNT("entity0"."id") AS "column1",
+	SUM("entity1"."decimalNumber") AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."decimalNumber"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."integer"<10000)
+) AS "entity1" ON ("entity0"."id"="entity1"."id")
+WHERE ("entity0"."deleted"=false)
+GROUP BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime"))
+ORDER BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column.method()).map(o => o.toArray()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT DAY("entity0"."dateTime") AS "column0",
+		DAY("entity0"."dateTime") AS "column0"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	GROUP BY DAY("entity0"."dateTime")
+) AS "entity0" ON ("entity0"."column0"=DAY("entity1"."dateTime"))
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.toOneRelation).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column0"
+FROM "Table1Manies" AS "entity0"
+GROUP BY "entity0"."table1Id"
+ORDER BY "entity0"."table1Id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy(o => ({col: o.column, col: o.column*2 })).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."identifier", ("entity0"."integer"*2), "entity0"."id"
+ORDER BY "entity0"."identifier" ASC, ("entity0"."integer"*2) ASC, "entity0"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE TOMAP should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0",
+	"entity0"."dateTime" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE TOMAP should support self select and keep defined includes 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."id" AS "column0"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity2"."id"="entity0"."id")
+	WHERE ("entity2"."deleted"=false)
+	ORDER BY "entity2"."id" ASC
+) AS "entity2" ON ("entity2"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column0"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity2"."deleted"=false)
+ORDER BY "entity2"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE TOSET should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support inner join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."integer" AS "column0",
+	"entity2"."name" AS "column1",
+	"entity0"."integer" AS "column2",
+	"entity1"."dateTime" AS "column3"
+FROM "Table1Manies" AS "entity0"
+INNER JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+LEFT JOIN "Table1One" AS "entity2" ON ("entity1"."id"="entity2"."table1Id")
+WHERE ("entity1"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support left join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity4"."id",
+	"entity4"."table1Id",
+	"entity4"."table2Id",
+	"entity4"."string"
+FROM "Table1_Table2_Manies" AS "entity4"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity0"."rowVersion",
+		"entity0"."t2Number" AS "column0",
+		"entity1"."option12" AS "column1",
+		"entity2"."decimalNumber" AS "column2",
+		"entity3"."date" AS "column3"
+	FROM "fixture"."Table2s" AS "entity0"
+	LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
+	LEFT JOIN (
+		SELECT "entity2"."id",
+			"entity2"."bigint",
+			"entity2"."binary",
+			"entity2"."boolean",
+			"entity2"."date",
+			"entity2"."plainDate",
+			"entity2"."dateTime",
+			"entity2"."instant",
+			"entity2"."decimal",
+			"entity2"."decimalNumber",
+			"entity2"."decimalDecimal",
+			"entity2"."deleted",
+			"entity2"."identifier",
+			"entity2"."identifierString",
+			"entity2"."integer",
+			"entity2"."real",
+			"entity2"."string",
+			"entity2"."time",
+			"entity2"."plainTime",
+			"entity2"."createdDate",
+			"entity2"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity2"
+		WHERE ("entity2"."deleted"=false)
+	) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+	LEFT JOIN (
+		SELECT "entity3"."id",
+			"entity3"."bigint",
+			"entity3"."binary",
+			"entity3"."boolean",
+			"entity3"."date",
+			"entity3"."plainDate",
+			"entity3"."dateTime",
+			"entity3"."instant",
+			"entity3"."decimal",
+			"entity3"."decimalNumber",
+			"entity3"."decimalDecimal",
+			"entity3"."deleted",
+			"entity3"."identifier",
+			"entity3"."identifierString",
+			"entity3"."integer",
+			"entity3"."real",
+			"entity3"."string",
+			"entity3"."time",
+			"entity3"."plainTime",
+			"entity3"."createdDate",
+			"entity3"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity3"
+		WHERE ("entity3"."deleted"=false)
+	) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+	WHERE ("entity0"."t2Number">1)
+) AS "entity0" ON (("entity0"."table1Id"="entity4"."table1Id") AND ("entity0"."table2Id"="entity4"."table2Id"))
+ORDER BY "entity4"."table1Id" ASC, "entity4"."table2Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity0"."rowVersion",
+	"entity0"."t2Number" AS "column0",
+	"entity1"."option12" AS "column1",
+	"entity2"."decimalNumber" AS "column2",
+	"entity3"."date" AS "column3"
+FROM "fixture"."Table2s" AS "entity0"
+LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity0"."t2Number">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support right join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+RIGHT JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support full join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support group join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity4"."table1Id",
+	"entity4"."table2Id",
+	"entity4"."option12"
+FROM "Table1_Table2s" AS "entity4"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity3"."column1" AS "column2",
+		"entity6"."column4" AS "column5",
+		"entity0"."dateTime" AS "column6"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			SUM("entity3"."integer") AS "column1"
+		FROM "fixture"."Table1s" AS "entity3"
+		INNER JOIN (
+			SELECT "entity2"."table1Id",
+				"entity2"."table2Id",
+				"entity2"."table1Id" AS "column0",
+				"entity2"."option12"
+			FROM "Table1_Table2s" AS "entity2"
+		) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+		WHERE ("entity3"."deleted"=false)
+		GROUP BY "entity2"."table1Id"
+	) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+	LEFT JOIN (
+		SELECT "entity5"."table1Id",
+			SUM("entity6"."t2Number") AS "column4"
+		FROM "fixture"."Table2s" AS "entity6"
+		INNER JOIN (
+			SELECT "entity5"."table1Id",
+				"entity5"."table2Id",
+				"entity5"."table2Id" AS "column3",
+				"entity5"."option12"
+			FROM "Table1_Table2s" AS "entity5"
+		) AS "entity5" ON ("entity5"."column3"="entity6"."id")
+		GROUP BY "entity5"."table1Id"
+	) AS "entity6" ON ("entity0"."id"="entity6"."table1Id")
+	WHERE (("entity0"."deleted"=false) AND ("entity3"."column1">1))
+) AS "entity0" ON ("entity0"."id"="entity4"."table1Id")
+ORDER BY "entity4"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity3"."column1" AS "column2",
+	"entity6"."column4" AS "column5",
+	"entity0"."dateTime" AS "column6"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		SUM("entity3"."integer") AS "column1"
+	FROM "fixture"."Table1s" AS "entity3"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table2Id",
+			"entity2"."table1Id" AS "column0",
+			"entity2"."option12"
+		FROM "Table1_Table2s" AS "entity2"
+	) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+	WHERE ("entity3"."deleted"=false)
+	GROUP BY "entity2"."table1Id"
+) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+LEFT JOIN (
+	SELECT "entity5"."table1Id",
+		SUM("entity6"."t2Number") AS "column4"
+	FROM "fixture"."Table2s" AS "entity6"
+	INNER JOIN (
+		SELECT "entity5"."table1Id",
+			"entity5"."table2Id",
+			"entity5"."table2Id" AS "column3",
+			"entity5"."option12"
+		FROM "Table1_Table2s" AS "entity5"
+	) AS "entity5" ON ("entity5"."column3"="entity6"."id")
+	GROUP BY "entity5"."table1Id"
+) AS "entity6" ON ("entity0"."id"="entity6"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity3"."column1">1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE JOIN should support cross join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should work 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"<$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should be computed in application 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 31,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND (DAY("entity0"."dateTime")<>$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should pass function to query 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."integer"/"entity1"."column0") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should pass function with parameter 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	(("entity0"."real"*10)/"entity1"."column0") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should re-build query based on Function type parameter 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."decimalNumber"+1) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should re-build query based on Function type parameter 2`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."decimalNumber"-1) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should support null value parameter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"=$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE PARAMETERS should support null value parameter 2`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => null,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"=$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in where (CONTAINS) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT DISTINCT "entity1"."table1Id"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in where (Aggregate comparation) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		MAX("entity1"."integer") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in where (ANY) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		true AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should determine whether where filter goes to join expression or not 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">1)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Relation/Array) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))
+) AS "entity0" ON ("entity1"."table1Id"="entity0"."id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Aggregate) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."column0" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity1"."table1Id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Count SubQuery) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."integer" AS "column0",
+	"entity2"."column2" AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		SUM("entity1"."column1") AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."integer",
+			COUNT("entity1"."id") AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."integer"
+	) AS "entity1" ON ("entity2"."integer">="entity1"."integer")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."integer" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`] = `
+[
+  {
+    "query": 
+"CREATE TABLE #ad1
+(
+	"__index" decimal,
+	"table1Id" bigint
+)"
+,
+    "type": 4,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"INSERT INTO "#ad1"("__index","table1Id") VALUES
+	(0,10)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      "param0" => [
+        ,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT DISTINCT "entity1"."table1Id"
+	FROM "#ad1" AS "entity1"
+))"
+,
+    "type": 1,
+  },
+  {
+    "query": "DROP TABLE "#ad1"",
+    "type": 4,
+  },
+]
+`;
+
+exports[`QUERYABLE QUERY OPTION should show soft deleted 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE FILTER should filter with navigation property 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."table2Id",
+	"entity0"."string",
+	"entity0"."number"
+FROM "Table1_Table2_Manies" AS "entity0"
+LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+WHERE ("entity2"."computed">10000)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY should be ordered by multiple column 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."number"
+FROM "Table1One" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+ORDER BY "entity0"."name" ASC, "entity1"."decimalDecimal" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE ORDER BY could be used in select 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC, "entity2"."t2Number" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUM could be used in where 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		SUM("entity2"."number") AS "column2"
+	FROM "Table1_Table2_Ones" AS "entity2"
+	INNER JOIN (
+		SELECT "entity1"."table1Id",
+			"entity1"."table2Id",
+			"entity1"."table1Id" AS "column0",
+			"entity1"."table2Id" AS "column1",
+			"entity1"."option12"
+		FROM "Table1_Table2s" AS "entity1"
+	) AS "entity1" ON (("entity1"."column0"="entity2"."relTable1Id") AND ("entity1"."column1"="entity2"."relTable2Id"))
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity2"."column2">3))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SLICE should work 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 1,
+      "param1" => 11,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY (SELECT NULL)
+OFFSET $2 ROWS
+FETCH NEXT $1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SLICE order.take.order.take 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."modifiedDate" DESC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SLICE should work in include 2 (consider orderBy after take) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity4"."id"
+	FROM "Table1Manies" AS "entity4"
+	INNER JOIN (
+		SELECT "entity2"."id",
+			COUNT("entity2"."id") AS "column0"
+		FROM "Table1Manies" AS "entity2"
+		INNER JOIN "Table1Manies" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
+		GROUP BY "entity2"."id"
+		HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+	) AS "entity2" ON ("entity4"."id"="entity2"."id")
+) AS "entity4" ON ("entity1"."id"="entity4"."id")
+INNER JOIN (
+	SELECT "entity5"."id",
+		COUNT("entity5"."id") AS "column1"
+	FROM "Table1Manies" AS "entity5"
+	INNER JOIN (
+		SELECT "entity4"."id"
+		FROM "Table1Manies" AS "entity4"
+		INNER JOIN (
+			SELECT "entity2"."id",
+				COUNT("entity2"."id") AS "column0"
+			FROM "Table1Manies" AS "entity2"
+			INNER JOIN "Table1Manies" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
+			GROUP BY "entity2"."id"
+			HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+		) AS "entity2" ON ("entity4"."id"="entity2"."id")
+	) AS "entity4" ON ("entity5"."id"="entity4"."id")
+	INNER JOIN (
+		SELECT "entity6"."id",
+			"entity6"."table1Id",
+			"entity6"."name"
+		FROM "Table1Manies" AS "entity6"
+		INNER JOIN (
+			SELECT "entity4"."id"
+			FROM "Table1Manies" AS "entity4"
+			INNER JOIN (
+				SELECT "entity2"."id",
+					COUNT("entity2"."id") AS "column0"
+				FROM "Table1Manies" AS "entity2"
+				INNER JOIN "Table1Manies" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
+				GROUP BY "entity2"."id"
+				HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+			) AS "entity2" ON ("entity4"."id"="entity2"."id")
+		) AS "entity4" ON ("entity6"."id"="entity4"."id")
+	) AS "entity6" ON (("entity6"."table1Id"="entity5"."table1Id") AND (("entity6"."name">"entity5"."name") OR (("entity6"."name"="entity5"."name") AND ("entity6"."id">="entity5"."id"))))
+	GROUP BY "entity5"."id"
+	HAVING ((COUNT("entity5"."id")>0) AND (COUNT("entity5"."id")<=3))
+) AS "entity5" ON ("entity1"."id"="entity5"."id")
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY (SELECT NULL)
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC, "entity1"."name" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY (SELECT NULL)
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column).map(o => o.key) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."dateTime"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."dateTime"
+ORDER BY "entity0"."dateTime" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column).map(o => o.key.method()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DAY("entity0"."date") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."date"
+ORDER BY "entity0"."date" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."dateTime"
+ORDER BY "entity0"."dateTime" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column + o.column).map(o => o.key) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime"))
+ORDER BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column + o.column).map(o => {column: o.key, count: o.count(), sum: o.sum()}) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) AS "column0",
+	COUNT("entity0"."id") AS "column1",
+	SUM("entity1"."decimalNumber") AS "column2"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."decimalNumber"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."integer"<10000)
+) AS "entity1" ON ("entity0"."id"="entity1"."id")
+WHERE ("entity0"."deleted"=false)
+GROUP BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime"))
+ORDER BY (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.column.method()).map(o => o.toArray()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT DAY("entity0"."dateTime") AS "column0",
+		DAY("entity0"."dateTime") AS "column0"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	GROUP BY DAY("entity0"."dateTime")
+) AS "entity0" ON ("entity0"."column0"=DAY("entity1"."dateTime"))
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy.(o => o.toOneRelation).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column0"
+FROM "Table1Manies" AS "entity0"
+GROUP BY "entity0"."table1Id"
+ORDER BY "entity0"."table1Id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy(o => o.toOneRelation).map(o => o.key.toOneRelation) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."table1Id" AS "column0",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."table1Id" AS "column1",
+			"entity0"."table2Id" AS "column2",
+			"entity0"."table1Id",
+			"entity0"."table2Id"
+		FROM "Table1_Table2_Manies" AS "entity0"
+		GROUP BY "entity0"."table1Id", "entity0"."table2Id"
+	) AS "entity0" ON (("entity0"."column1"="entity1"."table1Id") AND ("entity0"."column2"="entity1"."table2Id"))
+) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+WHERE ("entity2"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT GROUP BY groupBy(o => ({col: o.column, col: o.column*2 })).map(o => o.count()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT COUNT("entity0"."id") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY "entity0"."identifier", ("entity0"."integer"*2), "entity0"."id"
+ORDER BY "entity0"."identifier" ASC, ("entity0"."integer"*2) ASC, "entity0"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT TOMAP should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0",
+	"entity0"."dateTime" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT TOMAP should support self select and keep defined includes 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."id" AS "column0"
+		FROM "fixture"."Table1s" AS "entity0"
+		WHERE ("entity0"."deleted"=false)
+	) AS "entity0" ON ("entity2"."id"="entity0"."id")
+	WHERE ("entity2"."deleted"=false)
+	ORDER BY "entity2"."id" ASC
+) AS "entity2" ON ("entity2"."id"="entity1"."table1Id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column0"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+) AS "entity0" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity2"."deleted"=false)
+ORDER BY "entity2"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT TOSET should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support inner join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."integer" AS "column0",
+	"entity2"."name" AS "column1",
+	"entity0"."integer" AS "column2",
+	"entity1"."dateTime" AS "column3"
+FROM "Table1Manies" AS "entity0"
+INNER JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+LEFT JOIN "Table1One" AS "entity2" ON ("entity1"."id"="entity2"."table1Id")
+WHERE ("entity1"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support left join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity4"."id",
+	"entity4"."table1Id",
+	"entity4"."table2Id",
+	"entity4"."string"
+FROM "Table1_Table2_Manies" AS "entity4"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity0"."rowVersion",
+		"entity0"."t2Number" AS "column0",
+		"entity1"."option12" AS "column1",
+		"entity2"."decimalNumber" AS "column2",
+		"entity3"."date" AS "column3"
+	FROM "fixture"."Table2s" AS "entity0"
+	LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
+	LEFT JOIN (
+		SELECT "entity2"."id",
+			"entity2"."bigint",
+			"entity2"."binary",
+			"entity2"."boolean",
+			"entity2"."date",
+			"entity2"."plainDate",
+			"entity2"."dateTime",
+			"entity2"."instant",
+			"entity2"."decimal",
+			"entity2"."decimalNumber",
+			"entity2"."decimalDecimal",
+			"entity2"."deleted",
+			"entity2"."identifier",
+			"entity2"."identifierString",
+			"entity2"."integer",
+			"entity2"."real",
+			"entity2"."string",
+			"entity2"."time",
+			"entity2"."plainTime",
+			"entity2"."createdDate",
+			"entity2"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity2"
+		WHERE ("entity2"."deleted"=false)
+	) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+	LEFT JOIN (
+		SELECT "entity3"."id",
+			"entity3"."bigint",
+			"entity3"."binary",
+			"entity3"."boolean",
+			"entity3"."date",
+			"entity3"."plainDate",
+			"entity3"."dateTime",
+			"entity3"."instant",
+			"entity3"."decimal",
+			"entity3"."decimalNumber",
+			"entity3"."decimalDecimal",
+			"entity3"."deleted",
+			"entity3"."identifier",
+			"entity3"."identifierString",
+			"entity3"."integer",
+			"entity3"."real",
+			"entity3"."string",
+			"entity3"."time",
+			"entity3"."plainTime",
+			"entity3"."createdDate",
+			"entity3"."modifiedDate"
+		FROM "fixture"."Table1s" AS "entity3"
+		WHERE ("entity3"."deleted"=false)
+	) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+	WHERE ("entity0"."t2Number">1)
+) AS "entity0" ON (("entity0"."table1Id"="entity4"."table1Id") AND ("entity0"."table2Id"="entity4"."table2Id"))
+ORDER BY "entity4"."table1Id" ASC, "entity4"."table2Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity0"."rowVersion",
+	"entity0"."t2Number" AS "column0",
+	"entity1"."option12" AS "column1",
+	"entity2"."decimalNumber" AS "column2",
+	"entity3"."date" AS "column3"
+FROM "fixture"."Table2s" AS "entity0"
+LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity0"."t2Number">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support right join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+RIGHT JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support full join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support group join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity4"."table1Id",
+	"entity4"."table2Id",
+	"entity4"."option12"
+FROM "Table1_Table2s" AS "entity4"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity3"."column1" AS "column2",
+		"entity6"."column4" AS "column5",
+		"entity0"."dateTime" AS "column6"
+	FROM "fixture"."Table1s" AS "entity0"
+	LEFT JOIN (
+		SELECT "entity2"."table1Id",
+			SUM("entity3"."integer") AS "column1"
+		FROM "fixture"."Table1s" AS "entity3"
+		INNER JOIN (
+			SELECT "entity2"."table1Id",
+				"entity2"."table2Id",
+				"entity2"."table1Id" AS "column0",
+				"entity2"."option12"
+			FROM "Table1_Table2s" AS "entity2"
+		) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+		WHERE ("entity3"."deleted"=false)
+		GROUP BY "entity2"."table1Id"
+	) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+	LEFT JOIN (
+		SELECT "entity5"."table1Id",
+			SUM("entity6"."t2Number") AS "column4"
+		FROM "fixture"."Table2s" AS "entity6"
+		INNER JOIN (
+			SELECT "entity5"."table1Id",
+				"entity5"."table2Id",
+				"entity5"."table2Id" AS "column3",
+				"entity5"."option12"
+			FROM "Table1_Table2s" AS "entity5"
+		) AS "entity5" ON ("entity5"."column3"="entity6"."id")
+		GROUP BY "entity5"."table1Id"
+	) AS "entity6" ON ("entity0"."id"="entity6"."table1Id")
+	WHERE (("entity0"."deleted"=false) AND ("entity3"."column1">1))
+) AS "entity0" ON ("entity0"."id"="entity4"."table1Id")
+ORDER BY "entity4"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity3"."column1" AS "column2",
+	"entity6"."column4" AS "column5",
+	"entity0"."dateTime" AS "column6"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		SUM("entity3"."integer") AS "column1"
+	FROM "fixture"."Table1s" AS "entity3"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table2Id",
+			"entity2"."table1Id" AS "column0",
+			"entity2"."option12"
+		FROM "Table1_Table2s" AS "entity2"
+	) AS "entity2" ON ("entity2"."column0"="entity3"."id")
+	WHERE ("entity3"."deleted"=false)
+	GROUP BY "entity2"."table1Id"
+) AS "entity3" ON ("entity0"."id"="entity3"."table1Id")
+LEFT JOIN (
+	SELECT "entity5"."table1Id",
+		SUM("entity6"."t2Number") AS "column4"
+	FROM "fixture"."Table2s" AS "entity6"
+	INNER JOIN (
+		SELECT "entity5"."table1Id",
+			"entity5"."table2Id",
+			"entity5"."table2Id" AS "column3",
+			"entity5"."option12"
+		FROM "Table1_Table2s" AS "entity5"
+	) AS "entity5" ON ("entity5"."column3"="entity6"."id")
+	GROUP BY "entity5"."table1Id"
+) AS "entity6" ON ("entity0"."id"="entity6"."table1Id")
+WHERE (("entity0"."deleted"=false) AND ("entity3"."column1">1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT JOIN should support cross join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity2"."integer">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SET OPERATOR should union 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 5,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	UNION
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		"entity0"."id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity2"."column0">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SET OPERATOR should concat 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 5,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	UNION ALL
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		"entity0"."id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity2"."column0">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SET OPERATOR should intersect 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+      "param2" => 0,
+      "param3" => 10,
+      "param4" => 0,
+      "param5" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	INTERSECT
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+ORDER BY (SELECT NULL)
+OFFSET $5 ROWS
+FETCH NEXT $6 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SET OPERATOR should except records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	EXCEPT
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+ORDER BY "entity0"."decimalNumber" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should work 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"<$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should be computed in application 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 31,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND (DAY("entity0"."dateTime")<>$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should pass function to query 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."integer"/"entity1"."column0") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should pass function with parameter 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	(("entity0"."real"*10)/"entity1"."column0") AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should re-build query based on Function type parameter 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."decimalNumber"+1) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should re-build query based on Function type parameter 2`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	("entity0"."decimalNumber"-1) AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should support null value parameter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"=$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT PARAMETERS should support null value parameter 2`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => null,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"=$1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in where (CONTAINS) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT DISTINCT "entity1"."table1Id"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in where (Aggregate comparation) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		MAX("entity1"."integer") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in where (ANY) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		true AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">5)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should determine whether where filter goes to join expression or not 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		"entity0"."id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	WHERE ("entity1"."integer">1)
+	GROUP BY "entity0"."id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">1))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Relation/Array) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))
+) AS "entity0" ON ("entity1"."table1Id"="entity0"."id")
+ORDER BY "entity1"."table1Id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Aggregate) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity1"."column0" AS "column1"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."table1Id",
+		COUNT("entity1"."id") AS "column0"
+	FROM "Table1Manies" AS "entity1"
+	GROUP BY "entity1"."table1Id"
+) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
+WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Count SubQuery) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."integer" AS "column0",
+	"entity2"."column2" AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		SUM("entity1"."column1") AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."integer",
+			COUNT("entity1"."id") AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."integer"
+	) AS "entity1" ON ("entity2"."integer">="entity1"."integer")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."integer" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Sum SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0",
+	"entity0"."decimalNumber" AS "column1",
+	"entity2"."column3" AS "column4"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		SUM("entity1"."column2") AS "column3"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."dateTime",
+			SUM("entity1"."decimalNumber") AS "column2"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."dateTime"
+	) AS "entity1" ON ("entity1"."dateTime">="entity2"."dateTime")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."dateTime" DESC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Some SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."decimalNumber" AS "column0",
+	(
+	CASE WHEN (("entity2"."column2"=1)) 
+	THEN true
+	ELSE false
+	END
+) AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		(
+		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."decimalNumber",
+			true AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."decimalNumber"
+	) AS "entity1" ON ("entity2"."decimalNumber">"entity1"."decimalNumber")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."decimalNumber" ASC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT SUBQUERY should work in select (Every SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."decimalNumber" AS "column0",
+	(
+	CASE WHEN (("entity2"."column2"=1)) 
+	THEN true
+	ELSE false
+	END
+) AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		(
+		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."decimalNumber",
+			false AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."decimalNumber"
+	) AS "entity1" ON NOT(
+		NOT(
+			("entity2"."decimalNumber">="entity1"."decimalNumber")
+		)
+	)
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."decimalNumber" DESC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT ARRAY PARAMETER should work in where (CONTAINS) 1`] = `
+[
+  {
+    "query": 
+"CREATE TABLE #ad1
+(
+	"__index" decimal,
+	"table1Id" bigint
+)"
+,
+    "type": 4,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"INSERT INTO "#ad1"("__index","table1Id") VALUES
+	(0,10)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      "param0" => [
+        ,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT DISTINCT "entity1"."table1Id"
+	FROM "#ad1" AS "entity1"
+))"
+,
+    "type": 1,
+  },
+  {
+    "query": "DROP TABLE "#ad1"",
+    "type": 4,
+  },
+]
+`;
+
+exports[`QUERYABLE DISTINCT QUERY OPTION should show soft deleted 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy(o => o.toOneRelation).map(o => o.key.toOneRelation) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."table1Id" AS "column0",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."table1Id" AS "column1",
+			"entity0"."table2Id" AS "column2",
+			"entity0"."table1Id",
+			"entity0"."table2Id"
+		FROM "Table1_Table2_Manies" AS "entity0"
+		GROUP BY "entity0"."table1Id", "entity0"."table2Id"
+	) AS "entity0" ON (("entity0"."column1"="entity1"."table1Id") AND ("entity0"."column2"="entity1"."table2Id"))
+) AS "entity1" ON ("entity1"."column0"="entity2"."id")
+WHERE ("entity2"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SET OPERATOR should union 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 5,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	UNION
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		"entity0"."id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity2"."column0">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SET OPERATOR should concat 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 5,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	UNION ALL
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."table1Id",
+		"entity0"."id",
+		COUNT("entity2"."id") AS "column0"
+	FROM "Table1Manies" AS "entity2"
+	GROUP BY "entity0"."id"
+) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
+WHERE ("entity2"."column0">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SET OPERATOR should intersect 2 records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+      "param2" => 0,
+      "param3" => 10,
+      "param4" => 0,
+      "param5" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	INTERSECT
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+ORDER BY (SELECT NULL)
+OFFSET $5 ROWS
+FETCH NEXT $6 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SET OPERATOR should except records 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+      "param2" => 0,
+      "param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY "entity0"."decimalNumber" DESC
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY
+	EXCEPT
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."decimalNumber" ASC
+	OFFSET $3 ROWS
+	FETCH NEXT $4 ROWS ONLY
+) AS "entity0"
+ORDER BY "entity0"."decimalNumber" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Sum SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."id" AS "column0",
+	"entity0"."decimalNumber" AS "column1",
+	"entity2"."column3" AS "column4"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		SUM("entity1"."column2") AS "column3"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."dateTime",
+			SUM("entity1"."decimalNumber") AS "column2"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."dateTime"
+	) AS "entity1" ON ("entity1"."dateTime">="entity2"."dateTime")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."dateTime" DESC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Some SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."decimalNumber" AS "column0",
+	(
+	CASE WHEN (("entity2"."column2"=1)) 
+	THEN true
+	ELSE false
+	END
+) AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		(
+		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."decimalNumber",
+			true AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."decimalNumber"
+	) AS "entity1" ON ("entity2"."decimalNumber">"entity1"."decimalNumber")
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."decimalNumber" ASC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE SUBQUERY should work in select (Every SubQuery) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."decimalNumber" AS "column0",
+	(
+	CASE WHEN (("entity2"."column2"=1)) 
+	THEN true
+	ELSE false
+	END
+) AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity2"."id",
+		(
+		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
+		THEN true
+		ELSE false
+		END
+	) AS "column2"
+	FROM "fixture"."Table1s" AS "entity2"
+	LEFT JOIN (
+		SELECT "entity1"."decimalNumber",
+			false AS "column1"
+		FROM "fixture"."Table1s" AS "entity1"
+		WHERE ("entity1"."deleted"=false)
+		GROUP BY "entity1"."decimalNumber"
+	) AS "entity1" ON NOT(
+		NOT(
+			("entity2"."decimalNumber">="entity1"."decimalNumber")
+		)
+	)
+	WHERE ("entity2"."deleted"=false)
+	GROUP BY "entity2"."id"
+) AS "entity2" ON ("entity2"."id"="entity0"."id")
+WHERE ("entity0"."deleted"=false)
+ORDER BY "entity0"."decimalNumber" DESC
+OFFSET $1 ROWS
+FETCH NEXT $2 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy computed column 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate",
+	("entity0"."integer"+"entity0"."decimalNumber") AS "computed"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+ORDER BY ("entity0"."integer"+"entity0"."decimalNumber") ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy computed column complex 1 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "param0" => 0,
+      "param1" => 100,
+    }
+,
+    "query": 
+"SELECT CHAR_LENGTH("entity1"."name") AS "column1",
+	COUNT("entity1"."table1Id") AS "column2",
+	SUM("entity4"."real") AS "column4"
+FROM "Table1One" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."id" AS "column0",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	ORDER BY (SELECT NULL)
+	OFFSET $1 ROWS
+	FETCH NEXT $2 ROWS ONLY AS "entity0"
+	WHERE (("entity0"."integer"+"entity0"."decimalNumber")>10000)
+) AS "entity0" ON ("entity0"."column0"="entity1"."table1Id")
+LEFT JOIN (
+	SELECT "entity4"."id",
+		"entity2"."table1Id",
+		"entity4"."real"
+	FROM "fixture"."Table1s" AS "entity4"
+	INNER JOIN (
+		SELECT "entity2"."table1Id",
+			"entity2"."table1Id" AS "column3",
+			"entity2"."name",
+			"entity2"."number"
+		FROM "Table1One" AS "entity2"
+		LEFT JOIN (
+			SELECT "entity3"."id",
+				"entity3"."bigint",
+				"entity3"."binary",
+				"entity3"."boolean",
+				"entity3"."date",
+				"entity3"."plainDate",
+				"entity3"."dateTime",
+				"entity3"."instant",
+				"entity3"."decimal",
+				"entity3"."decimalNumber",
+				"entity3"."decimalDecimal",
+				"entity3"."deleted",
+				"entity3"."identifier",
+				"entity3"."identifierString",
+				"entity3"."integer",
+				"entity3"."real",
+				"entity3"."string",
+				"entity3"."time",
+				"entity3"."plainTime",
+				"entity3"."createdDate",
+				"entity3"."modifiedDate"
+			FROM "fixture"."Table1s" AS "entity3"
+			WHERE ("entity3"."deleted"=false)
+		) AS "entity3" ON ("entity2"."table1Id"="entity3"."id")
+		WHERE ("entity3"."real"<10000)
+	) AS "entity2" ON ("entity2"."column3"="entity4"."id")
+	WHERE ("entity4"."deleted"=false)
+) AS "entity4" ON ("entity1"."table1Id"="entity4"."table1Id")
+GROUP BY CHAR_LENGTH("entity1"."name")
+ORDER BY CHAR_LENGTH("entity1"."name") ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column.method()).map(o => ({items: o})) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	EXTRACT(DAY FROM "entity1"."plainDate") AS "column0",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT EXTRACT(DAY FROM "entity0"."plainDate") AS "column0"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE ("entity0"."deleted"=false)
+	GROUP BY EXTRACT(DAY FROM "entity0"."plainDate")
+	ORDER BY EXTRACT(DAY FROM "entity0"."plainDate") ASC
+) AS "entity0" ON ("entity0"."column0"=EXTRACT(DAY FROM "entity1"."plainDate"))
+ORDER BY EXTRACT(DAY FROM "entity1"."plainDate") ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT EXTRACT(DAY FROM "entity0"."plainDate") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)
+GROUP BY EXTRACT(DAY FROM "entity0"."plainDate")
+ORDER BY EXTRACT(DAY FROM "entity0"."plainDate") ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.toOneRelation).map(o => o.key) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."table1Id" AS "column0",
+		"entity0"."table1Id"
+	FROM "Table1Manies" AS "entity0"
+	WHERE ("entity0"."integer">1)
+	GROUP BY "entity0"."table1Id"
+) AS "entity0" ON ("entity0"."column0"="entity1"."id")
+WHERE ("entity1"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.toOneRelation).map(o => o.key.column.method()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT DAY("entity1"."date") AS "column0"
+FROM "Table1_Table2s" AS "entity0"
+INNER JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+GROUP BY "entity0"."table1Id", "entity1"."date"
+ORDER BY "entity0"."table1Id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.toOneRelation.toOneRelation).map(o => o.key.column) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity2"."id",
+	"entity2"."dateTime"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id" AS "column0",
+		"entity1"."table1Id"
+	FROM "Table1_Table2_Ones" AS "entity0"
+	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
+	GROUP BY "entity1"."table1Id"
+) AS "entity0" ON ("entity0"."column0"="entity2"."id")
+WHERE ("entity2"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE COUNT could be used in select with different filter 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT SUM("entity1"."integer") AS "column1",
+	COUNT("entity2"."id") AS "column2",
+	COUNT("entity3"."id") AS "column3"
+FROM "fixture"."Table1s" AS "entity0"
+LEFT JOIN "Table1Manies" AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."bigint">20000)
+) AS "entity2" ON ("entity0"."id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."real"<=20000)
+) AS "entity3" ON ("entity0"."id"="entity3"."id")
+WHERE ("entity0"."deleted"=false)
+GROUP BY EXTRACT(MONTH FROM "entity0"."plainDate"), "entity0"."id"
+ORDER BY EXTRACT(MONTH FROM "entity0"."plainDate") ASC, "entity0"."id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => o.column.method()) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate",
+	DAY("entity0"."dateTime") AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+INNER JOIN (
+	SELECT DISTINCT DAY("rel_entity0"."dateTime") AS "column0"
+	FROM "fixture"."Table1s" AS "rel_entity0"
+	WHERE (("rel_entity0"."deleted"=false) AND ("rel_entity0"."decimalNumber">20000))
+	GROUP BY DAY("rel_entity0"."dateTime")
+	HAVING (COUNT("rel_entity0"."id")>3)
+) AS "rel_entity0" ON (DAY("entity0"."dateTime")="rel_entity0"."column0")
+WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber">20000))
+ORDER BY DAY("entity0"."dateTime") ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => ({col: o.toOneRelation.column.method(), col: o.toOneRelation.column })) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table2Id",
+	"entity0"."option12",
+	DAY("entity1"."dateTime") AS "column0",
+	"entity2"."t2Number"
+FROM "Table1_Table2s" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity0"."table2Id"="entity2"."id")
+ORDER BY DAY("entity1"."dateTime") ASC, "entity2"."t2Number" ASC, "entity0"."table1Id" ASC, "entity0"."table2Id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`QUERYABLE GROUP BY groupBy.(o => ({col: o.toOneRelation })) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."table1Id",
+		"entity0"."table2Id",
+		"entity0"."option12"
+	FROM "Table1_Table2s" AS "entity0"
+	ORDER BY "entity0"."table1Id" ASC, "entity0"."table2Id" ASC
+) AS "entity0" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table2Id",
+	"entity0"."option12"
+FROM "Table1_Table2s" AS "entity0"
+ORDER BY "entity0"."table1Id" ASC, "entity0"."table2Id" ASC"
+,
+    "type": 1,
+  },
+]
+`;
