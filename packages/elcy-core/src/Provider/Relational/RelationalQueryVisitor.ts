@@ -48,7 +48,7 @@ import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation
 import { Queryable } from "../../Queryable/Queryable";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
-import { CustomEntityExpression } from "../../Queryable/QueryExpression/CustomEntityExpression";
+import { TemporaryEntityExpression } from "../../Queryable/QueryExpression/TemporaryEntityExpression";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { ExceptExpression } from "../../Queryable/QueryExpression/ExceptExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -1871,7 +1871,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 return new ValueExpression(value, exp.name);
             }
             else if (value instanceof Array || value instanceof Enumerable) {
-                const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<T[]>);
+                const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<Array<T & object>>);
                 arrayParamExp.itemType = exp.itemType;
 
                 let arrayItemType: Record<string, GenericType> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
@@ -1890,7 +1890,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
 
                 const itemType: GenericType<unknown> = arrayItemType?.constructor as GenericType ?? Object;
-                const entityExp = new CustomEntityExpression("#" + exp.name + this.parameterIndex, [], itemType, this.newAlias());
+                const entityExp = new TemporaryEntityExpression<T & object>("temp_" + exp.name + this.parameterIndex, [], itemType, this.newAlias());
                 entityExp.columns.push(new ColumnExpression(entityExp, Number, "__index", "__index", true));
 
                 if (arrayItemType && !isValueType(itemType)) {

@@ -7,7 +7,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export class CustomEntityExpression<T extends object = object> implements IEntityExpression<T> {
+export class TemporaryEntityExpression<T extends object = object> implements IEntityExpression<T> {
     public get primaryColumns(): IColumnExpression<T>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.filter((o) => o.isPrimary);
@@ -34,7 +34,7 @@ export class CustomEntityExpression<T extends object = object> implements IEntit
         if (!replaceMap) {
             replaceMap = new Map();
         }
-        const clone = new CustomEntityExpression(this.name, [], this.type, this.alias);
+        const clone = new TemporaryEntityExpression(this.name, [], this.type, this.alias);
         replaceMap.set(this, clone);
         clone.columns = this.columns.map((o) => resolveClone(o, replaceMap));
         return clone;

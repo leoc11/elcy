@@ -1,6 +1,7 @@
+import { TemporaryEntityExpression } from "src/Queryable/QueryExpression/TemporaryEntityExpression";
 import { ColumnGeneration, QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, SetterObj } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
@@ -22,6 +23,8 @@ import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { MssqlColumnType } from "./MssqlColumnType";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { Enumerable } from "@elcy/enumerable";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { IEntityExpression } from "src/Queryable/QueryExpression/IEntityExpression";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -61,7 +64,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             output = " OUTPUT " + output;
         }
 
-        const insertQuery = `INSERT INTO ${this.enclose(insertExp.entity.name)}(${colString})${output} VALUES`;
+        const insertQuery = `INSERT INTO ${this.entityName(insertExp.entity)}(${colString})${output} VALUES`;
         let queryCommand: IQuery = {
             query: insertQuery,
             parameters: new Map(),
@@ -180,5 +183,67 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     }
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";
+    }
+    protected override createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
+        const result: IQuery[] = [];
+        const columnDefinition = entityExp.columns.map((c) => {
+            const colTypeFactory = this.valueTypeMap.get(c.type);
+            const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
+            const colType = colTypeFactory(maxValue);
+            return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
+        }).join("," + this.newLine(1, false));
+
+        const query = `CREATE TABLE ${this.entityName(entityExp)}` +
+            `${this.newLine()}(` +
+            `${this.newLine(1, false)}${columnDefinition}` +
+            `${this.newLine()})`;
+
+        result.push({
+            query,
+            type: QueryType.DDL
+        });
+
+        let i = 0;
+        const columns = entityExp.columns;
+        const insertQuery = new InsertExpression(entityExp, [], columns);
+        for (const item of values) {
+            const itemExp: { [key: string]: IExpression } = {};
+            for (const col of columns) {
+                switch (col.propertyName) {
+                    case "__index": {
+                        itemExp[col.propertyName] = new ValueExpression(i++);
+                        break;
+                    }
+                    case "__value": {
+                        itemExp[col.propertyName] = new ValueExpression(item);
+                        break;
+                    }
+                    default: {
+                        const propVal = item[col.propertyName];
+                        itemExp[col.propertyName] = new ValueExpression(isNotNull(propVal) ? propVal : null);
+                        break;
+                    }
+                }
+            }
+            insertQuery.values.push(itemExp as SetterObj<T>);
+        }
+
+        result.push(...this.getInsertQuery(insertQuery, option, new Map()));
+
+        return result;
+    }
+    protected override dropTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, option: IQueryOption): IQuery[] {
+        return [{
+            query: `DROP TABLE ${this.entityName(entityExp)}`,
+            type: QueryType.DDL
+        }];
+    }
+
+    protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {
+        if (entityExp instanceof TemporaryEntityExpression) {
+            return this.enclose(`#${entityExp.name}`);
+        }
+
+        return super.entityName(entityExp);
     }
 }

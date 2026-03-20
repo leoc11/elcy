@@ -71,6 +71,7 @@ import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression
 import { Temporal } from "src/Data/Temporal";
 import { Decimal } from "src/Data/Decimal";
 import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
+import { TemporaryEntityExpression } from "src/Queryable/QueryExpression/TemporaryEntityExpression";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -381,41 +382,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             const postQ: IQuery[] = [];
             for (const [tableValuExp, tvp] of tvps) {
                 const entityExp = tableValuExp.entityExp;
-                let i = 0;
                 const arrayValues = tvp.value as any[];
-                const columns = entityExp.columns;
-                const insertQuery = new InsertExpression(entityExp, [], columns);
-                for (const item of arrayValues) {
-                    const itemExp: { [key: string]: IExpression } = {};
-                    for (const col of columns) {
-                        switch (col.propertyName) {
-                            case "__index": {
-                                itemExp[col.propertyName] = new ValueExpression(i++);
-                                break;
-                            }
-                            case "__value": {
-                                itemExp[col.propertyName] = new ValueExpression(item);
-                                break;
-                            }
-                            default: {
-                                const propVal = item[col.propertyName];
-                                itemExp[col.propertyName] = new ValueExpression(isNotNull(propVal) ? propVal : null);
-                                break;
-                            }
-                        }
-                    }
-                    insertQuery.values.push(itemExp);
-                }
+                const createQ = this.createTempTableQuery(entityExp, arrayValues, option);
+                const dropQ = this.dropTempTableQuery(entityExp, option);
 
-                const createQ = this.getTempTableQuery(entityExp, arrayValues, option);
-                const insertQ = this.getInsertQuery(insertQuery, option, new Map());
-
-                preQ = preQ.concat(createQ).concat(insertQ);
-
-                postQ.push({
-                    query: `DROP TABLE ${this.enclose(entityExp.name)}`,
-                    type: QueryType.DDL
-                });
+                preQ.push(...createQ);
+                postQ.push(...dropQ);
             }
             result = preQ.concat(result).concat(postQ);
         }
@@ -1017,16 +989,16 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         result += this.getSelectQuery(select, param.option, param.parameters, skipInclude).map((o) => o.query).join(";" + this.newLine() + this.newLine());
         return result;
     }
-    protected getTempTableQuery<T>(entityExp: IEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
+    protected createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
         const columnDefinition = entityExp.columns.map((c) => {
             const colTypeFactory = this.valueTypeMap.get(c.type);
-            const maxValue = Enumerable.from(values).map((o) => o[c.propertyName]).max();
+            const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
             const colType = colTypeFactory(maxValue);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 
-        const query = `CREATE TABLE ${entityExp.name}` +
+        const query = `CREATE TEMPORARY TABLE ${entityExp.name}` +
             `${this.newLine()}(` +
             `${this.newLine(1, false)}${columnDefinition}` +
             `${this.newLine()})`;
@@ -1035,8 +1007,43 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             query,
             type: QueryType.DDL
         });
+
+        let i = 0;
+        const columns = entityExp.columns;
+        const insertQuery = new InsertExpression(entityExp, [], columns);
+        for (const item of values) {
+            const itemExp: { [key: string]: IExpression } = {};
+            for (const col of columns) {
+                switch (col.propertyName) {
+                    case "__index": {
+                        itemExp[col.propertyName] = new ValueExpression(i++);
+                        break;
+                    }
+                    case "__value": {
+                        itemExp[col.propertyName] = new ValueExpression(item);
+                        break;
+                    }
+                    default: {
+                        const propVal = item[col.propertyName];
+                        itemExp[col.propertyName] = new ValueExpression(isNotNull(propVal) ? propVal : null);
+                        break;
+                    }
+                }
+            }
+            insertQuery.values.push(itemExp as SetterObj<T>);
+        }
+
+        result.push(...this.getInsertQuery(insertQuery, option, new Map()));
+
         return result;
     }
+    protected dropTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, option: IQueryOption): IQuery[] {
+        return [{
+            query: `DROP TABLE ${this.enclose(entityExp.name)}`,
+            type: QueryType.DDL
+        }];
+    }
+
     // TODO: Update Query should use ANSI SQL Standard
     protected getUpdateQuery<T extends object>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];

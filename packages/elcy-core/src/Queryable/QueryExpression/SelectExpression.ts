@@ -294,7 +294,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         this.joins.push(joinRel);
         return joinRel;
     }
-    public addSqlParameter<Tval extends object>(valueExp: IExpression<Tval[]>, colExp?: IEntityExpression<Tval>): SqlTableValueParameterExpression<Tval>;
+    public addSqlParameter<Tval extends object[]>(valueExp: IExpression<Tval>, colExp?: IEntityExpression<ElementType<Tval>>): SqlTableValueParameterExpression<Tval>;
     public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData): SqlParameterExpression<Tval>;
     public addSqlParameter<Tval>(valueExp: IExpression<Tval> | IExpression<ElementType<Tval>[]>, colExp?: IColumnMetaData | IEntityExpression<ElementType<Tval> & object>): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<ElementType<Tval> & object> {
         let paramExp: SqlParameterExpression<Tval> | SqlTableValueParameterExpression<ElementType<Tval> & object>;
