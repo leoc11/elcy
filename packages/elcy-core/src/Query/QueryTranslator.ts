@@ -15,7 +15,7 @@ export class QueryTranslator {
     protected fallbacks: QueryTranslator[] = [];
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
     public registerFallbacks(...fallbacks: QueryTranslator[]) {
-        this.fallbacks = this.fallbacks.concat(fallbacks);
+        this.fallbacks.push(...fallbacks);
     }
     public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: any[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(fn);
