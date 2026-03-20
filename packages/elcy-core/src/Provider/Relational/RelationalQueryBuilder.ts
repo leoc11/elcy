@@ -509,7 +509,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 throw new Error(`type "${value.constructor.name}" not supported`);
         }
     }
-    protected booleanString(value: boolean) {
+    protected booleanString(value: boolean): string {
         return value ? "true" : "false";
     }
     protected dateTimeString(value: Date): string {
