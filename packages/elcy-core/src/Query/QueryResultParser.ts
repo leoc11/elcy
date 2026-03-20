@@ -82,11 +82,32 @@ class SelectExpressionParserFactory<TE extends object, T> {
                 }
             }
         }
+
+        this.embeddedParserMap = {};
+        if (this.selectExp instanceof GroupByExpression) {
+            const keyRelation = this.selectExp.keyRelation;
+            if (keyRelation && keyRelation.isEmbedded) {
+                this.embeddedParserMap[keyRelation.name] = new SelectExpressionParserFactory(keyRelation.child);
+            }
+            for (const include of this.selectExp.itemSelect.includes) {
+                if (include.isEmbedded) {
+                    this.embeddedParserMap[include.name] = new SelectExpressionParserFactory<object, unknown>(include.child);
+                }
+            }
+        }
+        else {
+            for (const include of this.selectExp.includes) {
+                if (include.isEmbedded) {
+                    this.embeddedParserMap[include.name] = new SelectExpressionParserFactory<object, unknown>(include.child);
+                }
+            }
+        }
     }
     protected readonly isValue: boolean;
     protected readonly columns: IColumnExpression<TE, ValueType>[];
     protected readonly primaryColumns: IColumnExpression<TE, ValueType>[];
     protected readonly relationMap: Map<IncludeRelation<TE, object>, IRelationMetaData>;
+    protected readonly embeddedParserMap: Record<string, SelectExpressionParserFactory<object, unknown>>;
 
     protected parseRow(row: object, dbContext: DbContext, dbSet: DbSet<T & TE>, dbEventEmitter: DBEventEmitter<T & TE>, parseMap: Map<SelectExpression, ParserFunction>) {
         if (this.isValue) {
@@ -124,16 +145,23 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
         // load relations
         for (const include of this.itemSelectExp.includes) {
+            if (include.isEmbedded) {
+                const parserFactory = this.embeddedParserMap[include.name];
+                const parser = parserFactory.getGenerator({
+                    rows: [row]
+                });
+                const childEntities = Enumerable.from(parser(dbContext, parseMap));
+                data[include.name] = childEntities.find() ?? null;
+                continue;
+            }
+
             const parser = parseMap.get(include.child);
             const relId: Record<string, unknown> = {};
             for (const [col, childCol] of include.relationMap()) {
-                relId[childCol.columnName] = row[col.columnName];
+                relId[childCol.dataPropertyName] = row[col.dataPropertyName];
             }
             const childEntities = Enumerable.from(parser(dbContext, parseMap, relId));
-            if (include.isEmbedded) {
-                data[include.name] = childEntities.find() ?? null;
-            }
-            else if (include.type === "many") {
+            if (include.type === "many") {
                 if (!data[include.name]) {
                     data[include.name] = [];
                 }
@@ -192,13 +220,6 @@ class SelectExpressionParserFactory<TE extends object, T> {
         const context = this;
         const selectExp = this.selectExp;
         const isGroup = this.selectExp instanceof GroupByExpression && !this.selectExp.isAggregate;
-        const embeddedParserMap: Record<string, SelectExpressionParserFactory<object, unknown>> = {};
-        if (isGroup) {
-            const keyRelation = (this.selectExp as GroupByExpression).keyRelation;
-            if (keyRelation && keyRelation.isEmbedded) {
-                embeddedParserMap[keyRelation.name] = new SelectExpressionParserFactory(keyRelation.child);
-            }
-        }
         const generator: ParserFunction<T> = function* (dbContext: DbContext, parseMap: Map<SelectExpression, ParserFunction>, id?: Record<string, ValueType>) {
             let idKey = isNull(id) ? "" : getRelationKey(id, Object.keys(id));
             if (Array.isArray(groupedDataMap.get(idKey))) {
