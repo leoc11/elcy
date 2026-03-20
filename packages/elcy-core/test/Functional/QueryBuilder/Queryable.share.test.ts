@@ -8,7 +8,7 @@ import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
 import { ITestContext } from "../../fixture/ITestContext";
 import { Temporal } from "@js-temporal/polyfill";
-import { QueryableChain } from "packages/elcy-core/src/Queryable/Interface/QueryableChain";
+import { QueryableChain } from "../../../src/Queryable/Interface/QueryableChain";
 
 const table1ManyMeta = getEntityMetadata(Table1Many);
 const table1Meta = getEntityMetadata(Table1);
@@ -2627,6 +2627,40 @@ export const queryableTest = (db: ITestContext) => {
                 const queryIncludeSoftDeleted = db.table1s.option({ includeSoftDeleted: true }).toString();
 
                 expect(queryExcludeSoftDeleted).not.toBe(queryIncludeSoftDeleted);
+            });
+        });
+        describe("OTHER", () => {
+            it("test 1", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const query = db.table1Ones.filter(o => o.name == "filter")
+                    .map(o => ({
+                        id: o.table1Id,
+                        string: o.table1.string,
+                        number: o.number,
+                        t3Names: o.table1.table1Table2s
+                            .flatMap(p => p.table2.table2Table3s)
+                            .map(o => o.table3.t3Name)
+                            .concat(
+                                o.table1.table1Table3s
+                                    .map(o => o.table3.t3Name)
+                            )
+                            .join(',')
+                    }));
+                const results = await query.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(typeof o.id).toBe("bigint");
+                    expect(typeof o.string).toBe("string");
+                    expect(typeof o.number).toBe("number");
+                    expect(o.t3Names).toBeString();
+                }
             });
         });
     });

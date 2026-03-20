@@ -12380,3 +12380,253 @@ FROM "fixture"."Table1s" AS "entity0""
   },
 ]
 `;
+
+exports[`Sqlite QUERYABLE OTHER test 1 1`] = `
+[
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table1Id" AS "column0",
+	"entity1"."string" AS "column1",
+	"entity0"."number" AS "column2",
+	"entity6"."column4" AS "column5"
+FROM "Table1One" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity0"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity6"."table1Id",
+		STRING_AGG("entity6"."t3Name", ',') AS "column4"
+	FROM (
+		SELECT "entity6"."id",
+			"entity6"."t3Name",
+			"entity5"."table1Id"
+		FROM "fixture"."Table3s" AS "entity6"
+		INNER JOIN (
+			SELECT "entity5"."id",
+				"entity5"."table3Id",
+				"entity5"."table2Id",
+				"entity5"."option13",
+				"entity3"."table1Id"
+			FROM "Table1_Table3s" AS "entity5"
+			INNER JOIN (
+				SELECT "entity3"."table1Id",
+					"entity3"."table2Id",
+					"entity4"."id" AS "column3",
+					"entity3"."option12"
+				FROM "Table1_Table2s" AS "entity3"
+				LEFT JOIN "fixture"."Table2s" AS "entity4" ON ("entity3"."table2Id"="entity4"."id")
+			) AS "entity3" ON ("entity3"."column3"="entity5"."table2Id")
+		) AS "entity5" ON ("entity5"."table3Id"="entity6"."id")
+		UNION ALL
+		SELECT "entity9"."id",
+			"entity9"."t3Name",
+			"entity8"."table1Id"
+		FROM "fixture"."Table3s" AS "entity9"
+		INNER JOIN "Table1_Table3s" AS "entity8" ON ("entity8"."table3Id"="entity9"."id")
+	) AS "entity6"
+	GROUP BY "entity6"."table1Id"
+) AS "entity6" ON ("entity2"."id"="entity6"."table1Id")
+LEFT JOIN (
+	SELECT "entity7"."id",
+		"entity7"."bigint",
+		"entity7"."binary",
+		"entity7"."boolean",
+		"entity7"."date",
+		"entity7"."plainDate",
+		"entity7"."dateTime",
+		"entity7"."instant",
+		"entity7"."decimal",
+		"entity7"."decimalNumber",
+		"entity7"."decimalDecimal",
+		"entity7"."deleted",
+		"entity7"."identifier",
+		"entity7"."identifierString",
+		"entity7"."integer",
+		"entity7"."real",
+		"entity7"."string",
+		"entity7"."time",
+		"entity7"."plainTime",
+		"entity7"."createdDate",
+		"entity7"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity7"
+	WHERE ("entity7"."deleted"=false)
+) AS "entity7" ON ("entity0"."table1Id"="entity7"."id")
+WHERE ("entity0"."name"='filter')"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"SELECT "entity0"."table1Id",
+	"entity0"."table1Id" AS "column0",
+	"entity1"."string" AS "column1",
+	"entity0"."number" AS "column2",
+	"entity6"."column4" AS "column5"
+FROM "Table1One" AS "entity0"
+LEFT JOIN (
+	SELECT "entity1"."id",
+		"entity1"."bigint",
+		"entity1"."binary",
+		"entity1"."boolean",
+		"entity1"."date",
+		"entity1"."plainDate",
+		"entity1"."dateTime",
+		"entity1"."instant",
+		"entity1"."decimal",
+		"entity1"."decimalNumber",
+		"entity1"."decimalDecimal",
+		"entity1"."deleted",
+		"entity1"."identifier",
+		"entity1"."identifierString",
+		"entity1"."integer",
+		"entity1"."real",
+		"entity1"."string",
+		"entity1"."time",
+		"entity1"."plainTime",
+		"entity1"."createdDate",
+		"entity1"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
+LEFT JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity0"."table1Id"="entity2"."id")
+LEFT JOIN (
+	SELECT "entity6"."table1Id",
+		STRING_AGG("entity6"."t3Name", ',') AS "column4"
+	FROM (
+		SELECT "entity6"."id",
+			"entity6"."t3Name",
+			"entity5"."table1Id"
+		FROM "fixture"."Table3s" AS "entity6"
+		INNER JOIN (
+			SELECT "entity5"."id",
+				"entity5"."table3Id",
+				"entity5"."table2Id",
+				"entity5"."option13",
+				"entity3"."table1Id"
+			FROM "Table1_Table3s" AS "entity5"
+			INNER JOIN (
+				SELECT "entity3"."table1Id",
+					"entity3"."table2Id",
+					"entity4"."id" AS "column3",
+					"entity3"."option12"
+				FROM "Table1_Table2s" AS "entity3"
+				LEFT JOIN "fixture"."Table2s" AS "entity4" ON ("entity3"."table2Id"="entity4"."id")
+			) AS "entity3" ON ("entity3"."column3"="entity5"."table2Id")
+		) AS "entity5" ON ("entity5"."table3Id"="entity6"."id")
+		UNION ALL
+		SELECT "entity9"."id",
+			"entity9"."t3Name",
+			"entity8"."table1Id"
+		FROM "fixture"."Table3s" AS "entity9"
+		INNER JOIN "Table1_Table3s" AS "entity8" ON ("entity8"."table3Id"="entity9"."id")
+	) AS "entity6"
+	GROUP BY "entity6"."table1Id"
+) AS "entity6" ON ("entity2"."id"="entity6"."table1Id")
+LEFT JOIN (
+	SELECT "entity7"."id",
+		"entity7"."bigint",
+		"entity7"."binary",
+		"entity7"."boolean",
+		"entity7"."date",
+		"entity7"."plainDate",
+		"entity7"."dateTime",
+		"entity7"."instant",
+		"entity7"."decimal",
+		"entity7"."decimalNumber",
+		"entity7"."decimalDecimal",
+		"entity7"."deleted",
+		"entity7"."identifier",
+		"entity7"."identifierString",
+		"entity7"."integer",
+		"entity7"."real",
+		"entity7"."string",
+		"entity7"."time",
+		"entity7"."plainTime",
+		"entity7"."createdDate",
+		"entity7"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity7"
+	WHERE ("entity7"."deleted"=false)
+) AS "entity7" ON ("entity0"."table1Id"="entity7"."id")
+WHERE ("entity0"."name"='filter')"
+,
+    "_type": 1,
+  },
+]
+`;
