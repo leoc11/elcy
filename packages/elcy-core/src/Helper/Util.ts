@@ -1,5 +1,5 @@
 import { Decimal } from "src/Data/Decimal";
-import { ArrayView, GenericType, ValueType } from "../Common/Type";
+import { ArrayView, GenericType, IObjectType, ValueType } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
@@ -12,6 +12,7 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { Temporal } from "src/Data/Temporal";
+
 export const toHexaString = function (binary: ArrayBuffer | ArrayView): string {
     if (binary instanceof ArrayBuffer) {
         let hexaString = Array.from(new Uint8Array(binary))
@@ -42,6 +43,35 @@ export const isEqual = function (a: any, b: any) {
             && b.hasOwnProperty(Symbol.toPrimitive) && a[Symbol.toPrimitive] === b[Symbol.toPrimitive]
         );
 };
+export const tryCreateInstance = function <T>(type: GenericType<T>): T {
+    switch (true) {
+        case (type as GenericType<bigint>) === BigInt: {
+            return 0n as T;
+        }
+        case Decimal && (type as GenericType<unknown>) === Decimal: {
+            return new Decimal(0) as T;
+        }
+        case Temporal && (type as GenericType<unknown>) === Temporal.Instant: {
+            return Temporal.Now.instant() as T;
+        }
+        case Temporal && (type as GenericType<unknown>) === Temporal.PlainDate: {
+            return Temporal.Now.plainDateISO() as T;
+        }
+        case Temporal && (type as GenericType<unknown>) === Temporal.PlainTime: {
+            return Temporal.Now.plainTimeISO() as T;
+        }
+        default: {
+            try {
+                return new (type as IObjectType<T>)();
+            } catch { }
+            try {
+                return (type as () => T)();
+            } catch { }
+
+            return undefined;
+        }
+    }
+}
 export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>, sourceExp: IExpression, targetExp: IExpression) {
     replaceMap.set(sourceExp, targetExp);
     if ((sourceExp as SelectExpression).projectedColumns && (targetExp as SelectExpression).projectedColumns) {

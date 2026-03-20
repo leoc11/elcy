@@ -1,5 +1,5 @@
 import { ElementType, GenericType, IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
-import { hashCode, isNull, resolveClone } from "../../Helper/Util";
+import { hashCode, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
 import { getColumnMetadata, getRelationMetadata } from "../../MetaData/MetaDataMapper";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
@@ -24,16 +24,16 @@ export class MemberAccessExpression<TE extends object, K extends StringKeyOf<TE>
                     }
                 }
                 else {
-                    let memberValue;
+                    let memberValue: T;
                     try {
-                        memberValue = (objectType.prototype as TE)[this.memberName];
+                        memberValue = (objectType.prototype as TE)[this.memberName] as T;
                     }
                     catch {  /* ignoring error */ }
-                    
+
                     if (isNull(memberValue)) {
                         try {
-                            const objectInstance = new objectType();
-                            memberValue = objectInstance[this.memberName];
+                            const objectInstance = tryCreateInstance(objectType);
+                            memberValue = objectInstance[this.memberName] as T;
                         } catch { /* ignoring error */ }
                     }
                     if (!isNull(memberValue)) {

@@ -1,6 +1,6 @@
-import type { ElementType, GenericType, IObjectType, MethodKey, MethodReturnType } from "../../Common/Type";
+import type { ElementType, GenericType, MethodKey, MethodReturnType } from "../../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { hashCode, hashCodeAdd, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
@@ -31,6 +31,10 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
                             (this._type as GenericType<boolean>) = Boolean;
                             break;
                         }
+                        case "join": {
+                            (this._type as GenericType<string>) = String;
+                            break;
+                        }
                         case "find": {
                             this._type = this.objectOperand.itemType as GenericType<T>;
                             break;
@@ -42,12 +46,30 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
                     }
                 }
                 else {
+                    let returnValue: T;
                     try {
                         const proto = objectType.prototype as TE;
-                        this.type = (proto[this.methodName] as () => T)().constructor as GenericType<T>;
-                    } catch {
-                        const objectInstance = new (objectType as IObjectType<TE>)();
-                        this.type = (objectInstance[this.methodName] as () => T)().constructor as GenericType<T>;
+                        returnValue = (proto[this.methodName] as () => T)();
+                    } catch { }
+
+                    if (isNull(returnValue)) {
+                        try {
+                            const proto = objectType.prototype as TE;
+                            returnValue = (proto[this.methodName] as (arg: number) => T)(0);
+                        } catch { }
+                    }
+
+                    if (isNull(returnValue)) {
+                        const instance = tryCreateInstance(objectType);
+                        try {
+                            returnValue = (instance[this.methodName] as () => T)();
+                        } catch {
+                            returnValue = (instance[this.methodName] as (arg: number) => T)(0);
+                        }
+                    }
+                    
+                    if (!isNull(returnValue)) {
+                        this._type = (returnValue.constructor as GenericType<T>);
                     }
                 }
             }
