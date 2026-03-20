@@ -33,7 +33,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public override translator = postgresqlQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType>([
         [Uuid, () => ({ columnType: "uuid", group: "Identifier" })],
-        [BigInt, () => ({ columnType: "bigint", group: "Integer" })],
+        [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
         [Date, () => ({ columnType: "datetime", group: "DateTime" })],
         [String, (val: string) => ({ columnType: "nvarchar", group: "String", option: { length: Math.ceil(val.length / 50) * 50 } })],

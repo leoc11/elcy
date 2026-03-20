@@ -31,6 +31,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public override translator = mssqlQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<MssqlColumnType>>([
         [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
+        [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
         [Date, () => ({ columnType: "datetime", group: "DateTime" })],
         [String, (val: string) => ({ columnType: "nvarchar", group: "String", option: { length: 255 } })],
