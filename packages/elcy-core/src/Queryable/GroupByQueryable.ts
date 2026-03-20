@@ -41,16 +41,4 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     public hashCode() {
         return hashCodeAdd(hashCode("GROUPBY", this.parent.hashCode()), this.keySelector ? this.keySelector.hashCode() : 0);
     }
-    override deferredToEnumerable(): DeferredQuery<Enumerable<GroupedEnumerable<K, T>>> {
-        throw new Error("not supported");
-    }
-    override deferredToArray(): DeferredQuery<GroupedEnumerable<K, T>[]> {
-        throw new Error("not supported");
-    }
-    override deferredToSet(): DeferredQuery<Set<GroupedEnumerable<K, T>>> {
-        throw new Error("not supported");
-    }
-    override deferredToMap<K, V>(keySelector: (item: any) => K, valueSelector?: (item: any) => V): DeferredQuery<Map<K, V>> {
-        throw new Error("not supported");
-    }
 }

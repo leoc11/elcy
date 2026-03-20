@@ -5,8 +5,7 @@ import { IDriver } from "../../src/Connection/IDriver";
 import { MockDriver } from "../Mock/MockDriver";
 import { PostgresqlDbContext } from "../../src/Provider/Postgresql/PostgresqlDbContext";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table1Table2One, Table1Table3, Table2, Table2Table3, Table3 } from "./model";
-import { ITestContext } from "./ITestContext";
-const entityTypes = [Table1, Table2, Table3, Table1Table2, Table1Table3, Table2Table3, Table1One, Table1Many, Table1Table2One, Table1Table2Many];
+import { entityTypes, ITestContext } from "./ITestContext";
 
 export class PgContext extends PostgresqlDbContext implements ITestContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
