@@ -9,10 +9,17 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { GroupByExpression } from "./GroupByExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IOrderExpression } from "./IOrderExpression";
 
 export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
     public get allColumns() {
         return this.groupBy.union(super.allColumns);
+    }
+    public override get resolvedOrders(): IEnumerable<IOrderExpression> {
+        return Enumerable.from(this.parentRelation?.childColumns ?? []).concat(this.groupBy).map(o => ({
+            column: o,
+            direction: "ASC"
+        } as IOrderExpression)).union(this.orders);
     }
     public get groupBy() {
         if (!this._groupBy) {

@@ -11,10 +11,17 @@ import { ComputedColumnExpression } from "./ComputedColumnExpression";
 import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
+import { IOrderExpression } from "./IOrderExpression";
 
 export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, GroupedEnumerable<K, T>> {
     public get allColumns() {
-        return this.groupBy.union(super.allColumns);
+        return Enumerable.from(this.groupBy).concat(super.allColumns);
+    }
+    public override get resolvedOrders(): IEnumerable<IOrderExpression> {
+        return Enumerable.from(this.parentRelation?.childColumns ?? []).concat(this.groupBy).map(o => ({
+            column: o,
+            direction: "ASC"
+        } as IOrderExpression)).union(this.orders);
     }
     public get entity() {
         return this.itemSelect.entity;
@@ -132,7 +139,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 includes = (this.keyRelation.child.resolvedIncludes as IEnumerable<IncludeRelation<TE>>).union(includes);
             }
             else {
-                includes = ([this.keyRelation]).union(includes);
+                includes = Enumerable.from([this.keyRelation]).union(includes);
             }
         }
         return includes;
@@ -207,6 +214,9 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 const keyParentRel = selectExp.parentRelation;
                 if (keyParentRel) {
                     const replaceMap = new Map();
+                    for (const col of keyParentRel.childColumns) {
+                        replaceMap.set(col, col);
+                    }
                     for (const oriCol of keyParentRel.parentColumns) {
                         const col = this.projectedColumns.find(o => o.columnName === oriCol.columnName);
                         replaceMap.set(oriCol, col);

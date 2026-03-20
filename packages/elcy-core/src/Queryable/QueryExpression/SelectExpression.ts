@@ -119,7 +119,7 @@ export class SelectExpression<TE extends object = object, T = unknown> implement
         return selects;
     }
     public get resolvedOrders(): IEnumerable<IOrderExpression> {
-        return Enumerable.from(this.parentRelation?.childColumns ?? []).concat((this as any).groupBy ?? []).map(o => ({
+        return Enumerable.from(this.parentRelation?.childColumns ?? []).map(o => ({
             column: o,
             direction: "ASC"
         } as IOrderExpression)).union(this.orders);
