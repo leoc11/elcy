@@ -173,7 +173,7 @@ export class MockConnection implements IConnection {
                                         item[o.dataPropertyName] = this.getBoundedValue(o, equalValueMap, minValueMap, maxValueMap);
                                     }
                                     for (const [parentCol, entityCol] of relMap) {
-                                        item[entityCol.propertyName] = parent[parentCol.propertyName];
+                                        item[entityCol.dataPropertyName] = parent[parentCol.dataPropertyName];
                                     }
                                     rows.push(item);
                                 }
@@ -195,17 +195,17 @@ export class MockConnection implements IConnection {
                             rows.sort((o1, o2) => {
                                 for (const order of select.resolvedOrders.filter(o => isColumnExp(o.column))) {
                                     const columnExp = order.column as IColumnExpression;
-                                    if (o1[columnExp.columnName] === o2[columnExp.columnName]) {
+                                    if (o1[columnExp.dataPropertyName] === o2[columnExp.dataPropertyName]) {
                                         continue;
                                     }
 
                                     switch (order.direction) {
                                         case "DESC": {
-                                            return o1[columnExp.columnName] > o2[columnExp.columnName] ? -1 : 1;
+                                            return o1[columnExp.dataPropertyName] > o2[columnExp.dataPropertyName] ? -1 : 1;
                                         }
                                         case "ASC":
                                         default: {
-                                            return o1[columnExp.columnName] > o2[columnExp.columnName] ? 1 : -1;
+                                            return o1[columnExp.dataPropertyName] > o2[columnExp.dataPropertyName] ? 1 : -1;
                                         }
                                     }
                                 }
