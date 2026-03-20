@@ -1562,6 +1562,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         selectOperand = createProjectionSelect(selectOperand);
                     }
 
+                    const parentRelation = objectOperand.parentRelation;
                     const dimensions = exp.params[0] as FunctionExpression;
                     const metrics = exp.params[1] as FunctionExpression;
 
@@ -1618,7 +1619,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                 }
             }
-            
+
             const isObjectOperandSafe = this.isSafe(objectOperand);
             const isExpressionSafe = isObjectOperandSafe && exp.params.every((o) => this.isSafe(o));
 
