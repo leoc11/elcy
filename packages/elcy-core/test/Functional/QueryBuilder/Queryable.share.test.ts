@@ -5,7 +5,7 @@ import { Enumerable } from "@elcy/enumerable";
 import { mockContext } from "../../Mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
-import { MssqlContext, PgContext, Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
+import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
 import { ITestContext } from "../../fixture/ITestContext";
 import { Temporal } from "@js-temporal/polyfill";
 import { QueryableChain } from "packages/elcy-core/src/Queryable/Interface/QueryableChain";
@@ -2631,5 +2631,3 @@ export const queryableTest = (db: ITestContext) => {
         });
     });
 }
-
-queryableTest(new MssqlContext());

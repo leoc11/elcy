@@ -85,14 +85,6 @@ sqliteQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, para
     }
     return `(INSTR(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)}) - 1)`;
 });
-sqliteQueryTranslator.registerMethod(String.prototype, "like", (qb, exp, param) => {
-    let escape = qb.valueString("\\");
-    if (exp.params.length > 1) {
-        escape = qb.toString(exp.params[1], param);
-    }
-
-    return `(${qb.toString(exp.objectOperand, param)} LIKE ${qb.toString(exp.params[0], param)} ESCAPE ${escape})`;
-});
 sqliteQueryTranslator.registerMethod(String.prototype, "startsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE (${qb.toString(exp.params[0], param)} || ${qb.valueString("%")}))`);
 sqliteQueryTranslator.registerMethod(String.prototype, "substr", (qb, exp, param) => `SUBSTR(${qb.toString(exp.objectOperand, param)}, (${qb.toString(exp.params[0], param)} + 1)${(exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")})`);
 sqliteQueryTranslator.registerMethod(String.prototype, "substring", (qb, exp, param) => `SUBSTR(${qb.toString(exp.objectOperand, param)}, (${qb.toString(exp.params[0], param)} + 1)${(exp.params.length > 1 ? `, (${qb.toString(exp.params[1], param)} - ${qb.toString(exp.params[0], param)})` : "")})`);

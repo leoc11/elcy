@@ -22,16 +22,17 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         maxParameters: 999,
         maxQueryLength: 1000000
     };
-    public translator = sqliteQueryTranslator;
+    public override translator = sqliteQueryTranslator;
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<SqliteColumnType>>([
         [TimeSpan, () => ({ columnType: "text" })],
+        [BigInt, () => ({ columnType: "integer", group: "BigInt" })],
         [Date, () => ({ columnType: "text" })],
         [String, () => ({ columnType: "text" })],
-        [Number, () => ({ columnType: "numeric" })],
+        [Number, () => ({ columnType: "numeric", group: "Real" })],
         [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
-    public getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public override getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const param: IQueryBuilderParameter = {
             option: option,
             parameters: parameters,
@@ -103,13 +104,13 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         result.push(updateCommand);
         return result;
     }
-    protected override getPagingQueryString(select: SelectExpression): string {
+    protected override getPagingQueryString(select: SelectExpression, param?: IQueryBuilderParameter): string {
         let result = "";
         if (select.paging.take) {
-            result += `${this.newLine()}LIMIT ${this.toString(select.paging.take)}`;
+            result += `${this.newLine()}LIMIT ${this.toString(select.paging.take, param)}`;
         }
         if (select.paging.skip) {
-            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip)}`;
+            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip, param)}`;
         }
         return result;
     }
