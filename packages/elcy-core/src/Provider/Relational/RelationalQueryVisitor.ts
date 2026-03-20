@@ -1866,36 +1866,34 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             else if (value instanceof Function) {
                 return new ValueExpression(value, exp.name);
             }
-            else if (value instanceof Array) {
+            else if (value instanceof Array || value instanceof Enumerable) {
                 const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<T[]>);
                 arrayParamExp.itemType = exp.itemType;
-                const arrayValue = value;
 
-                let arrayItemType = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
-                const isTypeSpecified = !!arrayItemType;
+                let arrayItemType: Record<string, GenericType> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
                 if (!arrayItemType) {
-                    arrayItemType = arrayValue.find((o) => !!o);
+                    arrayItemType = {};
+                    const itemValue = value.find((o) => !!o);
+                    if (!isNull(itemValue)) {
+                        for (const prop in itemValue) {
+                            const propValue = itemValue[prop];
+                            if (propValue !== undefined) {
+                                arrayItemType[prop] = propValue?.constructor ?? String;
+                            }
+                        }
+                        arrayItemType.constructor = itemValue.constructor;
+                    }
                 }
-                const itemType = arrayItemType ? arrayItemType.constructor : Object;
 
+                const itemType: GenericType<unknown> = arrayItemType?.constructor as GenericType ?? Object;
                 const entityExp = new CustomEntityExpression("#" + exp.name + this.parameterIndex, [], itemType, this.newAlias());
                 entityExp.columns.push(new ColumnExpression(entityExp, Number, "__index", "__index", true));
 
                 if (arrayItemType && !isValueType(itemType)) {
-                    if (isTypeSpecified) {
-                        for (const prop in arrayItemType) {
-                            const propValue = arrayItemType[prop];
-                            if (isValueType(propValue)) {
-                                entityExp.columns.push(new ColumnExpression(entityExp, propValue, prop, prop, false));
-                            }
-                        }
-                    }
-                    else {
-                        for (const prop in arrayItemType) {
-                            const propValue = arrayItemType[prop];
-                            if (propValue === null || (propValue !== undefined && isValue(propValue))) {
-                                entityExp.columns.push(new ColumnExpression(entityExp, propValue ? propValue.constructor : String, prop, prop, false));
-                            }
+                    for (const prop in arrayItemType) {
+                        const propValue = arrayItemType[prop];
+                        if (isValueType(propValue)) {
+                            entityExp.columns.push(new ColumnExpression(entityExp, propValue, prop, prop, false));
                         }
                     }
                 }
