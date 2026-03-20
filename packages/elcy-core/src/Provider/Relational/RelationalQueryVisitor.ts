@@ -1455,6 +1455,9 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     if (parentRelation) {
                         const replaceMap = new Map();
+                        for (const col of parentRelation.parentColumns) {
+                            replaceMap.set(col, col);
+                        }
                         for (const oriCol of parentRelation.childColumns) {
                             const col = selectOperand.selects.find(o => o.columnName === oriCol.columnName);
                             replaceMap.set(oriCol, col);
@@ -2060,16 +2063,30 @@ const reverseJoin = (qv: RelationalQueryVisitor, childExp: SelectExpression, roo
             }
         }
         else {
-            const replaceMap = new Map();
-            for (const col of joinRel.parentColumns) {
-                replaceMap.set(col.entity, col.entity);
-                const newCol = col.clone(replaceMap);
-                if (!newCol.alias) {
-                    newCol.alias = qv.newAlias("column");
-                }
-            }
+            let relationExp = joinRel.relation;
 
-            const relationExp = resolveClone(joinRel.relation, replaceMap);
+            if (joinRel.parentColumns.find(o => o.entity !== joinRel.parent.entity)) {
+                // if parent column join use it's child column, use an alias column instead, 
+                // coz it might has the same name with parent column name (colission)
+                const replaceMap = new Map();
+                for (const col of joinRel.childColumns) {
+                    replaceMap.set(col, col);
+                }
+                for (const col of joinRel.parentColumns) {
+                    if (col.entity === joinRel.parent.entity) {
+                        replaceMap.set(col, col);
+                        continue;
+                    }
+
+                    replaceMap.set(col.entity, col.entity);
+                    const newCol = col.clone(replaceMap);
+                    if (!newCol.alias) {
+                        newCol.alias = qv.newAlias("column");
+                    }
+                }
+
+                relationExp = resolveClone(joinRel.relation, replaceMap);
+            }
             child.addJoin(parent, relationExp, "INNER", joinRel.isEmbedded);
         }
     }
@@ -2087,6 +2104,9 @@ const createProjectionSelect = <T>(selectExp: SelectExpression<T>) => {
     projectedSelectExp.selects = projectEntityExp.selectedColumns.slice(0);
     if (parentRelation) {
         const replaceMap = new Map();
+        for (const col of parentRelation.parentColumns) {
+            replaceMap.set(col, col);
+        }
         for (const oriCol of parentRelation.childColumns) {
             const col = projectedSelectExp.selects.find(o => o.columnName === oriCol.columnName);
             replaceMap.set(oriCol, col);
