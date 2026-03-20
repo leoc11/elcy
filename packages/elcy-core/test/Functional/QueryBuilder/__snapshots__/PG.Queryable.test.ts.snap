@@ -5797,7 +5797,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint
@@ -5808,7 +5808,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id") VALUES
 	(0,10)"
 ,
     "type": 2,
@@ -5843,13 +5843,13 @@ Map {
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
 	SELECT DISTINCT "entity1"."table1Id"
-	FROM "#ad1" AS "entity1"
+	FROM "temp_ad1" AS "entity1"
 ))"
 ,
     "type": 1,
   },
   {
-    "query": "DROP TABLE "#ad1"",
+    "query": "DROP TABLE "temp_ad1"",
     "type": 4,
   },
 ]
@@ -5859,7 +5859,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Aggregate co
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -5871,7 +5871,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Aggregate co
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id","integer") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
     "type": 2,
@@ -5908,7 +5908,7 @@ LEFT JOIN (
 	SELECT "entity1"."table1Id",
 		"entity0"."id",
 		MAX("entity1"."integer") AS "column0"
-	FROM "#ad1" AS "entity1"
+	FROM "temp_ad1" AS "entity1"
 	GROUP BY "entity0"."id"
 ) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
 WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
@@ -5916,7 +5916,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
     "type": 1,
   },
   {
-    "query": "DROP TABLE "#ad1"",
+    "query": "DROP TABLE "temp_ad1"",
     "type": 4,
   },
 ]
@@ -5926,7 +5926,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Some) 1`] = 
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -5938,7 +5938,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Some) 1`] = 
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id","integer") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
     "type": 2,
@@ -5982,7 +5982,7 @@ LEFT JOIN (
 	SELECT "entity1"."table1Id",
 		"entity0"."id",
 		true AS "column0"
-	FROM "#ad1" AS "entity1"
+	FROM "temp_ad1" AS "entity1"
 	GROUP BY "entity0"."id"
 ) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
 WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
@@ -5990,7 +5990,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ad1"",
+        "query": "DROP TABLE "temp_ad1"",
         "type": 4,
       },
     ]`;
@@ -5999,7 +5999,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should determine whether where fil
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6011,7 +6011,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should determine whether where fil
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id","integer") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
     "type": 2,
@@ -6055,7 +6055,7 @@ LEFT JOIN (
 	SELECT "entity1"."table1Id",
 		"entity0"."id",
 		COUNT("entity1"."__index") AS "column0"
-	FROM "#ad1" AS "entity1"
+	FROM "temp_ad1" AS "entity1"
 	WHERE ("entity1"."integer">1)
 	GROUP BY "entity0"."id"
 ) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
@@ -6064,7 +6064,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">1))"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ad1"",
+        "query": "DROP TABLE "temp_ad1"",
         "type": 4,
       },
     ]`;
@@ -6073,7 +6073,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Relation/Ar
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6085,7 +6085,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Relation/Ar
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id","integer") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
     "type": 2,
@@ -6106,7 +6106,7 @@ Map {
 "SELECT "entity1"."__index",
 	"entity1"."table1Id",
 	"entity1"."integer"
-FROM "#ad1" AS "entity1"
+FROM "temp_ad1" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
@@ -6136,7 +6136,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
             "type": 1,
           },
           {
-            "query": "DROP TABLE "#ad1"",
+            "query": "DROP TABLE "temp_ad1"",
             "type": 4,
           },
         ]`;
@@ -6145,7 +6145,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 
 [
   {
     "query": 
-"CREATE TABLE #ad1
+"CREATE TEMPORARY TABLE temp_ad1
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6157,7 +6157,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ad1"("__index","table1Id","integer") VALUES
+"INSERT INTO "temp_ad1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
     "type": 2,
@@ -6181,7 +6181,7 @@ FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
 		COUNT("entity1"."__index") AS "column0"
-	FROM "#ad1" AS "entity1"
+	FROM "temp_ad1" AS "entity1"
 	GROUP BY "entity1"."table1Id"
 ) AS "entity1" ON ("entity1"."table1Id"="entity0"."id")
 WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
@@ -6189,7 +6189,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ad1"",
+        "query": "DROP TABLE "temp_ad1"",
         "type": 4,
       },
     ]`;
@@ -6198,7 +6198,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Count SubQu
 [
   {
     "query": 
-"CREATE TABLE #ads1
+"CREATE TEMPORARY TABLE temp_ads1
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6211,7 +6211,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Count SubQu
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ads1"("__index","id","decimalNumber","computed") VALUES
+"INSERT INTO "temp_ads1"("__index","id","decimalNumber","computed") VALUES
 	(0,1234567890,13200,NaN),
 	(1,1234567891,71000,NaN)"
 ,
@@ -6241,7 +6241,7 @@ LEFT JOIN (
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
 			COUNT("entity1"."__index") AS "column1"
-		FROM "#ads1" AS "entity1"
+		FROM "temp_ads1" AS "entity1"
 		GROUP BY "entity1"."decimalNumber"
 	) AS "entity1" ON ("entity2"."decimalNumber">="entity1"."decimalNumber")
 	WHERE ("entity2"."deleted"=false)
@@ -6253,7 +6253,7 @@ ORDER BY "entity0"."decimalNumber" ASC"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ads1"",
+        "query": "DROP TABLE "temp_ads1"",
         "type": 4,
       },
     ]`;
@@ -6262,7 +6262,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuer
 [
   {
     "query": 
-"CREATE TABLE #ads2
+"CREATE TEMPORARY TABLE temp_ads2
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6276,7 +6276,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuer
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
+"INSERT INTO "temp_ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
 	(0,1234567890,'2017-02-22 23:03:39.447',13200,NaN),
 	(1,1234567891,'2017-01-19 02:08:41.530',71000,NaN)"
 ,
@@ -6309,7 +6309,7 @@ LEFT JOIN (
 	LEFT JOIN (
 		SELECT "entity1"."dateTime",
 			SUM("entity1"."decimalNumber") AS "column2"
-		FROM "#ads2" AS "entity1"
+		FROM "temp_ads2" AS "entity1"
 		GROUP BY "entity1"."dateTime"
 	) AS "entity1" ON ("entity1"."dateTime">="entity2"."dateTime")
 	WHERE ("entity2"."deleted"=false)
@@ -6323,7 +6323,7 @@ FETCH NEXT $2 ROWS ONLY"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ads2"",
+        "query": "DROP TABLE "temp_ads2"",
         "type": 4,
       },
     ]`;
@@ -6332,7 +6332,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Some SubQue
 [
   {
     "query": 
-"CREATE TABLE #ads2
+"CREATE TEMPORARY TABLE temp_ads2
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6346,7 +6346,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Some SubQue
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
+"INSERT INTO "temp_ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
 	(0,1234567890,'2017-02-22 23:03:39.447',13200,NaN),
 	(1,1234567891,'2017-01-19 02:08:41.530',71000,NaN)"
 ,
@@ -6388,7 +6388,7 @@ LEFT JOIN (
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
 			true AS "column1"
-		FROM "#ads2" AS "entity1"
+		FROM "temp_ads2" AS "entity1"
 		GROUP BY "entity1"."decimalNumber"
 	) AS "entity1" ON ("entity2"."decimalNumber">"entity1"."decimalNumber")
 	WHERE ("entity2"."deleted"=false)
@@ -6402,7 +6402,7 @@ FETCH NEXT $2 ROWS ONLY"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ads2"",
+        "query": "DROP TABLE "temp_ads2"",
         "type": 4,
       },
     ]`;
@@ -6411,7 +6411,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Every SubQu
 [
   {
     "query": 
-"CREATE TABLE #ads2
+"CREATE TEMPORARY TABLE temp_ads2
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6425,7 +6425,7 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Every SubQu
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "#ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
+"INSERT INTO "temp_ads2"("__index","id","dateTime","decimalNumber","computed") VALUES
 	(0,1234567890,'2017-02-22 23:03:39.447',13200,NaN),
 	(1,1234567891,'2017-01-19 02:08:41.530',71000,NaN)"
 ,
@@ -6467,7 +6467,7 @@ LEFT JOIN (
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
 			false AS "column1"
-		FROM "#ads2" AS "entity1"
+		FROM "temp_ads2" AS "entity1"
 		GROUP BY "entity1"."decimalNumber"
 	) AS "entity1" ON NOT(
 		NOT(
@@ -6485,7 +6485,7 @@ FETCH NEXT $2 ROWS ONLY"
         "type": 1,
       },
       {
-        "query": "DROP TABLE "#ads2"",
+        "query": "DROP TABLE "temp_ads2"",
         "type": 4,
       },
     ]`;
