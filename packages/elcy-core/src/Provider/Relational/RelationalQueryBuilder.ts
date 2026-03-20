@@ -24,7 +24,7 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
+import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, isValue, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
@@ -70,6 +70,7 @@ import { RawEntityExpression } from "src/Queryable/QueryExpression/RawEntityExpr
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
 import { Temporal } from "src/Data/Temporal";
 import { Decimal } from "src/Data/Decimal";
+import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -224,6 +225,32 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (isNull(input) && column.nullable) {
             return null;
         }
+        if (column instanceof SerializeColumnMetaData) {
+            let data: any;
+            try {
+                data = JSON.parse(input);
+            } catch {
+                return null;
+            }
+
+            try {
+                const obj = new column.type();
+                const keys = Enumerable.from(Object.entries(obj))
+                    .filter(o => typeof o[1] !== "function" && (isNull(o[1]) || isValue(o[1])))
+                    .map(o => o[0])
+                    .union(Object.keys(data));
+
+                for (const key of keys) {
+                    obj[key] = data[key];
+                }
+                
+                return obj;
+            }
+            catch {
+                return data;
+            }
+        }
+
         const type = column.type as GenericType;
         switch (true) {
             case type === Boolean:

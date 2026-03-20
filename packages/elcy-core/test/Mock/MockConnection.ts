@@ -37,6 +37,7 @@ import { LessThanExpression } from "../../src/ExpressionBuilder/Expression/LessT
 import { GreaterThanExpression } from "../../src/ExpressionBuilder/Expression/GreaterThanExpression";
 import { GreaterEqualExpression } from "../../src/ExpressionBuilder/Expression/GreaterEqualExpression";
 import { LessEqualExpression } from "../../src/ExpressionBuilder/Expression/LessEqualExpression";
+import { SerializeColumnMetaData } from "../../src/MetaData/SerializeColumnMetaData";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
@@ -354,6 +355,13 @@ export class MockConnection implements IConnection {
             const columnMeta = column.columnMeta;
             if (columnMeta.defaultExp) {
                 return ExpressionExecutor.execute(columnMeta.defaultExp.body);
+            }
+            if (columnMeta instanceof SerializeColumnMetaData) {
+                try {
+                    return JSON.stringify(new (columnMeta.type)());
+                } catch {
+                    return null;
+                }
             }
         }
 
