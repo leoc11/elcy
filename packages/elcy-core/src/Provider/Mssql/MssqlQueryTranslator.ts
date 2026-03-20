@@ -15,14 +15,14 @@ mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", 
 /**
  * Math
  */
-relationalQueryTranslator.registerMember(Math, "LN10", () => "LOG(10)", () => true);
-relationalQueryTranslator.registerMember(Math, "LN2", () => "LOG(2)", () => true);
-relationalQueryTranslator.registerMember(Math, "LOG10E", () => "LOG10(EXP(1))", () => true);
-relationalQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(EXP(1), 2)", () => true);
+mssqlQueryTranslator.registerMember(Math, "LN10", () => "LOG(10)", () => true);
+mssqlQueryTranslator.registerMember(Math, "LN2", () => "LOG(2)", () => true);
+mssqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG10(EXP(1))", () => true);
+mssqlQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(EXP(1), 2)", () => true);
 
-relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param) => `LEN(${qb.toString(exp.objectOperand, param)})`);
+mssqlQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param) => `LEN(${qb.toString(exp.objectOperand, param)})`);
 
-relationalQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CEILING(${qb.toString(exp.params[0], param)})`);
+mssqlQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CEILING(${qb.toString(exp.params[0], param)})`);
 
 /**
  * String
@@ -40,20 +40,20 @@ mssqlQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, pa
 mssqlQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `${qb.toOperandString(exp.leftOperand, param)}+${qb.toOperandString(exp.rightOperand, param)}`);
 mssqlQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `scope_identity()`, () => true);
 mssqlQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `coalesce(${exp.params.map((o) => qb.toString(o, param)).join(", ")})`);
-relationalQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
+mssqlQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
     return `(SELECT MAX(V) FROM (VALUES ${exp.params.map((o) => `(${qb.toString(o, param)})`).join(",")}) AS value(V))`;
 });
-relationalQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
+mssqlQueryTranslator.registerMethod(Math, "min", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);
     }
     return `(SELECT MIN(V) FROM (VALUES ${exp.params.map((o) => `(${qb.toString(o, param)})`).join(",")}) AS value(V))`;
 });
 
-relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
+mssqlQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
 
 
 /**
@@ -64,11 +64,11 @@ mssqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "getutcdat
 
 
 if (Decimal) {
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
+    mssqlQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
         const obQ = qb.toString(exp.objectOperand, param);
         return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
+    mssqlQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
         const obQ = qb.toString(exp.objectOperand, param);
         return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
     });

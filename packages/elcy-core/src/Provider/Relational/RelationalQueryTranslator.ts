@@ -180,10 +180,10 @@ relationalQueryTranslator.registerMethod(String.prototype, "concat", (qb, exp, p
 relationalQueryTranslator.registerMethod(String.prototype, "endsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE CONCAT(${qb.valueString("%")}, ${qb.toString(exp.params[0], param)}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "includes", (qb, exp, param) =>
     exp.params.length > 1
-        ? `(${qb.toString(exp.params[0], param)} + RIGHT(${qb.toString(exp.objectOperand, param)}, (LEN(${qb.toString(exp.objectOperand, param)}) - ${qb.toString(exp.params[0], param)})))`
+        ? `(${qb.toString(exp.params[0], param)} + RIGHT(${qb.toString(exp.objectOperand, param)}, (CHAR_LENGTH(${qb.toString(exp.objectOperand, param)}) - ${qb.toString(exp.params[0], param)})))`
         : `(${qb.toString(exp.objectOperand, param)} LIKE CONCAT(${qb.valueString("%")}, ${qb.toString(exp.params[0], param)}, ${qb.valueString("%")}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "indexOf", (qb, exp, param) => `(CHARINDEX(${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param) + (exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}) - 1)`);
-relationalQueryTranslator.registerMethod(String.prototype, "lastIndexOf", (qb, exp, param) => `(LEN(${qb.toString(exp.objectOperand, param)}) - CHARINDEX(${qb.toString(exp.params[0], param)}, REVERSE(${qb.toString(exp.objectOperand, param)})${(exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}))`);
+relationalQueryTranslator.registerMethod(String.prototype, "lastIndexOf", (qb, exp, param) => `(CHAR_LENGTH(${qb.toString(exp.objectOperand, param)}) - CHARINDEX(${qb.toString(exp.params[0], param)}, REVERSE(${qb.toString(exp.objectOperand, param)})${(exp.params.length > 1 ? `, ${qb.toString(exp.params[1], param)}` : "")}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "repeat", (qb, exp, param) => `REPLICATE(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`);
 relationalQueryTranslator.registerMethod(String.prototype, "replace", (qb, exp, param) => `REPLACE(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.params[1], param)})`);
 relationalQueryTranslator.registerMethod(String.prototype, "split", (qb, exp, param) => `STRING_SPLIT(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`);
