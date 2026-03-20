@@ -44,10 +44,10 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public override enclose(identity: string) {
         let requireEscape = this.namingStrategy.enableEscape;
         if (!requireEscape) {
-            requireEscape = identity.search(/[A-Z]/) !== -1;
+            requireEscape = identity.search(/[A-Z ]/) !== -1;
         }
         if (requireEscape && identity[0] !== "$") {
-            return "\"" + identity + "\"";
+            return this.encloseIdentifier(identity);
         }
         else {
             return identity;

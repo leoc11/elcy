@@ -102,12 +102,18 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return type;
     }
     public enclose(identity: string) {
-        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#") {
-            return "\"" + identity + "\"";
+        let requireEscape = this.namingStrategy.enableEscape;
+        if (!requireEscape) {
+            requireEscape = identity.search(/[ ]/) !== -1;
         }
-        else {
-            return identity;
+        if (requireEscape && identity[0] !== "@" && identity[0] !== "#") {
+            return this.encloseIdentifier(identity);
         }
+
+        return identity;
+    }
+    public encloseIdentifier(identity: string) {
+        return `"${identity}"`;
     }
     //#endregion
 
@@ -243,7 +249,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 for (const key of keys) {
                     obj[key] = data[key];
                 }
-                
+
                 return obj;
             }
             catch {

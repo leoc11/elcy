@@ -22,4 +22,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     ]);
 
     //#endregion
+    
+    override encloseIdentifier(identity: string): string {
+        return `\`${identity}\``;
+    }
 }

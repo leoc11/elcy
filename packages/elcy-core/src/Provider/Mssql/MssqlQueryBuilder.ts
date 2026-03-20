@@ -38,13 +38,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         [Number, () => ({ columnType: "decimal", group: "Decimal", option: { precision: 18, scale: 0 } })],
         [Boolean, () => ({ columnType: "bit", group: "Boolean" })]
     ]);
-    public override enclose(identity: string) {
-        if (this.namingStrategy.enableEscape && identity[0] !== "@" && identity[0] !== "#") {
-            return "[" + identity + "]";
-        }
-        else {
-            return identity;
-        }
+    public override encloseIdentifier(identity: string) {
+        return `[${identity}]`;
     }
     public override getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         if (insertExp.values.length <= 0) {
