@@ -134,6 +134,10 @@ export class MockConnection implements IConnection {
                                         }
 
                                         if (value) {
+                                            if (value instanceof Temporal.Instant || value instanceof Temporal.PlainDate || value instanceof Temporal.PlainTime) {
+                                                value = value.toString();
+                                            }
+
                                             valueMap[exp.leftOperand.propertyName] = value;
                                         }
                                     }
@@ -147,6 +151,10 @@ export class MockConnection implements IConnection {
                                             value = deferred.parameters.get(exp.leftOperand).value;
                                         }
                                         if (value) {
+                                            if (value instanceof Temporal.Instant || value instanceof Temporal.PlainDate || value instanceof Temporal.PlainTime) {
+                                                value = value.toString();
+                                            }
+
                                             valueMap[exp.rightOperand.propertyName] = value;
                                         }
                                     }
