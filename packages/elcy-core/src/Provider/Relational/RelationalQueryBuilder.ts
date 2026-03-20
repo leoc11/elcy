@@ -107,7 +107,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (!requireEscape) {
             requireEscape = identity.search(/[ ]/) !== -1;
         }
-        if (requireEscape && identity[0] !== "@" && identity[0] !== "#") {
+        if (requireEscape) {
             return this.encloseIdentifier(identity);
         }
 

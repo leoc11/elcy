@@ -46,7 +46,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         if (!requireEscape) {
             requireEscape = identity.search(/[A-Z ]/) !== -1;
         }
-        if (requireEscape && identity[0] !== "$") {
+        if (requireEscape) {
             return this.encloseIdentifier(identity);
         }
         else {
