@@ -31,7 +31,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
-import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isNull, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
@@ -1598,24 +1598,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return selectOperand;
                 }
                 case "toArray": {
-                    if (objectOperand instanceof GroupedExpression) {
-                        const groupExp = objectOperand.groupByExp;
-                        const entityExp = objectOperand.entity.clone();
-                        entityExp.alias = this.newAlias();
-                        const selectExp = new SelectExpression(entityExp);
-                        selectExp.selects = objectOperand.selects.map((o) => entityExp.columns.find((c) => c.propertyName === o.propertyName));
-
-                        let relation: IExpression<boolean>;
-                        const cloneMap = new Map();
-                        mapReplaceExp(cloneMap, objectOperand.entity, entityExp);
-                        for (const col of groupExp.groupBy) {
-                            const childCol = col instanceof ComputedColumnExpression ? col.clone(cloneMap) : entityExp.columns.find((o) => o.propertyName === col.propertyName);
-                            const logicalExp = new StrictEqualExpression(col, childCol);
-                            relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-                        }
-                        groupExp.addJoin(selectExp, relation, "LEFT");
-                        return selectExp;
-                    }
                     return objectOperand;
                 }
             }
