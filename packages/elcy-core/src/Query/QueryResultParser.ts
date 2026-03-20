@@ -251,6 +251,10 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
             do {
                 if (iterResult?.done) {
+                    if (isGroup) {
+                        const groupData = groupedDataMap.get(idKey) as IGroupArray<any, any>;
+                        yield groupData;
+                    }
                     return;
                 }
 
@@ -261,45 +265,51 @@ class SelectExpressionParserFactory<TE extends object, T> {
                         if (!id) {
                             id = {};
                             for (const col of groupSelectExp.groupBy) {
-                                id[col.columnName] = row[col.columnName];
+                                id[col.dataPropertyName] = row[col.dataPropertyName];
                             }
                             idKey = getRelationKey(id, Object.keys(id));
                         }
-                        const compareResult = compare(row, id);
+                        let compareResult = compare(row, id);
                         if (compareResult === 1) {
                             const groupData = groupedDataMap.get(idKey) as IGroupArray<any, any>;
-                            const keyExp = groupSelectExp.key;
-                            if (groupSelectExp.keyRelation) {
-                                if (groupSelectExp.keyRelation.isEmbedded) {
-                                    const parserFactory = embeddedParserMap[groupSelectExp.keyRelation.name];
-                                    const parser = parserFactory.getGenerator({
-                                        rows: [row]
-                                    });
-                                    const childEntities = Enumerable.from(parser(dbContext, parseMap));
-                                    groupData[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
-                                }
-                                else {
-                                    const parser = parseMap.get(groupSelectExp.keyRelation.child);
-                                    const childEntities = Enumerable.from(parser(dbContext, parseMap, id));
-                                    groupData[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
-                                }
-                            }
-                            else if (isColumnExp(keyExp)) {
-                                groupData.key = getColumnValue(keyExp, row, dbContext);
-                            }
-
-                            id = null;
                             yield groupData as T;
+
+                            compareResult = 0;
+                            id = {};
+                            for (const col of groupSelectExp.groupBy) {
+                                id[col.dataPropertyName] = row[col.dataPropertyName];
+                            }
+                            idKey = getRelationKey(id, Object.keys(id));
                         }
                         if (compareResult === -1) {
                             throw "unexpected";
                         }
                         if (compareResult === 0) {
                             const item: T = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
-                            let groupDatas: T[] = groupedDataMap.get(idKey);
+                            let groupDatas = groupedDataMap.get(idKey) as IGroupArray<T, unknown>;
                             if (!Array.isArray(groupDatas)) {
-                                groupDatas = [];
+                                groupDatas = [] as IGroupArray<T, unknown>;
                                 groupedDataMap.set(idKey, groupDatas);
+
+                                const keyExp = groupSelectExp.key;
+                                if (groupSelectExp.keyRelation) {
+                                    if (groupSelectExp.keyRelation.isEmbedded) {
+                                        const parserFactory = context.embeddedParserMap[groupSelectExp.keyRelation.name];
+                                        const parser = parserFactory.getGenerator({
+                                            rows: [row]
+                                        });
+                                        const childEntities = Enumerable.from(parser(dbContext, parseMap));
+                                        groupDatas[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
+                                    }
+                                    else {
+                                        const parser = parseMap.get(groupSelectExp.keyRelation.child);
+                                        const childEntities = Enumerable.from(parser(dbContext, parseMap, id));
+                                        groupDatas[groupSelectExp.keyRelation.name] = childEntities.find() ?? null;
+                                    }
+                                }
+                                else if (isColumnExp(keyExp)) {
+                                    groupDatas.key = getColumnValue(keyExp, row, dbContext);
+                                }
                             }
                             groupDatas.push(item);
                         }
