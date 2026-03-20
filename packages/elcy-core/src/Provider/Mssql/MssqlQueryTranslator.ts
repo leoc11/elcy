@@ -1,3 +1,4 @@
+import { Decimal } from "src/Data/Decimal";
 import { Uuid } from "../../Data/Uuid";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
@@ -60,3 +61,15 @@ relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, pa
  */
 mssqlQueryTranslator.registerMethod(DbFunction, "timestamp", (qb, exp, param) => "getdate()", () => true);
 mssqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "getutcdate()", () => true);
+
+
+if (Decimal) {
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
+        const obQ = qb.toString(exp.objectOperand, param);
+        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
+    });
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
+        const obQ = qb.toString(exp.objectOperand, param);
+        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
+    });
+}

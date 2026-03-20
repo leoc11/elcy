@@ -4,7 +4,6 @@ import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslat
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { Temporal } from "src/Data/Temporal";
-import { Decimal } from "src/Data/Decimal";
 
 export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"));
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -16,8 +15,6 @@ postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()"
 
 postgresqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG(10, EXP(1))");
 postgresqlQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(2, EXP(1))");
-
-relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param) => `CHAR_LENGTH(${qb.toString(exp.objectOperand, param)})`);
 
 if (Temporal) {
     /**
@@ -410,140 +407,5 @@ if (Temporal) {
         }
 
         return `CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)}`;
-    });
-}
-
-if (Decimal) {
-    /**
-     * Decimal
-     * TODO: toSD, toSignificantDigits, static methods
-     */
-    postgresqlQueryTranslator.registerType(Decimal, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as NUMERIC)`, o => o.params.length === 1);
-    postgresqlQueryTranslator.registerFn(Decimal, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as NUMERIC)`, o => o.params.length === 1);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "plus", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "add", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "minus", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}-${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "sub", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}-${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "times", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}*${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "mul", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}*${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "div", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "dividedBy", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "pow", (qb, exp, param) => `POWER(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toPower", (qb, exp, param) => `POWER(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "neg", (qb, exp, param) => `-${qb.toString(exp.objectOperand, param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "negated", (qb, exp, param) => `-${qb.toString(exp.objectOperand, param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "abs", (qb, exp, param) => `ABS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "absoluteValue", (qb, exp, param) => `ABS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "mod", (qb, exp, param) => `MOD(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "modulo", (qb, exp, param) => `MOD(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "sqrt", (qb, exp, param) => `SQRT(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "squareRoot", (qb, exp, param) => `SQRT(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cbrt", (qb, exp, param) => `CBRT(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cubeRoot", (qb, exp, param) => `CBRT(${qb.toString(exp.objectOperand, param)})`);
-
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "eq", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "equals", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "lt", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "lessThan", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "lte", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<=${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "lessThanOrEqualTo", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<=${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "gt", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "greaterThan", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "gte", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>=${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "greaterThanOrEqualTo", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>=${qb.toString(exp.params[0], param)}`);
-
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "round", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "floor", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "ceil", (qb, exp, param) => `CEILING(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "trunc", (qb, exp, param) => `TRUNC(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "truncated", (qb, exp, param) => `TRUNC(${qb.toString(exp.objectOperand, param)})`);
-
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "sin", (qb, exp, param) => `SIN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "sine", (qb, exp, param) => `SIN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cos", (qb, exp, param) => `COS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cosine", (qb, exp, param) => `COS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "tan", (qb, exp, param) => `TAN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "tangent", (qb, exp, param) => `TAN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "asin", (qb, exp, param) => `ASIN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseSine", (qb, exp, param) => `ASIN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "acos", (qb, exp, param) => `ACOS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseCosine", (qb, exp, param) => `ACOS(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "atan", (qb, exp, param) => `ATAN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseTangent", (qb, exp, param) => `ATAN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "sinh", (qb, exp, param) => `SINH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicSine", (qb, exp, param) => `SINH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cosh", (qb, exp, param) => `COSH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicCosine", (qb, exp, param) => `COSH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "tanh", (qb, exp, param) => `TANH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicTangent", (qb, exp, param) => `TANH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "asinh", (qb, exp, param) => `ASINH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicSine", (qb, exp, param) => `ASINH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "acosh", (qb, exp, param) => `ACOSH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicCosine", (qb, exp, param) => `ACOSH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "atanh", (qb, exp, param) => `ATANH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicTangent", (qb, exp, param) => `ATANH(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "exp", (qb, exp, param) => `EXP(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "naturalExponential", (qb, exp, param) => `EXP(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "ln", (qb, exp, param) => `LN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "naturalLogarithm", (qb, exp, param) => `LN(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "log", (qb, exp, param) => `LOG(${qb.toString(exp.objectOperand, param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "logarithm", (qb, exp, param) => `LOG(${qb.toString(exp.objectOperand, param)})`);
-
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "clamp", (qb, exp, param) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}), ${qb.toString(exp.params[1], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "clampedTo", (qb, exp, param) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}), ${qb.toString(exp.params[1], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "divToInt", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "dividedToIntegerBy", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toDP", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toDecimalPlaces", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
-
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toNumber", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} as DOUBLE PRECISION)`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toNearest", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})*${qb.toString(exp.params[0], param)}`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "toPrecision", (qb, exp, param) => {
-        const ob = qb.toString(exp.objectOperand, param);
-        const paramQ = exp.params.length ? qb.toString(exp.params[0], param) : "0";
-        return `CASE WHEN ${ob}=0 THEN 0
-ELSE ROUND(${ob}, ${paramQ} - FLOOR(LOG(10, ABS(${ob}))) - 1)
-END`;
-    });
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "cmp", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        const paramQ = qb.toString(exp.params[0], param);
-        return `CASE WHEN ${obQ}<${paramQ} THEN -1 WHEN ${obQ}>${paramQ} THEN 1 ELSE 0 END`;
-    }, o => o.params.length === 1);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "comparedTo", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        const paramQ = qb.toString(exp.params[0], param);
-        return `CASE WHEN ${obQ}<${paramQ} THEN -1 WHEN ${obQ}>${paramQ} THEN 1 ELSE 0 END`;
-    }, o => o.params.length === 1);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE CHAR_LENGTH(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
-    });
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE CHAR_LENGTH(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
-    });
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isInt", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `${obQ}=TRUNC(${obQ})`;
-    });
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isInteger", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `${obQ}=TRUNC(${obQ})`;
-    });
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isNeg", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<0`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isNegative", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<0`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isPos", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>0`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isPositive", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>0`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isZero", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=0`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isFinite", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} ~ '^-?[0-9]+(\.[0-9]+)?$'`);
-    postgresqlQueryTranslator.registerMethod(Decimal.prototype, "isNaN", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} !~ '^-?[0-9]+(\.[0-9]+)?$'`);
-
-    postgresqlQueryTranslator.registerMethod(Decimal, "random", (qb, exp, param) => {
-        if (!exp.params.length) {
-            return `RANDOM()`;
-        }
-        const paramQ = qb.toString(exp.params[0], param);
-        return `FLOOR(RANDOM()* 10^${paramQ})/10^${paramQ}`;
     });
 }
