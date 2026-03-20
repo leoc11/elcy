@@ -9,7 +9,7 @@ export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
-mssqlQueryTranslator.registerType(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
+mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
 
 /**
  * Math

@@ -10,6 +10,7 @@ export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
+relationalQueryTranslator.registerConstructor(Date, () => `NOW()`, exp => exp.params.length === 0);
 
 postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()");
 
