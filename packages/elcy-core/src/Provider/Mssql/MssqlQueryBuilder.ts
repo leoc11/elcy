@@ -37,6 +37,7 @@ import { GreaterEqualExpression } from "src/ExpressionBuilder/Expression/Greater
 import { LessThanExpression } from "src/ExpressionBuilder/Expression/LessThanExpression";
 import { LessEqualExpression } from "src/ExpressionBuilder/Expression/LessEqualExpression";
 import { InstanceofExpression } from "src/ExpressionBuilder/Expression/InstanceofExpression";
+import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -270,6 +271,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 case expression instanceof OrExpression:
                 case expression instanceof EqualExpression:
                 case expression instanceof StrictEqualExpression:
+                case expression instanceof StrictNotEqualExpression:
                 case expression instanceof NotEqualExpression:
                 case expression instanceof NotExpression:
                 case expression instanceof GreaterThanExpression:
