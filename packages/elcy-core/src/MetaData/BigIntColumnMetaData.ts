@@ -9,9 +9,9 @@ export class BigIntColumnMetaData<TE extends object = object> extends ColumnMeta
         super(entityMeta, type ?? BigInt);
     }
     public autoIncrement: boolean;
-    public columnType: BigIntColumnType = "bigint";
+    public override columnType: BigIntColumnType = "bigint";
     public size?: number;
-    public applyOption(columnMeta: BigIntColumnMetaData<TE>) {
+    public override applyOption(columnMeta: BigIntColumnMetaData<TE>) {
         if (typeof columnMeta.autoIncrement !== "undefined") {
             this.autoIncrement = columnMeta.autoIncrement;
         }

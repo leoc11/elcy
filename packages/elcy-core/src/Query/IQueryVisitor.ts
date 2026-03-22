@@ -17,5 +17,5 @@ export interface IQueryVisitor {
     setDefaultBehaviour<T extends object>(selectExp: SelectExpression<T>): void;
     setParameter(flatParameterStacks: { [key: string]: any }): void;
     visit<T>(exp: IExpression<T>, param: IQueryVisitParameter): IExpression<T>;
-    visitFunction<T>(exp: FunctionExpression<T>, parameters: IExpression[], param: IQueryVisitParameter): IExpression<T>;
+    visitFunction<T, TArgs extends readonly unknown[]>(exp: FunctionExpression<T, TArgs>, parameters: { [K in keyof TArgs]: IExpression<TArgs[K]>; }, param: IQueryVisitParameter): IExpression<T>;
 }

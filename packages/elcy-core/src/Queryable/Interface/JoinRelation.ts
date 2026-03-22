@@ -5,10 +5,11 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { isColumnExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
+import { IEntityExpression } from "../QueryExpression/IEntityExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 
-export class JoinRelation<T extends object = object, TChild extends object = object> implements ISelectRelation<T, TChild> {
+export class JoinRelation<TE extends object = object, TChild extends object = object> implements ISelectRelation<TE, TChild> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -35,8 +36,8 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
         this._childColumns = this._parentColumns = this._isManyManyRelation = null;
     }
     constructor();
-    constructor(parent: SelectExpression<T, any>, child: SelectExpression<TChild, any>, relations: IExpression<boolean>, type: JoinType);
-    constructor(parent?: SelectExpression<T, any>, child?: SelectExpression<TChild, any>, relations?: IExpression<boolean>, type?: JoinType) {
+    constructor(parent: SelectExpression<TE, any>, child: SelectExpression<TChild, any>, relations: IExpression<boolean>, type: JoinType);
+    constructor(parent?: SelectExpression<TE, any>, child?: SelectExpression<TChild, any>, relations?: IExpression<boolean>, type?: JoinType) {
         if (parent) {
             this.parent = parent;
             this.child = child;
@@ -49,12 +50,12 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
     //#endregion
 
     //#region Properties
-    public parent: SelectExpression<T>;
+    public parent: SelectExpression<TE>;
     public type: JoinType;
-    private _childColumns: IColumnExpression<TChild>[];
+    private _childColumns: IColumnExpression[];
     private _isManyManyRelation: boolean;
 
-    private _parentColumns: IColumnExpression<T>[];
+    private _parentColumns: IColumnExpression[];
     private _relations: IExpression<boolean>;
     //#endregion
 
@@ -76,18 +77,17 @@ export class JoinRelation<T extends object = object, TChild extends object = obj
         if (this.relation) {
             visitExpression(this.relation, (exp: IExpression) => {
                 if (isColumnExp(exp)) {
-                    const colExp = exp;
-                    if (this.child.entity === colExp.entity) {
-                        this._childColumns.push(colExp);
+                    if (this.child.entity === exp.entity as unknown as IEntityExpression<TChild>) {
+                        this._childColumns.push(exp);
                     }
-                    else if (this.parent.entity === colExp.entity) {
-                        this._parentColumns.push(colExp);
+                    else if (this.parent.entity === exp.entity as unknown as IEntityExpression<TE>) {
+                        this._parentColumns.push(exp);
                     }
-                    else if (this.child.allSelects.map((o) => o.entity).includes(colExp.entity)) {
-                        this._childColumns.push(colExp);
+                    else if (this.child.allSelects.map((o) => o.entity).includes(exp.entity)) {
+                        this._childColumns.push(exp);
                     }
-                    else if (this.parent.allSelects.map((o) => o.entity).includes(colExp.entity)) {
-                        this._parentColumns.push(colExp);
+                    else if (this.parent.allSelects.map((o) => o.entity).includes(exp.entity)) {
+                        this._parentColumns.push(exp);
                     }
                 }
                 else if (!(exp instanceof AndExpression || exp instanceof EqualExpression || exp instanceof StrictEqualExpression)) {

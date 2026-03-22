@@ -21,7 +21,7 @@ export class CheckConstraintMetaData<TE extends object> implements ICheckConstra
         }
         return this._definition;
     }
-    constructor(public name: string, public readonly entity: IEntityMetaData<TE, any>, definition: ((entity: TE) => boolean) | IExpression<boolean>) {
+    constructor(public name: string, public readonly entity: IEntityMetaData<TE>, definition: ((entity: TE) => boolean) | IExpression<boolean>) {
         if (definition instanceof Function) {
             this.checkFn = definition;
         }
@@ -39,18 +39,18 @@ export class CheckConstraintMetaData<TE extends object> implements ICheckConstra
 
         return queryBuilder.toLogicalString(this.definition);
     }
-    protected toDefinitionExpression(fnExp: FunctionExpression<boolean>) {
+    protected toDefinitionExpression(fnExp: FunctionExpression<boolean, [TE]>) {
         const entityParamExp = fnExp.params[0];
         const entityExp = new EntityExpression(this.entity.type, entityParamExp.name);
-        replaceExpression(fnExp.body, (exp) => {
+        replaceExpression(fnExp.body, <IExpression>(exp: IExpression) => {
             if (exp instanceof MemberAccessExpression && exp.objectOperand === entityParamExp) {
                 const columnMeta = this.entity.columns.find((o) => o.propertyName === exp.memberName);
                 if (columnMeta instanceof ComputedColumnMetaData) {
                     const fnExpClone = columnMeta.functionExpression.clone();
-                    replaceExpression(fnExpClone, (exp2) => exp2 === fnExpClone.params[0] ? entityParamExp : exp2);
-                    return new ComputedColumnExpression(entityExp, fnExpClone.body, columnMeta.propertyName);
+                    replaceExpression(fnExpClone, <IExpression>(exp2: IExpression) => exp2 === fnExpClone.params[0] ? entityParamExp as IExpression : exp2);
+                    return new ComputedColumnExpression(entityExp, fnExpClone.body, columnMeta.propertyName) as IExpression;
                 }
-                return new ColumnExpression(entityExp, columnMeta);
+                return new ColumnExpression(entityExp, columnMeta) as IExpression;
             }
             return exp;
         });

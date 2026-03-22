@@ -6,9 +6,9 @@ export class StringColumnMetaData<TE extends object = object> extends ColumnMeta
     constructor(entityMeta: IEntityMetaData<TE>) {
         super(entityMeta, String);
     }
-    public columnType: StringColumnType = "nvarchar";
+    public override columnType: StringColumnType = "nvarchar";
     public length?: number;
-    public applyOption(columnMeta: StringColumnMetaData<TE>) {
+    public override applyOption(columnMeta: StringColumnMetaData<TE>) {
         if (typeof columnMeta.length !== "undefined") {
             this.length = columnMeta.length;
         }

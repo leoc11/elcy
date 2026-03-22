@@ -34,7 +34,7 @@ export class Uuid extends Uint8Array {
     public toJSON() {
         return this.toString();
     }
-    public toString() {
+    public override toString() {
         let res = "";
         let i = 0;
         let stopper = 4;
@@ -52,7 +52,7 @@ export class Uuid extends Uint8Array {
         }
         return res;
     }
-    public valueOf() {
+    public override valueOf() {
         return this;
     }
     protected parse(uuid: string) {

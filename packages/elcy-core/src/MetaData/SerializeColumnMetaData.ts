@@ -3,7 +3,7 @@ import { SerializeColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export class SerializeColumnMetaData<TE extends object = object, T = unknown> extends ColumnMetaData<TE, T> {
+export class SerializeColumnMetaData<TE extends object = object, T extends object = object> extends ColumnMetaData<TE, T> {
     constructor(entityMeta?: IEntityMetaData<TE>, type?: IObjectType<T>) {
         super(entityMeta, type);
     }

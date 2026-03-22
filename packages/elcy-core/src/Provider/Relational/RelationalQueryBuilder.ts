@@ -1,7 +1,7 @@
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { DeleteMode, TimeZoneHandling } from "../../Common/StringType";
-import { ArrayView, GenericType, SetterObj, ValueType } from "../../Common/Type";
+import { ArrayView, GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
@@ -160,7 +160,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return "\n" + (Array(indent + 1).join("\t"));
     }
 
-    public resolveTranslator<T = any>(object: T, memberName?: keyof T) {
+    public resolveTranslator<T = any>(object: T, memberName?: StringKeyOf<T>) {
         return this.translator.resolve(object, memberName);
     }
     public toLogicalString(expression: IExpression<boolean>, param?: IQueryBuilderParameter) {
@@ -176,7 +176,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return this.getColumnQueryString(column, param);
         }
         else if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
-            expression = new TernaryExpression(expression, new ValueExpression(true), new ValueExpression(false));
+            expression = new TernaryExpression(expression as IExpression<boolean>, new ValueExpression(true), new ValueExpression(false));
         }
 
         return this.toString(expression, param);
@@ -508,23 +508,25 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return null;
     }
-    protected getColumnQueryString(column: IColumnExpression, param?: IQueryBuilderParameter) {
+    protected getColumnQueryString<TE extends object>(column: IColumnExpression<TE>, param?: IQueryBuilderParameter) {
         if (param && param.queryExpression) {
             if (param.queryExpression instanceof SelectExpression) {
                 const commandExp = param.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
+                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column as unknown as IColumnExpression))) {
                         return this.toOperandString(column.expression, param);
                     }
                     return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
                 }
                 else {
+                    // need refactor, coz builder should not concern itself with this. it is visitor job. build should only do minimal work.
+                    // now it needed coz select column from join table join child table.
                     let childSelect = commandExp.resolvedJoins.map((o) => o.child).find((selectExp) => selectExp.allSelects.some((o) => o.entity.alias === column.entity.alias));
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
-                    const useAlias = !commandExp.projectedColumns.includes(column);
+                    const useAlias = !commandExp.projectedColumns.includes(column as unknown as IColumnExpression);
                     return this.enclose(childSelect.entity.alias) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
@@ -648,7 +650,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         result = result.concat(includedDeletes);
         return result;
     }
-    protected getEntityQueryString(entity: IEntityExpression, param?: IQueryBuilderParameter): string {
+    protected getEntityQueryString<TE extends object>(entity: IEntityExpression<TE>, param?: IQueryBuilderParameter): string {
         let entityQ = "";
         if (entity instanceof UnionExpression) {
             entityQ = `(${this.newLine(1)}` +
@@ -695,7 +697,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return schemaString + this.enclose(entityExp.name);
     }
-    protected getInsertIntoQuery<T>(insertIntoExp: InsertIntoExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getInsertIntoQuery<TE extends object>(insertIntoExp: InsertIntoExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: insertIntoExp,
@@ -775,7 +777,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected getJoinQueryString<T>(joins: IEnumerable<JoinRelation<T, any>>, param?: IQueryBuilderParameter): string {
+    protected getJoinQueryString<TE extends object>(joins: IEnumerable<JoinRelation<TE>>, param?: IQueryBuilderParameter): string {
         let result = "";
         if (joins.some(() => true)) {
             result += this.newLine();
@@ -793,7 +795,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString(select: SelectExpression, param?: IQueryBuilderParameter): string {
+    protected getPagingQueryString<TE extends object>(select: SelectExpression<TE>, param?: IQueryBuilderParameter): string {
         let result = "";
         if (select.orders.length <= 0) {
             if (select.distinct) {
@@ -821,12 +823,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return paramObj;
     }
-    protected getParentJoinQueryString<T>(parentRel: ISelectRelation, param?: IQueryBuilderParameter) {
+    protected getParentJoinQueryString(parentRel: ISelectRelation, param?: IQueryBuilderParameter) {
         if (!(parentRel instanceof IncludeRelation)) {
             return "";
         }
 
-        let parentRelation = parentRel;
+        let parentRelation = parentRel as ISelectRelation;
         while (parentRelation) {
             ArrayExtension.add(parentRel.child.paramExps, ...parentRel.parent.paramExps);
             parentRelation = parentRelation.parent?.parentRelation;
@@ -840,7 +842,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const relationString = this.toLogicalString(parentRel.relation, param);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
     }
-    protected getSelectQuery<T extends object>(selectExp: SelectExpression<T>, option: IQueryOption, parameters: IQueryParameterMap, skipInclude = false): IQuery[] {
+    protected getSelectQuery<TE extends object>(selectExp: SelectExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap, skipInclude = false): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: selectExp,
@@ -886,7 +888,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             selectExp.joins.push(joinRel);
         }
 
-        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation, param);
+        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation as unknown as ISelectRelation, param);
 
         let selectQuerySuffix = "";
         if (selectExp.where) {
@@ -1053,8 +1055,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             option: option
         };
 
-        const setQuery = Object.keys(updateExp.setter).map((o: keyof T) => {
-            const value = updateExp.setter[o];
+        const setQuery = Object.keys(updateExp.setter).map((o) => {
+            const value = updateExp.setter[o as keyof T];
             const valueStr = this.toOperandString(value, param);
             const column = updateExp.entity.columns.find((c) => c.propertyName === o);
             return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
@@ -1077,7 +1079,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
                 }
 
-                const valueExp = new AdditionExpression(updateExp.entity.versionColumn, new ValueExpression(1));
+                // TODO: this is wrong, it should be handled by database
+                const valueExp = new AdditionExpression<number>(updateExp.entity.versionColumn, new ValueExpression(1));
                 const valueStr = this.toString(valueExp, param);
                 setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
             }
@@ -1099,7 +1102,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected getUpsertQuery(upsertExp: UpsertExpression, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const pkValues: string[] = [];
         const joinString: string[] = [];
         const param: IQueryBuilderParameter = {
@@ -1201,7 +1204,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (!translator) {
             try {
                 const value = ExpressionExecutor.execute(expression);
-                return this.valueString(value);
+                return this.valueString(value as ValueType);
             } catch (e) {
                 throw new Error(`instantiate "${expression.type.name}" not supported`);
             }
@@ -1222,7 +1225,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         throw new Error(`${exp.memberName} not supported.`);
     }
-    protected toMethodCallString<TType, KProp extends keyof TType, TResult = any>(exp: MethodCallExpression<TType, KProp, TResult>, param?: IQueryBuilderParameter): string {
+    protected toMethodCallString<TE, K extends MethodKey<TE>, T = MethodReturnType<TE, K>>(exp: MethodCallExpression<TE, K, T>, param?: IQueryBuilderParameter): string {
         let translator: IQueryTranslatorItem;
         if (exp.objectOperand instanceof SelectExpression) {
             translator = this.resolveTranslator(SelectExpression.prototype, exp.methodName as any);

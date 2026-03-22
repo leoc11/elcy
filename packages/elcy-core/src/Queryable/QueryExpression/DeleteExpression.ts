@@ -11,13 +11,14 @@ import { JoinRelation } from "../Interface/JoinRelation";
 import { EntityExpression } from "./EntityExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IOrderExpression } from "./IOrderExpression";
-import { IQueryExpression, IQueryIncludeRelation } from "./IQueryExpression";
+import { IQueryExpression } from "./IQueryExpression";
+import { IQueryIncludeRelation } from "./IQueryIncludeRelation";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IDeleteIncludeRelation<T = unknown, TChild = unknown> extends IQueryIncludeRelation<T, TChild, DeleteExpression<TChild>> {}
-export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
+export interface IDeleteIncludeRelation<T extends object = object, TChild extends object = object> extends IQueryIncludeRelation<T, TChild, DeleteExpression<TChild>, DeleteExpression<T>> { }
+export class DeleteExpression<TE extends object = object> implements IQueryExpression<TE> {
     public get entity() {
-        return this.select.entity as EntityExpression<T>;
+        return this.select.entity as EntityExpression<TE>;
     }
     public get joins() {
         return this.select.joins;
@@ -40,9 +41,9 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<T>, deleteMode?: IExpression<DeleteMode>);
-    constructor(select: SelectExpression<T>, deleteMode?: IExpression<DeleteMode>);
-    constructor(selectOrEntity: IEntityExpression<T> | SelectExpression<T>, deleteMode?: IExpression<DeleteMode>) {
+    constructor(entity: IEntityExpression<TE>, deleteMode?: IExpression<DeleteMode>);
+    constructor(select: SelectExpression<TE>, deleteMode?: IExpression<DeleteMode>);
+    constructor(selectOrEntity: IEntityExpression<TE> | SelectExpression<TE>, deleteMode?: IExpression<DeleteMode>) {
         this.deleteMode = deleteMode;
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
@@ -58,12 +59,12 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
         this.select.includes = [];
     }
     public deleteMode?: IExpression<DeleteMode>;
-    public includes: Array<IDeleteIncludeRelation<T>> = [];
-    public parentRelation: IDeleteIncludeRelation<unknown, T>;
-    public select: SelectExpression<T>;
-    public addInclude<TChild>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<T, TChild>): IDeleteIncludeRelation<T, TChild>;
-    public addInclude<TChild>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<T, TChild>;
-    public addInclude<TChild>(child: DeleteExpression<TChild>, relationMetaOrRelations: RelationMetaData<T, TChild> | IExpression<boolean>): IDeleteIncludeRelation<T, TChild> {
+    public includes: Array<IDeleteIncludeRelation<TE>> = [];
+    public parentRelation: IDeleteIncludeRelation<object, TE>;
+    public select: SelectExpression<TE>;
+    public addInclude<TChild extends object>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<TE, TChild>): IDeleteIncludeRelation<TE, TChild>;
+    public addInclude<TChild extends object>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<TE, TChild>;
+    public addInclude<TChild extends object>(child: DeleteExpression<TChild>, relationMetaOrRelations: RelationMetaData<TE, TChild> | IExpression<boolean>): IDeleteIncludeRelation<TE, TChild> {
         let relations: IExpression<boolean>;
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
@@ -82,23 +83,24 @@ export class DeleteExpression<T = unknown> implements IQueryExpression<void> {
         else {
             relations = relationMetaOrRelations;
         }
-        child.parentRelation = {
-            child,
+        const deleteRelation: IDeleteIncludeRelation<TE, TChild> = {
+            child: child,
             parent: this,
             relation: relations
         };
-        this.includes.push(child.parentRelation as IDeleteIncludeRelation<T, unknown>);
-        return child.parentRelation as IDeleteIncludeRelation<T, TChild>;
+        child.parentRelation = deleteRelation as unknown as IDeleteIncludeRelation<object, TChild>;
+        this.includes.push(deleteRelation as unknown as IDeleteIncludeRelation<TE, object>);
+        return deleteRelation;
     }
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): JoinRelation<T, any>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | IExpression<boolean>, type?: JoinType) {
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<TE, TChild>, toOneJoinType?: JoinType): JoinRelation<TE, any>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType): JoinRelation<TE, any>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<TE, TChild> | IExpression<boolean>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as IExpression<boolean>, type);
     }
     public addWhere(expression: IExpression<boolean>) {
         this.select.addWhere(expression);
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<T> {
+    public clone(replaceMap?: Map<IExpression, IExpression>): DeleteExpression<TE> {
         if (!replaceMap) {
             replaceMap = new Map();
         }

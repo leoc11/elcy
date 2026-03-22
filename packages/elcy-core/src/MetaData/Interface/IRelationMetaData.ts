@@ -1,5 +1,5 @@
 import { CompleteRelationshipType, ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { StringKeyOf, ValueType } from "../../Common/Type";
+import { StringKeyOf } from "../../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
 import { IBaseRelationMetaData } from "./IBaseRelationMetaData";
 import { IColumnMetaData } from "./IColumnMetaData";
@@ -15,12 +15,12 @@ export interface IRelationMetaData<TSource extends object = object, TTarget exte
     /**
      * Column used in relation that has been mapped to an entity's property.
      */
-    mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource, ValueType>>;
+    mappedRelationColumns?:  Enumerable<IColumnMetaData<TSource>>;
     name?: string;
     nullable?: boolean;
     propertyName?: StringKeyOf<TSource>;
-    relationColumns: Array<IColumnMetaData<TSource, ValueType>>;
-    relationMaps?: Map<IColumnMetaData<TSource, ValueType>, IColumnMetaData<TTarget, ValueType>>;
+    relationColumns: Array<IColumnMetaData<TSource>>;
+    relationMaps?: Map<IColumnMetaData<TSource>, IColumnMetaData<TTarget>>;
     relationType: TRel;
     reverseRelation?: IRelationMetaData<TTarget, TSource>;
     source: IEntityMetaData<TSource>;

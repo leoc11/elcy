@@ -5,8 +5,8 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
 export class IntegerColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, number> {
-    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<number>) {
-        super(entityMeta, Number);
+    constructor(entityMeta?: IEntityMetaData<TE>, type: GenericType<number> = Number) {
+        super(entityMeta, type);
     }
     public autoIncrement: boolean;
     public override columnType: IntColumnType = "int";

@@ -24,7 +24,7 @@ export class BitwiseXorExpression extends BitwiseExpression implements IBinaryOp
         return hashCodeAdd(hashCode("^", this.leftOperand.hashCode()), this.rightOperand.hashCode());
     }
 
-    public toString(): string {
+    public override toString(): string {
         return "(" + this.leftOperand.toString() + " ^ " + this.rightOperand.toString() + ")";
     }
 }

@@ -2,7 +2,7 @@ import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, GenericType, IObjectType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, GenericType, IObjectType, MethodKey, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -46,16 +46,14 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     public get queryOption(): IQueryOption {
         return this.parent ? this.parent.queryOption : {};
     }
-    constructor(public type: GenericType<T>, parent?: Queryable) {
+    constructor(public type: GenericType<T>, protected parent?: Queryable) {
         if (parent) {
             this.parent = parent;
         }
     }
-    async *[Symbol.asyncIterator](): AsyncIterator<T, any, any> {
+    async *[Symbol.asyncIterator](): AsyncIterator<T> {
         yield* await this.toEnumerable();
     }
-
-    protected parent: Queryable;
     public async every(predicate: (item: QueryableChain<T>) => boolean) {
         const query = this.deferredEvery(predicate);
         return await query.execute();
@@ -122,7 +120,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const methodExpression = new MethodCallExpression(commandQuery, "every", metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -169,7 +167,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (predicate) {
@@ -178,7 +176,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const methodExpression = new MethodCallExpression(commandQuery, "some", metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -240,12 +238,12 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "includes", [new ValueExpression(item)]);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -292,12 +290,12 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const methodExpression = new MethodCallExpression(commandQuery, "count", []);
+            const methodExpression = new MethodCallExpression(commandQuery, "count" as MethodKey<T[]>, []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -305,7 +303,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const queryBuilder = this.dbContext.queryBuilder;
             queryCache = {
                 commandQuery: commandQuery,
-                resultParser: this.dbContext.getQueryResultParser(commandQuery, queryBuilder)
+                resultParser: this.dbContext.getQueryResultParser<number>(commandQuery, queryBuilder)
             };
             if (!this.queryOption.noQueryCache && cacheManager) {
                 cacheManager.set(cacheKey, queryCache);
@@ -323,14 +321,14 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         return query;
     }
     public deferredDelete(mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): DeferredQuery<number>;
+    public deferredDelete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode): DeferredQuery<number>;
     public deferredDelete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
-        let queryCache: IQueryCache<T>;
+    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
+        let queryCache: IQueryCache<void>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let predicate: FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean);
+        let predicate: FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean);
         if (modeOrPredicate) {
             if (modeOrPredicate instanceof FunctionExpression) {
                 predicate = modeOrPredicate;
@@ -346,7 +344,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         if (predicate) {
             let q: Queryable<T> = this;
             if (!mode) {
-                const entityMeta = getEntityMetadata(this.type);
+                const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
                 mode = entityMeta?.deletedColumn ? "soft" : "hard";
             }
 
@@ -363,7 +361,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<void>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -371,14 +369,14 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         }
 
         if (!queryCache) {
-            if (!getEntityMetadata(this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
+            const selectExp = this.buildQuery(visitor) as SelectExpression<object, T>;
 
             const commandQuery = new DeleteExpression(selectExp, new SqlParameterExpression(new ParameterExpression("__deleteMode")));
             if (Diagnostic.enabled) {
@@ -395,7 +393,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
 
         const params = this.buildParameter(queryCache.commandQuery, flatParams);
         if (mode) {
-            const paramExp = (queryCache.commandQuery as DeleteExpression).deleteMode as SqlParameterExpression;
+            const paramExp = (queryCache.commandQuery as DeleteExpression<object>).deleteMode as SqlParameterExpression;
             params.set(paramExp, { value: mode });
         }
         if (Diagnostic.enabled) {
@@ -416,15 +414,15 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, "Find only support entity queryable");
             }
 
-            const param = new ParameterExpression("o", this.type);
-            const paramId = new ParameterExpression("id", id.constructor as any);
+            const param = new ParameterExpression("o", this.type as GenericType<T & object>);
+            const paramId = new ParameterExpression("id", id.constructor as GenericType);
             let andExp: IExpression<boolean>;
             if (isValueType) {
                 andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys?.[0]?.propertyName), paramId);
             }
             else {
                 for (const pk of dbSet.primaryKeys) {
-                    const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId, pk.propertyName));
+                    const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId as IExpression<object>, pk.propertyName));
                     andExp = andExp ? new AndExpression(andExp, d) : d;
                 }
             }
@@ -455,7 +453,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 const visitor = this.dbContext.queryVisitor;
                 visitor.queryOption = this.queryOption;
                 visitor.setParameter(flatParams);
-                let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+                let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
                 const metParams = [];
                 if (predicate) {
                     metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
@@ -463,7 +461,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 const methodExpression = new MethodCallExpression(commandQuery, "find", metParams);
                 const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
                 visitor.visit(methodExpression, param);
-                commandQuery = param.selectExpression;
+                commandQuery = param.selectExpression as SelectExpression<object, T>;
                 if (Diagnostic.enabled) {
                     Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
                 }
@@ -492,7 +490,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             return query;
         }
     }
-    public deferredInsertInto<TT>(type: IObjectType<TT>) {
+    public deferredInsertInto<TT extends object>(type: IObjectType<TT>) {
         const targetSet = this.dbContext.set(type);
 
         let queryCache: IQueryCache<T>;
@@ -515,20 +513,20 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         }
 
         if (!queryCache) {
-            if (!getEntityMetadata(this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const selectExp = this.buildQuery(visitor) as SelectExpression<T>;
-            if (!this.dbContext.entityTypes.includes(selectExp.itemExpression.type as IObjectType<T>)) {
+            const selectExp = this.buildQuery(visitor) as SelectExpression<object, TT>;
+            if (!this.dbContext.entityTypes.includes(selectExp.itemExpression.type as IObjectType<TT>)) {
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
             }
 
             const entityExp = new EntityExpression(targetSet.type, visitor.newAlias());
-            const commandQuery = new InsertIntoExpression(entityExp, selectExp);
+            const commandQuery = new InsertIntoExpression<TT>(entityExp, selectExp);
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -576,16 +574,16 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
             }
-            const methodExpression = new MethodCallExpression(commandQuery, "max", metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "max" as MethodKey<T[]>, metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -635,16 +633,16 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
             }
-            const methodExpression = new MethodCallExpression(commandQuery, "min", metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "min" as MethodKey<T[]>, metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -692,16 +690,16 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
             }
-            const methodExpression = new MethodCallExpression(commandQuery, "sum", metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "sum" as MethodKey<T[]>, metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -752,16 +750,16 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const metParams = [];
             if (selector) {
                 metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
             }
-            const methodExpression = new MethodCallExpression(commandQuery, "avg", metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "avg" as MethodKey<T[]>, metParams);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -809,12 +807,12 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "join", [new ValueExpression(separator)], String);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -934,7 +932,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            let commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
 
             const paramExp = new ParameterExpression("m");
             const selector = new ObjectValueExpression<{ Key: K, Value: V }>({});
@@ -948,7 +946,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             const methodExpression = new MethodCallExpression(commandQuery, "map", [selectorExp]);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression;
+            commandQuery = param.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
             }
@@ -976,8 +974,8 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: QueryableChain<T>) => ValueType) }) {
-        let queryCache: IQueryCache<T>;
+    public deferredUpdate(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }) {
+        let queryCache: IQueryCache<void>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
@@ -989,7 +987,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<void>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -997,25 +995,25 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         }
 
         if (!queryCache) {
-            if (!getEntityMetadata(this.type)) {
+            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
                 throw new Error(`Only entity supported`);
             }
 
             const visitor = this.dbContext.queryVisitor;
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
-            const commandQuery = this.buildQuery(visitor) as SelectExpression<T>;
+            const commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
 
             const setterExp: SetterObj<T> = {};
             for (const prop in setter) {
                 const val = setter[prop];
                 if (val instanceof Function) {
-                    const funcExp = ExpressionBuilder.parse(val as (item: QueryableChain<T>) => ValueType, [this.type], this.parameters);
+                    const funcExp = ExpressionBuilder.parse(val, [this.type], this.parameters);
                     setterExp[prop] = visitor.visitFunction(funcExp, [commandQuery.getItemExpression()], { selectExpression: commandQuery, scope: "queryable" });
                 }
                 else {
-                    setterExp[prop] = new ValueExpression(val as T[StringKeyOf<T>]);
+                    setterExp[prop] = new ValueExpression(val as T[StringKeyOf<T>] & ValueType);
                 }
             }
 
@@ -1043,10 +1041,10 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     }
 
     public async delete(mode?: DeleteMode): Promise<number>;
-    public async delete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): Promise<number>;
+    public async delete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode): Promise<number>;
     public async delete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): Promise<number>;
-    public async delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
-        const query = this.deferredDelete(modeOrPredicate as FunctionExpression<boolean, T>, mode);
+    public async delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
+        const query = this.deferredDelete(modeOrPredicate as FunctionExpression<boolean, [T]>, mode);
         return await query.execute();
     }
     public async find(predicate?: (item: QueryableChain<T>) => boolean): Promise<T>;
@@ -1059,11 +1057,11 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         return this.parent ? this.parent.flatQueryParameter(param) : {};
     }
     public abstract hashCode(): number;
-    public async insertInto<TT>(type: IObjectType<TT>) {
+    public async insertInto<TT extends object>(type: IObjectType<TT>) {
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }
-    public async max(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
+    public async max(...args: T extends number ? [selector?: (item: QueryableChain<T>) => T] : [selector: (item: QueryableChain<T>) => number]) {
         const query = this.deferredMax(...args);
         return await query.execute();
     }
@@ -1146,7 +1144,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const params = this.buildParameter(queryCache.commandQuery, flatParams);
         return queryBuilder.toString(queryCache.commandQuery, { parameters: params });
     }
-    public async update(setter: { [key in keyof T]?: T[key] | ((item: QueryableChain<T>) => ValueType) }) {
+    public async update(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }) {
         const query = this.deferredUpdate(setter);
         return await query.execute();
     }

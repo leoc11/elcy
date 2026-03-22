@@ -1,6 +1,5 @@
 import { RelationshipType } from "../../Common/StringType";
-import { ValueType } from "../../Common/Type";
-import { Enumerable, GroupedEnumerable } from "@elcy/enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { IEnumerable } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
@@ -12,9 +11,11 @@ import { GroupedExpression } from "./GroupedExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
+import { IGroupArray } from "src/Common/IGroupArray";
+import { ISelectRelation } from "../Interface/ISelectRelation";
 
-export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, GroupedEnumerable<K, T>> {
-    public get allColumns() {
+export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, IGroupArray<T, K>> {
+    public override get allColumns() {
         return Enumerable.from(this.groupBy).concat(super.allColumns);
     }
     public override get resolvedOrders(): IEnumerable<IOrderExpression> {
@@ -23,10 +24,10 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
             direction: "ASC"
         } as IOrderExpression)).union(this.orders);
     }
-    public get entity() {
+    public override get entity() {
         return this.itemSelect.entity;
     }
-    public set entity(value) {
+    public override set entity(value) {
         if (this.itemSelect) {
             this.itemSelect.entity = value;
         }
@@ -34,34 +35,34 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     public get groupBy() {
         return this.itemSelect.groupBy;
     }
-    public get includes() {
+    public override get includes() {
         return this.itemSelect.includes;
     }
-    public set includes(value) {
+    public override set includes(value) {
         if (this.itemSelect) {
             this.itemSelect.includes = value;
         }
     }
-    public get isSubSelect() {
+    public override get isSubSelect() {
         return this.itemSelect.isSubSelect;
     }
-    public set isSubSelect(value) {
+    public override set isSubSelect(value) {
         if (this.itemSelect) {
             this.itemSelect.isSubSelect = value;
         }
     }
-    public get itemExpression() {
-        return this.itemSelect.itemExpression;
+    public override get itemExpression() {
+        return this.itemSelect.itemExpression as any;
     }
-    public set itemExpression(value) {
+    public override set itemExpression(value) {
         if (this.itemSelect) {
             this.itemSelect.itemExpression = value;
         }
     }
-    public get joins() {
+    public override get joins() {
         return this.itemSelect.joins;
     }
-    public set joins(value) {
+    public override set joins(value) {
         if (this.itemSelect) {
             this.itemSelect.joins = value;
         }
@@ -72,47 +73,47 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     public set key(value) {
         this.itemSelect.key = value;
     }
-    public get orders() {
+    public override get orders() {
         return this.itemSelect.orders;
     }
-    public set orders(value) {
+    public override set orders(value) {
         if (this.itemSelect) {
             this.itemSelect.orders = value;
         }
     }
-    public get paging() {
+    public override get paging() {
         return this.itemSelect.paging;
     }
-    public set paging(value) {
+    public override set paging(value) {
         if (this.itemSelect) {
             this.itemSelect.paging = value;
         }
     }
-    public get paramExps() {
+    public override get paramExps() {
         return this.itemSelect.paramExps;
     }
-    public set paramExps(value) {
+    public override set paramExps(value) {
         if (this.itemSelect) {
             this.itemSelect.paramExps = value;
         }
     }
-    public get parentRelation() {
+    public override get parentRelation() {
         return this.itemSelect.parentRelation;
     }
-    public set parentRelation(value) {
+    public override set parentRelation(value) {
         if (this.itemSelect) {
             this.itemSelect.parentRelation = value;
         }
     }
-    public get primaryKeys() {
+    public override get primaryKeys() {
         return this.groupBy;
     }
-    public get relationColumns() {
+    public override get relationColumns() {
         return this.itemSelect.relationColumns;
     }
-    public get projectedColumns(): IEnumerable<IColumnExpression<TE>> {
+    public override get projectedColumns(): IEnumerable<IColumnExpression> {
         if (this.isAggregate) {
-            return this.relationColumns.union(this.resolvedSelects);
+            return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
         }
         return this.itemSelect.projectedColumns;
     }
@@ -132,11 +133,11 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         return this.groupBy;
     }
 
-    public get resolvedIncludes(): IEnumerable<IncludeRelation<TE>> {
+    public override get resolvedIncludes(): IEnumerable<IncludeRelation<TE>> {
         let includes = super.resolvedIncludes;
         if (!this.isAggregate && this.keyRelation) {
             if (this.keyRelation.isEmbedded) {
-                includes = (this.keyRelation.child.resolvedIncludes as IEnumerable<IncludeRelation<TE>>).union(includes);
+                includes = Enumerable.from(this.keyRelation.child.resolvedIncludes).union(includes);
             }
             else {
                 includes = Enumerable.from([this.keyRelation]).union(includes);
@@ -144,22 +145,22 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         }
         return includes;
     }
-    public get resolvedJoins(): IEnumerable<JoinRelation<TE>> {
+    public override get resolvedJoins(): IEnumerable<JoinRelation<TE>> {
         let join = super.resolvedJoins;
         if (this.keyRelation && this.keyRelation.isEmbedded && (!this.parentRelation || !this.parentRelation.isEmbedded)) {
-            join = (this.keyRelation.child.resolvedJoins as IEnumerable<JoinRelation<TE>>).union(join);
+            join = Enumerable.from(this.keyRelation.child.resolvedJoins).union(join);
         }
         return join;
     }
-    public get resolvedSelects(): IEnumerable<IColumnExpression<any, ValueType>> {
+    public override get resolvedSelects(): IEnumerable<IColumnExpression> {
         let selects = Enumerable.from(this.isAggregate ? this.selects : this.itemSelect.selects);
         for (const include of this.includes) {
             if (include.isEmbedded) {
                 const cloneMap = new Map();
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in emdedded relation
-                const childSelects = include.child.resolvedSelects.map((o: IColumnExpression<any, ValueType>) => {
-                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName);
+                const childSelects = include.child.resolvedSelects.map((o: IColumnExpression) => {
+                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName) as unknown as IColumnExpression;
                     if (!curCol) {
                         curCol = o.clone(cloneMap);
                     }
@@ -172,10 +173,10 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         super.resolvedSelects
         return selects;
     }
-    public get where() {
+    public override get where() {
         return this.itemSelect.where;
     }
-    public set where(value) {
+    public override set where(value) {
         if (this.itemSelect) {
             this.itemSelect.where = value;
         }
@@ -201,9 +202,9 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 this.addJoin(join.child, join.relation, join.type);
             }
 
-            const parentRel = select.parentRelation;
+            const parentRel = select.parentRelation as unknown as ISelectRelation<object, TE>;
             if (parentRel) {
-                parentRel.child = this;
+                parentRel.child = this as SelectExpression<TE, unknown>;
                 this.parentRelation = parentRel;
                 select.parentRelation = null;
             }
@@ -239,10 +240,10 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         this.keyRelation = includeRel;
         return includeRel;
     }
-    public addWhere(expression: IExpression<boolean>) {
+    public override addWhere(expression: IExpression<boolean>) {
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<TE, K, T> {
+    public override clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<TE, K, T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
@@ -256,13 +257,13 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         clone.isAggregate = this.isAggregate;
         return clone;
     }
-    public getItemExpression() {
+    public override getItemExpression() {
         if (this.isAggregate) {
             return this.itemSelect.getItemExpression();
         }
         return this.itemSelect;
     }
-    public hashCode() {
+    public override hashCode() {
         let code: number = super.hashCode();
         code = hashCodeAdd(hashCode("GROUPBY", code), Enumerable.from(this.groupBy).map((o) => o.hashCode()).sum());
         if (this.having) {
@@ -270,7 +271,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         }
         return code;
     }
-    public toString() {
+    public override toString() {
         return `GroupBy({
 Entity:${this.entity.toString()},
 Select:${this.selects.map((o) => o.toString()).join(",")},

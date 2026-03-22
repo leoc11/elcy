@@ -3,13 +3,13 @@ import { IEventEmitter } from "src/Event/IEventHandler";
 import { isEqual } from "src/Helper/Util";
 import { IChangeEventParam } from "src/MetaData/Interface/IChangeEventParam";
 import { eventEmitterFactory } from "src/Event/EventHandlerFactory";
-import { IObjectType } from "src/Common/Type";
+import { IObjectType, ValueType } from "src/Common/Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 
-export const trackMap = new WeakMap<object, IEventEmitter<any, IChangeEventParam<any>>>();
-export function trackEntity<T extends object>(entity: T, handler: (source: T, args: IChangeEventParam<T>) => boolean | void) {
-    let eventEmitter = trackMap.get(entity) as IEventEmitter<T, IChangeEventParam<T>>;
+export const trackMap = new WeakMap<object, IEventEmitter<unknown, IChangeEventParam<any, unknown>>>();
+export function trackEntity<TE extends object, T = ValueType>(entity: TE, handler: (source: TE, args: IChangeEventParam<TE, T>) => boolean | void) {
+    let eventEmitter = trackMap.get(entity) as IEventEmitter<TE, IChangeEventParam<TE, T>>;
     if (!eventEmitter) {
         eventEmitter = eventEmitterFactory(entity);
         trackMap.set(entity, eventEmitter);
@@ -17,8 +17,8 @@ export function trackEntity<T extends object>(entity: T, handler: (source: T, ar
 
     eventEmitter.add(handler);
 }
-export function untrackEntity<T extends object>(entity: T, handler: (source: T, args: IChangeEventParam<T>) => boolean | void) {
-    let eventEmitter = trackMap.get(entity) as IEventEmitter<T, IChangeEventParam<T>>;
+export function untrackEntity<TE extends object, T = ValueType>(entity: TE, handler: (source: TE, args: IChangeEventParam<TE, T>) => boolean | void) {
+    let eventEmitter = trackMap.get(entity) as IEventEmitter<TE, IChangeEventParam<TE, T>>;
     if (!eventEmitter) {
         eventEmitter = eventEmitterFactory(entity);
         trackMap.set(entity, eventEmitter);

@@ -462,7 +462,7 @@ if (Temporal) {
                 throw new Error(`Temporal.Instant.round: roundingIncrement not supported`);
             }
             if (paramExp.object.smallestUnit) {
-                smallestUnitParam = paramExp.object.smallestUnit;
+                smallestUnitParam = paramExp.object.smallestUnit as IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
             }
         }
         else {
@@ -733,7 +733,7 @@ if (Temporal) {
                 throw new Error(`Temporal.PlainTime.round: roundingIncrement not supported`);
             }
             if (paramExp.object.smallestUnit) {
-                smallestUnitParam = paramExp.object.smallestUnit;
+                smallestUnitParam = paramExp.object.smallestUnit as IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
             }
         }
         else {

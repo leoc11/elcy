@@ -9,8 +9,8 @@ export class ComputedColumnMetaData<TE extends object = object, T = ValueType> i
         return this.functionExpression.returnType;
     }
     constructor()
-    constructor(entity: IEntityMetaData<TE>, fn: FunctionExpression<T, TE>, propertyName: StringKeyOf<TE>)
-    constructor(entity?: IEntityMetaData<TE>, fn?: FunctionExpression<T, TE>, propertyName?: StringKeyOf<TE>) {
+    constructor(entity: IEntityMetaData<TE>, fn: FunctionExpression<T, [TE]>, propertyName: StringKeyOf<TE>)
+    constructor(entity?: IEntityMetaData<TE>, fn?: FunctionExpression<T, [TE]>, propertyName?: StringKeyOf<TE>) {
         if (entity) {
             this.entity = entity;
         }
@@ -33,7 +33,7 @@ export class ComputedColumnMetaData<TE extends object = object, T = ValueType> i
         this._description = value;
     };
     public entity: IEntityMetaData<TE>;
-    private _functionExpression: FunctionExpression<T, TE>;
+    private _functionExpression: FunctionExpression<T, [TE]>;
     public get functionExpression() {
         return this._functionExpression;
     };

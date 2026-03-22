@@ -5,22 +5,22 @@ import { ComputedColumnMetaData } from "../ComputedColumnMetaData";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 
 export class InheritedComputedColumnMetaData<TE extends TP, TP extends object, T = ValueType> extends ComputedColumnMetaData<TE, T> {
-    public get description() {
+    public override get description() {
         return this.parentColumnMetaData.description;
     }
-    public get functionExpression() {
-        return this.parentColumnMetaData.functionExpression as FunctionExpression<T, TE>;
+    public override get functionExpression() {
+        return this.parentColumnMetaData.functionExpression as FunctionExpression<T, [TE]>;
     }
     public get parentEntity(): IEntityMetaData<TP> {
         return this.parentColumnMetaData.entity;
     }
-    public get propertyName() {
+    public override get propertyName() {
         return this.parentColumnMetaData.propertyName as StringKeyOf<TE>;
     }
-    public get type(): GenericType<T> {
+    public override get type(): GenericType<T> {
         return this.parentColumnMetaData.type;
     }
-    constructor(public entity: IEntityMetaData<TE, TP>, parentColumnMetaData: ComputedColumnMetaData<TP, T>) {
+    constructor(public override entity: IEntityMetaData<TE, TP>, parentColumnMetaData: ComputedColumnMetaData<TP, T>) {
         super();
         this.applyOption(parentColumnMetaData as unknown as IColumnMetaData<TE, T>);
     }

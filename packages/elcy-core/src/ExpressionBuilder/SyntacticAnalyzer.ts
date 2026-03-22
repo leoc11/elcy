@@ -317,14 +317,13 @@ function createArrayExpression(param: SyntaticParameter, tokens: ILexicalToken[]
     return new ArrayValueExpression(...arrayVal);
 }
 function createObjectExpression(param: SyntaticParameter, tokens: ILexicalToken[]) {
-    const obj: unknown = {};
+    const obj: Record<string, IExpression> = {};
     while (param.index < tokens.length && (tokens[param.index].data !== "}")) {
         const propName = tokens[param.index].data;
         if (tokens[param.index + 1].data === ":") {
             param.index += 2;
         }
-        const value = createExpression(param, tokens);
-        obj[propName] = value;
+        obj[propName] = createExpression(param, tokens);
         if (tokens[param.index].data === ",") {
             param.index++;
         }

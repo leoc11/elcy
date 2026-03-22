@@ -4,7 +4,7 @@ import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression
 import type { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import type { IColumnExpression } from "./IColumnExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
-import { hashCode, isEntityExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { hashCode, isColumnExp, isEntityExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { GroupByExpression } from "./GroupByExpression";
 import { SelectExpression } from "./SelectExpression";
@@ -12,8 +12,8 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IOrderExpression } from "./IOrderExpression";
 
 export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
-    public get allColumns() {
-        return this.groupBy.union(super.allColumns);
+    public override get allColumns() {
+        return Enumerable.from(this.groupBy).union(super.allColumns);
     }
     public override get resolvedOrders(): IEnumerable<IOrderExpression> {
         return Enumerable.from(this.parentRelation?.childColumns ?? []).concat(this.groupBy).map(o => ({
@@ -37,7 +37,7 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                             if (!curCol) {
                                 curCol = o.clone(cloneMap) as any;
                             }
-                            return curCol;
+                            return curCol as unknown as IColumnExpression;
                         });
                         this._groupBy = childSelects.toArray();
                     }
@@ -48,18 +48,20 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
             }
             else if (this.key instanceof ObjectValueExpression) {
                 for (const prop in (this.key as ObjectValueExpression<T>).object) {
-                    this._groupBy.push(this.key.object[prop] as IColumnExpression<TE>);
+                    this._groupBy.push(this.key.object[prop] as IColumnExpression);
                 }
             }
+            else if (isColumnExp(this.key)) {
+                this._groupBy.push(this.key);
+            }
             else {
-                const column = this.key as unknown as IColumnExpression<TE>;
-                this._groupBy.push(column);
+                throw "unexpected";
             }
         }
         return this._groupBy;
     }
-    public get projectedColumns(): IEnumerable<IColumnExpression<TE>> {
-        return super.projectedColumns.union(this.groupBy);
+    public override get projectedColumns(): IEnumerable<IColumnExpression> {
+        return Enumerable.from(super.projectedColumns).union(this.groupBy);
     }
     constructor();
     constructor(select: SelectExpression<TE, T>, key: IExpression<K>);
@@ -71,7 +73,6 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
             this.itemExpression = select.itemExpression;
             this.selects = select.selects.slice();
             this.distinct = select.distinct;
-            // this.isAggregate = select.isAggregate;
             this.where = select.where;
             this.orders = select.orders.slice();
             Object.assign(this.paging, select.paging);
@@ -83,16 +84,16 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
     public groupByExp: GroupByExpression<TE, K, T>;
     public key: IExpression<K>;
 
-    private _groupBy: Array<IColumnExpression<TE>>;
+    private _groupBy: IColumnExpression[];
 
-    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<TE, TChild>, type?: JoinType): JoinRelation<TE, any>;
-    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<TE, any>;
-    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<TE, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
+    public override addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IBaseRelationMetaData<TE, TChild>, type?: JoinType): JoinRelation<TE, any>;
+    public override addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: IExpression<boolean>, type: JoinType, isEmbedded?: boolean): JoinRelation<TE, any>;
+    public override addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IBaseRelationMetaData<TE, TChild> | IExpression<boolean>, type?: JoinType, isEmbedded?: boolean) {
         const joinRel = super.addJoin(child, relationMetaOrRelations as IExpression<boolean>, type, isEmbedded);
         joinRel.parent = this.groupByExp as any;
         return joinRel;
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<TE, K, T> {
+    public override clone(replaceMap?: Map<IExpression, IExpression>): GroupedExpression<TE, K, T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
@@ -124,10 +125,10 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
         Object.assign(clone.paging, this.paging);
         return clone;
     }
-    public hashCode() {
+    public override hashCode() {
         return hashCode("GROUPED", super.hashCode());
     }
-    public toString() {
+    public override toString() {
         return `Grouped({
 Entity:${this.entity.toString()},
 Select:${this.selects.map((o) => o.toString()).join(",")},

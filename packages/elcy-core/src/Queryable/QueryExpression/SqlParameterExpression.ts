@@ -1,10 +1,10 @@
-import { GenericType, ValueType } from "../../Common/Type";
+import { GenericType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
-export class SqlParameterExpression<T = ValueType> implements IExpression<T> {
-    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<any, T>) { }
+export class SqlParameterExpression<T = unknown> implements IExpression<T> {
+    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<object, T>) { }
     public type: GenericType<T>;
     public isSystem?: boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {

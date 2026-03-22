@@ -18,8 +18,8 @@ export class IntersectExpression<T extends object> extends ProjectionEntityExpre
         this.subSelects = subSelects;
     }
     public subSelects: SelectExpression<T>[];
-    public readonly entityTypes: IObjectType[];
-    public clone(replaceMap?: Map<IExpression, IExpression>) {
+    public declare readonly entityTypes: IObjectType[];
+    public override clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
         }
@@ -28,10 +28,10 @@ export class IntersectExpression<T extends object> extends ProjectionEntityExpre
         replaceMap.set(this, clone);
         return clone;
     }
-    public hashCode() {
+    public override hashCode() {
         return this.subSelects.reduceRight((r, o, i) => i === 0 ? o.hashCode() : hashCodeAdd(hashCode("INTERSECT", r), o.hashCode()), 0);
     }
-    public toString(): string {
+    public override toString(): string {
         return `Intersect(${this.subSelects.map(o => o.toString()).join(", ")})`;
     }
 }

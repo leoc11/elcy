@@ -22,9 +22,9 @@ export interface IQueryBuilder {
     newLine(indent?: number, isAdd?: boolean): string;
     toLogicalString(exp: IExpression<boolean>, param?: IQueryBuilderParameter): string;
     toOperandString(exp: IExpression, param?: IQueryBuilderParameter): string;
-    toParameterValue(input: any, column: IColumnMetaData): any;
-    toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T;
-    toQuery<T>(queryExp: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[];
-    toString<T = any>(exp: IExpression<T>, param?: IQueryBuilderParameter): string;
+    toParameterValue(input: unknown, column: IColumnMetaData<object, unknown>): unknown;
+    toPropertyValue<T>(input: unknown, column: IColumnMetaData<object, T>): T;
+    toQuery<T = unknown>(queryExp: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[];
+    toString<T = unknown>(exp: IExpression<T>, param?: IQueryBuilderParameter): string;
     valueString(value: ValueType): string;
 }

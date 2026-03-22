@@ -7,7 +7,6 @@ import { IEntityExpression } from "./IEntityExpression";
 export interface IColumnExpression<TE extends object = object, T = ValueType> extends IExpression<T> {
     alias?: string;
     columnMeta?: IColumnMetaData<TE, T>;
-    // TODO: columnName not needed. coz it not available for computed column.
     columnName: string;
     dataPropertyName: string;
     entity: IEntityExpression<TE>;

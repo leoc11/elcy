@@ -1,5 +1,5 @@
 import { Enumerable } from "@elcy/enumerable";
-import { IObjectType } from "../Common/Type";
+import { IObjectType, MethodKey } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -13,7 +13,7 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
     protected get relation() {
         if (!this._relation && this.relationFn) {
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._relation = ExpressionBuilder.parse(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
         }
         return this._relation;
     }
@@ -22,14 +22,14 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     }
     protected get resultSelector() {
         if (!this._resultSelector && this.resultSelectorFn) {
-            this._resultSelector = ExpressionBuilder.parse<any>(this.resultSelectorFn, [this.parent.type, Enumerable], this.parameters);
+            this._resultSelector = ExpressionBuilder.parse(this.resultSelectorFn, [this.parent.type, Enumerable], this.parameters);
         }
         return this._resultSelector;
     }
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R> | ((item1: T, item2: Enumerable<T2>) => R), public type: IObjectType<R> = Object as any) {
+    constructor(public override readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relationShip: FunctionExpression<boolean, [T, T2]> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R, [T, Enumerable<T2>]> | ((item1: T, item2: Enumerable<T2>) => R), type: IObjectType<R> = Object as unknown as IObjectType<R>) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relationShip instanceof FunctionExpression) {
@@ -50,13 +50,13 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     }
     protected readonly relationFn: (item: T, item2: T2) => boolean;
     protected readonly resultSelectorFn: (item1: T, item2: Enumerable<T2>) => R;
-    private _relation: FunctionExpression<boolean>;
-    private _resultSelector: FunctionExpression<R>;
+    private _relation: FunctionExpression<boolean, [T, T2]>;
+    private _resultSelector: FunctionExpression<R, [T, Enumerable<T2>]>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
-        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin", [childOperand, this.relation.clone(), this.resultSelector.clone()]);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T2>;
+        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin" as MethodKey<T[]>, [childOperand, this.relation.clone(), this.resultSelector.clone()]);
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode() {

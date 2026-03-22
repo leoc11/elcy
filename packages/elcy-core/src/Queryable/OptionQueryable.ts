@@ -5,10 +5,10 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 
 export class OptionQueryable<T> extends Queryable<T> {
-    public get queryOption() {
+    public override get queryOption() {
         return this._queryOption;
     }
-    constructor(parent: Queryable<T>, option: IQueryOption) {
+    constructor(protected override readonly parent: Queryable<T>, option: IQueryOption) {
         super(parent.type, parent);
         this._queryOption = clone(this.parent.queryOption);
         this.option(option);
@@ -20,7 +20,7 @@ export class OptionQueryable<T> extends Queryable<T> {
     public hashCode() {
         return this.parent.hashCode();
     }
-    public option(option: IQueryOption) {
+    public override option(option: IQueryOption) {
         for (const prop in option) {
             const value = (option as any)[prop];
             if (value instanceof Object) {

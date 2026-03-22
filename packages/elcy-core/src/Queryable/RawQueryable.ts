@@ -51,12 +51,12 @@ export class RawQueryable<T extends object> extends Queryable<T> {
 
     protected isView: boolean;
     private _dbContext: DbContext;
-    public get dbContext(): DbContext {
+    public override get dbContext(): DbContext {
         return this._dbContext;
     }
 
     private _metaData: EntityMetaData<T>;
-    public flatQueryParameter(param?: { index: number }) {
+    public override flatQueryParameter(param?: { index: number }) {
         const flatParam = this.parent?.flatQueryParameter(param) ?? {};
         for (const prop in this.values) {
             flatParam[`${param.index}:${prop}`] = this.values[prop];
@@ -100,7 +100,7 @@ export class RawQueryable<T extends object> extends Queryable<T> {
         }
         return super.deferredDelete(modeOrPredicate as FunctionExpression<boolean, T>, mode);
     }
-    override deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: QueryableChain<T>) => ValueType); }): DeferredQuery<number> {
+    override deferredUpdate(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }): DeferredQuery<number> {
         if (this.isView) {
             throw new Error("not supported");
         }

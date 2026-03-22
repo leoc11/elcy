@@ -24,4 +24,8 @@ export class Version {
     public valueOf() {
         return (this.major * 1000) + this.minor + (this.patch / 1000);
     }
+    public static from(str: string) {
+        const d = str.split('.');
+        return new Version(Number(d[0]) || 0, Number(d[1]) || 0, Number(d[2]) || 0);
+    }
 }

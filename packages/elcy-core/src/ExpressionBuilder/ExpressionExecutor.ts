@@ -193,14 +193,15 @@ export class ExpressionExecutor {
     }
     public executeFunction<T>(expression: FunctionExpression<T>, parameters: unknown[]) {
         let i = 0;
-        for (const param of expression.params) {
+        const params = expression.params as ParameterExpression[];
+        for (const param of params) {
             if (parameters.length > i) {
                 this.scopeParameters.add(param.name, parameters[i++]);
             }
         }
         const result = this.execute(expression.body);
         i = 0;
-        for (const param of expression.params) {
+        for (const param of params) {
             if (parameters.length > i++) {
                 this.scopeParameters.remove(param.name);
             }
@@ -424,7 +425,7 @@ export class ExpressionExecutor {
     protected executeObjectValue<T>(expression: ObjectValueExpression<T>) {
         const result = new expression.type();
         for (const key in expression.object) {
-            result[key] = this.execute(expression.object[key]);
+            result[key] = this.execute(expression.object[key] as IExpression<T[StringKeyOf<T>]>);
         }
         return result;
     }

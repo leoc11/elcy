@@ -21,7 +21,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public override readonly parent: Queryable<T>, selectors: Array<((item: T) => Exclude<object, ValueType>)> | FunctionExpression<Exclude<object, ValueType>>[]) {
+    constructor(public override readonly parent: Queryable<T>, selectors: Array<((item: T) => Exclude<object, ValueType>)> | FunctionExpression<Exclude<object, ValueType>, [T]>[]) {
         super(parent.type, parent as Queryable);
         if (selectors.length > 0 && selectors[0] instanceof FunctionExpression) {
             this.selectors = selectors as any;
@@ -30,13 +30,13 @@ export class IncludeQueryable<T> extends Queryable<T> {
             this.selectorsFn = selectors as any;
         }
     }
-    protected readonly selectorsFn: Array<(item: T) => any>;
-    private _selectors: FunctionExpression[];
+    protected readonly selectorsFn: Array<(item: T) => Exclude<object, ValueType>>;
+    private _selectors: FunctionExpression<Exclude<object, ValueType>, [T]>[];
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "loads" as MethodKey<T[]>, selectors);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {

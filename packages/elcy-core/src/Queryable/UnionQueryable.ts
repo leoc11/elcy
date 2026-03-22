@@ -8,7 +8,7 @@ import { hashCode } from "../Helper/Util";
 import { Queryable } from "./Queryable";
 
 export class UnionQueryable<T> extends Queryable<T> {
-    public get parameters() {
+    public override get parameters() {
         if (!this._parameters) {
             this._parameters = {};
             for (const parent of this.parents) {
@@ -25,7 +25,7 @@ export class UnionQueryable<T> extends Queryable<T> {
     protected readonly parents: Queryable<T>[];
     private _parameters: { [key: string]: unknown };
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const parentOperands = this.parents.map(o => o.buildQuery(queryVisitor) as SelectExpression<T>);
+        const parentOperands = this.parents.map(o => o.buildQuery(queryVisitor) as SelectExpression<object, T>);
         const objectOperand = parentOperands[0];
         const childOperands = parentOperands.slice(1);
         const methodExpression = new MethodCallExpression(parentOperands[0], "union" as MethodKey<T[]>, childOperands);
@@ -33,7 +33,7 @@ export class UnionQueryable<T> extends Queryable<T> {
         const resut = queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
         return resut;
     }
-    public flatQueryParameter(param?: { index: number }) {
+    public override flatQueryParameter(param?: { index: number }) {
         let flatParam: Record<string, unknown> = {};
         for (const parent of this.parents) {
             Object.assign(flatParam, parent.flatQueryParameter(param));

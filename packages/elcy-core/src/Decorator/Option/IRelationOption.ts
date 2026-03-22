@@ -1,12 +1,12 @@
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { ReferenceOption, RelationshipType } from "../../Common/StringType";
-import { PropertySelector } from "../../Common/Type";
+import { PropertySelector, StringKeyOf } from "../../Common/Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 
 export interface IRelationData<TSource extends object, TTarget extends object> {
     name: string;
     metaData: IEntityMetaData<TSource>;
-    propertyName: keyof TSource;
+    propertyName: StringKeyOf<TSource>;
     isMaster: boolean;
 
     targetMetaData?: IEntityMetaData<TTarget>;

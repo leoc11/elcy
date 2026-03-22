@@ -21,7 +21,7 @@ export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOpe
         return hashCode("~", this.operand.hashCode());
     }
 
-    public toString(): string {
+    public override toString(): string {
         return "~" + this.operand.toString();
     }
 }

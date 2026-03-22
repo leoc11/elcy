@@ -6,7 +6,7 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 
 export class RawEntityExpression<T extends object = object> extends EntityExpression<T> {
     public readonly parameters: SqlParameterExpression<unknown>[] = [];
-    constructor(metaData: EntityMetaData<T>, public alias: string, public readonly sqlTemplateStrings: TemplateStringsArray) {
+    constructor(metaData: EntityMetaData<T>, public override alias: string, public readonly sqlTemplateStrings: TemplateStringsArray) {
         super(metaData.type, alias);
         this._rawMetaData = metaData;
     }
@@ -18,7 +18,7 @@ export class RawEntityExpression<T extends object = object> extends EntityExpres
     public addParameter(paramExp: SqlParameterExpression<unknown>) {
         this.parameters.push(paramExp);
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): RawEntityExpression<T> {
+    public override clone(replaceMap?: Map<IExpression, IExpression>): RawEntityExpression<T> {
         if (!replaceMap) {
             replaceMap = new Map();
         }
@@ -38,10 +38,10 @@ export class RawEntityExpression<T extends object = object> extends EntityExpres
         clone.name = this.name;
         return clone;
     }
-    public hashCode() {
+    public override hashCode() {
         return hashCode(this.name, hashCode(this.sqlTemplateStrings.join("?")));
     }
-    public toString(): string {
+    public override toString(): string {
         return `RawSql(${this.sqlTemplateStrings.join("?")})`;
     }
 }

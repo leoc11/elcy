@@ -1,5 +1,5 @@
 export class SortedArray<T> extends Array<T> {
-    public set length(value: number) {
+    public override set length(value: number) {
         this.splice(value);
     }
     public constructor(protected comparator: (item1: T, item2: T) => number, ...items: T[]) {
@@ -9,20 +9,20 @@ export class SortedArray<T> extends Array<T> {
     public static create<T>(compareFunction: (item1: T, item2: T) => number, ...items: T[]): SortedArray<T> {
         return new SortedArray(compareFunction, ...items);
     }
-    public push(...items: T[]) {
+    public override push(...items: T[]) {
         for (const o of items) {
             this.addItem(o);
         }
         return this.length;
     }
-    public splice(start: number, deleteCount?: number, ...items: T[]) {
+    public override splice(start: number, deleteCount?: number, ...items: T[]) {
         const result: T[] = typeof deleteCount === "undefined" ? super.splice(start) : super.splice(start, deleteCount);
         for (const o of items) {
             this.addItem(o);
         }
         return result;
     }
-    public unshift(...items: T[]) {
+    public override unshift(...items: T[]) {
         for (const o of items) {
             this.addItem(o);
         }

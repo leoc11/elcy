@@ -1,3 +1,4 @@
+import { MethodKey } from "src/Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -7,9 +8,9 @@ import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { GroupedEnumerable } from "@elcy/enumerable";
+import { IGroupArray } from "src/Common/IGroupArray";
 
-export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
+export class GroupByQueryable<K, T> extends Queryable<IGroupArray<K, T>> {
     protected get keySelector() {
         if (!this._keySelector && this.keySelectorFn) {
             this._keySelector = ExpressionBuilder.parse(this.keySelectorFn, [this.parent.type], this.parameters);
@@ -19,7 +20,7 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
     protected set keySelector(value) {
         this._keySelector = value;
     }
-    constructor(public readonly parent: Queryable<T>, keySelector: FunctionExpression<K> | ((item: T) => K)) {
+    constructor(public override readonly parent: Queryable<T>, keySelector: FunctionExpression<K, [T]> | ((item: T) => K)) {
         super(Array as any, parent);
         if (keySelector instanceof FunctionExpression) {
             this.keySelector = keySelector;
@@ -29,12 +30,12 @@ export class GroupByQueryable<K, T> extends Queryable<GroupedEnumerable<K, T>> {
         }
     }
     protected readonly keySelectorFn: (item: T) => K;
-    private _keySelector: FunctionExpression;
-    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<GroupedEnumerable<K, T>> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "groupBy", [this.keySelector.clone()]);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+    private _keySelector: FunctionExpression<K, [T]>;
+    public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<IGroupArray<K, T>> {
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const methodExpression = new MethodCallExpression(objectOperand, "groupBy" as MethodKey<T[]>, [this.keySelector.clone()]);
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression<object, IGroupArray<K, T>>;
         result.parentRelation = null;
         return result;
     }

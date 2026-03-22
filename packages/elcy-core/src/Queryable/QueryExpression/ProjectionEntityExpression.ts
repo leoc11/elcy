@@ -11,8 +11,8 @@ import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
-export class ProjectionEntityExpression<T extends object> implements IEntityExpression<T> {
-    public get primaryColumns(): IColumnExpression<T>[] {
+export class ProjectionEntityExpression<TE extends object = object> implements IEntityExpression<TE> {
+    public get primaryColumns(): IColumnExpression<TE>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = this.columns.filter((o) => o.isPrimary);
         }
@@ -27,31 +27,31 @@ export class ProjectionEntityExpression<T extends object> implements IEntityExpr
         }
         return this._selectedColumns;
     }
-    constructor(public subSelect: SelectExpression<T>, type?: GenericType<T>) {
+    constructor(public subSelect: SelectExpression<TE>, type?: GenericType<TE>) {
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = Enumerable.from(subSelect.projectedColumns).map((o) => {
-            const col = new ColumnExpression<T, ValueType>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMeta = o.columnMeta as unknown as IColumnMetaData<T, ValueType>;
+            const col = new ColumnExpression<TE>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
+            col.columnMeta = o.columnMeta as unknown as IColumnMetaData<TE>;
             return col;
         }).toArray();
         // TODO
         // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
-        this.type = type ? type : subSelect.itemType;
+        this.type = type ?? subSelect.itemType as GenericType<TE>;
         this.paramExps = subSelect.paramExps;
     }
     public alias: string;
-    public columns: IColumnExpression<T>[];
-    public defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> = [];
+    public columns: IColumnExpression<TE>[];
+    public defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
     public readonly entityTypes: IObjectType[];
     public name: string = "";
     public paramExps: SqlParameterExpression[] = [];
-    public select?: SelectExpression<T>;
-    public readonly type: GenericType<T>;
-    private _primaryColumns: IColumnExpression<T>[];
-    private _selectedColumns: IColumnExpression<T>[];
+    public select?: SelectExpression<TE>;
+    public readonly type: GenericType<TE>;
+    private _primaryColumns: IColumnExpression<TE>[];
+    private _selectedColumns: IColumnExpression<TE>[];
 
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {

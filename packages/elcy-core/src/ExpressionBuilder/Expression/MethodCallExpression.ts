@@ -1,4 +1,4 @@
-import type { ElementType, GenericType, MethodKey, MethodReturnType } from "../../Common/Type";
+import type { ElementType, GenericType, MethodKey, MethodReturnType, PrimitiveType } from "../../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
 import { hashCode, hashCodeAdd, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
 import { Queryable } from "../../Queryable/Queryable";
@@ -82,6 +82,8 @@ export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = Method
     public set type(value) {
         this._type = value;
     }
+    constructor(objectOperand: IExpression<TE>, method: K | (() => T), params: IExpression[], type?: PrimitiveType<T>);
+    constructor(objectOperand: IExpression<TE>, method: K | (() => T), params: IExpression[], type?: GenericType<T>);
     constructor(public objectOperand: IExpression<TE>, method: K | (() => T), public params: IExpression[], type?: GenericType<T>) {
         this._type = type;
         if (typeof method === "function") {

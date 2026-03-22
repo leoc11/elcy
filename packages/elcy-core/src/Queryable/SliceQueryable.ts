@@ -16,7 +16,7 @@ export class SliceQueryable<T> extends Queryable<T> {
         super(parent.type, parent.parameter(pagingVariable) as Queryable);
     }
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const parameterExps = [new ParameterExpression<number>("skip", Number)];
         if (typeof this.end === "number") {
             parameterExps.push(new ParameterExpression<number>("take", Number));

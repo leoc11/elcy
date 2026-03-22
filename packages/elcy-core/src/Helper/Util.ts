@@ -13,21 +13,20 @@ import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpressio
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { Temporal } from "src/Data/Temporal";
 
-export const toHexaString = function (binary: ArrayBuffer | ArrayView): string {
-    if (binary instanceof ArrayBuffer) {
-        let hexaString = Array.from(new Uint8Array(binary))
-            .map((b) => {
-                const a = b.toString(16);
-                return a.length < 2 ? "0" + a : a;
-            }).join("");
-        if (!hexaString) {
-            hexaString = "0";
-        }
-        return `0x${hexaString}`;
-    }
-    else {
+export const toHexaString = function (binary: ArrayBufferLike | ArrayView): string {
+    if (ArrayBuffer.isView(binary)) {
         return toHexaString(binary.buffer);
     }
+
+    let hexaString = Array.from(new Uint8Array(binary))
+        .map((b) => {
+            const a = b.toString(16);
+            return a.length < 2 ? "0" + a : a;
+        }).join("");
+    if (!hexaString) {
+        hexaString = "0";
+    }
+    return `0x${hexaString}`;
 };
 export const resolveClone = function <T extends IExpression>(exp: T, replaceMap: Map<IExpression, IExpression>): T {
     if (!exp) {

@@ -10,8 +10,8 @@ import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 
-export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryable<R> {
-    public get parameters() {
+export abstract class JoinQueryable<T = unknown, T2 = unknown, R = unknown> extends Queryable<R> {
+    public override get parameters() {
         if (!this._parameters) {
             this._parameters = {};
             Object.assign(this._parameters, this.parent2.parameters);
@@ -21,7 +21,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     }
     protected get relation() {
         if (!this._relation && this.relationFn) {
-            this._relation = ExpressionBuilder.parse<boolean>(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
+            this._relation = ExpressionBuilder.parse(this.relationFn, [this.parent.type, this.parent2.type], this.parameters);
         }
         return this._relation;
     }
@@ -37,7 +37,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     protected set resultSelector(value) {
         this._resultSelector = value;
     }
-    constructor(protected joinType: JoinType, parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<boolean> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R> | ((item1: T | null, item2: T2 | null) => R), public type: IObjectType<R> | ObjectConstructor = Object) {
+    constructor(protected joinType: JoinType, protected override readonly parent: Queryable<T>, protected readonly parent2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]> | ((item: T, item2: T2) => boolean), resultSelector: FunctionExpression<R, [T | null, T2 | null]> | ((item1: T | null, item2: T2 | null) => R), public override type: IObjectType<R> | ObjectConstructor = Object) {
         super(type, parent);
         this.option(this.parent2.queryOption);
         if (relation instanceof FunctionExpression) {
@@ -59,11 +59,11 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
     protected readonly relationFn: (item: T, item2: T2) => boolean;
     protected readonly resultSelectorFn: (item1: T | null, item2: T2 | null) => R;
     private _parameters: { [key: string]: any };
-    private _relation: FunctionExpression<boolean>;
-    private _resultSelector: FunctionExpression<R>;
+    private _relation: FunctionExpression<boolean, [T, T2]>;
+    private _resultSelector: FunctionExpression<R, [T | null, T2 | null]>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
-        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<T2>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
+        const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T2>;
         const type = this.joinType.toLowerCase() + "Join";
         const params: IExpression[] = [childOperand];
         if (this.joinType !== "CROSS") {
@@ -74,7 +74,7 @@ export abstract class JoinQueryable<T = any, T2 = any, R = any> extends Queryabl
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
-    public flatQueryParameter(param?: { index: number }) {
+    public override flatQueryParameter(param?: { index: number }) {
         const flatParam = this.parent.flatQueryParameter(param);
         const flatParam2 = this.parent2.flatQueryParameter(param);
         Object.assign(flatParam, flatParam2);

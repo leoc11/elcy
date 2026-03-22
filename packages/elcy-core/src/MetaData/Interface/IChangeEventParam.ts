@@ -1,7 +1,8 @@
+import { ValueType } from "src/Common/Type";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IChangeEventParam<TE extends object = object, T = unknown> {
+export interface IChangeEventParam<TE extends object = object, T = ValueType> {
     column: IColumnMetaData<TE, T>;
     newValue: T;
     oldValue: T;

@@ -2,7 +2,7 @@ import type { IObjectType, SetterObj } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 
-export class ObjectValueExpression<T = unknown> implements IExpression<T> {
+export class ObjectValueExpression<T extends object = object> implements IExpression<T> {
     constructor(objectValue: SetterObj<T>, type?: IObjectType<T>) {
         this.object = objectValue;
         this.type = type ? type : objectValue.constructor as IObjectType<T>;

@@ -1,6 +1,6 @@
+import { IOrderDefinition } from "@elcy/enumerable";
 import { OrderDirection } from "../Common/StringType";
-import { ValueType } from "../Common/Type";
-import { IOrderDefinition } from "../Enumerable/Interface/IOrderDefinition";
+import { MethodKey, ValueType } from "../Common/Type";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -31,7 +31,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected set selectors(value) {
         this._selectors = value;
     }
-    constructor(public readonly parent: Queryable<T>, ...selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> | Array<IOrderDefinition<T>>) {
+    constructor(public override readonly parent: Queryable<T>, ...selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> | Array<IOrderDefinition<T>>) {
         super(parent.type, parent);
 
         if (selectors[0] instanceof ArrayValueExpression) {
@@ -44,10 +44,10 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected _selectors: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
     protected readonly selectorsFn: Array<IOrderDefinition<T>>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
-        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<T>;
+        const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
-        const methodExpression = new MethodCallExpression(objectOperand, "orderBy", selectors);
-        const visitParam: IQueryVisitParameter<T> = { selectExpression: objectOperand, scope: "queryable" };
+        const methodExpression = new MethodCallExpression(objectOperand, "orderBy" as MethodKey<[]>, selectors);
+        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
     }
     public hashCode() {

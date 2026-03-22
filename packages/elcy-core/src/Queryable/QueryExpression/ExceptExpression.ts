@@ -18,8 +18,8 @@ export class ExceptExpression<T extends object> extends ProjectionEntityExpressi
         this.subSelects = subSelects;
     }
     public subSelects: SelectExpression<T>[];
-    public readonly entityTypes: IObjectType[];
-    public clone(replaceMap?: Map<IExpression, IExpression>) {
+    public declare readonly entityTypes: IObjectType[];
+    public override clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
         }
@@ -28,10 +28,10 @@ export class ExceptExpression<T extends object> extends ProjectionEntityExpressi
         replaceMap.set(this, clone);
         return clone;
     }
-    public hashCode() {
+    public override hashCode() {
         return this.subSelects.reduceRight((r, o, i) => i === 0 ? o.hashCode() : hashCodeAdd(hashCode("EXCEPT", r), o.hashCode()), 0);
     }
-    public toString(): string {
+    public override toString(): string {
         return `Except(${this.subSelects.map(o => o.toString()).join(", ")})`;
     }
 }

@@ -3,17 +3,18 @@ import { fillZero } from "../Helper/Util";
 
 declare global {
     interface Date {
+        addMilliseconds(days: number): Date;
+        addYears(days: number): Date;
+        toTime(): TimeSpan;
+        toUTCDate(): Date;
+
         addDays(days: number): Date;
         addHours(days: number): Date;
-        addMilliseconds(days: number): Date;
         addMinutes(days: number): Date;
         addMonths(months: number): Date;
         addSeconds(days: number): Date;
-        addYears(days: number): Date;
         fromUTCDate(): Date;
         toDate(): Date;
-        toTime(): TimeSpan;
-        toUTCDate(): Date;
     }
 }
 

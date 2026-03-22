@@ -5,8 +5,8 @@ import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
-export class InsertIntoExpression<T = unknown> implements IQueryExpression<void> {
-    public get columns(): Array<IColumnExpression<T>> {
+export class InsertIntoExpression<TE extends object = object> implements IQueryExpression<void> {
+    public get columns(): Array<IColumnExpression<TE>> {
         return this.select.selects;
     }
     public get paramExps() {
@@ -15,10 +15,10 @@ export class InsertIntoExpression<T = unknown> implements IQueryExpression<void>
     public get type() {
         return undefined as GenericType<void>;
     }
-    constructor(public entity: EntityExpression<T>, public select: SelectExpression<T>) {
+    constructor(public entity: EntityExpression<TE>, public select: SelectExpression<object, TE>) {
         this.select.isSelectOnly = true;
     }
-    public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<T> {
+    public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<TE> {
         if (!replaceMap) {
             replaceMap = new Map();
         }

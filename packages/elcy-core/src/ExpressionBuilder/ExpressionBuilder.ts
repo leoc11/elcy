@@ -6,7 +6,7 @@ import { SyntacticAnalyzer } from "./SyntacticAnalyzer";
 import { LazyFunctionExpression } from "./Expression/LazyFunctionExpression";
 
 export class ExpressionBuilder {
-    public static parse<T = unknown, ARG = unknown>(fn: (...items: ARG[]) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): FunctionExpression<T, ARG>;
+    public static parse<T = unknown, TArgs extends readonly unknown[] = []>(fn: (...items: TArgs) => T, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): FunctionExpression<T, TArgs>;
     public static parse<T = unknown>(fn: string, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }): IExpression<T>;
     public static parse<T = unknown>(fn: ((...items: unknown[]) => T) | string, paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }) {
         const tokens = LexicalAnalyzer.parse(fn.toString());
@@ -14,8 +14,8 @@ export class ExpressionBuilder {
     }
 }
 
-export function $l<T, TARG>(fn: string, hashCode?: number): FunctionExpression<T, TARG> {
-    return new LazyFunctionExpression(fn, hashCode);
+export function $l<T, Targs extends readonly unknown[] = []>(fn: string, hashCode?: number): FunctionExpression<T, Targs> {
+    return new LazyFunctionExpression<T, Targs>(fn, hashCode);
 }
 export function $c<T extends Function, TARG>(fn: T): T {
     return fn;

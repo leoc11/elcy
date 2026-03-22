@@ -6,5 +6,5 @@ export class BooleanColumnMetaData<TE extends object = object> extends ColumnMet
     constructor(entityMeta?: IEntityMetaData<TE>) {
         super(entityMeta, Boolean);
     }
-    public columnType: BooleanColumnType = "boolean";
+    public override columnType: BooleanColumnType = "boolean";
 }

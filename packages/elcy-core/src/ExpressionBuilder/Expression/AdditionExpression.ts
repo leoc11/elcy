@@ -20,7 +20,7 @@ export class AdditionExpression<T extends string | number = string | number> imp
     public itemType?: GenericType<T>;
     public leftOperand: IExpression<T>;
     public rightOperand: IExpression<T>;
-    public type: GenericType<T>;
+    public type: T extends string ? GenericType<Extract<T, string>> : GenericType<Extract<T, number>>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

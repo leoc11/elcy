@@ -5,15 +5,15 @@ import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayVa
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
-import { EntityMetaData } from "../../MetaData/EntityMetaData";
 import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 
-export class EntityExpression<T extends object = object> implements IEntityExpression<T> {
-    public get columns(): Array<IColumnExpression<T, ValueType>> {
+export class EntityExpression<TE extends object = object> implements IEntityExpression<TE> {
+    public get columns(): Array<IColumnExpression<TE>> {
         if (!this._columns) {
             if (this.metaData) {
                 this._columns = Enumerable.from(this.metaData.columns)
@@ -30,7 +30,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     public set columns(value) {
         this._columns = value;
     }
-    public get defaultOrders(): Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>> {
+    public get defaultOrders(): Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>> {
         if (!this._defaultOrders) {
             if (this.metaData && this.metaData.defaultOrders) {
                 this._defaultOrders = this.metaData.defaultOrders.slice();
@@ -43,7 +43,7 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get deleteColumn() {
         if (typeof this._deleteColumn === "undefined") {
-            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.deletedColumn.propertyName) as IColumnExpression<T, boolean>;
+            this._deleteColumn = !this.metaData || !this.metaData.deletedColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.deletedColumn.propertyName) as IColumnExpression<TE, boolean>;
         }
         return this._deleteColumn;
     }
@@ -55,11 +55,11 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get modifiedColumn() {
         if (typeof this._modifiedColumn === "undefined") {
-            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName) as IColumnExpression<T, Date>;
+            this._modifiedColumn = !this.metaData || !this.metaData.modifiedDateColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.modifiedDateColumn.propertyName) as IColumnExpression<TE, Date>;
         }
         return this._modifiedColumn;
     }
-    public get primaryColumns(): Array<IColumnExpression<T, ValueType>> {
+    public get primaryColumns(): Array<IColumnExpression<TE>> {
         if (!this._primaryColumns) {
             if (this.metaData) {
                 this._primaryColumns = this.metaData.primaryKeys.map((o) => this.columns.find((c) => c.columnName === o.columnName));
@@ -75,11 +75,11 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     }
     public get versionColumn() {
         if (typeof this._versionColumn === "undefined") {
-            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<T, Uint8Array>;
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<TE, Uint8Array>;
         }
         return this._versionColumn;
     }
-    constructor(public readonly type: IObjectType<T>, public alias: string, public isRelationData?: boolean) {
+    constructor(public readonly type: IObjectType<TE>, public alias: string, public isRelationData?: boolean) {
         if (this.metaData) {
             this.name = this.metaData.name;
             this.schema = this.metaData.schema;
@@ -92,15 +92,15 @@ export class EntityExpression<T extends object = object> implements IEntityExpre
     public readonly entityTypes: IObjectType[];
     public name: string;
     public schema?: string;
-    public select?: SelectExpression<T>;
-    private _columns: Array<IColumnExpression<T>>;
-    private _defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
-    private _deleteColumn: IColumnExpression<T, boolean>;
-    private _metaData: EntityMetaData<T>;
-    private _modifiedColumn: IColumnExpression<T, Date>;
-    private _primaryColumns: IColumnExpression<T>[];
-    private _versionColumn: IColumnExpression<T, Uint8Array>;
-    public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<T> {
+    public select?: SelectExpression<TE>;
+    private _columns: Array<IColumnExpression<TE>>;
+    private _defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
+    private _deleteColumn: IColumnExpression<TE, boolean>;
+    private _metaData: IEntityMetaData<TE>;
+    private _modifiedColumn: IColumnExpression<TE, Date>;
+    private _primaryColumns: IColumnExpression<TE>[];
+    private _versionColumn: IColumnExpression<TE, Uint8Array>;
+    public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<TE> {
         if (!replaceMap) {
             replaceMap = new Map();
         }

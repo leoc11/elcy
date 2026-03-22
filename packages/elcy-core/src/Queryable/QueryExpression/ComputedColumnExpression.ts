@@ -1,10 +1,10 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
-export class ComputedColumnExpression<TE = unknown, T = unknown> implements IColumnExpression<TE, T> {
+export class ComputedColumnExpression<TE extends object = object, T = ValueType> implements IColumnExpression<TE, T> {
     public get columnName() {
         return this.propertyName;
     }
@@ -16,7 +16,7 @@ export class ComputedColumnExpression<TE = unknown, T = unknown> implements ICol
     }
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression<T>, public propertyName: StringKeyOf<TE>, public alias?: string) {
         if (expression instanceof ComputedColumnExpression) {
-            this.expression = (expression as ComputedColumnExpression<TE, T>).expression;
+            this.expression = expression.expression;
         }
         if (!this.alias) {
             this.alias = this.propertyName;

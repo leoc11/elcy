@@ -22,9 +22,7 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
         });
     }
     public get updateGeneratedColumns() {
-        return this.columns.filter((o) => {
-            return (o.generation & ColumnGeneration.Update) as any;
-        });
+        return this.columns.filter((o) => (o.generation & ColumnGeneration.Update));
     }
 
     constructor(public type: IObjectType<TE>, name?: string) {
@@ -38,7 +36,7 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
 
         const parentType = Reflect.getPrototypeOf(this.type) as IObjectType<TBase>;
         if (parentType !== ClassBase) {
-            const parentMetaData: IEntityMetaData<any> = getEntityMetadata(parentType);
+            const parentMetaData = getEntityMetadata(parentType);
             if (parentMetaData instanceof EntityMetaData && parentMetaData.allowInheritance) {
                 this.parentType = parentType;
             }
@@ -58,5 +56,5 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
     // inheritance
     public parentType?: GenericType<TBase>;
     public primaryKeys: Array<IColumnMetaData<TE>> = [];
-    public relations: Array<IRelationMetaData<TE, any>> = [];
+    public relations: Array<IRelationMetaData<TE>> = [];
 }

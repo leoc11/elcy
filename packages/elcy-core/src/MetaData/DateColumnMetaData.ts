@@ -7,5 +7,5 @@ export class DateColumnMetaData<TE extends object = object> extends ColumnMetaDa
     constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<Date> | GenericType<Temporal.PlainDate>) {
         super(entityMeta, type ?? Date);
     }
-    public columnType: DateColumnType = "date";
+    public override columnType: DateColumnType = "date";
 }

@@ -9,7 +9,7 @@ export interface IEntityExpression<T extends object = object> extends IExpressio
     alias: string;
     columns: Array<IColumnExpression<T>>;
     defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
-    deleteColumn?: IColumnExpression<T>;
+    deleteColumn?: IColumnExpression<T, boolean>;
     entityTypes: IObjectType[];
     isRelationData?: boolean;
     name: string;

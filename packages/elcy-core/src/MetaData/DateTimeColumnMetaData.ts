@@ -9,7 +9,7 @@ export class DateTimeColumnMetaData<TE extends object = object> extends ColumnMe
     constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<Date | Temporal.Instant>) {
         super(entityMeta, type ?? Date);
     }
-    public columnType: DateTimeColumnType = "datetime";
+    public override columnType: DateTimeColumnType = "datetime";
     public isCreatedDate?: boolean;
     public isModifiedDate?: boolean;
     public precision?: number;

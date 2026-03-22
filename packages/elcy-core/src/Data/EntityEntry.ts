@@ -14,6 +14,10 @@ import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
+import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
+import { DeferredQuery } from "src/Query/DeferredQuery";
 
 export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     public get isCompletelyLoaded() {
@@ -87,9 +91,9 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
             this._state = value;
         }
     }
-    constructor(public readonly dbSet: DbSet<T>, public entity: T, public key: string) {
+    constructor(public readonly dbSet: DbSet<T>, public readonly entity: T, public key: string) {
         this._state = EntityState.Detached;
-        trackEntity(entity, (_: T, args: IChangeEventParam<T>) => this.onPropertyChanged(args));
+        trackEntity(entity, this.onPropertyChanged);
     }
 
     //#endregion
@@ -124,11 +128,11 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                         .filter((rel) => rel.isMaster && rel.relationColumns.some((o) => o.propertyName === prop)
                             && (rel.updateOption === "CASCADE" || rel.updateOption === "SET NULL" || rel.updateOption === "SET DEFAULT"));
                     for (const rel of relations) {
-                        let childEntities: unknown[] = [];
+                        let childEntities: Record<string, unknown>[] = [];
                         if (rel.relationType === "one") {
                             const childEntity = this.entity[rel.propertyName];
                             if (childEntity) {
-                                childEntities = [childEntity];
+                                childEntities = [childEntity as Record<string, unknown>];
                             }
                         }
                         else {
@@ -144,15 +148,15 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                         for (const childEntity of childEntities) {
                             switch (rel.updateOption) {
                                 case "CASCADE": {
-                                    childEntity[rCol.propertyName as string] = this.entity[prop];
+                                    childEntity[rCol.propertyName] = this.entity[prop] as never;
                                     break;
                                 }
                                 case "SET NULL": {
-                                    childEntity[rCol.propertyName as string] = null;
+                                    childEntity[rCol.propertyName] = null;
                                     break;
                                 }
                                 case "SET DEFAULT": {
-                                    childEntity[rCol.propertyName as string] = rCol?.defaultExp ? ExpressionExecutor.execute(rCol.defaultExp) : null;
+                                    childEntity[rCol.propertyName] = rCol?.defaultExp ? ExpressionExecutor.execute(rCol.defaultExp) : null;
                                     break;
                                 }
                             }
@@ -169,13 +173,13 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                 this.state = EntityState.Detached;
 
                 for (const relMeta of this.metaData.relations) {
-                    let childEntities: object[] = [];
+                    let childEntities: Record<string, unknown>[] = [];
                     const relProp = this.entity[relMeta.propertyName];
                     if (Array.isArray(relProp)) {
                         childEntities = relProp.slice();
                     }
                     else if (relProp) {
-                        childEntities = [relProp as object];
+                        childEntities = [relProp as Record<string, unknown>];
                     }
 
                     if (!childEntities.length) {
@@ -183,7 +187,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
                     }
 
                     if (relMeta.reverseRelation.relationType === "one") {
-                        childEntities.forEach((o) => o[relMeta.reverseRelation.propertyName as any] = null);
+                        childEntities.forEach((o) => o[relMeta.reverseRelation.propertyName] = null);
                     }
                     else {
                         childEntities.forEach((o) => ArrayExtension.delete(o[relMeta.reverseRelation.propertyName] as T[], this.entity));
@@ -272,10 +276,29 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelation(...relations: Array<(entity: QueryableChain<T>) => unknown>) {
-        const paramExp = new ParameterExpression("o", this.dbSet.type);
-        const projected = this.dbSet.primaryKeys.map((o) => new FunctionExpression<T[StringKeyOf<T>] & ValueType, T>(new MemberAccessExpression(paramExp, o.propertyName), [paramExp]));
-        await this.dbSet.project(...projected).loads(...relations).find(this.getPrimaryValues());
+    public async loadRelation(...relations: Array<(entity: QueryableChain<T>) => Exclude<object, ValueType>>) {
+        if (!relations.length) {
+            return;
+        }
+
+        const dbSet = this.dbSet;
+        const param = new ParameterExpression("o", this.dbSet.type);
+        const entityParamExp = new ParameterExpression("entity", this.dbSet.type);
+        let andExp: IExpression<boolean>;
+        for (const pk of dbSet.primaryKeys) {
+            const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(entityParamExp, pk.propertyName));
+            andExp = andExp ? new AndExpression(andExp, d) : d;
+        }
+        const a = new FunctionExpression(andExp, [param]);
+        const mainQuery = this.dbSet.parameter({ id: this.entity }).filter(a);
+
+        let deferredQuery: DeferredQuery;
+        for (const relation of relations) {
+            deferredQuery = mainQuery.map(relation).deferredToArray();
+        }
+
+        await deferredQuery;
+        this.buildRelation();
     }
 
     /**
@@ -374,7 +397,7 @@ export class EntityEntry<T extends object = object> implements IEntityEntry<T> {
         }
         this.state = this._originalValues.size > 0 ? EntityState.Modified : EntityState.Unchanged;
     }
-    protected onPropertyChanged(param: IChangeEventParam<T>) {
+    protected onPropertyChanged = (_: T, param: IChangeEventParam<T>) => {
         if (this.dbSet.primaryKeys.includes(param.column)) {
             // primary key changed, update dbset entry dictionary.
             this.dbSet.updateEntryKey(this);

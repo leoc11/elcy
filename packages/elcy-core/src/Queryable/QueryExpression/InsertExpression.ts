@@ -1,5 +1,5 @@
 import { Enumerable } from "@elcy/enumerable";
-import { GenericType, IObjectType, SetterObj } from "../../Common/Type";
+import { GenericType, IObjectType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { IEnumerable } from "@elcy/enumerable";
@@ -15,6 +15,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+
 export class InsertExpression<T extends object = object> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<T>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
@@ -49,7 +50,7 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
         const values = this.values.map((o) => {
             const item: SetterObj<T> = {};
             for (const prop in o) {
-                item[prop] = resolveClone(o[prop], replaceMap);
+                item[prop as StringKeyOf<T>] = resolveClone(o[prop as StringKeyOf<T>], replaceMap);
             }
             return item;
         });
@@ -64,7 +65,7 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
         return hashCode("INSERT", hashCode(this.entity.name, Enumerable.from(this.values).map((o) => {
             let hash = 0;
             for (const prop in o) {
-                hash += hashCode(prop, o[prop].hashCode());
+                hash += hashCode(prop, o[prop as StringKeyOf<T>].hashCode());
             }
             return hash;
         }).sum()));
@@ -74,12 +75,12 @@ export class InsertExpression<T extends object = object> implements IQueryExpres
     }
 }
 
-export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
-    const itemExp: SetterObj<T> = {};
+export const insertEntryExp = <T extends object>(insertExp: InsertExpression<T>, entry: EntityEntry<T>, columns: IEnumerable<IColumnMetaData<T>>, relations: IEnumerable<IRelationMetaData<T>>, queryParameters: IQueryParameterMap) => {
+    const itemExp: SetterObj<T, T[keyof T] & ValueType> = {};
     for (const col of columns) {
         const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            const param = new SqlParameterExpression(new ParameterExpression("", col.type), col);
+            const param = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col as unknown as IColumnMetaData<object, T[keyof T] & ValueType>);
             queryParameters.set(param, { value: value });
             itemExp[col.propertyName] = param;
             insertExp.paramExps.push(param);
@@ -89,13 +90,13 @@ export const insertEntryExp = <T>(insertExp: InsertExpression<T>, entry: EntityE
     for (const rel of relations) {
         const parentEntity = entry.entity[rel.propertyName];
         if (parentEntity) {
-            const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
+            const parentEntry = entry.dbSet.dbContext.entry(parentEntity as object);
             const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
             for (const [col, parentCol] of rel.relationMaps) {
-                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type), parentCol);
+                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type as GenericType<T[keyof T] & ValueType>), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as any), parentCol);
+                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as keyof object), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {

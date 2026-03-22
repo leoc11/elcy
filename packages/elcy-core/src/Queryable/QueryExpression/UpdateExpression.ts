@@ -1,6 +1,6 @@
 import { Enumerable } from "@elcy/enumerable";
 import { JoinType, OrderDirection } from "../../Common/StringType";
-import { FlatObjectLike, IObjectType, SetterObj } from "../../Common/Type";
+import { FlatObjectLike, IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
@@ -20,6 +20,7 @@ import { IQueryExpression } from "./IQueryExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { getColumnMetadata } from "src/MetaData/MetaDataMapper";
+
 export class UpdateExpression<T extends object = object> implements IQueryExpression<void> {
     public get entity() {
         return this.select.entity as EntityExpression<T>;
@@ -67,9 +68,9 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
     public returnings: Array<IColumnExpression<T>> = [];
     public select: SelectExpression<T>;
     public setter: SetterObj<T> = {};
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T>, IColumnExpression<TChild>>, type: JoinType): JoinRelation<T, TChild>;
-    public addJoin<TChild>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T>, IColumnExpression<TChild>>, type?: JoinType) {
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<T, TChild>, toOneJoinType?: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relations: Map<IColumnExpression<T>, IColumnExpression<TChild>>, type: JoinType): JoinRelation<T, TChild>;
+    public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMetaOrRelations: IRelationMetaData<T, TChild> | Map<IColumnExpression<T>, IColumnExpression<TChild>>, type?: JoinType) {
         return this.select.addJoin(child, relationMetaOrRelations as IRelationMetaData<T, TChild>, type);
     }
     public addWhere(expression: IExpression<boolean>) {
@@ -82,7 +83,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
         const select = resolveClone(this.select, replaceMap);
         const setter: SetterObj<T> = {};
         for (const prop in this.setter) {
-            setter[prop] = resolveClone(this.setter[prop], replaceMap);
+            setter[prop as StringKeyOf<T>] = resolveClone(this.setter[prop as StringKeyOf<T>], replaceMap);
         }
         const clone = new UpdateExpression(select, setter);
         replaceMap.set(this, clone);
@@ -94,7 +95,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
     public hashCode() {
         let code = 0;
         for (const prop in this.setter) {
-            code += hashCode(prop, this.setter[prop].hashCode());
+            code += hashCode(prop, this.setter[prop as StringKeyOf<T>].hashCode());
         }
         return hashCode("UPDATE", hashCodeAdd(code, this.select.hashCode()));
     }
@@ -106,7 +107,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
     public toString(): string {
         let setter = "";
         for (const prop in this.setter) {
-            const val = this.setter[prop];
+            const val = this.setter[prop as StringKeyOf<T>];
             setter += `${prop}:${val.toString()},\n`;
         }
         return `Update(${this.entity.toString()}, {${setter}})`;
@@ -116,7 +117,7 @@ export class UpdateExpression<T extends object = object> implements IQueryExpres
 export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
     const entityMeta = entry.metaData;
     const entity = entry.entity;
-    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).map((o) => getColumnMetadata(entityMeta.type, o) as IColumnMetaData<T>).filter((o) => !!o);
+    const modifiedColumns = Enumerable.from(entry.getModifiedProperties()).map((o) => getColumnMetadata(entityMeta.type, o)).filter((o) => !!o);
 
     for (const o of modifiedColumns) {
         const paramExp = new SqlParameterExpression(new ParameterExpression("", o.type), o);
@@ -126,7 +127,7 @@ export const updateItemExp = <T extends object>(updateExp: UpdateExpression<T>, 
 
     switch (entityMeta.concurrencyMode) {
         case "OPTIMISTIC VERSION": {
-            const versionCol: IColumnMetaData<T> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
+            const versionCol: IColumnMetaData<T, unknown> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
             if (!versionCol) {
                 throw new Error(`${entityMeta.name} did not have version column`);
             }

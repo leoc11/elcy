@@ -1,8 +1,10 @@
-let Decimal: typeof import("decimal.js").default;
+import type { Decimal as DecimalModule } from "decimal.js";
+let module: typeof import("decimal.js").default;
 
 try {
-    Decimal = (await import("decimal.js")).default;
+    module = (await import("decimal.js")).default;
 }
 catch { }
 
-export { Decimal };
+export const Decimal = module;
+export type Decimal = DecimalModule;

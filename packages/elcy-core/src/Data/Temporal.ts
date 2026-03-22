@@ -8,8 +8,12 @@ catch { }
 
 export const Temporal = module;
 export namespace Temporal {
+    export type Instant = TemporalModule.Instant;
+    export type PlainDate = TemporalModule.PlainDate;
+    export type PlainTime = TemporalModule.PlainTime;
     export type DurationLike = TemporalModule.DurationLike;
     export type PlainDateLike = TemporalModule.PlainDateLike;
     export type PlainTimeLike = TemporalModule.PlainTimeLike;
     export type RoundTo<T extends TemporalModule.DateTimeUnit> = TemporalModule.RoundTo<T>;
+    export type SmallestUnit<T extends TemporalModule.DateTimeUnit> = TemporalModule.SmallestUnit<T>;
 }

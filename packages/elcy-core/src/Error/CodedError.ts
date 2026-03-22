@@ -20,5 +20,5 @@ export class CodedError extends Error {
     }
     public readonly code: number;
     public readonly innerError: Error;
-    public readonly message: string;
+    public override readonly message: string;
 }

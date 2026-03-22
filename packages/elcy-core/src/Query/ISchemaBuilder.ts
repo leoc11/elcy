@@ -1,6 +1,5 @@
 import { IObjectType } from "../Common/Type";
 import { IConnection } from "../Connection/IConnection";
-import { IEntityMetaData } from "../MetaData/Interface/IEntityMetaData";
 import { IQueryBuilder } from "./IQueryBuilder";
 import { ISchemaBuilderOption } from "./ISchemaBuilderOption";
 import { ISchemaQuery } from "./ISchemaQuery";

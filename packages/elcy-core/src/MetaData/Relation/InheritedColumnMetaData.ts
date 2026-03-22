@@ -54,7 +54,7 @@ export class InheritedColumnMetaData<TE extends TP = any, TP extends object = ob
             this.parentColumnMetaData = columnMeta.parentColumnMetaData;
         }
         else if (columnMeta instanceof ColumnMetaData) {
-            this.parentColumnMetaData = columnMeta as ColumnMetaData<TP, T>;
+            this.parentColumnMetaData = columnMeta as unknown as ColumnMetaData<TP, T>;
         }
     }
 }
