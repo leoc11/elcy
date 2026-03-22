@@ -111,7 +111,7 @@ Queryable.prototype.map = function <T, TReturn>(this: Queryable<T>, typeOrSelect
     else {
         type = typeOrSelector as IObjectType<Unchain<TReturn>>;
     }
-    return new SelectQueryable(this, selector as unknown as FunctionExpression<Unchain<TReturn>, [T]>, type);
+    return new SelectQueryable(this, selector as FunctionExpression<Unchain<TReturn>, [T]>, type);
 };
 Queryable.prototype.parameter = function <T>(this: Queryable<T>, params: { [key: string]: unknown }): Queryable<T> {
     return new ParameterQueryable(this, params);

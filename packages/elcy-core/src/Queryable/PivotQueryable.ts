@@ -69,8 +69,8 @@ export class PivotQueryable<T,
         const param = new ParameterExpression(paramName, this.parent.type);
         const objectValue: SetterObj<KE> = {};
         for (const prop in objectFn) {
-            let fnExpression: FunctionExpression<KE[StringKeyOf<KE>] & ValueType>;
-            const value = objectFn[prop] as FunctionExpression<KE[StringKeyOf<KE>] & ValueType>;
+            let fnExpression: FunctionExpression<KE[StringKeyOf<KE>] & ValueType, unknown[]>;
+            const value = objectFn[prop] as FunctionExpression<KE[StringKeyOf<KE>] & ValueType, unknown[]>;
             if (value instanceof FunctionExpression) {
                 fnExpression = value;
             }

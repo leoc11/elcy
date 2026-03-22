@@ -8,9 +8,8 @@ import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 import { Enumerable } from "@elcy/enumerable";
-import { IEntityExpression } from "../QueryExpression/IEntityExpression";
 
-export class IncludeRelation<TE extends object = object, TChild extends object = object> implements ISelectRelation<TE, TChild> {
+export class IncludeRelation<TE extends object = any, TChild extends object = any> implements ISelectRelation<TE, TChild> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -73,7 +72,7 @@ export class IncludeRelation<TE extends object = object, TChild extends object =
     }
     public relationMap() {
         if (this.isEmbedded) {
-            return Enumerable.from(this.parent.primaryKeys).map(o => [o, o] as unknown as [IColumnExpression, IColumnExpression]);
+            return Enumerable.from(this.parent.primaryKeys).map(o => [o, o]);
         }
 
         return Enumerable.range(0, this.parentColumns.length - 1).map(o => [this.parentColumns[o], this.childColumns[o]]);
@@ -85,10 +84,10 @@ export class IncludeRelation<TE extends object = object, TChild extends object =
         this._isManyManyRelation = false;
         visitExpression(this.relation, (exp: IExpression) => {
             if (isColumnExp(exp)) {
-                if (this.child.entity === exp.entity as unknown as IEntityExpression<TChild>) {
+                if (this.child.entity === exp.entity) {
                     this._childColumns.push(exp);
                 }
-                else if (this.parent.entity === exp.entity as unknown as IEntityExpression<TE>) {
+                else if (this.parent.entity === exp.entity) {
                     this._parentColumns.push(exp);
                 }
                 else if (this.child.allSelects.map((o) => o.entity).includes(exp.entity)) {

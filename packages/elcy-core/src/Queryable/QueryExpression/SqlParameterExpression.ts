@@ -4,7 +4,7 @@ import { resolveClone } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 
 export class SqlParameterExpression<T = unknown> implements IExpression<T> {
-    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<object, T>) { }
+    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<any, T>) { }
     public type: GenericType<T>;
     public isSystem?: boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {

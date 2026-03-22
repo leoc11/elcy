@@ -99,7 +99,7 @@ export const upsertEntryExp = <T extends object>(upsertExp: UpsertExpression<T>,
     for (const col of upsertExp.insertColumns) {
         const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            const paramExp = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col.columnMeta as unknown as IColumnMetaData<object, T[keyof T] & ValueType>);
+            const paramExp = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col.columnMeta as IColumnMetaData<any, T[keyof T] & ValueType>);
             queryParameters.set(paramExp, { value: value });
             upsertExp.setter[col.propertyName] = paramExp;
         }

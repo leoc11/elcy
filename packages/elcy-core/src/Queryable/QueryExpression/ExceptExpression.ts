@@ -1,11 +1,13 @@
 import { Enumerable } from "@elcy/enumerable";
-import { GenericType, IObjectType } from "../../Common/Type";
+import { GenericType, IObjectType, PrimitiveType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 
 export class ExceptExpression<T extends object> extends ProjectionEntityExpression<T> {
+    constructor(type?: PrimitiveType<T>, ...subSelects: [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]);
+    constructor(type?: GenericType<T>, ...subSelects: [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]);
     constructor(type?: GenericType<T>, ...subSelects: [SelectExpression<T>, SelectExpression<T>, ...SelectExpression<T>[]]) {
         super(subSelects[0], type);
         let entityTypes = Enumerable.from<IObjectType>([]);

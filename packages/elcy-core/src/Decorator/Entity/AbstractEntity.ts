@@ -1,7 +1,7 @@
 import { ClassBase } from "../../Common/Constant";
 import { InheritanceType } from "../../Common/Enum";
 import { OrderDirection } from "../../Common/StringType";
-import { IObjectType, ValueType } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 import { IOrderDefinition } from "@elcy/enumerable";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
@@ -38,7 +38,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
         const entityMetadata = new AbstractEntityMetaData(type, option.name);
 
         if (defaultOrders) {
-            entityMetadata.defaultOrders = defaultOrders.map((o) => new ArrayValueExpression<OrderDirection | ((...param: T[]) => ValueType)>(ExpressionBuilder.parse(o[0], [type]), new ValueExpression(o[1])));
+            entityMetadata.defaultOrders = defaultOrders.map((o) => new ArrayValueExpression<OrderDirection | ((...param: T[]) => unknown)>(ExpressionBuilder.parse(o[0], [type]), new ValueExpression(o[1])));
         }
 
         const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;

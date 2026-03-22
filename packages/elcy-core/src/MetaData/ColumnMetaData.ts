@@ -1,13 +1,13 @@
 import { ColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
-import { GenericType, StringKeyOf, ValueType } from "../Common/Type";
+import { GenericType, PrimitiveType, StringKeyOf, ValueType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export abstract class ColumnMetaData<TE extends object, T = ValueType> implements IColumnMetaData<TE, T> {
+export abstract class ColumnMetaData<TE extends object = any, T = ValueType> implements IColumnMetaData<TE, T> {
     public get default() {
         return this._default;
     }
@@ -24,6 +24,8 @@ export abstract class ColumnMetaData<TE extends object, T = ValueType> implement
     public get isPrimaryColumn(): boolean {
         return this.entity.primaryKeys.includes(this as IColumnMetaData<TE>);
     }
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: PrimitiveType<T>);
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<T>);
     constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<T>) {
         if (typeof type !== "undefined") {
             this.type = type;

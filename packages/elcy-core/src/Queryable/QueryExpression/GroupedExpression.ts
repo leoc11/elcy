@@ -35,9 +35,9 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                         const childSelects = Enumerable.from(childSelectExp.resolvedSelects).map((o) => {
                             let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName as string && c.constructor === o.constructor);
                             if (!curCol) {
-                                curCol = o.clone(cloneMap) as any;
+                                curCol = o.clone(cloneMap);
                             }
-                            return curCol as unknown as IColumnExpression;
+                            return curCol;
                         });
                         this._groupBy = childSelects.toArray();
                     }
@@ -47,7 +47,7 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                 }
             }
             else if (this.key instanceof ObjectValueExpression) {
-                for (const prop in (this.key as ObjectValueExpression<T>).object) {
+                for (const prop in (this.key as ObjectValueExpression<K & object>).object) {
                     this._groupBy.push(this.key.object[prop] as IColumnExpression);
                 }
             }

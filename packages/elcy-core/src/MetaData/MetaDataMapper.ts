@@ -3,18 +3,18 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IObjectType, StringKeyOf, ValueType } from "../Common/Type";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 
-const entityMetaMap = new WeakMap<IObjectType<unknown>, IEntityMetaData<any>>();
-const columnMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IColumnMetaData<any, any>>>();
-const relationMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IRelationMetaData<any, any>>>();
+const entityMetaMap = new WeakMap<IObjectType<unknown>, IEntityMetaData>();
+const columnMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IColumnMetaData>>();
+const relationMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IRelationMetaData>>();
 
 export function getEntityMetadata<TE extends object>(constructor: IObjectType<TE>): IEntityMetaData<TE> {
-    return entityMetaMap.get(constructor) as unknown as IEntityMetaData<TE>;
+    return entityMetaMap.get(constructor);
 }
 export function setEntityMetadata<TE extends object>(constructor: IObjectType<TE>, metadata: IEntityMetaData<TE>): void {
     entityMetaMap.set(constructor, metadata);
 }
 export function getColumnMetadata<TE extends object, K extends StringKeyOf<TE>, T extends ValueType = ValueType>(constructor: IObjectType<TE>, propertyKey: K): IColumnMetaData<TE, T> {
-    return columnMetaMap.get(constructor)?.get(propertyKey);
+    return columnMetaMap.get(constructor)?.get(propertyKey) as IColumnMetaData<TE, T>;
 }
 export function setColumnMetadata<TE extends object, K extends StringKeyOf<TE>, T extends ValueType = ValueType>(constructor: IObjectType<TE>, propertyKey: K, metadata: IColumnMetaData<TE, T>): void {
     let map = columnMetaMap.get(constructor);

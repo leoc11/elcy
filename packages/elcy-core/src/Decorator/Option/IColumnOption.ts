@@ -20,5 +20,5 @@ export interface IColumnOption<T = any> {
     isProjected?: boolean;
     isReadOnly?: boolean;
     nullable?: boolean;
-    type?: T extends unknown ? GenericType<T> : never;
+    type?: GenericType<T>;
 }

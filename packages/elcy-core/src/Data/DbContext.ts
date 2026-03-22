@@ -2,7 +2,7 @@ import type { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import type { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { QueryType } from "../Common/Enum";
 import type { DbType, DeleteMode, IsolationLevel } from "../Common/StringType";
-import type { FlatObjectLike, IObjectType, RawSchema, ValueType } from "../Common/Type";
+import type { FlatObjectLike, IObjectType, RawSchema } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import type { IConnection } from "../Connection/IConnection";
 import type { IConnectionManager } from "../Connection/IConnectionManager";
@@ -53,7 +53,6 @@ import { EmbeddedEntityEntryMap } from "./EmbeddedEntityEntryMap";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { EntityChangeMap } from "./EntityChangeMap";
 import { RawQueryView } from "./RawQueryView";
-import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -603,11 +602,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     public set<T extends object = object>(type: IObjectType<T>, isClearCache = false): DbSet<T> {
         let result: DbSet<T>;
         if (!isClearCache) {
-            result = this._cachedDbSets.get(type) as unknown as DbSet<T>;
+            result = this._cachedDbSets.get(type);
         }
         if (!result && this.entityTypes.includes(type)) {
             result = new DbSet(type, this);
-            this._cachedDbSets.set(type, result as unknown as DbSet);
+            this._cachedDbSets.set(type, result);
         }
         return result;
     }
@@ -694,7 +693,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             for (const entry of entries) {
                 let primaryExp: IExpression<boolean>;
                 for (const col of entityExp.primaryColumns) {
-                    const parameter = new SqlParameterExpression(new ParameterExpression("", col.type), col.columnMeta as unknown as IColumnMetaData<object, ValueType>);
+                    const parameter = new SqlParameterExpression(new ParameterExpression("", col.type), col.columnMeta);
                     queryParameters.set(parameter, { value: entry.entity[col.propertyName] });
 
                     const logicalExp = new StrictEqualExpression(col, parameter);
@@ -707,7 +706,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const arrayValue = new ArrayValueExpression();
             const primaryKey = entityExp.primaryColumns.find(() => true);
             for (const entry of entries) {
-                const parameter = new SqlParameterExpression(new ParameterExpression("", primaryKey.type), primaryKey.columnMeta as unknown as IColumnMetaData<object, ValueType>);
+                const parameter = new SqlParameterExpression(new ParameterExpression("", primaryKey.type), primaryKey.columnMeta);
                 queryParameters.set(parameter, { value: entry.entity[primaryKey.propertyName] });
                 arrayValue.items.push(parameter);
             }
@@ -767,7 +766,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 results.push(insertQuery);
 
                 const selectExp = new SelectExpression(entityExp);
-                selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName) as unknown as IColumnExpression).toArray();
+                selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName)).toArray();
 
                 const lastId = queryBuilder.lastInsertIdQuery;
                 selectExp.addWhere(new StrictEqualExpression(entityExp.columns.find((c) => c.propertyName === incrementColumn.columnName), new RawSqlExpression(incrementColumn.type, lastId)));
@@ -840,7 +839,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 }
 
                 const selectExp = new SelectExpression(entityExp);
-                selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName) as unknown as IColumnExpression).toArray();
+                selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName)).toArray();
                 selectExp.addWhere(whereExp);
 
                 results.push(new DeferredQuery(this, selectExp, selectQueryParameters, (queryRes) => {
@@ -872,7 +871,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const selectParameters: IQueryParameterMap = new Map();
         if (hasUpdateColumn) {
             selectExp = new SelectExpression<T>(entityExp);
-            selectExp.selects = Enumerable.from(entityMetaData.primaryKeys).union(autoUpdateColumns).map((o) => entityExp.columns.find((c) => c.propertyName === o.propertyName) as unknown as IColumnExpression).toArray();
+            selectExp.selects = Enumerable.from(entityMetaData.primaryKeys).union(autoUpdateColumns).map((o) => entityExp.columns.find((c) => c.propertyName === o.propertyName)).toArray();
         }
 
         for (const entry of entries) {
@@ -881,7 +880,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
             let pkFilter: IExpression<boolean>;
             for (const colExp of updateExp.entity.primaryColumns) {
-                const parameter = new SqlParameterExpression(new ParameterExpression("", colExp.type), colExp.columnMeta as unknown as IColumnMetaData<object>);
+                const parameter = new SqlParameterExpression(new ParameterExpression("", colExp.type), colExp.columnMeta);
                 queryParameters.set(parameter, { value: entry.entity[colExp.propertyName as keyof T] });
                 if (hasUpdateColumn) {
                     selectParameters.set(parameter, { value: entry.entity[colExp.propertyName as keyof T] });
@@ -990,7 +989,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
 
             const selectExp = new SelectExpression(entityExp);
-            selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName) as unknown as IColumnExpression).toArray();
+            selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName)).toArray();
             selectExp.addWhere(whereExp);
 
             results.push(new DeferredQuery(this, selectExp, new Map(Enumerable.from(results).flatMap((o) => o.parameters)), (queryRes) => {

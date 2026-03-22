@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, PrimitiveType } from "../../Common/Type";
 import { resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { ObjectValueExpression } from "./ObjectValueExpression";
@@ -10,6 +10,8 @@ type ParameterTupleExp<T extends readonly unknown[]> = {
 const FunctionTypeConstructor: () => ((...param: any[]) => any) = () => (() => { });
 export class FunctionExpression<T = unknown, TArgs extends readonly unknown[] = []> implements IExpression<(...param: TArgs) => T> {
     // TODO: type must always specified
+    constructor(body?: IExpression<T>, params?: ParameterTupleExp<TArgs>, type?: PrimitiveType<T>);
+    constructor(body?: IExpression<T>, params?: ParameterTupleExp<TArgs>, type?: GenericType<T>);
     constructor(body?: IExpression<T>, params?: ParameterTupleExp<TArgs>, type?: GenericType<T>) {
         this.body = body;
         this.params = params;

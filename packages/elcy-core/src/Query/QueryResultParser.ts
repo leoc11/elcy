@@ -71,7 +71,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
         if (entityMetaData) {
             this.columns = this.columns.concat(Array.from(this.itemSelectExp.relationColumns));
             this.primaryColumns = Enumerable.from(this.primaryColumns)
-                .union(Enumerable.from(this.itemSelectExp.resolvedSelects).filter((o) => entityMetaData.primaryKeys.some((c) => c.propertyName === o.propertyName)) as unknown as Enumerable<IColumnExpression<TE>>)
+                .union(Enumerable.from(this.itemSelectExp.resolvedSelects).filter((o) => entityMetaData.primaryKeys.some((c) => c.propertyName === o.propertyName)))
                 .toArray();
         }
 
@@ -107,9 +107,9 @@ class SelectExpressionParserFactory<TE extends object, T> {
         }
     }
     protected readonly isValue: boolean;
-    protected readonly columns: IColumnExpression<object>[];
+    protected readonly columns: IColumnExpression[];
     protected readonly primaryColumns: IColumnExpression<TE>[];
-    protected readonly relationMap: Map<IncludeRelation<TE, object>, IRelationMetaData>;
+    protected readonly relationMap: Map<IncludeRelation<TE>, IRelationMetaData>;
     protected readonly embeddedParserMap: Record<string, SelectExpressionParserFactory<object, unknown>>;
 
     protected parseRow(row: Record<string, unknown>, dbContext: DbContext, dbSet: DbSet<TE>, dbEventEmitter: DBEventEmitter<TE>, parseMap: Map<SelectExpression, ParserFunction>) {
@@ -123,7 +123,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
             const data = new (this.itemSelectExp.itemType as IObjectType<T & object>)();
             // set column data
             for (const column of this.columns) {
-                setColumnValue(data, column as unknown as IColumnExpression<T & object>, row, dbContext);
+                setColumnValue(data, column, row, dbContext);
             }
 
             this.parseInclude(data, row, dbContext, parseMap);
@@ -146,7 +146,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
         // set column data
         for (const column of this.columns) {
-            setEntryColumnValue(entry, column as unknown as IColumnExpression<TE>, row, dbContext);
+            setEntryColumnValue(entry, column, row, dbContext);
         }
 
         this.parseInclude(data, row, dbContext, parseMap, dbSet);
@@ -163,7 +163,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
     }
 
     public parseInclude<T extends object>(data: T, row: object, dbContext: DbContext, parseMap: Map<SelectExpression, ParserFunction>, dbSet?: DbSet<T>) {            // load relations
-        for (const include of this.itemSelectExp.includes as unknown as IncludeRelation<T>[]) {
+        for (const include of this.itemSelectExp.includes) {
             const includeProperty = include.name as keyof T;
             if (include.isEmbedded) {
                 const parserFactory = this.embeddedParserMap[include.name];
@@ -175,7 +175,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
                 continue;
             }
 
-            const parser = parseMap.get(include.child);
+            const parser = parseMap.get(include.child) as ParserFunction<Record<string, unknown>>;
             const relId: Record<string, ValueType> = {};
             for (const [col, childCol] of include.relationMap()) {
                 relId[childCol.dataPropertyName] = row[col.dataPropertyName as keyof object];
@@ -200,21 +200,21 @@ class SelectExpressionParserFactory<TE extends object, T> {
                 continue;
             }
 
-            const reverseRelation = this.relationMap.get(include as unknown as IncludeRelation<TE>);
+            const reverseRelation = this.relationMap.get(include);
             if (!reverseRelation) {
                 continue;
             }
 
             for (const child of childEntities) {
                 if (reverseRelation.relationType === "many") {
-                    let childRelProperty: unknown[] = child[reverseRelation.propertyName];
+                    let childRelProperty = child[reverseRelation.propertyName] as unknown[];
                     if (!Array.isArray(childRelProperty)) {
-                        childRelProperty = child[reverseRelation.propertyName] = [] as never;
+                        childRelProperty = child[reverseRelation.propertyName] = [];
                     }
                     childRelProperty.push(data);
                 }
                 else {
-                    child[reverseRelation.propertyName] = data as never;
+                    child[reverseRelation.propertyName] = data;
                 }
             }
         }

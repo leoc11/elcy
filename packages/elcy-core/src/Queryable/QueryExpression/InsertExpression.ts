@@ -80,7 +80,7 @@ export const insertEntryExp = <T extends object>(insertExp: InsertExpression<T>,
     for (const col of columns) {
         const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            const param = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col as unknown as IColumnMetaData<object, T[keyof T] & ValueType>);
+            const param = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col as IColumnMetaData<any, T[keyof T] & ValueType>);
             queryParameters.set(param, { value: value });
             itemExp[col.propertyName] = param;
             insertExp.paramExps.push(param);
@@ -88,15 +88,15 @@ export const insertEntryExp = <T extends object>(insertExp: InsertExpression<T>,
     }
 
     for (const rel of relations) {
-        const parentEntity = entry.entity[rel.propertyName];
+        const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
         if (parentEntity) {
-            const parentEntry = entry.dbSet.dbContext.entry(parentEntity as object);
+            const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
             const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
             for (const [col, parentCol] of rel.relationMaps) {
-                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type as GenericType<T[keyof T] & ValueType>), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
+                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type as GenericType<T[keyof T] & ValueType>), parentCol as IColumnMetaData<any, T[keyof T] & ValueType>);
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as keyof object), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
+                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as keyof object), parentCol as IColumnMetaData<any, T[keyof T] & ValueType>);
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {

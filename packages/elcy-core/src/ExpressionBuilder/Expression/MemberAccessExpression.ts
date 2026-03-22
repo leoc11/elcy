@@ -1,4 +1,4 @@
-import { ElementType, GenericType, IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
+import { ElementType, GenericType, IObjectType, PrimitiveType, StringKeyOf, ValueType } from "../../Common/Type";
 import { hashCode, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
 import { getColumnMetadata, getRelationMetadata } from "../../MetaData/MetaDataMapper";
 import { IExpression } from "./IExpression";
@@ -47,6 +47,8 @@ export class MemberAccessExpression<TE extends object, K extends StringKeyOf<TE>
     public set type(value) {
         this._type = value;
     }
+    constructor(objectOperand: IExpression<TE>, memberName: K, type?: PrimitiveType<T>);
+    constructor(objectOperand: IExpression<TE>, memberName: K, type?: GenericType<T>);
     constructor(public objectOperand: IExpression<TE>, public memberName: K, type?: GenericType<T>) {
         this._type = type;
     }

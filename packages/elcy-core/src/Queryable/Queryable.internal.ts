@@ -2,7 +2,7 @@ import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, GenericType, IObjectType, MethodKey, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, GenericType, IObjectType, MethodKey, PrimitiveType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -16,7 +16,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { hashCode, hashCodeAdd, isNotNull, isValue } from "../Helper/Util";
+import { hashCode, hashCodeAdd, isNotNull, isNull, isValue } from "../Helper/Util";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
@@ -33,7 +33,7 @@ import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { QueryableChain, Unchain } from "./Interface/QueryableChain";
 
-export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, any> {
+export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
     }
@@ -46,6 +46,8 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     public get queryOption(): IQueryOption {
         return this.parent ? this.parent.queryOption : {};
     }
+    constructor(type: PrimitiveType<T>, parent?: Queryable);
+    constructor(type: GenericType<T>, parent?: Queryable);
     constructor(public type: GenericType<T>, protected parent?: Queryable) {
         if (parent) {
             this.parent = parent;
@@ -548,8 +550,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMax(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
-        let queryCache: IQueryCache<number>;
+        let queryCache: IQueryCache<TResult>;
         let cacheKey: number;
         const selector = args[0];
         const timer = Diagnostic.timer();
@@ -562,7 +563,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<number>(cacheKey);
+            queryCache = cacheManager.get<TResult>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -607,8 +608,8 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMin(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
-        let queryCache: IQueryCache<number>;
+    public deferredMin(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
+        let queryCache: IQueryCache<T>;
         let cacheKey: number;
         const selector = args[0];
         const timer = Diagnostic.timer();
@@ -621,7 +622,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<number>(cacheKey);
+            queryCache = cacheManager.get<T>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -905,7 +906,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
     }
     public deferredToMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V) {
         if (!valueSelector) {
-            valueSelector = (o: QueryableChain<T>) => (o as unknown as V);
+            valueSelector = (o: QueryableChain<T>) => (o as V);
         }
 
         let queryCache: IQueryCache<{ Key: K, Value: V }>;
@@ -1009,7 +1010,7 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
             for (const prop in setter) {
                 const val = setter[prop];
                 if (val instanceof Function) {
-                    const funcExp = ExpressionBuilder.parse(val, [this.type], this.parameters);
+                    const funcExp = ExpressionBuilder.parse(val as (o: unknown) => T[StringKeyOf<T>] & ValueType, [this.type], this.parameters);
                     setterExp[prop] = visitor.visitFunction(funcExp, [commandQuery.getItemExpression()], { selectExpression: commandQuery, scope: "queryable" });
                 }
                 else {
@@ -1061,11 +1062,11 @@ export abstract class Queryable<T = unknown> implements AsyncIterable<T, any, an
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }
-    public async max(...args: T extends number ? [selector?: (item: QueryableChain<T>) => T] : [selector: (item: QueryableChain<T>) => number]) {
+    public async max(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
         const query = this.deferredMax(...args);
         return await query.execute();
     }
-    public async min(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
+    public async min(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
         const query = this.deferredMin(...args);
         return await query.execute();
     }

@@ -6,7 +6,7 @@ import { IColumnOption } from "../../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../../ExpressionBuilder/Expression/FunctionExpression";
 import { IEntityMetaData } from "./IEntityMetaData";
 
-export interface IColumnMetaData<TE extends object = object, T = ValueType> {
+export interface IColumnMetaData<TE extends object = any, T = ValueType> {
     charset?: string;
     collation?: string;
     columnName?: string;

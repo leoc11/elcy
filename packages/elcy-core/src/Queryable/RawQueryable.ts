@@ -15,12 +15,12 @@ import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { DbContext } from "../Data/DbContext";
 import { CustomColumnMetaData } from "../MetaData/CustomColumnMetaData";
 
-export class RawQueryable<T extends object> extends Queryable<T> {
-    declare public type: IObjectType<T>;
-    constructor(sqlTemplateStrings: TemplateStringsArray, values: any[], dbSet: DbSet<T>);
-    constructor(sqlTemplateStrings: TemplateStringsArray, values: any[], objectType: RawSchema, context: DbContext);
-    constructor(public readonly sqlTemplateStrings: TemplateStringsArray, public readonly values: any[], objectTypeOrDbSet: RawSchema | DbSet<T>, context?: DbContext) {
-        let dbSet: DbSet<T>;
+export class RawQueryable<TE extends object> extends Queryable<TE> {
+    declare public type: IObjectType<TE>;
+    constructor(sqlTemplateStrings: TemplateStringsArray, values: unknown[], dbSet: DbSet<TE>);
+    constructor(sqlTemplateStrings: TemplateStringsArray, values: unknown[], objectType: RawSchema, context: DbContext);
+    constructor(public readonly sqlTemplateStrings: TemplateStringsArray, public readonly values: unknown[], objectTypeOrDbSet: RawSchema | DbSet<TE>, context?: DbContext) {
+        let dbSet: DbSet<TE>;
         let objectType: Record<string, GenericType<ValueType>>;
         if (objectTypeOrDbSet instanceof DbSet) {
             dbSet = objectTypeOrDbSet;
@@ -29,7 +29,7 @@ export class RawQueryable<T extends object> extends Queryable<T> {
         else {
             objectType = objectTypeOrDbSet;
         }
-        super(dbSet?.type ?? Object as unknown as IObjectType<T>, dbSet as any);
+        super(dbSet?.type ?? Object as unknown as IObjectType<TE>, dbSet);
         this._dbContext = context;
         this.isView = !dbSet;
         if (dbSet) {
@@ -39,7 +39,7 @@ export class RawQueryable<T extends object> extends Queryable<T> {
             const objectMetaData = new EntityMetaData(this.type);
             for (const prop in objectType) {
                 const columnMeta = new CustomColumnMetaData(objectMetaData, objectType[prop]);
-                columnMeta.propertyName = prop as StringKeyOf<T>;
+                columnMeta.propertyName = prop as StringKeyOf<TE>;
                 columnMeta.columnName = String(prop);
                 columnMeta.nullable = true;
                 columnMeta.isProjected = true;
@@ -55,7 +55,7 @@ export class RawQueryable<T extends object> extends Queryable<T> {
         return this._dbContext;
     }
 
-    private _metaData: EntityMetaData<T>;
+    private _metaData: EntityMetaData<TE>;
     public override flatQueryParameter(param?: { index: number }) {
         const flatParam = this.parent?.flatQueryParameter(param) ?? {};
         for (const prop in this.values) {
@@ -63,13 +63,13 @@ export class RawQueryable<T extends object> extends Queryable<T> {
         }
         return flatParam;
     }
-    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
+    public buildQuery(visitor: IQueryVisitor): IQueryExpression<TE> {
         if (typeof visitor.parameterIndex !== "number") {
             visitor.parameterIndex = 0;
         }
         const valueParameters: ParameterExpression[] = [];
         for (const prop in this.values) {
-            const paramExp = new ParameterExpression(`${visitor.parameterIndex}:${prop}`, this.values[prop]?.constructor);
+            const paramExp = new ParameterExpression(`${visitor.parameterIndex}:${prop}`, this.values[prop]?.constructor as GenericType);
             valueParameters.push(paramExp);
         }
         const entityExp = new RawEntityExpression(this._metaData, visitor.newAlias(), this.sqlTemplateStrings);
@@ -86,29 +86,29 @@ export class RawQueryable<T extends object> extends Queryable<T> {
     }
 
     override delete(mode?: DeleteMode): Promise<number>;
-    override delete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): Promise<number>;
-    override delete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): Promise<number>;
-    override delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode): Promise<number> {
+    override delete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): Promise<number>;
+    override delete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): Promise<number>;
+    override delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): Promise<number> {
         throw new Error("not supported");
     }
     override deferredDelete(mode?: DeleteMode): DeferredQuery<number>;
-    override deferredDelete(predicate?: FunctionExpression<boolean, T>, mode?: DeleteMode): DeferredQuery<number>;
-    override deferredDelete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    override deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode): DeferredQuery<number> {
+    override deferredDelete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): DeferredQuery<number>;
+    override deferredDelete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
+    override deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number> {
         if (this.isView) {
             throw new Error("not supported");
         }
-        return super.deferredDelete(modeOrPredicate as FunctionExpression<boolean, T>, mode);
+        return super.deferredDelete(modeOrPredicate as FunctionExpression<boolean, [TE]>, mode);
     }
-    override deferredUpdate(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }): DeferredQuery<number> {
+    override deferredUpdate(setter: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) }): DeferredQuery<number> {
         if (this.isView) {
             throw new Error("not supported");
         }
         return super.deferredUpdate(setter);
     }
-    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, T>>): Queryable<T>;
-    override loads<TLoad extends object>(...includes: Array<(item: QueryableChain<T>) => TLoad extends ValueType ? never: TLoad>): Queryable<T>;
-    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, T> | ((item: QueryableChain<T>) => TLoad extends ValueType ? never: TLoad)>): Queryable<T> {
+    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]>>): Queryable<TE>;
+    override loads<TLoad extends object>(...includes: Array<(item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad>): Queryable<TE>;
+    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]> | ((item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad)>): Queryable<TE> {
         if (this.isView) {
             throw new Error("not supported");
         }

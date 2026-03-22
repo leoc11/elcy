@@ -1,6 +1,6 @@
 import { Enumerable } from "@elcy/enumerable";
 import { OrderDirection } from "../../Common/StringType";
-import { GenericType, IObjectType, ValueType } from "../../Common/Type";
+import { GenericType, IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
@@ -9,7 +9,6 @@ import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
 export class ProjectionEntityExpression<TE extends object = object> implements IEntityExpression<TE> {
     public get primaryColumns(): IColumnExpression<TE>[] {
@@ -32,8 +31,8 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
         this.columns = Enumerable.from(subSelect.projectedColumns).map((o) => {
-            const col = new ColumnExpression<TE>(this, o.type, o.propertyName, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMeta = o.columnMeta as unknown as IColumnMetaData<TE>;
+            const col = new ColumnExpression(this, o.type, o.propertyName as StringKeyOf<TE>, o.columnName, o.isPrimary, o.isNullable);
+            col.columnMeta = o.columnMeta;
             return col;
         }).toArray();
         // TODO

@@ -5,17 +5,17 @@ import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression
 import type { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IEntityExpression<T extends object = object> extends IExpression<T> {
+export interface IEntityExpression<TE extends object = any> extends IExpression<TE> {
     alias: string;
-    columns: Array<IColumnExpression<T>>;
-    defaultOrders: Array<ArrayValueExpression<((...param: T[]) => ValueType) | OrderDirection>>;
-    deleteColumn?: IColumnExpression<T, boolean>;
+    columns: Array<IColumnExpression<TE>>;
+    defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
+    deleteColumn?: IColumnExpression<TE, boolean>;
     entityTypes: IObjectType[];
     isRelationData?: boolean;
     name: string;
     schema?: string;
-    primaryColumns: Array<IColumnExpression<T>>;
-    select?: SelectExpression<T, any>;
-    type: GenericType<T>;
-    clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T>;
+    primaryColumns: Array<IColumnExpression<TE>>;
+    select?: SelectExpression<TE, any>;
+    type: GenericType<TE>;
+    clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<TE>;
 }

@@ -1,16 +1,17 @@
 import type { ColumnType } from "../../Common/ColumnType";
-import type { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
+import type { GenericType, PrimitiveType, StringKeyOf, ValueType } from "../../Common/Type";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import type { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import type { IColumnExpression } from "./IColumnExpression";
 import type { IEntityExpression } from "./IEntityExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 
-export class ColumnExpression<TE extends object = object, T = ValueType> implements IColumnExpression<TE, T> {
+export class ColumnExpression<TE extends object = any, T = ValueType> implements IColumnExpression<TE, T> {
     public get dataPropertyName() {
         return this.alias || this.columnName;
     }
     constructor(entity: IEntityExpression<TE>, columnMeta: IColumnMetaData<TE, T>, isPrimary?: boolean);
+    constructor(entity: IEntityExpression<TE>, type: PrimitiveType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
     constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
     constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | StringKeyOf<TE>, columnName?: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType) {
         this.entity = entity;

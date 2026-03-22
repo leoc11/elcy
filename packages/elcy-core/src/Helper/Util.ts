@@ -1,5 +1,5 @@
 import { Decimal } from "src/Data/Decimal";
-import { ArrayView, GenericType, IObjectType, ValueType } from "../Common/Type";
+import { ArrayView, GenericType, IObjectType, PrimitiveType, ValueType } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
 import { Uuid } from "../Data/Uuid";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
@@ -42,7 +42,9 @@ export const isEqual = function (a: any, b: any) {
             && b.hasOwnProperty(Symbol.toPrimitive) && a[Symbol.toPrimitive] === b[Symbol.toPrimitive]
         );
 };
-export const tryCreateInstance = function <T>(type: GenericType<T>): T {
+export function tryCreateInstance<T>(type: PrimitiveType<T>): T;
+export function tryCreateInstance<T>(type: GenericType<T>): T;
+export function tryCreateInstance<T>(type: GenericType<T>): T {
     switch (true) {
         case (type as GenericType<bigint>) === BigInt: {
             return 0n as T;

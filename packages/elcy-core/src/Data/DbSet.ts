@@ -29,8 +29,8 @@ import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawQueryable } from "src/Queryable/RawQueryable";
 import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 
-export class DbSet<T extends object = object> extends Queryable<T> {
-    public get dbContext(): DbContext {
+export class DbSet<T extends object = any> extends Queryable<T> {
+    public override get dbContext(): DbContext {
         return this._dbContext;
     }
 
@@ -43,10 +43,10 @@ export class DbSet<T extends object = object> extends Queryable<T> {
     public get primaryKeys(): Array<IColumnMetaData<T>> {
         return this.metaData.primaryKeys;
     }
-    public get queryOption(): IQueryOption {
+    public override get queryOption(): IQueryOption {
         return {};
     }
-    constructor(public readonly type: IObjectType<T>, dbContext: DbContext) {
+    constructor(public override readonly type: IObjectType<T>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
     }
@@ -63,12 +63,12 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         this.dictionary.clear();
     }
     // simple delete.
-    public deferredDelete(mode: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(predicate?: FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | FunctionExpression<boolean, T> | ((item: QueryableChain<T>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public override deferredDelete(mode: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(predicate?: FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || modeOrKeyOrPredicate instanceof FunctionExpression || typeof modeOrKeyOrPredicate === "string") {
-            return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, T>, mode);
+            return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [T]>, mode);
         }
         else {
             const key = modeOrKeyOrPredicate;
@@ -125,9 +125,9 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         return query;
     }
     // simple update.
-    public deferredUpdate(setter: { [key in keyof T]?: T[key] | ((item: QueryableChain<T>) => ValueType) }) {
+    public override deferredUpdate(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }) {
         let pkFilter: IExpression<boolean> = null;
-        const setterObj: { [key in keyof T]?: T[key] | ((item: QueryableChain<T>) => ValueType) } = {};
+        const setterObj: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
         for (const prop in setter) {
             const primaryCol = this.metaData.primaryKeys.find((o) => o.propertyName === prop);
@@ -151,7 +151,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         }
 
         if (pkFilter) {
-            const query = new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]));
+            const query = this.filter(new FunctionExpression(pkFilter, [paramExp]));
             return query.deferredUpdate(setterObj);
         }
 
@@ -165,7 +165,7 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const setterExp: SetterObj<T> = {};
+        const setterExp: SetterObj<T, T[keyof T] & ValueType> = {};
         for (const prop in item) {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
@@ -206,9 +206,9 @@ export class DbSet<T extends object = object> extends Queryable<T> {
         }
         return entry;
     }
-    public async find(predicate?: (item: QueryableChain<T>) => boolean): Promise<T>;
-    public async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean): Promise<T>;
-    public async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: QueryableChain<T>) => boolean), forceReload?: boolean) {
+    public override async find(predicate?: (item: QueryableChain<T>) => boolean): Promise<T>;
+    public override async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean): Promise<T>;
+    public override async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: QueryableChain<T>) => boolean), forceReload?: boolean) {
         let entity: T;
         if (!idOrPredicate) {
             entity = await super.find();

@@ -514,7 +514,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 const commandExp = param.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column as unknown as IColumnExpression))) {
+                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
                         return this.toOperandString(column.expression, param);
                     }
                     return this.enclose(column.entity.alias) + "." + this.enclose(column.columnName);
@@ -526,7 +526,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     if (!childSelect) {
                         childSelect = commandExp.parentRelation.parent;
                     }
-                    const useAlias = !commandExp.projectedColumns.includes(column as unknown as IColumnExpression);
+                    const useAlias = !commandExp.projectedColumns.includes(column);
                     return this.enclose(childSelect.entity.alias) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
@@ -888,7 +888,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             selectExp.joins.push(joinRel);
         }
 
-        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation as unknown as ISelectRelation, param);
+        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation, param);
 
         let selectQuerySuffix = "";
         if (selectExp.where) {

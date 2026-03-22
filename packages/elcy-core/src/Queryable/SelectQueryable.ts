@@ -1,4 +1,4 @@
-import { GenericType } from "../Common/Type";
+import { GenericType, PrimitiveType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
@@ -21,8 +21,10 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     protected set selector(value) {
         this._selector = value;
     }
+    constructor(parent: Queryable<S>, selector: ((item: S) => T) | FunctionExpression<T, [S]>, type?: PrimitiveType<T>);
+    constructor(parent: Queryable<S>, selector: ((item: S) => T) | FunctionExpression<T, [S]>, type?: GenericType<T>);
     constructor(public override readonly parent: Queryable<S>, selector: ((item: S) => T) | FunctionExpression<T, [S]>, type: GenericType<T> = Object) {
-        super(type, parent);
+        super(type, parent as Queryable);
         if (selector instanceof FunctionExpression) {
             this.selector = selector;
         }

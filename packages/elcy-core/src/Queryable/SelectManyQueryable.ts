@@ -1,5 +1,5 @@
 import { IEnumerable } from "@elcy/enumerable";
-import { GenericType } from "../Common/Type";
+import { GenericType, PrimitiveType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
@@ -20,8 +20,10 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected set selector(value) {
         this._selector = value;
     }
+    constructor(parent: Queryable<S>, selector: FunctionExpression<IEnumerable<T>, [S]> | ((item: S) => IEnumerable<T>), type?: PrimitiveType<T>);
+    constructor(parent: Queryable<S>, selector: FunctionExpression<IEnumerable<T>, [S]> | ((item: S) => IEnumerable<T>), type?: GenericType<T>);
     constructor(public override readonly parent: Queryable<S>, selector: FunctionExpression<IEnumerable<T>, [S]> | ((item: S) => IEnumerable<T>), type: GenericType<T> = Object) {
-        super(type, parent);
+        super(type, parent as Queryable);
         if (selector instanceof FunctionExpression) {
             this.selector = selector;
         }
@@ -34,7 +36,10 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S & object>;
         const methodExpression = new MethodCallExpression(objectOperand, "flatMap", [this.selector.clone()]);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
+        const visitParam: IQueryVisitParameter = {
+            selectExpression: objectOperand,
+            scope: "queryable"
+        };
         const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
         result.parentRelation = null;
         return result;

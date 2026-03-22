@@ -5,11 +5,10 @@ import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { isColumnExp, resolveClone, visitExpression } from "../../Helper/Util";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
-import { IEntityExpression } from "../QueryExpression/IEntityExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 
-export class JoinRelation<TE extends object = object, TChild extends object = object> implements ISelectRelation<TE, TChild> {
+export class JoinRelation<TE extends object = any, TChild extends object = any> implements ISelectRelation<TE, TChild> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -77,10 +76,10 @@ export class JoinRelation<TE extends object = object, TChild extends object = ob
         if (this.relation) {
             visitExpression(this.relation, (exp: IExpression) => {
                 if (isColumnExp(exp)) {
-                    if (this.child.entity === exp.entity as unknown as IEntityExpression<TChild>) {
+                    if (this.child.entity === exp.entity) {
                         this._childColumns.push(exp);
                     }
-                    else if (this.parent.entity === exp.entity as unknown as IEntityExpression<TE>) {
+                    else if (this.parent.entity === exp.entity) {
                         this._parentColumns.push(exp);
                     }
                     else if (this.child.allSelects.map((o) => o.entity).includes(exp.entity)) {

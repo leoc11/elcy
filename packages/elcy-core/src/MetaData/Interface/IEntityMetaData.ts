@@ -1,5 +1,5 @@
 import { ConcurrencyModel, OrderDirection } from "../../Common/StringType";
-import { IObjectType, ValueType } from "../../Common/Type";
+import { IObjectType } from "../../Common/Type";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
@@ -12,13 +12,13 @@ import { IConstraintMetaData } from "./IConstraintMetaData";
 import { IIndexMetaData } from "./IIndexMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IEntityMetaData<TE extends object = object, TBase extends object = object> extends IDBEventListener<TE> {
+export interface IEntityMetaData<TE extends object = any, TBase extends object = object> extends IDBEventListener<TE> {
     allowInheritance?: boolean;
     columns: Array<IColumnMetaData<TE>>;
     concurrencyMode?: ConcurrencyModel;
     constraints?: Array<IConstraintMetaData<TE>>;
     createDateColumn?: DateTimeColumnMetaData<TE>;
-    defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
+    defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => unknown) | OrderDirection>>;
     deletedColumn?: BooleanColumnMetaData<TE>;
     descriminatorMember?: string;
     embeds?: Array<EmbeddedRelationMetaData<TE>>;

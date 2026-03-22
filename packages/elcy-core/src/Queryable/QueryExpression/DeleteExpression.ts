@@ -15,7 +15,7 @@ import { IQueryExpression } from "./IQueryExpression";
 import { IQueryIncludeRelation } from "./IQueryIncludeRelation";
 import { SelectExpression } from "./SelectExpression";
 
-export interface IDeleteIncludeRelation<T extends object = object, TChild extends object = object> extends IQueryIncludeRelation<T, TChild, DeleteExpression<TChild>, DeleteExpression<T>> { }
+export interface IDeleteIncludeRelation<T extends object = any, TChild extends object = any> extends IQueryIncludeRelation<T, TChild, DeleteExpression<TChild>, DeleteExpression<T>> { }
 export class DeleteExpression<TE extends object = object> implements IQueryExpression<TE> {
     public get entity() {
         return this.select.entity as EntityExpression<TE>;
@@ -60,7 +60,7 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
     }
     public deleteMode?: IExpression<DeleteMode>;
     public includes: Array<IDeleteIncludeRelation<TE>> = [];
-    public parentRelation: IDeleteIncludeRelation<object, TE>;
+    public parentRelation: IDeleteIncludeRelation<any, TE>;
     public select: SelectExpression<TE>;
     public addInclude<TChild extends object>(child: DeleteExpression<TChild>, relationMeta: RelationMetaData<TE, TChild>): IDeleteIncludeRelation<TE, TChild>;
     public addInclude<TChild extends object>(child: DeleteExpression<TChild>, relations: IExpression<boolean>): IDeleteIncludeRelation<TE, TChild>;
@@ -88,8 +88,8 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
             parent: this,
             relation: relations
         };
-        child.parentRelation = deleteRelation as unknown as IDeleteIncludeRelation<object, TChild>;
-        this.includes.push(deleteRelation as unknown as IDeleteIncludeRelation<TE, object>);
+        child.parentRelation = deleteRelation;
+        this.includes.push(deleteRelation);
         return deleteRelation;
     }
     public addJoin<TChild extends object>(child: SelectExpression<TChild>, relationMeta: IRelationMetaData<TE, TChild>, toOneJoinType?: JoinType): JoinRelation<TE, any>;

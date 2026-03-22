@@ -1,7 +1,7 @@
 import { ClassBase } from "../Common/Constant";
 import { ColumnGeneration } from "../Common/Enum";
 import { OrderDirection } from "../Common/StringType";
-import { GenericType, IObjectType, ValueType } from "../Common/Type";
+import { GenericType, IObjectType } from "../Common/Type";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { isNotNull } from "../Helper/Util";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
@@ -46,7 +46,7 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
     public columns: Array<IColumnMetaData<TE>> = [];
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn?: DateTimeColumnMetaData<TE>;
-    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
+    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => unknown) | OrderDirection>>;
     public deletedColumn?: BooleanColumnMetaData<TE>;
     public indices: Array<IndexMetaData<TE>> = [];
     public inheritance: InheritanceMetaData<TBase>;
