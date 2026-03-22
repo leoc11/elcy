@@ -10953,7 +10953,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NOT NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -10990,7 +10990,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NOT NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -11047,7 +11047,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -11088,7 +11088,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -12142,7 +12142,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NOT NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -12195,7 +12195,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NOT NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NOT NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -12288,7 +12288,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NULL)) 
 		THEN 1
 		ELSE 0
 		END
@@ -12345,7 +12345,7 @@ FROM [fixture].[Table1s] AS [entity0]
 LEFT JOIN (
 	SELECT [entity2].[id],
 		(
-		CASE WHEN ((SUM([entity1].[column1]) IS NULL)) 
+		CASE WHEN ((MAX([entity1].[column1]) IS NULL)) 
 		THEN 1
 		ELSE 0
 		END

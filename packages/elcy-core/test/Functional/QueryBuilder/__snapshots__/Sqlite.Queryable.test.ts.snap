@@ -2853,12 +2853,7 @@ exports[`Sqlite QUERYABLE SOME could be used in select 1`] = `
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."id",
-		(
-		CASE WHEN (("entity2"."column0" IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column1"
+		("entity2"."column0" IS NOT NULL) AS "column1"
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
@@ -2901,12 +2896,7 @@ ORDER BY "entity1"."id" ASC"
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."id",
-		(
-		CASE WHEN (("entity2"."column0" IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column1"
+		("entity2"."column0" IS NOT NULL) AS "column1"
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
@@ -2931,12 +2921,7 @@ ORDER BY "entity1"."id" ASC"
         "parameters": Map {},
         "query": 
 "SELECT "entity0"."id",
-	(
-	CASE WHEN (("entity2"."column0" IS NOT NULL)) 
-	THEN true
-	ELSE false
-	END
-) AS "column1"
+	("entity2"."column0" IS NOT NULL) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
@@ -3102,12 +3087,7 @@ exports[`Sqlite QUERYABLE EVERY could be used in select 1`] = `
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."id",
-		(
-		CASE WHEN (("entity2"."column0" IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column1"
+		("entity2"."column0" IS NULL) AS "column1"
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
@@ -3152,12 +3132,7 @@ ORDER BY "entity1"."id" ASC"
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."id",
-		(
-		CASE WHEN (("entity2"."column0" IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column1"
+		("entity2"."column0" IS NULL) AS "column1"
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
@@ -3184,12 +3159,7 @@ ORDER BY "entity1"."id" ASC"
         "parameters": Map {},
         "query": 
 "SELECT "entity0"."id",
-	(
-	CASE WHEN (("entity2"."column0" IS NULL)) 
-	THEN true
-	ELSE false
-	END
-) AS "column1"
+	("entity2"."column0" IS NULL) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
@@ -10661,21 +10631,11 @@ Map {
         "query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NOT NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -10698,21 +10658,11 @@ OFFSET @param0"
     "_query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NOT NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -10755,21 +10705,11 @@ Map {
         "query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -10796,21 +10736,11 @@ OFFSET @param0"
     "_query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -12059,21 +11989,11 @@ Map {
                 "query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NOT NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -12095,21 +12015,11 @@ OFFSET @param0"
             "_query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NOT NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NOT NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -12227,21 +12137,11 @@ Map {
                 "query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
@@ -12267,21 +12167,11 @@ OFFSET @param0"
             "_query": 
 "SELECT "entity0"."id",
 	"entity0"."decimalNumber" AS "column0",
-	(
-	CASE WHEN (("entity2"."column2"=1)) 
-	THEN true
-	ELSE false
-	END
-) AS "column3"
+	("entity2"."column2"=true) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."id",
-		(
-		CASE WHEN ((SUM("entity1"."column1") IS NULL)) 
-		THEN true
-		ELSE false
-		END
-	) AS "column2"
+		(MAX("entity1"."column1") IS NULL) AS "column2"
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
