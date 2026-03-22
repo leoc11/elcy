@@ -1044,7 +1044,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
 
     // TODO: Update Query should use ANSI SQL Standard
-    protected getUpdateQuery<T extends object>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: updateExp,
@@ -1053,7 +1053,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         };
 
         const setQuery = Object.keys(updateExp.setter).map((o) => {
-            const value = updateExp.setter[o as keyof T];
+            const value = updateExp.setter[o as keyof TE];
             const valueStr = this.toOperandString(value, param);
             const column = updateExp.entity.columns.find((c) => c.propertyName === o);
             return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;

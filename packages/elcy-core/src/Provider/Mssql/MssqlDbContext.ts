@@ -51,13 +51,13 @@ export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
         }
 
         const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (queryRes, commands: IQuery[]) => {
-            let rows: IEnumerable = [];
+            let rows = Enumerable.from<unknown>([]);
             let effectedRows = 0;
             for (let index = 0, len = commands.length; index < len; index++) {
                 const command = commands[index];
                 const result = queryRes[index];
                 if ((command.type & QueryType.DQL) && result.rows) {
-                    rows = rows.union(result.rows);
+                    rows = rows.concat(result.rows);
                 }
                 if (command.type & QueryType.DML) {
                     effectedRows += result.effectedRows;

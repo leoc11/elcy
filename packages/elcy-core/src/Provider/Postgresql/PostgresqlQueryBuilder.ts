@@ -9,7 +9,6 @@ import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { IQueryBuilderParameter } from "src/Query/IQueryBuilderParameter";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
 import { QueryType } from "src/Common/Enum";
-import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { MethodCallExpression } from "src/ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { DbFunction } from "src/Query/DbFunction";
@@ -83,7 +82,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         return `$${index + 1}`;
     }
 
-    protected override getUpdateQuery<T extends object>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected override getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: updateExp,
@@ -91,8 +90,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             option: option
         };
 
-        const setQuery = Object.keys(updateExp.setter).map((o: keyof T) => {
-            const value = updateExp.setter[o];
+        const setQuery = Object.keys(updateExp.setter).map((o) => {
+            const value = updateExp.setter[o as keyof TE];
             const valueStr = this.toOperandString(value, param);
             const column = updateExp.entity.columns.find((c) => c.propertyName === o);
             return `${this.enclose(column.columnName)} = ${valueStr}`;
@@ -114,14 +113,10 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                 if (updateExp.setter[colMeta.propertyName]) {
                     throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
                 }
-
-                const valueExp = new AdditionExpression(updateExp.entity.versionColumn, new ValueExpression(1));
-                const valueStr = this.toString(valueExp, param);
-                setQuery.push(`${this.enclose(colMeta.columnName)} = ${valueStr}`);
             }
         }
 
-        let firstJoin: JoinRelation<T> = null;
+        let firstJoin: JoinRelation<TE> = null;
         const whereQueries: string[] = [];
         let joins = updateExp.joins.slice();
         if (joins.length) {
@@ -155,7 +150,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         return result;
     }
 
-    protected getDeleteQuery<T extends object>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    protected override getDeleteQuery<TE extends object>(deleteExp: DeleteExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: deleteExp,
@@ -178,13 +173,13 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
         if (deleteStrategy === "soft") {
             // if soft delete, set delete column to true
-            const set: SetterObj<T> = {};
+            const set: SetterObj<TE> = {};
             set[deleteExp.entity.deleteColumn.propertyName] = new ValueExpression(true) as any;
             const updateQuery = new UpdateExpression(deleteExp.select, set);
             result = this.getUpdateQuery(updateQuery, param.option, param.parameters);
 
             // apply delete option rule. coz soft delete delete option will not handled by db.
-            const entityMeta: IEntityMetaData<T> = deleteExp.entity.metaData;
+            const entityMeta: IEntityMetaData<TE> = deleteExp.entity.metaData;
             const relations = entityMeta.relations.filter((o) => o.isMaster);
             result = result.concat(relations.flatMap((o) => {
                 if (o.completeRelationType === "many-many") {
@@ -234,7 +229,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         }
         else {
 
-            let firstJoin: JoinRelation<T> = null;
+            let firstJoin: JoinRelation<TE> = null;
             const whereQueries: string[] = [];
             let joins = deleteExp.joins.slice();
             if (joins.length) {

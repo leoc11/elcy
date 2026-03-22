@@ -62,12 +62,12 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         ["defaultString", { columnType: "nvarchar", option: { length: 255 } }],
         ["defaultRowVersion", { columnType: "rowversion" }]
     ]);
-    public addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
+    public override addDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
         const query = `ALTER TABLE ${this.entityName(columnMeta.entity)}` +
             ` ADD DEFAULT ${this.defaultValue(columnMeta)} FOR ${this.queryBuilder.enclose(columnMeta.columnName)}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
+    public override dropDefaultContraint(columnMeta: IColumnMetaData): IQuery[] {
         const result: IQuery[] = [];
         const variableName = this.queryBuilder.newAlias("param");
         result.push({
@@ -85,11 +85,11 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         });
         return result;
     }
-    public dropIndex(indexMeta: IIndexMetaData): IQuery[] {
+    public override dropIndex(indexMeta: IIndexMetaData): IQuery[] {
         const query = `DROP INDEX ${this.entityName(indexMeta.entity)}.${indexMeta.name}`;
         return [{ query, type: QueryType.DDL }];
     }
-    public dropPrimaryKey(entityMeta: IEntityMetaData): IQuery[] {
+    public override dropPrimaryKey(entityMeta: IEntityMetaData): IQuery[] {
         const result: IQuery[] = [];
         const variableName = this.queryBuilder.newAlias("param");
         result.push({
@@ -105,11 +105,11 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         });
         return result;
     }
-    public renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
+    public override renameColumn(columnMeta: IColumnMetaData, newName: string): IQuery[] {
         const query = `EXEC sp_rename '${this.entityName(columnMeta.entity)}.${this.queryBuilder.enclose(columnMeta.columnName)}', '${newName}', 'COLUMN'`;
         return [{ query, type: QueryType.DDL }];
     }
-    protected columnType<T>(column: IColumnMetaData<T>): ICompleteColumnType {
+    protected override columnType<TE extends object>(column: IColumnMetaData<TE>): ICompleteColumnType {
         const columnType = super.columnType(column);
         switch (columnType.group) {
             case "Integer": {
@@ -144,7 +144,7 @@ export class MssqlSchemaBuilder extends RelationalSchemaBuilder {
         }
         return columnType;
     }
-    protected foreignKeyDeclaration(relationMeta: IRelationMetaData) {
+    protected override foreignKeyDeclaration(relationMeta: IRelationMetaData) {
         const columns = relationMeta.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
         const referenceColumns = relationMeta.reverseRelation.relationColumns.map((o) => this.queryBuilder.enclose(o.columnName)).join(", ");
         let result = `CONSTRAINT ${this.queryBuilder.enclose(relationMeta.fullName)}` +

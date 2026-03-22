@@ -14,6 +14,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     };
     public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<MysqlColumnType>>([
         [Uuid, () => ({ columnType: "binary", option: { size: 16 } })],
+        [BigInt, () => ({ columnType: "bigint" })],
         [TimeSpan, () => ({ columnType: "time" })],
         [Date, () => ({ columnType: "datetime" })],
         [String, (val: string) => ({ columnType: "varchar", option: { length: 255 + (Math.ceil(Math.max(val.length - 255, 0) / 50) * 50) } })],
@@ -22,7 +23,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     ]);
 
     //#endregion
-    
+
     override encloseIdentifier(identity: string): string {
         return `\`${identity}\``;
     }
