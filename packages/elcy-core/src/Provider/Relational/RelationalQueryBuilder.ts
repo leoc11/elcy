@@ -175,10 +175,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
             return this.getColumnQueryString(column, param);
         }
-        else if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
-            expression = new TernaryExpression(expression as IExpression<boolean>, new ValueExpression(true), new ValueExpression(false));
-        }
-
+        
         return this.toString(expression, param);
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {

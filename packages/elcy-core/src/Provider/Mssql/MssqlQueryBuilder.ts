@@ -7,7 +7,7 @@ import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { isNotNull, isNull } from "../../Helper/Util";
+import { isColumnExp, isEntityExp, isNotNull, isNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { DbFunction } from "../../Query/DbFunction";
@@ -25,6 +25,18 @@ import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { Enumerable } from "@elcy/enumerable";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { IEntityExpression } from "src/Queryable/QueryExpression/IEntityExpression";
+import { TernaryExpression } from "src/ExpressionBuilder/Expression/TernaryExpression";
+import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
+import { OrExpression } from "src/ExpressionBuilder/Expression/OrExpression";
+import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { NotEqualExpression } from "src/ExpressionBuilder/Expression/NotEqualExpression";
+import { NotExpression } from "src/ExpressionBuilder/Expression/NotExpression";
+import { GreaterThanExpression } from "src/ExpressionBuilder/Expression/GreaterThanExpression";
+import { GreaterEqualExpression } from "src/ExpressionBuilder/Expression/GreaterEqualExpression";
+import { LessThanExpression } from "src/ExpressionBuilder/Expression/LessThanExpression";
+import { LessEqualExpression } from "src/ExpressionBuilder/Expression/LessEqualExpression";
+import { InstanceofExpression } from "src/ExpressionBuilder/Expression/InstanceofExpression";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -44,7 +56,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public override encloseIdentifier(identity: string) {
         return `[${identity}]`;
     }
-    public override getInsertQuery<T>(insertExp: InsertExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         if (insertExp.values.length <= 0) {
             return [];
         }
@@ -115,7 +127,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     }
 
     //#region Update
-    public override getUpdateQuery<T>(updateExp: UpdateExpression<T>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public override getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             option: option,
@@ -123,8 +135,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             queryExpression: updateExp
         };
 
-        const setQuery = Object.keys(updateExp.setter).map((o: keyof T) => {
-            const value = updateExp.setter[o];
+        const setQuery = Object.keys(updateExp.setter).map((o) => {
+            const value = updateExp.setter[o as keyof TE];
             const valueStr = this.toOperandString(value, param);
             const column = updateExp.entity.columns.find((c) => c.propertyName === o);
             return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
@@ -245,5 +257,32 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
 
         return super.entityName(entityExp);
+    }
+    public override toOperandString(expression: IExpression, param?: IQueryBuilderParameter): string {
+        if (isEntityExp(expression)) {
+            // TODO: dead code
+            const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
+            return this.getColumnQueryString(column, param);
+        }
+        else if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
+            switch (true) {
+                case expression instanceof AndExpression:
+                case expression instanceof OrExpression:
+                case expression instanceof EqualExpression:
+                case expression instanceof StrictEqualExpression:
+                case expression instanceof NotEqualExpression:
+                case expression instanceof NotExpression:
+                case expression instanceof GreaterThanExpression:
+                case expression instanceof GreaterEqualExpression:
+                case expression instanceof LessThanExpression:
+                case expression instanceof LessEqualExpression:
+                case expression instanceof InstanceofExpression: {
+                    expression = new TernaryExpression(expression as IExpression<boolean>, new ValueExpression(true), new ValueExpression(false));
+                    break;
+                }
+            }
+        }
+
+        return this.toString(expression, param);
     }
 }
