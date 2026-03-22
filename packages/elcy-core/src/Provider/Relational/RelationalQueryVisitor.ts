@@ -1178,7 +1178,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
 
-                            return new StrictEqualExpression(bridgeColumn, new ValueExpression(false)) as unknown as IExpression<boolean & T>;
+                            return new StrictEqualExpression(bridgeColumn, new ValueExpression(true)) as unknown as IExpression<boolean & T>;
                         }
 
                         const parentCol = new ColumnExpression(column.entity, column.type, column.propertyName, column.columnName, column.isPrimary, column.isNullable);
