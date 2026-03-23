@@ -7,7 +7,7 @@
         "experimentalDecorators": false,
         "sourceMap": true,
         "inlineSources": true,
-        "target": "ES6",
+        "target": "esnext",
         "lib": [
             "es6"
         ],
@@ -22,13 +22,6 @@
         "pretty": true,
         "removeComments": false,
         "allowSyntheticDefaultImports": true,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
-        "strictNullChecks": false,
-        "strictBindCallApply": true,
-        "strictFunctionTypes": false,
-        "strictPropertyInitialization": false,
-        
         // Best practices
         "strict": true,
         "noImplicitAny": true,
@@ -40,6 +33,13 @@
         "noUnusedLocals": true,
         "noUnusedParameters": false,
         "noPropertyAccessFromIndexSignature": false,
+        // Some stricter flags (enable all later)
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "strictBindCallApply": true,
+        "strictNullChecks": false,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": false,
     },
     "exclude": [
         "build",

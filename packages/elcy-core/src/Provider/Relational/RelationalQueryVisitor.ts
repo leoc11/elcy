@@ -1873,7 +1873,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
 
                 if (entityExp.columns.length === 1) {
-                    entityExp.columns.push(new ColumnExpression(entityExp, itemType as GenericType<ValueType>, "__value" as StringKeyOf<ElementType<T>>, "__value", false));
+                    entityExp.columns.push(new ColumnExpression(entityExp, itemType as unknown as GenericType<ValueType>, "__value" as StringKeyOf<ElementType<T>>, "__value", false));
                 }
 
                 const selectExp = new SelectExpression(entityExp);

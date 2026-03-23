@@ -11,6 +11,7 @@ export namespace Temporal {
     export type Instant = TemporalModule.Instant;
     export type PlainDate = TemporalModule.PlainDate;
     export type PlainTime = TemporalModule.PlainTime;
+    export type PlainDateTime = TemporalModule.PlainDateTime;
     export type DurationLike = TemporalModule.DurationLike;
     export type PlainDateLike = TemporalModule.PlainDateLike;
     export type PlainTimeLike = TemporalModule.PlainTimeLike;
