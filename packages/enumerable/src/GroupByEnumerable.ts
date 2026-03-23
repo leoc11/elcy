@@ -6,12 +6,12 @@ export class GroupByEnumerable<K = unknown, T = unknown> extends Enumerable<
   GroupedEnumerable<K, T>
 > {
   constructor(
-    public readonly parent: Enumerable<T>,
+    public override readonly parent: Enumerable<T>,
     public readonly keySelector: (item: T) => K,
   ) {
     super(parent);
   }
-  protected *generator() {
+  protected override *generator() {
     const source = this.parent[Symbol.iterator]();
     const iterator = new GroupByIterator(source, this.keySelector);
     let index = 0;

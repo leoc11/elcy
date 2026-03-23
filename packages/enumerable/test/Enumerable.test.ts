@@ -109,7 +109,7 @@ describe("ENUMERABLE", () => {
       const distincts = items.groupJoin(
         [1, 5],
         (o, o2) => o % 2 === o2 % 2,
-        (o1, o2s) => (o1 ? o1 : 0) + o2s.sum(),
+        (o1, o2s) => (o1 ? o1 : 0) + o2s.sum((o) => o),
       );
       let index1 = 0;
       for (const {} of distincts) {
@@ -727,6 +727,38 @@ describe("ENUMERABLE", () => {
       expect(array).toEqual(cache.result);
     });
   });
+  describe("SUM", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      const sum = enums.sum();
+      const sumReduce = Array.from(enums).reduce((r, o) => r + o, 0);
+      expect(sum).toBe(sumReduce);
+    });
+    it("should work with selector", () => {
+      const enums = items.filter((o) => o > 5);
+      const sum = enums.sum((o) => o + 1);
+      const sumReduce = Array.from(enums)
+        .map((o) => o + 1)
+        .reduce((r, o) => r + o, 0);
+      expect(sum).toBe(sumReduce);
+    });
+    it("should work with bigint", () => {
+      const enums = items.filter((o) => o > 5).map((o) => BigInt(o));
+      const sum = enums.sum((o) => o + 1n);
+      const sumReduce = Array.from(enums)
+        .map((o) => o + 1n)
+        .reduce((r, o) => r + o, 0n);
+      expect(sum).toBe(sumReduce);
+    });
+    it("should return 0 when empty", () => {
+      const enums = items.filter((o) => o > 100);
+      const count = enums.count();
+      const sum = enums.sum();
+
+      expect(count).toBe(0);
+      expect(sum).toBe(0);
+    });
+  });
   describe("AVG", () => {
     it("should work", () => {
       const enums = items.filter((o) => o > 5);
@@ -742,7 +774,14 @@ describe("ENUMERABLE", () => {
       const count = enums.count();
       expect(avg).toBe(sum / count);
     });
-    it("should return 0 when empty", () => {
+    it("should work with bigint", () => {
+      const enums = items.filter((o) => o > 5).map((o) => BigInt(o));
+      const avg = enums.avg((o) => o + 1n);
+      const sum = enums.sum((o) => o + 1n);
+      const count = BigInt(enums.count());
+      expect(avg).toBe(sum / count);
+    });
+    it("should return null when empty", () => {
       const enums = items.filter((o) => o > 100);
       const avg = enums.avg();
       const sum = enums.sum();
@@ -766,6 +805,12 @@ describe("ENUMERABLE", () => {
       const maxMath = Math.max.call(Math, ...enums.map((o) => o + 1));
       expect(max).toBe(maxMath);
     });
+    it("should work with bigint", () => {
+      const enums = items.filter((o) => o > 5).map((o) => BigInt(o));
+      const max = enums.max((o) => o + 1n);
+      const maxMath = Math.max.call(Math, ...enums.map((o) => Number(o) + 1));
+      expect(max).toBe(BigInt(maxMath));
+    });
     it("should return 0 when empty", () => {
       const enums = items.filter((o) => o > 100);
       const max = enums.max();
@@ -788,6 +833,12 @@ describe("ENUMERABLE", () => {
       const minMath = Math.min.call(Math, ...enums.map((o) => o + 1));
       expect(min).toBe(minMath);
     });
+    it("should work with bigint", () => {
+      const enums = items.filter((o) => o > 5).map((o) => BigInt(o));
+      const min = enums.min((o) => o + 1n);
+      const minMath = Math.min.call(Math, ...enums.map((o) => Number(o) + 1));
+      expect(min).toBe(BigInt(minMath));
+    });
     it("should return 0 when empty", () => {
       const enums = items.filter((o) => o > 100);
       const min = enums.min();
@@ -797,7 +848,7 @@ describe("ENUMERABLE", () => {
       expect(min).toBe(null);
     });
   });
-  describe("Join", () => {
+  describe("JOIN", () => {
     it("should work", () => {
       const enums = items.filter((o) => o > 5).map((o) => String(o));
       const join = enums.join(",");
@@ -837,7 +888,7 @@ describe("ENUMERABLE", () => {
   describe("EACH", () => {
     it("should work", () => {
       let loopCount = 0;
-      let loops = [];
+      let loops: number[] = [];
       items.each((o) => {
         loops.push(o);
         loopCount++;

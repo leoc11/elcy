@@ -14,10 +14,13 @@ const keyString = (a: unknown): string => {
         Enumerable.from(Object.entries(a))
           .filter(([, v]) => typeof v !== "function")
           .orderBy([([k]) => k])
-          .reduce((res, [k, v]) => {
-            res[k] = v;
-            return res;
-          }, {}),
+          .reduce(
+            (res, [k, v]) => {
+              res[k] = v;
+              return res;
+            },
+            {} as Record<string, unknown>,
+          ),
       );
     }
     case typeof a === "string": {

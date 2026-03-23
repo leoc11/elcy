@@ -7,7 +7,7 @@ export class UnionEnumerable<T = unknown> extends Enumerable<T> {
   }
   declare protected parent: Enumerable<T>;
   protected parents: Enumerable<T>[];
-  protected *generator() {
+  protected override *generator() {
     const result: T[] = [];
     for (const parent of this.parents) {
       for (const value of parent) {

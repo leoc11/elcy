@@ -1,6 +1,7 @@
-import { GenericType } from "./Interface/Type";
+import { GenericType, ValueType } from "./Interface/Type";
 import { IEnumerableCache } from "./IEnumerableCache";
 import { IEnumerable } from "./IEnumerable";
+import { isNull } from "./Helper/Util";
 
 export class Enumerable<T = unknown> implements IEnumerable<T> {
   public enableCache(value: boolean = true) {
@@ -109,71 +110,82 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
     return undefined;
   }
-  public max(
-    ...args: T extends number
-      ? [selector?: (item: T) => number]
-      : [selector: (item: T) => number]
-  ): number {
-    let max = null;
+  public max<
+    TArgs extends T extends ValueType
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType],
+    TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+  >(...args: TArgs): TResult {
+    let max: TResult = null;
     const selector = args[0];
     for (const item of this) {
-      const num = selector ? selector(item) : (item as number);
-      if (max < num) {
+      const num = (selector ? selector(item) : item) as TResult;
+      if (isNull(max) || num > max) {
         max = num;
       }
     }
     return max;
   }
-  public min(
-    ...args: T extends number
-      ? [selector?: (item: T) => number]
-      : [selector: (item: T) => number]
-  ): number {
-    let min = null;
+  public min<
+    TArgs extends T extends ValueType
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType] = T extends ValueType
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType],
+    TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]> =
+      TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+  >(...args: TArgs): TResult {
+    let min: TResult | null = null;
     const selector = args[0];
     for (const item of this) {
-      const num = selector ? selector(item) : (item as number);
-      if (!min || min > num) {
+      const num = (selector ? selector(item) : item) as TResult;
+      if (isNull(min) || num < min) {
         min = num;
       }
     }
     return min;
   }
-  public sum(
-    ...args: T extends number
-      ? [selector?: (item: T) => number]
-      : [selector: (item: T) => number]
-  ): number {
-    let sum = 0;
+  public sum<
+    TArgs extends T extends number | bigint
+      ? [selector?: (item: T) => number | bigint]
+      : [selector: (item: T) => number | bigint],
+    TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+  >(...args: TArgs): TResult {
+    let sum: TResult;
     const selector = args[0];
     for (const item of this) {
-      sum += selector ? selector(item) : (item as number);
+      const num = (selector ? selector(item) : item) as TResult;
+      if (isNull(sum)) {
+        sum = num;
+      } else {
+        sum = ((sum as number) + (num as number)) as TResult;
+      }
     }
-    return sum;
+    return sum || (0 as TResult);
   }
-  public avg(
-    ...args: T extends number
-      ? [selector?: (item: T) => number]
-      : [selector: (item: T) => number]
-  ): number | null {
-    let sum = 0;
-    let count = 0;
+  public avg<
+    TArgs extends T extends number | bigint
+      ? [selector?: (item: T) => number | bigint]
+      : [selector: (item: T) => number | bigint],
+    TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+  >(...args: TArgs): TResult | null {
+    let sum: TResult;
+    let count: number | undefined;
     const selector = args[0];
     for (const item of this) {
-      sum += selector ? selector(item) : (item as number);
+      const num = (selector ? selector(item) : item) as TResult;
+      if (isNull(sum)) {
+        sum = num;
+      } else {
+        sum = ((sum as number) + (num as number)) as TResult;
+      }
+      if (isNull(count)) {
+        count = (typeof sum === "bigint" ? 0n : 0) as number;
+      }
       count++;
     }
-    return count === 0 ? null : sum / count;
+    return isNull(count) ? null : (((sum as number) / count) as TResult);
   }
-  public join: T extends string ? (separator?: string) => string : never = ((
-    separator: string = ",",
-  ): string => {
-    let str: string = "";
-    for (const item of this) {
-      str += `${str ? separator : ""}${item}`;
-    }
-    return str;
-  }) as T extends string ? (separator?: string) => string : never;
   public ofType<TType>(type: GenericType<TType>): Enumerable<TType> {
     return this.filter(
       (o) => o instanceof type || o?.constructor === type,
@@ -239,7 +251,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     iterator._accessCount++;
     try {
       let index = 0;
-      for (; ;) {
+      for (;;) {
         const isDone = this.cache.isDone;
         const len = this.cache.result.length;
         while (len > index) {

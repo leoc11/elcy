@@ -7,7 +7,7 @@ export class IntersectEnumerable<T = unknown> extends Enumerable<T> {
   }
   declare protected parent: Enumerable<T>;
   protected parents: Enumerable<T>[];
-  protected *generator() {
+  protected override *generator() {
     const parent2 = Enumerable.from([])
       .union(...(this.parents.slice(1) as [Enumerable<T>, ...Enumerable<T>[]]))
       .enableCache(true);

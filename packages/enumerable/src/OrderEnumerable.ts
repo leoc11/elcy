@@ -44,14 +44,14 @@ export const partition = <T>(
 };
 export class OrderEnumerable<T = unknown> extends Enumerable<T> {
   constructor(
-    protected readonly parent: Enumerable<T>,
+    protected override readonly parent: Enumerable<T>,
     ...selectors: Array<IOrderDefinition<T>>
   ) {
     super();
     this.selectors = selectors;
   }
   protected readonly selectors: Array<IOrderDefinition<T>>;
-  protected *generator() {
+  protected override *generator() {
     let index = 0;
     const array = this.parent.toArray();
     const stack: IRange[] = [];

@@ -22,6 +22,8 @@ import { SliceEnumerable } from "./SliceEnumerable";
 
 declare module "./Enumerable" {
   interface Enumerable<T> {
+    [Symbol.iterator](): IterableIterator<T>;
+
     cast<TReturn>(): Enumerable<TReturn>;
     crossJoin<T2, TResult>(
       array2: IEnumerable<T2>,
@@ -72,8 +74,11 @@ declare module "./Enumerable" {
     except(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
     concat(...items: [Iterable<T>, ...Iterable<T>[]]): Enumerable<T>;
     filter(predicate: (item: T) => boolean): Enumerable<T>;
+
+    join: T extends string ? (separator?: string) => string : never;
   }
 }
+
 Enumerable.prototype.cast = function <T, TReturn>(
   this: Enumerable<T>,
 ): Enumerable<TReturn> {
@@ -241,6 +246,16 @@ Enumerable.prototype.except = function <T>(
       ...Enumerable<T>[],
     ]),
   );
+};
+Enumerable.prototype.join = function <T>(
+  this: Enumerable<T>,
+  separator: string = ",",
+): string {
+  let str: string = "";
+  for (const item of this) {
+    str += `${str ? separator : ""}${item}`;
+  }
+  return str;
 };
 Enumerable.prototype.pivot = function <
   T,

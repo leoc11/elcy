@@ -6,14 +6,14 @@ export class FullJoinEnumerable<
   R = unknown,
 > extends Enumerable<R> {
   constructor(
-    protected readonly parent: Enumerable<T>,
+    protected override readonly parent: Enumerable<T>,
     protected readonly parent2: Enumerable<T2>,
     protected readonly relation: (item: T, item2: T2) => boolean,
     protected readonly resultSelector: (item1: T | null, item2: T2 | null) => R,
   ) {
     super();
   }
-  protected *generator() {
+  protected override *generator() {
     const array2 = this.parent2.toArray();
     for (const value1 of this.parent) {
       let hasMatch = false;

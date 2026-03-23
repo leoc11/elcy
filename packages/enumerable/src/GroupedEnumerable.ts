@@ -13,10 +13,10 @@ export class GroupedEnumerable<K = unknown, T = unknown> extends Enumerable<T> {
       result: result,
     };
   }
-  public [Symbol.iterator](): IterableIterator<T> {
+  public override [Symbol.iterator](): IterableIterator<T> {
     return this.generator();
   }
-  protected *generator() {
+  protected override *generator() {
     let index = 0;
     for (;;) {
       const isDone = this.cache.isDone;

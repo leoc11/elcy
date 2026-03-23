@@ -1,4 +1,5 @@
 export * from "./Interface";
+export * from "./Helper";
 export * from "./ConcatEnumerable";
 export * from "./CrossJoinEnumerable";
 export * from "./DistinctEnumerable";

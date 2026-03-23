@@ -2,13 +2,13 @@ import { Enumerable } from "./Enumerable";
 
 export class SliceEnumerable<T = unknown> extends Enumerable<T> {
   constructor(
-    protected readonly parent: Enumerable<T>,
+    protected override readonly parent: Enumerable<T>,
     protected readonly start: number,
     protected readonly end?: number,
   ) {
     super();
   }
-  protected *generator() {
+  protected override *generator() {
     if (
       typeof this.end === "number" &&
       (this.end === 0 || this.end <= this.start)
