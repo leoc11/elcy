@@ -7,7 +7,7 @@ import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
 import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { isColumnExp, isEntityExp, isNotNull, isNull } from "../../Helper/Util";
+import { isColumnExp, isNotNull, isNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { DbFunction } from "../../Query/DbFunction";
@@ -260,12 +260,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         return super.entityName(entityExp);
     }
     public override toOperandString(expression: IExpression, param?: IQueryBuilderParameter): string {
-        if (isEntityExp(expression)) {
-            // TODO: dead code
-            const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
-            return this.getColumnQueryString(column, param);
-        }
-        else if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
+        if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
             switch (true) {
                 case expression instanceof AndExpression:
                 case expression instanceof OrExpression:

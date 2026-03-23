@@ -32,6 +32,7 @@ import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { QueryableChain, Unchain } from "./Interface/QueryableChain";
+import { Decimal } from "src/Data/Decimal";
 
 export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public get dbContext(): DbContext {
@@ -145,7 +146,11 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSome(predicate?: (item: QueryableChain<T>) => boolean) {
+    public deferredSome(predicate?: (item: QueryableChain<T>) => boolean): DeferredQuery<boolean> {
+        if (!isNull(predicate)) {
+            return this.filter(predicate).deferredSome();
+        }
+
         let queryCache: IQueryCache<boolean>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
@@ -153,7 +158,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
 
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "SOME", predicate ? hashCode(predicate.toString()) : undefined);
+            cacheKey = this.cacheKey(flatParams, "SOME");
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
@@ -171,11 +176,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const metParams = [];
-            if (predicate) {
-                metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "some", metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "some", []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression as SelectExpression<object, T>;
@@ -550,15 +551,19 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
+    public deferredMax<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+        if (!isNull(args[0])) {
+            return (this.map(args[0]) as Queryable<ValueType>).deferredMax<TResult>();
+        }
+
         let queryCache: IQueryCache<TResult>;
         let cacheKey: number;
-        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "MAX", selector ? hashCode(selector.toString()) : undefined);
+            cacheKey = this.cacheKey(flatParams, "MAX");
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
@@ -577,11 +582,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const metParams = [];
-            if (selector) {
-                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "max" as MethodKey<T[]>, metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "max" as MethodKey<T[]>, []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression as SelectExpression<object, T>;
@@ -608,21 +609,24 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMin(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
-        let queryCache: IQueryCache<T>;
+    public deferredMin<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+        if (!isNull(args[0])) {
+            return (this.map(args[0]) as Queryable<ValueType>).deferredMin<TResult>();
+        }
+
+        let queryCache: IQueryCache<TResult>;
         let cacheKey: number;
-        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "MIN", selector ? hashCode(selector.toString()) : undefined);
+            cacheKey = this.cacheKey(flatParams, "MIN");
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<T>(cacheKey);
+            queryCache = cacheManager.get<TResult>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -636,11 +640,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const metParams = [];
-            if (selector) {
-                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "min" as MethodKey<T[]>, metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "min" as MethodKey<T[]>, []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression as SelectExpression<object, T>;
@@ -667,20 +667,23 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSum(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
-        let queryCache: IQueryCache<number>;
+    public deferredSum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+        if (!isNull(args[0])) {
+            return (this.map(args[0]) as Queryable<ValueType>).deferredSum<TResult>();
+        }
+
+        let queryCache: IQueryCache<TResult>;
         let cacheKey: number;
-        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "SUM", selector ? hashCode(selector.toString()) : undefined);
+            cacheKey = this.cacheKey(flatParams, "SUM");
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<number>(cacheKey);
+            queryCache = cacheManager.get<TResult>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -693,11 +696,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const metParams = [];
-            if (selector) {
-                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "sum" as MethodKey<T[]>, metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "sum" as MethodKey<T[]>, []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression as SelectExpression<object, T>;
@@ -725,21 +724,24 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredAvg(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]): DeferredQuery<number | null> {
-        let queryCache: IQueryCache<number>;
+    public deferredAvg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult | null> {
+        if (!isNull(args[0])) {
+            return (this.map(args[0]) as Queryable<ValueType>).deferredAvg<TResult>();
+        }
+
+        let queryCache: IQueryCache<TResult | null>;
         let cacheKey: number;
-        const selector = args[0];
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
 
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "AVG", selector ? hashCode(selector.toString()) : undefined);
+            cacheKey = this.cacheKey(flatParams, "AVG");
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
 
-            queryCache = cacheManager.get<number>(cacheKey);
+            queryCache = cacheManager.get<TResult | null>(cacheKey);
             if (Diagnostic.enabled) {
                 Diagnostic.debug(this, `find query expression cache with key: ${cacheKey}. cache exist: ${!!queryCache}`);
                 Diagnostic.trace(this, `find query expression cache time: ${timer.lap()}ms`);
@@ -753,11 +755,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
-            const metParams = [];
-            if (selector) {
-                metParams.push(ExpressionBuilder.parse(selector, [this.type], this.parameters));
-            }
-            const methodExpression = new MethodCallExpression(commandQuery, "avg" as MethodKey<T[]>, metParams);
+            const methodExpression = new MethodCallExpression(commandQuery, "avg" as MethodKey<T[]>, []);
             const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
             visitor.visit(methodExpression, param);
             commandQuery = param.selectExpression as SelectExpression<object, T>;
@@ -779,7 +777,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
+        const query = new DeferredQuery<TResult | null>(this.dbContext, queryCache.commandQuery, params,
             (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
@@ -1062,20 +1060,20 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }
-    public async max(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
-        const query = this.deferredMax(...args);
+    public async max<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+        const query = this.deferredMax<TResult>(...args);
         return await query.execute();
     }
-    public async min(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => ValueType] : [selector: (item: QueryableChain<T>) => ValueType]) {
-        const query = this.deferredMin(...args);
+    public async min<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+        const query = this.deferredMin<TResult>(...args);
         return await query.execute();
     }
-    public async sum(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]) {
-        const query = this.deferredSum(...args);
+    public async sum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+        const query = this.deferredSum<TResult>(...args);
         return await query.execute();
     }
-    public async avg(...args: T extends number ? [selector?: (item: QueryableChain<T>) => number] : [selector: (item: QueryableChain<T>) => number]): Promise<number | null> {
-        const query = this.deferredAvg(...args);
+    public async avg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+        const query = this.deferredAvg<TResult>(...args);
         return await query.execute();
     }
     public join: T extends string ? (separator?: string) => Promise<string> : never = (async (separator: string = ",") => {

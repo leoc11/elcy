@@ -170,12 +170,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return this.toString(expression, param);
     }
     public toOperandString(expression: IExpression, param?: IQueryBuilderParameter): string {
-        if (isEntityExp(expression)) {
-            // TODO: dead code
-            const column = expression.primaryColumns.length > 0 ? expression.primaryColumns[0] : expression.columns[0];
-            return this.getColumnQueryString(column, param);
-        }
-        
         return this.toString(expression, param);
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {
