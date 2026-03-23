@@ -1,4 +1,3 @@
-import { Pivot } from "./Interface/Type";
 import { Enumerable } from "./Enumerable.internal";
 import { CrossJoinEnumerable } from "./CrossJoinEnumerable";
 import { DistinctEnumerable } from "./DistinctEnumerable";
@@ -52,13 +51,6 @@ declare module "./Enumerable" {
       resultSelector: (item1: T, item2: T2 | null) => TResult,
     ): Enumerable<TResult>;
     orderBy(...selectors: Array<IOrderDefinition<T>>): Enumerable<T>;
-    pivot<
-      TD extends { [key: string]: (item: T) => unknown },
-      TM extends { [key: string]: (item: Enumerable<T>) => unknown },
-    >(
-      dimensions: TD,
-      metrics: TM,
-    ): Enumerable<Pivot<T, TD, TM>>;
     rightJoin<T2, TResult>(
       array2: IEnumerable<T2>,
       relation: (item: T, item2: T2) => boolean,
@@ -257,39 +249,6 @@ Enumerable.prototype.join = function <T>(
   }
   return str;
 };
-Enumerable.prototype.pivot = function <
-  T,
-  TD extends { [key: string]: (item: T) => unknown },
-  TM extends { [key: string]: (item: Enumerable<T>) => unknown },
->(
-  this: Enumerable<T>,
-  dimensions: TD,
-  metrics: TM,
-): Enumerable<Pivot<T, TD, TM>> {
-  return this.groupBy((o) => {
-    const dimensionKey = {} as Pivot<T, TD, TM>;
-    for (const key in dimensions) {
-      if (dimensions[key] instanceof Function) {
-        dimensionKey[key] = dimensions[key](o) as Pivot<T, TD, TM>[Extract<
-          keyof TD,
-          string
-        >];
-      }
-    }
-    return dimensionKey;
-  }).map((o) => {
-    for (const key in metrics) {
-      if (o.key) {
-        o.key[key] = metrics[key](o) as Pivot<T, TD, TM>[Extract<
-          keyof TM,
-          string
-        >];
-      }
-    }
-    return o.key;
-  });
-};
-
 export { Enumerable };
 const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
 export const keyComparer = <T = unknown>(a: T, b: T) => {

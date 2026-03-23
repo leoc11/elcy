@@ -663,36 +663,6 @@ describe("ENUMERABLE", () => {
       expect(array).toEqual([1, 2, 3]);
     });
   });
-  describe("PIVOT", () => {
-    it("should work", () => {
-      const distincts = items.pivot(
-        {
-          modulo: (o) => o % 2,
-        },
-        {
-          max: (o) => o.max(),
-        },
-      );
-      let index1 = 0;
-      for (const {} of distincts) {
-        index1++;
-      }
-      let index2 = 0;
-      for (const {} of distincts) {
-        index2++;
-      }
-
-      const array = distincts.toArray();
-      expect(index1).toBe(items.groupBy((o) => o % 2).count());
-      expect(index1).toBe(index2);
-      expect(array).toBeInstanceOf(Array);
-      expect(array).toHaveLength(index1);
-      expect(array).toEqual([
-        { modulo: 1, max: 9 },
-        { modulo: 0, max: 8 },
-      ]);
-    });
-  });
   describe("CACHE", () => {
     it("should work", () => {
       const enums = items.filter((o) => o > 5);
