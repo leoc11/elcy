@@ -1,4 +1,4 @@
-import { GenericType, IObjectType, Pivot, ValueType } from "../Common/Type";
+import { GenericType, IObjectType, Pivot, PivotD, PivotM, ValueType } from "../Common/Type";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "./Queryable.internal";
@@ -15,7 +15,7 @@ import { LeftJoinQueryable } from "./LeftJoinQueryable";
 import { OptionQueryable } from "./OptionQueryable";
 import { OrderQueryable } from "./OrderQueryable";
 import { ParameterQueryable } from "./ParameterQueryable";
-import { PivotQueryable, TExpObject } from "./PivotQueryable";
+import { PivotQueryable } from "./PivotQueryable";
 import { ProjectQueryable } from "./ProjectQueryable";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
@@ -43,9 +43,9 @@ declare module "./Queryable" {
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult): Queryable<TResult>;
         fullJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, [T | null, T2 | null]> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2> | null) => TResult)): Queryable<TResult>;
 
-        groupBy<K>(keySelector: (item: QueryableChain<T>) => K): Queryable<IGroupArray<K, T>>;
-        groupBy<K>(keySelector: FunctionExpression<K, [T]>): Queryable<IGroupArray<K, T>>;
-        groupBy<K>(keySelector: FunctionExpression<K, [T]> | ((item: QueryableChain<T>) => K)): Queryable<IGroupArray<K, T>>;
+        groupBy<K>(keySelector: (item: QueryableChain<T>) => K): Queryable<IGroupArray<T, K>>;
+        groupBy<K>(keySelector: FunctionExpression<K, [T]>): Queryable<IGroupArray<T, K>>;
+        groupBy<K>(keySelector: FunctionExpression<K, [T]> | ((item: QueryableChain<T>) => K)): Queryable<IGroupArray<T, K>>;
 
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult): Queryable<TResult>;
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]>, resultSelector: FunctionExpression<TResult, [T, Enumerable<T2>]>): Queryable<TResult>;
@@ -70,9 +70,9 @@ declare module "./Queryable" {
 
         parameter(params: { [key: string]: unknown }): Queryable<T>;
 
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TExpObject<TD>, metrics: TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
-        pivot<TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: FunctionExpression<PivotD<T, TD>, [T]>, metrics: FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>>;
+        pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: TD | FunctionExpression<PivotD<T, TD>, [T]>, metrics: TM | FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>>;
 
         project(...includes: Array<(item: QueryableChain<T>) => ValueType>): Queryable<T>;
         project(...includes: FunctionExpression<ValueType, [T]>[]): Queryable<T>;
@@ -167,7 +167,7 @@ Queryable.prototype.intersect = function <T>(this: Queryable<T>, ...items: [Quer
 Queryable.prototype.except = function <T>(this: Queryable<T>, ...items: [Queryable<T>, ...Queryable<T>[]]): Queryable<T> {
     return new ExceptQueryable(this, ...items);
 };
-Queryable.prototype.pivot = function <T, TD extends { [key: string]: (item: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (item: Enumerable<QueryableChain<T>>) => ValueType }>(this: Queryable<T>, dimensions: TD | TExpObject<TD>, metrics: TM | TExpObject<TM>): Queryable<Pivot<T, TD, TM>> {
+Queryable.prototype.pivot = function <T, TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(this: Queryable<T>, dimensions: TD | FunctionExpression<PivotD<T, TD>, [T]>, metrics: TM | FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);
 };
 Queryable.prototype.loads = function <T>(this: Queryable<T>, ...includes: FunctionExpression<Exclude<object, ValueType>, [T]>[] | Array<(item: T) => Exclude<object, ValueType>>): Queryable<T> {

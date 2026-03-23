@@ -1569,54 +1569,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     return selectOperand as unknown as IExpression<T>;
                 }
-                case "pivot": {
-                    if (param.scope === "loads" || param.scope === "project") {
-                        throw new Error(`${param.scope} did not support ${exp.methodName}`);
-                    }
-
-                    if (selectOperand.paging.skip) {
-                        selectOperand = createProjectionSelect(selectOperand);
-                    }
-
-                    const parentRelation = objectOperand.parentRelation;
-                    const dimensions = exp.params[0] as FunctionExpression<unknown, [TE]>;
-                    const metrics = exp.params[1] as FunctionExpression<unknown, [unknown]>;
-
-                    // groupby
-                    let visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: exp.methodName };
-                    const groupExp: GroupByExpression = this.visit(new MethodCallExpression(objectOperand, "groupBy" as MethodKey<[]>, [dimensions]), visitParam) as any;
-                    param.selectExpression = visitParam.selectExpression;
-
-                    const dObject = (dimensions.body as ObjectValueExpression<any>).object;
-                    const mObject = (metrics.body as ObjectValueExpression<any>).object;
-                    const dmObject: { [key: string]: IExpression } = {};
-                    for (const prop in dObject) {
-                        dmObject[prop] = new MemberAccessExpression(new MemberAccessExpression(metrics.params[0], "key"), prop);
-                    }
-                    for (const prop in mObject) {
-                        dmObject[prop] = mObject[prop];
-                    }
-
-                    // select
-                    const selectorFn = new FunctionExpression(new ObjectValueExpression(dmObject), metrics.params);
-                    this.scopeParameters.add(dimensions.params[0].name, groupExp.key);
-                    this.scopeParameters.add(selectorFn.params[0].name, groupExp.getItemExpression());
-                    visitParam = { selectExpression: groupExp, scope: exp.methodName };
-                    const selectExpression: SelectExpression = this.visit(new MethodCallExpression(groupExp, "map", [selectorFn]), visitParam) as any;
-                    this.scopeParameters.remove(selectorFn.params[0].name);
-                    this.scopeParameters.remove(dimensions.params[0].name);
-                    param.selectExpression = visitParam.selectExpression;
-                    selectOperand = selectExpression;
-
-                    if (parentRelation) {
-                        parentRelation.child = selectOperand;
-                        selectOperand.parentRelation = parentRelation;
-                    }
-                    else {
-                        param.selectExpression = selectOperand;
-                    }
-                    return selectOperand;
-                }
                 case "toArray": {
                     return objectOperand as unknown as IExpression<T>;
                 }
