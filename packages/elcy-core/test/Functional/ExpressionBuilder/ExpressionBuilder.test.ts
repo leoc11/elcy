@@ -1,12 +1,12 @@
 import "../../../src/Startup";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";
 
 describe("EXPRESSION BUILDER", () => {
     it("should build correct expression", () => {
         interface testType { member: number; method: (a: number) => number; }
-        const bitFns: Array<(a: any) => any> = [
+        const bitFns: Array<(a: unknown) => unknown> = [
             (a: number) => a & 2,
             (a: number) => a | 2,
             (a: number) => ~a,
@@ -77,16 +77,16 @@ describe("EXPRESSION BUILDER", () => {
         };
         for (const fn of bitFns) {
             const exp = ExpressionBuilder.parse(fn, [], paramObj);
-            expect(fn.toString().replace(/[() ]/g, "")).to.equal(exp.toString().replace(/[() ]/g, ""));
+            expect(fn.toString().replace(/[() ]/g, "")).toBe(exp.toString().replace(/[() ]/g, ""));
 
             const clone = exp.clone();
-            expect(exp.toString()).to.equal(clone.toString());
+            expect(exp.toString()).toBe(clone.toString());
 
             const executor = new ExpressionExecutor(paramObj);
-            const paramName = exp.params[0].name;
+            const paramName = exp.params[0].name as keyof typeof paramObj;
             const expVal = executor.execute(exp);
             const fnVal = fn(paramObj[paramName]);
-            expect(JSON.stringify(fnVal)).to.equal(JSON.stringify(expVal));
+            expect(JSON.stringify(fnVal)).toBe(JSON.stringify(expVal));
         }
     });
     it("should identify comment", () => {
@@ -101,13 +101,13 @@ describe("EXPRESSION BUILDER", () => {
         const paramObj = { a: 10 };
         for (const [fn, fnString] of bitFns) {
             const exp = ExpressionBuilder.parse(fn, [], paramObj);
-            expect(fnString).to.equal(exp.toString());
+            expect(fnString).toBe(exp.toString());
 
             const executor = new ExpressionExecutor(paramObj);
-            const paramName = exp.params[0].name;
+            const paramName = exp.params[0].name as keyof typeof paramObj;
             const expVal = executor.execute(exp);
             const fnVal = fn(paramObj[paramName]);
-            expect(JSON.stringify(fnVal)).to.equal(JSON.stringify(expVal));
+            expect(JSON.stringify(fnVal)).toBe(JSON.stringify(expVal));
         }
     });
 });

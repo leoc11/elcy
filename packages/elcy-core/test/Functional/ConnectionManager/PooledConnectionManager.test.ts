@@ -1,6 +1,6 @@
 import "../../../src/Startup";
 // tslint:disable-next-line: ordered-imports
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
@@ -67,7 +67,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         await con1.close();
         const con2 = await connectionManager.getConnection();
         await con2.close();
-        expect(con1).not.equal(con2);
+        expect(con1).not.toBe(con2);
         const con3 = await connectionManager.getConnection();
         await con3.close();
         expect(con3).toBeOneOf([con1, con2]);

@@ -1,4 +1,4 @@
-import {describe, it, expect } from "vitest";
+import {describe, it, expect } from "bun:test";
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
 import { MockDriver } from "../../Mock/MockDriver";
 
@@ -10,18 +10,18 @@ describe("REPLICATION CONNECTION MANAGER", () => {
     it("should return master connection", async () => {
         const con = await connectionManager.getConnection(true);
         await con.close();
-        expect(con.database).to.equal("Master");
+        expect(con.database).toBe("Master");
     });
     it("should return replica connection", async () => {
         const con = await connectionManager.getConnection();
         await con.close();
-        expect(con.database).to.equal("Replica");
+        expect(con.database).toBe("Replica");
     });
     it("should return all connections", async () => {
         const cons = await connectionManager.getAllConnections();
         for (const o of cons) {
             await o.close();
         }
-        expect(cons).has.lengthOf(2);
+        expect(cons).toBeArrayOfSize(2);
     });
 });
