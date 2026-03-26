@@ -10773,8 +10773,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`] = 
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer
@@ -10784,7 +10796,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`] = 
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer
@@ -10883,18 +10895,6 @@ WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
 ))"
 ,
     "_type": 1,
-  },
-  BatchedQuery {
-    "_isBuildComplete": undefined,
-    "_parameters": undefined,
-    "_queries": [
-      {
-        "query": "DROP TABLE "temp_ad1"",
-        "type": 4,
-      },
-    ],
-    "_query": undefined,
-    "_type": undefined,
   },
 ]
 `;
@@ -10906,8 +10906,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (Aggregate compar
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -10918,7 +10930,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (Aggregate compar
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11027,18 +11039,6 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
 ,
     "_type": 1,
   },
-  BatchedQuery {
-    "_isBuildComplete": undefined,
-    "_parameters": undefined,
-    "_queries": [
-      {
-        "query": "DROP TABLE "temp_ad1"",
-        "type": 4,
-      },
-    ],
-    "_query": undefined,
-    "_type": undefined,
-  },
 ]
 `;
 
@@ -11049,8 +11049,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (Some) 1`] = `
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11061,7 +11073,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (Some) 1`] = `
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11181,18 +11193,6 @@ LEFT JOIN (
 WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
 ,
             "_type": 1,
-          },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ad1"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
           },
         ]`;
 
@@ -11203,8 +11203,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should determine whether where filter 
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11215,7 +11227,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should determine whether where filter 
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11338,18 +11350,6 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">1))"
 ,
             "_type": 1,
           },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ad1"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
-          },
         ]`;
 
 exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 1`] = `
@@ -11359,8 +11359,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11371,7 +11383,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11478,18 +11490,6 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
                 "_query": undefined,
                 "_type": undefined,
               },
-              BatchedQuery {
-                "_isBuildComplete": undefined,
-                "_parameters": undefined,
-                "_queries": [
-                  {
-                    "query": "DROP TABLE "temp_ad1"",
-                    "type": 4,
-                  },
-                ],
-                "_query": undefined,
-                "_type": undefined,
-              },
             ]`;
 
 exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 1`] = `
@@ -11499,8 +11499,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 1`] 
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ad1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11511,7 +11523,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 1`] 
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" numeric,
 	"table1Id" integer,
@@ -11591,18 +11603,6 @@ LEFT JOIN (
 WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
 ,
             "_type": 1,
-          },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ad1"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
           },
         ]`;
 
@@ -11613,8 +11613,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Count SubQuery)
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ads1"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ads1"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ads1
+"CREATE TEMPORARY TABLE "temp_ads1"
 (
 	"__index" numeric,
 	"id" integer,
@@ -11626,7 +11638,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Count SubQuery)
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ads1
+"CREATE TEMPORARY TABLE "temp_ads1"
 (
 	"__index" numeric,
 	"id" integer,
@@ -11728,18 +11740,6 @@ ORDER BY "entity0"."decimalNumber" ASC"
 ,
             "_type": 1,
           },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ads1"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
-          },
         ]`;
 
 exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuery) 1`] = `
@@ -11749,8 +11749,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuery) 1
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ads2"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -11763,7 +11775,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuery) 1
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -11875,18 +11887,6 @@ LIMIT @param1
 OFFSET @param0"
 ,
             "_type": 1,
-          },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ads2"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
           },
         ]`;
 
@@ -11897,8 +11897,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Some SubQuery) 
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ads2"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -11911,7 +11923,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Some SubQuery) 
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -12021,18 +12033,6 @@ LIMIT @param1
 OFFSET @param0"
 ,
             "_type": 1,
-          },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ads2"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
           },
         ]`;
 
@@ -12043,8 +12043,20 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Every SubQuery)
     "_parameters": Map {},
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS "temp_ads2"",
+        "type": 4,
+      },
+    ],
+    "_query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "_type": 4,
+  },
+  BatchedQuery {
+    "_isBuildComplete": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
         "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -12057,7 +12069,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Every SubQuery)
       },
     ],
     "_query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" numeric,
 	"id" integer,
@@ -12175,18 +12187,6 @@ LIMIT @param1
 OFFSET @param0"
 ,
             "_type": 1,
-          },
-          BatchedQuery {
-            "_isBuildComplete": undefined,
-            "_parameters": undefined,
-            "_queries": [
-              {
-                "query": "DROP TABLE "temp_ads2"",
-                "type": 4,
-              },
-            ],
-            "_query": undefined,
-            "_type": undefined,
           },
         ]`;
 

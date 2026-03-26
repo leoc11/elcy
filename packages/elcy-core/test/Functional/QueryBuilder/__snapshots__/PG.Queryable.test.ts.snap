@@ -5756,8 +5756,12 @@ FETCH NEXT $2 ROWS ONLY"
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint
@@ -5808,18 +5812,18 @@ WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
 ,
     "type": 1,
   },
-  {
-    "query": "DROP TABLE "temp_ad1"",
-    "type": 4,
-  },
 ]
 `;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Aggregate comparation) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -5875,18 +5879,18 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">10))"
 ,
     "type": 1,
   },
-  {
-    "query": "DROP TABLE "temp_ad1"",
-    "type": 4,
-  },
 ]
 `;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in where (Some) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -5948,17 +5952,17 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0" IS NOT NULL))"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ad1"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should determine whether where filter goes to join expression or not 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6021,17 +6025,17 @@ WHERE (("entity0"."deleted"=false) AND ("entity1"."column0">1))"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ad1"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6091,17 +6095,17 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
 ,
             "type": 1,
           },
-          {
-            "query": "DROP TABLE "temp_ad1"",
-            "type": 4,
-          },
         ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ad1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ad1
+"CREATE TEMPORARY TABLE "temp_ad1"
 (
 	"__index" decimal,
 	"table1Id" bigint,
@@ -6143,17 +6147,17 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ad1"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Count SubQuery) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ads1"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ads1
+"CREATE TEMPORARY TABLE "temp_ads1"
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6206,17 +6210,17 @@ ORDER BY "entity0"."decimalNumber" ASC"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ads1"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuery) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6275,17 +6279,17 @@ FETCH NEXT $2 ROWS ONLY"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ads2"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Some SubQuery) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6343,17 +6347,17 @@ FETCH NEXT $2 ROWS ONLY"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE "temp_ads2"",
-        "type": 4,
-      },
     ]`;
 
 exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Every SubQuery) 1`] = `
 [
   {
+    "query": "DROP TABLE IF EXISTS "temp_ads2"",
+    "type": 4,
+  },
+  {
     "query": 
-"CREATE TEMPORARY TABLE temp_ads2
+"CREATE TEMPORARY TABLE "temp_ads2"
 (
 	"__index" decimal,
 	"id" bigint,
@@ -6414,10 +6418,6 @@ OFFSET $1 ROWS
 FETCH NEXT $2 ROWS ONLY"
 ,
         "type": 1,
-      },
-      {
-        "query": "DROP TABLE "temp_ads2"",
-        "type": 4,
       },
     ]`;
 

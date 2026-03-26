@@ -11128,6 +11128,10 @@ Map {
         ,
     "_queries": [
       {
+        "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+        "type": 4,
+      },
+      {
         "query": 
 "CREATE TABLE [#temp_ad1]
 (
@@ -11180,13 +11184,11 @@ WHERE (([entity0].[deleted]=0) AND [entity0].[id] IN (
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE [#temp_ad1]",
-        "type": 4,
-      },
     ],
     "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint
@@ -11220,9 +11222,7 @@ FROM [fixture].[Table1s] AS [entity0]
 WHERE (([entity0].[deleted]=0) AND [entity0].[id] IN (
 	SELECT DISTINCT [entity1].[table1Id]
 	FROM [#temp_ad1] AS [entity1]
-));
-
-DROP TABLE [#temp_ad1]"
+))"
 ,
     "_type": 7,
   },
@@ -11238,6 +11238,10 @@ Map {
       "param0" => [
         ,
     "_queries": [
+      {
+        "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+        "type": 4,
+      },
       {
         "query": 
 "CREATE TABLE [#temp_ad1]
@@ -11296,13 +11300,11 @@ WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>10))"
 ,
         "type": 1,
       },
-      {
-        "query": "DROP TABLE [#temp_ad1]",
-        "type": 4,
-      },
     ],
     "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint,
@@ -11341,9 +11343,7 @@ LEFT JOIN (
 	FROM [#temp_ad1] AS [entity1]
 	GROUP BY [entity0].[id]
 ) AS [entity1] ON ([entity1].[table1Id]=[entity0].[id])
-WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>10));
-
-DROP TABLE [#temp_ad1]"
+WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>10))"
 ,
     "_type": 7,
   },
@@ -11365,6 +11365,10 @@ Map {
           "parent": [
             ,
         "_queries": [
+          {
+            "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+            "type": 4,
+          },
           {
             "query": 
 "CREATE TABLE [#temp_ad1]
@@ -11429,13 +11433,11 @@ WHERE (([entity0].[deleted]=0) AND ([entity1].[column0] IS NOT NULL))"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ad1]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint,
@@ -11474,9 +11476,7 @@ LEFT JOIN (
 	FROM [#temp_ad1] AS [entity1]
 	GROUP BY [entity0].[id]
 ) AS [entity1] ON ([entity1].[table1Id]=[entity0].[id])
-WHERE (([entity0].[deleted]=0) AND ([entity1].[column0] IS NOT NULL));
-
-DROP TABLE [#temp_ad1]"
+WHERE (([entity0].[deleted]=0) AND ([entity1].[column0] IS NOT NULL))"
 ,
             "_type": 7,
           },
@@ -11497,6 +11497,10 @@ Map {
           "parent": [
             ,
         "_queries": [
+          {
+            "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+            "type": 4,
+          },
           {
             "query": 
 "CREATE TABLE [#temp_ad1]
@@ -11562,13 +11566,11 @@ WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>1))"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ad1]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint,
@@ -11608,9 +11610,7 @@ LEFT JOIN (
 	WHERE ([entity1].[integer]>1)
 	GROUP BY [entity0].[id]
 ) AS [entity1] ON ([entity1].[table1Id]=[entity0].[id])
-WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>1));
-
-DROP TABLE [#temp_ad1]"
+WHERE (([entity0].[deleted]=0) AND ([entity1].[column0]>1))"
 ,
             "_type": 7,
           },
@@ -11631,6 +11631,10 @@ Map {
           "parent": [
             ,
         "_queries": [
+          {
+            "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+            "type": 4,
+          },
           {
             "query": 
 "CREATE TABLE [#temp_ad1]
@@ -11693,13 +11697,11 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 ,
                     "type": 1,
                   },
-                  {
-                    "query": "DROP TABLE [#temp_ad1]",
-                    "type": 4,
-                  },
                 ],
                 "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint,
@@ -11722,9 +11724,7 @@ ORDER BY [entity1].[table1Id] ASC;
 
 SELECT [entity0].[id]
 FROM [fixture].[Table1s] AS [entity0]
-WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000));
-
-DROP TABLE [#temp_ad1]"
+WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 ,
                 "_type": 7,
               },
@@ -11745,6 +11745,10 @@ Map {
           "parent": [
             ,
         "_queries": [
+          {
+            "query": "DROP TABLE IF EXISTS [#temp_ad1]",
+            "type": 4,
+          },
           {
             "query": 
 "CREATE TABLE [#temp_ad1]
@@ -11789,13 +11793,11 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ad1]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ad1]
+"DROP TABLE IF EXISTS [#temp_ad1];
+
+CREATE TABLE [#temp_ad1]
 (
 	[__index] decimal(18, 0),
 	[table1Id] bigint,
@@ -11814,9 +11816,7 @@ LEFT JOIN (
 	FROM [#temp_ad1] AS [entity1]
 	GROUP BY [entity1].[table1Id]
 ) AS [entity1] ON ([entity1].[table1Id]=[entity0].[id])
-WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000));
-
-DROP TABLE [#temp_ad1]"
+WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 ,
             "_type": 7,
           },
@@ -11837,6 +11837,10 @@ Map {
           "parent": [
             ,
         "_queries": [
+          {
+            "query": "DROP TABLE IF EXISTS [#temp_ads1]",
+            "type": 4,
+          },
           {
             "query": 
 "CREATE TABLE [#temp_ads1]
@@ -11892,13 +11896,11 @@ ORDER BY [entity0].[decimalNumber] ASC"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ads1]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ads1]
+"DROP TABLE IF EXISTS [#temp_ads1];
+
+CREATE TABLE [#temp_ads1]
 (
 	[__index] decimal(18, 0),
 	[id] bigint,
@@ -11928,9 +11930,7 @@ LEFT JOIN (
 	GROUP BY [entity2].[id]
 ) AS [entity2] ON ([entity2].[id]=[entity0].[id])
 WHERE ([entity0].[deleted]=0)
-ORDER BY [entity0].[decimalNumber] ASC;
-
-DROP TABLE [#temp_ads1]"
+ORDER BY [entity0].[decimalNumber] ASC"
 ,
             "_type": 7,
           },
@@ -11954,6 +11954,10 @@ Map {
             ,
         "_queries": [
           {
+            "query": "DROP TABLE IF EXISTS [#temp_ads2]",
+            "type": 4,
+          },
+          {
             "query": 
 "CREATE TABLE [#temp_ads2]
 (
@@ -12014,13 +12018,11 @@ FETCH NEXT @param1 ROWS ONLY"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ads2]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ads2]
+"DROP TABLE IF EXISTS [#temp_ads2];
+
+CREATE TABLE [#temp_ads2]
 (
 	[__index] decimal(18, 0),
 	[id] bigint,
@@ -12054,9 +12056,7 @@ LEFT JOIN (
 WHERE ([entity0].[deleted]=0)
 ORDER BY [entity0].[dateTime] DESC
 OFFSET @param0 ROWS
-FETCH NEXT @param1 ROWS ONLY;
-
-DROP TABLE [#temp_ads2]"
+FETCH NEXT @param1 ROWS ONLY"
 ,
             "_type": 7,
           },
@@ -12080,6 +12080,10 @@ Map {
             ,
         "_queries": [
           {
+            "query": "DROP TABLE IF EXISTS [#temp_ads2]",
+            "type": 4,
+          },
+          {
             "query": 
 "CREATE TABLE [#temp_ads2]
 (
@@ -12149,13 +12153,11 @@ FETCH NEXT @param1 ROWS ONLY"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ads2]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ads2]
+"DROP TABLE IF EXISTS [#temp_ads2];
+
+CREATE TABLE [#temp_ads2]
 (
 	[__index] decimal(18, 0),
 	[id] bigint,
@@ -12198,9 +12200,7 @@ LEFT JOIN (
 WHERE ([entity0].[deleted]=0)
 ORDER BY [entity0].[decimalNumber] ASC
 OFFSET @param0 ROWS
-FETCH NEXT @param1 ROWS ONLY;
-
-DROP TABLE [#temp_ads2]"
+FETCH NEXT @param1 ROWS ONLY"
 ,
             "_type": 7,
           },
@@ -12224,6 +12224,10 @@ Map {
             ,
         "_queries": [
           {
+            "query": "DROP TABLE IF EXISTS [#temp_ads2]",
+            "type": 4,
+          },
+          {
             "query": 
 "CREATE TABLE [#temp_ads2]
 (
@@ -12297,13 +12301,11 @@ FETCH NEXT @param1 ROWS ONLY"
 ,
                 "type": 1,
               },
-              {
-                "query": "DROP TABLE [#temp_ads2]",
-                "type": 4,
-              },
             ],
             "_query": 
-"CREATE TABLE [#temp_ads2]
+"DROP TABLE IF EXISTS [#temp_ads2];
+
+CREATE TABLE [#temp_ads2]
 (
 	[__index] decimal(18, 0),
 	[id] bigint,
@@ -12350,9 +12352,7 @@ LEFT JOIN (
 WHERE ([entity0].[deleted]=0)
 ORDER BY [entity0].[decimalNumber] DESC
 OFFSET @param0 ROWS
-FETCH NEXT @param1 ROWS ONLY;
-
-DROP TABLE [#temp_ads2]"
+FETCH NEXT @param1 ROWS ONLY"
 ,
             "_type": 7,
           },
