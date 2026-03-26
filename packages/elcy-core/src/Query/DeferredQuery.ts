@@ -17,7 +17,7 @@ export class DeferredQuery<T = unknown> {
         protected readonly dbContext: DbContext,
         public readonly command: IQueryExpression,
         public readonly parameters: IQueryParameterMap,
-        public readonly resultParser: (result: IQueryResult[], queryCommands?: IQuery[]) => T,
+        public readonly resultParser: (result: Map<IQuery, IQueryResult>) => T,
         public readonly queryOption: IQueryOption
     ) { }
     public resolver: (value?: T | PromiseLike<T>) => void;
@@ -51,7 +51,8 @@ export class DeferredQuery<T = unknown> {
         return this.command.hashCode() + Enumerable.from(this.parameters).map((o) => hashCode((o[1].value || "NULL").toString())).sum();
     }
     public resolve(result: IQueryResult[]) {
-        this.value = this.resultParser(result, this._queries);
+        const resultMap = Enumerable.from(this._queries).toMap(o => o, o => result[this._queries.indexOf(o)]);
+        this.value = this.resultParser(resultMap);
         if (this.resolver) {
             this.resolver(this.value);
             this.resolver = undefined;

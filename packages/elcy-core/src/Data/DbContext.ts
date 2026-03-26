@@ -716,9 +716,9 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         if (whereExp) {
             deleteExp.addWhere(whereExp);
             deleteExp.paramExps = Array.from(queryParameters.keys());
-            const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (queryRes) => {
+            const deleteQuery = new DeferredQuery(this, deleteExp, queryParameters, (resultMap) => {
                 return {
-                    effectedRows: Enumerable.from(queryRes).sum((o) => o.effectedRows),
+                    effectedRows: Enumerable.from(resultMap).sum((o) => o[1].effectedRows),
                     rows: []
                 } as IQueryResult;
             }, option);
@@ -896,8 +896,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 selectExp.where = selectExp.where ? new OrExpression(selectExp.where, pkFilter) : pkFilter;
             }
 
-            const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (queryRes) => {
-                const effectedRows = Enumerable.from(queryRes).sum((o) => o.effectedRows);
+            const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (resultMap) => {
+                const effectedRows = Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DML)).sum((o) => o[1].effectedRows);
                 if (entityMetaData.concurrencyMode !== "NONE" && effectedRows <= 0) {
                     throw new Error("Concurrency Error");
                 }
@@ -911,10 +911,10 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
         // get changes done by server.
         if (hasUpdateColumn) {
-            const selectQuery = new DeferredQuery(this, selectExp, selectParameters, (queryRes) => {
+            const selectQuery = new DeferredQuery(this, selectExp, selectParameters, (resultMap) => {
                 return {
                     effectedRows: 0,
-                    rows: queryRes.flatMap((o) => o.rows)
+                    rows: Enumerable.from(resultMap).flatMap((o) => o[1].rows)
                 } as IQueryResult<FlatObjectLike<T>>;
             }, option);
             results.push(selectQuery);
@@ -957,9 +957,9 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const queryParameters: IQueryParameterMap = new Map();
             upsertEntryExp(upsertExp, entry, queryParameters);
 
-            const upsertQuery = new DeferredQuery(this, upsertExp, queryParameters, (queryRes) => {
+            const upsertQuery = new DeferredQuery(this, upsertExp, queryParameters, (resultMap) => {
                 return {
-                    effectedRows: Enumerable.from(queryRes).max((o) => o.effectedRows),
+                    effectedRows: Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DML)).max((o) => o[1].effectedRows),
                     rows: []
                 } as IQueryResult<FlatObjectLike<T>>;
             }, param);
@@ -992,10 +992,10 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             selectExp.selects = generatedColumns.map((c) => entityExp.columns.find((e) => e.propertyName === c.propertyName)).toArray();
             selectExp.addWhere(whereExp);
 
-            results.push(new DeferredQuery(this, selectExp, new Map(Enumerable.from(results).flatMap((o) => o.parameters)), (queryRes) => {
+            results.push(new DeferredQuery(this, selectExp, new Map(Enumerable.from(results).flatMap((o) => o.parameters)), (resultMap) => {
                 return {
                     effectedRows: 0,
-                    rows: queryRes.flatMap((o) => o.rows)
+                    rows: Enumerable.from(resultMap).flatMap((o) => o[1].rows)
                 } as IQueryResult<FlatObjectLike<T>>;
             }, param));
         }

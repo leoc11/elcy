@@ -142,7 +142,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => !result.find(() => true).rows.some(() => true), this.queryOption);
+            (resultMap) => !Enumerable.from(resultMap).map(o => o[1]).find().rows.some(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -198,7 +198,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => result.find(() => true).rows.some(() => true), this.queryOption);
+            (resultMap) => Enumerable.from(resultMap).map(o => o[1]).find().rows.some(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -265,7 +265,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => result.find(() => true).rows.some(() => true), this.queryOption);
+            (resultMap) => Enumerable.from(resultMap).map(o => o[1]).find().rows.some(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -319,7 +319,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -403,7 +403,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (resultMap) => Enumerable.from(resultMap).map(o => o[1]).reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -484,9 +484,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             }
 
             const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-                (result) => {
-                    let i = 0;
-                    result = result.filter(() => (query.queries[i++].type & QueryType.DQL) && true);
+                (resultMap) => {
+                    const result = Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DQL)).map(o => o[1]).toArray();
                     return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).find();
                 }, this.queryOption);
             this.dbContext.deferredQueries.push(query);
@@ -547,7 +546,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (resultMap) => Enumerable.from(resultMap).map(o => o[1]).reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -605,7 +604,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -663,7 +662,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -720,7 +719,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -778,7 +777,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery<TResult | null>(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true), this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -832,7 +831,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => queryCache.resultParser.parse(result, this.dbContext).find(() => true) ?? "", this.queryOption);
+            (resultMap) => queryCache.resultParser.parse(Array.from(resultMap.values()), this.dbContext).find(() => true) ?? "", this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }) as any;
@@ -884,9 +883,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => {
-                let i = 0;
-                result = result.filter(() => query.queries[i++].type === QueryType.DQL);
+            (resultMap) => {
+                const result = Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DQL)).map(o => o[1]).toArray();
                 const data = queryCache.resultParser.parse(result, this.dbContext);
                 return resultParser(data);
             }, this.queryOption);
@@ -965,9 +963,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
-            (result) => {
-                let i = 0;
-                result = result.filter(() => query.queries[i++].type === QueryType.DQL);
+            (resultMap) => {
+                const result = Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DQL)).map(o => o[1]).toArray();
                 return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).toMap((o) => o.Key as Unchain<K>, (o) => o.Value as Unchain<V>);
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
@@ -1034,7 +1031,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (result) => result.reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params, (resultMap) => Enumerable.from(resultMap).map(o => o[1]).reduce((r, o) => r + o.effectedRows, 0), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }

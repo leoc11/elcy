@@ -23,6 +23,7 @@ import { ColumnExpression } from "src/Queryable/QueryExpression/ColumnExpression
 import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
 import { UpdateExpression, updateItemExp } from "src/Queryable/QueryExpression/UpdateExpression";
 import { QueryResultParser } from "src/Query/QueryResultParser";
+import { QueryType } from "src/Common/Enum";
 
 export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresql"> {
     protected namingStrategy = new NamingStrategy();
@@ -99,14 +100,24 @@ export abstract class PostgresqlDbContext extends RelationalDbContext<"postgresq
                 updateExp.returnings = entityMetaData.updateGeneratedColumns.map(o => new ColumnExpression(updateExp.entity, o));
             }
 
-            const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (queryRes) => {
-                const effectedRows = Enumerable.from(queryRes).sum((o) => o.effectedRows);
+            const updateQuery = new DeferredQuery(this, updateExp, queryParameters, (queryMap) => {
+                let rows = Enumerable.from<unknown>([]);
+                let effectedRows = 0;
+                for (const [command, result] of queryMap) {
+                    if ((command.type & QueryType.DQL) && result.rows) {
+                        rows = rows.concat(result.rows);
+                    }
+                    if (command.type & QueryType.DML) {
+                        effectedRows += result.effectedRows;
+                    }
+                }
+
                 if (entityMetaData.concurrencyMode !== "NONE" && effectedRows <= 0) {
                     throw new Error("Concurrency Error");
                 }
                 return {
                     effectedRows: effectedRows,
-                    rows: Enumerable.from(queryRes).flatMap((o) => o.rows)
+                    rows: rows
                 } as IQueryResult<FlatObjectLike<T>>;
             }, option);
             results.push(updateQuery);

@@ -120,7 +120,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, insertExp, params, (result) => Enumerable.from(result).sum((o) => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, insertExp, params, (resultMap) => Enumerable.from(resultMap).sum((o) => o[1].effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
@@ -178,7 +178,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, upsertExp, params, (result) => Enumerable.from(result).sum((o) => o.effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, upsertExp, params, (resultMap) => Enumerable.from(resultMap).sum((o) => o[1].effectedRows), this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }

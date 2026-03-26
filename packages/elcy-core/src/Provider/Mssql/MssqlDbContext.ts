@@ -4,7 +4,6 @@ import { EntityEntry } from "../../Data/EntityEntry";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
 import { DeferredQuery } from "../../Query/DeferredQuery";
-import { IQuery } from "../../Query/IQuery";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { IQueryParameterMap } from "../../Query/IQueryParameter";
 import { IQueryResult } from "../../Query/IQueryResult";
@@ -50,12 +49,10 @@ export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
             insertEntryExp(insertExp, entry, columns, relations, queryParameters);
         }
 
-        const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (queryRes, commands: IQuery[]) => {
+        const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (queryMap) => {
             let rows = Enumerable.from<unknown>([]);
             let effectedRows = 0;
-            for (let index = 0, len = commands.length; index < len; index++) {
-                const command = commands[index];
-                const result = queryRes[index];
+            for (const [command, result] of queryMap) {
                 if ((command.type & QueryType.DQL) && result.rows) {
                     rows = rows.concat(result.rows);
                 }
