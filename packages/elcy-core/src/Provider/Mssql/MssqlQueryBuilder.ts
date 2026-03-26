@@ -199,6 +199,10 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     }
     protected override createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
+        result.push({
+            query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
+            type: QueryType.DDL
+        });
         const columnDefinition = entityExp.columns.map((c) => {
             const colTypeFactory = this.valueTypeMap.get(c.type);
             const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
@@ -245,13 +249,6 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         return result;
     }
-    protected override dropTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, option: IQueryOption): IQuery[] {
-        return [{
-            query: `DROP TABLE ${this.entityName(entityExp)}`,
-            type: QueryType.DDL
-        }];
-    }
-
     protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {
         if (entityExp instanceof TemporaryEntityExpression) {
             return this.enclose(`#${entityExp.name}`);

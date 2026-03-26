@@ -375,10 +375,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 const entityExp = tableValuExp.entityExp;
                 const arrayValues = tvp.value as any[];
                 const createQ = this.createTempTableQuery(entityExp, arrayValues, option);
-                const dropQ = this.dropTempTableQuery(entityExp, option);
-
                 preQ.push(...createQ);
-                postQ.push(...dropQ);
             }
             result = preQ.concat(result).concat(postQ);
         }
@@ -984,6 +981,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
+        result.push({
+            query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
+            type: QueryType.DDL
+        });
         const columnDefinition = entityExp.columns.map((c) => {
             const colTypeFactory = this.valueTypeMap.get(c.type);
             const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
@@ -991,7 +992,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 
-        const query = `CREATE TEMPORARY TABLE ${entityExp.name}` +
+        const query = `CREATE TEMPORARY TABLE ${this.entityName(entityExp)}` +
             `${this.newLine()}(` +
             `${this.newLine(1, false)}${columnDefinition}` +
             `${this.newLine()})`;
@@ -1030,13 +1031,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected dropTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, option: IQueryOption): IQuery[] {
-        return [{
-            query: `DROP TABLE ${this.enclose(entityExp.name)}`,
-            type: QueryType.DDL
-        }];
-    }
-
     // TODO: Update Query should use ANSI SQL Standard
     protected getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         const result: IQuery[] = [];
