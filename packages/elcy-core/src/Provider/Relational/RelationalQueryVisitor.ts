@@ -264,16 +264,21 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         }
 
         if (isExpressionSafe) {
+            let hasParam = false;
             exp.params = exp.params.map((o) => {
                 if (o instanceof SqlParameterExpression) {
                     ArrayExtension.delete(param.selectExpression.paramExps, o);
+                    hasParam = true;
                     return o.valueExp;
                 }
                 return o;
             });
 
-            const result = param.selectExpression.addSqlParameter(exp);
-            return result;
+            if (hasParam) {
+                return param.selectExpression.addSqlParameter(exp);
+            }
+
+            return new ValueExpression(this.valueTransformer.execute(exp));
         }
 
         throw new Error(`${exp.type.name} not supported.`);
