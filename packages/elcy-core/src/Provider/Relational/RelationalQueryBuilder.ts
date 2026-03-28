@@ -1213,6 +1213,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return "NULL";
     }
     protected numberString(value: number) {
+        if (!Number.isFinite(value)) {
+            return this.nullString();
+        }
+
         return value.toString();
     }
     protected bigIntString(value: bigint) {
