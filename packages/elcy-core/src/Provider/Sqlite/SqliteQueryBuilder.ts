@@ -1,7 +1,7 @@
 import { Enumerable } from "@elcy/enumerable";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, ValueType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
@@ -122,5 +122,17 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         }
 
         return super.entityName(entityExp);
+    }
+    protected override createTableValueConstructorQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
+        const columns = entityExp.columns.map((o, i) => `column${i+1} AS ${this.enclose(o.columnName)}`).join(", ");
+        let i = 0;
+        const valueLiterals = values.map(o => {
+            const valueQuery = entityExp.columns.map(p => {
+                const value = p.propertyName === "__index" ? i++ : o[p.propertyName];
+                return this.valueString(value as ValueType);
+            }).join(", ");
+            return `(${valueQuery})`;
+        }).join(`,${this.newLine(2, false)}`)
+        return `(${this.newLine(1)}SELECT${this.newLine(1)}${columns}${this.newLine(-1)}FROM (${this.newLine(1)}VALUES${this.newLine()}${valueLiterals}${this.newLine(-1)})${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}`;
     }
 }

@@ -27,7 +27,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     ]);
 
     //#endregion
-    protected override createLiteralTableValueQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
+    protected override createTableValueConstructorQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
         const valueLiterals = values.map(o => {
             const valueQueries = entityExp.columns.map(p => {
                 return `${this.valueString(o[p.propertyName] as ValueType)} AS ${this.enclose(p.columnName)}`;

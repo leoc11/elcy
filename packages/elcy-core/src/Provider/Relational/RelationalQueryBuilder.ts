@@ -680,7 +680,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                         .map(o => o[1])
                         .find();
 
-                    return this.createLiteralTableValueQuery(entity, paramValue.value as TE[], param);
+                    return this.createTableValueConstructorQuery(entity, paramValue.value as TE[], param);
                 }
             }
         }
@@ -1076,7 +1076,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected createLiteralTableValueQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
+    protected createTableValueConstructorQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
         const columns = entityExp.columns.map(o => this.enclose(o.columnName)).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
