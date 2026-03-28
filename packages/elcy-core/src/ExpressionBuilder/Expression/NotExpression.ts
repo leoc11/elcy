@@ -1,3 +1,4 @@
+import { PrimitiveType } from "@elcy/enumerable";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
@@ -9,7 +10,7 @@ export class NotExpression implements IUnaryOperatorExpression<boolean> {
         this.operand = this.convertOperand(operand);
     }
     public operand: IExpression<boolean>;
-    public type = Boolean;
+    public type: PrimitiveType<boolean> = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

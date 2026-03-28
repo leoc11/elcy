@@ -1,9 +1,10 @@
+import { PrimitiveType } from "src/Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class ModulusExpression implements IBinaryOperatorExpression<number> {
     constructor(public leftOperand: IExpression<number>, public rightOperand: IExpression<number>) { }
-    public type = Number;
+    public type: PrimitiveType<number> = Number;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

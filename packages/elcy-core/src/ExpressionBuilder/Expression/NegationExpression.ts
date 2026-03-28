@@ -1,9 +1,10 @@
+import { PrimitiveType } from "src/Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 export class NegationExpression implements IUnaryOperatorExpression<number> {
     constructor(public operand: IExpression<number>) { }
-    public type = Number;
+    public type: PrimitiveType<number> = Number;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

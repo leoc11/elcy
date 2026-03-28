@@ -1,4 +1,4 @@
-import { GenericType } from "../../Common/Type";
+import { GenericType, PrimitiveType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
@@ -20,7 +20,7 @@ export class AdditionExpression<T extends string | number = string | number> imp
     public itemType?: GenericType<T>;
     public leftOperand: IExpression<T>;
     public rightOperand: IExpression<T>;
-    public type: T extends string ? GenericType<Extract<T, string>> : GenericType<Extract<T, number>>;
+    public type: T extends string ? PrimitiveType<Extract<T, string>> : PrimitiveType<Extract<T, number>>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();

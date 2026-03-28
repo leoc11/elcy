@@ -1,9 +1,10 @@
+import { PrimitiveType } from "src/Common/Type";
 import { FunctionCallExpression } from "./FunctionCallExpression";
 import { IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
 import { ValueExpression } from "./ValueExpression";
 export abstract class BitwiseExpression implements IExpression<number> {
-    public type = Number;
+    public type: PrimitiveType<number> = Number;
     public abstract clone(replaceMap?: Map<IExpression, IExpression>): BitwiseExpression;
     public abstract hashCode(): number;
     protected convertOperand(operand: IExpression): IExpression<number> {

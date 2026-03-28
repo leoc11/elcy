@@ -1,9 +1,10 @@
+import { PrimitiveType } from "@elcy/enumerable";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class AndExpression implements IBinaryOperatorExpression<boolean> {
     constructor(public leftOperand: IExpression<boolean>, public rightOperand: IExpression<boolean>) { }
-    public type = Boolean;
+    public type: PrimitiveType<boolean> = Boolean;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
