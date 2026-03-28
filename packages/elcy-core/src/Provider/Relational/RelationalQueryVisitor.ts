@@ -1286,10 +1286,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return selectOperand.entity as unknown as IExpression<T>;
                 }
                 case "slice": {
-                    let startExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
-                    let endExp: IExpression<number>;
+                    let startExp = exp.params[0] as ParameterExpression<number>;
+                    let endExp: ParameterExpression<number>;
                     if (exp.params.length > 1) {
-                        endExp = exp.params.length > 1 ? this.visit(exp.params[1] as ParameterExpression<number>, param) : undefined;
+                        endExp = exp.params.length > 1 ? exp.params[1] as ParameterExpression<number> : undefined;
                     }
 
                     if (param.scope === "queryable") {
@@ -1315,7 +1315,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                         if (selectOperand.paging.take) {
                             selectOperand.paging.take = this.visit<number>(new SubstractionExpression(selectOperand.paging.take, startExp), param);
-                            startExp = this.visit(exp.params[0] as ParameterExpression<number>, param);
                         }
                         selectOperand.paging.skip = this.visit(selectOperand.paging.skip ? new AdditionExpression(selectOperand.paging.skip, startExp) : startExp, param);
 
@@ -1401,9 +1400,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const groupExp = pagingJoinRel.child as GroupByExpression;
                         const countExp = (Enumerable.from(groupExp.selects).except(groupExp.groupBy).find() as ComputedColumnExpression).expression;
 
-                        pagingJoinRel.start = this.visit(pagingJoinRel.start ? new AdditionExpression(pagingJoinRel.start, startExp) : startExp, param);
+                        const pagingStartExp = pagingJoinRel.start ? new AdditionExpression(pagingJoinRel.start, startExp) : startExp;
+                        pagingJoinRel.start = this.visit(pagingStartExp, param);
                         if (endExp) {
-                            pagingJoinRel.end = this.visit(pagingJoinRel.start ? new AdditionExpression(pagingJoinRel.start, endExp) : endExp, param);
+                            pagingJoinRel.end = this.visit(pagingStartExp ? new AdditionExpression(pagingStartExp, endExp) : endExp, param);
                         }
 
                         groupExp.having = null;
