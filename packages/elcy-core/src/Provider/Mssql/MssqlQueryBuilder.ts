@@ -220,17 +220,12 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
 
-        let i = 0;
         const columns = entityExp.columns;
         const insertQuery = new InsertExpression(entityExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};
             for (const col of columns) {
                 switch (col.propertyName) {
-                    case "__index": {
-                        itemExp[col.propertyName] = new ValueExpression(i++);
-                        break;
-                    }
                     case "__value": {
                         itemExp[col.propertyName] = new ValueExpression(item);
                         break;

@@ -337,18 +337,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     //#region Query
     public toQuery<T>(queryExpression: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[] {
         let result: IQuery[] = [];
-        const tvps = new Map<SqlTableValueParameterExpression, IQueryParameter>();
-
-        if (!(option && option.supportTVP)) {
-            for (const [key, value] of parameters) {
-                if (key instanceof SqlTableValueParameterExpression) {
-                    tvps.set(key, value);
-                    // NOTE: maybe TVP param should be deleted for unsupported db
-                    // parameters.delete(key);
-                }
-            }
-        }
-
         if (queryExpression instanceof SelectExpression) {
             result = this.getSelectQuery(queryExpression, option, parameters);
         }
@@ -368,17 +356,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             result = this.getDeleteQuery(queryExpression, option, parameters);
         }
 
-        if (tvps.size > 0) {
-            let preQ: IQuery[] = [];
-            const postQ: IQuery[] = [];
-            for (const [tableValuExp, tvp] of tvps) {
-                const entityExp = tableValuExp.entityExp;
-                const arrayValues = tvp.value as any[];
-                const createQ = this.createTempTableQuery(entityExp, arrayValues, option);
-                preQ.push(...createQ);
-            }
-            result = preQ.concat(result).concat(postQ);
-        }
         return result;
     }
     public toString<T = any>(expression: IExpression<T>, param?: IQueryBuilderParameter): string {
@@ -531,6 +508,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             option: option
         };
 
+        const useTempTable = !option?.supportTVP && !deleteExp.parentRelation && deleteExp.includes.length;
+        if (useTempTable) {
+            for (const [key, value] of parameters) {
+                if (!(key instanceof SqlTableValueParameterExpression)) {
+                    continue;
+                }
+
+                result.push(...this.createTempTableQuery(key.entityExp, value as unknown[], option));
+            }
+        }
+
         let deleteStrategy: DeleteMode;
         if (deleteExp.deleteMode) {
             deleteStrategy = this.extractValue(deleteExp.deleteMode, param);
@@ -671,6 +659,30 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 return res + str + paramName;
             }, "")})`;
+        }
+        else if (entity instanceof TemporaryEntityExpression) {
+            if (param?.option?.supportTVP) {
+                const paramExp = Enumerable.from(param.parameters)
+                    .filter(o => o[0] instanceof SqlTableValueParameterExpression && o[0].entityExp === entity)
+                    .map(o => o[0])
+                    .find();
+
+                entityQ = this.toSqlParameterString(paramExp, param);
+            }
+            else {
+                const useTempTable = (param.queryExpression.parentRelation instanceof IncludeRelation || param.queryExpression.includes.length);
+                if (useTempTable) {
+                    entityQ = this.entityName(entity);
+                }
+                else {
+                    const paramValue = Enumerable.from(param.parameters)
+                        .filter(o => o[0] instanceof SqlTableValueParameterExpression && o[0].entityExp === entity)
+                        .map(o => o[1])
+                        .find();
+
+                    return this.createLiteralTableValueQuery(entity, paramValue.value as TE[], param);
+                }
+            }
         }
         else {
             entityQ = this.entityName(entity);
@@ -853,6 +865,20 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             parameters: parameters,
             option: option
         };
+
+        const useTempTable = !option?.supportTVP && !selectExp.parentRelation && selectExp.includes.length;
+        if (useTempTable) {
+            for (const [key, valueExp] of parameters) {
+                if (!(key instanceof SqlTableValueParameterExpression)) {
+                    continue;
+                }
+
+                // NOTE: maybe TVP param should be deleted for unsupported db
+                // parameters.delete(key);
+                result.push(...this.createTempTableQuery(key.entityExp, valueExp.value as unknown[], option));
+            }
+        }
+
         let skipInclude = false;
         // subselect should not have include
         if (selectExp.isSubSelect) {
@@ -998,7 +1024,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return `SELECT${distinct} ${selects}`
             + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
     }
-    protected createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
+    protected createTempTableQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
@@ -1043,12 +1069,24 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     }
                 }
             }
-            insertQuery.values.push(itemExp as SetterObj<T>);
+            insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
         result.push(...this.getInsertQuery(insertQuery, option, new Map()));
 
         return result;
+    }
+    protected createLiteralTableValueQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
+        const columns = entityExp.columns.map(o => this.enclose(o.columnName)).join(", ");
+        let i = 0;
+        const valueLiterals = values.map(o => {
+            const valueQuery = entityExp.columns.map(p => {
+                const value = p.propertyName === "__index" ? i++ : o[p.propertyName];
+                return this.valueString(value as ValueType);
+            }).join(", ");
+            return `(${valueQuery})`;
+        }).join(`,${this.newLine(1, false)}`)
+        return `(${this.newLine(1)}VALUES${this.newLine()}${valueLiterals}${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}(${columns})`;
     }
     // TODO: Update Query should use ANSI SQL Standard
     protected getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {

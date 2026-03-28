@@ -23,8 +23,14 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     ]);
 
     //#endregion
-
-    override encloseIdentifier(identity: string): string {
-        return `\`${identity}\``;
+    protected override createLiteralTableValueQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): string {
+        const valueLiterals = values.map(o => {
+            const valueQueries = entityExp.columns.map(p => {
+                return `${this.valueString(o[p.propertyName] as ValueType)} AS ${this.enclose(p.columnName)}`;
+            }).join(", ");
+            return `SELECT ${valueQueries}`;
+        }).join(`${this.newLine(1, false)}UNION ALL${this.newLine(1, false)}`)
+        return `(${this.newLine(1)}${valueLiterals}${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}`;
+    }
     }
 }

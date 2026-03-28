@@ -1884,8 +1884,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         }
                     }
                 }
-
-                if (entityExp.columns.length === 1) {
+                else {
                     entityExp.columns.push(new ColumnExpression(entityExp, itemType as unknown as GenericType<ValueType>, "__value" as StringKeyOf<ElementType<T>>, "__value", false));
                 }
 
