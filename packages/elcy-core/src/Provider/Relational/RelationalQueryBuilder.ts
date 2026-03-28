@@ -515,7 +515,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key.entityExp, value as unknown[], option));
+                result.push(...this.createTempTableQuery(key.entityExp, value as unknown[], param));
             }
         }
 
@@ -875,7 +875,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
                 // NOTE: maybe TVP param should be deleted for unsupported db
                 // parameters.delete(key);
-                result.push(...this.createTempTableQuery(key.entityExp, valueExp.value as unknown[], option));
+                result.push(...this.createTempTableQuery(key.entityExp, valueExp.value as unknown[], param));
             }
         }
 
@@ -1024,7 +1024,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return `SELECT${distinct} ${selects}`
             + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
     }
-    protected createTempTableQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], option: IQueryOption): IQuery[] {
+    protected createTempTableQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param?: IQueryBuilderParameter): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
@@ -1072,7 +1072,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
-        result.push(...this.getInsertQuery(insertQuery, option, new Map()));
+        result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
 
         return result;
     }

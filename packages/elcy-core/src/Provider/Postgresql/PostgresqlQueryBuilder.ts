@@ -290,4 +290,11 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         result = result.concat(includedDeletes);
         return result;
     }
+    protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {
+        if (entityExp instanceof TemporaryEntityExpression) {
+            return `pg_temp.${this.enclose(entityExp.name)}`;
+        }
+
+        return super.entityName(entityExp);
+    }
 }

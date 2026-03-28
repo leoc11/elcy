@@ -30,6 +30,7 @@ export class TemporaryEntityExpression<T extends object = any> implements IEntit
     public columns: IColumnExpression<T>[];
     public entityTypes: IObjectType[] = [];
     public isRelationData?: boolean;
+    public schema?: string;
     public select?: SelectExpression<T>;
     private _primaryColumns: IColumnExpression<T>[];
     public clone(replaceMap?: Map<IExpression, IExpression>): IEntityExpression<T> {
@@ -37,6 +38,7 @@ export class TemporaryEntityExpression<T extends object = any> implements IEntit
             replaceMap = new Map();
         }
         const clone = new TemporaryEntityExpression(this.name, [], this.type, this.alias);
+        clone.schema = this.schema;
         replaceMap.set(this, clone);
         clone.columns = this.columns.map((o) => resolveClone(o, replaceMap));
         return clone;

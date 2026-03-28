@@ -15,6 +15,8 @@ import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { SqliteColumnType } from "./SqliteColumnType";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
+import { TemporaryEntityExpression } from "src/Queryable/QueryExpression/TemporaryEntityExpression";
+import { IEntityExpression } from "src/Queryable/QueryExpression/IEntityExpression";
 
 export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -113,5 +115,12 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip, param)}`;
         }
         return result;
+    }
+    protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {
+        if (entityExp instanceof TemporaryEntityExpression) {
+            return `temp.${this.enclose(entityExp.name)}`;
+        }
+
+        return super.entityName(entityExp);
     }
 }

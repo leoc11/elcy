@@ -197,7 +197,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";
     }
-    protected override createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
+    protected override createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], param: IQueryBuilderParameter): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
@@ -240,7 +240,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             insertQuery.values.push(itemExp as SetterObj<T>);
         }
 
-        result.push(...this.getInsertQuery(insertQuery, option, new Map()));
+        result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
 
         return result;
     }
