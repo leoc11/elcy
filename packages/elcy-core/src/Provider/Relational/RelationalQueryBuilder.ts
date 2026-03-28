@@ -402,7 +402,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             case expression instanceof RawSqlExpression:
                 return this.toRawSqlString(expression, param);
             case expression instanceof SelectExpression:
-                return this.getSelectQueryString(expression, param) /*+ (expression.isSubSelect ? "" : ";")*/;
+                return this.toSelectString(expression, param);
             default: {
                 if (isColumnExp(expression)) {
                     return this.getColumnQueryString(expression, param);
@@ -642,26 +642,26 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         let entityQ = "";
         if (entity instanceof UnionExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}UNION${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}UNION${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof IntersectExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}INTERSECT${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}INTERSECT${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ExceptExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}EXCEPT${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}EXCEPT${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ConcatExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.getSelectQueryString(o, param)).join(`${this.newLine()}UNION ALL${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}UNION ALL${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ProjectionEntityExpression) {
-            entityQ = this.getSelectQueryString(entity.subSelect, param);
+            entityQ = this.toSelectString(entity.subSelect, param);
         }
         else if (entity instanceof RawEntityExpression) {
             entityQ = `(${entity.sqlTemplateStrings.reduce((res, str, i) => {
@@ -693,7 +693,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             option: option
         };
 
-        const selectString = this.getSelectQueryString(insertIntoExp.select, param, true);
+        const selectString = this.toSelectString(insertIntoExp.select, param);
         const columns = insertIntoExp.columns.map((o) => this.enclose(o.columnName)).join(",");
         const selectQuery = `INSERT INTO ${this.entityName(insertIntoExp.entity)} (${columns})` + this.newLine() + selectString;
         result.push({
@@ -771,7 +771,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             result += this.newLine();
             result += Enumerable.from(joins).map((o) => {
                 const childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, param)
-                    : "(" + this.newLine(1) + this.getSelectQueryString(o.child, param, true) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
+                    : "(" + this.newLine(1) + this.toSelectString(o.child, param) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias);
 
                 let joinStr = `${o.type} JOIN ${childString}`;
                 if (o.relation) {
@@ -826,85 +826,22 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         while (parent.parentRelation && parent.parentRelation.isEmbedded) {
             parent = parent.parentRelation.parent;
         }
-        const entityString = this.isSimpleSelect(parent) ? this.getEntityQueryString(parent.entity, param) : `(${this.newLine(1)}${this.getSelectQueryString(parent, param, true)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
+        const entityString = this.isSimpleSelect(parent) ? this.getEntityQueryString(parent.entity, param) : `(${this.newLine(1)}${this.toSelectString(parent, param)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
         const relationString = this.toLogicalString(parentRel.relation, param);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
     }
-    protected getSelectQuery<TE extends object>(selectExp: SelectExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap, skipInclude = false): IQuery[] {
+    protected getSelectQuery<TE extends object>(selectExp: SelectExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
         const param: IQueryBuilderParameter = {
             queryExpression: selectExp,
             parameters: parameters,
             option: option
         };
+        let skipInclude = false;
         // subselect should not have include
         if (selectExp.isSubSelect) {
             skipInclude = true;
         }
-
-        const distinct = selectExp.distinct ? " DISTINCT" : "";
-        const selects = Enumerable.from(selectExp.projectedColumns)
-            .map((o) => {
-                let colStr = this.getColumnQueryString(o, param);
-                // NOTE: computed column should always has alias
-                if (o.alias) {
-                    colStr += " AS " + this.enclose(o.alias);
-                }
-
-                return colStr;
-            })
-            .toArray()
-            .join("," + this.newLine(1, false));
-
-        const entityQ = this.getEntityQueryString(selectExp.entity, param);
-
-        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
-            const clone = selectExp.clone();
-            clone.entity.alias = "rel_" + clone.entity.alias;
-            clone.isAggregate = true;
-            clone.distinct = true;
-            clone.selects = clone.resolvedGroupBy.slice();
-
-            let relation: IExpression<boolean>;
-            for (const col of selectExp.resolvedGroupBy) {
-                const cloneCol = clone.resolvedGroupBy.find((o) => o.dataPropertyName === col.dataPropertyName);
-                const logicalExp = new StrictEqualExpression(col, cloneCol);
-                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
-            }
-
-            const joinRel = clone.parentRelation = new JoinRelation(selectExp, clone, relation, "INNER");
-            selectExp.joins.push(joinRel);
-        }
-
-        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation, param);
-
-        let selectQuerySuffix = "";
-        if (selectExp.where) {
-            param.state = "column-declared";
-            selectQuerySuffix += this.newLine() + "WHERE " + this.toLogicalString(selectExp.where, param);
-            param.state = "";
-        }
-
-        if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
-            if (selectExp.groupBy.length > 0) {
-                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.map((o) => this.getColumnQueryString(o, param)).join(", ");
-            }
-            if (selectExp.having) {
-                selectQuerySuffix += this.newLine() + "HAVING " + this.toLogicalString(selectExp.having, param);
-            }
-        }
-
-        const hasPagination = selectExp.paging.skip || selectExp.paging.take;
-        if (selectExp.resolvedOrders.some(o => true) && (hasPagination || !(selectExp.parentRelation instanceof JoinRelation))) {
-            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.resolvedOrders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
-        }
-
-        if (hasPagination) {
-            selectQuerySuffix += this.getPagingQueryString(selectExp, param);
-        }
-
-        const selectQuery = `SELECT${distinct} ${selects}`
-            + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
 
         if (!skipInclude) {
             // select each include as separated query as it more beneficial for performance
@@ -967,17 +904,82 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         // select include before parent, coz result parser will parse include first before parent.
         // this way it will be much more easier to implement async iterator.
         result.push({
-            query: selectQuery,
+            query: this.toSelectString(selectExp, param),
             type: QueryType.DQL,
             parameters: this.getParameter(param)
         });
         return result;
     }
+    protected toSelectString<TE extends object>(selectExp: SelectExpression<TE>, param?: IQueryBuilderParameter): string {
+        const distinct = selectExp.distinct ? " DISTINCT" : "";
+        param = {
+            option: param.option,
+            parameters: param.parameters,
+            queryExpression: selectExp
+        };
+        
+        const selects = Enumerable.from(selectExp.projectedColumns)
+            .map((o) => {
+                let colStr = this.getColumnQueryString(o, param);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
 
-    protected getSelectQueryString(select: SelectExpression, param?: IQueryBuilderParameter, skipInclude = false): string {
-        let result = "";
-        result += this.getSelectQuery(select, param.option, param.parameters, skipInclude).map((o) => o.query).join(";" + this.newLine() + this.newLine());
-        return result;
+                return colStr;
+            })
+            .toArray()
+            .join("," + this.newLine(1, false));
+
+        const entityQ = this.getEntityQueryString(selectExp.entity, param);
+
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
+            const clone = selectExp.clone();
+            clone.entity.alias = "rel_" + clone.entity.alias;
+            clone.isAggregate = true;
+            clone.distinct = true;
+            clone.selects = clone.resolvedGroupBy.slice();
+
+            let relation: IExpression<boolean>;
+            for (const col of selectExp.resolvedGroupBy) {
+                const cloneCol = clone.resolvedGroupBy.find((o) => o.dataPropertyName === col.dataPropertyName);
+                const logicalExp = new StrictEqualExpression(col, cloneCol);
+                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+            }
+
+            const joinRel = clone.parentRelation = new JoinRelation(selectExp, clone, relation, "INNER");
+            selectExp.joins.push(joinRel);
+        }
+
+        const joinStr = this.getJoinQueryString(selectExp.resolvedJoins, param) + this.getParentJoinQueryString(selectExp.parentRelation, param);
+
+        let selectQuerySuffix = "";
+        if (selectExp.where) {
+            param.state = "column-declared";
+            selectQuerySuffix += this.newLine() + "WHERE " + this.toLogicalString(selectExp.where, param);
+            param.state = "";
+        }
+
+        if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
+            if (selectExp.groupBy.length > 0) {
+                selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.map((o) => this.getColumnQueryString(o, param)).join(", ");
+            }
+            if (selectExp.having) {
+                selectQuerySuffix += this.newLine() + "HAVING " + this.toLogicalString(selectExp.having, param);
+            }
+        }
+
+        const hasPagination = selectExp.paging.skip || selectExp.paging.take;
+        if (selectExp.resolvedOrders.some(o => true) && (hasPagination || !(selectExp.parentRelation instanceof JoinRelation))) {
+            selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.resolvedOrders.map((c) => this.toString(c.column, param) + " " + c.direction).join(", ");
+        }
+
+        if (hasPagination) {
+            selectQuerySuffix += this.getPagingQueryString(selectExp, param);
+        }
+
+        return `SELECT${distinct} ${selects}`
+            + this.newLine() + `FROM ${entityQ}${joinStr}${selectQuerySuffix}`;
     }
     protected createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], option: IQueryOption): IQuery[] {
         const result: IQuery[] = [];
