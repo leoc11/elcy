@@ -1,9 +1,10 @@
+import { PrimitiveType } from "src/Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 export class TypeofExpression implements IUnaryOperatorExpression<string> {
     constructor(public operand: IExpression) { }
-    public type = String;
+    public type: PrimitiveType<string> = String;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
