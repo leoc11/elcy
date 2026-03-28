@@ -197,7 +197,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";
     }
-    protected override createTempTableQuery<T extends object>(entityExp: TemporaryEntityExpression<T>, values: T[], param: IQueryBuilderParameter): IQuery[] {
+    protected override createTempTableQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param: IQueryBuilderParameter): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
@@ -220,12 +220,17 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
 
+        let i = 0;
         const columns = entityExp.columns;
         const insertQuery = new InsertExpression(entityExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};
             for (const col of columns) {
                 switch (col.propertyName) {
+                    case "__index": {
+                        itemExp[col.propertyName] = new ValueExpression(i++);
+                        break;
+                    }
                     case "__value": {
                         itemExp[col.propertyName] = new ValueExpression(item);
                         break;
@@ -237,7 +242,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                     }
                 }
             }
-            insertQuery.values.push(itemExp as SetterObj<T>);
+            insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
         result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
