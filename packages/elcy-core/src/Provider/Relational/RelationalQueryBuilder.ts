@@ -803,9 +803,15 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected getParameter(param: IQueryBuilderParameter) {
         const paramObj = new Map<string, any>();
-        const qparams = Enumerable.from(param.queryExpression.paramExps)
-            .filter(o => !o.isSystem)
-            .map((o) => param.parameters.get(o)).filter((o) => !!o);
+        let queryParamExps = this.getQueryParameters(param)
+            .filter(o => !o.isSystem);
+
+        if (!param.option?.supportTVP) {
+            queryParamExps = queryParamExps.filter(o => !(o instanceof SqlTableValueParameterExpression));
+        }
+        const qparams = queryParamExps
+            .map((o) => param.parameters.get(o))
+            .filter((o) => !!o);
         for (const o of qparams) {
             paramObj.set(o.name, o.value);
         }
@@ -816,12 +822,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return "";
         }
 
-        let parentRelation = parentRel as ISelectRelation;
-        while (parentRelation) {
-            ArrayExtension.add(parentRel.child.paramExps, ...parentRel.parent.paramExps);
-            parentRelation = parentRelation.parent?.parentRelation;
-        }
-
         let parent = parentRel.parent;
         while (parent.parentRelation && parent.parentRelation.isEmbedded) {
             parent = parent.parentRelation.parent;
@@ -829,6 +829,22 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const entityString = this.isSimpleSelect(parent) ? this.getEntityQueryString(parent.entity, param) : `(${this.newLine(1)}${this.toSelectString(parent, param)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias)}`;
         const relationString = this.toLogicalString(parentRel.relation, param);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
+    }
+    // TODO: catch paramExps at querycache
+    protected getQueryParameters(param: IQueryBuilderParameter) {
+        const queryExp = param.rootQueryExpression ?? param.queryExpression;
+        let paramExps = Enumerable.from(queryExp.paramExps);
+        if (!(queryExp.parentRelation instanceof IncludeRelation)) {
+            return paramExps;
+        }
+
+        let parentRelation = queryExp.parentRelation as ISelectRelation;
+        while (parentRelation) {
+            paramExps = paramExps.union(parentRelation.parent.paramExps);
+            parentRelation = parentRelation.parent?.parentRelation;
+        }
+
+        return paramExps;
     }
     protected getSelectQuery<TE extends object>(selectExp: SelectExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
         let result: IQuery[] = [];
@@ -913,11 +929,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     protected toSelectString<TE extends object>(selectExp: SelectExpression<TE>, param?: IQueryBuilderParameter): string {
         const distinct = selectExp.distinct ? " DISTINCT" : "";
         param = {
+            rootQueryExpression: param.queryExpression,
             option: param.option,
             parameters: param.parameters,
             queryExpression: selectExp
         };
-        
+
         const selects = Enumerable.from(selectExp.projectedColumns)
             .map((o) => {
                 let colStr = this.getColumnQueryString(o, param);

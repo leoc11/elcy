@@ -637,12 +637,20 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     if (exp.methodName === "project") {
                         objectOperand.selects = [];
                     }
+                    const paramExpCount = selectOperand.paramExps.length;
                     for (const paramFn of exp.params) {
                         const selectorFn = paramFn as FunctionExpression<T, [unknown]>;
-                        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: exp.methodName };
-                        this.visitFunction(selectorFn, [objectOperand.getItemExpression()], visitParam);
+                        const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
+                        const childSelect = this.visitFunction(selectorFn, [selectOperand.getItemExpression()], visitParam) as unknown as SelectExpression;
+                        
+                        // move all new parameter to loaded child select
+                        if (!childSelect.paramExps) {
+                            childSelect.paramExps = [];
+                        }
+                        childSelect.paramExps.push(...selectOperand.paramExps.slice(paramExpCount));
+                        selectOperand.paramExps.splice(paramExpCount, selectOperand.paramExps.length - paramExpCount);
                     }
-                    return objectOperand as unknown as IExpression<T>;
+                    return selectOperand as unknown as IExpression<T>;
                 }
                 case "filter": {
                     if (selectOperand.paging.skip) {

@@ -24,6 +24,7 @@ import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { EntityExpression } from "src/Queryable/QueryExpression/EntityExpression";
 import { postgresqlQueryTranslator } from "./PostgresqlQueryTranslator";
+import { SqlTableValueParameterExpression } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -60,8 +61,11 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
     protected override getParameter(param: IQueryBuilderParameter) {
         const paramObj = new Map<string, any>();
-        const qparams = param.queryExpression.paramExps
+        let qparams = this.getQueryParameters(param)
             .filter(o => !o.isSystem);
+        if (!param.option?.supportTVP) {
+            qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
+        }
         for (const [k, p] of param.parameters) {
             if (!qparams.includes(k)) {
                 continue;
@@ -77,7 +81,14 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
 
-        const indexMap = Enumerable.from(param.parameters).map(o => o[1].name).distinct().toArray();
+        let qparams = this.getQueryParameters(param)
+            .filter(o => !o.isSystem);
+        if (!param.option?.supportTVP) {
+            qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
+        }
+        const indexMap = Enumerable.from(param.parameters)
+            .filter(o => qparams.includes(o[0]))
+            .map(o => o[1].name).distinct().toArray();
         const index = indexMap.indexOf(paramValue.name);
         return `$${index + 1}`;
     }

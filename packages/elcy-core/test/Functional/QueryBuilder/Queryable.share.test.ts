@@ -2190,6 +2190,46 @@ export const queryableTest = (db: ITestContext) => {
                     expect(o).toBeInstanceOf(Table1);
                 }
             });
+            it("should be used in loads", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                let skip1 = 5;
+                let take1 = 10;
+                let take2 = 10;
+                let filter1 = 100;
+                let filter2 = 2000;
+                const include = db.table1s
+                    .parameter({ skip1, take1, take2, filter1, filter2 })
+                    .loads(o => o.table1Table2s.slice(skip1, take1), (o) => o.table1Manies.slice(0, take2).filter(o => o.integer > filter1))
+                    .filter(o => o.decimalNumber < filter2);
+                const results = await include.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Table1);
+                    const properties = table1Meta.columns.map((o) => o.propertyName);
+                    for (const property of properties) {
+                        expect(o).toHaveProperty(property as any);
+                        expect(o[property]).not.toBeNull();
+                    }
+                    expect(o.table1Table2s).toBeArray();
+                    for (const od of o.table1Table2s) {
+                        expect(od).toBeInstanceOf(Table1Table2);
+                    }
+                    expect(o.table1Manies).toBeArray();
+                    for (const od of o.table1Manies) {
+                        expect(od).toBeInstanceOf(Table1Many);
+                        const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
+                        for (const prop of odProps) {
+                            expect(od).toHaveProperty(prop as any);
+                            expect(od[prop]).not.toBeNull();
+                        }
+                    }
+                }
+            });
         });
         describe("SUBQUERY", () => {
             it("should work in where (CONTAINS)", async () => {

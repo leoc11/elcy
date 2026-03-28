@@ -3,7 +3,8 @@ import { IQueryOption } from "./IQueryOption";
 import { IQueryParameterMap } from "./IQueryParameter";
 export interface IQueryBuilderParameter {
     option?: IQueryOption;
-    parameters?: IQueryParameterMap;
-    queryExpression?: IQueryExpression;
+    parameters: IQueryParameterMap;
+    rootQueryExpression?: IQueryExpression;
+    queryExpression: IQueryExpression;
     state?: string;
 }
