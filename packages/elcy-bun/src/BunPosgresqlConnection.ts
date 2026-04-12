@@ -5,6 +5,8 @@ import { EventHandlerFactory } from "@elcy/core/src/Event/EventHandlerFactory";
 import type { IsolationLevel } from "@elcy/core/src/Common/StringType";
 import { QueryType } from "@elcy/core/src/Common/Enum";
 import type { IQuery } from "@elcy/core/src/Query/IQuery";
+import { BatchedQuery } from "@elcy/core/src/Query/BatchedQuery";
+import { isNull } from "@elcy/core/src/Helper/Util";
 import { SQL } from "bun";
 
 interface IBunTransaction {
@@ -144,20 +146,21 @@ export class BunPosgresqlConnection implements IConnection {
         else {
             command = commandOrQuery;
         }
-        const results: IQueryResult[] = [];
-        const params = this.getParameter(command.parameters);
-        const execResult: SQLResultArray = await this.connection.unsafe(command.query, params);
-        const queryResult: IQueryResult = {};
-        if (execResult.length || !execResult.count) {
-            queryResult.effectedRows = execResult.length;
-            queryResult.rows = execResult;
-        }
-        else {
-            queryResult.effectedRows = execResult.count;
-        }
-        results.push(queryResult);
 
-        return results;
+        const commands = command instanceof BatchedQuery ? Array.from(command.queries) : [command];
+        // use pipeline to reduce roundtrip
+        return await Promise.all(commands.map(o => this.connection.unsafe(o.query, this.getParameter(o.parameters))
+            .then((execResult: SQLResultArray) => {
+                const queryResult: IQueryResult = {};
+                if (execResult.length || isNull(execResult.count)) {
+                    queryResult.effectedRows = execResult.length;
+                    queryResult.rows = execResult;
+                }
+                else {
+                    queryResult.effectedRows = execResult.count;
+                }
+                return queryResult;
+            })));
     }
     public async setIsolationLevel(isolationLevel: IsolationLevel): Promise<void> {
         await this.connection`SET TRANSACTION ISOLATION LEVEL ${isolationLevel};`;

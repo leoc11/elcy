@@ -55,11 +55,15 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     }
 
     public override mergeQueries(queries: IEnumerable<IQuery>): IQuery[] {
-        // only able to support merged for query without parameter
-        return Enumerable.from(queries).toArray();
-    }
+        // merge all, pipeline must use driver
+        if (!queries.slice(1, 2).some(() => true)) {
+            return Enumerable.from(queries).toArray();
+        }
 
-    protected override getParameter(param: IQueryBuilderParameter) {
+        const query = new BatchedQuery();
+        query.add(...queries);
+        return [query];
+    }
         const paramObj = new Map<string, any>();
         let qparams = this.getQueryParameters(param)
             .filter(o => !o.isSystem);
