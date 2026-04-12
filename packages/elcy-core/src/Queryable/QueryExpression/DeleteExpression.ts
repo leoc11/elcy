@@ -1,10 +1,10 @@
 import { Enumerable } from "@elcy/enumerable";
-import { DeleteMode, JoinType, OrderDirection } from "../../Common/StringType";
+import { JoinType, OrderDirection } from "../../Common/StringType";
 import { IObjectType } from "../../Common/Type";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
 import { RelationMetaData } from "../../MetaData/Relation/RelationMetaData";
 import { JoinRelation } from "../Interface/JoinRelation";
@@ -41,10 +41,9 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
     public get where() {
         return this.select.where;
     }
-    constructor(entity: IEntityExpression<TE>, deleteMode?: IExpression<DeleteMode>);
-    constructor(select: SelectExpression<TE>, deleteMode?: IExpression<DeleteMode>);
-    constructor(selectOrEntity: IEntityExpression<TE> | SelectExpression<TE>, deleteMode?: IExpression<DeleteMode>) {
-        this.deleteMode = deleteMode;
+    constructor(entity: IEntityExpression<TE>);
+    constructor(select: SelectExpression<TE>);
+    constructor(selectOrEntity: IEntityExpression<TE> | SelectExpression<TE>) {
         if (selectOrEntity instanceof SelectExpression) {
             selectOrEntity = selectOrEntity;
         } else {
@@ -52,13 +51,12 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
         }
         this.select = selectOrEntity;
         for (const o of this.select.includes) {
-            const childDeleteExp = new DeleteExpression(o.child, this.deleteMode);
+            const childDeleteExp = new DeleteExpression(o.child);
             childDeleteExp.paramExps = childDeleteExp.paramExps.concat(this.paramExps);
             this.addInclude(childDeleteExp, o.relation);
         }
         this.select.includes = [];
     }
-    public deleteMode?: IExpression<DeleteMode>;
     public includes: Array<IDeleteIncludeRelation<TE>> = [];
     public parentRelation: IDeleteIncludeRelation<any, TE>;
     public select: SelectExpression<TE>;
@@ -105,7 +103,7 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
             replaceMap = new Map();
         }
         const select = resolveClone(this.select, replaceMap);
-        const clone = new DeleteExpression(select, this.deleteMode);
+        const clone = new DeleteExpression(select);
         replaceMap.set(this, clone);
         return clone;
     }
@@ -119,7 +117,7 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
             .concat(this.includes.flatMap((o) => o.child.getEffectedEntities())).distinct().toArray();
     }
     public hashCode() {
-        return hashCode("DELETE", hashCodeAdd(this.deleteMode ? 0 : this.deleteMode.hashCode(), this.select.hashCode()));
+        return hashCode("DELETE", this.select.hashCode());
     }
     public setOrder(orders: IOrderExpression[]): void;
     public setOrder(expression: IExpression<unknown>, direction: OrderDirection): void;
@@ -129,8 +127,7 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
     public toString(): string {
         return `Delete({
 Entity:${this.entity.toString()},
-Where:${this.where ? this.where.toString() : ""},
-Mode:${this.deleteMode}
+Where:${this.where ? this.where.toString() : ""}
 })`;
     }
 }

@@ -36,9 +36,9 @@ export class EmbeddedEntityEntry<T extends object = object, TP extends object = 
         trackEntity(parentEntry.entity, this.onParentPropertyChange);
     }
     public column: IColumnMetaData<TP, T>;
-    private onParentPropertyChange = (_: TP, param: IChangeEventParam<TP, T>) => {
-        if (param.column === this.column) {
-            if (param.oldValue === this.entity) {
+    private onParentPropertyChange = (...[metadata, newValue, oldValue]: IChangeEventParam<TP, T>) => {
+        if (metadata === this.column) {
+            if (oldValue === this.entity) {
                 untrackEntity(this.parentEntry.entity, this.onParentPropertyChange);
                 this.state = EntityState.Detached;
             }

@@ -31,7 +31,7 @@ import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpress
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
 import { TransformerParameter } from "../../ExpressionBuilder/TransformerParameter";
-import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isNull, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { isColumnExp, isEntityExp, isNativeFunction, isNotNull, isNull, isValue, isValueType, mapKeepExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
@@ -47,7 +47,6 @@ import { PagingJoinRelation } from "../../Queryable/Interface/PagingJoinRelation
 import { Queryable } from "../../Queryable/Queryable";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../../Queryable/QueryExpression/ComputedColumnExpression";
-import { TemporaryEntityExpression } from "../../Queryable/QueryExpression/TemporaryEntityExpression";
 import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
 import { ExceptExpression } from "../../Queryable/QueryExpression/ExceptExpression";
 import { GroupByExpression } from "../../Queryable/QueryExpression/GroupByExpression";
@@ -63,6 +62,7 @@ import { Enumerable } from "@elcy/enumerable";
 import { getColumnMetadata, getRelationMetadata } from "src/MetaData/MetaDataMapper";
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
+import { TSchema } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 
 export class RelationalQueryVisitor implements IQueryVisitor {
@@ -643,7 +643,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const selectorFn = paramFn as FunctionExpression<T, [unknown]>;
                         const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: exp.methodName };
                         const childSelect = this.visitFunction(selectorFn, [selectOperand.getItemExpression()], visitParam) as unknown as SelectExpression;
-                        
+
                         // move all new parameter to loaded child select
                         if (!childSelect.paramExps) {
                             childSelect.paramExps = [];
@@ -825,20 +825,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression<Record<string, unknown>>({});
                         if (parentRel) {
-                            if (param.scope === "select-object") {
-                                for (const relCol of parentRel.childColumns) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
-                            }
-                            else {
-                                for (const relCol of parentRel.parent.primaryKeys) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
                         groupExp.isAggregate = true;
-                        const column = new ComputedColumnExpression(groupExp.entity, countExp as unknown as IExpression<number & T>, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
+                        const column = new ComputedColumnExpression(groupExp.entity, countExp as unknown as IExpression<Extract<number, T>>, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
 
@@ -886,7 +879,101 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                 }
                 case "sum":
-                case "avg":
+                case "avg": {
+                    if (param.scope === "loads" || param.scope === "project") {
+                        throw new Error(`${param.scope} did not support ${exp.methodName}`);
+                    }
+
+                    if (selectOperand.paging.skip) {
+                        selectOperand = createProjectionSelect(selectOperand);
+                    }
+
+                    if (exp.params.length > 0) {
+                        const selectorFn = exp.params[0] as FunctionExpression;
+                        const visitParam: IQueryVisitParameter = { selectExpression: selectOperand, scope: param.scope };
+                        const selectExpression = this.visit(new MethodCallExpression(objectOperand, "map", [selectorFn]), visitParam) as SelectExpression;
+                        param.selectExpression = visitParam.selectExpression;
+
+                        if (!isValueType(selectExpression.itemType)) {
+                            throw new Error(`Queryable<${selectOperand.type.name}> required select with basic type return value.`);
+                        }
+
+                        selectOperand = selectExpression;
+                    }
+                    const aggregateExp = new MethodCallExpression(selectOperand as unknown as IExpression<TE>, exp.methodName, selectOperand.selects.map((o) => {
+                        if (o instanceof ComputedColumnExpression) {
+                            return o.expression;
+                        }
+                        return o;
+                    }), Number as unknown as GenericType<Extract<number, T>>);
+                    const parentRel = selectOperand.parentRelation as JoinRelation;
+                    if (param.scope === "queryable") {
+                        // call from queryable
+                        const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
+                        objectOperand.selects = [column];
+                        objectOperand.distinct = true;
+                        return objectOperand as unknown as IExpression<T>;
+                    }
+                    else if (selectOperand instanceof GroupByExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
+                        return aggregateExp;
+                    }
+                    else {
+                        // any is used on related entity. change query to groupby.
+                        const objExp = new ObjectValueExpression<Record<string, unknown>>({});
+                        if (parentRel) {
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
+                            }
+                        }
+                        const groupExp = new GroupByExpression(selectOperand, objExp);
+                        groupExp.isAggregate = true;
+                        const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
+                        column.isNullable = false;
+                        groupExp.selects.push(column);
+
+                        if (parentRel && parentRel.isManyToManyRelation) {
+                            // alter relation to: parent -> bridge -> groupExp
+                            const parentSelect = parentRel.parent;
+                            ArrayExtension.delete(parentSelect.joins, parentRel);
+
+                            const bridge = new SelectExpression(parentSelect.entity.clone());
+                            this.setDefaultBehaviour(bridge);
+                            bridge.entity.alias = this.newAlias();
+                            bridge.selects = [];
+
+                            const replaceMap = new Map();
+                            mapReplaceExp(replaceMap, parentSelect.entity, bridge.entity);
+                            mapKeepExp(replaceMap, groupExp);
+                            // relation bridge -> groupExp
+                            bridge.addJoin(groupExp, parentRel.relation.clone(replaceMap), parentRel.type);
+
+                            // group the bridge so it could be easily join to parent
+                            const bridgeAggreateExp = new MethodCallExpression(bridge as unknown as IExpression<TE>, exp.methodName, [column], Number as unknown as GenericType<number & T>);
+                            const bridgeColumn = new ComputedColumnExpression(bridge.entity, bridgeAggreateExp, this.newAlias("column"));
+                            bridgeColumn.isNullable = false;
+
+                            const groupKey = new ObjectValueExpression<Record<string, unknown>>({});
+                            // add join from parent to bridge
+                            let bridgeParentRelation: IExpression<boolean>;
+                            for (const primaryCol of bridge.entity.primaryColumns) {
+                                groupKey.object[primaryCol.propertyName] = primaryCol;
+                                const pCol = parentSelect.projectedColumns.find((o) => o.columnName === primaryCol.columnName);
+                                const logicalExp = new StrictEqualExpression(primaryCol, pCol);
+                                bridgeParentRelation = bridgeParentRelation ? new AndExpression(bridgeParentRelation, logicalExp) : logicalExp;
+                            }
+
+                            const groupedBridge = new GroupByExpression(bridge, groupKey);
+                            groupedBridge.isAggregate = true;
+
+                            parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
+                            ArrayExtension.add(groupedBridge.selects, bridgeColumn);
+
+                            return bridgeColumn;
+                        }
+
+                        return new NullCoalesceExpression(column, new ValueExpression(0 as Extract<Number, T>));
+                    }
+                }
                 case "max":
                 case "min": {
                     if (param.scope === "loads" || param.scope === "project") {
@@ -914,7 +1001,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             return o.expression;
                         }
                         return o;
-                    }), Number as unknown as GenericType<number & T>);
+                    }), selectOperand.itemType as GenericType<Extract<T, ValueType>>);
                     const parentRel = selectOperand.parentRelation as JoinRelation;
                     if (param.scope === "queryable") {
                         // call from queryable
@@ -930,15 +1017,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression<Record<string, unknown>>({});
                         if (parentRel) {
-                            if (param.scope === "select-object") {
-                                for (const relCol of parentRel.childColumns) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
-                            }
-                            else {
-                                for (const relCol of parentRel.parent.primaryKeys) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
@@ -1022,15 +1102,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression<Record<string, unknown>>({});
                         if (parentRel) {
-                            if (param.scope === "select-object") {
-                                for (const relCol of parentRel.childColumns) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
-                            }
-                            else {
-                                for (const relCol of parentRel.parent.primaryKeys) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
                             }
                         }
 
@@ -1128,15 +1201,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // any is used on related entity. change query to groupby.
                         const objExp = new ObjectValueExpression<Record<string, unknown>>({});
                         if (parentRel) {
-                            if (param.scope === "select-object") {
-                                for (const relCol of parentRel.childColumns) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
-                            }
-                            else {
-                                for (const relCol of parentRel.parent.primaryKeys) {
-                                    objExp.object[relCol.propertyName] = relCol;
-                                }
+                            for (const relCol of parentRel.childColumns) {
+                                objExp.object[relCol.propertyName] = relCol;
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
@@ -1855,46 +1921,29 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 return new ValueExpression(value, exp.name) as unknown as IExpression<T>;
             }
             else if (value instanceof Array || value instanceof Enumerable) {
-                const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<Array<ElementType<T> & object>>);
+                const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<Array<Extract<ElementType<T>, object>>>);
                 arrayParamExp.itemType = exp.itemType;
 
-                let arrayItemType: Record<string, GenericType<ValueType>> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
+                let arrayItemType: TSchema<Extract<ElementType<T>, object>> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
                 if (!arrayItemType) {
-                    arrayItemType = {};
-                    const itemValue = value.find((o) => !!o);
+                    arrayItemType = {} as TSchema<Extract<ElementType<T>, object>>;
+                    const itemValue = value.find((o) => !!o) as Extract<ElementType<T>, object>;
                     if (!isNull(itemValue)) {
                         for (const prop in itemValue) {
                             const propValue = itemValue[prop];
-                            if (propValue !== undefined) {
-                                arrayItemType[prop] = propValue?.constructor ?? String;
+                            if (isValue(propValue) || propValue === null) {
+                                arrayItemType[prop] = propValue?.constructor as GenericType<any> ?? String;
                             }
                         }
                         arrayItemType.constructor = itemValue.constructor;
                     }
                 }
 
-                const itemType = (arrayItemType?.constructor ?? Object) as GenericType<ElementType<T> & object>;
-                const entityExp = new TemporaryEntityExpression("temp_" + exp.name + this.parameterIndex, [], itemType, this.newAlias());
-                entityExp.columns.push(new ColumnExpression(entityExp, Number, "__index" as StringKeyOf<ElementType<T>>, "__index", true));
-
-                if (arrayItemType && !isValueType(itemType)) {
-                    for (const prop in arrayItemType) {
-                        const propValue = arrayItemType[prop];
-                        if (isValueType(propValue)) {
-                            entityExp.columns.push(new ColumnExpression(entityExp, propValue, prop as StringKeyOf<ElementType<T>>, prop, false));
-                        }
-                    }
-                }
-                else {
-                    entityExp.columns.push(new ColumnExpression(entityExp, itemType as unknown as GenericType<ValueType>, "__value" as StringKeyOf<ElementType<T>>, "__value", false));
-                }
-
+                const entityExp = param.selectExpression.addSqlParameter(arrayParamExp, this.parameterIndex, arrayItemType);
                 const selectExp = new SelectExpression(entityExp);
                 selectExp.selects = entityExp.columns.filter((o) => !o.isPrimary);
                 selectExp.isSubSelect = true;
                 param.selectExpression.addJoin(selectExp, null, "LEFT");
-
-                param.selectExpression.addSqlParameter(arrayParamExp, entityExp);
                 return selectExp as unknown as IExpression<T>;
             }
 

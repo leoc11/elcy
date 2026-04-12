@@ -18,11 +18,12 @@ export type Pivot<TE,
     TM extends { [key: string]: (item: QueryableChain<TE[]>) => ValueType }>
     = PivotD<TE, TD> & PivotM<TE, TM>;
 export type ObjectLike<T> = { [key in keyof T]?: T[key] };
-export type FlatObjectLike<T> = { [key in keyof T]?: T[key] & ValueType };
+export type FlatObjectLike<T> = { [K in keyof T as T[K] extends ValueType ? K : never]?: Extract<T[K], ValueType> };
+export type FlatObjectValue<T> = KeyValue<FlatObjectLike<T>, ValueType>;
 export type PropertySelector<TE> = StringKeyOf<TE> | ((source: TE) => ValueType | undefined);
-export type KeysExceptType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? never : P }[StringKeyOf<T>];
-export type KeysExtractType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];
-export type KeysType<T, TProp> = { [P in StringKeyOf<T>]: T[P] extends TProp ? P : never }[StringKeyOf<T>];
+export type KeysExceptType<TE, TVal> = { [P in StringKeyOf<TE>]: TE[P] extends TVal ? never : P }[StringKeyOf<TE>];
+export type KeysType<TE, TVal> = { [P in StringKeyOf<TE>]: TE[P] extends TVal ? P : never }[StringKeyOf<TE>];
+export type KeyValue<TE, TVal = ValueType> = Extract<TE[keyof TE], TVal>;
 export type TypeItem<T> = (T extends Array<(infer U)> ? U : T);
 export type ValueType = number | bigint | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView | ArrayBuffer | Temporal.Instant | Temporal.PlainDate | Temporal.PlainTime | Decimal;
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array

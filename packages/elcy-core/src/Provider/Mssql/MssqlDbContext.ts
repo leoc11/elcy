@@ -1,16 +1,4 @@
-import { QueryType } from "../../Common/Enum";
-import { FlatObjectLike } from "../../Common/Type";
-import { EntityEntry } from "../../Data/EntityEntry";
-import { Enumerable, IEnumerable } from "@elcy/enumerable";
-import { IEntityMetaData } from "../../MetaData/Interface/IEntityMetaData";
-import { DeferredQuery } from "../../Query/DeferredQuery";
-import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
-import { IQueryResult } from "../../Query/IQueryResult";
-import { IQueryVisitor } from "../../Query/IQueryVisitor";
 import { NamingStrategy } from "../../Query/NamingStrategy";
-import { EntityExpression } from "../../Queryable/QueryExpression/EntityExpression";
-import { insertEntryExp, InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { RelationalDbContext } from "../Relational/RelationalDbContext";
 import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
@@ -25,49 +13,4 @@ export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
     protected queryVisitorType = RelationalQueryVisitor;
     protected schemaBuilderType = MssqlSchemaBuilder;
     protected translator = mssqlQueryTranslator;
-    protected override getInsertQueries<T extends object>(entityMeta: IEntityMetaData<T>, entries: IEnumerable<EntityEntry<T>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<T>>>> {
-        if (!visitor) {
-            visitor = this.queryVisitor;
-        }
-        super.getInsertQueries
-        const results: DeferredQuery[] = [];
-
-        if (!entries.some(() => true)) {
-            return results;
-        }
-
-        const entityExp = new EntityExpression<T>(entityMeta.type, visitor.newAlias());
-        const relations = entityMeta.relations
-            .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
-        const columns = Enumerable.from(relations).flatMap((o) => o.relationColumns)
-            .union(entityExp.metaData.columns)
-            .except(entityExp.metaData.insertGeneratedColumns).distinct();
-
-        const insertExp = new InsertExpression(entityExp, []);
-        const queryParameters: IQueryParameterMap = new Map();
-        for (const entry of entries) {
-            insertEntryExp(insertExp, entry, columns, relations, queryParameters);
-        }
-
-        const insertQuery = new DeferredQuery<IQueryResult>(this, insertExp, queryParameters, (queryMap) => {
-            let rows = Enumerable.from<unknown>([]);
-            let effectedRows = 0;
-            for (const [command, result] of queryMap) {
-                if ((command.type & QueryType.DQL) && result.rows) {
-                    rows = rows.concat(result.rows);
-                }
-                if (command.type & QueryType.DML) {
-                    effectedRows += result.effectedRows;
-                }
-            }
-
-            return {
-                rows: rows,
-                effectedRows: effectedRows
-            };
-        }, {});
-        results.push(insertQuery);
-
-        return results;
-    }
 }

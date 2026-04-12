@@ -6,9 +6,9 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IColumnMetaData } from "../MetaData/Interface/IColumnMetaData";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { IQuery } from "./IQuery";
-import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
+import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryOption } from "./IQueryOption";
-import { IQueryParameterMap } from "./IQueryParameter";
+import { ISqlParameterValueMap } from "./IQueryParameter";
 import { NamingStrategy } from "./NamingStrategy";
 
 export interface IQueryBuilder {
@@ -20,11 +20,12 @@ export interface IQueryBuilder {
 
     // TODO: Remove
     newLine(indent?: number, isAdd?: boolean): string;
-    toLogicalString(exp: IExpression<boolean>, param?: IQueryBuilderParameter): string;
-    toOperandString(exp: IExpression, param?: IQueryBuilderParameter): string;
+    toLogicalString(exp: IExpression<boolean>, param?: IQueryBuilderContext): string;
+    toOperandString(exp: IExpression, param?: IQueryBuilderContext): string;
     toParameterValue(input: unknown, column: IColumnMetaData<any, unknown>): unknown;
     toPropertyValue<T>(input: unknown, column: IColumnMetaData<any, T>): T;
-    toQuery<T = unknown>(queryExp: IQueryExpression<T>, parameters?: IQueryParameterMap, option?: IQueryOption): IQuery[];
-    toString<T = unknown>(exp: IExpression<T>, param?: IQueryBuilderParameter): string;
+    toQuery<T = unknown>(queryExp: IQueryExpression<T>, parameters?: ISqlParameterValueMap, option?: IQueryOption): IQuery[];
+    toString<T = unknown>(exp: IExpression<T>, param?: IQueryBuilderContext): string;
     valueString(value: ValueType): string;
+    extractValue<T>(exp: IExpression<T>, param?: IQueryBuilderContext): T | undefined;
 }

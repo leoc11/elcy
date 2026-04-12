@@ -13,9 +13,14 @@ import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpressio
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { Temporal } from "src/Data/Temporal";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
+import { IRelationMetaData } from "src/MetaData/Interface/IRelationMetaData";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 
+export const isIterable = (value: unknown): value is Iterable<any> => {
+    return typeof (value as any)?.[Symbol.iterator] === 'function';
+}
 export const toHexaString = function (binary: ArrayBufferLike | ArrayView): string {
     if (ArrayBuffer.isView(binary)) {
         return toHexaString(binary.buffer);
@@ -222,6 +227,12 @@ export const isNonNullExp = (data: IExpression): boolean => {
 };
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);
+};
+export const isColumnMetaData = <TE extends object>(entityMeta: IEntityMetaData<TE>, data: unknown): data is IColumnMetaData<TE> => {
+    return entityMeta.columns.includes(data);
+};
+export const isRelationMetaData = <TE extends object>(entityMeta: IEntityMetaData<TE>, data: unknown): data is IRelationMetaData<TE> => {
+    return entityMeta.relations.includes(data as IRelationMetaData<TE>);
 };
 
 export const isValueType = (type: GenericType) => {

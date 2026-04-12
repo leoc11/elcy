@@ -2,14 +2,7 @@ import { ValueType } from "src/Common/Type";
 import { IColumnMetaData } from "./IColumnMetaData";
 import { IRelationMetaData } from "./IRelationMetaData";
 
-export interface IChangeEventParam<TE extends object = object, T = ValueType> {
-    column: IColumnMetaData<TE, T>;
-    newValue: T;
-    oldValue: T;
-}
-export type RelationChangeType = "add" | "del";
-export interface IRelationChangeEventParam<TM extends object = object, TS extends object = object> {
-    entities: TS[];
-    relation: IRelationMetaData<TM, TS>;
-    type: RelationChangeType;
-}
+export type IChangeEventParam<TMeta = any, T = unknown> = [metadata: TMeta, newValue: T, oldValue: T];
+export type IColumnChangeEventParam<TE extends object = object, T = ValueType> = IChangeEventParam<IColumnMetaData<TE, T>, T>;
+export type IRelationChangeEventParam<TE extends object = object, T extends object = object> = IChangeEventParam<IRelationMetaData<TE, T>, T[]>;
+

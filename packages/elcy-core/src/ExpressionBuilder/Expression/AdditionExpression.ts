@@ -4,7 +4,7 @@ import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 import { MethodCallExpression } from "./MethodCallExpression";
 
-export class AdditionExpression<T extends string | number = string | number> implements IBinaryOperatorExpression<T> {
+export class AdditionExpression<T extends string | number | bigint = string | number | bigint> implements IBinaryOperatorExpression<T> {
     constructor(leftOperand: IExpression<T>, rightOperand: IExpression<T>) {
         if ((leftOperand as IExpression<string>).type === String || (rightOperand as IExpression<string>).type === String) {
             (this.type as GenericType<string>) = String;
@@ -31,8 +31,8 @@ export class AdditionExpression<T extends string | number = string | number> imp
         replaceMap.set(this, clone);
         return clone;
     }
-    public convertToStringOperand(operand: IExpression<string | number>): IExpression<string> {
-        if (operand.type === Number) {
+    public convertToStringOperand(operand: IExpression<string | number | bigint>): IExpression<string> {
+        if (operand.type === Number || operand.type === BigInt) {
             operand = new MethodCallExpression<number, "toString", string>(operand as IExpression<number>, "toString", [], String);
         }
         return operand as IExpression<string>;

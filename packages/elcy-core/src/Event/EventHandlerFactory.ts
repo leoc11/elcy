@@ -22,8 +22,8 @@ export const EventHandlerFactory = <TSource, TArgs = unknown>(source: TSource, s
     return [eventHandler, eventDispacher];
 };
 
-export const eventEmitterFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): IEventEmitter<TSource, TArgs> => {
-    const handlers = new Set<(source: TSource, args: TArgs) => boolean | void>();
+export const eventEmitterFactory = <TSource, TArgs extends unknown[] = unknown[]>(source: TSource, stopOnFalse = false): IEventEmitter<TSource, TArgs> => {
+    const handlers = new Set<(this: TSource, ...args: TArgs) => boolean | void>();
     return {
         add: (handler) => {
             handlers.add(handler);
@@ -37,17 +37,17 @@ export const eventEmitterFactory = <TSource, TArgs = unknown>(source: TSource, s
         clear: () => {
             handlers.clear();
         },
-        emit: (args: TArgs) => {
+        emit: (...args: TArgs) => {
             for (const handler of handlers) {
-                if (handler(source, args) === false && stopOnFalse) {
+                if (handler.call(source, ...args) === false && stopOnFalse) {
                     break;
                 }
             }
         }
     };
 };
-export const asyncEventEmitterFactory = <TSource, TArgs = unknown>(source: TSource, stopOnFalse = false): IAsyncEventEmitter<TSource, TArgs> => {
-    const handlers = new Set<(source: TSource, args: TArgs) => Promise<boolean> | Promise<void>>();
+export const asyncEventEmitterFactory = <TSource, TArgs extends unknown[] = unknown[]>(source: TSource, stopOnFalse = false): IAsyncEventEmitter<TSource, TArgs> => {
+    const handlers = new Set<(this: TSource, ...args: TArgs) => Promise<boolean> | Promise<void>>();
     return {
         add: (handler) => {
             handlers.add(handler);
@@ -61,9 +61,9 @@ export const asyncEventEmitterFactory = <TSource, TArgs = unknown>(source: TSour
         clear: () => {
             handlers.clear();
         },
-        emit: async (args: TArgs) => {
+        emit: async (...args: TArgs) => {
             for (const handler of handlers) {
-                if (await handler(source, args) === false && stopOnFalse) {
+                if (await handler.call(source, ...args) === false && stopOnFalse) {
                     break;
                 }
             }

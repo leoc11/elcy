@@ -1,20 +1,17 @@
-import { TemporaryEntityExpression } from "src/Queryable/QueryExpression/TemporaryEntityExpression";
-import { ColumnGeneration, QueryType } from "../../Common/Enum";
+import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, IObjectType, SetterObj } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
-import { MethodCallExpression } from "../../ExpressionBuilder/Expression/MethodCallExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { isColumnExp, isNotNull, isNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
-import { DbFunction } from "../../Query/DbFunction";
 import { IQuery } from "../../Query/IQuery";
-import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { IQueryBuilderContext } from "../../Query/IQueryBuilderContext";
 import { IQueryOption } from "../../Query/IQueryOption";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
+import { ISqlParameterValueMap } from "../../Query/IQueryParameter";
 import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
@@ -38,6 +35,10 @@ import { LessThanExpression } from "src/ExpressionBuilder/Expression/LessThanExp
 import { LessEqualExpression } from "src/ExpressionBuilder/Expression/LessEqualExpression";
 import { InstanceofExpression } from "src/ExpressionBuilder/Expression/InstanceofExpression";
 import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { SqlTableValueParameterExpression } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
+import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
+import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -45,7 +46,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         maxQueryLength: 67108864
     };
     public override translator = mssqlQueryTranslator;
-    public valueTypeMap = new Map<GenericType, (value: unknown) => ICompleteColumnType<MssqlColumnType>>([
+    public valueTypeMap = new Map<GenericType, (value?: unknown) => ICompleteColumnType<MssqlColumnType>>([
         [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
         [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
         [TimeSpan, () => ({ columnType: "time", group: "Time" })],
@@ -57,124 +58,142 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public override encloseIdentifier(identity: string) {
         return `[${identity}]`;
     }
-    public override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+
+    //#region Update
+    public override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         if (insertExp.values.length <= 0) {
             return [];
         }
 
-        const param: IQueryBuilderParameter = {
+        const param: IQueryBuilderContext = {
             option: option,
             parameters: parameters,
             queryExpression: insertExp
         };
+        let returning = "";
+        if (insertExp.returnings.length) {
+            const originalAlias = insertExp.entity.alias;
+            insertExp.entity.alias = "INSERTED";
+            returning = `${this.newLine()}OUTPUT ${insertExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, param);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            }).join(",")}`;
+            insertExp.entity.alias = originalAlias;
+        }
+
         const colString = insertExp.columns.map((o) => this.enclose(o.columnName)).join(", ");
-        let output = Enumerable.from(insertExp.entity.columns).filter((o) => isNotNull(o.columnMeta))
-            .filter((o) => (o.columnMeta.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta.defaultExp)
-            .map((o) => `INSERTED.${this.enclose(o.columnName)} AS ${o.propertyName}`)
-            .toArray()
-            .join(", ");
-        if (output) {
-            output = " OUTPUT " + output;
-        }
+        const insertQuery = `INSERT INTO ${this.entityName(insertExp.entity)}(${colString})${returning}` +
+            `${this.newLine()}VALUES${this.newLine(1, false)}`;
 
-        const insertQuery = `INSERT INTO ${this.entityName(insertExp.entity)}(${colString})${output} VALUES`;
-        let queryCommand: IQuery = {
-            query: insertQuery,
-            parameters: new Map(),
-            type: QueryType.DML
-        };
-        if (output) {
-            queryCommand.type |= QueryType.DQL;
-        }
-
-        const result: IQuery[] = [queryCommand];
-        let count = 0;
         this.indent++;
+        const rowValues: string[] = [];
         for (const itemExp of insertExp.values) {
-            const isLimitExceed = this.queryLimit.maxParameters && (count + insertExp.columns.length) > this.queryLimit.maxParameters;
-            if (isLimitExceed) {
-                queryCommand.query = queryCommand.query.slice(0, -1);
-                queryCommand = {
-                    query: insertQuery,
-                    parameters: new Map(),
-                    type: QueryType.DML
-                };
-                count = 0;
-                result.push(queryCommand);
-            }
-
             const values: string[] = [];
             for (const col of insertExp.columns) {
                 const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
                 if (valueExp) {
                     values.push(this.toString(valueExp, param));
-                    const paramExp = param.parameters.get(valueExp);
-                    if (paramExp) {
-                        queryCommand.parameters.set(paramExp.name, paramExp.value);
-                        count++;
-                    }
                 }
                 else {
                     values.push("DEFAULT");
                 }
             }
-
-            queryCommand.query += `${this.newLine()}(${values.join(",")}),`;
+            rowValues.push(`(${values.join(",")})`);
         }
+        const result: IQuery[] = [{
+            query: `${insertQuery}${rowValues.join(`,${this.newLine()}`)}`,
+            parameters: this.getParameter(param),
+            type: returning ? QueryType.DML | QueryType.DQL : QueryType.DML
+        }];
         this.indent--;
-        queryCommand.query = queryCommand.query.slice(0, -1);
 
         return result;
     }
-
-    //#region Update
-    public override getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: IQueryParameterMap): IQuery[] {
+    public override getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         const result: IQuery[] = [];
-        const param: IQueryBuilderParameter = {
+        const context: IQueryBuilderContext = {
             option: option,
             parameters: parameters,
             queryExpression: updateExp
         };
 
-        const setQuery = Object.keys(updateExp.setter).map((o) => {
-            const value = updateExp.setter[o as keyof TE];
-            const valueStr = this.toOperandString(value, param);
-            const column = updateExp.entity.columns.find((c) => c.propertyName === o);
-            return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-        });
-
-        if (updateExp.entity.metaData) {
-            if (updateExp.entity.metaData.modifiedDateColumn) {
-                const colMeta = updateExp.entity.metaData.modifiedDateColumn;
-                // only update modifiedDate column if not explicitly specified in update set statement.
-                if (!updateExp.setter[colMeta.propertyName]) {
-                    const valueExp = new MethodCallExpression(new ValueExpression(DbFunction), colMeta.timeZoneHandling === "utc" ? "utcTimestamp" : "timestamp", []);
-                    const valueStr = this.toString(valueExp, param);
-                    setQuery.push(`${this.enclose(updateExp.entity.alias)}.${this.enclose(colMeta.columnName)} = ${valueStr}`);
+        let returning = "";
+        if (updateExp.returnings.length) {
+            const originalAlias = updateExp.entity.alias;
+            updateExp.entity.alias = "INSERTED";
+            returning = `${this.newLine()}OUTPUT ${updateExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, context);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
                 }
-            }
 
-            if (updateExp.entity.metaData.versionColumn) {
-                const colMeta = updateExp.entity.metaData.versionColumn;
-                if (updateExp.setter[colMeta.propertyName]) {
-                    throw new Error(`${colMeta.propertyName} is a version column and should not be update explicitly`);
-                }
-            }
+                return colStr;
+            }).join(",")}`;
+            updateExp.entity.alias = originalAlias;
         }
 
-        let updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias)}` +
-            this.newLine() + `SET ${setQuery.join(", ")}` +
-            this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
-            this.getJoinQueryString(updateExp.joins, param);
-        if (updateExp.where) {
-            updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, param);
-        }
+        if (updateExp.paging?.skip) {
+            const projectedEntity = new ProjectionEntityExpression(updateExp.select);
+            projectedEntity.alias = updateExp.entity.alias + "_1";
+            const selectExp = new SelectExpression(projectedEntity);
 
-        result.push({
-            query: updateQuery,
-            parameters: this.getParameter(param),
-            type: QueryType.DML
-        });
+            let relation: IExpression<boolean>;
+            for (const column of updateExp.entity.primaryColumns) {
+                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const equalExp = new StrictEqualExpression(column, selectColumn);
+                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+            }
+
+            const setQuery = selectExp.selects
+                .map((o) => `${this.enclose(o.columnName)} = ${this.getColumnQueryString(o, context)}`)
+                .join(", ");
+            const updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias)}` +
+                this.newLine() + `SET ${setQuery}` +
+                returning +
+                this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
+                this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation, "INNER")], context);
+            result.push({
+                query: updateQuery,
+                parameters: this.getParameter(context),
+                type: updateExp.returnings.length ? QueryType.DML | QueryType.DQL : QueryType.DML
+            });
+        }
+        else {
+            const setQuery = Object.keys(updateExp.setter).map((o) => {
+                const value = updateExp.setter[o as keyof TE];
+                const valueStr = this.toOperandString(value, context);
+                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+            });
+
+            let limit = "";
+            if (updateExp.paging?.take) {
+                limit = ` TOP (${this.toString(updateExp.paging.take, context)})`;
+            }
+            let updateQuery = `UPDATE${limit} ${this.enclose(updateExp.entity.alias)}` +
+                this.newLine() + `SET ${setQuery.join(", ")}` +
+                returning +
+                this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
+                this.getJoinQueryString(updateExp.joins, context);
+            if (updateExp.where) {
+                updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, context);
+            }
+            if (limit && updateExp.orders.length) {
+                updateQuery += this.newLine() + `ORDER BY ${updateExp.orders.map((c) => this.toString(c.column, context) + " " + c.direction).join(", ")}`;
+            }
+
+            result.push({
+                query: updateQuery,
+                parameters: this.getParameter(context),
+                type: updateExp.returnings.length ? QueryType.DML | QueryType.DQL : QueryType.DML
+            });
+        }
 
         return result;
     }
@@ -197,7 +216,56 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";
     }
-    protected override createTempTableQuery<TE extends object>(entityExp: TemporaryEntityExpression<TE>, values: TE[], param: IQueryBuilderParameter): IQuery[] {
+    protected override getParameter(param: IQueryBuilderContext) {
+        const paramObj = new Map<string, any>();
+        let qparams = this.getQueryParameters(param);
+        if (!param.option?.supportTVP) {
+            qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
+        }
+        for (const [k, p] of param.parameters) {
+            if (!qparams.includes(k)) {
+                continue;
+            }
+            if (k instanceof SqlTableValueParameterExpression) {
+                paramObj.set(`@${p.name}`, JSON.stringify(p.value));
+            }
+            else {
+                paramObj.set(`@${p.name}`, p.value);
+            }
+        }
+
+        return paramObj;
+    }
+    protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderContext): string {
+        const paramValue = param.parameters.get(expression);
+        if (!paramValue) {
+            throw new Error(`Sql Parameter ${expression.toString()} no supported`);
+        }
+        if (param?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
+            const column = expression.columns.map((col, i) => {
+                const itemType = expression.itemSchema?.[col.propertyName];
+                let columnType: string;
+                let valueType: GenericType;
+                if (typeof itemType !== "function") {
+                    valueType = itemType.type;
+                    columnType = itemType.columnType;
+                }
+                else {
+                    valueType = itemType;
+                }
+                if (!columnType) {
+                    const colTypeFactory = this.valueTypeMap.get(valueType);
+                    const colType = colTypeFactory();
+                    columnType = this.columnTypeString(colType);
+                }
+                return `${this.enclose(col.columnName)} ${columnType} '$.${col.propertyName}'`;
+            }).join(`,${this.newLine(1, false)}`);
+            return `OPENJSON(@${paramValue.name}) WITH(${this.newLine(1)}${column}${this.newLine(-1)}) AS ${this.enclose(expression.alias)}`;
+        }
+
+        return "@" + paramValue.name;
+    }
+    protected override createTempTableQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param: IQueryBuilderContext): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(entityExp)}`,
@@ -250,13 +318,13 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         return result;
     }
     protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {
-        if (entityExp instanceof TemporaryEntityExpression) {
+        if (entityExp instanceof SqlTableValueParameterExpression) {
             return this.enclose(`#${entityExp.name}`);
         }
 
         return super.entityName(entityExp);
     }
-    public override toOperandString(expression: IExpression, param?: IQueryBuilderParameter): string {
+    public override toOperandString(expression: IExpression, param?: IQueryBuilderContext): string {
         if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
             switch (true) {
                 case expression instanceof AndExpression:

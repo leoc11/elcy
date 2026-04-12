@@ -1,10 +1,33 @@
+import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
+import { IBinaryOperatorExpression } from "src/ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { NotEqualExpression } from "src/ExpressionBuilder/Expression/NotEqualExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { IQueryBuilder } from "src/Query/IQueryBuilder";
+import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
+
+const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
+    const leftExpString = qb.toOperandString(exp.leftOperand, context);
+    const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    return `${leftExpString} IS ${rightExpString}`;
+};
+sqliteQueryTranslator.registerOperator(EqualExpression, equalTranslator);
+sqliteQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
+const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
+    const leftExpString = qb.toOperandString(exp.leftOperand, context);
+    const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    return `${leftExpString} IS NOT ${rightExpString}`;
+};
+sqliteQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
+sqliteQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
 
 //#region Function
 
@@ -13,6 +36,14 @@ sqliteQueryTranslator.registerFn(isNaN, null);
 //#endregion
 
 //#region Member Access
+
+sqliteQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp, param) => {
+    let value = 12;
+    if (exp.params.length) {
+        value = qb.extractValue(exp.params[0] as IExpression<number>, param) ?? 12;
+    }
+    return `printf('%.${value}e', ${qb.toString(exp.objectOperand, param)})`;
+});
 
 /**
  * Math
@@ -36,7 +67,6 @@ sqliteQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param
  * DbFunction
  */
 sqliteQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `LAST_INSERT_ROWID()`, () => true);
-sqliteQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `COALESCE(${exp.params.map((o) => qb.toString(o, param)).join(", ")})`);
 
 /**
  * Math

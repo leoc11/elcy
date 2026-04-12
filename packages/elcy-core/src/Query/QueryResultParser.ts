@@ -66,7 +66,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
 
         this.isValue = isValueType(this.itemSelectExp.itemType);
         this.columns = this.itemSelectExp.selects;
-        this.primaryColumns = this.itemSelectExp.entity.primaryColumns.filter((o) => o.columnName !== "__index");
+        this.primaryColumns = this.itemSelectExp.entity.primaryColumns;
         const entityMetaData = getEntityMetadata(this.itemSelectExp.itemType as unknown as IObjectType<TE>);
         if (entityMetaData) {
             this.columns = this.columns.concat(Array.from(this.itemSelectExp.relationColumns));

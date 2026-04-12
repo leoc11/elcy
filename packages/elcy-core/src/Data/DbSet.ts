@@ -165,7 +165,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const setterExp: SetterObj<T, T[keyof T] & ValueType> = {};
+        const setterExp: SetterObj<T, Extract<T[keyof T], ValueType>> = {};
         for (const prop in item) {
             setterExp[prop] = new ValueExpression(item[prop]);
         }
@@ -241,7 +241,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         let keyString = "";
         let useReference = false;
         for (const o of this.primaryKeys) {
-            const val = id[o.propertyName];
+            const val = id[o.propertyName as keyof FlatObjectLike<T>];
             if (isNull(val)) {
                 if (o.generation & ColumnGeneration.Insert) {
                     useReference = true;
@@ -270,7 +270,9 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         const query = this.deferredInsert(...items);
         return await query.execute();
     }
-    public new(primaryValue: ValueType | ObjectLike<T>) {
+    public new(objectValue: FlatObjectLike<T>): T;
+    public new(primaryValue: ValueType): T;
+    public new(primaryValue: ValueType | FlatObjectLike<T>) {
         const entity = new this.type();
         if (isValue(primaryValue)) {
             if (this.primaryKeys.length !== 1) {
@@ -280,12 +282,12 @@ export class DbSet<T extends object = any> extends Queryable<T> {
             entity[this.primaryKeys.find(() => true).propertyName] = primaryValue as T[StringKeyOf<T>];
         }
         else {
-            if (this.primaryKeys.some((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName])) {
+            if (this.primaryKeys.some((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName as keyof FlatObjectLike<T>])) {
                 throw new Error(`Primary keys is required`);
             }
 
             for (const prop in primaryValue) {
-                entity[prop] = primaryValue[prop] as T[StringKeyOf<T>];
+                entity[prop as StringKeyOf<T>] = primaryValue[prop];
             }
         }
         this.dbContext.add(entity);

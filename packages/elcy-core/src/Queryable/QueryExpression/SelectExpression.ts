@@ -22,8 +22,8 @@ import { IPagingExpression } from "./IPagingExpression";
 import { IQueryExpression } from "./IQueryExpression";
 import { ProjectionEntityExpression } from "./ProjectionEntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "./SqlTableValueParameterExpression";
-import { TemporaryEntityExpression } from "./TemporaryEntityExpression";
+import { SqlTableValueParameterExpression, TSchema } from "./SqlTableValueParameterExpression";
+import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
 
 export class SelectExpression<TE extends object = any, T = unknown> implements IQueryExpression<T> {
     public get allColumns(): IEnumerable<IColumnExpression> {
@@ -295,15 +295,15 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
         this.joins.push(joinRel);
         return joinRel;
     }
-    public addSqlParameter<Tval extends object[]>(valueExp: IExpression<Tval>, entityExp?: TemporaryEntityExpression<ElementType<Tval> & object>): SqlTableValueParameterExpression<Tval>;
+    public addSqlParameter<Tval extends object>(parameterExp: ParameterExpression<Tval[]>, parameterIndex: number, schema?: TSchema<Tval>): SqlTableValueParameterExpression<Tval>;
     public addSqlParameter<Tval>(valueExp: IExpression<Tval>, colExp?: IColumnMetaData): SqlParameterExpression<Tval>;
-    public addSqlParameter<Tval>(valueExp: IExpression<Tval> | IExpression<Array<ElementType<Tval> & object>>, colExpOrEntityExp?: IColumnMetaData | TemporaryEntityExpression<ElementType<Tval> & object>): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<ElementType<Tval> & object> {
+    public addSqlParameter<Tval>(valueExp: IExpression<Tval> | ParameterExpression<Array<ElementType<Tval> & object>>, colExpOrParamIndex?: IColumnMetaData | number, schema?: TSchema<Extract<Tval, object>>): SqlParameterExpression<Tval> | SqlTableValueParameterExpression<Extract<ElementType<Tval>, object>> {
         let paramExp: SqlParameterExpression<Tval>;
         if ((valueExp.type as GenericType<ElementType<Tval>[]>) === Array) {
-            paramExp = new SqlTableValueParameterExpression(valueExp as IExpression<Array<ElementType<Tval> & object>>, colExpOrEntityExp as TemporaryEntityExpression<ElementType<Tval> & object>) as unknown as SqlParameterExpression<Tval>;
+            paramExp = new SqlTableValueParameterExpression(valueExp as ParameterExpression<Array<ElementType<Tval> & object>>, schema as any, colExpOrParamIndex as number) as unknown as SqlParameterExpression<Tval>;
         }
         else {
-            paramExp = new SqlParameterExpression(valueExp as IExpression<Tval>, colExpOrEntityExp as IColumnMetaData<object, Tval>);
+            paramExp = new SqlParameterExpression(valueExp as IExpression<Tval>, colExpOrParamIndex as IColumnMetaData<object, Tval>);
         }
         this.paramExps.push(paramExp);
         return paramExp;

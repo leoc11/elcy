@@ -1,5 +1,5 @@
 import { Enumerable } from "@elcy/enumerable";
-import { GenericType, IObjectType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
+import { GenericType, IObjectType, KeyValue, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { EntityEntry } from "../../Data/EntityEntry";
 import { EntityState } from "../../Data/EntityState";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -9,7 +9,7 @@ import { ParameterExpression } from "../../ExpressionBuilder/Expression/Paramete
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { hashCode, resolveClone } from "../../Helper/Util";
 import { IRelationMetaData } from "../../MetaData/Interface/IRelationMetaData";
-import { IQueryParameterMap } from "../../Query/IQueryParameter";
+import { ISqlParameterValueMap } from "../../Query/IQueryParameter";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";
@@ -56,7 +56,7 @@ export class UpsertExpression<TE extends object = object> implements IQueryExpre
             return new StrictEqualExpression(o, valueExp);
         }).reduce<IExpression<boolean>>((acc, item) => acc ? new AndExpression(acc, item) : item, null);
     }
-    constructor(public readonly entity: EntityExpression<TE>, public readonly setter: SetterObj<TE, TE[keyof TE] & ValueType>) {
+    constructor(public readonly entity: EntityExpression<TE>, public readonly setter: SetterObj<TE, KeyValue<TE>>) {
     }
     public paramExps: SqlParameterExpression[];
     private _insertColumns: Array<IColumnExpression<TE>>;
@@ -67,7 +67,7 @@ export class UpsertExpression<TE extends object = object> implements IQueryExpre
             replaceMap = new Map();
         }
         const entity = resolveClone(this.entity, replaceMap);
-        const setter: SetterObj<TE, TE[keyof TE] & ValueType> = {};
+        const setter: SetterObj<TE, KeyValue<TE>> = {};
         for (const prop in this.setter) {
             setter[prop as StringKeyOf<TE>] = resolveClone(this.setter[prop as StringKeyOf<TE>], replaceMap);
         }
@@ -95,11 +95,11 @@ export class UpsertExpression<TE extends object = object> implements IQueryExpre
     }
 }
 
-export const upsertEntryExp = <T extends object>(upsertExp: UpsertExpression<T>, entry: EntityEntry<T>, queryParameters: IQueryParameterMap) => {
+export const upsertEntryExp = <T extends object>(upsertExp: UpsertExpression<T>, entry: EntityEntry<T>, queryParameters: ISqlParameterValueMap) => {
     for (const col of upsertExp.insertColumns) {
         const value = entry.entity[col.propertyName];
         if (value !== undefined) {
-            const paramExp = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<T[keyof T] & ValueType>), col.columnMeta as IColumnMetaData<any, T[keyof T] & ValueType>);
+            const paramExp = new SqlParameterExpression(new ParameterExpression("", col.type as GenericType<Extract<T[keyof T], ValueType>>), col.columnMeta as IColumnMetaData<any, Extract<T[keyof T], ValueType>>);
             queryParameters.set(paramExp, { value: value });
             upsertExp.setter[col.propertyName] = paramExp;
         }
@@ -111,10 +111,10 @@ export const upsertEntryExp = <T extends object>(upsertExp: UpsertExpression<T>,
             const parentEntry = entry.dbSet.dbContext.entry(parentEntity as object);
             const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.metaData.hasIncrementPrimary;
             for (const [col, parentCol] of rel.relationMaps) {
-                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type as GenericType<T[keyof T] & ValueType>), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
+                let paramExp = new SqlParameterExpression(new ParameterExpression("", parentCol.type as GenericType<KeyValue<T>>), parentCol as IColumnMetaData<object, KeyValue<T>>);
                 if (isGeneratedPrimary) {
                     const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
-                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as never), parentCol as IColumnMetaData<object, T[keyof T] & ValueType>);
+                    paramExp = new SqlParameterExpression(new MemberAccessExpression(new ParameterExpression(index.toString(), parentEntry.metaData.type), parentCol.columnName as never), parentCol as IColumnMetaData<object, KeyValue<T>>);
                     queryParameters.set(paramExp, { name: parentEntry.metaData.name });
                 }
                 else {

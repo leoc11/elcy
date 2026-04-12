@@ -15,7 +15,7 @@ export class InsertIntoExpression<TE extends object = object> implements IQueryE
     public get type() {
         return undefined as GenericType<void>;
     }
-    constructor(public entity: EntityExpression<TE>, public select: SelectExpression<object, TE>) {
+    constructor(public entity: EntityExpression<TE>, public select: SelectExpression<object, TE>, public readonly returnings: Array<IColumnExpression<TE>> = []) {
         this.select.isSelectOnly = true;
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): InsertIntoExpression<TE> {

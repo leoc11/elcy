@@ -1,4 +1,4 @@
-import { GenericType, IObjectType, Pivot, PivotD, PivotM, ValueType } from "../Common/Type";
+import { FlatObjectLike, GenericType, IObjectType, Pivot, PivotD, PivotM, ValueType } from "../Common/Type";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryOption } from "../Query/IQueryOption";
 import { Queryable } from "./Queryable.internal";
@@ -82,8 +82,8 @@ declare module "./Queryable" {
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, [T | null, T2]> | ((item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult)): Queryable<TResult>;
 
+        map<TReturn>(type: IObjectType<TReturn>, selector: FunctionExpression<TReturn, [T]> | ((item: QueryableChain<T>) => FlatObjectLike<TReturn>)): Queryable<TReturn>;
         map<TReturn>(selector: FunctionExpression<TReturn, [T]> | ((item: QueryableChain<T>) => TReturn)): Queryable<Unchain<TReturn>>;
-        map<TReturn>(type: IObjectType<TReturn>, selector: FunctionExpression<TReturn, [T]> | ((item: QueryableChain<T>) => { [key in keyof TReturn]?: TReturn[key] })): Queryable<Unchain<TReturn>>;
         map<TReturn>(typeOrSelector: FunctionExpression<TReturn, [T]> | IObjectType<TReturn> | ((item: QueryableChain<T>) => TReturn), selector?: ((item: QueryableChain<T>) => TReturn)): Queryable<Unchain<TReturn>>;
 
         flatMap<TReturn>(selector: (item: QueryableChain<T>) => IEnumerable<TReturn>, type?: GenericType<TReturn>): Queryable<Unchain<TReturn>>;

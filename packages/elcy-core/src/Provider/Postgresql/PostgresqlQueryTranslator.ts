@@ -9,12 +9,27 @@ export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
+relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS text)`);
 relationalQueryTranslator.registerConstructor(Date, () => `NOW()`, exp => exp.params.length === 0);
 
 postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()");
 
 postgresqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG(10, EXP(1))");
 postgresqlQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(2, EXP(1))");
+
+postgresqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp, param) => {
+    let value = 12;
+    if (exp.params.length) {
+        value = qb.extractValue(exp.params[0] as IExpression<number>, param) ?? 12;
+    }
+
+    let decimalFormat = "9".repeat(value);
+    if (decimalFormat) {
+        decimalFormat = `.${decimalFormat}`;
+    }
+    return `to_char(${qb.toString(exp.objectOperand, param)}, '9${decimalFormat}EEEE')`;
+});
+
 
 if (Temporal) {
     /**

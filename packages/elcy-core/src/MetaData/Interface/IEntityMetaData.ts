@@ -1,5 +1,5 @@
 import { ConcurrencyModel, OrderDirection } from "../../Common/StringType";
-import { IObjectType } from "../../Common/Type";
+import { IObjectType, ValueType } from "../../Common/Type";
 import { IDBEventListener } from "../../Data/Event/IDBEventListener";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { BooleanColumnMetaData } from "../BooleanColumnMetaData";
@@ -18,7 +18,7 @@ export interface IEntityMetaData<TE extends object = any, TBase extends object =
     concurrencyMode?: ConcurrencyModel;
     constraints?: Array<IConstraintMetaData<TE>>;
     createDateColumn?: DateTimeColumnMetaData<TE>;
-    defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => unknown) | OrderDirection>>;
+    defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     deletedColumn?: BooleanColumnMetaData<TE>;
     descriminatorMember?: string;
     embeds?: Array<EmbeddedRelationMetaData<TE>>;

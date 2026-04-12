@@ -5,17 +5,29 @@ import { InstantiationExpression } from "../../ExpressionBuilder/Expression/Inst
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
+import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { Version } from "src/Common/Version";
 import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
 import { IBinaryOperatorExpression } from "src/ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { NotEqualExpression } from "src/ExpressionBuilder/Expression/NotEqualExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
+import { IQueryBuilder } from "src/Query/IQueryBuilder";
+import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
+
+mssqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp, param) => {
+    let value = 12;
+    if (exp.params.length) {
+        value = qb.extractValue(exp.params[0] as IExpression<number>, param) ?? 12;
+    }
+    return `FORMAT(${qb.toString(exp.objectOperand, param)}, 'E${value}')`;
+});
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -67,7 +79,6 @@ mssqlQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, pa
 
 mssqlQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `${qb.toOperandString(exp.leftOperand, param)}+${qb.toOperandString(exp.rightOperand, param)}`);
 mssqlQueryTranslator.registerMethod(DbFunction, "lastInsertedId", () => `scope_identity()`, () => true);
-mssqlQueryTranslator.registerMethod(DbFunction, "coalesce", (qb, exp, param) => `coalesce(${exp.params.map((o) => qb.toString(o, param)).join(", ")})`);
 mssqlQueryTranslator.registerMethod(Math, "max", (qb, exp, param) => {
     if (exp.params.length <= 0) {
         throw new Error(`${exp.toString()} require at least one parameter`);

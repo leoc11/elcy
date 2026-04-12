@@ -58,7 +58,9 @@ export type IntervalColumnType = "interval year" // oracle
     | "interval" // postgres
     | "year"; // mysql
 
-export type RowVersionColumnType = "rowversion"; // mssql
+export type RowVersionColumnType = "bigint" // all
+    | "rowversion" // mssql
+    | "xmin"; // postgres
 
 export type BinaryColumnType = "binary" // mssql
     | "varbinary" // mssql

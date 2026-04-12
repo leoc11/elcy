@@ -7,16 +7,18 @@ export interface ISelectCacheOption extends ICacheOption {
 }
 export interface IQueryOption {
     concurrencyMode?: ConcurrencyModel;
+    supportTVP?: boolean;
+    noQueryCache?: boolean;
+    version?: Version;
+    
     // delete
     forceHardDelete?: boolean;
     includeSoftDeleted?: boolean;
-    noQueryCache?: boolean;
+    softDeleteCascade?: boolean;
     // select
     resultCache?: "none" | ISelectCacheOption;
-    supportTVP?: boolean;
     // insert/update
     useUpsert?: boolean;
-    version?: Version;
 
     // noTracking?: boolean;
     // batchSize?: number;

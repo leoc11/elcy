@@ -20,7 +20,7 @@ import { hashCode, hashCodeAdd, isNotNull, isNull, isValue } from "../Helper/Uti
 import { Diagnostic } from "../Logger/Diagnostic";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
-import { IQueryParameterMap } from "../Query/IQueryParameter";
+import { ISqlParameterValueMap } from "../Query/IQueryParameter";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
@@ -28,11 +28,12 @@ import { EntityExpression } from "./QueryExpression/EntityExpression";
 import { InsertIntoExpression } from "./QueryExpression/InsertIntoExpression";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
-import { SqlParameterExpression } from "./QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { QueryableChain, Unchain } from "./Interface/QueryableChain";
 import { Decimal } from "src/Data/Decimal";
+import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 
 export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public get dbContext(): DbContext {
@@ -68,8 +69,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
 
     //#region Get Result
 
-    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: unknown }): IQueryParameterMap {
-        const result: IQueryParameterMap = new Map();
+    public buildParameter(queryExp: IQueryExpression, params: { [key: string]: unknown }): ISqlParameterValueMap {
+        const result: ISqlParameterValueMap = new Map();
         const valueTransformer = new ExpressionExecutor(params);
         let paramExps = Enumerable.from(queryExp.paramExps);
         if (Array.isArray(queryExp.includes)) {
@@ -323,12 +324,13 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredDelete(mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
+    public deferredDelete(mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
+    public deferredDelete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
+    public deferredDelete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
+    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), modeOrCascade?: DeleteMode | boolean, softDeleteCascade?: boolean) {
         let queryCache: IQueryCache<void>;
         let cacheKey: number;
+        let mode: DeleteMode;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
         let predicate: FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean);
@@ -343,14 +345,20 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
                 mode = modeOrPredicate;
             }
         }
+        if (typeof modeOrCascade === "string") {
+            mode = modeOrCascade;
+        }
+        else if (typeof modeOrCascade === "boolean") {
+            softDeleteCascade = modeOrCascade;
+        }
+
+        if (!mode) {
+            const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
+            mode = entityMeta?.deletedColumn ? "soft" : "hard";
+        }
 
         if (predicate) {
             let q: Queryable<T> = this;
-            if (!mode) {
-                const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
-                mode = entityMeta?.deletedColumn ? "soft" : "hard";
-            }
-
             if (mode === "hard") {
                 q = q.option({ includeSoftDeleted: true });
             }
@@ -359,7 +367,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
 
         const flatParams = this.flatQueryParameter({ index: 0 });
         if (!this.queryOption.noQueryCache && cacheManager) {
-            cacheKey = this.cacheKey(flatParams, "DELETE");
+            cacheKey = this.cacheKey(flatParams, "DELETE", hashCode(mode));
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `cache key: ${cacheKey}. build cache key time: ${timer.lap()}ms`);
             }
@@ -372,7 +380,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         if (!queryCache) {
-            if (!getEntityMetadata(this.type as IObjectType<T & object>)) {
+            const entityMeta = getEntityMetadata(this.type as IObjectType<T & object>);
+            if (!entityMeta) {
                 throw new Error(`Only entity supported`);
             }
 
@@ -381,7 +390,58 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.setParameter(flatParams);
             const selectExp = this.buildQuery(visitor) as SelectExpression<object, T>;
 
-            const commandQuery = new DeleteExpression(selectExp, new SqlParameterExpression(new ParameterExpression("__deleteMode")));
+
+            let commandQuery: IQueryExpression<void>;
+            if (mode === "hard") {
+                commandQuery = new DeleteExpression(selectExp);
+            }
+            else {
+                if (!selectExp.entity.deleteColumn) {
+                    throw "no delete column";
+                }
+
+                const setter: SetterObj<T> = {};
+                setter[entityMeta.deletedColumn.propertyName] = new ValueExpression(true as T[keyof T]);
+                if (entityMeta.modifiedDateColumn) {
+                    setter[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body as IExpression<T[keyof T]>;
+                }
+                if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "bigint") {
+                    setter[entityMeta.versionColumn.propertyName] = new AdditionExpression((selectExp.entity as EntityExpression).versionColumn, new ValueExpression(1n));
+                }
+
+                const includes = selectExp.includes.slice(0);
+                const updateExp = new UpdateExpression(selectExp, setter);
+                commandQuery = updateExp;
+
+                for (const include of includes) {
+                    if (!(include.child.entity instanceof EntityExpression)) {
+                        continue;
+                    }
+
+                    const entityMeta = include.child.entity.metaData;
+                    if (!entityMeta.deletedColumn) {
+                        throw `'${entityMeta.name}' did not support 'Soft' delete`;
+                    }
+
+                    const setter: SetterObj<any> = {};
+                    setter[entityMeta.deletedColumn.propertyName] = new ValueExpression(true);
+                    if (entityMeta.modifiedDateColumn) {
+                        setter[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body;
+                    }
+                    if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "bigint") {
+                        setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(include.child.entity.versionColumn, new ValueExpression(1n));
+                    }
+
+                    const childUpdateExp = new UpdateExpression(include.child.entity, setter);
+                    childUpdateExp.addWhere(new StrictEqualExpression(childUpdateExp.entity.deleteColumn, new ValueExpression(false)));
+                    updateExp.addInclude(childUpdateExp, include.relation);
+                }
+
+                if (softDeleteCascade) {
+                    this.dbContext.softDeleteCascade(updateExp, visitor);
+                }
+            }
+
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -395,10 +455,6 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const params = this.buildParameter(queryCache.commandQuery, flatParams);
-        if (mode) {
-            const paramExp = (queryCache.commandQuery as DeleteExpression<object>).deleteMode as SqlParameterExpression;
-            params.set(paramExp, { value: mode });
-        }
         if (Diagnostic.enabled) {
             Diagnostic.trace(this, `build params time: ${timer.lap()}ms`);
         }
@@ -1138,7 +1194,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         }
 
         const params = this.buildParameter(queryCache.commandQuery, flatParams);
-        return queryBuilder.toString(queryCache.commandQuery, { parameters: params });
+        return queryBuilder.toString(queryCache.commandQuery, { parameters: params, queryExpression: queryCache.commandQuery });
     }
     public async update(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }) {
         const query = this.deferredUpdate(setter);

@@ -43,7 +43,7 @@ import { SubstractionExpression } from "../../ExpressionBuilder/Expression/Subst
 import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { IQueryBuilder } from "../../Query/IQueryBuilder";
-import { IQueryBuilderParameter } from "../../Query/IQueryBuilderParameter";
+import { IQueryBuilderContext } from "../../Query/IQueryBuilderContext";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { SelectExpression } from "../../Queryable/QueryExpression/SelectExpression";
 import { Temporal } from "src/Data/Temporal";
@@ -109,7 +109,7 @@ relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, p
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "every" as any, (qb, exp, param) => `NOT EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "some" as any, (qb, exp, param) => `EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "count" as any, (qb, exp, param) => `COUNT(${exp.params.length ? qb.toString(exp.params[0], param) : "*"})`);
-const aggregateTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
+const aggregateTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "sum" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "min" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "max" as any, aggregateTranslator);
@@ -133,7 +133,7 @@ relationalQueryTranslator.registerMethod(Enumerable.prototype, "includes", (qb, 
  * Math
  * TODO: max,min,acosh,asinh,atanh,cbrt,clz32,fround,imul
  */
-const trigonoTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
+const trigonoTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
 relationalQueryTranslator.registerMethod(Math, "abs", trigonoTranslator);
 relationalQueryTranslator.registerMethod(Math, "acos", trigonoTranslator);
 relationalQueryTranslator.registerMethod(Math, "asin", trigonoTranslator);
@@ -192,23 +192,38 @@ relationalQueryTranslator.registerMethod(String.prototype, "split", (qb, exp, pa
 relationalQueryTranslator.registerMethod(String.prototype, "startsWith", (qb, exp, param) => `(${qb.toString(exp.objectOperand, param)} LIKE CONCAT(${qb.toString(exp.params[0], param)}, ${qb.valueString("%")}))`);
 relationalQueryTranslator.registerMethod(String.prototype, "substr", (qb, exp, param) => `SUBSTRING(${qb.toString(exp.objectOperand, param)}, (${qb.toString(exp.params[0], param)} + 1), ${(exp.params.length > 1 ? qb.toString(exp.params[1], param) : "8000")})`);
 relationalQueryTranslator.registerMethod(String.prototype, "substring", (qb, exp, param) => `SUBSTRING(${qb.toString(exp.objectOperand, param)}, (${qb.toString(exp.params[0], param)} + 1), ${(exp.params.length > 1 ? `(${qb.toString(exp.params[1], param)} - ${qb.toString(exp.params[0], param)})` : "8000")})`);
-const tolowerTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => `LOWER(${qb.toString(exp.objectOperand, param)})`;
+const tolowerTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => `LOWER(${qb.toString(exp.objectOperand, param)})`;
 relationalQueryTranslator.registerMethod(String.prototype, "toLowerCase", tolowerTranslator);
 relationalQueryTranslator.registerMethod(String.prototype, "toLocaleLowerCase", tolowerTranslator);
-const toupperTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => `UPPER(${qb.toString(exp.objectOperand, param)})`;
+const toupperTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => `UPPER(${qb.toString(exp.objectOperand, param)})`;
 relationalQueryTranslator.registerMethod(String.prototype, "toUpperCase", toupperTranslator);
 relationalQueryTranslator.registerMethod(String.prototype, "toLocaleUpperCase", toupperTranslator);
-const stringValueOf = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderParameter) => qb.toString(exp.objectOperand, param);
+const stringValueOf = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => qb.toString(exp.objectOperand, param);
 relationalQueryTranslator.registerMethod(String.prototype, "toString", stringValueOf);
 relationalQueryTranslator.registerMethod(String.prototype, "valueOf", stringValueOf);
 relationalQueryTranslator.registerMethod(String.prototype, "trim", (qb, exp, param) => `RTRIM(LTRIM(${qb.toString(exp.objectOperand, param)}))`);
 
 /**
  * Number
- * TODO: isFinite,isInteger,isNaN,isSafeInteger,toExponential,toFixed,toPrecision
+ * TODO: isFinite,isInteger,isNaN,isSafeInteger, toLocaleString,toExponential,toFixed,toPrecision
  */
 relationalQueryTranslator.registerMethod(Number.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS nvarchar(255))`);
 relationalQueryTranslator.registerMethod(Number.prototype, "valueOf", (qb, exp, param) => qb.toString(exp.objectOperand, param));
+relationalQueryTranslator.registerMethod(Number.prototype, "toFixed", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
+relationalQueryTranslator.registerMethod(Number.prototype, "toPrecision", (qb, exp, param) => {
+    const ob = qb.toString(exp.objectOperand, param);
+    const paramQ = exp.params.length ? qb.toString(exp.params[0], param) : "0";
+    return `CASE WHEN ${ob}=0 THEN 0
+ELSE ROUND(${ob}, ${paramQ} - FLOOR(LOG(10, ABS(${ob}))) - 1)
+END`;
+});
+
+/**
+ * BigInt
+ * TODO: toLocaleString
+ */
+relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS nvarchar(max))`);
+relationalQueryTranslator.registerMethod(BigInt.prototype, "valueOf", (qb, exp, param) => qb.toString(exp.objectOperand, param));
 
 /**
  * Symbol
@@ -267,7 +282,7 @@ relationalQueryTranslator.registerMethod(RegExp.prototype, "test", (qb, exp, par
 // http://dataeducation.com/bitmask-handling-part-4-left-shift-and-right-shift/
 // TypeofExpression,BitwiseSignedRightShiftExpression, BitwiseZeroRightShiftExpression
 // BitwiseZeroLeftShiftExpression,InstanceofExpression
-const aritAssignmentTranlator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, param: IQueryBuilderParameter) => {
+const aritAssignmentTranlator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, param: IQueryBuilderContext) => {
     if (!(exp.leftOperand instanceof ParameterExpression)) {
         throw new Error(`Operator ${exp.toString()} only support parameter for left operand`);
     }
@@ -287,7 +302,7 @@ relationalQueryTranslator.registerOperator(BitwiseZeroLeftShiftAssignmentExpress
 relationalQueryTranslator.registerOperator(BitwiseZeroRightShiftAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, ">>", param));
 relationalQueryTranslator.registerOperator(BitwiseSignedRightShiftAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, ">>>", param));
 
-const incrementTranslator = (qb: IQueryBuilder, exp: IUnaryOperatorExpression, operator: string, param: IQueryBuilderParameter) => {
+const incrementTranslator = (qb: IQueryBuilder, exp: IUnaryOperatorExpression, operator: string, param: IQueryBuilderContext) => {
     if (!(exp.operand instanceof ParameterExpression)) {
         throw new Error(`Operator ${exp.toString()} only support parameter operand`);
     }
@@ -299,7 +314,7 @@ relationalQueryTranslator.registerOperator(LeftDecrementExpression, (qb, exp, pa
 relationalQueryTranslator.registerOperator(RightIncrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "+", param)}) - 1`);
 relationalQueryTranslator.registerOperator(RightDecrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "-", param)}) + 1`);
 
-const binaryTranslator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, param: IQueryBuilderParameter) => `${qb.toOperandString(exp.leftOperand, param)}${operator}${qb.toOperandString(exp.rightOperand, param)}`;
+const binaryTranslator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, param: IQueryBuilderContext) => `${qb.toOperandString(exp.leftOperand, param)}${operator}${qb.toOperandString(exp.rightOperand, param)}`;
 relationalQueryTranslator.registerOperator(AssignmentExpression, (qb, exp, param) => binaryTranslator(qb, exp, "=", param));
 relationalQueryTranslator.registerOperator(GreaterEqualExpression, (qb, exp, param) => binaryTranslator(qb, exp, ">=", param));
 relationalQueryTranslator.registerOperator(GreaterThanExpression, (qb, exp, param) => binaryTranslator(qb, exp, ">", param));
@@ -386,11 +401,11 @@ if (Temporal) {
     relationalQueryTranslator.registerMethod(Temporal.Instant, "from", (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as TIMESTAMP WITH TIME ZONE)`);
     relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochMilliseconds", (qb, exp, param) => {
         const value = param.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
-        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value/1_000} SECOND`), param)}`;
+        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000} SECOND`), param)}`;
     });
     relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochNanoseconds", (qb, exp, param) => {
         const value = param.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
-        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value/1_000_000} SECOND`), param)}`;
+        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000_000} SECOND`), param)}`;
     });
     relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochMilliseconds", (qb, exp, param) => `CAST((${qb.toString(exp.objectOperand, param)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000`);
     relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochNanoseconds", (qb, exp, param) => `CAST((${qb.toString(exp.objectOperand, param)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000000000`);

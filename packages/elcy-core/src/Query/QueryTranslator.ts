@@ -7,7 +7,7 @@ import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAc
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpression";
 import { IQueryBuilder } from "./IQueryBuilder";
-import { IQueryBuilderParameter } from "./IQueryBuilderParameter";
+import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 
 export class QueryTranslator {
@@ -17,7 +17,7 @@ export class QueryTranslator {
     public registerFallbacks(...fallbacks: QueryTranslator[]) {
         this.fallbacks.push(...fallbacks);
     }
-    public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: unknown[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerFn<T, TExp extends FunctionCallExpression<T>>(fn: (...params: unknown[]) => T, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(fn);
         if (!map) {
             map = {};
@@ -29,7 +29,7 @@ export class QueryTranslator {
         };
         map[""] = translateItem;
     }
-    public registerMember<TE extends object, K extends StringKeyOf<TE>, TExp extends MemberAccessExpression<TE, K>>(object: TE, memberName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerMember<TE extends object, K extends StringKeyOf<TE>, TExp extends MemberAccessExpression<TE, K>>(object: TE, memberName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(object);
         if (!map) {
             map = {};
@@ -41,7 +41,7 @@ export class QueryTranslator {
         };
         map[memberName] = translateItem;
     }
-    public registerMethod<TE, K extends MethodKey<TE>, TExp extends MethodCallExpression<TE, K>>(object: TE, methodName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerMethod<TE, K extends MethodKey<TE>, TExp extends MethodCallExpression<TE, K>>(object: TE, methodName: K, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(object);
         if (!map) {
             map = {};
@@ -53,7 +53,7 @@ export class QueryTranslator {
         };
         map[methodName] = translateItem;
     }
-    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate = (exp: TExp) => false) {
+    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(operator);
         if (!map) {
             map = {};
@@ -65,9 +65,9 @@ export class QueryTranslator {
         };
         map[""] = translateItem;
     }
-    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: PrimitiveType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate?: (exp: TExp) => boolean): void;
-    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate?: (exp: TExp) => boolean): void;
-    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderParameter) => string, isTranslate:(exp: TExp) => boolean = (exp: TExp) => false) {
+    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: PrimitiveType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate?: (exp: TExp) => boolean): void;
+    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate?: (exp: TExp) => boolean): void;
+    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, param?: IQueryBuilderContext) => string, isTranslate:(exp: TExp) => boolean = (exp: TExp) => false) {
         let map = this._map.get(type);
         if (!map) {
             map = {};

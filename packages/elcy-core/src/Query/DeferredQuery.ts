@@ -6,7 +6,7 @@ import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression"
 import { IQuery } from "./IQuery";
 import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryOption } from "./IQueryOption";
-import { IQueryParameterMap } from "./IQueryParameter";
+import { ISqlParameterValueMap } from "./IQueryParameter";
 import { IQueryResult } from "./IQueryResult";
 
 export class DeferredQuery<T = unknown> {
@@ -16,7 +16,7 @@ export class DeferredQuery<T = unknown> {
     constructor(
         protected readonly dbContext: DbContext,
         public readonly command: IQueryExpression,
-        public readonly parameters: IQueryParameterMap,
+        public readonly parameters: ISqlParameterValueMap,
         public readonly resultParser: (result: Map<IQuery, IQueryResult>) => T,
         public readonly queryOption: IQueryOption
     ) { }
