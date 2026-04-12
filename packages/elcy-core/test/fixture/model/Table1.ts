@@ -2,11 +2,13 @@ import { Temporal } from "@js-temporal/polyfill";
 import Decimal from "decimal.js";
 import { TimeSpan } from "../../../src/Data/TimeSpan";
 import { Uuid } from "../../../src/Data/Uuid";
-import { BigIntColumn, BinaryColumn, BooleanColumn, ComputedColumn, CreatedDateColumn, DateColumn, DateTimeColumn, DecimalColumn, DeletedColumn, Entity, IdentifierColumn, IntegerColumn, ModifiedDateColumn, PrimaryKey, RealColumn, Relationship, StringColumn, TimeColumn } from "../../../src/Decorator";
+import { AfterDelete, AfterSave, BeforeDelete, BeforeSave, BigIntColumn, BinaryColumn, BooleanColumn, ComputedColumn, CreatedDateColumn, DateColumn, DateTimeColumn, DecimalColumn, DeletedColumn, Entity, IdentifierColumn, IntegerColumn, ModifiedDateColumn, NullableColumn, PrimaryKey, RealColumn, Relationship, StringColumn, TimeColumn } from "../../../src/Decorator";
 import { Table1Table2 } from "./Table1Table2";
 import { Table1One } from "./Table1One";
 import { Table1Table3 } from "./Table1Table3";
 import { Table1Many } from "./Table1Many";
+import { ISaveEventParam } from "packages/elcy-core/src/MetaData/Interface/ISaveEventParam";
+import { IDeleteEventParam } from "packages/elcy-core/src/MetaData/Interface/IDeleteEventParam";
 
 // TODO: Enum
 // missing one side relation (one, many, reverse_one, revers_many)
@@ -44,10 +46,11 @@ export class Table1 {
     identifier: Uuid;
     @IdentifierColumn({ type: String })
     identifierString: string;
-    @IntegerColumn()
+    @IntegerColumn({ default: () => 1 })
     integer: number;
+    @NullableColumn()
     @RealColumn()
-    real: number;
+    real?: number;
     @StringColumn()
     string: string;
     @TimeColumn()
@@ -69,4 +72,27 @@ export class Table1 {
     table1One: Table1One;
     @Relationship("Table1Many")
     table1Manies: Table1Many[];
+
+
+    @BeforeSave
+    public static beforeSave(entity: Table1, param: ISaveEventParam) {
+        // before save
+        return true;
+    }
+
+    @AfterSave
+    public static afterSave(entity: Table1, param: ISaveEventParam) {
+        // after save
+    }
+
+    @BeforeDelete
+    public static beforeDelete(entity: Table1, param: IDeleteEventParam) {
+        // before save
+        return true;
+    }
+
+    @AfterDelete
+    public static afterDelete(entity: Table1, param: IDeleteEventParam) {
+        // after save
+    }
 }

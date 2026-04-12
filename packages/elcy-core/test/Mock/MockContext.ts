@@ -8,6 +8,7 @@ import { MockConnection } from "./MockConnection";
 export interface IMockedContext {
     oriExecuteDeferred?(deferredQueries: IEnumerable<DeferredQuery>): Promise<void>;
     oriGetConnection?(writable?: boolean): Promise<IConnection>;
+    oriCloseConnection?(con?: IConnection): Promise<void>;
 }
 export const mockContext = function (context: DbContext & IMockedContext) {
     context.oriGetConnection = context.getConnection;
@@ -24,6 +25,15 @@ export const mockContext = function (context: DbContext & IMockedContext) {
         }
         return connection;
     };
+    context.oriCloseConnection = context.closeConnection;
+    context.closeConnection = async function (con?: IConnection) {
+        if (!con) {
+            con = this.connection;
+        }
+        if (con && !con.inTransaction) {
+            await con.close();
+        }
+    }
     context.executeDeferred = async function (deferredQueries?: IEnumerable<DeferredQuery>) {
         if (!deferredQueries) {
             deferredQueries = context.deferredQueries.splice(0);
@@ -40,4 +50,6 @@ export function restore(context: DbContext & IMockedContext) {
     context.oriGetConnection = undefined;
     context.executeDeferred = context.oriExecuteDeferred;
     context.oriExecuteDeferred = undefined;
+    context.closeConnection = context.oriCloseConnection;
+    context.oriCloseConnection = undefined;
 }
