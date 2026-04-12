@@ -1,7 +1,7 @@
 import { Enumerable } from "./Enumerable.internal";
 import { GroupedEnumerable } from "./GroupedEnumerable";
 
-const keyString = (a: unknown): string => {
+const keyString = (a: unknown): string | object => {
   if (a == null) {
     return undefined;
   }
@@ -10,18 +10,23 @@ const keyString = (a: unknown): string => {
   }
   switch (true) {
     case a instanceof Object: {
-      return JSON.stringify(
-        Enumerable.from(Object.entries(a))
-          .filter(([, v]) => typeof v !== "function")
-          .orderBy([([k]) => k])
-          .reduce(
-            (res, [k, v]) => {
-              res[k] = v;
-              return res;
-            },
-            {} as Record<string, unknown>,
-          ),
-      );
+      try {
+        return JSON.stringify(
+          Enumerable.from(Object.entries(a))
+            .filter(([, v]) => typeof v !== "function")
+            .orderBy([([k]) => k])
+            .reduce(
+              (res, [k, v]) => {
+                res[k] = v;
+                return res;
+              },
+              {} as Record<string, unknown>,
+            ),
+        );
+      }
+      catch {
+        return a;
+      }
     }
     case typeof a === "string": {
       return a;
@@ -38,11 +43,11 @@ export class GroupByIterator<K, T> implements Iterator<T, unknown, unknown> {
   }
   private _isDone: boolean;
   public readonly result: GroupedEnumerable<K, T>[] = [];
-  public readonly groupResultMap: Map<string, T[]> = new Map();
+  public readonly groupResultMap: Map<string | object, T[]> = new Map();
   constructor(
     protected readonly source: IterableIterator<T>,
     protected readonly keySelector: (item: T) => K,
-  ) {}
+  ) { }
 
   public next(...value: [] | [unknown]) {
     const a = this.source.next(...value);
