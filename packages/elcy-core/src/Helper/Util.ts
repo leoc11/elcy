@@ -17,6 +17,7 @@ import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { IRelationMetaData } from "src/MetaData/Interface/IRelationMetaData";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
+import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 
 export const isIterable = (value: unknown): value is Iterable<any> => {
     return typeof (value as any)?.[Symbol.iterator] === 'function';
@@ -214,6 +215,11 @@ export const isColumnExp = (data: IExpression): data is IColumnExpression => {
 };
 export const isNonNullExp = (data: IExpression): boolean => {
     if (isColumnExp(data)) {
+        const parentRel = data.entity.select?.parentRelation;
+        if (parentRel instanceof JoinRelation && (parentRel.type === "LEFT" || parentRel.type === "FULL")) {
+            return false;
+        }
+
         return data.isNullable !== true;
     }
     if (data instanceof ValueExpression) {
