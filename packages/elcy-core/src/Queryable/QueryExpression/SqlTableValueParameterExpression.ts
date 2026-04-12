@@ -17,7 +17,7 @@ export type TSchema<TE extends object> = {
 export type TSchemaType<TE> = TE extends TSchema<infer U> ? U : never;
 
 export class SqlTableValueParameterExpression<TE extends object = object> implements ISqlParameterExpression<TE[]>, IEntityExpression<TE> {
-    constructor(public readonly valueExp: ParameterExpression<TE[]>, public itemSchema: TSchema<TE>, public readonly parameterIndex?: number) {
+    constructor(public readonly valueExp: ParameterExpression<TE[]>, public itemSchema: TSchema<TE>, public readonly parameterIndex?: number, alias?: string) {
         const columns: IColumnExpression<TE>[] = [];
         if (itemSchema instanceof Object) {
             for (const prop in itemSchema) {
@@ -44,7 +44,7 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
         }
 
         this.columns = columns;
-        this.alias = this.name;
+        this.alias = alias ?? this.name;
     }
 
     public get primaryColumns(): IColumnExpression<TE>[] {
@@ -58,8 +58,9 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
     public entityTypes: IObjectType[] = [];
     public readonly defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
     public get name(): string {
+        const names = this.valueExp.name.split(':');
         const posfix = isNull(this.parameterIndex) ? "" : `_${this.parameterIndex}`;
-        return `${this.valueExp.name}${posfix}`;
+        return `${names.pop()}${posfix}`;
     }
     public type: GenericType<TE & TE[]> = Object as any;
     public select?: SelectExpression<TE>;
@@ -75,7 +76,7 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
             replaceMap = new Map();
         }
         const parameterExp = resolveClone(this.valueExp, replaceMap);
-        const clone = new SqlTableValueParameterExpression(parameterExp, this.itemSchema, this.parameterIndex);
+        const clone = new SqlTableValueParameterExpression(parameterExp, this.itemSchema, this.parameterIndex, this.alias);
         replaceMap.set(this, clone);
         return clone;
     }

@@ -1924,22 +1924,22 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 const arrayParamExp = new ParameterExpression(this.parameterIndex + ":" + exp.name, Array as GenericType<Array<Extract<ElementType<T>, object>>>);
                 arrayParamExp.itemType = exp.itemType;
 
-                let arrayItemType: TSchema<Extract<ElementType<T>, object>> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
-                if (!arrayItemType) {
-                    arrayItemType = {} as TSchema<Extract<ElementType<T>, object>>;
+                let schema: TSchema<Extract<ElementType<T>, object>> = this.scopeParameters.get(`${this.parameterIndex}:${exp.name}_itemtype`);
+                if (!schema) {
+                    schema = {} as TSchema<Extract<ElementType<T>, object>>;
                     const itemValue = value.find((o) => !!o) as Extract<ElementType<T>, object>;
                     if (!isNull(itemValue)) {
                         for (const prop in itemValue) {
                             const propValue = itemValue[prop];
                             if (isValue(propValue) || propValue === null) {
-                                arrayItemType[prop] = propValue?.constructor as GenericType<any> ?? String;
+                                schema[prop] = propValue?.constructor as GenericType<any> ?? String;
                             }
                         }
-                        arrayItemType.constructor = itemValue.constructor;
+                        schema.constructor = itemValue.constructor;
                     }
                 }
 
-                const entityExp = param.selectExpression.addSqlParameter(arrayParamExp, this.parameterIndex, arrayItemType);
+                const entityExp = param.selectExpression.addSqlParameter(arrayParamExp, this.parameterIndex, this.newAlias(), schema);
                 const selectExp = new SelectExpression(entityExp);
                 selectExp.selects = entityExp.columns.filter((o) => !o.isPrimary);
                 selectExp.isSubSelect = true;
