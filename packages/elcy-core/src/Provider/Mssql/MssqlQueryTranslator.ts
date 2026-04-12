@@ -133,3 +133,43 @@ if (Decimal) {
         return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
     });
 }
+
+if (Temporal) {
+    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "year", (qb, exp, param) => `YEAR(${qb.toString(exp.objectOperand, param)})`);
+    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "month", (qb, exp, param) => `MONTH(${qb.toString(exp.objectOperand, param)})`);
+    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "day", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
+
+    mssqlQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "with", (qb, exp, param) => {
+        if (exp.params.length !== 1) {
+            throw Error("Temporal.PlainDate.with: only support info");
+        }
+        const paramInfoExp = exp.params[0] as ObjectValueExpression<Temporal.PlainDateLike>;
+        if (paramInfoExp.object.calendar) {
+            throw Error("Temporal.PlainDate.with: calendar not supported");
+        }
+        if (paramInfoExp.object.era) {
+            throw Error("Temporal.PlainDate.with: era not supported");
+        }
+        if (paramInfoExp.object.eraYear) {
+            throw Error("Temporal.PlainDate.with: eraYear not supported");
+        }
+        if (paramInfoExp.object.monthCode) {
+            throw Error("Temporal.PlainDate.with: monthCode not supported");
+        }
+        const objectQ = qb.toString(exp.objectOperand, param);
+        let yearQ = `YEAR(${objectQ})`;
+        if (paramInfoExp.object.year) {
+            yearQ = `COALESCE(${qb.toString(paramInfoExp.object.year, param)}, ${yearQ})`;
+        }
+        let monthQ = `MONTH(${objectQ})`;
+        if (paramInfoExp.object.month) {
+            monthQ = `COALESCE(${qb.toString(paramInfoExp.object.month, param)}, ${monthQ})`;
+        }
+        let dayQ = `DAY(${objectQ})`;
+        if (paramInfoExp.object.day) {
+            dayQ = `COALESCE(${qb.toString(paramInfoExp.object.day, param)}, ${dayQ})`;
+        }
+
+        return `DATEFROMPARTS(CAST(${yearQ} as int), CAST(${monthQ} as int), CAST(${dayQ} as int))`;
+    });
+}
