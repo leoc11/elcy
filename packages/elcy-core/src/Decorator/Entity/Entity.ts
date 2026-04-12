@@ -20,9 +20,9 @@ import { ClassDecorator } from "../Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { proxyEntityType } from "src/Data/EntityChangeTracker";
 
-export function Entity<TE extends object>(option: IEntityOption<TE>): ClassDecorator<TE>;
-export function Entity<TE extends object>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TE>;
-export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TE> {
+export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(option: IEntityOption<TE>): ClassDecorator<TC>;
+export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TC>;
+export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(optionOrName?: IEntityOption<TE> | string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TC> {
     let option: IEntityOption<TE> = {};
     if (optionOrName) {
         if (typeof optionOrName === "string") {
@@ -38,12 +38,12 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
         }
     }
 
-    return <TC extends IObjectType<TE>>(type: TC, context: ClassDecoratorContext<TC>): TC => {
+    return (type: TC, context: ClassDecoratorContext<TC>): TC => {
         if (!option.name) {
             option.name = type.name;
         }
 
-        const proxyType = proxyEntityType(type) as TC;
+        const proxyType = proxyEntityType(type) as TC & IObjectType<TE>;
         const entityMetadata = new EntityMetaData(proxyType, option.name);
         entityMetadata.schema = option.schema;
 
@@ -64,7 +64,7 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: Array<IExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
-                itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, TE> : ExpressionBuilder.parse<ValueType, TE>(selector, [type]));
+                itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, [TE]> : ExpressionBuilder.parse<ValueType, [TE]>(selector, [type]));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
             });
@@ -152,7 +152,6 @@ export function Entity<TE extends object>(optionOrName?: IEntityOption<TE> | str
                 handler(entityMetadata);
             }
         }
-
 
         setEntityMetadata(proxyType, entityMetadata);
 
