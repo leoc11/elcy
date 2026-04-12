@@ -1,24 +1,30 @@
-import { IObjectType, StringKeyOf } from "../../Common/Type";
-import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
-import { AbstractEntity } from "../Entity/AbstractEntity";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
+import { IObjectType } from "../../Common/Type";
+import { ClassDecorator } from "../Type";
+
 /**
  * Register before save event. only for concrete entity
  */
-export function AfterLoad<TE extends object = object>(handler?: (item: TE) => void): MethodDecorator | ClassDecorator {
-    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
-        let entityMetaData = getEntityMetadata(ctor);
-        if (!entityMetaData) {
-            AbstractEntity()(ctor);
-            entityMetaData = getEntityMetadata(ctor);
+export function AfterLoad<TE extends object>(handler: (entity: TE) => void, context: ClassMethodDecoratorContext<any, (entity: TE) => void>): void;
+export function AfterLoad<TC extends IObjectType, TE = TC extends IObjectType<infer U> ? U : never>(handler: (entity: TE) => void): ClassDecorator<TC>;
+export function AfterLoad<TE extends object>(handler: (entity: TE) => void, context?: ClassMethodDecoratorContext<any, (entity: TE) => void>): ClassDecorator<IObjectType<TE>> | void {
+    const classDecorator = (_: IObjectType<TE>, context: ClassDecoratorContext<IObjectType<TE>> | ClassMethodDecoratorContext<any, (entity: TE) => void>) => {
+        let handlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (!Array.isArray(handlers)) {
+            context.metadata.relations = handlers = [];
         }
 
-        if (!handler && descriptor && typeof descriptor.value === "function") {
-            handler = descriptor.value;
-        }
-
-        if (handler) {
-            entityMetaData.afterLoad = handler;
+        if (typeof handler === "function") {
+            handlers.push((entityMeta) => {
+                entityMeta.afterLoad = handler;
+            });
         }
     };
+
+    if (context?.kind === "method") {
+        return classDecorator(undefined, context);
+    }
+
+    return classDecorator;
 }
+

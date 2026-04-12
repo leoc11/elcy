@@ -1,25 +1,31 @@
-import { IObjectType, StringKeyOf } from "../../Common/Type";
-import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
-import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
-import { AbstractEntity } from "../Entity/AbstractEntity";
+import { ISaveEventParam } from "src/MetaData/Interface/ISaveEventParam";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
+import { IObjectType } from "../../Common/Type";
+import { ClassDecorator } from "../Type";
+
 /**
  * Register before save event. only for concrete entity
  */
-export function AfterSave<TE extends object = object>(handler?: (item: TE, param: ISaveEventParam) => void): MethodDecorator & ClassDecorator {
-    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
-        let entityMetaData = getEntityMetadata(ctor);
-        if (!entityMetaData) {
-            AbstractEntity()(ctor);
-            entityMetaData = getEntityMetadata(ctor);
+export function AfterSave<TE extends object>(handler: (entity: TE, param: ISaveEventParam) => void, context: ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => void>): void;
+export function AfterSave<TC extends IObjectType, TE = TC extends IObjectType<infer U> ? U : never>(handler: (entity: TE, param: ISaveEventParam) => void): ClassDecorator<TC>;
+export function AfterSave<TE extends object>(handler: (entity: TE, param: ISaveEventParam) => void, context?: ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => void>): ClassDecorator<IObjectType<TE>> | void {
+    const classDecorator = (_: IObjectType<TE>, context: ClassDecoratorContext<IObjectType<TE>> | ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => void>) => {
+        let handlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (!Array.isArray(handlers)) {
+            context.metadata.relations = handlers = [];
         }
 
-        if (!handler && descriptor && typeof descriptor.value === "function") {
-            handler = descriptor.value;
-        }
-
-        if (handler) {
-            entityMetaData.afterSave = handler;
+        if (typeof handler === "function") {
+            handlers.push((entityMeta) => {
+                entityMeta.afterSave = handler;
+            });
         }
     };
+
+    if (context?.kind === "method") {
+        return classDecorator(undefined, context);
+    }
+
+    return classDecorator;
 }
+

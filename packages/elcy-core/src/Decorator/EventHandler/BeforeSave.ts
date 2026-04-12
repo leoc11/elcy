@@ -1,26 +1,31 @@
-import { IObjectType, StringKeyOf } from "../../Common/Type";
+import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
+import { IObjectType } from "../../Common/Type";
 import { ISaveEventParam } from "../../MetaData/Interface/ISaveEventParam";
-import { getEntityMetadata } from "../../MetaData/MetaDataMapper";
-import { AbstractEntity } from "../Entity/AbstractEntity";
+import { ClassDecorator } from "../Type";
+
 /**
  * Register before save event. only for concrete
  * @handler: if named function was passed, then it will override last function with the same name
  */
-export function BeforeSave<TE extends object = object>(handler?: (item: TE, param?: ISaveEventParam) => boolean): MethodDecorator & ClassDecorator {
-    return (target: object | IObjectType<TE>, propertyKey?: StringKeyOf<TE>, descriptor?: PropertyDescriptor) => {
-        const ctor = (propertyKey ? target.constructor : target) as IObjectType<TE>;
-        let entityMetaData = getEntityMetadata(ctor);
-        if (!entityMetaData) {
-            AbstractEntity()(ctor);
-            entityMetaData = getEntityMetadata(ctor);
+export function BeforeSave<TE extends object>(handler: (entity: TE, param: ISaveEventParam) => boolean, context: ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => boolean>): void;
+export function BeforeSave<TC extends IObjectType, TE = TC extends IObjectType<infer U> ? U : never>(handler: (entity: TE, param: ISaveEventParam) => boolean): ClassDecorator<TC>;
+export function BeforeSave<TE extends object>(handler: (entity: TE, param: ISaveEventParam) => boolean, context?: ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => boolean>): ClassDecorator<IObjectType<TE>> | void {
+    const classDecorator = (_: IObjectType<TE>, context: ClassDecoratorContext<IObjectType<TE>> | ClassMethodDecoratorContext<any, (entity: TE, param: ISaveEventParam) => boolean>) => {
+        let handlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (!Array.isArray(handlers)) {
+            context.metadata.relations = handlers = [];
         }
 
-        if (!handler && descriptor && typeof descriptor.value === "function") {
-            handler = descriptor.value;
-        }
-
-        if (handler) {
-            entityMetaData.beforeSave = handler;
+        if (typeof handler === "function") {
+            handlers.push((entityMeta) => {
+                entityMeta.beforeSave = handler;
+            });
         }
     };
+
+    if (context?.kind === "method") {
+        return classDecorator(undefined, context);
+    }
+
+    return classDecorator;
 }
