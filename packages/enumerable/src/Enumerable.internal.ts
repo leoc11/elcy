@@ -70,6 +70,10 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return true;
   }
   public some(predicate?: (item: T) => boolean): boolean {
+    if (!predicate && this.cache?.enabled && this.cache?.isDone) {
+      return this.cache.result.length > 0;
+    }
+
     for (const item of this) {
       if (!predicate || predicate(item)) {
         return true;
@@ -78,6 +82,10 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return false;
   }
   public includes(item: T): boolean {
+    if (this.cache?.enabled && this.cache?.isDone) {
+      return this.cache.result.includes(item);
+    }
+
     for (const it of this) {
       if (it === item) {
         return true;
@@ -86,6 +94,10 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     return false;
   }
   public count(predicate?: (item: T) => boolean): number {
+    if (!predicate && this.cache?.enabled && this.cache?.isDone) {
+      return this.cache.result.length;
+    }
+
     let count = 0;
     for (const item of this) {
       if (!predicate || predicate(item)) {
@@ -103,6 +115,10 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     }
   }
   public find(predicate?: (item: T) => boolean): T | undefined {
+    if (!predicate && this.cache?.enabled && this.cache?.isDone) {
+      return this.cache.result[0];
+    }
+
     for (const item of this) {
       if (!predicate || predicate(item)) {
         return item;
@@ -112,8 +128,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public max<
     TArgs extends T extends ValueType
-      ? [selector?: (item: T) => ValueType]
-      : [selector: (item: T) => ValueType],
+    ? [selector?: (item: T) => ValueType]
+    : [selector: (item: T) => ValueType],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let max: TResult = null;
@@ -128,12 +144,12 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public min<
     TArgs extends T extends ValueType
-      ? [selector?: (item: T) => ValueType]
-      : [selector: (item: T) => ValueType] = T extends ValueType
-      ? [selector?: (item: T) => ValueType]
-      : [selector: (item: T) => ValueType],
+    ? [selector?: (item: T) => ValueType]
+    : [selector: (item: T) => ValueType] = T extends ValueType
+    ? [selector?: (item: T) => ValueType]
+    : [selector: (item: T) => ValueType],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]> =
-      TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+    TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let min: TResult | null = null;
     const selector = args[0];
@@ -147,8 +163,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public sum<
     TArgs extends T extends number | bigint
-      ? [selector?: (item: T) => number | bigint]
-      : [selector: (item: T) => number | bigint],
+    ? [selector?: (item: T) => number | bigint]
+    : [selector: (item: T) => number | bigint],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let sum: TResult;
@@ -165,8 +181,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public avg<
     TArgs extends T extends number | bigint
-      ? [selector?: (item: T) => number | bigint]
-      : [selector: (item: T) => number | bigint],
+    ? [selector?: (item: T) => number | bigint]
+    : [selector: (item: T) => number | bigint],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult | null {
     let sum: TResult;
@@ -251,7 +267,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     iterator._accessCount++;
     try {
       let index = 0;
-      for (;;) {
+      for (; ;) {
         const isDone = this.cache.isDone;
         const len = this.cache.result.length;
         while (len > index) {
