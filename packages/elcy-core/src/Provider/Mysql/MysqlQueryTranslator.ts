@@ -7,25 +7,43 @@ import { IQueryBuilder } from "src/Query/IQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
+import { isNonNullExp } from "src/Helper/Util";
 
 export const mysqlQueryTranslator = new QueryTranslator(Symbol("mysql"));
 mysqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
-    const leftExpString = qb.toOperandString(exp.leftOperand, context);
-    const rightExpString = qb.toOperandString(exp.rightOperand, context);
-    return `NOT(${leftExpString}<=>${rightExpString})`;
-};
-mysqlQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
-mysqlQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
-
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
     const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NULL`;
+    }
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}=${rightExpString}`;
+    }
     return `${leftExpString}<=>${rightExpString}`;
 };
 mysqlQueryTranslator.registerOperator(EqualExpression, equalTranslator);
 mysqlQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
+const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
+    const leftExpString = qb.toOperandString(exp.leftOperand, context);
+    const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NOT NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NOT NULL`;
+    }
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}<>${rightExpString}`;
+    }
+    return `NOT(${leftExpString}<=>${rightExpString})`;
+};
+mysqlQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
+mysqlQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
 
 /**
  * Math

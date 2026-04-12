@@ -338,6 +338,12 @@ relationalQueryTranslator.registerOperator(BitwiseXorExpression, (qb, exp, param
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, param: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NULL`;
+    }
     if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
         return `${leftExpString}=${rightExpString}`;
     }
@@ -348,6 +354,12 @@ relationalQueryTranslator.registerOperator(StrictEqualExpression, equalTranslato
 const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, param: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, param);
     const rightExpString = qb.toOperandString(exp.rightOperand, param);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NOT NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NOT NULL`;
+    }
     if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
         return `${leftExpString}<>${rightExpString}`;
     }

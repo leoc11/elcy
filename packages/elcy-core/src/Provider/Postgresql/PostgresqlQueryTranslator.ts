@@ -30,7 +30,6 @@ postgresqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb,
     return `to_char(${qb.toString(exp.objectOperand, param)}, '9${decimalFormat}EEEE')`;
 });
 
-
 if (Temporal) {
     /**
      * Temporal.Instant

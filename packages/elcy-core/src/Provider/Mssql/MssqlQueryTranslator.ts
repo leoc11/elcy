@@ -14,6 +14,9 @@ import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEq
 import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
 import { IQueryBuilder } from "src/Query/IQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
+import { isNonNullExp } from "src/Helper/Util";
+import { Temporal } from "src/Data/Temporal";
+import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -32,6 +35,15 @@ mssqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp,
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
     const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NULL`;
+    }
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}=${rightExpString}`;
+    }
     // SQL SERVER < 2022
     if (context?.option?.version && context?.option?.version < new Version(16)) {
         return `(${leftExpString}=${rightExpString} OR (${leftExpString} IS NULL AND ${rightExpString} IS NULL))`;
@@ -43,6 +55,15 @@ mssqlQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
 const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
     const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (rightExpString === "NULL") {
+        return `${leftExpString} IS NOT NULL`;
+    }
+    if (leftExpString === "NULL") {
+        return `${rightExpString} IS NOT NULL`;
+    }
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}<>${rightExpString}`;
+    }
     // SQL SERVER < 2022
     if (context?.option?.version && context?.option?.version < new Version(16)) {
         return `NOT(${leftExpString}=${rightExpString} OR (${leftExpString} IS NULL AND ${rightExpString} IS NULL))`;

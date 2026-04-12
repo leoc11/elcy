@@ -10,6 +10,7 @@ import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
+import { isNonNullExp } from "src/Helper/Util";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -17,6 +18,9 @@ sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
     const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}=${rightExpString}`;
+    }
     return `${leftExpString} IS ${rightExpString}`;
 };
 sqliteQueryTranslator.registerOperator(EqualExpression, equalTranslator);
@@ -24,6 +28,9 @@ sqliteQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
 const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
     const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    if (isNonNullExp(exp.leftOperand) || isNonNullExp(exp.rightOperand)) {
+        return `${leftExpString}<>${rightExpString}`;
+    }
     return `${leftExpString} IS NOT ${rightExpString}`;
 };
 sqliteQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
