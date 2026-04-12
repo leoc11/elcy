@@ -60,6 +60,7 @@ import { TypeofExpression } from "./Expression/TypeofExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
 import { ExpressionBuilder } from "./ExpressionBuilder";
 import { TransformerParameter } from "./TransformerParameter";
+import { NullCoalesceExpression } from "./Expression/NullCoalesceExpression";
 
 export class ExpressionExecutor {
     constructor(params?: { [key: string | number]: unknown }) {
@@ -159,9 +160,11 @@ export class ExpressionExecutor {
             case expression instanceof NotExpression:
                 return this.executeNot(expression) as T;
             case expression instanceof ObjectValueExpression:
-                return this.executeObjectValue(expression as ObjectValueExpression<T>);
+                return this.executeObjectValue(expression as ObjectValueExpression<Extract<T, object>>);
             case expression instanceof OrExpression:
                 return this.executeOr(expression) as T;
+            case expression instanceof NullCoalesceExpression:
+                return this.executeNullCoalesce(expression);
             case expression instanceof ParameterExpression:
                 return this.executeParameter(expression as ParameterExpression<T>);
             case expression instanceof SqlTableValueParameterExpression:
@@ -422,7 +425,7 @@ export class ExpressionExecutor {
         // tslint:disable-next-line:triple-equals
         return this.execute(expression.leftOperand) != this.execute(expression.rightOperand);
     }
-    protected executeObjectValue<T>(expression: ObjectValueExpression<T>) {
+    protected executeObjectValue<T extends object>(expression: ObjectValueExpression<T>) {
         const result = new expression.type();
         for (const key in expression.object) {
             result[key] = this.execute(expression.object[key] as IExpression<T[StringKeyOf<T>]>);
@@ -431,6 +434,9 @@ export class ExpressionExecutor {
     }
     protected executeOr(expression: OrExpression) {
         return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
+    }
+    protected executeNullCoalesce<T>(expression: NullCoalesceExpression<T>): T {
+        return this.execute(expression.leftOperand) ?? this.execute(expression.rightOperand);
     }
     protected executeParameter<T>(expression: ParameterExpression<T>): T {
         return this.scopeParameters.get(expression.name);

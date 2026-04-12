@@ -5,12 +5,40 @@ import { InstantiationExpression } from "../../ExpressionBuilder/Expression/Inst
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
+import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
+import { IBinaryOperatorExpression } from "src/ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { NotEqualExpression } from "src/ExpressionBuilder/Expression/NotEqualExpression";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/StrictNotEqualExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
+
+const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
+    const leftExpString = qb.toOperandString(exp.leftOperand, context);
+    const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    // SQL SERVER < 2022
+    if (context?.option?.version && context?.option?.version < new Version(16)) {
+        return `(${leftExpString}=${rightExpString} OR (${leftExpString} IS NULL AND ${rightExpString} IS NULL))`;
+    }
+    return `${leftExpString} IS NOT DISTINCT FROM ${rightExpString}`;
+};
+mssqlQueryTranslator.registerOperator(EqualExpression, equalTranslator);
+mssqlQueryTranslator.registerOperator(StrictEqualExpression, equalTranslator);
+const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictNotEqualExpression, context: IQueryBuilderContext) => {
+    const leftExpString = qb.toOperandString(exp.leftOperand, context);
+    const rightExpString = qb.toOperandString(exp.rightOperand, context);
+    // SQL SERVER < 2022
+    if (context?.option?.version && context?.option?.version < new Version(16)) {
+        return `NOT(${leftExpString}=${rightExpString} OR (${leftExpString} IS NULL AND ${rightExpString} IS NULL))`;
+    }
+    return `${leftExpString} IS DISTINCT FROM ${rightExpString}`;
+};
+mssqlQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
+mssqlQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
 
 /**
  * Math

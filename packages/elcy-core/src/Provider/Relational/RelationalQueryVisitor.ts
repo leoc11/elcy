@@ -63,6 +63,7 @@ import { Enumerable } from "@elcy/enumerable";
 import { getColumnMetadata, getRelationMetadata } from "src/MetaData/MetaDataMapper";
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
+import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 
 export class RelationalQueryVisitor implements IQueryVisitor {
     constructor() {
@@ -881,7 +882,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             return bridgeColumn;
                         }
 
-                        return column;
+                        return new NullCoalesceExpression(column, new ValueExpression(0 as Extract<Number, T>));
                     }
                 }
                 case "sum":

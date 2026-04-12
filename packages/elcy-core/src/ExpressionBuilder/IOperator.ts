@@ -37,6 +37,7 @@ import { MultiplicationExpression } from "./Expression/MultiplicationExpression"
 import { NegationExpression } from "./Expression/NegationExpression";
 import { NotEqualExpression } from "./Expression/NotEqualExpression";
 import { NotExpression } from "./Expression/NotExpression";
+import { NullCoalesceExpression } from "./Expression/NullCoalesceExpression";
 import { OrExpression } from "./Expression/OrExpression";
 import { ParameterExpression } from "./Expression/ParameterExpression";
 import { RightDecrementExpression } from "./Expression/RightDecrementExpression";
@@ -123,6 +124,7 @@ export const operators: IOperator[] = [
     { identifier: "|", type: OperatorType.Binary, precedence: { precedence: 7, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseOrExpression(op1, op2) },
     { identifier: "&&", type: OperatorType.Binary, precedence: { precedence: 6, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new AndExpression(op1, op2) },
     { identifier: "||", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new OrExpression(op1, op2) },
+    { identifier: "??", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new NullCoalesceExpression(op1, op2) },
     { identifier: "?", type: OperatorType.Ternary, precedence: { precedence: 4, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression, op3: IExpression) => new TernaryExpression(op1, op2, op3) },
     { identifier: "=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new AssignmentExpression(op1, op2) },
     { identifier: "+=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<string | number>, op2: IExpression<string | number>) => new AdditionAssignmentExpression(op1, op2) },

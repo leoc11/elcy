@@ -12,6 +12,9 @@ import { IColumnExpression } from "../Queryable/QueryExpression/IColumnExpressio
 import { IEntityExpression } from "../Queryable/QueryExpression/IEntityExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { Temporal } from "src/Data/Temporal";
+import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
+import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
+import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 
 export const toHexaString = function (binary: ArrayBufferLike | ArrayView): string {
     if (ArrayBuffer.isView(binary)) {
@@ -203,6 +206,19 @@ export const isGroupExp = (data: IExpression): data is GroupByExpression => {
 };
 export const isColumnExp = (data: IExpression): data is IColumnExpression => {
     return !!(data as IColumnExpression).entity;
+};
+export const isNonNullExp = (data: IExpression): boolean => {
+    if (isColumnExp(data)) {
+        return data.isNullable !== true;
+    }
+    if (data instanceof ValueExpression) {
+        return !isNull(data.value);
+    }
+    if (data instanceof NullCoalesceExpression) {
+        return isNonNullExp(data.rightOperand);
+    }
+
+    return false;
 };
 export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);

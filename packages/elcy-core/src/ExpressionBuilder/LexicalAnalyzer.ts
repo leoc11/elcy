@@ -235,11 +235,11 @@ function analyzeLexicalComment(pointer: ILexicalPointer, input: string, isBlock 
 function analyzeLexicalOperator(pointer: ILexicalPointer, input: string): ILexicalToken {
     const start = pointer.index;
     let char = input[pointer.index++];
-    if (["(", "["].indexOf(char) < 0) {
+    if (["(", "["].indexOf(char) === -1) {
         char = input[pointer.index];
-        if (["=", ".", "+", "-", "*", "&", "|", ">", "<"].indexOf(char) >= 0) {
+        if (["=", ".", "+", "-", "*", "&", "|", ">", "<", "?"].indexOf(char) >= 0) {
             char = input[++pointer.index];
-            if (["=", ">", "."].indexOf(char) >= 0) {
+            if (["=", ">", ".", "?"].indexOf(char) >= 0) {
                 char = input[++pointer.index];
                 if (char === "=") {
                     pointer.index++;
