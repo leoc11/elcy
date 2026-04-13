@@ -120,7 +120,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
         }
 
         if (!dbSet) {
-            const data = new (this.itemSelectExp.itemType as IObjectType<T & object>)();
+            const data = new (this.itemSelectExp.itemType as IObjectType<T & object> ?? Object)();
             // set column data
             for (const column of this.columns) {
                 setColumnValue(data, column, row, dbContext);
