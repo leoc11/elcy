@@ -5,7 +5,9 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { ISqlParameterExpression } from "./ISqlParameterExpression";
 
 export class SqlParameterExpression<T = unknown> implements ISqlParameterExpression<T> {
-    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<any, T>) { }
+    constructor(public readonly valueExp: IExpression<T>, public readonly column?: IColumnMetaData<any, T>) {
+        this.type = this.valueExp.type;
+    }
     public type: GenericType<T>;
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlParameterExpression<T> {
         if (!replaceMap) {
