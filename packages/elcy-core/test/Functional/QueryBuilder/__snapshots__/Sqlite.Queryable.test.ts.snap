@@ -4702,7 +4702,7 @@ exports[`Sqlite QUERYABLE JOIN should support cross join 1`] = `
 	"entity0"."t3Number" AS "column2",
 	"entity3"."dateTime" AS "column3"
 FROM "fixture"."Table3s" AS "entity0"
-FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+CROSS JOIN "Table1_Table3s" AS "entity1"
 LEFT JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
@@ -4727,7 +4727,7 @@ LEFT JOIN (
 		"entity2"."modifiedDate"
 	FROM "fixture"."Table1s" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
-) AS "entity2" ON ("entity1"."table1Id" IS "entity2"."id")
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
 LEFT JOIN (
 	SELECT "entity3"."id",
 		"entity3"."bigint",
@@ -4752,7 +4752,7 @@ LEFT JOIN (
 		"entity3"."modifiedDate"
 	FROM "fixture"."Table1s" AS "entity3"
 	WHERE ("entity3"."deleted"=false)
-) AS "entity3" ON ("entity1"."table1Id" IS "entity3"."id")
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
 WHERE ("entity2"."integer">1)"
 ,
     "type": 1,

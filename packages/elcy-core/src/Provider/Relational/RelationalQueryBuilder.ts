@@ -879,7 +879,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
 
         const hasPagination = selectExp.paging.skip || selectExp.paging.take;
-        if (selectExp.resolvedOrders.some(o => true) && (hasPagination || !(selectExp.parentRelation instanceof JoinRelation))) {
+        if (selectExp.resolvedOrders.some(o => true) && (hasPagination || ((context.rootQueryExpression ?? context.queryExpression) == selectExp && !(selectExp.parentRelation instanceof JoinRelation)))) {
             selectQuerySuffix += this.newLine() + "ORDER BY " + selectExp.resolvedOrders.map((c) => this.toString(c.column, context) + " " + c.direction).join(", ");
         }
 
