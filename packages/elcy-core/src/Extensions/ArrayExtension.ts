@@ -9,6 +9,14 @@ export class ArrayExtension {
             }
         }
     }
+    static deleteLast<T>(array: T[], ...items: T[]) {
+        for (const item of items) {
+            const index = array.lastIndexOf(item);
+            if (index >= 0) {
+                array.splice(index, 1);
+            }
+        }
+    }
     static add<T>(array: T[], ...items: T[]) {
         for (const item of items) {
             if (!array.includes(item)) {

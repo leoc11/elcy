@@ -177,12 +177,12 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.leftOperand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.leftOperand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.leftOperand);
                 exp.leftOperand = exp.leftOperand.valueExp;
                 hasParam = true;
             }
             if (exp.rightOperand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.rightOperand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.rightOperand);
                 exp.rightOperand = exp.rightOperand.valueExp;
                 hasParam = true;
             }
@@ -232,7 +232,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             let hasParam = false;
             exp.params = exp.params.map((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    ArrayExtension.delete(param.selectExpression.paramExps, o);
+                    ArrayExtension.deleteLast(param.selectExpression.paramExps, o);
                     hasParam = true;
                     return o.valueExp;
                 }
@@ -268,7 +268,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             let hasParam = false;
             exp.params = exp.params.map((o) => {
                 if (o instanceof SqlParameterExpression) {
-                    ArrayExtension.delete(param.selectExpression.paramExps, o);
+                    ArrayExtension.deleteLast(param.selectExpression.paramExps, o);
                     hasParam = true;
                     return o.valueExp;
                 }
@@ -409,7 +409,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
         }
         else if (objectOperand instanceof SqlParameterExpression) {
-            ArrayExtension.delete(param.selectExpression.paramExps, objectOperand);
+            ArrayExtension.deleteLast(param.selectExpression.paramExps, objectOperand);
             exp.objectOperand = objectOperand.valueExp;
             return param.selectExpression.addSqlParameter(exp);
         }
@@ -434,7 +434,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             // Execute in app if all parameter is available.
             if (isExpressionSafe) {
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    ArrayExtension.delete(param.selectExpression.paramExps, exp.objectOperand);
+                    ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
                     return param.selectExpression.addSqlParameter(exp);
                 }
@@ -1703,13 +1703,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             if (isExpressionSafe) {
                 let hasParam = false;
                 if (exp.objectOperand instanceof SqlParameterExpression) {
-                    ArrayExtension.delete(param.selectExpression.paramExps, exp.objectOperand);
+                    ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.objectOperand);
                     exp.objectOperand = exp.objectOperand.valueExp;
                     hasParam = true;
                 }
                 exp.params = exp.params.map((o) => {
                     if (o instanceof SqlParameterExpression) {
-                        ArrayExtension.delete(param.selectExpression.paramExps, o);
+                        ArrayExtension.deleteLast(param.selectExpression.paramExps, o);
                         hasParam = true;
                         return o.valueExp;
                     }
@@ -1947,8 +1947,16 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 return selectExp as unknown as IExpression<T>;
             }
 
+            const sqlParamName = this.parameterIndex + ":" + exp.name;
+            const sqlParamExp = param.selectExpression.paramExps
+                .find(o => o.valueExp instanceof ParameterExpression && o.valueExp.name === sqlParamName) as SqlParameterExpression<T>;
+            if (sqlParamExp) {
+                param.selectExpression.paramExps.push(sqlParamExp);
+                return sqlParamExp;
+            }
+
             const paramExp = exp.clone();
-            paramExp.name = this.parameterIndex + ":" + exp.name;
+            paramExp.name = sqlParamName;
             paramExp.itemType = exp.itemType;
             return param.selectExpression.addSqlParameter(paramExp);
         }
@@ -1981,17 +1989,17 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         if (isExpressionSafe) {
             let hasParam = false;
             if (exp.logicalOperand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.logicalOperand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.logicalOperand);
                 exp.logicalOperand = exp.logicalOperand.valueExp;
                 hasParam = true;
             }
             if (exp.trueOperand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.trueOperand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.trueOperand);
                 exp.trueOperand = exp.trueOperand.valueExp;
                 hasParam = true;
             }
             if (exp.falseOperand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.falseOperand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.falseOperand);
                 exp.falseOperand = exp.falseOperand.valueExp;
                 hasParam = true;
             }
@@ -2008,7 +2016,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         const isExpressionSafe = this.isSafe(exp.operand);
         if (isExpressionSafe) {
             if (exp.operand instanceof SqlParameterExpression) {
-                ArrayExtension.delete(param.selectExpression.paramExps, exp.operand);
+                ArrayExtension.deleteLast(param.selectExpression.paramExps, exp.operand);
                 exp.operand = exp.operand.valueExp;
                 return param.selectExpression.addSqlParameter(exp);
             }

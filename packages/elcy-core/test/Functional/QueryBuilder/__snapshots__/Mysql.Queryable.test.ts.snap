@@ -7787,6 +7787,145 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<?))"
 ]
 `;
 
+exports[`Mysql QUERYABLE PARAMETERS 1 parameter multi location 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 10,
+      "?1" => 10,
+      "?2" => 10,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer"<?) AND ("entity0"."decimalNumber">?)) AND ("entity0"."real" IS DISTINCT FROM ?)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE PARAMETERS 1 parameter multi sql param 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 10,
+      "?1" => 30,
+      "?2" => 4,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer"<?) AND ("entity0"."decimalNumber">?)) AND ("entity0"."real" IS DISTINCT FROM ?)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE PARAMETERS 1 parameter multi sql param + keep 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 10,
+      "?1" => 10,
+      "?2" => 4,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer"<?) AND ("entity0"."decimalNumber">?)) AND ("entity0"."real" IS DISTINCT FROM ?)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE PARAMETERS should work as return value 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	? AS "column0"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."deleted"=false)"
+,
+    "type": 1,
+  },
+]
+`;
+
 exports[`Mysql QUERYABLE SUBQUERY should work in where (CONTAINS) 1`] = `
 [
   {

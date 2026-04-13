@@ -72,9 +72,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public buildParameter(queryExp: IQueryExpression, params: { [key: string]: unknown }): ISqlParameterValueMap {
         const result: ISqlParameterValueMap = new Map();
         const valueTransformer = new ExpressionExecutor(params);
-        let paramExps = Enumerable.from(queryExp.paramExps);
+        let paramExps = Enumerable.from(queryExp.paramExps).distinct();
         if (Array.isArray(queryExp.includes)) {
-            paramExps = paramExps.union(Enumerable.from(queryExp.includes).flatMap(o => o.child.paramExps));
+            paramExps = paramExps.union(Enumerable.from(queryExp.includes).flatMap(o => Enumerable.from(o.child.paramExps).distinct()));
         }
         for (const sqlParameter of paramExps) {
             const value = valueTransformer.execute(sqlParameter);

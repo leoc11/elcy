@@ -43,7 +43,7 @@ export const queryableTest = (db: ITestContext) => {
                         expect(o).toHaveProperty(property as any);
                         expect(o[property]).not.toBeNull();
                     }
-                    expect(o.table1Manies).toBeArray();
+                    expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
                         const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
@@ -63,11 +63,11 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1);
-                    expect(o.table1Table2s).toBeArray();
+                    expect(o.table1Table2s).toBeInstanceOf(Array);
                     for (const od of o.table1Table2s) {
                         expect(od).toBeInstanceOf(Table1Table2);
                         expect(od.table2).toBeInstanceOf(Table2);
@@ -83,7 +83,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1Many);
@@ -99,7 +99,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1Table2);
@@ -118,7 +118,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Date);
@@ -136,7 +136,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o.date).toBeInstanceOf(Temporal.Instant);
@@ -154,7 +154,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o.date).toBeInstanceOf(Temporal.PlainDate);
@@ -171,10 +171,10 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
-                    expect(o.t1ms).toBeArray();
+                    expect(o.t1ms).toBeInstanceOf(Array);
                     for (const od of o.t1ms) {
                         expect(od).toBeInstanceOf(Table1Many);
                     }
@@ -191,7 +191,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o.t1One).toBeInstanceOf(Table1One);
@@ -210,10 +210,10 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
-                    expect(o.simpleTable1Manies).toBeArray();
+                    expect(o.simpleTable1Manies).toBeInstanceOf(Array);
                     expect(o.simpleTable1Manies.length).toBeGreaterThan(0);
                     for (const od of o.simpleTable1Manies) {
                         expect(od.name).toBeString();
@@ -233,10 +233,10 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
-                    expect(o.simpleT1T2s).toBeArray();
+                    expect(o.simpleT1T2s).toBeInstanceOf(Array);
                     expect(o.simpleT1T2s.length).toBeGreaterThan(0);
                     for (const od of o.simpleT1T2s) {
                         expect(od.t2).toBeInstanceOf(Table2);
@@ -257,10 +257,10 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
-                    expect(o.simpleT1T2s).toBeArray();
+                    expect(o.simpleT1T2s).toBeInstanceOf(Array);
                     expect(o.simpleT1T2s.length).toBeGreaterThan(0);
                     for (const od of o.simpleT1T2s) {
                         expect(od.t1t2).toBeInstanceOf(Table1Table2);
@@ -278,10 +278,10 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
-                    expect(o).toBeArray();
+                    expect(o).toBeInstanceOf(Array);
                     expect(o.length).not.toBe(0);
                     for (const od of o) {
                         expect(od).toBeInstanceOf(Table1Many);
@@ -300,11 +300,11 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o.sum).toBeNumber();
-                    expect(o.ods).toBeArray();
+                    expect(o.ods).toBeInstanceOf(Array);
                     for (const od of o.ods) {
                         expect(od).toBeInstanceOf(Table1Many);
                     }
@@ -326,7 +326,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(typeof o.test3).toBe("bigint");
@@ -1088,6 +1088,7 @@ export const queryableTest = (db: ITestContext) => {
 
                 const now = Temporal.Instant.from('2026-01-01T00:00:00Z');
                 const result = await db.table1s
+                    .parameter({ now })
                     .filter((o) => o.instant < now)
                     .find((o) => o.integer > 20000);
 
@@ -1109,7 +1110,7 @@ export const queryableTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
 
-                expect(results).toBeArray();
+                expect(results).toBeInstanceOf(Array);
                 expect(results.length).not.toBe(0);
                 for (const o of results) {
                     expect(o.order).toBeInstanceOf(Table1);
@@ -2215,11 +2216,11 @@ export const queryableTest = (db: ITestContext) => {
                         expect(o).toHaveProperty(property as any);
                         expect(o[property]).not.toBeNull();
                     }
-                    expect(o.table1Table2s).toBeArray();
+                    expect(o.table1Table2s).toBeInstanceOf(Array);
                     for (const od of o.table1Table2s) {
                         expect(od).toBeInstanceOf(Table1Table2);
                     }
-                    expect(o.table1Manies).toBeArray();
+                    expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
                         const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
@@ -2228,6 +2229,81 @@ export const queryableTest = (db: ITestContext) => {
                             expect(od[prop]).not.toBeNull();
                         }
                     }
+                }
+            });
+            it("1 parameter multi location", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                let param = 10;
+                const parameter = db.table1s.parameter({ param })
+                    .filter((o) => o.integer < param && o.decimalNumber > param && o.real != param);
+                const results = await parameter.toArray();
+
+                expect(spy).toHaveBeenCalledTimes(1);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Table1);
+                }
+            });
+            it("1 parameter multi sql param", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                let param = 10;
+                const parameter = db.table1s.parameter({ param })
+                    .filter((o) => o.integer < param && o.decimalNumber > param + 20 && o.real != param % 3 + 3);
+                const results = await parameter.toArray();
+
+                expect(spy).toHaveBeenCalledTimes(1);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Table1);
+                }
+            });
+            it("1 parameter multi sql param + keep", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                let param = 10;
+                const parameter = db.table1s.parameter({ param })
+                    .filter((o) => o.integer < param && o.decimalNumber > param && o.real != param % 3 + 3);
+                const results = await parameter.toArray();
+
+                expect(spy).toHaveBeenCalledTimes(1);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Table1);
+                }
+            });
+            it("should work as return value", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const paramObj = { now: (new Date(1767200400000)) };
+                const parameter = db.table1s.parameter({ paramObj }).map(o => paramObj.now);
+                const results = await parameter.toArray();
+
+                expect(spy).toHaveBeenCalledTimes(1);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Date);
                 }
             });
         });

@@ -7826,6 +7826,142 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<@param0_3))"
 ]
 `;
 
+exports[`Mssql QUERYABLE PARAMETERS 1 parameter multi location 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 10,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	[entity0].[bigint],
+	[entity0].[binary],
+	[entity0].[boolean],
+	[entity0].[date],
+	[entity0].[plainDate],
+	[entity0].[dateTime],
+	[entity0].[instant],
+	[entity0].[decimal],
+	[entity0].[decimalNumber],
+	[entity0].[decimalDecimal],
+	[entity0].[deleted],
+	[entity0].[identifier],
+	[entity0].[identifierString],
+	[entity0].[integer],
+	[entity0].[real],
+	[entity0].[string],
+	[entity0].[time],
+	[entity0].[plainTime],
+	[entity0].[createdDate],
+	[entity0].[modifiedDate]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]<@param0) AND ([entity0].[decimalNumber]>@param0)) AND ([entity0].[real] IS DISTINCT FROM @param0)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mssql QUERYABLE PARAMETERS 1 parameter multi sql param 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 10,
+      "@param1" => 30,
+      "@param2" => 4,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	[entity0].[bigint],
+	[entity0].[binary],
+	[entity0].[boolean],
+	[entity0].[date],
+	[entity0].[plainDate],
+	[entity0].[dateTime],
+	[entity0].[instant],
+	[entity0].[decimal],
+	[entity0].[decimalNumber],
+	[entity0].[decimalDecimal],
+	[entity0].[deleted],
+	[entity0].[identifier],
+	[entity0].[identifierString],
+	[entity0].[integer],
+	[entity0].[real],
+	[entity0].[string],
+	[entity0].[time],
+	[entity0].[plainTime],
+	[entity0].[createdDate],
+	[entity0].[modifiedDate]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]<@param0) AND ([entity0].[decimalNumber]>@param1)) AND ([entity0].[real] IS DISTINCT FROM @param2)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mssql QUERYABLE PARAMETERS 1 parameter multi sql param + keep 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 10,
+      "@param1" => 4,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	[entity0].[bigint],
+	[entity0].[binary],
+	[entity0].[boolean],
+	[entity0].[date],
+	[entity0].[plainDate],
+	[entity0].[dateTime],
+	[entity0].[instant],
+	[entity0].[decimal],
+	[entity0].[decimalNumber],
+	[entity0].[decimalDecimal],
+	[entity0].[deleted],
+	[entity0].[identifier],
+	[entity0].[identifierString],
+	[entity0].[integer],
+	[entity0].[real],
+	[entity0].[string],
+	[entity0].[time],
+	[entity0].[plainTime],
+	[entity0].[createdDate],
+	[entity0].[modifiedDate]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]<@param0) AND ([entity0].[decimalNumber]>@param0)) AND ([entity0].[real] IS DISTINCT FROM @param1)))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mssql QUERYABLE PARAMETERS should work as return value 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 2025-12-31T17:00:00.000Z,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	@param0 AS [column0]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE ([entity0].[deleted]=0)"
+,
+    "type": 1,
+  },
+]
+`;
+
 exports[`Mssql QUERYABLE SUBQUERY should work in where (CONTAINS) 1`] = `
 [
   {
