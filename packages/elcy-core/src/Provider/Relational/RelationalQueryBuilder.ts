@@ -391,7 +391,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 return this.toMethodCallString(expression, param);
             case expression instanceof FunctionCallExpression:
                 return this.toFunctionCallString(expression, param);
-            case expression instanceof SqlTableValueParameterExpression:
             case expression instanceof SqlParameterExpression:
                 return this.toSqlParameterString(expression, param);
             case expression instanceof ArrayValueExpression:
@@ -409,7 +408,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     return this.getColumnQueryString(expression, param);
                 }
                 else if (isEntityExp(expression)) {
-                    return this.enclose(expression.alias ?? `${expression.schema ? `${expression.schema}.` : ""}${expression.name}`);
+                    return this.toEntityString(expression);
                 }
                 else if (expression instanceof TernaryExpression) {
                     return this.toOperatorString(expression as any, param);
@@ -506,7 +505,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
                         return this.toOperandString(column.expression, param);
                     }
-                    return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.columnName);
+                    return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
                 else {
                     // need refactor, coz builder should not concern itself with this. it is visitor job. build should only do minimal work.
@@ -516,11 +515,11 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                         childSelect = commandExp.parentRelation?.parent;
                     }
                     if (!childSelect) {
-                        return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.columnName);
+                        return this.toString(column.entity) + "." + this.enclose(column.columnName);
                     }
 
                     const useAlias = !commandExp.projectedColumns.includes(column);
-                    return this.enclose(childSelect.entity.alias ?? childSelect.entity.name) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
+                    return this.toString(childSelect.entity) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
             else if (param.queryExpression instanceof InsertExpression) {
@@ -530,7 +529,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.columns.includes(column))) {
                         return this.toOperandString(column.expression, param);
                     }
-                    return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.columnName);
+                    return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
             }
             else if (param.queryExpression instanceof UpdateExpression) {
@@ -540,10 +539,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.entity.columns.includes(column))) {
                         return this.toOperandString(column.expression, param);
                     }
-                    return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.columnName);
+                    return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
             }
-            return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.dataPropertyName);
+            return this.toString(column.entity) + "." + this.enclose(column.dataPropertyName);
         }
 
         return this.enclose(column.dataPropertyName);
@@ -822,6 +821,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             parameters: this.getParameter(context)
         });
         return result;
+    }
+    protected toEntityString<TE extends object>(entityExp: IEntityExpression<TE>) {
+        return this.enclose(entityExp.alias ?? `${entityExp.schema ? `${entityExp.schema}.` : ""}${entityExp.name}`);
     }
     protected toSelectString<TE extends object>(selectExp: SelectExpression<TE>, context?: IQueryBuilderContext): string {
         const distinct = selectExp.distinct ? " DISTINCT" : "";
