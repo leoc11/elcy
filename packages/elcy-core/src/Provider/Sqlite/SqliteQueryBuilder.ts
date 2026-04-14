@@ -163,6 +163,17 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         const result: IQuery[] = [];
         const context = this.createContext(updateExp, parameters, option);
 
+        const useTempTable = !option?.supportTVP && !updateExp.parentRelation && updateExp.includes.length;
+        if (useTempTable) {
+            for (const [key, valueExp] of parameters) {
+                if (!(key instanceof SqlTableValueParameterExpression)) {
+                    continue;
+                }
+
+                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+            }
+        }
+
         if (updateExp.paging?.take) {
             const projectedEntity = new ProjectionEntityExpression(updateExp.select);
             projectedEntity.alias = updateExp.entity.alias + "_1";
@@ -231,6 +242,8 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             });
         }
 
+        const includedUpdates = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
+        result.push(...includedUpdates);
         return result;
     }
 }

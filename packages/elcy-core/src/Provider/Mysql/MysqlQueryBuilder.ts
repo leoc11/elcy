@@ -30,6 +30,7 @@ import { IQueryExpression } from "src/Queryable/QueryExpression/IQueryExpression
 import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
+import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 
 export class MysqlQueryBuilder extends RelationalQueryBuilder {
     //#region column type map
@@ -170,6 +171,17 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         const result: IQuery[] = [];
         const context = this.createContext(updateExp, parameters, option);
 
+        const useTempTable = !option?.supportTVP && !updateExp.parentRelation && updateExp.includes.length;
+        if (useTempTable) {
+            for (const [key, valueExp] of parameters) {
+                if (!(key instanceof SqlTableValueParameterExpression)) {
+                    continue;
+                }
+
+                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+            }
+        }
+
         if (updateExp.paging?.skip) {
             const projectedEntity = new ProjectionEntityExpression(updateExp.select);
             projectedEntity.alias = updateExp.entity.alias + "_1";
@@ -233,6 +245,39 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             result.push(...this.getSelectQuery(selectExp, option, parameters));
         }
 
+        const includedUpdates = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
+        result.push(...includedUpdates);
+        return result;
+    }
+    protected override getDeleteQuery<T extends object>(deleteExp: DeleteExpression<T>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
+        let result: IQuery[] = [];
+        const context = this.createContext(deleteExp, parameters, option);
+
+        const useTempTable = !option?.supportTVP && !deleteExp.parentRelation && deleteExp.includes.length;
+        if (useTempTable) {
+            for (const [key, valueExp] of parameters) {
+                if (!(key instanceof SqlTableValueParameterExpression)) {
+                    continue;
+                }
+
+                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+            }
+        }
+
+        let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias ?? deleteExp.entity.name)}` +
+            this.newLine() + `FROM ${this.entityName(deleteExp.entity)}${(deleteExp.entity.alias ? " AS " + this.enclose(deleteExp.entity.alias) : "")}` +
+            this.getJoinQueryString(deleteExp.joins, context) + this.getParentJoinQueryString(deleteExp.parentRelation, context);
+        if (deleteExp.where) {
+            selectQuery += this.newLine() + "WHERE " + this.toLogicalString(deleteExp.where, context);
+        }
+        result.push({
+            query: selectQuery,
+            type: QueryType.DML,
+            parameters: this.getParameter(context)
+        });
+
+        const includedDeletes = deleteExp.includes.flatMap((o) => this.getDeleteQuery(o.child, context.option, context.parameters));
+        result.push(...includedDeletes);
         return result;
     }
     protected override createTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {

@@ -513,8 +513,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     // now it needed coz select column from join table join child table.
                     let childSelect = commandExp.resolvedJoins.map((o) => o.child).find((selectExp) => selectExp.allSelects.some((o) => o.entity.alias === column.entity.alias));
                     if (!childSelect) {
-                        childSelect = commandExp.parentRelation.parent;
+                        childSelect = commandExp.parentRelation?.parent;
                     }
+                    if (!childSelect) {
+                        return this.enclose(column.entity.alias ?? column.entity.name) + "." + this.enclose(column.columnName);
+                    }
+
                     const useAlias = !commandExp.projectedColumns.includes(column);
                     return this.enclose(childSelect.entity.alias ?? childSelect.entity.name) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
@@ -1006,58 +1010,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return result;
     }
     // TODO: Update Query should use ANSI SQL Standard
-    protected getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
-        const result: IQuery[] = [];
-        const context = this.createContext(updateExp, parameters, option);
-        
-        const useTempTable = !option?.supportTVP && !updateExp.parentRelation && updateExp.includes.length;
-        if (useTempTable) {
-            for (const [key, valueExp] of parameters) {
-                if (!(key instanceof SqlTableValueParameterExpression)) {
-                    continue;
-                }
-
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
-            }
-        }
-
-        const setQuery = Object.keys(updateExp.setter).map((o) => {
-            const value = updateExp.setter[o as keyof TE];
-            const valueStr = this.toOperandString(value, context);
-            const column = updateExp.entity.columns.find((c) => c.propertyName === o);
-            return `${this.enclose(updateExp.entity.alias ?? updateExp.entity.name)}.${this.enclose(column.columnName)} = ${valueStr}`;
-        }).join(`,${this.newLine(1, false)}`);
-
-        let updateQuery = `UPDATE ${this.enclose(updateExp.entity.alias ?? updateExp.entity.name)}` +
-            this.newLine() + `SET ${setQuery}` +
-            this.newLine() + `FROM ${this.entityName(updateExp.entity)}${(updateExp.entity.alias ? " AS " + this.enclose(updateExp.entity.alias) : "")}` +
-            this.getJoinQueryString(updateExp.joins, context) + this.getParentJoinQueryString(updateExp.parentRelation, context);
-        if (updateExp.where) {
-            updateQuery += this.newLine() + "WHERE " + this.toLogicalString(updateExp.where, context);
-        }
-
-        if (updateExp.returnings.length) {
-            updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => {
-                let colStr = this.getColumnQueryString(o, context);
-                // NOTE: computed column should always has alias
-                if (o.alias) {
-                    colStr += " AS " + this.enclose(o.alias);
-                }
-
-                return colStr;
-            }).join(",")}`;
-        }
-
-        result.push({
-            query: updateQuery,
-            type: updateExp.returnings.length ? QueryType.DML | QueryType.DQL : QueryType.DML,
-            parameters: this.getParameter(context)
-        });
-
-        const includedDeletes = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
-        result.push(...includedDeletes);
-        return result;
-    }
+    protected abstract getUpdateQuery<TE extends object>(updateExp: UpdateExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[];
     protected getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         const pkValues: string[] = [];
         const joinString: string[] = [];
@@ -1126,14 +1079,28 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             }
         }
 
-        let selectQuery = `DELETE ${this.enclose(deleteExp.entity.alias ?? deleteExp.entity.name)}` +
-            this.newLine() + `FROM ${this.entityName(deleteExp.entity)}${(deleteExp.entity.alias ? " AS " + this.enclose(deleteExp.entity.alias) : "")}` +
-            this.getJoinQueryString(deleteExp.joins, context) + this.getParentJoinQueryString(deleteExp.parentRelation, context);
-        if (deleteExp.where) {
-            selectQuery += this.newLine() + "WHERE " + this.toLogicalString(deleteExp.where, context);
+        if (!deleteExp.entity.alias) {
+            deleteExp.entity.alias = "d0";
         }
+
+        const projectedEntity = new ProjectionEntityExpression(deleteExp.select);
+        projectedEntity.alias = deleteExp.entity.alias + "_1";
+        const selectExp = new SelectExpression(projectedEntity);
+        selectExp.selects.length = 0;
+
+        let pkFilter: IExpression<boolean>;
+        for (const col of deleteExp.entity.primaryColumns) {
+            const subCol = projectedEntity.primaryColumns.find(o => o.propertyName == col.propertyName);
+            const exp = new StrictEqualExpression(subCol, col);
+            pkFilter = pkFilter ? new AndExpression(pkFilter, exp) : exp;
+        }
+        selectExp.addWhere(pkFilter);
+        const entityString = `${this.newLine(1)}${this.toSelectString(selectExp, context)}${this.newLine(-1)}`;
+
+        let deleteQuery = `DELETE FROM ${this.entityName(deleteExp.entity)} AS ${this.enclose(deleteExp.entity.alias)}` +
+            this.newLine() + `WHERE EXISTS(${entityString})`;
         result.push({
-            query: selectQuery,
+            query: deleteQuery,
             type: QueryType.DML,
             parameters: this.getParameter(context)
         });
