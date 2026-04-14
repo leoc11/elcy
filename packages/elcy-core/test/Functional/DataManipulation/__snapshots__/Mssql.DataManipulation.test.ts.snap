@@ -1,0 +1,1152 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`Mssql DATA MANIPULATION INSERT should insert new entity 1 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"INSERT INTO [Table1One]([table1Id], [name], [number])
+VALUES
+	(1,'TEST1',10)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should insert new entity 2 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 2n,
+      "@param1" => "TEST2",
+      "@param2" => 20,
+    }
+,
+    "query": 
+"INSERT INTO [Table1One]([table1Id], [name], [number])
+VALUES
+	(@param0,@param1,@param2)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should insert new entity 3 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 3n,
+      "@param1" => "TEST3",
+      "@param2" => 30,
+    }
+,
+    "query": 
+"INSERT INTO [Table1One]([table1Id], [name], [number])
+VALUES
+	(@param0,@param1,@param2)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should insert new entity and update all insert generated column (createdDate, default) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "INSERT 1",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param0,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should insert entity with it relation correctly 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 10n,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	[entity0].[bigint],
+	[entity0].[binary],
+	[entity0].[boolean],
+	[entity0].[date],
+	[entity0].[plainDate],
+	[entity0].[dateTime],
+	[entity0].[instant],
+	[entity0].[decimal],
+	[entity0].[decimalNumber],
+	[entity0].[decimalDecimal],
+	[entity0].[deleted],
+	[entity0].[identifier],
+	[entity0].[identifierString],
+	[entity0].[integer],
+	[entity0].[real],
+	[entity0].[string],
+	[entity0].[time],
+	[entity0].[plainTime],
+	[entity0].[createdDate],
+	[entity0].[modifiedDate]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=@param0))
+ORDER BY (SELECT NULL)
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "@param0" => 10n,
+      "@param1" => "detail 1",
+      "@param2" => 1,
+      "@param3" => 10n,
+      "@param4" => "detail 2",
+      "@param5" => 2,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "@param0" => 10n,
+          "@param1" => "detail 1",
+          "@param2" => 1,
+        }
+,
+        "query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param0,@param1,@param2,DEFAULT)"
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "@param3" => 10n,
+          "@param4" => "detail 2",
+          "@param5" => 2,
+        }
+,
+        "query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param3,@param4,@param5,DEFAULT)"
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param0,@param1,@param2,DEFAULT);
+
+INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param3,@param4,@param5,DEFAULT)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should insert entity with it relation correctly (auto pk) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "INSERT 1",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param0,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "@param1" => "Insert 2",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param1,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "@param0" => Anything,
+      "@param1" => "detail 1",
+      "@param2" => 1,
+    }
+,
+    "query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param0,@param1,@param2,DEFAULT)"
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "@param3" => Anything,
+      "@param4" => "detail 2",
+      "@param5" => 2,
+    }
+,
+    "query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param3,@param4,@param5,DEFAULT)"
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "@param6" => Anything,
+      "@param7" => "detail 21",
+      "@param8" => 2,
+    }
+,
+    "query": 
+"INSERT INTO [Table1Manies]([table1Id], [name], [integer], [deleted])
+OUTPUT [INSERTED].[id],[INSERTED].[table1Id],[INSERTED].[deleted]
+VALUES
+	(@param6,@param7,@param8,DEFAULT)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should trigger before/after save event 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Insert 1",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param0,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should bulk insert 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"INSERT INTO [Table1Manies] ([name])
+SELECT ('Detail of parent '+CAST([entity0].[id] AS text)) AS [column1]
+FROM [fixture].[Table1s] AS [entity0]
+LEFT JOIN (
+	SELECT [entity1].[table1Id],
+		COUNT([entity1].[id]) AS [column0]
+	FROM [Table1Manies] AS [entity1]
+	WHERE ([entity1].[deleted]=0)
+	GROUP BY [entity1].[table1Id]
+) AS [entity1] ON ([entity0].[id]=[entity1].[table1Id])
+WHERE (([entity0].[deleted]=0) AND ((COALESCE([entity1].[column0], 0))<=0))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION INSERT should bulk insert entity for non auto pk when updating more than 10 entity 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+      "@param1" => "TEST1",
+      "@param2" => 10,
+      "@param3" => 2n,
+      "@param4" => "TEST2",
+      "@param5" => 20,
+      "@param6" => 3n,
+      "@param7" => "TEST3",
+      "@param8" => 30,
+      "@param9" => 4n,
+      "@param10" => "TEST4",
+      "@param11" => 40,
+      "@param12" => 5n,
+      "@param13" => "TEST5",
+      "@param14" => 50,
+      "@param15" => 6n,
+      "@param16" => "TEST6",
+      "@param17" => 60,
+      "@param18" => 7n,
+      "@param19" => "TEST7",
+      "@param20" => 70,
+      "@param21" => 8n,
+      "@param22" => "TEST8",
+      "@param23" => 80,
+      "@param24" => 9n,
+      "@param25" => "TEST9",
+      "@param26" => 90,
+      "@param27" => 10n,
+      "@param28" => "TEST10",
+      "@param29" => 100,
+      "@param30" => 11n,
+      "@param31" => "TEST11",
+      "@param32" => 110,
+    }
+,
+    "query": 
+"INSERT INTO [Table1One]([table1Id], [name], [number])
+VALUES
+	(@param0,@param1,@param2),
+	(@param3,@param4,@param5),
+	(@param6,@param7,@param8),
+	(@param9,@param10,@param11),
+	(@param12,@param13,@param14),
+	(@param15,@param16,@param17),
+	(@param18,@param19,@param20),
+	(@param21,@param22,@param23),
+	(@param24,@param25,@param26),
+	(@param27,@param28,@param29),
+	(@param30,@param31,@param32)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update entity 1 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[name] = @param0
+FROM [Table1One] AS [entity0]
+WHERE ([entity0].[table1Id]=@param1)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should bulk update entity 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[name] = 'Updated', [entity0].[number] = ([entity0].[number]+100)
+FROM [Table1One] AS [entity0]
+WHERE ([entity0].[table1Id]=1)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should bulk update entity with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 100,
+      "@param1" => 99.99,
+      "@param2" => 100,
+      "@param3" => 50,
+      "@param4" => 100.12,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [id] = [entity0_1].[id]
+FROM [Table1s] AS [entity0]
+INNER JOIN (
+	SELECT [entity0].[id]
+	FROM [fixture].[Table1s] AS [entity0]
+	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
+	ORDER BY (SELECT NULL)
+	OFFSET @param2 ROWS
+	FETCH NEXT @param3 ROWS ONLY
+) AS [entity0_1] ON ([entity0].[id]=[entity0_1].[id])"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update with DIRTY concurrency check 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 2n,
+      "@param2" => "TEST2",
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[name] = @param0
+FROM [Table1One] AS [entity0]
+WHERE (([entity0].[table1Id]=@param1) AND ([entity0].[name]=@param2))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update with VERSION concurrency check 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1,
+      "@param2" => Uint8Array [
+        1,
+        200,
+        0,
+        0,
+        100,
+      ],
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[t2Name] = @param0
+OUTPUT [INSERTED].[id],[INSERTED].[rowVersion]
+FROM [Table2s] AS [entity0]
+WHERE (([entity0].[id]=@param1) AND ([entity0].[rowVersion]=@param2))"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update with VERSION concurrency check (fallback to ModifiedDate) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+      "@param2" => Instant {},
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
+FROM [Table1s] AS [entity0]
+WHERE (([entity0].[id]=@param1) AND ([entity0].[modifiedDate]=@param2))"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update without concurrency check 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
+FROM [Table1s] AS [entity0]
+WHERE ([entity0].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update ModifiedDate 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
+FROM [Table1s] AS [entity0]
+WHERE ([entity0].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should not update Readonly Column, ex: CreatedDate 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
+FROM [Table1s] AS [entity0]
+WHERE ([entity0].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should trigger before/after save event 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
+FROM [Table1s] AS [entity0]
+WHERE ([entity0].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update entity with it relation correctly 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+    }
+,
+    "query": 
+"SELECT [entity0].[id],
+	[entity0].[bigint],
+	[entity0].[binary],
+	[entity0].[boolean],
+	[entity0].[date],
+	[entity0].[plainDate],
+	[entity0].[dateTime],
+	[entity0].[instant],
+	[entity0].[decimal],
+	[entity0].[decimalNumber],
+	[entity0].[decimalDecimal],
+	[entity0].[deleted],
+	[entity0].[identifier],
+	[entity0].[identifierString],
+	[entity0].[integer],
+	[entity0].[real],
+	[entity0].[string],
+	[entity0].[time],
+	[entity0].[plainTime],
+	[entity0].[createdDate],
+	[entity0].[modifiedDate]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=@param0))
+ORDER BY (SELECT NULL)
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[table1Id] = @param0
+OUTPUT [INSERTED].[id]
+FROM [Table1Manies] AS [entity0]
+WHERE ([entity0].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION UPDATE should update relation value to inserted relation entity's identity 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => "INSERT 1",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param0,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "@param0" => Anything,
+      "@param1" => 1n,
+    }
+,
+    "query": 
+"UPDATE [entity1]
+SET [entity1].[table1Id] = @param0
+OUTPUT [INSERTED].[id]
+FROM [Table1Manies] AS [entity1]
+WHERE ([entity1].[id]=@param1)"
+,
+    "type": 3,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should delete entity (soft delete) + should update modifiedDate 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN (
+	VALUES
+	(1)
+) AS [delete]([id]) ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should delete entity (hard delete) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"DELETE [entity0]
+FROM [fixture].[Table1s] AS [entity0]
+INNER JOIN (
+	VALUES
+	(1)
+) AS [delete]([id]) ON ([entity0].[id]=[delete].[id])"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should bulk delete entity (soft delete) with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 100,
+      "@param1" => 99.99,
+      "@param2" => 100,
+      "@param3" => 50,
+    }
+,
+    "query": 
+"UPDATE [entity0]
+SET [id] = [entity0_1].[id]
+FROM [Table1s] AS [entity0]
+INNER JOIN (
+	SELECT [entity0].[id]
+	FROM [fixture].[Table1s] AS [entity0]
+	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
+	ORDER BY (SELECT NULL)
+	OFFSET @param2 ROWS
+	FETCH NEXT @param3 ROWS ONLY
+) AS [entity0_1] ON ([entity0].[id]=[entity0_1].[id])"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should bulk delete entity (hard delete) with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 100,
+      "@param1" => 99.99,
+      "@param2" => 100,
+      "@param3" => 50,
+    }
+,
+    "query": 
+"DELETE [entity0]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should bulk delete with include (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity1]
+SET [entity1].[deleted] = 1
+FROM [Table1Manies] AS [entity1]
+WHERE ([entity1].[deleted]=0)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1));
+
+UPDATE [entity1]
+SET [entity1].[deleted] = 1
+FROM [Table1Manies] AS [entity1]
+WHERE ([entity1].[deleted]=0)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should bulk delete with include (hard delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"DELETE [entity0]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"DELETE [entity1]
+FROM [Table1Manies] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[id],
+		[entity0].[bigint],
+		[entity0].[binary],
+		[entity0].[boolean],
+		[entity0].[date],
+		[entity0].[plainDate],
+		[entity0].[dateTime],
+		[entity0].[instant],
+		[entity0].[decimal],
+		[entity0].[decimalNumber],
+		[entity0].[decimalDecimal],
+		[entity0].[deleted],
+		[entity0].[identifier],
+		[entity0].[identifierString],
+		[entity0].[integer],
+		[entity0].[real],
+		[entity0].[string],
+		[entity0].[time],
+		[entity0].[plainTime],
+		[entity0].[createdDate],
+		[entity0].[modifiedDate]
+	FROM [fixture].[Table1s] AS [entity0]
+	WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))
+) AS [entity0] ON ([entity0].[id]=[entity1].[table1Id])
+WHERE ([entity1].[deleted]=0)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DELETE [entity0]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1));
+
+DELETE [entity1]
+FROM [Table1Manies] AS [entity1]
+INNER JOIN (
+	SELECT [entity0].[id],
+		[entity0].[bigint],
+		[entity0].[binary],
+		[entity0].[boolean],
+		[entity0].[date],
+		[entity0].[plainDate],
+		[entity0].[dateTime],
+		[entity0].[instant],
+		[entity0].[decimal],
+		[entity0].[decimalNumber],
+		[entity0].[decimalDecimal],
+		[entity0].[deleted],
+		[entity0].[identifier],
+		[entity0].[identifierString],
+		[entity0].[integer],
+		[entity0].[real],
+		[entity0].[string],
+		[entity0].[time],
+		[entity0].[plainTime],
+		[entity0].[createdDate],
+		[entity0].[modifiedDate]
+	FROM [fixture].[Table1s] AS [entity0]
+	WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))
+) AS [entity0] ON ([entity0].[id]=[entity1].[table1Id])
+WHERE ([entity1].[deleted]=0)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should not cascade delete entity when not enabled (soft delete) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN (
+	VALUES
+	(1)
+) AS [delete]([id]) ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should cascade delete entity + relation (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TABLE IF EXISTS [#delete]",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TABLE [#delete]
+(
+	[id] bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO [#delete]([id])
+VALUES
+	(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity1]
+SET [entity1].[deleted] = 1
+FROM [Table1Manies] AS [entity1]
+WHERE ([entity1].[deleted]=0)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TABLE IF EXISTS [#delete];
+
+CREATE TABLE [#delete]
+(
+	[id] bigint
+);
+
+INSERT INTO [#delete]([id])
+VALUES
+	(1);
+
+UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0);
+
+UPDATE [entity1]
+SET [entity1].[deleted] = 1
+FROM [Table1Manies] AS [entity1]
+WHERE ([entity1].[deleted]=0)"
+,
+    "_type": 6,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should delete with SET NULL option (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TABLE IF EXISTS [#delete]",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TABLE [#delete]
+(
+	[id] bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO [#delete]([id])
+VALUES
+	(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity1]
+SET [entity1].[table1Id] = NULL
+FROM [Table1Manies] AS [entity1]"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TABLE IF EXISTS [#delete];
+
+CREATE TABLE [#delete]
+(
+	[id] bigint
+);
+
+INSERT INTO [#delete]([id])
+VALUES
+	(1);
+
+UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0);
+
+UPDATE [entity1]
+SET [entity1].[table1Id] = NULL
+FROM [Table1Manies] AS [entity1]"
+,
+    "_type": 6,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should delete with SET DEFAULT option (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TABLE IF EXISTS [#delete]",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TABLE [#delete]
+(
+	[id] bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO [#delete]([id])
+VALUES
+	(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity1]
+SET [entity1].[table1Id] = 0
+FROM [Table1Manies] AS [entity1]"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TABLE IF EXISTS [#delete];
+
+CREATE TABLE [#delete]
+(
+	[id] bigint
+);
+
+INSERT INTO [#delete]([id])
+VALUES
+	(1);
+
+UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0);
+
+UPDATE [entity1]
+SET [entity1].[table1Id] = 0
+FROM [Table1Manies] AS [entity1]"
+,
+    "_type": 6,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should trigger before/after delete event 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE [entity0]
+SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+INNER JOIN (
+	VALUES
+	(1)
+) AS [delete]([id]) ON ([entity0].[id]=[delete].[id])
+WHERE ([entity0].[deleted]=0)"
+,
+    "type": 2,
+  },
+]
+`;
