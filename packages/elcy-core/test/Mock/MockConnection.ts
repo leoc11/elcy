@@ -1,4 +1,4 @@
-import { ColumnGeneration, QueryType } from "../../src/Common/Enum";
+import { QueryType } from "../../src/Common/Enum";
 import { IsolationLevel } from "../../src/Common/StringType";
 import { IConnection } from "../../src/Connection/IConnection";
 import { TimeSpan } from "../../src/Data/TimeSpan";
@@ -11,7 +11,7 @@ import { IExpression } from "../../src/ExpressionBuilder/Expression/IExpression"
 import { StrictEqualExpression } from "../../src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../src/ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../../src/ExpressionBuilder/ExpressionExecutor";
-import { isColumnExp, isNotNull, visitExpression } from "../../src/Helper/Util";
+import { isColumnExp, visitExpression } from "../../src/Helper/Util";
 import { IntegerColumnMetaData } from "../../src/MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../../src/MetaData/StringColumnMetaData";
 import { BatchedQuery } from "../../src/Query/BatchedQuery";
@@ -47,7 +47,7 @@ export class MockConnection implements IConnection {
     public get results() {
         if (!this._results) {
             if (!this._generatedResults) {
-                this._generatedResults = this.generateQueryResult();
+                this._generatedResults = Array.from(this.generateQueryResult());
             }
             return this._generatedResults;
         }
@@ -246,20 +246,18 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof InsertExpression) {
                     let i = 0;
-                    const generatedColumns = Enumerable.from(command.entity.columns)
-                        .filter((o) => isNotNull(o.columnMeta))
-                        .filter((o) => (o.columnMeta!.generation & ColumnGeneration.Insert) !== 0 || !!o.columnMeta!.defaultExp)
-                        .toArray();
-
+                    const rowPerQuery = command.values.length / Enumerable.from(deferred.queries)
+                        .filter(o => Boolean(o.type & QueryType.DML))
+                        .count();
                     return deferred.queries.map((query) => {
                         const result: IQueryResult = {
-                            effectedRows: 1
+                            effectedRows: 0
                         };
                         i++;
                         if (query.type & QueryType.DQL) {
                             const rows = command.values.map((o) => {
                                 const val: { [key in any]: any } = {};
-                                for (const col of generatedColumns) {
+                                for (const col of command.returnings) {
                                     val[col.dataPropertyName] = this.generateValue(col);
                                 }
                                 return val;
@@ -268,7 +266,7 @@ export class MockConnection implements IConnection {
                         }
                         if (query.type & QueryType.DML) {
                             if (i >= skipCount) {
-                                result.effectedRows = command.values.length;
+                                result.effectedRows = rowPerQuery;
                             }
                             else {
                                 const arrayParameter = tvps[i];
@@ -283,18 +281,71 @@ export class MockConnection implements IConnection {
                 }
                 else if (command instanceof UpdateExpression) {
                     let i = 0;
+                    const arrayParameter = tvps[i];
+                    const values: unknown[] = arrayParameter ? deferred.parameters.get(arrayParameter).value as [] : [null];
                     return deferred.queries.map((query) => {
                         const result: IQueryResult = {
-                            effectedRows: 1
+                            effectedRows: 0
                         };
-                        if (query.type & QueryType.DML) {
-                            i++;
-                            if (i < skipCount) {
-                                const arrayParameter = tvps[i];
-                                const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
-                                    result.effectedRows = paramValue.value.length;
+                        i++;
+                        if (query.type & QueryType.DQL) {
+                            const equalValueMap = {};
+                            if (command.where) {
+                                visitExpression(command.where, (exp) => {
+                                    const isEqual = exp instanceof EqualExpression || exp instanceof StrictEqualExpression;
+                                    if (isEqual) {
+                                        if (exp.leftOperand instanceof ColumnExpression && exp.leftOperand.entity.type === command.entity.type) {
+                                            let value = null;
+                                            if (exp.rightOperand instanceof ValueExpression) {
+                                                value = exp.rightOperand.value;
+                                            }
+                                            else if (exp.rightOperand instanceof SqlParameterExpression) {
+                                                value = deferred.parameters.get(exp.rightOperand).value;
+                                            }
+
+                                            if (value) {
+                                                if (value instanceof Temporal.Instant || value instanceof Temporal.PlainDate || value instanceof Temporal.PlainTime) {
+                                                    value = value.toString();
+                                                }
+
+                                                equalValueMap[exp.leftOperand.propertyName] = value;
+                                            }
+                                        }
+                                        else if (exp.rightOperand instanceof ColumnExpression && exp.rightOperand.entity.type === command.entity.type) {
+                                            let value = null;
+                                            if (exp.leftOperand instanceof ValueExpression) {
+                                                value = exp.leftOperand.value;
+                                            }
+                                            else if (exp.leftOperand instanceof SqlParameterExpression) {
+                                                value = deferred.parameters.get(exp.leftOperand).value;
+                                            }
+                                            if (value) {
+                                                if (value instanceof Temporal.Instant || value instanceof Temporal.PlainDate || value instanceof Temporal.PlainTime) {
+                                                    value = value.toString();
+                                                }
+
+                                                equalValueMap[exp.rightOperand.propertyName] = value;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            const rows = values.map((o) => {
+                                const val: { [key in any]: any } = {};
+                                for (const col of command.returnings) {
+                                    val[col.dataPropertyName] = this.getBoundedValue(col, equalValueMap, {}, {});
                                 }
+                                return val;
+                            });
+                            result.rows = rows;
+                        }
+                        if (query.type & QueryType.DML) {
+                            if (i >= skipCount) {
+                                result.effectedRows = values.length;
+                            }
+                            else {
+                                result.effectedRows = values.length;
                             }
                         }
                         return result;
