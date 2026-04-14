@@ -409,7 +409,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     return this.getColumnQueryString(expression, param);
                 }
                 else if (isEntityExp(expression)) {
-                    return this.getEntityQueryString(expression, param);
+                    return this.enclose(expression.alias ?? `${expression.schema ? `${expression.schema}.` : ""}${expression.name}`);
                 }
                 else if (expression instanceof TernaryExpression) {
                     return this.toOperatorString(expression as any, param);

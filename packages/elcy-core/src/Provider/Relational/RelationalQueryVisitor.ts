@@ -381,7 +381,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
         }
         else if (objectOperand instanceof SelectExpression && exp.memberName === "length") {
-            return this.visit(new MethodCallExpression(objectOperand, "count" as MethodKey<[]>, objectOperand.primaryKeys.slice(0, 1)), param);
+            return this.visit(new MethodCallExpression(objectOperand, "count" as MethodKey<[]>, [objectOperand.entity]), param);
         }
         else if (objectOperand instanceof GroupedExpression) {
             if (exp.memberName === "key") {
@@ -804,7 +804,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         selectOperand = createProjectionSelect(selectOperand);
                     }
 
-                    const countExp = new MethodCallExpression(objectOperand as IExpression<TE>, exp.methodName, objectOperand.primaryKeys.slice(0, 1), Number);
+                    const countExp = new MethodCallExpression(objectOperand as IExpression<TE>, exp.methodName, [objectOperand.entity], Number);
                     const parentRel = selectOperand.parentRelation as JoinRelation<any, ElementType<TE> & object>;
                     if (param.scope === "queryable") {
                         // call from queryable
@@ -1328,7 +1328,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         sorter.orders = filterer.orders = [];
                         filterer.addJoin(sorter, new AndExpression(joinExp, orderExp), "INNER");
 
-                        const countExp = new MethodCallExpression(filterer, "count" as MethodKey<[]>, filterer.entity.primaryColumns.slice(0, 1), Number);
+                        const countExp = new MethodCallExpression(filterer, "count" as MethodKey<[]>, [filterer.entity], Number);
                         const colCountExp = new ComputedColumnExpression(filterer.entity, countExp, this.newAlias("column"));
 
                         let keyExp: IExpression;
@@ -1440,7 +1440,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             sorter.orders = filterer.orders = [];
                             filterer.addJoin(sorter, new AndExpression(joinExp, orderExp), "INNER");
 
-                            const innercountExp = new MethodCallExpression(filterer, "count" as MethodKey<[]>, filterer.entity.primaryColumns.slice(0, 1), Number);
+                            const innercountExp = new MethodCallExpression(filterer, "count" as MethodKey<[]>, [filterer.entity], Number);
                             const colCountExp = new ComputedColumnExpression(filterer.entity, innercountExp, this.newAlias("column"));
 
                             let keyExp: IExpression;

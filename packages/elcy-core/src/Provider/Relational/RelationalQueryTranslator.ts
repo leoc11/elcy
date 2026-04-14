@@ -52,7 +52,7 @@ import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
-import { isNonNullExp } from "src/Helper/Util";
+import { isEntityExp, isNonNullExp } from "src/Helper/Util";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
@@ -108,7 +108,7 @@ relationalQueryTranslator.registerMember(String.prototype, "length", (qb, exp, p
  */
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "every" as any, (qb, exp, param) => `NOT EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "some" as any, (qb, exp, param) => `EXIST(${qb.newLine(1) + qb.toString(exp.objectOperand, param) + qb.newLine(-1)})`);
-relationalQueryTranslator.registerMethod(SelectExpression.prototype, "count" as any, (qb, exp, param) => `COUNT(${exp.params.length ? qb.toString(exp.params[0], param) : "*"})`);
+relationalQueryTranslator.registerMethod(SelectExpression.prototype, "count" as any, (qb, exp, param) => `COUNT(${exp.params.length && isEntityExp(exp.params[0]) ? `${qb.toString(exp.params[0], param)}.*` : "*"})`);
 const aggregateTranslator = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, param: IQueryBuilderContext) => `${exp.methodName.toUpperCase()}(${qb.toString(exp.params[0], param)})`;
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "sum" as any, aggregateTranslator);
 relationalQueryTranslator.registerMethod(SelectExpression.prototype, "min" as any, aggregateTranslator);

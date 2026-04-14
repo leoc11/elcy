@@ -1721,7 +1721,7 @@ exports[`Mysql QUERYABLE FILTER should work with groupBy 1`] = `
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND "entity0"."decimalDecimal">20000)
 GROUP BY "entity0"."date"
-HAVING ((COUNT("entity0"."id")>=1) AND (DAY("entity0"."date")>15))
+HAVING ((COUNT("entity0".*)>=1) AND (DAY("entity0"."date")>15))
 ORDER BY "entity0"."date" ASC"
 ,
     "type": 1,
@@ -3366,7 +3366,7 @@ exports[`Mysql QUERYABLE COUNT should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT COUNT("entity0"."table1Id") AS "column1"
+"SELECT DISTINCT COUNT("entity0".*) AS "column1"
 FROM "Table1_Table2s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
@@ -3419,7 +3419,7 @@ INNER JOIN (
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
-			COUNT("entity2"."id") AS "column0"
+			COUNT("entity2".*) AS "column0"
 		FROM "Table1Manies" AS "entity2"
 		WHERE ("entity2"."deleted"=false)
 		GROUP BY "entity2"."table1Id"
@@ -3439,7 +3439,7 @@ ORDER BY "entity1"."id" ASC"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."table1Id"
@@ -3478,7 +3478,7 @@ INNER JOIN (
 	FROM "fixture"."Table1s" AS "entity0"
 	LEFT JOIN (
 		SELECT "entity2"."table1Id",
-			COUNT("entity2"."id") AS "column0"
+			COUNT("entity2".*) AS "column0"
 		FROM "Table1Manies" AS "entity2"
 		WHERE ("entity2"."deleted"=false)
 		GROUP BY "entity2"."table1Id"
@@ -3493,7 +3493,7 @@ SELECT "entity0"."id",
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."table1Id"
@@ -3534,7 +3534,7 @@ exports[`Mysql QUERYABLE COUNT could be used in where 1`] = `
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 	GROUP BY "entity1"."table1Id"
@@ -3552,8 +3552,8 @@ exports[`Mysql QUERYABLE COUNT could be used in select with different filter 1`]
     "parameters": Map {},
     "query": 
 "SELECT SUM("entity1"."integer") AS "column1",
-	COUNT("entity2"."id") AS "column2",
-	COUNT("entity3"."id") AS "column3"
+	COUNT("entity2".*) AS "column2",
+	COUNT("entity3".*) AS "column3"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."id",
@@ -3722,7 +3722,7 @@ exports[`Mysql QUERYABLE SLICE should work in include 1`] = `
 FROM "Table1Manies" AS "entity1"
 INNER JOIN (
 	SELECT "entity2"."id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	INNER JOIN (
 		SELECT "entity3"."id",
@@ -3733,7 +3733,7 @@ INNER JOIN (
 	) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer">"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."id"
-	HAVING ((COUNT("entity2"."id")>2) AND (COUNT("entity2"."id")<=3))
+	HAVING ((COUNT("entity2".*)>2) AND (COUNT("entity2".*)<=3))
 ) AS "entity2" ON ("entity1"."id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -3804,7 +3804,7 @@ WHERE ("entity0"."deleted"=false)"
 FROM "Table1Manies" AS "entity1"
 INNER JOIN (
 	SELECT "entity2"."id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	INNER JOIN (
 		SELECT "entity3"."id",
@@ -3815,7 +3815,7 @@ INNER JOIN (
 	) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer">"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."id"
-	HAVING ((COUNT("entity2"."id")>2) AND (COUNT("entity2"."id")<=3))
+	HAVING ((COUNT("entity2".*)>2) AND (COUNT("entity2".*)<=3))
 ) AS "entity2" ON ("entity1"."id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -3906,7 +3906,7 @@ INNER JOIN (
 	FROM "Table1Manies" AS "entity4"
 	INNER JOIN (
 		SELECT "entity2"."id",
-			COUNT("entity2"."id") AS "column0"
+			COUNT("entity2".*) AS "column0"
 		FROM "Table1Manies" AS "entity2"
 		INNER JOIN (
 			SELECT "entity3"."id",
@@ -3917,20 +3917,20 @@ INNER JOIN (
 		) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 		WHERE ("entity2"."deleted"=false)
 		GROUP BY "entity2"."id"
-		HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+		HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 	) AS "entity2" ON ("entity4"."id"="entity2"."id")
 	WHERE ("entity4"."deleted"=false)
 ) AS "entity4" ON ("entity1"."id"="entity4"."id")
 INNER JOIN (
 	SELECT "entity5"."id",
-		COUNT("entity5"."id") AS "column1"
+		COUNT("entity5".*) AS "column1"
 	FROM "Table1Manies" AS "entity5"
 	INNER JOIN (
 		SELECT "entity4"."id"
 		FROM "Table1Manies" AS "entity4"
 		INNER JOIN (
 			SELECT "entity2"."id",
-				COUNT("entity2"."id") AS "column0"
+				COUNT("entity2".*) AS "column0"
 			FROM "Table1Manies" AS "entity2"
 			INNER JOIN (
 				SELECT "entity3"."id",
@@ -3941,7 +3941,7 @@ INNER JOIN (
 			) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 			WHERE ("entity2"."deleted"=false)
 			GROUP BY "entity2"."id"
-			HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+			HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 		) AS "entity2" ON ("entity4"."id"="entity2"."id")
 		WHERE ("entity4"."deleted"=false)
 	) AS "entity4" ON ("entity5"."id"="entity4"."id")
@@ -3955,7 +3955,7 @@ INNER JOIN (
 			FROM "Table1Manies" AS "entity4"
 			INNER JOIN (
 				SELECT "entity2"."id",
-					COUNT("entity2"."id") AS "column0"
+					COUNT("entity2".*) AS "column0"
 				FROM "Table1Manies" AS "entity2"
 				INNER JOIN (
 					SELECT "entity3"."id",
@@ -3966,13 +3966,13 @@ INNER JOIN (
 				) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 				WHERE ("entity2"."deleted"=false)
 				GROUP BY "entity2"."id"
-				HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+				HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 			) AS "entity2" ON ("entity4"."id"="entity2"."id")
 			WHERE ("entity4"."deleted"=false)
 		) AS "entity4" ON ("entity6"."id"="entity4"."id")
 	) AS "entity6" ON (("entity6"."table1Id"="entity5"."table1Id") AND (("entity6"."name">"entity5"."name") OR (("entity6"."name"="entity5"."name") AND ("entity6"."id">="entity5"."id"))))
 	GROUP BY "entity5"."id"
-	HAVING ((COUNT("entity5"."id")>0) AND (COUNT("entity5"."id")<=3))
+	HAVING ((COUNT("entity5".*)>0) AND (COUNT("entity5".*)<=3))
 ) AS "entity5" ON ("entity1"."id"="entity5"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -4056,7 +4056,7 @@ INNER JOIN (
 	FROM "Table1Manies" AS "entity4"
 	INNER JOIN (
 		SELECT "entity2"."id",
-			COUNT("entity2"."id") AS "column0"
+			COUNT("entity2".*) AS "column0"
 		FROM "Table1Manies" AS "entity2"
 		INNER JOIN (
 			SELECT "entity3"."id",
@@ -4067,20 +4067,20 @@ INNER JOIN (
 		) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 		WHERE ("entity2"."deleted"=false)
 		GROUP BY "entity2"."id"
-		HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+		HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 	) AS "entity2" ON ("entity4"."id"="entity2"."id")
 	WHERE ("entity4"."deleted"=false)
 ) AS "entity4" ON ("entity1"."id"="entity4"."id")
 INNER JOIN (
 	SELECT "entity5"."id",
-		COUNT("entity5"."id") AS "column1"
+		COUNT("entity5".*) AS "column1"
 	FROM "Table1Manies" AS "entity5"
 	INNER JOIN (
 		SELECT "entity4"."id"
 		FROM "Table1Manies" AS "entity4"
 		INNER JOIN (
 			SELECT "entity2"."id",
-				COUNT("entity2"."id") AS "column0"
+				COUNT("entity2".*) AS "column0"
 			FROM "Table1Manies" AS "entity2"
 			INNER JOIN (
 				SELECT "entity3"."id",
@@ -4091,7 +4091,7 @@ INNER JOIN (
 			) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 			WHERE ("entity2"."deleted"=false)
 			GROUP BY "entity2"."id"
-			HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+			HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 		) AS "entity2" ON ("entity4"."id"="entity2"."id")
 		WHERE ("entity4"."deleted"=false)
 	) AS "entity4" ON ("entity5"."id"="entity4"."id")
@@ -4105,7 +4105,7 @@ INNER JOIN (
 			FROM "Table1Manies" AS "entity4"
 			INNER JOIN (
 				SELECT "entity2"."id",
-					COUNT("entity2"."id") AS "column0"
+					COUNT("entity2".*) AS "column0"
 				FROM "Table1Manies" AS "entity2"
 				INNER JOIN (
 					SELECT "entity3"."id",
@@ -4116,13 +4116,13 @@ INNER JOIN (
 				) AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."integer"<"entity2"."integer") OR (("entity3"."integer"="entity2"."integer") AND ("entity3"."id">="entity2"."id"))))
 				WHERE ("entity2"."deleted"=false)
 				GROUP BY "entity2"."id"
-				HAVING ((COUNT("entity2"."id")>1) AND (COUNT("entity2"."id")<=5))
+				HAVING ((COUNT("entity2".*)>1) AND (COUNT("entity2".*)<=5))
 			) AS "entity2" ON ("entity4"."id"="entity2"."id")
 			WHERE ("entity4"."deleted"=false)
 		) AS "entity4" ON ("entity6"."id"="entity4"."id")
 	) AS "entity6" ON (("entity6"."table1Id"="entity5"."table1Id") AND (("entity6"."name">"entity5"."name") OR (("entity6"."name"="entity5"."name") AND ("entity6"."id">="entity5"."id"))))
 	GROUP BY "entity5"."id"
-	HAVING ((COUNT("entity5"."id")>0) AND (COUNT("entity5"."id")<=3))
+	HAVING ((COUNT("entity5".*)>0) AND (COUNT("entity5".*)<=3))
 ) AS "entity5" ON ("entity1"."id"="entity5"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -4314,7 +4314,7 @@ ORDER BY "entity1"."id" ASC"
 FROM "Table1Manies" AS "entity2"
 INNER JOIN (
 	SELECT "entity3"."id",
-		COUNT("entity3"."id") AS "column0"
+		COUNT("entity3".*) AS "column0"
 	FROM "Table1Manies" AS "entity3"
 	INNER JOIN (
 		SELECT "entity4"."id",
@@ -4327,7 +4327,7 @@ INNER JOIN (
 	) AS "entity4" ON (("entity4"."table1Id"="entity3"."table1Id") AND (("entity4"."integer"<"entity3"."integer") OR (("entity4"."integer"="entity3"."integer") AND ("entity4"."id">="entity3"."id"))))
 	WHERE ("entity3"."deleted"=false)
 	GROUP BY "entity3"."id"
-	HAVING (COUNT("entity3"."id")<=1)
+	HAVING (COUNT("entity3".*)<=1)
 ) AS "entity3" ON ("entity2"."id"="entity3"."id")
 INNER JOIN (
 	SELECT "entity0"."id"
@@ -4388,7 +4388,7 @@ SELECT "entity2"."id",
 FROM "Table1Manies" AS "entity2"
 INNER JOIN (
 	SELECT "entity3"."id",
-		COUNT("entity3"."id") AS "column0"
+		COUNT("entity3".*) AS "column0"
 	FROM "Table1Manies" AS "entity3"
 	INNER JOIN (
 		SELECT "entity4"."id",
@@ -4401,7 +4401,7 @@ INNER JOIN (
 	) AS "entity4" ON (("entity4"."table1Id"="entity3"."table1Id") AND (("entity4"."integer"<"entity3"."integer") OR (("entity4"."integer"="entity3"."integer") AND ("entity4"."id">="entity3"."id"))))
 	WHERE ("entity3"."deleted"=false)
 	GROUP BY "entity3"."id"
-	HAVING (COUNT("entity3"."id")<=1)
+	HAVING (COUNT("entity3".*)<=1)
 ) AS "entity3" ON ("entity2"."id"="entity3"."id")
 INNER JOIN (
 	SELECT "entity0"."id"
@@ -4589,7 +4589,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy.(o => o.column).map(o => o.count()) 1`
   {
     "parameters": Map {},
     "query": 
-"SELECT COUNT("entity0"."id") AS "column0"
+"SELECT COUNT("entity0".*) AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)
 GROUP BY "entity0"."dateTime"
@@ -4622,7 +4622,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy.(o => o.column + o.column).map(o => {c
     "parameters": Map {},
     "query": 
 "SELECT (DAY("entity0"."dateTime")+YEAR("entity0"."dateTime")) AS "column0",
-	COUNT("entity0"."id") AS "column1",
+	COUNT("entity0".*) AS "column1",
 	SUM("entity1"."decimalNumber") AS "column2"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
@@ -4687,7 +4687,7 @@ Map {
 ,
     "query": 
 "SELECT CHAR_LENGTH("entity1"."name") AS "column0",
-	COUNT("entity1"."table1Id") AS "column1",
+	COUNT("entity1".*) AS "column1",
 	SUM("entity4"."real") AS "column2"
 FROM "Table1One" AS "entity1"
 INNER JOIN (
@@ -5009,7 +5009,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy.(o => o.toOneRelation).map(o => o.coun
   {
     "parameters": Map {},
     "query": 
-"SELECT COUNT("entity0"."id") AS "column0"
+"SELECT COUNT("entity0".*) AS "column0"
 FROM "Table1Manies" AS "entity0"
 WHERE ("entity0"."deleted"=false)
 GROUP BY "entity0"."table1Id"
@@ -5075,7 +5075,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy.(o => o.toOneRelation).map(o => {col: 
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."table1Id",
-		COUNT("entity0"."id") AS "column0",
+		COUNT("entity0".*) AS "column0",
 		SUM("entity2"."integer") AS "column1"
 	FROM "Table1Manies" AS "entity0"
 	LEFT JOIN (
@@ -5096,7 +5096,7 @@ ORDER BY "entity1"."id" ASC"
         "parameters": Map {},
         "query": 
 "SELECT "entity0"."table1Id",
-	COUNT("entity0"."id") AS "column0",
+	COUNT("entity0".*) AS "column0",
 	SUM("entity2"."integer") AS "column1"
 FROM "Table1Manies" AS "entity0"
 LEFT JOIN (
@@ -5137,7 +5137,7 @@ ORDER BY "entity0"."table1Id" ASC"
 FROM "fixture"."Table1s" AS "entity1"
 INNER JOIN (
 	SELECT "entity0"."table1Id",
-		COUNT("entity0"."id") AS "column0",
+		COUNT("entity0".*) AS "column0",
 		SUM("entity2"."integer") AS "column1"
 	FROM "Table1Manies" AS "entity0"
 	LEFT JOIN (
@@ -5153,7 +5153,7 @@ WHERE ("entity1"."deleted"=false)
 ORDER BY "entity1"."id" ASC;
 
 SELECT "entity0"."table1Id",
-	COUNT("entity0"."id") AS "column0",
+	COUNT("entity0".*) AS "column0",
 	SUM("entity2"."integer") AS "column1"
 FROM "Table1Manies" AS "entity0"
 LEFT JOIN (
@@ -5254,7 +5254,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy(o => o.toOneRelation.toOneRelation).ma
 FROM "fixture"."Table1s" AS "entity2"
 INNER JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity0"."relTable1Id") AS "column0",
+		COUNT("entity0".*) AS "column0",
 		SUM("entity3"."number") AS "column1"
 	FROM "Table1_Table2_Ones" AS "entity0"
 	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
@@ -5276,7 +5276,7 @@ ORDER BY "entity2"."id" ASC"
         "parameters": Map {},
         "query": 
 "SELECT "entity1"."table1Id",
-	COUNT("entity0"."relTable1Id") AS "column0",
+	COUNT("entity0".*) AS "column0",
 	SUM("entity3"."number") AS "column1"
 FROM "Table1_Table2_Ones" AS "entity0"
 LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
@@ -5318,7 +5318,7 @@ ORDER BY "entity1"."table1Id" ASC"
 FROM "fixture"."Table1s" AS "entity2"
 INNER JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity0"."relTable1Id") AS "column0",
+		COUNT("entity0".*) AS "column0",
 		SUM("entity3"."number") AS "column1"
 	FROM "Table1_Table2_Ones" AS "entity0"
 	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
@@ -5335,7 +5335,7 @@ WHERE ("entity2"."deleted"=false)
 ORDER BY "entity2"."id" ASC;
 
 SELECT "entity1"."table1Id",
-	COUNT("entity0"."relTable1Id") AS "column0",
+	COUNT("entity0".*) AS "column0",
 	SUM("entity3"."number") AS "column1"
 FROM "Table1_Table2_Ones" AS "entity0"
 LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
@@ -5423,7 +5423,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy(o => ({col: o.column, col: o.column*2 
   {
     "parameters": Map {},
     "query": 
-"SELECT COUNT("entity0"."id") AS "column1"
+"SELECT COUNT("entity0".*) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)
 GROUP BY "entity0"."identifier", ("entity0"."integer"*2), "entity0"."id"
@@ -5455,7 +5455,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy(o => ({col: o.column, col: o.column*2 
   {
     "parameters": Map {},
     "query": 
-"SELECT COUNT("entity0"."id") AS "column3",
+"SELECT COUNT("entity0".*) AS "column3",
 	SUM("entity2"."integer") AS "column4",
 	"entity0"."identifier" AS "column1",
 	("entity0"."integer"*2) AS "column0",
@@ -5482,7 +5482,7 @@ exports[`Mysql QUERYABLE GROUP BY groupBy(o => ({col: o.toOneRelation.column.met
   {
     "parameters": Map {},
     "query": 
-"SELECT COUNT("entity0"."table1Id") AS "column3",
+"SELECT COUNT("entity0".*) AS "column3",
 	SUM("entity6"."number") AS "column4",
 	DAY("entity1"."dateTime") AS "column0",
 	"entity2"."column1" AS "column1",
@@ -5594,7 +5594,7 @@ INNER JOIN (
 	FROM "fixture"."Table1s" AS "rel_entity0"
 	WHERE (("rel_entity0"."deleted"=false) AND ("rel_entity0"."decimalNumber">20000))
 	GROUP BY DAY("rel_entity0"."dateTime")
-	HAVING (COUNT("rel_entity0"."id")>3)
+	HAVING (COUNT("rel_entity0".*)>3)
 ) AS "rel_entity0" ON (DAY("entity0"."dateTime") IS NOT DISTINCT FROM "rel_entity0"."column0")
 WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber">20000))
 ORDER BY DAY("entity0"."dateTime") ASC"
@@ -6860,7 +6860,7 @@ FROM (
 ) AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."table1Id"
@@ -6962,7 +6962,7 @@ FROM (
 ) AS "entity0"
 LEFT JOIN (
 	SELECT "entity2"."table1Id",
-		COUNT("entity2"."id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1Manies" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 	GROUP BY "entity2"."table1Id"
@@ -7341,7 +7341,7 @@ exports[`Mysql QUERYABLE PARAMETERS should pass function to query 1`] = `
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 	GROUP BY "entity1"."table1Id"
@@ -7363,7 +7363,7 @@ exports[`Mysql QUERYABLE PARAMETERS should pass function with parameter 1`] = `
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 	GROUP BY "entity1"."table1Id"
@@ -7523,11 +7523,11 @@ FROM "Table1_Table2s" AS "entity1"
 INNER JOIN (
 	SELECT "entity2"."table1Id",
 		"entity2"."table2Id",
-		COUNT("entity2"."table1Id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1_Table2s" AS "entity2"
 	INNER JOIN "Table1_Table2s" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."table2Id">="entity2"."table2Id") OR (("entity3"."table2Id"="entity2"."table2Id") AND ("entity3"."table1Id">="entity2"."table1Id"))))
 	GROUP BY "entity2"."table1Id", "entity2"."table2Id"
-	HAVING ((COUNT("entity2"."table1Id")>?) AND (COUNT("entity2"."table1Id")<=?))
+	HAVING ((COUNT("entity2".*)>?) AND (COUNT("entity2".*)<=?))
 ) AS "entity2" ON (("entity1"."table1Id"="entity2"."table1Id") AND ("entity1"."table2Id"="entity2"."table2Id"))
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -7575,7 +7575,7 @@ Map {
 FROM "Table1Manies" AS "entity4"
 INNER JOIN (
 	SELECT "entity5"."id",
-		COUNT("entity5"."id") AS "column1"
+		COUNT("entity5".*) AS "column1"
 	FROM "Table1Manies" AS "entity5"
 	INNER JOIN (
 		SELECT "entity6"."id",
@@ -7585,7 +7585,7 @@ INNER JOIN (
 	) AS "entity6" ON (("entity6"."table1Id"="entity5"."table1Id") AND ("entity6"."id">="entity5"."id"))
 	WHERE ("entity5"."deleted"=false)
 	GROUP BY "entity5"."id"
-	HAVING ((COUNT("entity5"."id")>0) AND (COUNT("entity5"."id")<=?))
+	HAVING ((COUNT("entity5".*)>0) AND (COUNT("entity5".*)<=?))
 ) AS "entity5" ON ("entity4"."id"="entity5"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -7659,11 +7659,11 @@ FROM "Table1_Table2s" AS "entity1"
 INNER JOIN (
 	SELECT "entity2"."table1Id",
 		"entity2"."table2Id",
-		COUNT("entity2"."table1Id") AS "column0"
+		COUNT("entity2".*) AS "column0"
 	FROM "Table1_Table2s" AS "entity2"
 	INNER JOIN "Table1_Table2s" AS "entity3" ON (("entity3"."table1Id"="entity2"."table1Id") AND (("entity3"."table2Id">="entity2"."table2Id") OR (("entity3"."table2Id"="entity2"."table2Id") AND ("entity3"."table1Id">="entity2"."table1Id"))))
 	GROUP BY "entity2"."table1Id", "entity2"."table2Id"
-	HAVING ((COUNT("entity2"."table1Id")>?) AND (COUNT("entity2"."table1Id")<=?))
+	HAVING ((COUNT("entity2".*)>?) AND (COUNT("entity2".*)<=?))
 ) AS "entity2" ON (("entity1"."table1Id"="entity2"."table1Id") AND ("entity1"."table2Id"="entity2"."table2Id"))
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -7700,7 +7700,7 @@ SELECT "entity4"."id",
 FROM "Table1Manies" AS "entity4"
 INNER JOIN (
 	SELECT "entity5"."id",
-		COUNT("entity5"."id") AS "column1"
+		COUNT("entity5".*) AS "column1"
 	FROM "Table1Manies" AS "entity5"
 	INNER JOIN (
 		SELECT "entity6"."id",
@@ -7710,7 +7710,7 @@ INNER JOIN (
 	) AS "entity6" ON (("entity6"."table1Id"="entity5"."table1Id") AND ("entity6"."id">="entity5"."id"))
 	WHERE ("entity5"."deleted"=false)
 	GROUP BY "entity5"."id"
-	HAVING ((COUNT("entity5"."id")>0) AND (COUNT("entity5"."id")<=?))
+	HAVING ((COUNT("entity5".*)>0) AND (COUNT("entity5".*)<=?))
 ) AS "entity5" ON ("entity4"."id"="entity5"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -8057,7 +8057,7 @@ exports[`Mysql QUERYABLE SUBQUERY should determine whether where filter goes to 
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE (("entity1"."deleted"=false) AND ("entity1"."integer">1))
 	GROUP BY "entity1"."table1Id"
@@ -8138,7 +8138,7 @@ exports[`Mysql QUERYABLE SUBQUERY should work in select (Aggregate) 1`] = `
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 	GROUP BY "entity1"."table1Id"
@@ -8165,7 +8165,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."integer",
-			COUNT("entity1"."id") AS "column1"
+			COUNT("entity1".*) AS "column1"
 		FROM "fixture"."Table1s" AS "entity1"
 		WHERE ("entity1"."deleted"=false)
 		GROUP BY "entity1"."integer"
@@ -8452,7 +8452,7 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should determine whether where filter g
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."__index") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM (
 		SELECT NULL AS "__index", 1234567890 AS "table1Id", 11 AS "integer"
 	) AS "entity1"
@@ -8581,7 +8581,7 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Aggregate) 1`] =
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."__index") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM (
 		SELECT NULL AS "__index", 1234567890 AS "table1Id", 11 AS "integer"
 	) AS "entity1"
@@ -8609,7 +8609,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity2"
 	LEFT JOIN (
 		SELECT "entity1"."decimalNumber",
-			COUNT("entity1"."__index") AS "column1"
+			COUNT("entity1".*) AS "column1"
 		FROM (
 			SELECT NULL AS "__index", 1234567890 AS "id", 13200 AS "decimalNumber", NULL AS "computed"
 			UNION ALL
