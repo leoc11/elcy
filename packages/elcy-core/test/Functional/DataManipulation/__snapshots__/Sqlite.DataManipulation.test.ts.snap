@@ -242,7 +242,7 @@ SELECT ('Detail of parent ' || CAST("entity0"."id" AS text)) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
-		COUNT("entity1"."id") AS "column0"
+		COUNT("entity1".*) AS "column0"
 	FROM "Table1Manies" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 	GROUP BY "entity1"."table1Id"
