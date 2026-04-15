@@ -647,7 +647,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     protected getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, param?: IQueryBuilderContext): string {
         let result = "";
         if (sqlExp.orders.length <= 0) {
-            if (sqlExp.distinct) {
+            if (sqlExp.distinct || sqlExp.isAggregated) {
                 result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), param)}`;
             }
             else {
