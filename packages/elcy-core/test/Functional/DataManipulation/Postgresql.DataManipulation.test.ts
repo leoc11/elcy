@@ -1,8 +1,8 @@
 import { describe } from "node:test";
-import { PgContext } from "../../fixture";
+import { PostgresqlContext } from "../../fixture";
 import { dataManipulationTest } from "./DataManipulation.shared.test";
 
-const db = new PgContext();
+const db = new PostgresqlContext();
 describe("Postgresql", () => {
     dataManipulationTest(db);
 });

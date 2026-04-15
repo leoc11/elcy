@@ -7,7 +7,7 @@ import { PostgresqlDbContext } from "../../src/Provider/Postgresql/PostgresqlDbC
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table1Table2One, Table1Table3, Table2, Table2Table3, Table3 } from "./model";
 import { entityTypes, ITestContext } from "./ITestContext";
 
-export class PgContext extends PostgresqlDbContext implements ITestContext {
+export class PostgresqlContext extends PostgresqlDbContext implements ITestContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
         super(factory, entityTypes);
     }
