@@ -266,20 +266,24 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
         let relation: IExpression<boolean>;
         if (relationMetaOrRelations instanceof RelationMetaData) {
             const relationMeta = relationMetaOrRelations;
-            if (relationMeta.completeRelationType === "many-many") {
+            if (relationMetaOrRelations.completeRelationType === "many-many") {
                 throw new Error("many-many relation not supported");
             }
 
-            const isReverse = relationMeta.source.type !== this.entity.type;
-            const relType = isReverse ? relationMeta.reverseRelation.relationType : relationMeta.relationType;
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === (isReverse ? childColMeta : parentColMeta).propertyName);
-                const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === (isReverse ? parentColMeta : childColMeta).propertyName);
+                const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
+                const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
 
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
             }
-            type = relType === "one" && type ? type : "LEFT";
+
+            if (relationMeta.relationType === "many") {
+                type = "LEFT";
+            }
+            else if (!type) {
+                type = relationMeta.nullable || relationMeta.isMaster ? "LEFT" : "INNER";
+            }
         }
         else if (relationMetaOrRelations instanceof EmbeddedRelationMetaData) {
             type = "INNER";
